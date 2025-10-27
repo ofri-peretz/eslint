@@ -8,7 +8,7 @@ import { generateLLMContext, extractFunctionSignature } from '../../utils/llm-co
 
 type MessageIds = 'migrateToHooks' | 'convertToFunction' | 'viewMigrationGuide';
 
-interface Options {
+export interface Options {
   ignorePureRenderComponents?: boolean;
   allowComplexLifecycle?: boolean;
 }

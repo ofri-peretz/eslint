@@ -140,7 +140,7 @@ export function extractFunctionSignature(
     | TSESTree.ArrowFunctionExpression
 ): string {
   const params = node.params
-    .map((param) => {
+    .map((param: any) => {
       if (param.type === 'Identifier') {
         return param.name;
       }

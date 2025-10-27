@@ -8,7 +8,7 @@ import { generateLLMContext } from '../../utils/llm-context';
 
 type MessageIds = 'inlineFunction' | 'useCallback' | 'extractFunction';
 
-interface Options {
+export interface Options {
   allowInEventHandlers?: boolean;
   minArraySize?: number;
 }

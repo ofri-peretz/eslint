@@ -3,7 +3,7 @@
  * Prevents importing from internal/deep module paths with configurable strategies
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../utils/create-rule';
+import { createRule } from '../../utils/create-rule';
 
 type Strategy = 'error' | 'suggest' | 'autofix' | 'warn';
 
@@ -12,7 +12,7 @@ type MessageIds =
   | 'suggestPublicApi'
   | 'suggestBarrelExport';
 
-interface Options {
+export interface Options {
   strategy?: Strategy;
   ignorePaths?: string[];
   allow?: string[];

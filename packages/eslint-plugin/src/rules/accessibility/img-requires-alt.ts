@@ -8,7 +8,7 @@ import { generateLLMContext } from '../../utils/llm-context';
 
 type MessageIds = 'missingAlt' | 'emptyAlt' | 'addDescriptiveAlt' | 'useEmptyAlt';
 
-interface Options {
+export interface Options {
   allowAriaLabel?: boolean;
   allowAriaLabelledby?: boolean;
 }
@@ -65,7 +65,7 @@ export const imgRequiresAlt = createRule<RuleOptions, MessageIds>({
      */
     const hasAltAttribute = (node: TSESTree.JSXOpeningElement): boolean => {
       return node.attributes.some(
-        (attr) => attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier' && attr.name.name === 'alt'
+        (attr: any) => attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier' && attr.name.name === 'alt'
       );
     };
 
@@ -74,7 +74,7 @@ export const imgRequiresAlt = createRule<RuleOptions, MessageIds>({
      */
     const getAltValue = (node: TSESTree.JSXOpeningElement): string | null => {
       const altAttr = node.attributes.find(
-        (attr) => attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier' && attr.name.name === 'alt'
+        (attr: any) => attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier' && attr.name.name === 'alt'
       );
 
       if (!altAttr || altAttr.type !== 'JSXAttribute') return null;
@@ -113,7 +113,7 @@ export const imgRequiresAlt = createRule<RuleOptions, MessageIds>({
       surroundingText: string;
     } => {
       const srcAttr = node.attributes.find(
-        (attr) => attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier' && attr.name.name === 'src'
+        (attr: any) => attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier' && attr.name.name === 'src'
       );
 
       let src: string | undefined;

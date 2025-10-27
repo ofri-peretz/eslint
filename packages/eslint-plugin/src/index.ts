@@ -11,9 +11,13 @@
  */
 
 import type { TSESLint } from '@forge-js/eslint-plugin-utils';
-import { noConsoleLog } from './rules/no-console-log';
-import { noCircularDependencies } from './rules/no-circular-dependencies';
-import { noInternalModules } from './rules/no-internal-modules';
+
+// Development rules
+import { noConsoleLog } from './rules/development/no-console-log';
+
+// Architecture rules
+import { noCircularDependencies } from './rules/architecture/no-circular-dependencies';
+import { noInternalModules } from './rules/architecture/no-internal-modules';
 
 // Security rules
 import { noSqlInjection } from './rules/security/no-sql-injection';
@@ -55,10 +59,12 @@ import { enforceNaming } from './rules/domain/enforce-naming';
  * ```
  */
 export const rules = {
-  // Core rules
-  'no-console-log': noConsoleLog,
-  'no-circular-dependencies': noCircularDependencies,
-  'no-internal-modules': noInternalModules,
+  // Development rules
+  'development/no-console-log': noConsoleLog,
+  
+  // Architecture rules  
+  'architecture/no-circular-dependencies': noCircularDependencies,
+  'architecture/no-internal-modules': noInternalModules,
   
   // Security rules
   'security/no-sql-injection': noSqlInjection,
@@ -81,6 +87,11 @@ export const rules = {
   
   // Domain rules
   'domain/enforce-naming': enforceNaming,
+  
+  // Backwards compatibility aliases (deprecated - will be removed in v1.0)
+  'no-console-log': noConsoleLog,
+  'no-circular-dependencies': noCircularDependencies,
+  'no-internal-modules': noInternalModules,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -166,9 +177,9 @@ export const configs = {
       '@forge-js/llm-optimized': plugin,
     },
     rules: {
-      '@forge-js/llm-optimized/no-console-log': 'warn',
-      '@forge-js/llm-optimized/no-circular-dependencies': 'error',
-      '@forge-js/llm-optimized/no-internal-modules': 'error',
+      '@forge-js/llm-optimized/development/no-console-log': 'warn',
+      '@forge-js/llm-optimized/architecture/no-circular-dependencies': 'error',
+      '@forge-js/llm-optimized/architecture/no-internal-modules': 'error',
       '@forge-js/llm-optimized/security/no-sql-injection': 'error',
       '@forge-js/llm-optimized/security/no-unsafe-dynamic-require': 'error',
       '@forge-js/llm-optimized/accessibility/img-requires-alt': 'warn',
@@ -185,9 +196,9 @@ export const configs = {
       '@forge-js/llm-optimized': plugin,
     },
     rules: {
-      '@forge-js/llm-optimized/no-console-log': 'error',
-      '@forge-js/llm-optimized/no-circular-dependencies': 'error',
-      '@forge-js/llm-optimized/no-internal-modules': 'error',
+      '@forge-js/llm-optimized/development/no-console-log': 'error',
+      '@forge-js/llm-optimized/architecture/no-circular-dependencies': 'error',
+      '@forge-js/llm-optimized/architecture/no-internal-modules': 'error',
       '@forge-js/llm-optimized/security/no-sql-injection': 'error',
       '@forge-js/llm-optimized/security/no-unsafe-dynamic-require': 'error',
       '@forge-js/llm-optimized/accessibility/img-requires-alt': 'error',
@@ -207,6 +218,21 @@ export const configs = {
     rules: {
       '@forge-js/llm-optimized/security/no-sql-injection': 'error',
       '@forge-js/llm-optimized/security/no-unsafe-dynamic-require': 'error',
+    },
+  } satisfies TSESLint.FlatConfig.Config,
+
+  /**
+   * Architecture configuration
+   * 
+   * Enforces clean architecture and module boundaries
+   */
+  architecture: {
+    plugins: {
+      '@forge-js/llm-optimized': plugin,
+    },
+    rules: {
+      '@forge-js/llm-optimized/architecture/no-circular-dependencies': 'error',
+      '@forge-js/llm-optimized/architecture/no-internal-modules': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 

@@ -3,7 +3,7 @@
  * Disallows console.log with configurable strategies and LLM-optimized output
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { createRule, isMemberExpression } from '../utils/create-rule';
+import { createRule, isMemberExpression } from '../../utils/create-rule';
 import * as path from 'path';
 
 type Strategy = 'remove' | 'convert' | 'comment' | 'warn';
@@ -19,7 +19,7 @@ interface SeverityMapping {
   [consoleMethod: string]: string; // e.g., { "log": "info", "debug": "verbose", "error": "error" }
 }
 
-interface Options {
+export interface Options {
   strategy?: Strategy;
   ignorePaths?: string[];
   allowedMethods?: string[];

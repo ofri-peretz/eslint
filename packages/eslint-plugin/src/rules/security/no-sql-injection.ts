@@ -12,7 +12,7 @@ import {
 
 type MessageIds = 'sqlInjection' | 'useParameterized' | 'useORM';
 
-interface Options {
+export interface Options {
   allowDynamicTableNames?: boolean;
   trustedFunctions?: string[];
 }

@@ -15,7 +15,7 @@ interface DomainTerm {
   examples?: string[];
 }
 
-interface Options {
+export interface Options {
   domain?: string;
   terms?: DomainTerm[];
   glossaryUrl?: string;

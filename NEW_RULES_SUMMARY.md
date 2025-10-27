@@ -5,10 +5,12 @@
 ### 1. Enhanced no-console-log Rule
 
 **New Features:**
+
 - **Auto-detect Logger**: Automatically finds logger imports in your file (e.g., `import logger from './logger'`)
 - **Severity Mapping**: Map console methods to logger methods
 
 **Configuration Example:**
+
 ```typescript
 {
   rules: {
@@ -29,6 +31,7 @@
 ```
 
 **What It Does:**
+
 - Scans file for logger imports (`import logger`, `const logger = require()`)
 - Uses detected logger or falls back to `customLogger`
 - Converts `console.log()` → `logger.info()` based on severity map
@@ -36,6 +39,7 @@
 - LLM gets full context: detected logger + mapping info
 
 **Example Output:**
+
 ```
 ⚠️ console.log | file.ts:42 | Strategy: convert | Logger: logger | log → info
 ```
@@ -45,6 +49,7 @@
 **Purpose:** Enforce required attributes on React components with per-attribute ignore lists.
 
 **Configuration Example:**
+
 ```typescript
 {
   rules: {
@@ -73,6 +78,7 @@
 ```
 
 **Features:**
+
 - Per-attribute ignore lists
 - Auto-generated suggested values (e.g., `data-testid="button"` from `<Button>`)
 - LLM context includes:
@@ -82,6 +88,7 @@
   - Links to relevant docs
 
 **Example Output:**
+
 ```
 ♿ Missing required attribute: data-testid | Element: Button | Purpose: Testing & QA automation
 
@@ -94,6 +101,7 @@ LLM Context:
 ## 🎯 Use Cases
 
 ### Use Case 1: Team migrating from console to logger
+
 ```typescript
 // Before:
 console.log('User logged in');
@@ -107,6 +115,7 @@ logger.error('Failed to fetch');
 ```
 
 ### Use Case 2: Enforcing test IDs everywhere except UI components
+
 ```typescript
 {
   attributes: [{
@@ -132,6 +141,7 @@ logger.error('Failed to fetch');
 ```
 
 ### Use Case 3: Accessibility for interactive elements
+
 ```typescript
 {
   attributes: [
@@ -142,20 +152,22 @@ logger.error('Failed to fetch');
     {
       attribute: 'tabIndex',
       ignoreTags: ['button', 'a', 'input', 'select', 'textarea'], // Already focusable
-    }
-  ]
+    },
+  ];
 }
 ```
 
 ## 📊 Benefits
 
 ### For Teams:
+
 1. **Gradual Migration**: Map console methods incrementally
 2. **Consistency**: Everyone uses the same logger methods
 3. **Flexibility**: Ignore specific components without disabling rule
 4. **Education**: LLM explains WHY each attribute is needed
 
 ### For LLMs:
+
 1. **Rich Context**: Knows which logger is being used
 2. **Mapping Awareness**: Understands console.debug → logger.verbose
 3. **Component Context**: Knows which elements need what attributes
@@ -164,12 +176,14 @@ logger.error('Failed to fetch');
 ## 🔧 How It Works
 
 ### Logger Detection Algorithm:
+
 1. Scan AST for `ImportDeclaration` nodes
 2. Check for imports with "log" in the name
 3. Scan for `require()` calls with "log" in variable name
 4. Fall back to `customLogger` if nothing found
 
 ### Required Attributes Flow:
+
 1. Check element name (Button, TextField, etc.)
 2. For each required attribute:
    - Check if element is in ignoreTags for this attribute
@@ -179,12 +193,12 @@ logger.error('Failed to fetch');
 
 ## 📝 Configuration Matrix
 
-| Scenario | no-console-log Config | required-attributes Config |
-|----------|----------------------|----------------------------|
-| **Test IDs for E2E** | N/A | `data-testid` required, ignore UI primitives |
-| **A11y Compliance** | N/A | `aria-label` on interactive elements |
-| **Logger Migration** | `severityMap` with auto-detect | N/A |
-| **Mixed Approach** | `convert` strategy with mapping | Multiple attributes with different ignore lists |
+| Scenario             | no-console-log Config           | required-attributes Config                      |
+| -------------------- | ------------------------------- | ----------------------------------------------- |
+| **Test IDs for E2E** | N/A                             | `data-testid` required, ignore UI primitives    |
+| **A11y Compliance**  | N/A                             | `aria-label` on interactive elements            |
+| **Logger Migration** | `severityMap` with auto-detect  | N/A                                             |
+| **Mixed Approach**   | `convert` strategy with mapping | Multiple attributes with different ignore lists |
 
 ## 🚀 Next Steps
 
@@ -204,4 +218,3 @@ These rules showcase the power of **LLM-aware ESLint rules**:
 4. **Practical**: Solves real team migration challenges
 
 This is exactly the kind of tooling that makes LLMs more effective at helping teams maintain code quality!
-

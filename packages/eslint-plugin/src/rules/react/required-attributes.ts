@@ -15,7 +15,7 @@ interface AttributeRule {
   suggestedValue?: string;
 }
 
-interface Options {
+export interface Options {
   attributes?: AttributeRule[];
   ignoreComponents?: string[];
 }

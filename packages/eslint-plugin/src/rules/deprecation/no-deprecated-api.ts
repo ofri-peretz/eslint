@@ -17,7 +17,7 @@ interface DeprecatedAPI {
   migrationGuide?: string;
 }
 
-interface Options {
+export interface Options {
   apis?: DeprecatedAPI[];
   warnDaysBeforeRemoval?: number;
 }

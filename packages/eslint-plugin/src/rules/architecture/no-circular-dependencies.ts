@@ -10,7 +10,7 @@
  * @llm-optimized This rule provides structured, actionable error messages
  * that include the full cycle chain and specific fix suggestions.
  */
-import { createRule } from '../utils/create-rule';
+import { createRule } from '../../utils/create-rule';
 import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import * as path from 'path';
 import * as fs from 'fs';
