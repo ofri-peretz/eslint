@@ -1,0 +1,31 @@
+{
+    "name": "@forge-js/cli",
+    "version": "0.0.1",
+    "description": "CLI tool for managing releases in the forge-js monorepo",
+    "type": "commonjs",
+    "bin": {
+        "forge": "./bin/forge.js"
+    },
+    "main": "./src/index.js",
+    "scripts": {
+        "build": "tsc",
+        "dev": "node ./bin/forge.js"
+    },
+    "keywords": [
+        "cli",
+        "monorepo",
+        "release-management"
+    ],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "chalk": "^4.1.2",
+        "commander": "^12.1.0",
+        "ora": "^5.4.1"
+    },
+    "devDependencies": {
+        "@types/commander": "^2.12.5",
+        "@types/node": "^20.19.9",
+        "typescript": "^5.9.3"
+    }
+}

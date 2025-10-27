@@ -201,7 +201,6 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
             },
             {
               messageId: 'useORM',
-              fix: null, // Cannot auto-fix to ORM, needs manual intervention
             },
           ],
         });

@@ -206,25 +206,26 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
             ...llmContext,
           },
           suggest: [
-            {
-              messageId: 'convertToFunction',
-              fix: complexity === 'simple' ? (fixer: TSESLint.RuleFixer) => {
-                // Simple auto-fix for basic components
-                const classText = sourceCode.getText(node);
-                
-                // This is a simplified transformation
-                // Real implementation would need more sophisticated AST manipulation
-                let funcText = classText
-                  .replace(/class\s+(\w+)\s+extends\s+\w+\.\w+/, 'function $1(props)')
-                  .replace(/this\.props\./g, 'props.')
-                  .replace(/this\.state\.(\w+)/g, (_: string, name: string) => name);
+            ...(complexity === 'simple' ? [
+              {
+                messageId: 'convertToFunction' as const,
+                fix: (fixer: TSESLint.RuleFixer) => {
+                  // Simple auto-fix for basic components
+                  const classText = sourceCode.getText(node);
+                  
+                  // This is a simplified transformation
+                  // Real implementation would need more sophisticated AST manipulation
+                  const funcText = classText
+                    .replace(/class\s+(\w+)\s+extends\s+\w+\.\w+/, 'function $1(props)')
+                    .replace(/this\.props\./g, 'props.')
+                    .replace(/this\.state\.(\w+)/g, (_: string, name: string) => name);
 
-                return fixer.replaceText(node, funcText);
-              } : null,
-            },
+                  return fixer.replaceText(node, funcText);
+                },
+              }
+            ] : []),
             {
               messageId: 'viewMigrationGuide',
-              fix: null, // Just informational
             },
           ],
         });

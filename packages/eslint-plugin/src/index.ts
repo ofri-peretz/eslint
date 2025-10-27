@@ -22,6 +22,7 @@ import { noInternalModules } from './rules/architecture/no-internal-modules';
 // Security rules
 import { noSqlInjection } from './rules/security/no-sql-injection';
 import { noUnsafeDynamicRequire } from './rules/security/no-unsafe-dynamic-require';
+import { databaseInjection } from './rules/security/database-injection';
 
 // Migration rules
 import { reactClassToHooks } from './rules/migration/react-class-to-hooks';
@@ -40,6 +41,12 @@ import { noDeprecatedApi } from './rules/deprecation/no-deprecated-api';
 
 // Domain rules
 import { enforceNaming } from './rules/domain/enforce-naming';
+
+// Complexity rules
+import { cognitiveComplexity } from './rules/complexity/cognitive-complexity';
+
+// Duplication rules
+import { identicalFunctions } from './rules/duplication/identical-functions';
 
 /**
  * Collection of all ESLint rules provided by this plugin
@@ -69,6 +76,7 @@ export const rules = {
   // Security rules
   'security/no-sql-injection': noSqlInjection,
   'security/no-unsafe-dynamic-require': noUnsafeDynamicRequire,
+  'security/database-injection': databaseInjection,
   
   // Migration rules
   'migration/react-class-to-hooks': reactClassToHooks,
@@ -87,6 +95,12 @@ export const rules = {
   
   // Domain rules
   'domain/enforce-naming': enforceNaming,
+  
+  // Complexity rules (SonarQube-inspired)
+  'complexity/cognitive-complexity': cognitiveComplexity,
+  
+  // Duplication rules (SonarQube-inspired)
+  'duplication/identical-functions': identicalFunctions,
   
   // Backwards compatibility aliases (deprecated - will be removed in v1.0)
   'no-console-log': noConsoleLog,
@@ -171,6 +185,8 @@ export const configs = {
    * - Errors on deep module imports
    * - Errors on critical security issues
    * - Warns on accessibility violations
+   * - Warns on high cognitive complexity (SonarQube-inspired)
+   * - Warns on duplicate implementations (SonarQube-inspired)
    */
   recommended: {
     plugins: {
@@ -182,7 +198,10 @@ export const configs = {
       '@forge-js/llm-optimized/architecture/no-internal-modules': 'error',
       '@forge-js/llm-optimized/security/no-sql-injection': 'error',
       '@forge-js/llm-optimized/security/no-unsafe-dynamic-require': 'error',
+      '@forge-js/llm-optimized/security/database-injection': 'error',
       '@forge-js/llm-optimized/accessibility/img-requires-alt': 'warn',
+      '@forge-js/llm-optimized/complexity/cognitive-complexity': 'warn',
+      '@forge-js/llm-optimized/duplication/identical-functions': 'warn',
     },
   } satisfies TSESLint.FlatConfig.Config,
   
@@ -190,6 +209,7 @@ export const configs = {
    * Strict configuration for production-ready code
    * 
    * All rules are set to 'error' for maximum code quality enforcement
+   * Includes SonarQube-inspired complexity and duplication rules
    */
   strict: {
     plugins: {
@@ -201,8 +221,11 @@ export const configs = {
       '@forge-js/llm-optimized/architecture/no-internal-modules': 'error',
       '@forge-js/llm-optimized/security/no-sql-injection': 'error',
       '@forge-js/llm-optimized/security/no-unsafe-dynamic-require': 'error',
+      '@forge-js/llm-optimized/security/database-injection': 'error',
       '@forge-js/llm-optimized/accessibility/img-requires-alt': 'error',
       '@forge-js/llm-optimized/performance/react-no-inline-functions': 'error',
+      '@forge-js/llm-optimized/complexity/cognitive-complexity': 'error',
+      '@forge-js/llm-optimized/duplication/identical-functions': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 
@@ -210,6 +233,7 @@ export const configs = {
    * Security-focused configuration
    * 
    * Enables all security rules for maximum protection
+   * Includes comprehensive database injection detection (SonarQube-inspired)
    */
   security: {
     plugins: {
@@ -218,6 +242,7 @@ export const configs = {
     rules: {
       '@forge-js/llm-optimized/security/no-sql-injection': 'error',
       '@forge-js/llm-optimized/security/no-unsafe-dynamic-require': 'error',
+      '@forge-js/llm-optimized/security/database-injection': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 
@@ -307,6 +332,25 @@ export const configs = {
     },
     rules: {
       '@forge-js/llm-optimized/domain/enforce-naming': 'warn',
+    },
+  } satisfies TSESLint.FlatConfig.Config,
+
+  /**
+   * SonarQube-inspired configuration
+   * 
+   * Advanced code quality rules inspired by SonarQube:
+   * - Cognitive complexity detection
+   * - Duplicate function detection
+   * - Comprehensive injection prevention
+   */
+  sonarqube: {
+    plugins: {
+      '@forge-js/llm-optimized': plugin,
+    },
+    rules: {
+      '@forge-js/llm-optimized/complexity/cognitive-complexity': 'warn',
+      '@forge-js/llm-optimized/duplication/identical-functions': 'warn',
+      '@forge-js/llm-optimized/security/database-injection': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 } satisfies Record<string, TSESLint.FlatConfig.Config>;

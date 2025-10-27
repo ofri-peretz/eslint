@@ -1,0 +1,84 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Manual Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish (e.g., 1.0.0 or minor/major/patch)"
+        required: true
+        type: string
+      preid:
+        description: "Pre-release identifier (alpha/beta/rc)"
+        required: false
+        type: choice
+        default: "none"
+        options:
+          - none
+          - alpha
+          - beta
+          - rc
+      dry-run:
+        description: "Dry run (do not actually publish)"
+        required: false
+        type: boolean
+        default: true
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "10.18.3"
+
+jobs:
+  publish:
+    name: 📦 Manual Release with NX
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write # Required for NPM provenance
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: "https://registry.npmjs.org"
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: 📥 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🚀 Run NX Release (Dry Run)
+        if: github.event.inputs.dry-run == 'true'
+        run: |
+          if [ "${{ github.event.inputs.preid }}" != "none" ]; then
+            pnpm nx release --version=${{ github.event.inputs.version }} --preid=${{ github.event.inputs.preid }} --dry-run
+          else
+            pnpm nx release --version=${{ github.event.inputs.version }} --dry-run
+          fi
+
+      - name: 🚀 Run NX Release (Version)
+        if: github.event.inputs.dry-run == 'false'
+        run: |
+          if [ "${{ github.event.inputs.preid }}" != "none" ]; then
+            pnpm nx release --version=${{ github.event.inputs.version }} --preid=${{ github.event.inputs.preid }} --skip-publish
+          else
+            pnpm nx release --version=${{ github.event.inputs.version }} --skip-publish
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📦 Publish to NPM
+        if: github.event.inputs.dry-run == 'false'
+        run: pnpm nx release publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true

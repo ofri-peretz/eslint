@@ -1,0 +1,30 @@
+# yamllint Configuration
+# This file configures yamllint rules for YAML files in this repository
+# For more info: https://yamllint.readthedocs.io/
+
+extends: default
+
+rules:
+  line-length:
+    max: 120
+    level: warning
+  
+  indentation:
+    spaces: 2
+    indent-sequences: true
+  
+  truthy:
+    allowed-values: ['true', 'false']
+    check-keys: false
+  
+  comments:
+    min-spaces-from-content: 1
+  
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 0
+  
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+

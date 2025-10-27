@@ -91,13 +91,13 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
       }
       if (node.name.type === 'JSXMemberExpression') {
         // Handle cases like <Box.Item>
-        let current: TSESTree.JSXMemberExpression | TSESTree.JSXIdentifier = node.name;
+        let current: TSESTree.JSXIdentifier | TSESTree.JSXMemberExpression = node.name;
         const parts: string[] = [];
         while (current.type === 'JSXMemberExpression') {
           if (current.property.type === 'JSXIdentifier') {
             parts.unshift(current.property.name);
           }
-          current = current.object;
+          current = current.object as TSESTree.JSXIdentifier | TSESTree.JSXMemberExpression;
         }
         if (current.type === 'JSXIdentifier') {
           parts.unshift(current.name);

@@ -1,0 +1,27 @@
+{
+  "name": "cli",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/cli/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/cli",
+        "main": "packages/cli/src/index.ts",
+        "tsConfig": "packages/cli/tsconfig.json",
+        "assets": [
+          "packages/cli/README.md",
+          {
+            "glob": "*",
+            "input": "packages/cli/bin",
+            "output": "bin"
+          }
+        ]
+      }
+    }
+  }
+}
+

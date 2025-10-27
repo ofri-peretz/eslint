@@ -296,7 +296,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
           },
           fix,
           // Only provide suggestions if strategy is 'suggest', otherwise the fix is automatic
-          suggest: strategy === 'suggest' ? suggest : undefined,
+          ...(strategy === 'suggest' && suggest ? { suggest } : {}),
         });
       },
     };

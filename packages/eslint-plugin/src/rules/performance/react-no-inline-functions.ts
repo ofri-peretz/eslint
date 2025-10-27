@@ -209,11 +209,9 @@ export const reactNoInlineFunctions = createRule<RuleOptions, MessageIds>({
           suggest: [
             {
               messageId: 'useCallback',
-              fix: null, // Complex transformation, suggest only
             },
             {
               messageId: 'extractFunction',
-              fix: null,
             },
           ],
         });

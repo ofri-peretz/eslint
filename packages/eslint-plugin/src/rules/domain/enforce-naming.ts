@@ -186,7 +186,6 @@ export const enforceNaming = createRule<RuleOptions, MessageIds>({
             ? [
                 {
                   messageId: 'viewGlossary' as const,
-                  fix: null,
                 },
               ]
             : []),
