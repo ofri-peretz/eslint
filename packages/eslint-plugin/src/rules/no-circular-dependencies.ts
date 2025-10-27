@@ -198,7 +198,7 @@ export const noCircularDependencies = createRule<RuleOptions, MessageIds>({
      */
     function shouldIgnoreFile(file: string, patterns: string[]): boolean {
       const normalizedFile = path.normalize(file);
-      return patterns.some((pattern) => {
+      return patterns.some((pattern: string) => {
         const regex = patternToRegex(pattern);
         return regex.test(normalizedFile);
       });

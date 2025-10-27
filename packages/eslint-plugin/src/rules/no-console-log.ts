@@ -108,7 +108,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
 
       const normalizedPath = path.normalize(filename).replace(/\\/g, '/');
 
-      return ignorePaths.some((pattern) => {
+      return ignorePaths.some((pattern: string) => {
         const normalizedPattern = pattern.replace(/\\/g, '/');
 
         // Exact match
@@ -164,7 +164,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
 
             case 'convert': {
               const args = node.arguments
-                .map((arg) => sourceCode.getText(arg))
+                .map((arg: any) => sourceCode.getText(arg))
                 .join(', ');
               return fixer.replaceText(node.callee, `${customLogger}.debug`);
             }
@@ -186,7 +186,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
         const suggest: TSESLint.SuggestionReportDescriptor<MessageIds>[] = [
           {
             messageId: 'strategyRemove',
-            fix: (fixer) => {
+            fix: (fixer: TSESLint.RuleFixer) => {
               const statement = findParentStatement(node);
               return statement ? fixer.remove(statement) : null;
             },
@@ -194,11 +194,11 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
           {
             messageId: 'strategyConvert',
             data: { logger: customLogger },
-            fix: (fixer) => fixer.replaceText(node.callee, `${customLogger}.debug`),
+            fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(node.callee, `${customLogger}.debug`),
           },
           {
             messageId: 'strategyComment',
-            fix: (fixer) => {
+            fix: (fixer: TSESLint.RuleFixer) => {
               const statement = findParentStatement(node);
               if (!statement) return null;
               const text = sourceCode.getText(statement);
@@ -207,7 +207,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
           },
           {
             messageId: 'strategyWarn',
-            fix: (fixer) => fixer.replaceText(node.callee, 'console.warn'),
+            fix: (fixer: TSESLint.RuleFixer) => fixer.replaceText(node.callee, 'console.warn'),
           },
         ];
 

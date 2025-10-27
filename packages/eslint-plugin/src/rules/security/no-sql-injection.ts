@@ -60,8 +60,8 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = options[0] || {};
-    const { trustedFunctions = [] } = options;
+    const opts = context.options[0] || {};
+    const { trustedFunctions = [] } = opts;
 
     const sourceCode = context.sourceCode || context.getSourceCode();
     const filename = context.filename || context.getFilename();
@@ -173,21 +173,21 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
           node,
           messageId: 'sqlInjection',
           data: {
+            ...llmContext,
             filePath: filename,
             line: String(node.loc?.start.line ?? 0),
-            ...llmContext,
           },
           suggest: [
             {
               messageId: 'useParameterized',
-              fix: (fixer) => {
+              fix: (fixer: TSESLint.RuleFixer) => {
                 // Generate parameterized version
                 const params: string[] = [];
                 let paramIndex = 1;
 
                 const parameterized = queryText.replace(
                   /\$\{([^}]+)\}/g,
-                  (_, expr) => {
+                  (_: string, expr: string) => {
                     params.push(expr);
                     return `$${paramIndex++}`;
                   }

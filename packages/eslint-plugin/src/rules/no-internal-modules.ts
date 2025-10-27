@@ -112,19 +112,19 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
      */
     const shouldIgnoreModule = (modulePath: string): boolean => {
       // Check explicit allow list
-      if (allow.some((pattern) => matchesPattern(modulePath, pattern))) {
+      if (allow.some((pattern: string) => matchesPattern(modulePath, pattern))) {
         return true;
       }
 
       // Check ignore patterns
-      return ignorePaths.some((pattern) => matchesPattern(modulePath, pattern));
+      return ignorePaths.some((pattern: string) => matchesPattern(modulePath, pattern));
     };
 
     /**
      * Check if module is explicitly forbidden
      */
     const isForbidden = (modulePath: string): boolean => {
-      return forbid.some((pattern) => matchesPattern(modulePath, pattern));
+      return forbid.some((pattern: string) => matchesPattern(modulePath, pattern));
     };
 
     /**
@@ -205,7 +205,7 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
         {
           messageId: 'suggestPublicApi',
           data: { suggestion: publicApiPath },
-          fix: (fixer) => {
+          fix: (fixer: TSESLint.RuleFixer) => {
             const sourceNode = node.source;
             if (!sourceNode) return null;
             return fixer.replaceText(
@@ -222,7 +222,7 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
         suggest.push({
           messageId: 'suggestBarrelExport',
           data: { suggestion: barrelPath },
-          fix: (fixer) => {
+          fix: (fixer: TSESLint.RuleFixer) => {
             const sourceNode = node.source;
             if (!sourceNode) return null;
             return fixer.replaceText(sourceNode, `'${barrelPath}'`);
