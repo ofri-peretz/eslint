@@ -1,0 +1,48 @@
+{
+  "name": "eslint-plugin",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/eslint-plugin/src",
+  "projectType": "library",
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": [
+        "dist/{projectRoot}"
+      ],
+      "currentVersionResolver": "git-tag",
+      "fallbackCurrentVersionResolver": "disk"
+    }
+  },
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "outputPath": "dist/packages/eslint-plugin",
+        "main": "packages/eslint-plugin/src/index.ts",
+        "tsConfig": "packages/eslint-plugin/tsconfig.lib.json",
+        "assets": [
+          "packages/eslint-plugin/*.md",
+          "packages/eslint-plugin/docs/**/*.md"
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": [
+        "{workspaceRoot}/coverage/packages/eslint-plugin"
+      ],
+      "options": {
+        "config": "packages/eslint-plugin/vitest.config.ts",
+        "reportsDirectory": "../../coverage/packages/eslint-plugin"
+      }
+    },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "dist/{projectRoot}"
+      }
+    }
+  }
+}
