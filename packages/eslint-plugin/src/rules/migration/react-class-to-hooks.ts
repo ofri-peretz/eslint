@@ -205,8 +205,8 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
             complexity,
             ...llmContext,
           },
-          suggest: [
-            ...(complexity === 'simple' ? [
+          ...(complexity === 'simple' ? {
+            suggest: [
               {
                 messageId: 'convertToFunction' as const,
                 fix: (fixer: TSESLint.RuleFixer) => {
@@ -223,11 +223,8 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
                   return fixer.replaceText(node, funcText);
                 },
               }
-            ] : []),
-            {
-              messageId: 'viewMigrationGuide',
-            },
-          ],
+            ]
+          } : {}),
         });
       },
     };

@@ -206,14 +206,6 @@ export const reactNoInlineFunctions = createRule<RuleOptions, MessageIds>({
             impact: impact.severity,
             location: arrayInfo.inArray ? `${arrayInfo.method}() call` : 'JSX prop',
           },
-          suggest: [
-            {
-              messageId: 'useCallback',
-            },
-            {
-              messageId: 'extractFunction',
-            },
-          ],
         });
       },
     };

@@ -170,16 +170,6 @@ const module = require(moduleName);`;
             attack: 'Arbitrary Code Execution',
             ...llmContext,
           },
-          suggest: [
-            {
-              messageId: 'useStaticImport',
-              fix: null, // Cannot auto-convert, needs manual intervention
-            },
-            {
-              messageId: 'useAllowlist',
-              fix: null, // Too complex for auto-fix
-            },
-          ],
         });
       },
     };

@@ -199,9 +199,6 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
                 );
               },
             },
-            {
-              messageId: 'useORM',
-            },
           ],
         });
       },

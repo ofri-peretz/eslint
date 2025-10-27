@@ -182,13 +182,6 @@ export const enforceNaming = createRule<RuleOptions, MessageIds>({
               return fixer.replaceText(node, replacement);
             },
           },
-          ...(glossaryUrl
-            ? [
-                {
-                  messageId: 'viewGlossary' as const,
-                },
-              ]
-            : []),
         ],
       });
     };

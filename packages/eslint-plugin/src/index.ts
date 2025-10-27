@@ -101,11 +101,6 @@ export const rules = {
   
   // Duplication rules (SonarQube-inspired)
   'duplication/identical-functions': identicalFunctions,
-  
-  // Backwards compatibility aliases (deprecated - will be removed in v1.0)
-  'no-console-log': noConsoleLog,
-  'no-circular-dependencies': noCircularDependencies,
-  'no-internal-modules': noInternalModules,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
