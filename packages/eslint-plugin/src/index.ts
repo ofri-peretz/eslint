@@ -28,6 +28,9 @@ import { reactNoInlineFunctions } from './rules/performance/react-no-inline-func
 // Accessibility rules
 import { imgRequiresAlt } from './rules/accessibility/img-requires-alt';
 
+// React rules
+import { requiredAttributes } from './rules/react/required-attributes';
+
 // Deprecation rules
 import { noDeprecatedApi } from './rules/deprecation/no-deprecated-api';
 
@@ -69,6 +72,9 @@ export const rules = {
   
   // Accessibility rules
   'accessibility/img-requires-alt': imgRequiresAlt,
+  
+  // React rules
+  'react/required-attributes': requiredAttributes,
   
   // Deprecation rules
   'deprecation/no-deprecated-api': noDeprecatedApi,
@@ -217,6 +223,7 @@ export const configs = {
       '@forge-js/llm-optimized/migration/react-class-to-hooks': 'warn',
       '@forge-js/llm-optimized/performance/react-no-inline-functions': 'warn',
       '@forge-js/llm-optimized/accessibility/img-requires-alt': 'error',
+      '@forge-js/llm-optimized/react/required-attributes': 'warn',
     },
   } satisfies TSESLint.FlatConfig.Config,
 
