@@ -13,6 +13,7 @@
 import type { TSESLint } from '@forge-js/eslint-plugin-utils';
 import { noConsoleLog } from './rules/no-console-log';
 import { noCircularDependencies } from './rules/no-circular-dependencies';
+import { noInternalModules } from './rules/no-internal-modules';
 
 /**
  * Collection of all ESLint rules provided by this plugin
@@ -34,6 +35,7 @@ import { noCircularDependencies } from './rules/no-circular-dependencies';
 export const rules = {
   'no-console-log': noConsoleLog,
   'no-circular-dependencies': noCircularDependencies,
+  'no-internal-modules': noInternalModules,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -110,6 +112,7 @@ export const configs = {
    * Includes essential rules with sensible defaults:
    * - Warns on console.log usage
    * - Errors on circular dependencies
+   * - Errors on deep module imports
    */
   recommended: {
     plugins: {
@@ -118,6 +121,7 @@ export const configs = {
     rules: {
       '@forge-js/llm-optimized/no-console-log': 'warn',
       '@forge-js/llm-optimized/no-circular-dependencies': 'error',
+      '@forge-js/llm-optimized/no-internal-modules': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
   
@@ -127,6 +131,7 @@ export const configs = {
    * All rules are set to 'error' for maximum code quality enforcement:
    * - Errors on console.log usage
    * - Errors on circular dependencies
+   * - Errors on deep module imports
    */
   strict: {
     plugins: {
@@ -135,6 +140,7 @@ export const configs = {
     rules: {
       '@forge-js/llm-optimized/no-console-log': 'error',
       '@forge-js/llm-optimized/no-circular-dependencies': 'error',
+      '@forge-js/llm-optimized/no-internal-modules': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 } satisfies Record<string, TSESLint.FlatConfig.Config>;
