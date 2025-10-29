@@ -14,10 +14,17 @@
     "keywords": [
         "cli",
         "monorepo",
-        "release-management"
+        "release-management",
+        "nx",
+        "versioning"
     ],
-    "author": "",
-    "license": "ISC",
+    "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ofriperetz/forge-js.git",
+        "directory": "packages/cli"
+    },
     "dependencies": {
         "chalk": "^4.1.2",
         "commander": "^12.1.0",

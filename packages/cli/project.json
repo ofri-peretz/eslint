@@ -21,6 +21,14 @@
           }
         ]
       }
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "npm publish dist/packages/cli --access public",
+        "cwd": "{workspaceRoot}"
+      }
     }
   }
 }

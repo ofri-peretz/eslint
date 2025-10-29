@@ -5,16 +5,26 @@
   "type": "commonjs",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ofriperetz/forge-js.git",
+    "directory": "packages/eslint-plugin-utils"
+  },
+  "keywords": [
+    "eslint",
+    "eslint-plugin",
+    "typescript",
+    "utilities",
+    "ast",
+    "type-checking"
+  ],
   "peerDependencies": {
-    "@typescript-eslint/parser": ">=6.0.0",
-    "eslint": "^8.0.0 || ^9.0.0",
     "typescript": ">=4.0.0"
   },
   "dependencies": {
-    "@typescript-eslint/types": "^8.46.2",
-    "@typescript-eslint/typescript-estree": "^8.46.2",
     "@typescript-eslint/utils": "^8.46.2",
-    "eslint": "^9.38.0",
     "tslib": "^2.3.0"
   }
 }

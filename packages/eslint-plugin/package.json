@@ -5,8 +5,23 @@
   "type": "commonjs",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ofriperetz/forge-js.git",
+    "directory": "packages/eslint-plugin"
+  },
+  "keywords": [
+    "eslint",
+    "eslint-plugin",
+    "typescript",
+    "linting",
+    "llm-optimized",
+    "code-quality"
+  ],
   "peerDependencies": {
-    "vitest": "4.0.3"
+    "vitest": "^4.0.0"
   },
   "dependencies": {
     "@forge-js/eslint-plugin-utils": "workspace:*",
