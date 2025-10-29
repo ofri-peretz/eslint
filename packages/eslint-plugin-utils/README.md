@@ -1,97 +1,67 @@
 # @forge-js/eslint-plugin-utils
 
-Comprehensive TypeScript utilities for building ESLint plugins, inspired by [typescript-eslint](https://typescript-eslint.io)'s infrastructure.
+**Build ESLint plugins that write themselves** - TypeScript utilities for creating rules that AI assistants can understand and auto-fix.
 
-## Features
+[![npm version](https://img.shields.io/npm/v/@forge-js/eslint-plugin-utils.svg)](https://www.npmjs.com/package/@forge-js/eslint-plugin-utils)
+[![npm downloads](https://img.shields.io/npm/dm/@forge-js/eslint-plugin-utils.svg)](https://www.npmjs.com/package/@forge-js/eslint-plugin-utils)
 
-✅ **Rule Creator** - Factory function for creating well-typed ESLint rules  
-✅ **AST Utilities** - Helper functions for traversing and analyzing ESTree/TSESTree nodes  
-✅ **Type Utilities** - Type-aware linting utilities using TypeScript compiler API  
-✅ **Fully Typed** - Complete TypeScript support with type safety  
-✅ **ESLint 8+ & 9+ Compatible** - Works with both major ESLint versions
+## What is this?
+
+Most ESLint utilities help you **write rules**. This package helps you write rules that **LLMs can fix automatically**.
+
+Inspired by [@typescript-eslint/utils](https://typescript-eslint.io/packages/utils/), enhanced for the AI-assisted development era.
 
 ## Installation
 
 ```bash
-pnpm add -D @forge-js/eslint-plugin-utils @typescript-eslint/parser typescript
+npm install --save-dev @forge-js/eslint-plugin-utils
+# or
+pnpm add -D @forge-js/eslint-plugin-utils
+# or
+yarn add -D @forge-js/eslint-plugin-utils
 ```
 
-## Usage
+**Peer dependencies:**
 
-### Rule Creator
+```bash
+npm install --save-dev @typescript-eslint/parser typescript
+```
 
-Create rules with automatic documentation links:
+## Quick Example
 
 ```typescript
-import { createRuleCreator } from '@forge-js/eslint-plugin-utils';
+import { createRule, isMemberExpression } from '@forge-js/eslint-plugin-utils';
 
-// Create a rule creator with custom documentation URL
-const createRule = createRuleCreator(
-  (name) => `https://github.com/my-org/eslint-plugin/docs/rules/${name}.md`
-);
-
-export const myRule = createRule({
-  name: 'my-rule',
+export default createRule({
+  name: 'no-console-log',
   meta: {
     type: 'problem',
     docs: {
-      description: 'Description of my rule',
-      recommended: 'recommended',
+      description: 'Disallow console.log - use logger.debug() instead',
     },
+    fixable: 'code',
     messages: {
-      myMessage: 'This is a violation message',
+      useLogger:
+        'Replace console.log with logger.{{method}}() on line {{line}}',
     },
     schema: [],
   },
   defaultOptions: [],
   create(context) {
     return {
-      Identifier(node) {
-        // Rule logic
-      },
-    };
-  },
-});
-```
-
-### AST Utilities
-
-Work with AST nodes efficiently:
-
-```typescript
-import {
-  isNodeOfType,
-  isFunctionNode,
-  isCallExpression,
-  isMemberExpression,
-  getIdentifierName,
-} from '@forge-js/eslint-plugin-utils';
-
-createRule({
-  // ...
-  create(context) {
-    return {
       CallExpression(node) {
-        // Check if it's console.log()
         if (isMemberExpression(node.callee, 'console', 'log')) {
           context.report({
             node,
-            messageId: 'noConsoleLog',
+            messageId: 'useLogger',
+            data: {
+              method: 'debug',
+              line: node.loc.start.line,
+            },
+            fix(fixer) {
+              return fixer.replaceText(node.callee, 'logger.debug');
+            },
           });
-        }
-
-        // Check if it's a specific function call
-        if (isCallExpression(node, 'dangerousFunction')) {
-          context.report({
-            node,
-            messageId: 'noDangerousFunction',
-          });
-        }
-      },
-      FunctionDeclaration(node) {
-        if (isFunctionNode(node)) {
-          const name = node.id?.name;
-          // Process function
         }
       },
     };
@@ -99,152 +69,276 @@ createRule({
 });
 ```
 
-### Type Utilities (Type-Aware Rules)
+When GitHub Copilot or Cursor sees this error, they know exactly:
 
-Create type-aware rules using TypeScript compiler API:
+- What's wrong: `console.log` on line 42
+- How to fix: Replace with `logger.debug()`
+- Auto-fix available: Yes
+
+## API
+
+### Rule Creation
+
+#### `createRule(options)`
+
+Creates a well-typed ESLint rule with automatic documentation links.
 
 ```typescript
-import {
-  getParserServices,
-  hasParserServices,
-  getTypeOfNode,
-  isStringType,
-  isArrayType,
-  isPromiseType,
-} from '@forge-js/eslint-plugin-utils';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 
-createRule({
-  // ...
+const rule = createRule({
+  name: 'my-rule',
+  meta: {
+    /* ... */
+  },
+  defaultOptions: [],
   create(context) {
-    // Check if type information is available
-    if (!hasParserServices(context)) {
-      return {};
-    }
-
-    const parserServices = getParserServices(context);
-    const checker = parserServices.program.getTypeChecker();
-
+    // Your rule implementation
     return {
-      Identifier(node) {
-        const type = getTypeOfNode(node, parserServices);
-
-        if (isStringType(type)) {
-          // Handle string types
-        }
-
-        if (isArrayType(type, checker)) {
-          // Handle array types
-        }
-
-        if (isPromiseType(type, checker)) {
-          // Handle promise types
-        }
-      },
+      /* visitors */
     };
   },
 });
 ```
 
-## API Reference
+#### `createRuleCreator(urlCreator)`
 
-### Rule Creator
+Creates a custom rule factory with your documentation URL pattern.
 
-| Function                        | Description                                                  |
-| ------------------------------- | ------------------------------------------------------------ |
-| `createRuleCreator(urlCreator)` | Create a custom rule creator with documentation URL resolver |
-| `createRule`                    | Default rule creator with standard URL pattern               |
+```typescript
+import { createRuleCreator } from '@forge-js/eslint-plugin-utils';
+
+const createRule = createRuleCreator(
+  (ruleName) => `https://your-plugin.dev/rules/${ruleName}`
+);
+
+export default createRule({
+  /* ... */
+});
+```
 
 ### AST Utilities
 
-| Function                                     | Description                                              |
-| -------------------------------------------- | -------------------------------------------------------- |
-| `isNodeOfType(node, type)`                   | Check if node is of specific type                        |
-| `isFunctionNode(node)`                       | Check if node is a function                              |
-| `isClassNode(node)`                          | Check if node is a class                                 |
-| `isMemberExpression(node, object, property)` | Check if node is member expression (e.g., `console.log`) |
-| `isCallExpression(node, object, method)`     | Check if node is call expression                         |
-| `getIdentifierName(node)`                    | Get identifier name from node                            |
-| `getFunctionName(node)`                      | Get function name                                        |
-| `isInsideNode(node, parentType, ancestors)`  | Check if node is inside specific parent                  |
-| `getAncestorOfType(type, ancestors)`         | Get first ancestor of type                               |
-| `isLiteral(node)`                            | Check if node is literal                                 |
-| `isTemplateLiteral(node)`                    | Check if node is template literal                        |
-| `getStaticValue(node)`                       | Get static value from literal node                       |
+Helper functions for traversing and analyzing ESTree/TSESTree nodes:
+
+| Function                                     | Description                        | Example                                      |
+| -------------------------------------------- | ---------------------------------- | -------------------------------------------- |
+| `isNodeOfType(node, type)`                   | Type guard for AST nodes           | `isNodeOfType(node, 'Identifier')`           |
+| `isFunctionNode(node)`                       | Check if node is any function type | `isFunctionNode(node)`                       |
+| `isClassNode(node)`                          | Check if node is a class           | `isClassNode(node)`                          |
+| `isMemberExpression(node, object, property)` | Match patterns like `console.log`  | `isMemberExpression(node, 'console', 'log')` |
+| `isCallExpression(node, name)`               | Check function call by name        | `isCallExpression(node, 'fetch')`            |
+| `getIdentifierName(node)`                    | Extract identifier name            | `getIdentifierName(node) // 'myVar'`         |
+| `getFunctionName(node)`                      | Get function name                  | `getFunctionName(node) // 'myFunc'`          |
+| `isInsideNode(node, parentType, ancestors)`  | Check if inside specific parent    | `isInsideNode(node, 'TryStatement')`         |
+| `getAncestorOfType(type, ancestors)`         | Find first ancestor of type        | `getAncestorOfType('FunctionDeclaration')`   |
+| `isLiteral(node)`                            | Check if literal value             | `isLiteral(node)`                            |
+| `isTemplateLiteral(node)`                    | Check if template literal          | `isTemplateLiteral(node)`                    |
+| `getStaticValue(node)`                       | Extract static value               | `getStaticValue(node) // 'hello'`            |
+
+**Example:**
+
+```typescript
+import {
+  isMemberExpression,
+  isInsideNode,
+  getAncestorOfType,
+} from '@forge-js/eslint-plugin-utils';
+
+create(context) {
+  return {
+    CallExpression(node) {
+      // Detect console.log() calls
+      if (isMemberExpression(node.callee, 'console', 'log')) {
+        // Check if inside try-catch (might be intentional logging)
+        const insideTry = isInsideNode(
+          node,
+          'TryStatement',
+          context.getAncestors()
+        );
+
+        if (!insideTry) {
+          context.report({
+            node,
+            message: 'Avoid console.log outside error handlers',
+          });
+        }
+      }
+    },
+  };
+}
+```
 
 ### Type Utilities
 
-| Function                                         | Description                                 |
-| ------------------------------------------------ | ------------------------------------------- |
-| `getParserServices(context)`                     | Get parser services (throws if unavailable) |
-| `hasParserServices(context)`                     | Check if parser services available          |
-| `getTypeOfNode(node, services)`                  | Get TypeScript type of node                 |
-| `isAnyType(type)`                                | Check if type is `any`                      |
-| `isUnknownType(type)`                            | Check if type is `unknown`                  |
-| `isNeverType(type)`                              | Check if type is `never`                    |
-| `isNullableType(type)`                           | Check if type is nullable                   |
-| `isStringType(type)`                             | Check if type is string                     |
-| `isNumberType(type)`                             | Check if type is number                     |
-| `isBooleanType(type)`                            | Check if type is boolean                    |
-| `isArrayType(type, checker)`                     | Check if type is array                      |
-| `isPromiseType(type, checker)`                   | Check if type is promise                    |
-| `getTypeArguments(type, checker)`                | Get type arguments of generic               |
-| `typeMatchesPredicateRecursive(type, predicate)` | Check if type matches predicate recursively |
+Type-aware analysis using TypeScript compiler API:
 
-## Project Structure
+| Function                          | Description                                 | Example                                       |
+| --------------------------------- | ------------------------------------------- | --------------------------------------------- |
+| `hasParserServices(context)`      | Check if type info available                | `if (hasParserServices(context))`             |
+| `getParserServices(context)`      | Get parser services (throws if unavailable) | `const services = getParserServices(context)` |
+| `getTypeOfNode(node, services)`   | Get TypeScript type of node                 | `const type = getTypeOfNode(node, services)`  |
+| `isStringType(type)`              | Check if type is string                     | `isStringType(type)`                          |
+| `isNumberType(type)`              | Check if type is number                     | `isNumberType(type)`                          |
+| `isBooleanType(type)`             | Check if type is boolean                    | `isBooleanType(type)`                         |
+| `isArrayType(type, checker)`      | Check if type is array                      | `isArrayType(type, checker)`                  |
+| `isPromiseType(type, checker)`    | Check if type is Promise                    | `isPromiseType(type, checker)`                |
+| `isAnyType(type)`                 | Check if type is any                        | `isAnyType(type)`                             |
+| `isUnknownType(type)`             | Check if type is unknown                    | `isUnknownType(type)`                         |
+| `isNullableType(type)`            | Check if type is nullable                   | `isNullableType(type)`                        |
+| `getTypeArguments(type, checker)` | Get generic type arguments                  | `getTypeArguments(type, checker)`             |
 
-```mermaid
-%%{init: {
-  'theme': 'base',
-  'themeVariables': {
-    'primaryColor': '#f8fafc',
-    'primaryTextColor': '#1e293b',
-    'primaryBorderColor': '#334155',
-    'lineColor': '#475569',
-    'c0': '#f8fafc',
-    'c1': '#f1f5f9',
-    'c2': '#e2e8f0',
-    'c3': '#cbd5e1'
-  }
-}}%%
-flowchart TD
-    A[📦 eslint-plugin-utils] --> B[🏗️ rule-creator.ts]
-    A --> C[🌳 ast-utils.ts]
-    A --> D[📘 type-utils.ts]
-    A --> E[📋 index.ts]
-
-    B --> B1[RuleCreator Factory]
-    C --> C1[AST Helpers]
-    D --> D1[Type Checking]
-
-    classDef rootNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
-    classDef fileNode fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1f2937
-    classDef utilNode fill:#fef3c7,stroke:#f59e0b,stroke-width:2px,color:#1f2937
-
-    class A rootNode
-    class B,C,D,E fileNode
-    class B1,C1,D1 utilNode
-```
-
-## Building
-
-```bash
-# Build the package
-pnpm nx build eslint-plugin-utils
-
-# Watch mode
-pnpm nx build eslint-plugin-utils --watch
-```
-
-## Usage in Monorepo
-
-This package is designed to be shared across multiple ESLint plugin packages in a monorepo:
+**Example:**
 
 ```typescript
-// In any plugin package
-import { createRule, isCallExpression } from '@forge-js/eslint-plugin-utils';
+import {
+  hasParserServices,
+  getParserServices,
+  getTypeOfNode,
+  isPromiseType,
+} from '@forge-js/eslint-plugin-utils';
 
-export const myRule = createRule({
-  // ... your rule implementation
+create(context) {
+  // Gracefully handle projects without TypeScript
+  if (!hasParserServices(context)) {
+    return {};
+  }
+
+  const services = getParserServices(context);
+  const checker = services.program.getTypeChecker();
+
+  return {
+    CallExpression(node) {
+      const type = getTypeOfNode(node, services);
+
+      // Detect unawaited promises by TYPE, not syntax
+      if (isPromiseType(type, checker)) {
+        const parent = node.parent;
+        const isAwaited = parent.type === 'AwaitExpression';
+
+        if (!isAwaited) {
+          context.report({
+            node,
+            message: 'Promise is not awaited - add "await" or handle with .then()',
+            fix(fixer) {
+              return fixer.insertTextBefore(node, 'await ');
+            },
+          });
+        }
+      }
+    },
+  };
+}
+```
+
+## Why LLM-Optimized Matters
+
+### Traditional ESLint Rule
+
+```typescript
+// Error output
+{
+  message: "Unexpected console statement",
+  line: 42
+}
+
+// AI Assistant thinks: "Remove it? Comment it? Replace with what?"
+```
+
+### LLM-Optimized Rule
+
+```typescript
+// Error output
+{
+  message: "Replace console.log with logger.debug() on line 42",
+  line: 42,
+  fix: { /* auto-fix available */ }
+}
+
+// AI Assistant thinks: "Replace with logger.debug(), add import if needed"
+// ✅ Auto-applies fix
+```
+
+## Best Practices
+
+### 1. Provide Specific Error Messages
+
+```typescript
+// ❌ Vague
+message: 'Invalid usage';
+
+// ✅ Specific
+message: 'Replace fetch() with apiClient.get() for automatic error handling';
+```
+
+### 2. Include Auto-Fixes When Possible
+
+```typescript
+context.report({
+  node,
+  message: 'Use const instead of let for immutable variables',
+  fix(fixer) {
+    return fixer.replaceText(letToken, 'const');
+  },
+});
+```
+
+### 3. Structure Error Data for AI
+
+```typescript
+context.report({
+  node,
+  messageId: 'circularDependency',
+  data: {
+    chain: 'A.ts → B.ts → C.ts → A.ts',
+    breakAt: 'C.ts',
+    suggestion: 'Extract shared types to types.ts',
+  },
+});
+```
+
+### 4. Use Type Information When Available
+
+```typescript
+// Detect issues semantically, not just syntactically
+if (hasParserServices(context)) {
+  const type = getTypeOfNode(node, services);
+  if (isPromiseType(type, checker)) {
+    // Type-aware detection
+  }
+}
+```
+
+## TypeScript
+
+Full TypeScript support with comprehensive type definitions:
+
+```typescript
+import type { TSESTree } from '@typescript-eslint/utils';
+import {
+  createRule,
+  isMemberExpression,
+  type RuleContext,
+} from '@forge-js/eslint-plugin-utils';
+
+// Fully typed rule creation
+const rule = createRule<[], 'messageId'>({
+  name: 'my-rule',
+  meta: {
+    type: 'problem',
+    messages: {
+      messageId: 'Error message',
+    },
+    schema: [],
+  },
+  defaultOptions: [],
+  create(context: RuleContext<'messageId', []>) {
+    return {
+      Identifier(node: TSESTree.Identifier) {
+        // Fully typed node visitors
+      },
+    };
+  },
 });
 ```
 
@@ -256,17 +350,18 @@ export const myRule = createRule({
 | TypeScript                | >=4.0.0            |
 | @typescript-eslint/parser | >=6.0.0            |
 | @typescript-eslint/utils  | ^8.0.0             |
-
-## Inspired By
-
-This package is heavily inspired by [@typescript-eslint/utils](https://typescript-eslint.io/packages/utils/) and follows similar patterns for rule creation and AST manipulation. The typescript-eslint team has built an exceptional infrastructure for TypeScript ESLint rules, and this package aims to provide a similar experience for custom plugin development.
+| Node.js                   | >=18.0.0           |
 
 ## Related Packages
 
-- [@typescript-eslint/utils](https://www.npmjs.com/package/@typescript-eslint/utils) - Official typescript-eslint utilities
-- [@typescript-eslint/parser](https://www.npmjs.com/package/@typescript-eslint/parser) - TypeScript parser for ESLint
-- [@typescript-eslint/typescript-estree](https://www.npmjs.com/package/@typescript-eslint/typescript-estree) - TypeScript AST converter
+- **[@forge-js/eslint-plugin-llm-optimized](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized)** - Ready-to-use LLM-optimized rules built with this package
+- **[@typescript-eslint/utils](https://www.npmjs.com/package/@typescript-eslint/utils)** - Official TypeScript ESLint utilities
+- **[eslint-plugin-import](https://www.npmjs.com/package/eslint-plugin-import)** - Import/export validation
 
 ## License
 
-MIT © Ofri Peretz
+MIT © [Ofri Peretz](https://github.com/ofri-peretz)
+
+## Contributing
+
+Contributions welcome! See [CONTRIBUTING.md](https://github.com/ofri-peretz/forge-js/blob/main/CONTRIBUTING.md).

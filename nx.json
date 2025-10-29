@@ -88,11 +88,13 @@
     "version": {
       "conventionalCommits": true,
       "preVersionCommand": "pnpm nx run-many -t build --projects=eslint-plugin,eslint-plugin-utils",
-      "postVersionCommand": "pnpm install --lockfile-only",
       "generatorOptions": {
         "updateDependents": "always",
         "currentVersionResolver": "git-tag",
         "specifierSource": "conventional-commits"
+      },
+      "versionActionsOptions": {
+        "skipLockFileUpdate": true
       },
       "release": {
         "preid": "rc"
