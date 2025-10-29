@@ -9,6 +9,56 @@
         "config": ".verdaccio/config.yml",
         "storage": "tmp/local-registry/storage"
       }
+    },
+    "verify-husky": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          {
+            "command": "test -d .husky || (echo '❌ .husky directory not found. Run: pnpm install' && exit 1)",
+            "description": "Check .husky directory exists"
+          },
+          {
+            "command": "test -f .husky/commit-msg || (echo '❌ commit-msg hook not found. Run: pnpm install' && exit 1)",
+            "description": "Check commit-msg hook exists"
+          },
+          {
+            "command": "test -x .husky/commit-msg || (echo '❌ commit-msg hook not executable. Run: chmod +x .husky/*' && exit 1)",
+            "description": "Check hook is executable"
+          },
+          {
+            "command": "test -f commitlint.config.js || (echo '❌ commitlint.config.js not found' && exit 1)",
+            "description": "Check commitlint config exists"
+          },
+          {
+            "command": "git config --get commit.template > /dev/null 2>&1 || git config commit.template .gitmessage",
+            "description": "Configure git commit template"
+          },
+          {
+            "command": "echo 'feat: test message' | npx --no commitlint > /dev/null 2>&1 || (echo '❌ commitlint not working' && exit 1)",
+            "description": "Test commitlint with valid message"
+          },
+          {
+            "command": "echo 'invalid message' | npx --no commitlint > /dev/null 2>&1 && (echo '❌ commitlint not rejecting invalid messages' && exit 1) || true",
+            "description": "Test commitlint with invalid message"
+          },
+          {
+            "command": "echo '✅ Husky verification passed!'",
+            "description": "Success message"
+          }
+        ],
+        "parallel": false,
+        "color": true
+      },
+      "outputs": []
+    },
+    "verify-husky-verbose": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/verify-husky.js",
+        "color": true
+      },
+      "outputs": []
     }
   }
 }

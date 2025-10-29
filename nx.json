@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "defaultBase": "master",
+  "defaultBase": "main",
   "namedInputs": {
     "default": [
       "{projectRoot}/**/*",
@@ -81,23 +81,29 @@
   ],
   "release": {
     "projects": [
-      "packages/*"
+      "packages/eslint-plugin",
+      "packages/eslint-plugin-utils"
     ],
+    "projectsRelationship": "independent",
     "version": {
       "conventionalCommits": true,
-      "preVersionCommand": "pnpm nx run-many -t build --all"
+      "preVersionCommand": "pnpm nx run-many -t build --projects=eslint-plugin,eslint-plugin-utils",
+      "git": {
+        "commit": true,
+        "commitArgs": "--no-verify",
+        "commitMessage": "chore(release): version {version}",
+        "tag": true
+      }
     },
     "changelog": {
       "workspaceChangelog": {
         "createRelease": "github",
         "file": "CHANGELOG.md"
       },
-      "projectChangelogs": true
-    },
-    "git": {
-      "commit": true,
-      "commitMessage": "chore(release): version {version}",
-      "tag": true
+      "projectChangelogs": true,
+      "git": {
+        "commit": false
+      }
     },
     "releaseTagPattern": "{projectName}@{version}"
   },
