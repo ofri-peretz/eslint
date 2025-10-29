@@ -6,6 +6,7 @@
   "release": {
     "version": {
       "manifestRootsToUpdate": [
+        "{projectRoot}",
         "dist/{projectRoot}"
       ],
       "currentVersionResolver": "git-tag",
@@ -29,8 +30,10 @@
       }
     },
     "nx-release-publish": {
+      "executor": "nx:run-commands",
       "options": {
-        "packageRoot": "dist/{projectRoot}"
+        "command": "pnpm publish dist/{projectRoot} --access public --no-git-checks",
+        "cwd": "{workspaceRoot}"
       }
     },
     "publish": {

@@ -36,7 +36,7 @@
     "vitest": "^4.0.0"
   },
   "dependencies": {
-    "@forge-js/eslint-plugin-utils": "workspace:*",
+    "@forge-js/eslint-plugin-utils": "*",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
