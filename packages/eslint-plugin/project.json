@@ -46,7 +46,9 @@
     },
     "publish": {
       "executor": "nx:run-commands",
-      "dependsOn": ["build"],
+      "dependsOn": [
+        "build"
+      ],
       "options": {
         "command": "npm publish dist/packages/eslint-plugin --access public",
         "cwd": "{workspaceRoot}"
