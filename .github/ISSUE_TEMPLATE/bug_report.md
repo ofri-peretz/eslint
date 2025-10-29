@@ -14,10 +14,10 @@ assignees: ''
 
 Steps to reproduce the behavior:
 
-1. 
-2. 
-3. 
-4. 
+1.
+2.
+3.
+4.
 
 ## Expected Behavior
 
@@ -63,4 +63,3 @@ Steps to reproduce the behavior:
 - [ ] I've provided a minimal code sample that reproduces the issue
 - [ ] I've included my environment details
 - [ ] I've checked the documentation and this isn't a usage issue
-

@@ -5,6 +5,7 @@
 ## Related Issue
 
 <!-- Link to the issue this PR addresses -->
+
 Closes #
 
 ## Type of Change
@@ -25,9 +26,9 @@ Closes #
 
 <!-- List the specific changes made in this PR -->
 
-- 
-- 
-- 
+-
+-
+-
 
 ## Testing
 
@@ -76,4 +77,3 @@ None / Describe here
 ## Reviewer Notes
 
 <!-- Optional: Specific areas you'd like reviewers to focus on -->
-
