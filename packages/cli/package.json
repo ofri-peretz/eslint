@@ -11,19 +11,30 @@
     "build": "tsc",
     "dev": "node ./bin/forge.js"
   },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ofri-peretz/forge-js#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/forge-js.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/forge-js/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "keywords": [
     "cli",
     "monorepo",
     "release-management",
     "nx",
-    "versioning"
+    "versioning",
+    "semantic-versioning"
   ],
-  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ofriperetz/forge-js.git",
-    "directory": "packages/cli"
+  "engines": {
+    "node": ">=18.0.0"
   },
   "dependencies": {
     "chalk": "^4.1.2",

@@ -7,10 +7,17 @@
   "types": "./src/index.d.ts",
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
   "license": "MIT",
+  "homepage": "https://github.com/ofri-peretz/forge-js#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ofriperetz/forge-js.git",
+    "url": "git+https://github.com/ofri-peretz/forge-js.git",
     "directory": "packages/eslint-plugin-utils"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/forge-js/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "keywords": [
     "eslint",
@@ -18,8 +25,12 @@
     "typescript",
     "utilities",
     "ast",
-    "type-checking"
+    "type-checking",
+    "plugin-development"
   ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "peerDependencies": {
     "typescript": ">=4.0.0"
   },
