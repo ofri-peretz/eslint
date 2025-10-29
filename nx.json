@@ -87,23 +87,20 @@
     "projectsRelationship": "independent",
     "version": {
       "conventionalCommits": true,
-      "preVersionCommand": "pnpm nx run-many -t build --projects=eslint-plugin,eslint-plugin-utils",
-      "git": {
-        "commit": true,
-        "commitArgs": "--no-verify",
-        "commitMessage": "chore(release): version {version}",
-        "tag": true
-      }
+      "preVersionCommand": "pnpm nx run-many -t build --projects=eslint-plugin,eslint-plugin-utils"
     },
     "changelog": {
       "workspaceChangelog": {
         "createRelease": "github",
         "file": "CHANGELOG.md"
       },
-      "projectChangelogs": true,
-      "git": {
-        "commit": false
-      }
+      "projectChangelogs": true
+    },
+    "git": {
+      "commit": true,
+      "commitArgs": "--no-verify",
+      "commitMessage": "chore(release): version {version}",
+      "tag": true
     },
     "releaseTagPattern": "{projectName}@{version}"
   },
