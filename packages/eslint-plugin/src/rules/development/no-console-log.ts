@@ -3,7 +3,7 @@
  * Disallows console.log with configurable strategies and LLM-optimized output
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { createRule, isMemberExpression } from '../../utils/create-rule';
+import { createRule } from '../../utils/create-rule';
 import * as path from 'path';
 
 type Strategy = 'remove' | 'convert' | 'comment' | 'warn';
@@ -40,7 +40,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
         'Disallow console.log with configurable remediation strategies',
     },
     fixable: 'code',
-    hasSuggestions: true,
+    hasSuggestions: false,
     messages: {
       consoleLogFound:
         '⚠️ console.log | {{filePath}}:{{line}} | Strategy: {{strategy}}',
@@ -295,8 +295,8 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
             strategy,
           },
           fix,
-          // Only provide suggestions when available
-          ...(suggest && suggest.length > 0 ? { suggest } : {}),
+          // Suggestions disabled for testing
+          // ...(suggest && suggest.length > 0 ? { suggest } : {}),
         });
       },
     };

@@ -4,7 +4,7 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
-import { noCircularDependencies } from '../rules/no-circular-dependencies';
+import { noCircularDependencies } from '../rules/architecture/no-circular-dependencies';
 
 // Configure RuleTester for Vitest
 RuleTester.afterAll = afterAll;

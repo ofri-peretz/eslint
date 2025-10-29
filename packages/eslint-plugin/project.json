@@ -30,13 +30,13 @@
       }
     },
     "test": {
-      "executor": "@nx/vite:test",
+      "executor": "nx:run-commands",
       "outputs": [
         "{workspaceRoot}/coverage/packages/eslint-plugin"
       ],
       "options": {
-        "config": "packages/eslint-plugin/vitest.config.ts",
-        "reportsDirectory": "../../coverage/packages/eslint-plugin"
+        "command": "vitest run",
+        "cwd": "{projectRoot}"
       }
     },
     "nx-release-publish": {

@@ -4,7 +4,7 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
-import { noConsoleLog } from '../rules/no-console-log';
+import { noConsoleLog } from '../rules/development/no-console-log';
 
 // Configure RuleTester for Vitest
 RuleTester.afterAll = afterAll;
@@ -45,12 +45,16 @@ describe('no-console-log', () => {
         {
           code: 'console.log("test");',
           output: '',
-          errors: [{ messageId: 'consoleLogFound' }],
+          errors: [{
+            messageId: 'consoleLogFound',
+          }],
         },
         {
           code: 'console.log("debug", data);',
           output: '',
-          errors: [{ messageId: 'consoleLogFound' }],
+          errors: [{
+            messageId: 'consoleLogFound',
+          }],
         },
         {
           code: `
@@ -63,7 +67,9 @@ describe('no-console-log', () => {
               
             }
           `,
-          errors: [{ messageId: 'consoleLogFound' }],
+          errors: [{
+            messageId: 'consoleLogFound',
+          }],
         },
       ],
     });
@@ -77,7 +83,9 @@ describe('no-console-log', () => {
           code: 'console.log("test");',
           options: [{ strategy: 'remove' }],
           output: '',
-          errors: [{ messageId: 'consoleLogFound' }],
+          errors: [{
+            messageId: 'consoleLogFound',
+          }],
         },
         {
           code: `
@@ -91,7 +99,9 @@ function test() {
   
   return true;
 }`,
-          errors: [{ messageId: 'consoleLogFound' }],
+          errors: [{
+            messageId: 'consoleLogFound',
+          }],
         },
       ],
     });
@@ -105,13 +115,17 @@ function test() {
           code: 'console.log("test");',
           options: [{ strategy: 'convert', customLogger: 'logger' }],
           output: 'logger.debug("test");',
-          errors: [{ messageId: 'consoleLogFound' }],
+          errors: [{
+            messageId: 'consoleLogFound',
+          }],
         },
         {
           code: 'console.log("test", data);',
           options: [{ strategy: 'convert', customLogger: 'myLogger' }],
           output: 'myLogger.debug("test", data);',
-          errors: [{ messageId: 'consoleLogFound' }],
+          errors: [{
+            messageId: 'consoleLogFound',
+          }],
         },
       ],
     });
@@ -125,7 +139,9 @@ function test() {
           code: 'console.log("test");',
           options: [{ strategy: 'comment' }],
           output: '// console.log("test");',
-          errors: [{ messageId: 'consoleLogFound' }],
+          errors: [{
+            messageId: 'consoleLogFound',
+          }],
         },
       ],
     });
@@ -139,7 +155,9 @@ function test() {
           code: 'console.log("test");',
           options: [{ strategy: 'warn' }],
           output: 'console.warn("test");',
-          errors: [{ messageId: 'consoleLogFound' }],
+          errors: [{
+            messageId: 'consoleLogFound',
+          }],
         },
       ],
     });
@@ -170,7 +188,9 @@ function test() {
           filename: '/project/src/app.ts',
           options: [{ ignorePaths: ['test'] }],
           output: '',
-          errors: [{ messageId: 'consoleLogFound' }],
+          errors: [{
+            messageId: 'consoleLogFound',
+          }],
         },
       ],
     });
@@ -200,8 +220,12 @@ console.log("fourth");`,
 `,
           ],
           errors: [
-            { messageId: 'consoleLogFound' },
-            { messageId: 'consoleLogFound' },
+            {
+              messageId: 'consoleLogFound',
+            },
+            {
+              messageId: 'consoleLogFound',
+            },
           ],
         },
       ],
@@ -219,13 +243,17 @@ console.log("fourth");`,
           code: 'console.log("test");',
           options: [{ strategy: 'convert', customLogger: 'winston' }],
           output: 'winston.debug("test");',
-          errors: [{ messageId: 'consoleLogFound' }],
+          errors: [{
+            messageId: 'consoleLogFound',
+          }],
         },
         {
           code: 'console.log("test");',
           options: [{ strategy: 'convert', customLogger: 'bunyan' }],
           output: 'bunyan.debug("test");',
-          errors: [{ messageId: 'consoleLogFound' }],
+          errors: [{
+            messageId: 'consoleLogFound',
+          }],
         },
       ],
     });
