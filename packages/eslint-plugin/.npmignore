@@ -1,0 +1,51 @@
+# Source files (we publish compiled JS)
+*.ts
+!*.d.ts
+
+# Tests
+src/tests/
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+__tests__/
+__mocks__/
+coverage/
+
+# Config files
+tsconfig.json
+tsconfig.*.json
+vitest.config.ts
+vitest.config.js
+eslint.config.js
+eslint.config.mjs
+.eslintrc*
+.prettierrc*
+jest.config.*
+
+# Documentation (except README)
+docs/
+*.md
+!README.md
+
+# Build artifacts
+*.tsbuildinfo
+.nx/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.log
+.env
+.env.*
+!.env.example
+
