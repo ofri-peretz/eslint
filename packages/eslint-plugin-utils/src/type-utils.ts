@@ -203,7 +203,6 @@ export function isArrayType(
  */
 export function isPromiseType(
   type: ts.Type,
-  checker: ts.TypeChecker
 ): boolean {
   const symbol = type.getSymbol();
   if (!symbol) {
