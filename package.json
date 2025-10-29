@@ -5,8 +5,6 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "test": "nx run-many -t test",
-    "lint": "nx run-many -t lint",
     "lint:workflows": "actionlint",
     "release": "nx release",
     "release:dry-run": "nx release --dry-run",
