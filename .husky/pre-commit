@@ -1,1 +1,2 @@
-pnpm test
+pnpm nx run eslint-plugin:test
+
