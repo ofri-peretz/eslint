@@ -9,6 +9,9 @@ import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { generateLLMContext, extractFunctionSignature } from '../../utils/llm-context';
 
+/**
+ * Message IDs for cognitive complexity violations and suggestions
+ */
 type MessageIds = 'highCognitiveComplexity' | 'extractMethod' | 'simplifyLogic' | 'useStrategy';
 
 export interface Options {
@@ -44,10 +47,18 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       highCognitiveComplexity:
-        '⚡ High cognitive complexity detected ({{current}}/{{max}}) | {{filePath}}:{{line}} | {{functionName}}',
-      extractMethod: '✅ Extract nested logic to "{{methodName}}"',
-      simplifyLogic: '✅ Simplify conditional logic',
-      useStrategy: '✅ Consider {{pattern}} pattern',
+        '⚡ Cognitive Complexity: {{current}}/{{max}} ({{overBy}} over) | Function: {{functionName}} | {{filePath}}:{{line}}\n' +
+        '📊 Breakdown: {{conditionals}} conditionals, {{loops}} loops, {{nesting}} max nesting\n' +
+        '💡 Recommended Pattern: {{pattern}}\n' +
+        '🔧 Refactoring Steps:\n' +
+        '   1. Extract nested blocks into helper functions\n' +
+        '   2. Replace nested if/else with guard clauses (early returns)\n' +
+        '   3. Apply {{pattern}} to reduce branching logic\n' +
+        '   4. Target complexity: {{max}} or lower\n' +
+        '⏱️  Estimated effort: {{estimatedTime}}',
+      extractMethod: '✅ Extract nested logic to "{{methodName}}" (reduces complexity by ~{{reduction}})',
+      simplifyLogic: '✅ Simplify conditional logic using guard clauses and early returns',
+      useStrategy: '✅ Apply {{pattern}} pattern to eliminate switch/case and nested conditionals',
     },
     schema: [
       {
@@ -195,18 +206,35 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
           breakdown.nesting = Math.max(breakdown.nesting, currentNesting);
         }
 
-        // Traverse children
-        for (const key in n) {
-          const child = (n as any)[key]; // eslint-disable-line @typescript-eslint/no-explicit-any
-          if (child && typeof child === 'object') {
+        /**
+         * Traverse children - use a visited set to prevent infinite recursion
+         * Only traverse specific AST child properties, not all object properties
+         */
+        const visited = new Set<TSESTree.Node>();
+        
+        function traverseChild(child: unknown) {
+          if (child && typeof child === 'object' && 'type' in child) {
+            const childNode = child as TSESTree.Node;
+            if (!visited.has(childNode)) {
+              visited.add(childNode);
+              traverse(childNode, currentNesting);
+            }
+          }
+        }
+
+        // Known child properties based on ESTree spec
+        const childKeys = ['body', 'test', 'consequent', 'alternate', 'init', 'update',
+                          'left', 'right', 'argument', 'arguments', 'callee', 'object',
+                          'property', 'elements', 'properties', 'expression', 'expressions',
+                          'declarations', 'declaration', 'specifiers', 'source', 'key', 'value'];
+
+        for (const key of childKeys) {
+          const child = (n as unknown as Record<string, unknown>)[key];
+          if (child) {
             if (Array.isArray(child)) {
-              child.forEach((c: unknown) => {
-                if (c && typeof c === 'object' && 'type' in c) {
-                  traverse(c as TSESTree.Node, currentNesting);
-                }
-              });
-            } else if ('type' in child) {
-              traverse(child as TSESTree.Node, currentNesting);
+              child.forEach(traverseChild);
+            } else {
+              traverseChild(child);
             }
           }
         }
@@ -395,9 +423,15 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
           ...llmContext,
           current: String(complexity),
           max: String(maxComplexity),
+          overBy: String(complexity - maxComplexity),
           filePath: filename,
           line: String(node.loc?.start.line ?? 0),
           functionName: functionSignature,
+          conditionals: String(breakdown.conditionals),
+          loops: String(breakdown.loops),
+          nesting: String(breakdown.nesting),
+          pattern,
+          estimatedTime,
         },
         suggest: suggestions.length > 0 ? suggestions.map((suggestion, index) => {
           const messageId: MessageIds =
@@ -407,6 +441,7 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
             data: {
               methodName: suggestion.name,
               pattern,
+              reduction: String(suggestion.estimatedComplexityReduction),
             },
             fix: () => null, // Complex refactoring, cannot auto-fix
           };

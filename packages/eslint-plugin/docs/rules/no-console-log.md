@@ -47,30 +47,34 @@ flowchart TD
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| 🔒 **Security** | May leak sensitive data in production | Use structured logging |
-| 🐛 **Debugging** | Clutters console, hard to filter | Environment-aware logging |
-| ⚡ **Performance** | Uncontrolled logging impacts speed | Configurable log levels |
-| 📊 **Observability** | Cannot aggregate or analyze logs | Centralized logging systems |
+| Issue                | Impact                                | Solution                    |
+| -------------------- | ------------------------------------- | --------------------------- |
+| 🔒 **Security**      | May leak sensitive data in production | Use structured logging      |
+| 🐛 **Debugging**     | Clutters console, hard to filter      | Environment-aware logging   |
+| ⚡ **Performance**   | Uncontrolled logging impacts speed    | Configurable log levels     |
+| 📊 **Observability** | Cannot aggregate or analyze logs      | Centralized logging systems |
 
 ## Configuration
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `strategy` | `'remove' \| 'convert' \| 'comment' \| 'warn'` | `'remove'` | Remediation strategy |
-| `ignorePaths` | `string[]` | `[]` | Paths/patterns to ignore |
-| `customLogger` | `string` | `'logger'` | Logger name for convert strategy |
-| `maxOccurrences` | `number` | `undefined` | Max violations to report |
+| Option             | Type                                           | Default       | Description                                                                     |
+| ------------------ | ---------------------------------------------- | ------------- | ------------------------------------------------------------------------------- |
+| `strategy`         | `'remove' \| 'convert' \| 'comment' \| 'warn'` | `'remove'`    | Remediation strategy                                                            |
+| `ignorePaths`      | `string[]`                                     | `[]`          | Paths/patterns to ignore                                                        |
+| `loggerName`       | `string`                                       | `'logger'`    | Logger object name (e.g., `'logger'`, `'winston'`)                              |
+| `maxOccurrences`   | `number`                                       | `undefined`   | Max violations to report (0 = report all)                                       |
+| `severityMap`      | `object`                                       | `{}`          | Map method names to logger methods (e.g., `{ log: 'info', debug: 'verbose' }`)  |
+| `autoDetectLogger` | `boolean`                                      | `true`        | Auto-detect logger import in file                                               |
+| `sourcePatterns`   | `string[]`                                     | `['console']` | Object names to match and replace (e.g., `['console', 'winston', 'oldLogger']`) |
+| ~~`customLogger`~~ | `string`                                       | `'logger'`    | **Deprecated:** Use `loggerName` instead                                        |
 
 ### Strategy Comparison
 
-| Strategy | Behavior | Use Case | Output |
-|----------|----------|----------|--------|
-| 🗑️ **remove** | Deletes statement | Production cleanup | `console.log("x")` → *(removed)* |
-| 🔄 **convert** | Replace with logger | Migration to proper logging | `console.log("x")` → `logger.debug("x")` |
-| 💬 **comment** | Comments out code | Temporary debugging | `console.log("x")` → `// console.log("x")` |
-| ⚡ **warn** | Change to warning | Downgrade severity | `console.log("x")` → `console.warn("x")` |
+| Strategy       | Behavior            | Use Case                    | Output                                     |
+| -------------- | ------------------- | --------------------------- | ------------------------------------------ |
+| 🗑️ **remove**  | Deletes statement   | Production cleanup          | `console.log("x")` → _(removed)_           |
+| 🔄 **convert** | Replace with logger | Migration to proper logging | `console.log("x")` → `logger.debug("x")`   |
+| 💬 **comment** | Comments out code   | Temporary debugging         | `console.log("x")` → `// console.log("x")` |
+| ⚡ **warn**    | Change to warning   | Downgrade severity          | `console.log("x")` → `console.warn("x")`   |
 
 ## Examples
 
@@ -79,7 +83,7 @@ flowchart TD
 ```typescript
 function processData(data: any) {
   console.log('Processing data:', data);
-  return data.map(item => item * 2);
+  return data.map((item) => item * 2);
 }
 
 class UserService {
@@ -97,7 +101,7 @@ import { logger } from './logger';
 
 function processData(data: any) {
   logger.debug('Processing data:', { data });
-  return data.map(item => item * 2);
+  return data.map((item) => item * 2);
 }
 
 class UserService {
@@ -117,13 +121,14 @@ class UserService {
 export default [
   {
     rules: {
-      '@forge-js/no-console-log': 'error'
-    }
-  }
+      '@forge-js/no-console-log': 'error',
+    },
+  },
 ];
 ```
 
 **Output Format:**
+
 ```
 ⚠️ console.log | src/app.ts:42 | Strategy: remove
 ```
@@ -143,13 +148,12 @@ export default [
 ```typescript
 // Before
 function calculate() {
-  console.log("Calculating...");
+  console.log('Calculating...');
   return 42;
 }
 
 // After (auto-fixed)
 function calculate() {
-  
   return 42;
 }
 ```
@@ -161,7 +165,8 @@ function calculate() {
   rules: {
     '@forge-js/no-console-log': ['error', {
       strategy: 'convert',
-      customLogger: 'winston'
+      loggerName: 'logger',      // Replace 'console' with 'logger'
+      loggerMethod: 'info'        // Replace '.log()' with '.info()'
     }]
   }
 }
@@ -169,10 +174,41 @@ function calculate() {
 
 ```typescript
 // Before
-console.log("User logged in", userId);
+console.log('User logged in', userId);
 
 // After (auto-fixed)
-winston.debug("User logged in", userId);
+logger.info('User logged in', userId);
+```
+
+**With Custom Logger (e.g., Winston):**
+
+```javascript
+{
+  rules: {
+    '@forge-js/no-console-log': ['error', {
+      strategy: 'convert',
+      loggerName: 'winston',
+      severityMap: {
+        'log': 'info',      // console.log → winston.info
+        'debug': 'debug',   // console.debug → winston.debug
+        'error': 'error',   // console.error → winston.error
+        'warn': 'warn'      // console.warn → winston.warn
+      }
+    }]
+  }
+}
+```
+
+```typescript
+// Before
+console.log('Processing request');
+console.debug('Debug details');
+console.error('Something failed');
+
+// After (auto-fixed)
+winston.info('Processing request');
+winston.debug('Debug details');
+winston.error('Something failed');
 ```
 
 ### Strategy: Comment (Temporary Disable)
@@ -189,7 +225,7 @@ winston.debug("User logged in", userId);
 
 ```typescript
 // Before
-console.log("Debug info", data);
+console.log('Debug info', data);
 
 // After (auto-fixed)
 // console.log("Debug info", data);
@@ -209,10 +245,10 @@ console.log("Debug info", data);
 
 ```typescript
 // Before
-console.log("Important notice");
+console.log('Important notice');
 
 // After (auto-fixed)
-console.warn("Important notice");
+console.warn('Important notice');
 ```
 
 ### Ignore Specific Paths
@@ -243,6 +279,103 @@ console.warn("Important notice");
     }]
   }
 }
+```
+
+### Replace Multiple Logging Objects (Legacy Projects)
+
+Perfect for migrating legacy projects with mixed logging approaches:
+
+```javascript
+{
+  rules: {
+    '@forge-js/no-console-log': ['error', {
+      strategy: 'convert',
+      loggerName: 'logger',                          // Target logger
+      sourcePatterns: ['console', 'winston', 'oldLogger'],  // Replace all these
+      severityMap: {
+        log: 'info',
+        debug: 'debug',
+        error: 'error',
+        warn: 'warn'
+      }
+    }]
+  }
+}
+```
+
+```typescript
+// Before (mixed legacy logging)
+console.log('User action');
+winston.info('Database query');
+oldLogger.debug('Cache hit');
+
+// After (auto-fixed to unified logger)
+logger.info('User action');
+logger.info('Database query');
+logger.debug('Cache hit');
+```
+
+**Safety:** Uses exact string matching - won't accidentally match `consoleUI` or `winstonConfig`.
+
+### Custom Severity Mapping
+
+Map specific console methods to different logger methods:
+
+```javascript
+{
+  rules: {
+    '@forge-js/no-console-log': ['error', {
+      strategy: 'convert',
+      loggerName: 'logger',
+      loggerMethod: 'info',       // Default for unmapped methods
+      severityMap: {
+        'log': 'info',             // console.log → logger.info
+        'debug': 'verbose',        // console.debug → logger.verbose
+        'error': 'error',          // console.error → logger.error
+        'warn': 'warn'             // console.warn → logger.warn
+      }
+    }]
+  }
+}
+```
+
+**Result:**
+
+```typescript
+// Before
+console.log('Info message');
+console.debug('Debug message');
+console.error('Error message');
+
+// After (auto-fixed)
+logger.info('Info message');
+logger.verbose('Debug message');
+logger.error('Error message');
+```
+
+### Auto-Detect Logger
+
+```javascript
+{
+  rules: {
+    '@forge-js/no-console-log': ['error', {
+      strategy: 'convert',
+      autoDetectLogger: true,     // Auto-detect 'logger', 'log', etc. in imports
+      loggerName: 'winston',      // Fallback if no logger detected
+      loggerMethod: 'info'        // Method to use
+    }]
+  }
+}
+```
+
+**Auto-detection example:**
+
+```typescript
+// If you have this import
+import { myLogger } from './utils';
+
+// console.log will be converted to
+myLogger.info(...)  // Auto-detected 'myLogger' (contains 'log')
 ```
 
 ### Team-Specific Configurations
@@ -280,11 +413,11 @@ The rule provides minimal, actionable messages optimized for both humans and LLM
 
 ### Output Format Breakdown
 
-| Component | Purpose | Example |
-|-----------|---------|---------|
-| `⚠️ console.log` | Issue type | Clear identification |
-| `src/services/auth.ts:127` | Location | File path + line number |
-| `Strategy: convert` | Action | Remediation method |
+| Component                  | Purpose    | Example                 |
+| -------------------------- | ---------- | ----------------------- |
+| `⚠️ console.log`           | Issue type | Clear identification    |
+| `src/services/auth.ts:127` | Location   | File path + line number |
+| `Strategy: convert`        | Action     | Remediation method      |
 
 ### Multi-Strategy Suggestions
 
@@ -341,12 +474,12 @@ sequenceDiagram
 
 ### Step-by-Step Migration
 
-| Phase | Configuration | Goal |
-|-------|---------------|------|
-| **1. Discovery** | `strategy: 'comment'` | Identify all occurrences |
-| **2. Setup Logger** | Import logging library | Add infrastructure |
-| **3. Convert** | `strategy: 'convert'` | Auto-migrate code |
-| **4. Cleanup** | `strategy: 'remove'` | Remove debugging logs |
+| Phase               | Configuration          | Goal                     |
+| ------------------- | ---------------------- | ------------------------ |
+| **1. Discovery**    | `strategy: 'comment'`  | Identify all occurrences |
+| **2. Setup Logger** | Import logging library | Add infrastructure       |
+| **3. Convert**      | `strategy: 'convert'`  | Auto-migrate code        |
+| **4. Cleanup**      | `strategy: 'remove'`   | Remove debugging logs    |
 
 ## Advanced Usage
 
@@ -387,22 +520,22 @@ sequenceDiagram
 
 ## When Not To Use
 
-| Scenario | Recommendation |
-|----------|----------------|
-| 🧪 Prototyping | Disable or use `warn` severity |
-| 📚 Tutorials | Add to `ignorePaths` |
-| 🔧 Build Scripts | Use `ignorePaths: ['scripts']` |
-| 🧪 Test Files | Use `ignorePaths: ['*.test.ts']` |
+| Scenario         | Recommendation                   |
+| ---------------- | -------------------------------- |
+| 🧪 Prototyping   | Disable or use `warn` severity   |
+| 📚 Tutorials     | Add to `ignorePaths`             |
+| 🔧 Build Scripts | Use `ignorePaths: ['scripts']`   |
+| 🧪 Test Files    | Use `ignorePaths: ['*.test.ts']` |
 
 ## Comparison with Other Solutions
 
-| Feature | @forge-js/no-console-log | eslint-plugin-no-console | eslint built-in |
-|---------|-------------------------|--------------------------|-----------------|
-| ✅ Auto-fix | ✅ 4 strategies | ❌ No | ❌ No |
-| 🎯 Suggestions | ✅ All strategies | ❌ No | ❌ No |
-| 📁 ignorePaths | ✅ Pattern matching | ❌ No | ⚠️ Limited |
-| 🤖 LLM-optimized | ✅ Yes | ❌ No | ❌ No |
-| 🔄 Logger migration | ✅ Configurable | ❌ No | ❌ No |
+| Feature             | @forge-js/no-console-log | eslint-plugin-no-console | eslint built-in |
+| ------------------- | ------------------------ | ------------------------ | --------------- |
+| ✅ Auto-fix         | ✅ 4 strategies          | ❌ No                    | ❌ No           |
+| 🎯 Suggestions      | ✅ All strategies        | ❌ No                    | ❌ No           |
+| 📁 ignorePaths      | ✅ Pattern matching      | ❌ No                    | ⚠️ Limited      |
+| 🤖 LLM-optimized    | ✅ Yes                   | ❌ No                    | ❌ No           |
+| 🔄 Logger migration | ✅ Configurable          | ❌ No                    | ❌ No           |
 
 ## Further Reading
 
@@ -410,4 +543,3 @@ sequenceDiagram
 - [Best Practices for Logging in Node.js](https://blog.logrocket.com/best-practices-logging-node-js/)
 - [Structured Logging with Winston](https://github.com/winstonjs/winston)
 - [MDN: Console API](https://developer.mozilla.org/en-US/docs/Web/API/Console)
-

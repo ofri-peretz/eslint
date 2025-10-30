@@ -580,12 +580,38 @@ export const noCircularDependencies = createRule<RuleOptions, MessageIds>({
 
     /**
      * Generate a unique hash for a cycle to avoid duplicate reports
+     * Uses the minimal cycle (just the loop, not the entry path)
      */
     function getCycleHash(cycle: string[]): string {
+      // Find the minimal cycle (the actual loop, not the path leading to it)
+      const minimalCycle = getMinimalCycle(cycle);
+      
       // Normalize the cycle to start from the smallest path (for consistency)
-      const minIndex = cycle.indexOf(cycle.reduce((min, curr) => (curr < min ? curr : min), cycle[0]));
-      const normalized = [...cycle.slice(minIndex), ...cycle.slice(0, minIndex)];
+      const minIndex = minimalCycle.indexOf(minimalCycle.reduce((min, curr) => (curr < min ? curr : min), minimalCycle[0]));
+      const normalized = [...minimalCycle.slice(minIndex), ...minimalCycle.slice(0, minIndex)];
       return normalized.join('->');
+    }
+
+    /**
+     * Extract the minimal cycle from a path
+     * For example: A → B → C → B → A becomes B → C → B
+     */
+    function getMinimalCycle(cycle: string[]): string[] {
+      if (cycle.length < 2) return cycle;
+      
+      // Find where the cycle actually starts (first repeated element)
+      const seen = new Map<string, number>();
+      for (let i = 0; i < cycle.length; i++) {
+        const file = cycle[i];
+        if (seen.has(file)) {
+          // Found the start of the actual cycle
+          const cycleStart = seen.get(file);
+          return cycle.slice(cycleStart, i + 1);
+        }
+        seen.set(file, i);
+      }
+      
+      return cycle;
     }
 
     // Store found cycles to report on specific imports
@@ -602,10 +628,19 @@ export const noCircularDependencies = createRule<RuleOptions, MessageIds>({
 
         if (cycles.length > 0) {
           for (const cycle of cycles) {
-            const cycleStart = cycle.indexOf(filename);
+            // Extract the minimal cycle (the actual loop)
+            const minimalCycle = getMinimalCycle(cycle);
+            
+            // Only report if current file is part of the minimal cycle
+            // (not just a file that imports into the cycle)
+            if (!minimalCycle.includes(filename)) {
+              continue;
+            }
+            
+            const cycleStart = minimalCycle.indexOf(filename);
             if (cycleStart === -1) continue;
 
-            const relevantCycle = cycle.slice(cycleStart);
+            const relevantCycle = [...minimalCycle.slice(cycleStart), ...minimalCycle.slice(0, cycleStart)];
             const cycleHash = getCycleHash(relevantCycle);
 
             // Skip if we've already reported this cycle
@@ -618,7 +653,7 @@ export const noCircularDependencies = createRule<RuleOptions, MessageIds>({
             const strategy = selectFixStrategy(relevantCycle, fixStrategy);
 
             // Find the target of the first import that causes the cycle
-            const cycleTarget = relevantCycle[1]; // The next file in the cycle
+            const cycleTarget = relevantCycle[1] || relevantCycle[0]; // The next file in the cycle
 
             detectedCycles.push({
               cycleTarget,

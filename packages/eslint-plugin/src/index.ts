@@ -23,6 +23,11 @@ import { noInternalModules } from './rules/architecture/no-internal-modules';
 import { noSqlInjection } from './rules/security/no-sql-injection';
 import { noUnsafeDynamicRequire } from './rules/security/no-unsafe-dynamic-require';
 import { databaseInjection } from './rules/security/database-injection';
+import { detectEvalWithExpression } from './rules/security/detect-eval-with-expression';
+import { detectChildProcess } from './rules/security/detect-child-process';
+import { detectNonLiteralFsFilename } from './rules/security/detect-non-literal-fs-filename';
+import { detectNonLiteralRegexp } from './rules/security/detect-non-literal-regexp';
+import { detectObjectInjection } from './rules/security/detect-object-injection';
 
 // Migration rules
 import { reactClassToHooks } from './rules/migration/react-class-to-hooks';
@@ -66,40 +71,46 @@ import { identicalFunctions } from './rules/duplication/identical-functions';
  * ```
  */
 export const rules = {
-  // Development rules
-  'development/no-console-log': noConsoleLog,
+  // Flat rule names (for easier usage)
+  'no-console-log': noConsoleLog,
+  'no-circular-dependencies': noCircularDependencies,
+  'no-internal-modules': noInternalModules,
+  'no-sql-injection': noSqlInjection,
+  'no-unsafe-dynamic-require': noUnsafeDynamicRequire,
+  'database-injection': databaseInjection,
+  'detect-eval-with-expression': detectEvalWithExpression,
+  'detect-child-process': detectChildProcess,
+  'detect-non-literal-fs-filename': detectNonLiteralFsFilename,
+  'detect-non-literal-regexp': detectNonLiteralRegexp,
+  'detect-object-injection': detectObjectInjection,
+  'react-class-to-hooks': reactClassToHooks,
+  'react-no-inline-functions': reactNoInlineFunctions,
+  'img-requires-alt': imgRequiresAlt,
+  'required-attributes': requiredAttributes,
+  'no-deprecated-api': noDeprecatedApi,
+  'enforce-naming': enforceNaming,
+  'cognitive-complexity': cognitiveComplexity,
+  'identical-functions': identicalFunctions,
   
-  // Architecture rules  
+  // Categorized rule names (for better organization)
+  'development/no-console-log': noConsoleLog,
   'architecture/no-circular-dependencies': noCircularDependencies,
   'architecture/no-internal-modules': noInternalModules,
-  
-  // Security rules
   'security/no-sql-injection': noSqlInjection,
   'security/no-unsafe-dynamic-require': noUnsafeDynamicRequire,
   'security/database-injection': databaseInjection,
-  
-  // Migration rules
+  'security/detect-eval-with-expression': detectEvalWithExpression,
+  'security/detect-child-process': detectChildProcess,
+  'security/detect-non-literal-fs-filename': detectNonLiteralFsFilename,
+  'security/detect-non-literal-regexp': detectNonLiteralRegexp,
+  'security/detect-object-injection': detectObjectInjection,
   'migration/react-class-to-hooks': reactClassToHooks,
-  
-  // Performance rules
   'performance/react-no-inline-functions': reactNoInlineFunctions,
-  
-  // Accessibility rules
   'accessibility/img-requires-alt': imgRequiresAlt,
-  
-  // React rules
   'react/required-attributes': requiredAttributes,
-  
-  // Deprecation rules
   'deprecation/no-deprecated-api': noDeprecatedApi,
-  
-  // Domain rules
   'domain/enforce-naming': enforceNaming,
-  
-  // Complexity rules (SonarQube-inspired)
   'complexity/cognitive-complexity': cognitiveComplexity,
-  
-  // Duplication rules (SonarQube-inspired)
   'duplication/identical-functions': identicalFunctions,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
@@ -133,7 +144,7 @@ export const rules = {
 export const plugin = {
   meta: {
     name: '@forge-js/eslint-plugin-llm-optimized',
-    version: '0.0.1',
+    version: '0.0.3-rc.16',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

@@ -73,6 +73,44 @@ flowchart TD
 | `./utils`                       | 0     | Relative root           |
 | `./utils/helpers`               | 1     | Relative one level deep |
 
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** with clear violation details:
+
+```
+🚫 Internal module import detected
+   Module: lodash/fp/get
+   Depth: 2 (max allowed: 1)
+   Reason: Exceeds maximum depth (2 > 1)
+💡 Suggested fix: lodash
+📖 Use barrel exports (index files) to expose public APIs
+   Strategy: error
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+|-----------|---------|---------|
+| **Module** | The problematic import path | `lodash/fp/get` |
+| **Depth** | Current depth vs maximum | `2 (max allowed: 1)` |
+| **Reason** | Why it violates the rule | `Exceeds maximum depth (2 > 1)` |
+| **Suggested fix** | Recommended import path | `lodash` |
+| **Guidance** | Educational tip | `Use barrel exports (index files)` |
+| **Strategy** | Current remediation strategy | `error` |
+
+### Possible Reasons
+
+| Reason | When it occurs |
+|--------|----------------|
+| `Exceeds maximum depth (X > Y)` | Import depth exceeds `maxDepth` config |
+| `Path matches forbidden pattern` | Import matches a pattern in `forbid` array |
+| `Internal module structure exposed` | General violation |
+
+This format helps:
+- 🤖 **LLMs** - Parse structured information and apply fixes
+- 👨‍💻 **Developers** - Understand violations instantly
+- 🔧 **Auto-fixing** - Clear target for automated corrections
+
 ### Strategy Comparison
 
 | Strategy       | Behavior               | Use Case           | Output                  |

@@ -113,7 +113,7 @@ function test() {
       invalid: [
         {
           code: 'console.log("test");',
-          options: [{ strategy: 'convert', customLogger: 'logger' }],
+          options: [{ strategy: 'convert', loggerName: 'logger' }],
           output: 'logger.debug("test");',
           errors: [{
             messageId: 'consoleLogFound',
@@ -121,7 +121,7 @@ function test() {
         },
         {
           code: 'console.log("test", data);',
-          options: [{ strategy: 'convert', customLogger: 'myLogger' }],
+          options: [{ strategy: 'convert', loggerName: 'myLogger' }],
           output: 'myLogger.debug("test", data);',
           errors: [{
             messageId: 'consoleLogFound',
@@ -241,7 +241,7 @@ console.log("fourth");`,
       invalid: [
         {
           code: 'console.log("test");',
-          options: [{ strategy: 'convert', customLogger: 'winston' }],
+          options: [{ strategy: 'convert', loggerName: 'winston' }],
           output: 'winston.debug("test");',
           errors: [{
             messageId: 'consoleLogFound',
@@ -249,7 +249,7 @@ console.log("fourth");`,
         },
         {
           code: 'console.log("test");',
-          options: [{ strategy: 'convert', customLogger: 'bunyan' }],
+          options: [{ strategy: 'convert', loggerName: 'bunyan' }],
           output: 'bunyan.debug("test");',
           errors: [{
             messageId: 'consoleLogFound',
