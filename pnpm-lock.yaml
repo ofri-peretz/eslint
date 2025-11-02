@@ -142,8 +142,8 @@ importers:
   packages/eslint-plugin:
     dependencies:
       '@forge-js/eslint-plugin-utils':
-        specifier: workspace:*
-        version: link:../eslint-plugin-utils
+        specifier: ^0.1.0
+        version: 0.1.0(@typescript-eslint/utils@8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
@@ -1186,6 +1186,13 @@ packages:
   '@eslint/plugin-kit@0.4.0':
     resolution: {integrity: sha512-sB5uyeq+dwCWyPi31B2gQlVlo+j5brPlWx4yZBrEaRo/nhdDE8Xke1gsGgtiBdaBTxuTkceLVuVt/pclrasb0A==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@forge-js/eslint-plugin-utils@0.1.0':
+    resolution: {integrity: sha512-5UhOj2ZiKkeVluzzrPI9vuvnZLbcNW1QmfkKk7KhqYdfPL62XHLR1gdp5SczxdQunB0X6WQlbau/zcTyHJjSxQ==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      '@typescript-eslint/utils': ^8.46.2
+      typescript: '>=4.0.0'
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -6792,6 +6799,12 @@ snapshots:
       '@eslint/core': 0.16.0
       levn: 0.4.1
 
+  '@forge-js/eslint-plugin-utils@0.1.0(@typescript-eslint/utils@8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)':
+    dependencies:
+      '@typescript-eslint/utils': 8.46.2(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
+      tslib: 2.8.1
+      typescript: 5.9.3
+
   '@humanfs/core@0.19.1': {}
 
   '@humanfs/node@0.16.7':
@@ -8369,6 +8382,14 @@ snapshots:
     optionalDependencies:
       vite: 7.1.12(@types/node@20.19.9)(jiti@2.4.2)(terser@5.44.0)(yaml@2.8.1)
 
+  '@vitest/mocker@4.0.4(vite@7.1.12(@types/node@20.19.9)(jiti@2.6.1)(terser@5.44.0)(yaml@2.8.1))':
+    dependencies:
+      '@vitest/spy': 4.0.4
+      estree-walker: 3.0.3
+      magic-string: 0.30.21
+    optionalDependencies:
+      vite: 7.1.12(@types/node@20.19.9)(jiti@2.6.1)(terser@5.44.0)(yaml@2.8.1)
+
   '@vitest/pretty-format@4.0.4':
     dependencies:
       tinyrainbow: 3.0.3
@@ -8395,7 +8416,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vitest: 4.0.4(@types/node@20.19.9)(@vitest/ui@4.0.4)(jiti@2.4.2)(jsdom@22.1.0)(terser@5.44.0)(yaml@2.8.1)
+      vitest: 4.0.4(@types/node@20.19.9)(@vitest/ui@4.0.4)(jiti@2.6.1)(jsdom@22.1.0)(terser@5.44.0)(yaml@2.8.1)
 
   '@vitest/utils@4.0.4':
     dependencies:
@@ -11907,7 +11928,7 @@ snapshots:
   vitest@4.0.4(@types/node@20.19.9)(@vitest/ui@4.0.4)(jiti@2.6.1)(jsdom@22.1.0)(terser@5.44.0)(yaml@2.8.1):
     dependencies:
       '@vitest/expect': 4.0.4
-      '@vitest/mocker': 4.0.4(vite@7.1.12(@types/node@20.19.9)(jiti@2.4.2)(terser@5.44.0)(yaml@2.8.1))
+      '@vitest/mocker': 4.0.4(vite@7.1.12(@types/node@20.19.9)(jiti@2.6.1)(terser@5.44.0)(yaml@2.8.1))
       '@vitest/pretty-format': 4.0.4
       '@vitest/runner': 4.0.4
       '@vitest/snapshot': 4.0.4

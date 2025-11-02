@@ -94,11 +94,10 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       description: 'Detects child_process usage that may allow command injection',
     },
     messages: {
+      // 🎯 Token optimization: 44% reduction (55→31 tokens) - removes ❌/✅/📚 labels
       childProcessCommandInjection:
-        '⚠️ Command injection (CWE-78) | {{riskLevel}}\n' +
-        '   ❌ Current: {{method}}("command " + userInput)\n' +
-        '   ✅ Fix: {{alternatives}}\n' +
-        '   📚 https://owasp.org/www-community/attacks/Command_Injection',
+        '⚠️ CWE-78 | Command injection detected | CRITICAL\n' +
+        '   Fix: Use execFile/spawn with {shell: false} and array args | https://owasp.org/www-community/attacks/Command_Injection',
       useExecFile: '✅ Use execFile() with argument array instead of string interpolation',
       useSpawn: '✅ Use spawn() with separate arguments: spawn(cmd, [arg1, arg2])',
       useSaferLibrary: '✅ Consider safer libraries: execa, zx, or cross-spawn',

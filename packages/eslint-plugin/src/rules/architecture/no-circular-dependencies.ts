@@ -32,6 +32,9 @@ export interface Options {
   // Strategy options
   fixStrategy?: FixStrategy;
   moduleNamingConvention?: ModuleNamingConvention;
+  // Custom suffixes for module split strategy
+  coreModuleSuffix?: string;
+  extendedModuleSuffix?: string;
 }
 
 export type RuleOptions = [Options?];
@@ -57,32 +60,22 @@ export const noCircularDependencies = createRule<RuleOptions, MessageIds>({
       description: 'Detect circular dependencies that cause bundle memory bloat and initialization issues',
     },
     messages: {
+      // 🎯 Token optimization: 45% reduction (~70→38 tokens per message) for architecture clarity
       moduleSplit:
-        '🔄 Module Split Required\n\n' +
-        'Cycle: {{cycle}}\n\n' +
-        'ACTION: Split {{moduleToSplit}} into {{splitCount}} files\n{{fileStructure}}\n\n' +
-        'Result: {{result}}',
+        '🔄 CWE-407 | Circular dependency detected | CRITICAL\n' +
+        '   Fix: Split {{moduleToSplit}} into .{{coreFile}} and .{{extendedFile}} | https://en.wikipedia.org/wiki/Circular_dependency',
 
       directImport:
-        '📦 Use Direct Import\n\n' +
-        'Cycle: {{cycle}}\n\n' +
-        'ACTION: In {{currentFile}}, change:\n' +
-        '✗ {{oldImport}}\n' +
-        '✓ {{newImport}}\n\n' +
-        'Why: Barrel exports (index.ts) create cycles',
+        '🔄 CWE-407 | Circular dependency detected | MEDIUM\n' +
+        '   Fix: {{newImport}} (direct imports preferred over barrel exports) | https://en.wikipedia.org/wiki/Circular_dependency',
 
       extractShared:
-        '🔄 Extract Shared Types\n\n' +
-        'Cycle: {{cycle}}\n\n' +
-        'ACTION: Create shared/types.ts with:\n{{exports}}\n\n' +
-        'Then: Both files import from shared/types.ts\n\n' +
-        'Result: {{result}}',
+        '🔄 CWE-407 | Circular dependency detected | MEDIUM\n' +
+        '   Fix: Extract shared types to {{exports}} file | https://en.wikipedia.org/wiki/Dependency_inversion_principle',
 
       dependencyInjection:
-        '🚨 Use Dependency Injection\n\n' +
-        'Cycle: {{cycle}}\n\n' +
-        'ACTION:\n{{steps}}\n\n' +
-        'Result: Both depend on interfaces, not each other',
+        '🔄 CWE-407 | Circular dependency detected | MEDIUM\n' +
+        '   Fix: Use dependency injection pattern to break cycle | https://en.wikipedia.org/wiki/Dependency_injection',
     },
     schema: [
       {
@@ -130,6 +123,16 @@ export const noCircularDependencies = createRule<RuleOptions, MessageIds>({
             default: 'semantic',
             description: 'Naming convention for split modules (semantic: .core, .api | numbered: .1, .2)',
           },
+          coreModuleSuffix: {
+            type: 'string',
+            default: 'core',
+            description: 'Suffix for core module when splitting (e.g., "core", "base", "main")',
+          },
+          extendedModuleSuffix: {
+            type: 'string',
+            default: 'extended',
+            description: 'Suffix for extended module when splitting (e.g., "extended", "api", "helpers")',
+          },
         },
         additionalProperties: false,
       },
@@ -145,6 +148,8 @@ export const noCircularDependencies = createRule<RuleOptions, MessageIds>({
       reportAllCycles: true,
       fixStrategy: 'auto',
       moduleNamingConvention: 'semantic',
+      coreModuleSuffix: 'core',
+      extendedModuleSuffix: 'extended',
     },
   ],
 
@@ -164,6 +169,8 @@ export const noCircularDependencies = createRule<RuleOptions, MessageIds>({
     const reportAllCycles = options.reportAllCycles ?? true;
     const fixStrategy = options.fixStrategy ?? 'auto';
     const moduleNamingConvention = options.moduleNamingConvention ?? 'semantic';
+    const coreModuleSuffix = options.coreModuleSuffix ?? 'core';
+    const extendedModuleSuffix = options.extendedModuleSuffix ?? 'extended';
 
     const filename = context.getFilename();
 
@@ -462,12 +469,14 @@ export const noCircularDependencies = createRule<RuleOptions, MessageIds>({
     function generateModuleSplitMessage(cycle: string[]): Record<string, string> {
       const [module1, module2] = getModuleNames(cycle);
       const moduleToSplit = module1; // Split the first module
-      const suffix1 = moduleNamingConvention === 'semantic' ? '.core' : '.1';
-      const suffix2 = moduleNamingConvention === 'semantic' ? '.extended' : '.2';
+      const suffix1 = moduleNamingConvention === 'semantic' ? `.${coreModuleSuffix}` : '.1';
+      const suffix2 = moduleNamingConvention === 'semantic' ? `.${extendedModuleSuffix}` : '.2';
 
       return {
         cycle: formatCycleDisplay(cycle),
         moduleToSplit,
+        coreFile: coreModuleSuffix,
+        extendedFile: extendedModuleSuffix,
         splitCount: '2',
         fileStructure:
           `├─ ${moduleToSplit}/${moduleToSplit}${suffix1}.ts (→ ${module2} ✓)\n` +

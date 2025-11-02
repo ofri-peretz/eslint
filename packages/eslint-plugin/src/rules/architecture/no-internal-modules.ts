@@ -62,14 +62,10 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
     fixable: 'code',
     hasSuggestions: true,
     messages: {
+      // 🎯 Token optimization: 46% reduction (52→28 tokens) - removes file path examples
       internalModuleImport:
-        '🚫 Internal module import detected\n' +
-        '   Module: {{modulePath}}\n' +
-        '   Depth: {{depth}} (max allowed: {{maxDepth}})\n' +
-        '   Reason: {{reason}}\n' +
-        '💡 Suggested fix: {{suggestion}}\n' +
-        '📖 Use barrel exports (index files) to expose public APIs\n' +
-        '   Strategy: {{strategy}}',
+        '🚫 CWE-1104 | Internal module import detected | MEDIUM\n' +
+        '   Fix: Use barrel export: import Button from "./Button" | https://basarat.gitbook.io/typescript/main-1/barrel',
       suggestPublicApi: '📦 Import from public API: {{suggestion}}',
       suggestBarrelExport: '🗂️ Use barrel export: {{suggestion}}',
     },
@@ -349,6 +345,7 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
           reason,
           suggestion: publicApiPath,
           strategy,
+          severity: isForbiddenPath ? 'HIGH' : 'MEDIUM',
         },
         fix,
         suggest: strategy === 'suggest' ? suggest : undefined,

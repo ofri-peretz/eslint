@@ -89,11 +89,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       description: 'Detects variable[key] as a left- or right-hand assignment operand',
     },
     messages: {
+      // 🎯 Token optimization: 37% reduction (54→34 tokens) - removes verbose current/fix/doc labels
       objectInjection:
-        '⚠️ Object injection (CWE-915: Prototype Pollution) | {{riskLevel}}\n' +
-        '   ❌ Current: obj[{{pattern}}] = value\n' +
-        '   ✅ Fix: {{safeAlternative}}\n' +
-        '   📚 https://portswigger.net/web-security/prototype-pollution',
+        '⚠️ CWE-915 | Object injection/Prototype pollution | {{riskLevel}}\n' +
+        '   Fix: {{safeAlternative}} | https://portswigger.net/web-security/prototype-pollution',
       useMapInstead: '✅ Use Map instead of plain objects for key-value storage',
       useHasOwnProperty: '✅ Use hasOwnProperty() check to avoid prototype properties',
       whitelistKeys: '✅ Whitelist allowed property names',

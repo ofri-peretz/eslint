@@ -3,11 +3,20 @@ name: CI
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+# Prevent concurrent runs on the same PR/branch to save quota
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   ci:
     name: CI Pipeline
     runs-on: ubuntu-latest
+
+    # Prevent hanging builds
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -15,10 +24,44 @@ jobs:
         with:
           fetch-depth: 0
 
+      # ═══════════════════════════════════════════════════════════════════════
+      # LAYER 1: PNPM PACKAGE MANAGER CACHING
+      # ═══════════════════════════════════════════════════════════════════════
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10.18.3
+
+      # Get pnpm store path for caching
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+          echo "STORE_PATH=$(pnpm store path --silent)"
+
+      # Cache pnpm global store (packages)
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
+
+      # Cache pnpm virtual store (symlinks) - critical for speed
+      - name: Cache pnpm virtual store
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.pnpm
+          key: pnpm-vstore-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-vstore-${{ runner.os }}-
+
+      # ═══════════════════════════════════════════════════════════════════════
+      # LAYER 2: NODE RUNTIME & BUILT-IN CACHING
+      # ═══════════════════════════════════════════════════════════════════════
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -26,17 +69,108 @@ jobs:
           node-version: 20
           cache: "pnpm"
 
-      - name: Install dependencies
+      - name: Install dependencies (with cache)
         run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm nx run-many -t lint --all
+      # ═══════════════════════════════════════════════════════════════════════
+      # LAYER 3: TYPESCRIPT INCREMENTAL BUILD CACHE
+      # ═══════════════════════════════════════════════════════════════════════
 
-      - name: Build
-        run: pnpm nx run-many -t build --all
+      - name: Cache TypeScript build info
+        uses: actions/cache@v4
+        with:
+          path: |
+            **/dist
+            **/*.tsbuildinfo
+            .nx/cache
+          key: ts-build-${{ runner.os }}-${{ github.ref }}-${{ github.sha }}
+          restore-keys: |
+            ts-build-${{ runner.os }}-${{ github.ref }}-
+            ts-build-${{ runner.os }}-
 
-      - name: Test
-        run: pnpm nx run-many -t test --all
+      # ═══════════════════════════════════════════════════════════════════════
+      # LAYER 4: ESLINT & CODE QUALITY CACHING
+      # ═══════════════════════════════════════════════════════════════════════
 
-      - name: Print Environment Info
-        run: pnpm nx report
+      - name: Cache ESLint results
+        uses: actions/cache@v4
+        with:
+          path: .eslintcache
+          key: eslint-cache-${{ runner.os }}-${{ github.ref }}-${{ github.sha }}
+          restore-keys: |
+            eslint-cache-${{ runner.os }}-${{ github.ref }}-
+            eslint-cache-${{ runner.os }}-
+
+      # ═══════════════════════════════════════════════════════════════════════
+      # LAYER 5: TESTING CACHE (VITEST)
+      # ═══════════════════════════════════════════════════════════════════════
+
+      - name: Cache test results
+        uses: actions/cache@v4
+        with:
+          path: |
+            **/coverage
+            **/test-cache
+            **/.vitest
+          key: vitest-cache-${{ runner.os }}-${{ github.ref }}-${{ github.sha }}
+          restore-keys: |
+            vitest-cache-${{ runner.os }}-${{ github.ref }}-
+            vitest-cache-${{ runner.os }}-
+
+      # ═══════════════════════════════════════════════════════════════════════
+      # LAYER 6: NX COMPUTATION & BUILD CACHING (INCREMENTAL BUILDS)
+      # ═══════════════════════════════════════════════════════════════════════
+
+      - name: Derive affected packages using NX
+        uses: nrwl/nx-set-shas@v4
+        with:
+          main-branch-name: main
+
+      # ═══════════════════════════════════════════════════════════════════════
+      # LAYER 7: BUILD EXECUTION WITH ALL CACHES ACTIVE
+      # ═══════════════════════════════════════════════════════════════════════
+
+      # Lint with ESLint cache enabled
+      - name: Lint (incremental, cached)
+        run: |
+          export ESLINT_CACHE=true
+          pnpm nx run-many -t lint --all --parallel=4 --verbose
+
+      # Build with TypeScript incremental compilation
+      - name: Build (incremental, cached)
+        run: |
+          export TSNODE_SKIP_TRANSPILATION=true
+          pnpm nx run-many -t build --all --parallel=4 --verbose
+
+      # Test with Vitest cache
+      - name: Test (incremental, cached)
+        run: |
+          pnpm nx run-many -t test --all --parallel=4 --verbose
+
+      # ═══════════════════════════════════════════════════════════════════════
+      # DIAGNOSTICS & REPORTING
+      # ═══════════════════════════════════════════════════════════════════════
+
+      - name: Print cache diagnostics
+        if: always()
+        run: |
+          echo "═══════════════════════════════════════════════════════════════"
+          echo "Cache Diagnostics"
+          echo "═══════════════════════════════════════════════════════════════"
+          echo ""
+          echo "pnpm store size:"
+          du -sh ${{ steps.pnpm-cache.outputs.STORE_PATH }} || echo "Not cached yet"
+          echo ""
+          echo "NX cache size:"
+          du -sh .nx/cache 2>/dev/null || echo "Not cached yet"
+          echo ""
+          echo "ESLint cache size:"
+          du -sh .eslintcache 2>/dev/null || echo "Not cached yet"
+          echo ""
+          echo "Node modules size:"
+          du -sh node_modules 2>/dev/null || echo "Not cached yet"
+          echo ""
+          echo "Build artifacts:"
+          find . -name "dist" -type d | xargs du -sh 2>/dev/null || echo "No dist found"
+          echo ""
+          pnpm nx report

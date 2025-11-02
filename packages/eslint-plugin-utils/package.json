@@ -1,6 +1,6 @@
 {
   "name": "@forge-js/eslint-plugin-utils",
-  "version": "0.0.4",
+  "version": "0.2.0",
   "description": "Utilities for building LLM-optimized ESLint rules",
   "type": "commonjs",
   "main": "./src/index.js",
@@ -19,6 +19,13 @@
   "publishConfig": {
     "access": "public"
   },
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "keywords": [
     "eslint",
     "eslint-plugin",
