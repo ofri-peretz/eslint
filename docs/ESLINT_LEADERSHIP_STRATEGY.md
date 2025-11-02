@@ -6,6 +6,7 @@
 **Solution:** LLM-optimized ESLint creates **"Standards as Executable Code"** — deterministic, auditable, always-enforced.
 
 **Impact:**
+
 - 60-80% of violations auto-fixed before human review
 - Consistent standards across all teams/timezones
 - Reduced review cycles (skip the lint discussion)
@@ -36,12 +37,12 @@ flowchart TD
     F --> G
     G --> H["📝 Audit Log"]
     H --> I["🚀 Merge Ready"]
-    
+
     classDef dev fill:#dbeafe,stroke:#0284c7,stroke-width:2px,color:#1e293b
     classDef auto fill:#d1fae5,stroke:#059669,stroke-width:2px,color:#1e293b
     classDef human fill:#fef3c7,stroke:#f59e0b,stroke-width:2px,color:#1e293b
     classDef audit fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#1e293b
-    
+
     class A,B,C dev
     class E,G auto
     class F,I human
@@ -53,6 +54,7 @@ flowchart TD
 ## The Standards Enforcement Stack
 
 ### Level 1: Define Standards (Leadership)
+
 **→ Create ESLint rules that encode your standards**
 
 ```javascript
@@ -66,15 +68,18 @@ flowchart TD
 ```
 
 **What this means:**
+
 - Standards are now executable, not just documented
 - Every violation is caught, not guessed
 - Consistency across all repos/teams
 - Change management happens via code, not emails
 
 ### Level 2: Optimize Messages (Leadership + Architects)
+
 **→ Make every error actionable for AI**
 
 Each rule configured with LLM-optimal format:
+
 ```
 🔒 CWE-89 SQL Injection | Severity: Critical
 ❌ const query = `SELECT * FROM users WHERE id = ${userId}`;
@@ -83,11 +88,13 @@ Each rule configured with LLM-optimal format:
 ```
 
 **What this means:**
+
 - AI understands not just "what's wrong" but "why it's wrong"
 - Fixes are predicable and consistent
 - Every error becomes a teaching moment
 
 ### Level 3: Enable Auto-Fix (CI/CD Infrastructure)
+
 **→ Pre-fix violations before PR submission**
 
 ```yaml
@@ -103,22 +110,26 @@ jobs:
 ```
 
 **What this means:**
+
 - 80% of violations never reach human review
 - Developers see green before they PR
 - CI/CD is faster (less blocking)
 
 ### Level 4: Focused Human Review (Team Lead)
+
 **→ Reviewers focus on logic, not lint**
 
 Old way: "15 minutes reviewing lint issues"  
 New way: "2 minutes spot-checking auto-fixes, then logic review"
 
 **What this means:**
+
 - Code review velocity increases
 - Reviewers stay in the flow
 - No "go fix lint" comment chains
 
 ### Level 5: Audit Trail (Compliance/Security)
+
 **→ Complete record of standards compliance**
 
 ```
@@ -133,6 +144,7 @@ Verification: ✅ Tests passed
 ```
 
 **What this means:**
+
 - Auditors see exactly what was fixed and when
 - No "but I didn't know that rule existed"
 - Compliance becomes automatic
@@ -144,8 +156,9 @@ Verification: ✅ Tests passed
 ### 🎯 Governance Model
 
 **Traditional:**
+
 ```
-Standards Doc (95% ignored) 
+Standards Doc (95% ignored)
     ↓
 Code Review (inconsistent)
     ↓
@@ -153,6 +166,7 @@ Merge (many issues slip through)
 ```
 
 **With LLM-Optimized ESLint:**
+
 ```
 Standards as Code (always enforced)
     ↓
@@ -165,32 +179,35 @@ Merge (standards guaranteed)
 
 ### 💼 What Leadership Can Enforce
 
-| Standard | Method | Verification | Audit |
-|----------|--------|--------------|-------|
-| **No SQL injection** | ESLint rule (error) | Auto-fix | ✅ Each commit |
-| **No eval() usage** | ESLint rule (error) | Auto-fix | ✅ Each commit |
-| **No circular deps** | ESLint rule (error) | Manual review | ✅ Build log |
-| **Cognitive complexity <20** | ESLint rule (warn) | Developer fixes | ✅ Each PR |
-| **No console.log in prod** | ESLint rule (warn) | Auto-convert to logger | ✅ CI log |
-| **Required alt text** | ESLint rule (error) | Auto-suggest | ✅ Accessibility report |
-| **No deprecated APIs** | ESLint rule (error) | Auto-migrate | ✅ Version tracking |
-| **Naming conventions** | ESLint rule (warn) | Auto-rename | ✅ Refactor log |
+| Standard                     | Method              | Verification           | Audit                   |
+| ---------------------------- | ------------------- | ---------------------- | ----------------------- |
+| **No SQL injection**         | ESLint rule (error) | Auto-fix               | ✅ Each commit          |
+| **No eval() usage**          | ESLint rule (error) | Auto-fix               | ✅ Each commit          |
+| **No circular deps**         | ESLint rule (error) | Manual review          | ✅ Build log            |
+| **Cognitive complexity <20** | ESLint rule (warn)  | Developer fixes        | ✅ Each PR              |
+| **No console.log in prod**   | ESLint rule (warn)  | Auto-convert to logger | ✅ CI log               |
+| **Required alt text**        | ESLint rule (error) | Auto-suggest           | ✅ Accessibility report |
+| **No deprecated APIs**       | ESLint rule (error) | Auto-migrate           | ✅ Version tracking     |
+| **Naming conventions**       | ESLint rule (warn)  | Auto-rename            | ✅ Refactor log         |
 
 ### 🚀 Deployment Strategy
 
 #### Week 1: Foundation
+
 - [ ] Select ESLint rules aligned with org standards
 - [ ] Configure LLM-optimized messages
 - [ ] Add to CI/CD (warn mode first)
 - [ ] Document in wiki/handbook
 
 #### Week 2-3: Adoption
+
 - [ ] Run org-wide ESLint scan
 - [ ] Auto-fix all violations (generate PRs)
 - [ ] Have teams review/merge
 - [ ] Celebrate baseline: "Standards now enforced"
 
 #### Week 4+: Enforcement
+
 - [ ] Switch to error mode (blocks merge)
 - [ ] Monitor compliance by team
 - [ ] Iterate on rules based on feedback
@@ -199,6 +216,7 @@ Merge (standards guaranteed)
 ### 📊 Metrics Leaders Can Track
 
 **Velocity Impact:**
+
 ```
 Code Review Time:
   Before: 15 min/violation × 1000 violations = 250 hours
@@ -207,6 +225,7 @@ Code Review Time:
 ```
 
 **Quality Impact:**
+
 ```
 Security Violations in Production:
   Before: 12-18 per quarter (found in prod)
@@ -215,6 +234,7 @@ Security Violations in Production:
 ```
 
 **Consistency Metrics:**
+
 ```
 Code Style Consistency:
   Before: 60% (varies by reviewer, timezone, mood)
@@ -223,6 +243,7 @@ Code Style Consistency:
 ```
 
 **Onboarding Speed:**
+
 ```
 New Dev Productivity:
   Before: 4 weeks to "unblock"
@@ -277,6 +298,7 @@ Approved in 1 round
 ### Strategy 1: Shift Left (Prevent Before Merge)
 
 **Pre-commit hook** (developer machine):
+
 ```bash
 # .husky/pre-commit
 npm run eslint -- --fix
@@ -288,6 +310,7 @@ npm run eslint  # Fail if unfixable violations remain
 ### Strategy 2: Auto-Fix in CI (Backup Layer)
 
 **Before merge** (GitHub Actions):
+
 ```yaml
 - run: npm run eslint -- --fix
 - run: git add -A && git commit -m 'chore: auto-fix lint'
@@ -298,6 +321,7 @@ npm run eslint  # Fail if unfixable violations remain
 ### Strategy 3: Focused Manual Review (Final Layer)
 
 **PR checklist** (reviewers):
+
 ```
 ☐ All ESLint violations resolved (or auto-fixed)
 ☐ Tests pass
@@ -310,8 +334,9 @@ npm run eslint  # Fail if unfixable violations remain
 ### Strategy 4: Audit Trail (Compliance Layer)
 
 **Post-merge verification:**
+
 ```
-SELECT COUNT(*) FROM commits 
+SELECT COUNT(*) FROM commits
 WHERE eslint_violations > 0 AND status != 'auto-fixed'
 ```
 
@@ -323,7 +348,8 @@ WHERE eslint_violations > 0 AND status != 'auto-fixed'
 
 ### ❓ "Won't this slow down developers?"
 
-**Reality:** 
+**Reality:**
+
 - Pre-commit hook: 2-3 seconds (most rules cached)
 - CI: 30 seconds (already happening, just with --fix now)
 - **Net result:** FASTER (developers don't wait for lint feedback in review)
@@ -331,6 +357,7 @@ WHERE eslint_violations > 0 AND status != 'auto-fixed'
 ### ❓ "What about legitimate edge cases?"
 
 **Design:**
+
 - 80% of violations are auto-fixable (if not, they're not a lint rule)
 - 20% requiring judgment stay as warnings
 - Developers can disable with comments (with audit trail)
@@ -343,6 +370,7 @@ const result = db.query(userProvidedStoredProc);
 ### ❓ "Will senior devs resist automation?"
 
 **Approach:**
+
 - Position as "more time for real code review, less time on lint"
 - Show metrics: "Review cycle improved 2x"
 - Make it configurable (team can adjust rules)
@@ -351,13 +379,14 @@ const result = db.query(userProvidedStoredProc);
 ### ❓ "What if we want different rules by team?"
 
 **Design:**
+
 ```javascript
 // eslint.config.js
 export default [
-  baseConfig,  // Org standards (all teams)
-  teamConfig,  // Team-specific (frontend, backend, devops)
-  projectConfig,  // Project-specific (experimental, legacy)
-]
+  baseConfig, // Org standards (all teams)
+  teamConfig, // Team-specific (frontend, backend, devops)
+  projectConfig, // Project-specific (experimental, legacy)
+];
 ```
 
 **Result:** Hierarchy of standards, not conflicts
@@ -367,16 +396,19 @@ export default [
 ## Implementation Roadmap (30/60/90 Days)
 
 ### 30 Days: Foundation
+
 - ✅ Week 1-2: Set up ESLint + LLM-optimized rules in "warn" mode
 - ✅ Week 3-4: Run scan, generate metrics, socialize results
 - **Outcome:** Team sees violations, baseline measured
 
 ### 60 Days: Automation
+
 - ✅ Week 5-6: Enable auto-fix in CI/CD
 - ✅ Week 7-8: Batch-fix existing violations, celebrate baseline reset
 - **Outcome:** Future violations auto-fixed, dev experience improves
 
 ### 90 Days: Enforcement
+
 - ✅ Week 9-10: Switch critical rules to "error" (block merge)
 - ✅ Week 11-12: Monitor, iterate, celebrate improvements
 - **Outcome:** Standards become non-negotiable
@@ -388,9 +420,11 @@ export default [
 ### Example: Security Standard
 
 **Requirement:**
+
 > "All database queries must use parameterized statements (prepared statements), never string concatenation."
 
 **Traditional Approach:**
+
 1. Write in Wiki: "Always use parameterized queries"
 2. Mention in code review guidelines
 3. Hope reviewers remember
@@ -433,6 +467,7 @@ export default createRule({
 ```
 
 **Outcome:**
+
 - ✅ Standard is enforced at static analysis time
 - ✅ AI can fix it automatically
 - ✅ Developers see CWE in every violation
@@ -443,15 +478,16 @@ export default createRule({
 
 ## ROI Summary for Leadership
 
-| Investment | Timeline | Return |
-|---|---|---|
-| ESLint setup + config | 2-3 days | Immediate: All rules now enforced |
-| LLM message optimization | 1 week | Ongoing: Developers understand "why" |
-| CI/CD integration | 2-3 days | Immediate: Auto-fixes in pipeline |
-| Team training | 1 hour | 48+ hours saved per dev per month |
-| **Total:** | **2 weeks** | **600+ hours saved per year (25-person team)** |
+| Investment               | Timeline    | Return                                         |
+| ------------------------ | ----------- | ---------------------------------------------- |
+| ESLint setup + config    | 2-3 days    | Immediate: All rules now enforced              |
+| LLM message optimization | 1 week      | Ongoing: Developers understand "why"           |
+| CI/CD integration        | 2-3 days    | Immediate: Auto-fixes in pipeline              |
+| Team training            | 1 hour      | 48+ hours saved per dev per month              |
+| **Total:**               | **2 weeks** | **600+ hours saved per year (25-person team)** |
 
 **Plus:**
+
 - Security violations prevented (no pricetag)
 - Consistency enabling faster refactoring
 - Junior devs onboarded 2x faster
@@ -468,5 +504,6 @@ export default createRule({
 5. **Measure & celebrate** improvements
 6. **Iterate** based on team feedback
 
-**The key insight:** 
+**The key insight:**
+
 > Standards aren't suggestions once they're embedded in ESLint rules. They become part of the development workflow, automated, auditable, and impossible to ignore.
