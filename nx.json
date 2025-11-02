@@ -16,7 +16,12 @@
       "!{projectRoot}/eslint.config.mjs",
       "!{projectRoot}/src/test-setup.[jt]s"
     ],
-    "sharedGlobals": []
+    "sharedGlobals": [
+      "{workspaceRoot}/.env*",
+      "{workspaceRoot}/.npmrc",
+      "{workspaceRoot}/.yarnrc",
+      "{workspaceRoot}/.pnpmfile.cjs"
+    ]
   },
   "targetDefaults": {
     "build": {
@@ -27,17 +32,25 @@
         "production",
         "^production"
       ],
-      "cache": true,
       "outputs": [
-        "{projectRoot}/dist"
-      ]
+        "{projectRoot}/dist",
+        "{projectRoot}/.tsbuildinfo"
+      ],
+      "cache": true,
+      "configurations": {
+        "production": {}
+      }
     },
     "lint": {
       "inputs": [
         "default",
         "{workspaceRoot}/.eslintrc.json",
         "{workspaceRoot}/.eslintignore",
-        "{workspaceRoot}/eslint.config.js"
+        "{workspaceRoot}/eslint.config.js",
+        "{workspaceRoot}/eslint.config.mjs"
+      ],
+      "outputs": [
+        "{projectRoot}/.eslintcache"
       ],
       "cache": true
     },
@@ -45,12 +58,14 @@
       "inputs": [
         "default",
         "^production",
-        "{workspaceRoot}/jest.config.ts"
+        "{workspaceRoot}/jest.config.ts",
+        "{workspaceRoot}/vitest.config.ts"
       ],
-      "cache": true,
       "outputs": [
-        "{projectRoot}/coverage"
-      ]
+        "{projectRoot}/coverage",
+        "{projectRoot}/.vitest"
+      ],
+      "cache": true
     },
     "@nx/js:tsc": {
       "cache": true,
@@ -60,6 +75,17 @@
       "inputs": [
         "production",
         "^production"
+      ],
+      "outputs": [
+        "{projectRoot}/dist",
+        "{projectRoot}/.tsbuildinfo"
+      ]
+    },
+    "typecheck": {
+      "cache": true,
+      "inputs": [
+        "default",
+        "{workspaceRoot}/tsconfig.base.json"
       ]
     }
   },
