@@ -1,0 +1,89 @@
+# ESLint Plugin - LLM-Optimized Message Format
+
+You are working in the @forge-js/eslint-plugin package. When creating or modifying ESLint rule messages, ALWAYS follow the 4-line LLM-optimized format.
+
+## Format Standard
+
+Every error/warning message MUST have exactly 4 lines:
+
+```
+Line 1: [Icon] [Vulnerability] (CWE-XXX) | [Severity]
+Line 2:    ❌ Current: [Bad practice example]
+Line 3:    ✅ Fix: [Solution with pattern]
+Line 4:    📚 [Documentation link or context]
+```
+
+## Quick Reference
+
+**Severity Levels:** CRITICAL | HIGH | MEDIUM | LOW
+
+**Icons by Category:**
+- 🔒 Security vulnerabilities
+- ⚠️ Warnings/general issues
+- 🔄 Refactoring/architecture
+- ♿ Accessibility
+- ⚡ Performance
+- 📚 Domain/terminology
+- 🚫 Module/import rules
+
+**CWE References:** https://cwe.mitre.org/
+- CWE-89: SQL Injection
+- CWE-78: Command Injection
+- CWE-95: Code Injection (eval, require)
+- CWE-22: Path Traversal
+- CWE-400: ReDoS
+- CWE-915: Prototype Pollution
+- CWE-407: Circular Dependencies
+- CWE-431: Insecure Dependency
+- CWE-532: Sensitive Data Logging
+- CWE-1078: Deprecated API
+- CWE-1104: Code Duplication
+
+## Implementation Template
+
+```typescript
+messages: {
+  ruleName:
+    '[ICON] [Vulnerability Name] (CWE-XXX) | [SEVERITY]\n' +
+    '   ❌ Current: [bad example]\n' +
+    '   ✅ Fix: [good solution]\n' +
+    '   📚 [link or context]',
+}
+```
+
+## DO's ✅
+
+- Include CWE references
+- Use 4 lines with newlines (\n)
+- Include both bad example AND fix
+- Provide actionable solutions
+- Link to documentation
+- Use correct severity level
+- Indent lines 2-4 with 3 spaces
+- Use emoji for visual scanning
+- Test on playground app
+
+## DON'Ts ❌
+
+- Skip CWE references
+- Use vague examples
+- Provide only problems
+- Mix unrelated concepts
+- Create biased rules
+- Add special-case logic
+- Forget severity/icon
+- Skip documentation
+
+## Reference Rules
+
+See `/src/rules/` for optimized examples:
+- `security/no-sql-injection.ts` - Security example
+- `architecture/no-circular-dependencies.ts` - Architecture example
+- `development/no-console-log.ts` - Development example
+
+## When in Doubt
+
+1. Check existing rules in the same category
+2. Reference the full guide: `.cursor/rules/eslint-rule-llm-format.md`
+3. Run `nx lint` on the playground app to verify
+4. Ensure message is parseable by both humans and LLMs
