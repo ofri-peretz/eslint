@@ -33,10 +33,10 @@ export const enforceNaming = createRule<RuleOptions, MessageIds>({
     fixable: 'code',
     hasSuggestions: true,
     messages: {
-      wrongTerminology: '📚 Domain terminology (CWE-1078: Inconsistency) | MEDIUM\n' +
-        '   ❌ Current: Uses "{{incorrectTerm}}" in {{domain}}\n' +
-        '   ✅ Fix: Use "{{correctTerm}}" ({{context}})\n' +
-        '   📚 Domain glossary available',
+      wrongTerminology: '📚 Domain terminology | CWE-216 (Semantic Design) | MEDIUM\n' +
+        '   ❌ Current: const customer = user; (domain uses "customer", not "user")\n' +
+        '   ✅ Fix: Use "{{correctTerm}}" consistently ({{context}})\n' +
+        '   📚 Domain glossary: Ubiquitous Language ensures team alignment',
       useDomainTerm: '✅ Replace with "{{correctTerm}}"',
       viewGlossary: '📖 View domain glossary',
     },

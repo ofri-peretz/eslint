@@ -44,9 +44,9 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       identicalFunctions:
-        '🔄 Duplicate implementations (CWE-1104: Use of Unmaintained Third-Party Components) | MEDIUM\n' +
-        '   ❌ Current: {{count}} duplicate functions ({{similarity}}% similar)\n' +
-        '   ✅ Fix: Extract to reusable function or use higher-order patterns\n' +
+        '🔄 Code duplication | CWE-561 (Dead Code) | MEDIUM\n' +
+        '   ❌ Current: handleUserClick() and handleAdminClick() have identical bodies\n' +
+        '   ✅ Fix: Extract to reusable function: handleRoleClick(role)\n' +
         '   📚 https://en.wikipedia.org/wiki/Don%27t_repeat_yourself',
       extractGeneric: '✅ Extract to generic function: {{functionName}}',
       useHigherOrder: '✅ Use higher-order function pattern',

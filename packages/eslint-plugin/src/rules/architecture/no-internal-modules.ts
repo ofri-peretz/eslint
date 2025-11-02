@@ -63,9 +63,9 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
     hasSuggestions: true,
     messages: {
       internalModuleImport:
-        '🚫 Internal module import (CWE-431: Insecure Dependency) | MEDIUM\n' +
-        '   ❌ Current: import from internal/deep module path\n' +
-        '   ✅ Fix: import from {{suggestion}} using barrel exports\n' +
+        '🚫 Internal module import | CWE-1104 (Module Design) | MEDIUM\n' +
+        '   ❌ Current: import Button from "./Button/Button.tsx"\n' +
+        '   ✅ Fix: import Button from "./Button" (use barrel exports)\n' +
         '   📚 https://basarat.gitbook.io/typescript/main-1/barrel',
       suggestPublicApi: '📦 Import from public API: {{suggestion}}',
       suggestBarrelExport: '🗂️ Use barrel export: {{suggestion}}',

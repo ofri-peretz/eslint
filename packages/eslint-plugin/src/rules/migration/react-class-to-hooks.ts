@@ -25,9 +25,9 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
     fixable: 'code',
     hasSuggestions: true,
     messages: {
-      migrateToHooks: '🔄 React class component (CWE-1078: Deprecated API) | MEDIUM\n' +
-        '   ❌ Current: class extends React.Component\n' +
-        '   ✅ Fix: Convert to functional component with hooks (Complexity: {{complexity}})\n' +
+      migrateToHooks: '🔄 React class component | CWE-1078 (Deprecated API) | MEDIUM\n' +
+        '   ❌ Current: class Counter extends React.Component { componentDidMount() {...} }\n' +
+        '   ✅ Fix: function Counter() { useEffect(...) } with hooks (Complexity: {{complexity}})\n' +
         '   📚 https://react.dev/reference/react/hooks',
       convertToFunction: '✅ Convert to functional component with hooks',
       viewMigrationGuide: '📖 View detailed migration guide',
