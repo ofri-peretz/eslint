@@ -34,9 +34,9 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
     hasSuggestions: true,
     messages: {
       missingAttribute:
-        '📝 Missing required attribute | CWE-252 (Missing UI Info) | MEDIUM\n' +
-        '   ❌ Current: <button> without data-testid attribute\n' +
-        '   ✅ Fix: Add {{attribute}}="{{suggestedValue}}" to element\n' +
+        '📝 Missing required attribute | CWE-252 (Missing UI Rendering Info) | MEDIUM\n' +
+        '   ❌ Current: {{element}} element missing {{attribute}} attribute\n' +
+        '   ✅ Fix: Add {{attribute}}="{{suggestedValue}}" for proper {{purpose}}\n' +
         '   📚 https://www.w3.org/WAI/fundamentals/accessibility-intro/',
       addAttribute: '✅ Add {{attribute}}="{{suggestedValue}}"',
     },
