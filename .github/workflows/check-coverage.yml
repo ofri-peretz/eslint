@@ -17,6 +17,7 @@ jobs:
   check-coverage:
     name: 📊 Check Code Coverage
     runs-on: ubuntu-latest
+    environment: development
     permissions:
       contents: read
       pull-requests: write
@@ -128,6 +129,21 @@ jobs:
             echo "Some packages have coverage below 50%. Please add tests to improve coverage." >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
+
+      # ═══════════════════════════════════════════════════════════════════════
+      # POST-COVERAGE ANALYSIS (RUN IN PARALLEL)
+      # ═══════════════════════════════════════════════════════════════════════
+
+      - name: 📤 Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/coverage-final.json,packages/*/coverage/coverage-final.json,apps/*/coverage/coverage-final.json
+          flags: pr-checks
+          name: codecov-pr-coverage
+          fail_ci_if_error: false  # Don't fail CI on Codecov service errors
+          verbose: true
+        continue-on-error: true
 
       - name: 📝 Comment on PR
         if: github.event_name == 'pull_request' && always()

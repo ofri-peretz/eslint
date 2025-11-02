@@ -14,6 +14,8 @@ This repository uses a comprehensive CI/CD setup with GitHub Actions, optimized 
 | [`canary-release.yml`](.github/workflows/canary-release.yml) | Push to main | Canary Releases        | ✅ Active |
 | [`lint-workflows.yml`](.github/workflows/lint-workflows.yml) | PR, Push     | Workflow Linting       | ✅ Active |
 
+**📌 Note:** These workflows use [GitHub Environments](./ENVIRONMENTS.md) for environment-specific controls (development, staging, production). See [`ENVIRONMENTS.md`](./ENVIRONMENTS.md) for details.
+
 ## CI Pipeline Architecture
 
 ```mermaid
@@ -145,6 +147,7 @@ Configure these secrets in GitHub Settings → Secrets and variables → Actions
 | `NPM_TOKEN`             | Publish to NPM   | release.yml, publish-manual.yml, canary-release.yml | [Create NPM token](https://docs.npmjs.com/creating-and-viewing-access-tokens) with publish permissions |
 | `GITHUB_TOKEN`          | Automatic        | All workflows                                       | Auto-provided by GitHub Actions                                                                        |
 | `NX_CLOUD_ACCESS_TOKEN` | NX Cloud caching | ci.yml (optional)                                   | [Create NX Cloud workspace](https://nx.app/)                                                           |
+| `CODECOV_TOKEN`         | Codecov uploads  | ci.yml, check-coverage.yml                          | [Get token from Codecov](https://codecov.io/account/integration/github) (free for open source)         |
 
 ## Optional: NX Cloud Setup
 
@@ -160,6 +163,89 @@ For maximum CI performance, set up NX Cloud:
 - Without NX Cloud: ~5-10 minutes CI time
 - With NX Cloud: ~1-2 minutes CI time (cached)
 - Agents: Parallel execution across 3 runners
+
+## Coverage Integration with Codecov
+
+### Overview
+
+This project uses **Codecov** for comprehensive code coverage tracking. Coverage reports are uploaded automatically from two workflows:
+
+1. **Every PR** (`ci.yml` + `check-coverage.yml`) - Real-time feedback on coverage changes
+2. **Per-PR basis** - Codecov shows diff coverage (new code coverage impact)
+
+### Setup
+
+1. Visit [https://codecov.io/](https://codecov.io/) and sign in with GitHub
+2. Select your repository (automatically detected for public repos)
+3. Get your `CODECOV_TOKEN` from [Account Settings → Integration](https://codecov.io/account/integration/github)
+4. Add as `CODECOV_TOKEN` secret in GitHub Settings → Secrets and variables → Actions
+
+### Workflows
+
+```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#f8fafc',
+    'primaryTextColor': '#1e293b',
+    'primaryBorderColor': '#334155',
+    'lineColor': '#475569'
+  }
+}}%%
+flowchart TD
+    A["📤 PR Submitted"] --> B["CI: Lint/Build/Test"]
+    A --> C["📊 Check Coverage"]
+    
+    B --> D{Both Pass?}
+    C --> D
+    
+    D -->|✅| E["📤 Upload to Codecov<br/>Parallel execution"]
+    D -->|❌| F["❌ Blocks PR"]
+    
+    E --> G["🎯 Codecov Reports<br/>Dashboard + PR Comments"]
+    G --> H["📝 Merge PR"]
+    F --> H
+    
+    classDef successNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px
+    classDef processNode fill:#eff6ff,stroke:#2563eb,stroke-width:2px
+    
+    class E,G successNode
+    class B,C processNode
+```
+
+### What You Get
+
+| Feature | Coverage |
+|---------|----------|
+| 🔴 Line coverage % | Tracked per PR and overall |
+| 🔵 Branch coverage | Included in reports |
+| 🟢 Coverage trends | Historical graphs on Codecov dashboard |
+| 📈 Diff coverage | Shows coverage impact of your changes |
+| 📝 PR comments | Auto-comments with coverage summary |
+| 🎯 Badges | Add to README: `[![codecov](https://codecov.io/gh/YOUR_ORG/forge-js/graph/badge.svg)](https://codecov.io/gh/YOUR_ORG/forge-js)` |
+
+### Accessing Reports
+
+- **Codecov Dashboard:** [https://codecov.io/gh/YOUR_ORG/forge-js](https://codecov.io/gh/YOUR_ORG/forge-js)
+- **PR Comments:** Each PR gets an automatic comment with coverage metrics
+- **Badge:** Add to README for CI status visibility
+
+### Configuration
+
+Both workflows run Codecov uploads in **parallel** with other post-test actions:
+
+**ci.yml** (`main` branch):
+- Runs after tests complete
+- Executes concurrently with cache diagnostics
+- Flag: `unittests`
+
+**check-coverage.yml** (`pull_request` trigger):
+- Runs after coverage analysis
+- Executes concurrently with PR comments
+- Flag: `pr-checks`
+- Verbose mode enabled for debugging
+
+Both use `fail_ci_if_error: false` to prevent external service outages from blocking your CI pipeline.
 
 ## Workflow Linting
 
