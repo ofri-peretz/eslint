@@ -1,3 +1,13 @@
+## 0.2.1 (2025-11-02)
+
+### 🩹 Fixes
+
+- optimize ESLint rule messages for LLM parsing ([10927e9](https://github.com/ofri-peretz/forge-js/commit/10927e9))
+
+### ❤️ Thank You
+
+- Ofri Peretz
+
 ## 0.2.0 (2025-11-02)
 
 ### 🩹 Fixes
