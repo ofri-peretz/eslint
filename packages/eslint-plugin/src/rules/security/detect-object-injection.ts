@@ -90,14 +90,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       objectInjection:
-        '🚨 Security: Prototype Pollution Risk | {{pattern}} | {{filePath}}:{{line}}\n' +
-        '📊 Risk Level: {{riskLevel}} (CWE-915: Improperly Controlled Modification of Object Prototype)\n' +
-        '🔍 Issue: {{vulnerability}} allows modifying object prototypes or injecting properties\n' +
-        '💡 Safe Alternative: {{safeAlternative}}\n' +
-        '🔧 Refactoring Steps:\n' +
-        '{{steps}}\n' +
-        '⏱️  Estimated effort: {{effort}}\n' +
-        '🔗 Security Impact: Prevents prototype chain manipulation',
+        '⚠️ Object injection (CWE-915: Prototype Pollution) | {{riskLevel}}\n' +
+        '   ❌ Current: obj[{{pattern}}] = value\n' +
+        '   ✅ Fix: {{safeAlternative}}\n' +
+        '   📚 https://portswigger.net/web-security/prototype-pollution',
       useMapInstead: '✅ Use Map instead of plain objects for key-value storage',
       useHasOwnProperty: '✅ Use hasOwnProperty() check to avoid prototype properties',
       whitelistKeys: '✅ Whitelist allowed property names',

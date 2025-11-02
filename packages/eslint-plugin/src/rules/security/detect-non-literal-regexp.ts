@@ -90,14 +90,10 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       regexpReDoS:
-        '🚨 Security: ReDoS Vulnerability | {{pattern}} | {{filePath}}:{{line}}\n' +
-        '📊 Risk Level: {{riskLevel}} (CWE-400: Uncontrolled Resource Consumption)\n' +
-        '🔍 Issue: {{vulnerability}} allows server resource exhaustion\n' +
-        '💡 Safe Alternative: {{safeAlternative}}\n' +
-        '🔧 Refactoring Steps:\n' +
-        '{{steps}}\n' +
-        '⏱️  Estimated effort: {{effort}}\n' +
-        '🔗 Security Impact: Prevents server DoS attacks',
+        '⚠️ ReDoS vulnerability (CWE-400) | {{riskLevel}}\n' +
+        '   ❌ Current: new RegExp({{pattern}})\n' +
+        '   ✅ Fix: {{safeAlternative}}\n' +
+        '   📚 https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
       useStaticRegex: '✅ Use pre-defined RegExp constants instead of dynamic construction',
       validateInput: '✅ Validate and escape user input before RegExp construction',
       useRegexLibrary: '✅ Consider safe-regex library or re2 for validation',

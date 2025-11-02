@@ -95,14 +95,10 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       fsPathTraversal:
-        '🚨 Security: Path Traversal Vulnerability | {{method}}({{path}}) | {{filePath}}:{{line}}\n' +
-        '📊 Risk Level: {{riskLevel}} (CWE-22: Path Traversal)\n' +
-        '🔍 Issue: {{vulnerability}} allows accessing files outside intended directory\n' +
-        '💡 Safe Pattern: {{safePattern}}\n' +
-        '🔧 Refactoring Steps:\n' +
-        '{{steps}}\n' +
-        '⏱️  Estimated effort: {{effort}}\n' +
-        '🔗 Security Impact: Prevents unauthorized file system access',
+        '🔑 Path traversal (CWE-22) | {{riskLevel}}\n' +
+        '   ❌ Current: fs.readFile(userPath)\n' +
+        '   ✅ Fix: {{safePattern}}\n' +
+        '   📚 https://owasp.org/www-community/attacks/Path_Traversal',
       usePathResolve: '✅ Use path.resolve() to normalize paths and prevent traversal',
       validatePath: '✅ Validate resolved path starts with allowed base directory',
       useBasename: '✅ Use path.basename() to strip directory components',

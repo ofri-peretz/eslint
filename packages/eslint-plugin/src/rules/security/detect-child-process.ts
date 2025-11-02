@@ -95,16 +95,12 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       childProcessCommandInjection:
-        '🚨 Security: Command Injection Risk | {{method}}({{args}}) | {{filePath}}:{{line}}\n' +
-        '📊 Risk Level: {{riskLevel}} (CWE-78: OS Command Injection)\n' +
-        '🔍 Issue: {{vulnerability}} vulnerability in {{method}} call\n' +
-        '💡 Safe Alternatives: {{alternatives}}\n' +
-        '🔧 Refactoring Steps:\n' +
-        '{{steps}}\n' +
-        '⏱️  Estimated effort: {{effort}}\n' +
-        '🔗 Security Impact: Prevents arbitrary command execution on server',
+        '⚠️ Command injection (CWE-78) | {{riskLevel}}\n' +
+        '   ❌ Current: {{method}}("command " + userInput)\n' +
+        '   ✅ Fix: {{alternatives}}\n' +
+        '   📚 https://owasp.org/www-community/attacks/Command_Injection',
       useExecFile: '✅ Use execFile() with argument array instead of string interpolation',
-      useSpawn: '✅ Use spawn() with separate arguments',
+      useSpawn: '✅ Use spawn() with separate arguments: spawn(cmd, [arg1, arg2])',
       useSaferLibrary: '✅ Consider safer libraries: execa, zx, or cross-spawn',
       validateInput: '✅ Add input validation and sanitization',
       useShellFalse: '✅ Always use shell: false to prevent shell interpretation'
@@ -191,7 +187,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       return args.every(arg =>
         arg.type === 'Literal' ||
         (arg.type === 'ArrayExpression' &&
-         arg.elements.every(el => el?.type === 'Literal'))
+         arg.elements.every((el: TSESTree.Node | null) => el?.type === 'Literal'))
       );
     };
 
@@ -210,12 +206,12 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
                       : 'unknown';
 
       const sourceCode = context.sourceCode || context.getSourceCode();
-      const args = node.arguments.map(arg => sourceCode.getText(arg)).join(', ');
+      const args = node.arguments.map((arg: TSESTree.Node) => sourceCode.getText(arg)).join(', ');
 
       const pattern = COMMAND_PATTERNS.find(p => p.method === method) || null;
 
       // Check if arguments contain dynamic content
-      const isDynamic = node.arguments.some(arg => containsDynamicStrings(arg));
+      const isDynamic = node.arguments.some((arg: TSESTree.Node) => containsDynamicStrings(arg));
 
       return { method, args, pattern, isDynamic };
     };
@@ -258,14 +254,14 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
     /**
      * Determine risk level based on the call pattern
      */
-    const determineRiskLevel = (pattern: CommandPattern, isDynamic: boolean): string => {
-      if (pattern.dangerous && isDynamic) {
-        return 'CRITICAL';
+    const determineRiskLevel = (pattern: CommandPattern | null, isDynamic: boolean): 'critical' | 'high' | 'medium' => {
+      if (pattern?.dangerous && isDynamic) {
+        return 'critical';
       }
-      if (pattern.dangerous || isDynamic) {
-        return 'HIGH';
+      if (pattern?.dangerous || isDynamic) {
+        return 'high';
       }
-      return 'MEDIUM';
+      return 'medium';
     };
 
     /**
@@ -300,12 +296,12 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       }
 
       // Report the security issue
-      const riskLevel = determineRiskLevel(pattern || COMMAND_PATTERNS[0], isDynamic);
+      const riskLevel = determineRiskLevel(pattern, isDynamic);
       const steps = pattern ? generateRefactoringSteps(pattern) : 'Review and secure command execution';
       const alternatives = pattern?.safeAlternatives.join(', ') || 'execFile, spawn with validation';
 
       const llmContext = generateLLMContext('security/detect-child-process', {
-        severity: riskLevel.toLowerCase() as 'critical' | 'high' | 'medium',
+        severity: riskLevel === 'critical' ? 'error' : riskLevel === 'high' ? 'warning' : 'info',
         category: 'security',
         filePath: context.filename || context.getFilename(),
         node,
@@ -314,7 +310,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
             type: pattern?.vulnerability || 'command-injection',
             cwe: 'CWE-78: OS Command Injection',
             owasp: 'A03:2021-Injection',
-            cvss: riskLevel === 'CRITICAL' ? '9.8' : riskLevel === 'HIGH' ? '8.1' : '6.5'
+            cvss: riskLevel === 'critical' ? '9.8' : riskLevel === 'high' ? '8.1' : '6.5'
           },
           command: {
             method,
@@ -352,12 +348,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         },
         resources: {
           docs: 'https://owasp.org/www-community/attacks/Command_Injection',
-          cwe: 'https://cwe.mitre.org/data/definitions/78.html',
-          examples: [
-            'https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html',
-            'https://nodejs.org/api/child_process.html#child_process_child_process'
-          ],
-          libraries: ['execa', 'zx', 'cross-spawn']
+          examples: 'https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html',
         }
       });
 
@@ -402,7 +393,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
     /**
      * Check require/import statements for child_process
      */
-    const checkChildProcessImport = (node: TSESTree.CallExpression | TSESTree.ImportDeclaration) => {
+    const checkChildProcessImport = () => {
       // This could be extended to warn about child_process imports in general
       // For now, we focus on the actual dangerous calls
     };

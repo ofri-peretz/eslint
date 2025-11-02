@@ -90,15 +90,10 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       evalWithExpression:
-        '🚨 Security: Arbitrary Code Execution Risk | eval({{expression}}) | {{filePath}}:{{line}}\n' +
-        '📊 Risk Level: CRITICAL (CWE-95: Code Injection)\n' +
-        '🔍 Issue: eval() with dynamic expression allows arbitrary code execution\n' +
-        '💡 Pattern Detected: {{patternCategory}}\n' +
-        '🔧 Recommended Fix: {{safeAlternative}}\n' +
-        '📝 Refactoring Steps:\n' +
-        '{{steps}}\n' +
-        '⏱️  Estimated effort: {{effort}}\n' +
-        '🔗 Security Impact: Prevents Remote Code Execution (RCE)',
+        '🔒 eval() with dynamic code | CWE-95 | CRITICAL\n' +
+        '   ❌ Current: eval({{expression}})\n' +
+        '   ✅ Fix: {{safeAlternative}}\n' +
+        '   📚 https://owasp.org/www-community/attacks/Code_Injection',
       useJsonParse: '✅ Use JSON.parse() for JSON string parsing',
       useObjectAccess: '✅ Use direct property access: obj[key] or Map',
       useTemplateLiteral: '✅ Use template literals: `Hello ${name}`',
@@ -374,7 +369,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
       // Check for new Function() usage
       if (node.callee.type === 'Identifier' && node.callee.name === 'Function') {
         const sourceCode = context.sourceCode || context.getSourceCode();
-        const expression = node.arguments.map(arg => sourceCode.getText(arg)).join(', ');
+        const expression = node.arguments.map((arg: TSESTree.Node) => sourceCode.getText(arg)).join(', ');
 
         context.report({
           node,
