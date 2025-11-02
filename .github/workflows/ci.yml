@@ -5,10 +5,18 @@ on:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 
+# Prevent concurrent runs on the same PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   ci:
     name: CI Pipeline
     runs-on: ubuntu-latest
+    
+    # Set timeout to prevent hanging builds
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -16,10 +24,29 @@ jobs:
         with:
           fetch-depth: 0
 
+      # CACHING STRATEGY:
+      # 1. Cache pnpm store globally
+      # 2. Cache NX computation outputs
+      # 3. Cache build artifacts
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10.18.3
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -30,14 +57,29 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm nx run-many -t lint --all
+      # NX INCREMENTAL BUILD CACHING
+      - name: Cache NX computation
+        uses: actions/cache@v4
+        with:
+          path: .nx/cache
+          key: nx-cache-${{ runner.os }}-${{ github.ref }}-${{ github.sha }}
+          restore-keys: |
+            nx-cache-${{ runner.os }}-${{ github.ref }}-
+            nx-cache-${{ runner.os }}-
 
-      - name: Build
-        run: pnpm nx run-many -t build --all
+      - name: Derive base for NX computation
+        uses: nrwl/nx-set-shas@v4
 
-      - name: Test
-        run: pnpm nx run-many -t test --all
+      # PARALLEL EXECUTION FOR SPEED
+      - name: Lint (affected only)
+        run: pnpm nx run-many -t lint --all --parallel=4
+
+      - name: Build (affected only)
+        run: pnpm nx run-many -t build --all --parallel=4
+
+      - name: Test (affected only)
+        run: pnpm nx run-many -t test --all --parallel=4
 
       - name: Print Environment Info
+        if: always()
         run: pnpm nx report

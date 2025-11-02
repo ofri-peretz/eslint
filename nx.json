@@ -27,7 +27,10 @@
         "production",
         "^production"
       ],
-      "cache": true
+      "cache": true,
+      "outputs": [
+        "{projectRoot}/dist"
+      ]
     },
     "lint": {
       "inputs": [
@@ -44,7 +47,10 @@
         "^production",
         "{workspaceRoot}/jest.config.ts"
       ],
-      "cache": true
+      "cache": true,
+      "outputs": [
+        "{projectRoot}/coverage"
+      ]
     },
     "@nx/js:tsc": {
       "cache": true,
