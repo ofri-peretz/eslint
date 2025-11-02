@@ -35,9 +35,9 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
     hasSuggestions: true,
     messages: {
       deprecatedAPI: '⚠️ Deprecated API (CWE-1078: Obsolete Component) | HIGH\n' +
-        '   ❌ Current: Deprecated API usage\n' +
-        '   ✅ Fix: Replace with modern alternative\n' +
-        '   📚 https://developer.mozilla.org/en-US/docs/',
+        '   ❌ Current: Using deprecated API (check console for name)\n' +
+        '   ✅ Fix: Migrate to recommended alternative with timeline guidance\n' +
+        '   📚 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference',
       useReplacement: '✅ Replace with {{replacement}}',
     },
     schema: [

@@ -67,7 +67,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
     messages: {
       consoleLogFound:
         '⚠️ console.log (CWE-532: Sensitive Data Logging) | MEDIUM\n' +
-        '   ❌ Current: console.log() at [file:line]\n' +
+        '   ❌ Current: console.log() call\n' +
         '   ✅ Fix: Remove or replace with logger.debug()\n' +
         '   📚 https://owasp.org/www-project-log-review-guide/',
       strategyRemove: '🗑️ Remove console.log statement',
