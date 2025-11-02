@@ -14,7 +14,7 @@ jobs:
   ci:
     name: CI Pipeline
     runs-on: ubuntu-latest
-    
+
     # Prevent hanging builds
     timeout-minutes: 15
 
@@ -27,7 +27,7 @@ jobs:
       # ═══════════════════════════════════════════════════════════════════════
       # LAYER 1: PNPM PACKAGE MANAGER CACHING
       # ═══════════════════════════════════════════════════════════════════════
-      
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-          echo "STORE_PATH=$(pnpm store path --silent)" 
+          echo "STORE_PATH=$(pnpm store path --silent)"
 
       # Cache pnpm global store (packages)
       - name: Cache pnpm store
