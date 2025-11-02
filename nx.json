@@ -87,6 +87,18 @@
         "default",
         "{workspaceRoot}/tsconfig.base.json"
       ]
+    },
+    "ci-monitor": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/ci-interactive.sh",
+        "parallel": false
+      },
+      "configurations": {
+        "watch": {
+          "command": "sh -c 'echo \"1\" | ./scripts/ci-interactive.sh | head -100'"
+        }
+      }
     }
   },
   "plugins": [

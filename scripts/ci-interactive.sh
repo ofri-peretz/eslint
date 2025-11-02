@@ -11,6 +11,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 CYAN='\033[0;36m'
+PURPLE='\033[0;35m'
 NC='\033[0m' # No Color
 
 # Configuration
@@ -18,11 +19,20 @@ WORKFLOW="ci.yml"
 BRANCH="${1:-local-playground-app}"
 MAX_RUNS=5
 
+# Get repository info from git
+REPO_URL=$(git config --get remote.origin.url 2>/dev/null || echo "")
+REPO_OWNER=$(echo "$REPO_URL" | sed 's/.*:\|.*\/\///' | sed 's/\/.*//')
+REPO_NAME=$(echo "$REPO_URL" | sed 's/.*\///' | sed 's/\.git//')
+GITHUB_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}"
+
 clear
 
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║         🚀 Interactive CI Runner & Monitor                     ║${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+echo -e "${PURPLE}Repository: ${CYAN}${GITHUB_URL}${NC}"
+echo -e "${PURPLE}Branch: ${CYAN}${BRANCH}${NC}"
 echo ""
 
 # Function to display menu
@@ -47,7 +57,10 @@ trigger_ci() {
         
         # Get the new run ID
         NEW_RUN=$(gh run list --workflow "$WORKFLOW" --limit 1 --json databaseId -q '.[0].databaseId')
+        RUN_URL="${GITHUB_URL}/actions/runs/${NEW_RUN}"
+        
         echo -e "${GREEN}New run ID: ${BLUE}${NEW_RUN}${NC}"
+        echo -e "${PURPLE}View on GitHub: ${CYAN}${RUN_URL}${NC}"
         echo ""
         
         echo -e "${YELLOW}Would you like to watch this run in real-time?${NC}"
@@ -107,11 +120,15 @@ view_recent_runs() {
         DATE=$(echo "$CREATED" | cut -d'T' -f1)
         TIME=$(echo "$CREATED" | cut -d'T' -f2 | cut -d'.' -f1)
         
+        # Build run URL
+        RUN_URL="${GITHUB_URL}/actions/runs/${RUN_ID}"
+        
         RUN_COUNT=$((RUN_COUNT + 1))
-        echo -e "${BLUE}${RUN_COUNT})${NC} ${STATUS_COLOR}${STATUS_ICON}${NC} | ID: ${BLUE}${RUN_ID}${NC} | ${DATE} ${TIME}"
+        echo -e "${BLUE}${RUN_COUNT})${NC} ${STATUS_COLOR}${STATUS_ICON}${NC} | ${CYAN}${RUN_ID}${NC} | ${DATE} ${TIME}"
+        echo -e "   🔗 ${CYAN}${RUN_URL}${NC}"
+        echo ""
     done
     
-    echo ""
     echo -e "${YELLOW}Which run would you like to view?${NC}"
     read -p "Enter number (or press Enter to go back): " run_choice
     
@@ -134,10 +151,12 @@ view_recent_runs() {
 # Function to show options for a specific run
 show_run_options() {
     LOCAL_RUN_ID=$1
+    RUN_URL="${GITHUB_URL}/actions/runs/${LOCAL_RUN_ID}"
     
     echo ""
     echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
     echo -e "${BLUE}Selected Run: ${CYAN}${LOCAL_RUN_ID}${NC}"
+    echo -e "${PURPLE}GitHub URL: ${CYAN}${RUN_URL}${NC}"
     echo -e "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
     echo ""
     
@@ -148,10 +167,11 @@ show_run_options() {
     echo -e "${BLUE}3)${NC} View failed logs only"
     echo -e "${BLUE}4)${NC} Watch in real-time"
     echo -e "${BLUE}5)${NC} Open in browser"
-    echo -e "${BLUE}6)${NC} Back to run list"
+    echo -e "${BLUE}6)${NC} Copy GitHub URL to clipboard"
+    echo -e "${BLUE}7)${NC} Back to run list"
     echo ""
     
-    read -p "Choose (1-6): " run_action
+    read -p "Choose (1-7): " run_action
     
     case $run_action in
         1)
@@ -184,6 +204,12 @@ show_run_options() {
             echo -e "${GREEN}✅ Opened in browser${NC}"
             ;;
         6)
+            echo ""
+            echo -e "${CYAN}📋 Copying to clipboard...${NC}"
+            echo -n "$RUN_URL" | pbcopy 2>/dev/null || echo -n "$RUN_URL" | xclip -selection clipboard 2>/dev/null || true
+            echo -e "${GREEN}✅ URL copied: ${CYAN}${RUN_URL}${NC}"
+            ;;
+        7)
             return
             ;;
         *)
