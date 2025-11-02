@@ -9,7 +9,7 @@ All ESLint rule messages in this package MUST follow the **4-line LLM-optimized 
 Every error/warning message MUST have exactly 4 lines:
 
 ```
-Line 1: [Icon] [Vulnerability Name] (CWE-XXX) | [Severity Level]
+Line 1: [Icon] [Issue Name] (CWE-XXX) | [Severity Level]
 Line 2:    ❌ Current: [Bad practice example]
 Line 3:    ✅ Fix: [Solution with pattern/code]
 Line 4:    📚 [Documentation Link] or [Context]
@@ -17,10 +17,10 @@ Line 4:    📚 [Documentation Link] or [Context]
 
 ## Line Breakdown
 
-### Line 1: Icon + Vulnerability + CWE + Severity
-- **Icon**: Use category-specific emoji (🔒 security, ⚠️ warning, 🔄 refactoring, ♿ accessibility, ⚡ performance, 📚 domain, 🚫 architecture)
-- **Vulnerability**: Brief name of the vulnerability/issue
-- **CWE Reference**: Include CWE number (CWE-XXX format)
+### Line 1: Icon + Issue Name + CWE + Severity
+- **Icon**: Use category-specific emoji (🔒 security issues, ⚠️ warnings, 🔄 refactoring/architecture, ♿ accessibility, ⚡ performance, 📚 domain, 🚫 module/import)
+- **Issue Name**: Brief name of the issue/violation
+- **CWE Reference**: Include CWE number (CWE-XXX format) - applies to ALL rule types
 - **Severity**: One of: `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`
 
 **Example:**
@@ -139,39 +139,75 @@ context.report({
 
 ## Template Examples
 
-### Security Rule Template
+### Generic Rule Template (Works for ALL Categories)
 
 ```typescript
 messages: {
-  vulnerabilityName:
-    '[Icon] [Vulnerability Name] (CWE-XXX) | CRITICAL\n' +
+  ruleName:
+    '[Icon] [Issue Name] (CWE-XXX) | {{severity}}\n' +
     '   ❌ Current: {{currentBadExample}}\n' +
-    '   ✅ Fix: {{solutionPattern}}\n' +
+    '   ✅ Fix: {{solution}}\n' +
     '   📚 {{documentationLink}}',
 }
 ```
 
-### Architecture Rule Template
+### Example: Security Rule
 
 ```typescript
 messages: {
-  architectureViolation:
-    '[Icon] [Issue Name] (CWE-407) | {{severity}}\n' +
-    '   ❌ Current: {{currentStructure}}\n' +
-    '   ✅ Fix: {{recommendedStructure}}\n' +
-    '   📚 {{guideline}}',
+  sqlInjection:
+    '🔒 SQL Injection (CWE-89) | CRITICAL\n' +
+    '   ❌ Current: `SELECT * FROM users WHERE id = ${userId}`\n' +
+    '   ✅ Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId])\n' +
+    '   📚 https://owasp.org/www-community/attacks/SQL_Injection',
 }
 ```
 
-### Performance Rule Template
+### Example: Architecture Rule
 
 ```typescript
 messages: {
-  performanceConcern:
-    '⚡ [Performance Issue] (CWE-1104) | MEDIUM\n' +
-    '   ❌ Current: {{currentImplementation}}\n' +
-    '   ✅ Fix: Use {{optimizedApproach}}\n' +
-    '   📚 {{performanceImpact}}',
+  circularDependency:
+    '🔄 Circular Dependency (CWE-407) | HIGH\n' +
+    '   ❌ Current: A → B → A (creates cycle)\n' +
+    '   ✅ Fix: Split into 3 modules: A.core → B → A.extended\n' +
+    '   📚 https://en.wikipedia.org/wiki/Circular_dependency',
+}
+```
+
+### Example: Performance Rule
+
+```typescript
+messages: {
+  inlineFunction:
+    '⚡ Inline Function (CWE-1104) | MEDIUM\n' +
+    '   ❌ Current: Inline function in render causes re-renders\n' +
+    '   ✅ Fix: Use useCallback or extract to component method\n' +
+    '   📚 https://react.dev/reference/react/useCallback',
+}
+```
+
+### Example: Accessibility Rule
+
+```typescript
+messages: {
+  missingAltText:
+    '♿ Missing Alt Text (CWE-252) | CRITICAL\n' +
+    '   ❌ Current: <img> without alt attribute\n' +
+    '   ✅ Fix: Add alt="descriptive text" or alt="" for decorative images\n' +
+    '   📚 https://www.w3.org/WAI/tutorials/images/',
+}
+```
+
+### Example: Code Quality Rule
+
+```typescript
+messages: {
+  duplicateFunction:
+    '🔄 Duplicate Implementation (CWE-1104) | MEDIUM\n' +
+    '   ❌ Current: 3 identical functions with 95% similarity\n' +
+    '   ✅ Fix: Extract to shared utility function\n' +
+    '   📚 https://en.wikipedia.org/wiki/Don%27t_repeat_yourself',
 }
 ```
 

@@ -7,7 +7,7 @@ You are working in the @forge-js/eslint-plugin package. When creating or modifyi
 Every error/warning message MUST have exactly 4 lines:
 
 ```
-Line 1: [Icon] [Vulnerability] (CWE-XXX) | [Severity]
+Line 1: [Icon] [Issue Name] (CWE-XXX) | [Severity]
 Line 2:    ❌ Current: [Bad practice example]
 Line 3:    ✅ Fix: [Solution with pattern]
 Line 4:    📚 [Documentation link or context]
@@ -18,13 +18,13 @@ Line 4:    📚 [Documentation link or context]
 **Severity Levels:** CRITICAL | HIGH | MEDIUM | LOW
 
 **Icons by Category:**
-- 🔒 Security vulnerabilities
+- 🔒 Security issues (vulnerabilities)
 - ⚠️ Warnings/general issues
-- 🔄 Refactoring/architecture
-- ♿ Accessibility
-- ⚡ Performance
-- 📚 Domain/terminology
-- 🚫 Module/import rules
+- 🔄 Refactoring/architecture issues
+- ♿ Accessibility issues
+- ⚡ Performance issues
+- 📚 Domain/terminology issues
+- 🚫 Module/import issues
 
 **CWE References:** https://cwe.mitre.org/
 - CWE-89: SQL Injection
@@ -44,7 +44,7 @@ Line 4:    📚 [Documentation link or context]
 ```typescript
 messages: {
   ruleName:
-    '[ICON] [Vulnerability Name] (CWE-XXX) | [SEVERITY]\n' +
+    '[ICON] [Issue Name] (CWE-XXX) | [SEVERITY]\n' +
     '   ❌ Current: [bad example]\n' +
     '   ✅ Fix: [good solution]\n' +
     '   📚 [link or context]',
