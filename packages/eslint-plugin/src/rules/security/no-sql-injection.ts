@@ -31,10 +31,8 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
     hasSuggestions: true,
     messages: {
       sqlInjection:
-        '🔒 SQL Injection (CWE-89) | CRITICAL\n' +
-        '   ❌ Current: `SELECT * FROM users WHERE id = ${userId}`\n' +
-        '   ✅ Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId])\n' +
-        '   📚 https://owasp.org/www-community/attacks/SQL_Injection',
+        '🔒 CWE-89 | SQL Injection detected | CRITICAL\n' +
+        '   Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId]) | https://owasp.org/www-community/attacks/SQL_Injection',
       useParameterized: '✅ Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId])',
       useORM: '✅ Use ORM/Query Builder: db.user.findWhere({ id: userId })',
     },
