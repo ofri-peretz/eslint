@@ -1,20 +1,45 @@
 {
   "name": "@forge-js/eslint-plugin-llm-optimized",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "description": "A solid TypeScript-based ESLint plugin infrastructure inspired by typescript-eslint",
   "type": "commonjs",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
-  "peerDependencies": {
-    "vitest": "4.0.3"
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ofri-peretz/forge-js#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/forge-js.git",
+    "directory": "packages/eslint-plugin"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/forge-js/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "eslint",
+    "eslint-plugin",
+    "typescript",
+    "linting",
+    "llm-optimized",
+    "code-quality",
+    "ast",
+    "static-analysis"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
   },
   "dependencies": {
-    "@forge-js/eslint-plugin-utils": "workspace:*",
-    "tslib": "^2.3.0"
+    "@forge-js/eslint-plugin-utils": "0.0.4",
+    "tslib": "^2.3.0",
+    "vitest": "^4.0.4"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
     "@typescript-eslint/rule-tester": "^8.46.2",
-    "vitest": "^4.0.3"
+    "vitest": "^4.0.4"
   }
 }

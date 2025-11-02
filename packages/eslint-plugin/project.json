@@ -6,10 +6,15 @@
   "release": {
     "version": {
       "manifestRootsToUpdate": [
+        "{projectRoot}",
         "dist/{projectRoot}"
       ],
       "currentVersionResolver": "git-tag",
-      "fallbackCurrentVersionResolver": "disk"
+      "fallbackCurrentVersionResolver": "disk",
+      "generatorOptions": {
+        "packageRoot": "{projectRoot}",
+        "currentVersionResolver": "git-tag"
+      }
     }
   },
   "tags": [],
@@ -30,18 +35,30 @@
       }
     },
     "test": {
-      "executor": "@nx/vite:test",
+      "executor": "nx:run-commands",
       "outputs": [
         "{workspaceRoot}/coverage/packages/eslint-plugin"
       ],
       "options": {
-        "config": "packages/eslint-plugin/vitest.config.ts",
-        "reportsDirectory": "../../coverage/packages/eslint-plugin"
+        "command": "vitest run",
+        "cwd": "{projectRoot}"
       }
     },
     "nx-release-publish": {
+      "executor": "nx:run-commands",
       "options": {
-        "packageRoot": "dist/{projectRoot}"
+        "command": "pnpm publish dist/{projectRoot} --access public --no-git-checks",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "command": "npm publish dist/packages/eslint-plugin --access public",
+        "cwd": "{workspaceRoot}"
       }
     }
   }

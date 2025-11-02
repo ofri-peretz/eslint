@@ -7,7 +7,9 @@
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "outputPath": "dist/packages/cli",
         "main": "packages/cli/src/index.ts",
@@ -21,7 +23,16 @@
           }
         ]
       }
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "command": "npm publish dist/packages/cli --access public",
+        "cwd": "{workspaceRoot}"
+      }
     }
   }
 }
-

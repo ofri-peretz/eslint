@@ -43,7 +43,10 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       databaseInjection:
-        '🔒 {{type}} Injection Vulnerability ({{severity}}) | {{filePath}}:{{line}} | CWE: {{cwe}}',
+        '🔒 {{type}} Injection (CWE-{{cweCode}}) | {{severity}}\n' +
+        '❌ Current: {{currentExample}}\n' +
+        '✅ Fix: {{fixExample}}\n' +
+        '📚 {{docLink}}',
       usePrisma: '✅ Use Prisma ORM (recommended)',
       useTypeORM: '✅ Use TypeORM with QueryBuilder',
       useParameterized: '✅ Use parameterized query',
@@ -404,6 +407,10 @@ const user = await User.findOne({ email: userEmail });`,
           filePath: filename,
           line: String(node.loc?.start.line ?? 0),
           cwe: vulnDetails.cwe,
+          cweCode: vulnDetails.cwe.replace('CWE-', ''),
+          currentExample: `db.query(\`SELECT * FROM users WHERE id = ${'\${userId}'}\`)`,
+          fixExample: `Use parameterized: db.query("SELECT * FROM users WHERE id = $1", [userId])`,
+          docLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
         },
       });
     }
@@ -473,6 +480,10 @@ const user = await User.findOne({ email: userEmail });`,
           filePath: filename,
           line: String(node.loc?.start.line ?? 0),
           cwe: vulnDetails.cwe,
+          cweCode: vulnDetails.cwe.replace('CWE-', ''),
+          currentExample: `User.findOne({ email: req.body.email })`,
+          fixExample: `Sanitize input: User.findOne({ email: mongoSanitize(req.body.email) })`,
+          docLink: 'https://owasp.org/www-community/attacks/NoSQL_Injection',
         },
       });
     }

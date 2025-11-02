@@ -1,20 +1,41 @@
 {
   "name": "@forge-js/eslint-plugin-utils",
-  "version": "0.0.1",
-  "description": "Utilities for creating TypeScript ESLint plugins - inspired by typescript-eslint",
+  "version": "0.0.4",
+  "description": "Utilities for building LLM-optimized ESLint rules",
   "type": "commonjs",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ofri-peretz/forge-js#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/forge-js.git",
+    "directory": "packages/eslint-plugin-utils"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/forge-js/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "eslint",
+    "eslint-plugin",
+    "typescript",
+    "utilities",
+    "ast",
+    "type-checking",
+    "plugin-development"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "peerDependencies": {
-    "@typescript-eslint/parser": ">=6.0.0",
-    "eslint": "^8.0.0 || ^9.0.0",
-    "typescript": ">=4.0.0"
+    "typescript": ">=4.0.0",
+    "@typescript-eslint/utils": "^8.46.2"
   },
   "dependencies": {
-    "@typescript-eslint/types": "^8.46.2",
-    "@typescript-eslint/typescript-estree": "^8.46.2",
-    "@typescript-eslint/utils": "^8.46.2",
-    "eslint": "^9.38.0",
     "tslib": "^2.3.0"
   }
 }

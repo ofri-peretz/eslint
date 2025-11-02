@@ -1,0 +1,58 @@
+# <type>(<scope>): <subject>
+#
+# type: feat, fix, docs, style, refactor, perf, test, build, ci, chore
+# scope: Optional area affected (e.g., parser, rules, cli, utils)
+# subject: Brief description in present tense (lowercase, no period)
+#
+# Body (optional): Detailed explanation of what and why
+#
+# Footer (optional): Breaking changes, issue references
+#   BREAKING CHANGE: description
+#   Closes #123
+#   Refs #456
+#
+# ──────────────────────────────────────────────────────────────────
+# Examples:
+#
+# feat: add no-console-log rule
+# fix: handle null values in parser
+# feat!: change configuration format
+# perf: optimize rule execution by 40%
+# docs: update installation guide
+#
+# With body and breaking change:
+# feat: update configuration format
+#
+# Changed the configuration structure to support nested rules
+# and better organization of rule options.
+#
+# BREAKING CHANGE: Configuration now requires 'rules' object
+# instead of flat structure. Users need to update their configs.
+#
+# ──────────────────────────────────────────────────────────────────
+# Type Descriptions:
+#
+# feat:     New feature (triggers MINOR version bump)
+# fix:      Bug fix (triggers PATCH version bump)
+# perf:     Performance improvement (triggers PATCH)
+# feat!:    Breaking change (triggers MAJOR version bump)
+# fix!:     Breaking fix (triggers MAJOR)
+#
+# docs:     Documentation only (no release)
+# style:    Code style/formatting (no release)
+# refactor: Code refactoring (no release)
+# test:     Add/update tests (no release)
+# build:    Build system changes (no release)
+# ci:       CI configuration changes (no release)
+# chore:    Maintenance tasks (no release)
+#
+# ──────────────────────────────────────────────────────────────────
+# Rules:
+# - Subject line max 72 characters
+# - Use present tense ("add" not "added")
+# - Don't capitalize first letter of subject
+# - No period at end of subject
+# - Separate subject from body with blank line
+# - Wrap body at 72 characters
+# - Use body to explain what and why, not how
+

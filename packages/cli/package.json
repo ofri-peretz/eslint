@@ -1,6 +1,6 @@
 {
     "name": "@forge-js/cli",
-    "version": "0.0.1",
+    "version": "0.0.3",
     "description": "CLI tool for managing releases in the forge-js monorepo",
     "type": "commonjs",
     "bin": {
@@ -11,13 +11,31 @@
         "build": "tsc",
         "dev": "node ./bin/forge.js"
     },
+    "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+    "license": "MIT",
+    "homepage": "https://github.com/ofri-peretz/forge-js#readme",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ofri-peretz/forge-js.git",
+        "directory": "packages/cli"
+    },
+    "bugs": {
+        "url": "https://github.com/ofri-peretz/forge-js/issues"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
     "keywords": [
         "cli",
         "monorepo",
-        "release-management"
+        "release-management",
+        "nx",
+        "versioning",
+        "semantic-versioning"
     ],
-    "author": "",
-    "license": "ISC",
+    "engines": {
+        "node": ">=18.0.0"
+    },
     "dependencies": {
         "chalk": "^4.1.2",
         "commander": "^12.1.0",

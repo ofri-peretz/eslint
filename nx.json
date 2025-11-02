@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "defaultBase": "master",
+  "defaultBase": "main",
   "namedInputs": {
     "default": [
       "{projectRoot}/**/*",
@@ -13,7 +13,8 @@
       "!{projectRoot}/.eslintrc.json",
       "!{projectRoot}/eslint.config.js",
       "!{projectRoot}/**/*.md",
-      "!{projectRoot}/eslint.config.mjs"
+      "!{projectRoot}/eslint.config.mjs",
+      "!{projectRoot}/src/test-setup.[jt]s"
     ],
     "sharedGlobals": []
   },
@@ -62,30 +63,78 @@
       "options": {
         "targetName": "lint"
       }
+    },
+    {
+      "plugin": "@nx/vite/plugin",
+      "options": {
+        "buildTargetName": "build",
+        "testTargetName": "vite:test",
+        "serveTargetName": "serve",
+        "devTargetName": "dev",
+        "previewTargetName": "preview",
+        "serveStaticTargetName": "serve-static",
+        "typecheckTargetName": "typecheck",
+        "buildDepsTargetName": "build-deps",
+        "watchDepsTargetName": "watch-deps"
+      }
     }
   ],
   "release": {
     "projects": [
-      "packages/*"
+      "packages/eslint-plugin",
+      "packages/eslint-plugin-utils"
     ],
+    "projectsRelationship": "independent",
     "version": {
       "conventionalCommits": true,
-      "preVersionCommand": "pnpm nx run-many -t build --all",
-      "currentVersionResolver": "git-tag",
-      "fallbackCurrentVersionResolver": "disk"
-    },
-    "changelog": {
+      "preVersionCommand": "pnpm nx run-many -t build --projects=eslint-plugin,eslint-plugin-utils",
+      "generatorOptions": {
+        "updateDependents": "always",
+        "currentVersionResolver": "git-tag",
+        "specifierSource": "conventional-commits"
+      },
+      "versionActionsOptions": {
+        "skipLockFileUpdate": true
+      },
+      "release": {
+        "preid": "rc"
+      },
       "git": {
         "commit": true,
+        "commitArgs": "--no-verify",
         "commitMessage": "chore(release): version {version}",
         "tag": true
-      },
+      }
+    },
+    "changelog": {
       "workspaceChangelog": {
         "createRelease": "github",
         "file": "CHANGELOG.md"
       },
-      "projectChangelogs": true
+      "projectChangelogs": true,
+      "git": {
+        "commit": true,
+        "commitArgs": "--no-verify",
+        "commitMessage": "chore(release): update changelog {version}"
+      }
     },
     "releaseTagPattern": "{projectName}@{version}"
+  },
+  "generators": {
+    "@nx/react": {
+      "application": {
+        "babel": true,
+        "style": "css",
+        "linter": "none",
+        "bundler": "vite"
+      },
+      "component": {
+        "style": "css"
+      },
+      "library": {
+        "style": "css",
+        "linter": "none"
+      }
+    }
   }
 }

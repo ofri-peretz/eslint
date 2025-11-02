@@ -24,7 +24,11 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
     fixable: 'code',
     hasSuggestions: true,
     messages: {
-      unsafeDynamicRequire: '🔒 Security: Dynamic require() | Risk: {{risk}} | Attack: {{attack}}',
+      unsafeDynamicRequire:
+        '🔒 Dynamic require() (CWE-95) | CRITICAL\n' +
+        '❌ Current: {{currentExample}}\n' +
+        '✅ Fix: {{fixExample}}\n' +
+        '📚 https://owasp.org/www-community/attacks/Code_Injection',
       useStaticImport: '✅ Use static import',
       useAllowlist: '✅ Add path validation with allowlist',
     },
@@ -47,8 +51,6 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
-    const { allowDynamicImport = false } = options;
 
     const sourceCode = context.sourceCode || context.getSourceCode();
     const filename = context.filename || context.getFilename();
@@ -168,6 +170,8 @@ const module = require(moduleName);`;
           data: {
             risk: 'CRITICAL',
             attack: 'Arbitrary Code Execution',
+            currentExample: `require(${argText})`,
+            fixExample: `const ALLOWED = ['mod1', 'mod2']; if (!ALLOWED.includes(${argText})) throw new Error('Not allowed'); const mod = require(${argText});`,
             ...llmContext,
           },
         });

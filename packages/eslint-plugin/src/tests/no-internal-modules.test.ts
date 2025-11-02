@@ -4,7 +4,7 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
-import { noInternalModules } from '../rules/no-internal-modules';
+import { noInternalModules } from '../rules/architecture/no-internal-modules';
 
 // Configure RuleTester for Vitest
 RuleTester.afterAll = afterAll;
