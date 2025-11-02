@@ -32,12 +32,10 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "peerDependencies": {
-    "vitest": "^4.0.0"
-  },
   "dependencies": {
     "@forge-js/eslint-plugin-utils": "0.0.3-rc.8",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "vitest": "^4.0.4"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
