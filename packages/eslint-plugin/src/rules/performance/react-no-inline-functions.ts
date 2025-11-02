@@ -25,7 +25,10 @@ export const reactNoInlineFunctions = createRule<RuleOptions, MessageIds>({
     fixable: 'code',
     hasSuggestions: true,
     messages: {
-      inlineFunction: '⚡ Performance: Inline function in render | Impact: {{impact}} | Location: {{location}}',
+      inlineFunction: '⚡ Performance: Inline function (CWE-1104: Code Quality) | MEDIUM\n' +
+        '   ❌ Current: Inline {{location}} in render (causes re-render)\n' +
+        '   ✅ Fix: Use useCallback or extract to component method\n' +
+        '   📚 https://react.dev/reference/react/useCallback',
       useCallback: '✅ Wrap with useCallback',
       extractFunction: '✅ Extract to component method',
     },

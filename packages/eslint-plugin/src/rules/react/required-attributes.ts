@@ -34,7 +34,10 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
     hasSuggestions: true,
     messages: {
       missingAttribute:
-        '♿ Missing required attribute: {{attribute}} | Element: {{element}} | Purpose: {{purpose}}',
+        '📝 Missing required attribute | MEDIUM\n' +
+        '   ❌ Current: <element> without {{attribute}}\n' +
+        '   ✅ Fix: Add {{attribute}}="value" to element\n' +
+        '   📚 https://www.w3.org/WAI/fundamentals/accessibility-intro/',
       addAttribute: '✅ Add {{attribute}}="{{suggestedValue}}"',
     },
     schema: [

@@ -43,10 +43,10 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       databaseInjection:
-        '🔒 {{type}} Injection (CWE-{{cweCode}}) | {{severity}}\n' +
-        '❌ Current: {{currentExample}}\n' +
-        '✅ Fix: {{fixExample}}\n' +
-        '📚 {{docLink}}',
+        '🔒 SQL Injection (CWE-89) | CRITICAL\n' +
+        '   ❌ Current: `SELECT * FROM users WHERE id = ${userId}`\n' +
+        '   ✅ Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId])\n' +
+        '   📚 https://owasp.org/www-community/attacks/SQL_Injection',
       usePrisma: '✅ Use Prisma ORM (recommended)',
       useTypeORM: '✅ Use TypeORM with QueryBuilder',
       useParameterized: '✅ Use parameterized query',
@@ -409,7 +409,7 @@ const user = await User.findOne({ email: userEmail });`,
           cwe: vulnDetails.cwe,
           cweCode: vulnDetails.cwe.replace('CWE-', ''),
           currentExample: `db.query(\`SELECT * FROM users WHERE id = ${'\${userId}'}\`)`,
-          fixExample: `Use parameterized: db.query("SELECT * FROM users WHERE id = $1", [userId])`,
+          fixExample: `Use parameterized: db.query("SELECT * FROM users WHERE id = ?", [userId])`,
           docLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
         },
       });

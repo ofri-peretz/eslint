@@ -47,15 +47,10 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       highCognitiveComplexity:
-        '⚡ Cognitive Complexity: {{current}}/{{max}} ({{overBy}} over) | Function: {{functionName}} | {{filePath}}:{{line}}\n' +
-        '📊 Breakdown: {{conditionals}} conditionals, {{loops}} loops, {{nesting}} max nesting\n' +
-        '💡 Recommended Pattern: {{pattern}}\n' +
-        '🔧 Refactoring Steps:\n' +
-        '   1. Extract nested blocks into helper functions\n' +
-        '   2. Replace nested if/else with guard clauses (early returns)\n' +
-        '   3. Apply {{pattern}} to reduce branching logic\n' +
-        '   4. Target complexity: {{max}} or lower\n' +
-        '⏱️  Estimated effort: {{estimatedTime}}',
+        '⚡ High Cognitive Complexity (CWE-1104: Unmaintainable Code) | HIGH\n' +
+        '   ❌ Current: Function complexity exceeds {{max}} threshold\n' +
+        '   ✅ Fix: Extract nested logic into helper functions or use guard clauses\n' +
+        '   📚 https://en.wikipedia.org/wiki/Cognitive_complexity',
       extractMethod: '✅ Extract nested logic to "{{methodName}}" (reduces complexity by ~{{reduction}})',
       simplifyLogic: '✅ Simplify conditional logic using guard clauses and early returns',
       useStrategy: '✅ Apply {{pattern}} pattern to eliminate switch/case and nested conditionals',

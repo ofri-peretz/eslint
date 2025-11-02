@@ -9,37 +9,46 @@ All ESLint rule messages in this package MUST follow the **4-line LLM-optimized 
 Every error/warning message MUST have exactly 4 lines:
 
 ```
-Line 1: [Icon] [Issue Name] (CWE-XXX) | [Severity Level]
+Line 1: [Icon] [Issue Name] (CWE-XXX)? | [Severity Level]
 Line 2:    ❌ Current: [Bad practice example]
 Line 3:    ✅ Fix: [Solution with pattern/code]
 Line 4:    📚 [Documentation Link] or [Context]
 ```
 
+**Note:** CWE is optional - only include when relevant to the rule type.
+
 ## Line Breakdown
 
 ### Line 1: Icon + Issue Name + CWE + Severity
+
 - **Icon**: Use category-specific emoji (🔒 security issues, ⚠️ warnings, 🔄 refactoring/architecture, ♿ accessibility, ⚡ performance, 📚 domain, 🚫 module/import)
 - **Issue Name**: Brief name of the issue/violation
-- **CWE Reference**: Include CWE number (CWE-XXX format) - applies to ALL rule types
+- **CWE Reference**: Include CWE number (CWE-XXX format) **ONLY if relevant to the rule**
+  - Include for: Security, high-impact architecture, critical bugs
+  - Skip for: Naming conventions, minor style issues, personal preferences
 - **Severity**: One of: `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`
 
 **Example:**
+
 ```
 🔒 SQL Injection (CWE-89) | CRITICAL
 ```
 
 ### Line 2: Current Bad Practice
+
 - Show the problematic code/pattern
 - Use `❌ Current:` prefix
 - Include minimal code snippet or description
 - Indent with 3 spaces for alignment
 
 **Example:**
+
 ```
    ❌ Current: `SELECT * FROM users WHERE id = ${userId}`
 ```
 
 ### Line 3: Fix with Solution
+
 - Show how to fix the issue
 - Use `✅ Fix:` prefix
 - Include working pattern or code
@@ -47,38 +56,41 @@ Line 4:    📚 [Documentation Link] or [Context]
 - Indent with 3 spaces for alignment
 
 **Example:**
+
 ```
    ✅ Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId])
 ```
 
 ### Line 4: Documentation
+
 - Provide relevant documentation link
 - Include context about why this matters
 - Use `📚` prefix
 - Indent with 3 spaces for alignment
 
 **Example:**
+
 ```
    📚 https://owasp.org/www-community/attacks/SQL_Injection
 ```
 
 ## CWE Reference Guide
 
-Common CWE mappings for security/code quality issues:
+Common CWE mappings for security and high-impact code quality issues. **Use when relevant to your rule:**
 
-| Category | CWE | Examples |
-|----------|-----|----------|
-| **Injection** | CWE-89 | SQL Injection |
-| | CWE-78 | Command Injection |
-| | CWE-95 | Code Injection (eval, require) |
-| **Path Traversal** | CWE-22 | Path traversal attacks |
-| **Regex** | CWE-400 | ReDoS (Regular Expression Denial of Service) |
-| **Prototype Pollution** | CWE-915 | Object injection |
-| **Module Issues** | CWE-407 | Circular dependencies |
-| | CWE-431 | Insecure dependency |
-| **Logging** | CWE-532 | Sensitive data logging |
-| **API** | CWE-1078 | Deprecated/obsolete components |
-| **Code Quality** | CWE-1104 | Code duplication |
+| Category                | CWE      | Examples                                     |
+| ----------------------- | -------- | -------------------------------------------- |
+| **Injection**           | CWE-89   | SQL Injection                                |
+|                         | CWE-78   | Command Injection                            |
+|                         | CWE-95   | Code Injection (eval, require)               |
+| **Path Traversal**      | CWE-22   | Path traversal attacks                       |
+| **Regex**               | CWE-400  | ReDoS (Regular Expression Denial of Service) |
+| **Prototype Pollution** | CWE-915  | Object injection                             |
+| **Module Issues**       | CWE-407  | Circular dependencies                        |
+|                         | CWE-431  | Insecure dependency                          |
+| **Logging**             | CWE-532  | Sensitive data logging                       |
+| **API**                 | CWE-1078 | Deprecated/obsolete components               |
+| **Code Quality**        | CWE-1104 | Code duplication                             |
 
 ## Severity Levels
 
@@ -90,13 +102,15 @@ Common CWE mappings for security/code quality issues:
 ## Implementation Example
 
 ### Bad Message (Old Style)
+
 ```typescript
 messages: {
-  sqlInjection: '⚠️ SQL Injection detected | {{filePath}}:{{line}}'
+  sqlInjection: '⚠️ SQL Injection detected | {{filePath}}:{{line}}';
 }
 ```
 
 ### Good Message (LLM-Optimized)
+
 ```typescript
 messages: {
   sqlInjection:
@@ -117,19 +131,19 @@ context.report({
   messageId: 'ruleName',
   data: {
     // Line 1 substitutions
-    severity: 'CRITICAL',  // or HIGH, MEDIUM, LOW
-    
+    severity: 'CRITICAL', // or HIGH, MEDIUM, LOW
+
     // Line 2 substitutions
-    current: '...',        // Current bad pattern
-    
+    current: '...', // Current bad pattern
+
     // Line 3 substitutions
-    fix: '...',            // Suggested fix
-    solution: '...',       // Alternative fix approach
-    
+    fix: '...', // Suggested fix
+    solution: '...', // Alternative fix approach
+
     // Line 4 substitutions
-    documentation: '...',  // Doc link
-    reason: '...',         // Why this matters
-    
+    documentation: '...', // Doc link
+    reason: '...', // Why this matters
+
     // Context for placeholders
     filePath: '...',
     line: '...',
@@ -215,7 +229,6 @@ messages: {
 
 ### DO ✅
 
-- ✅ Always include CWE reference
 - ✅ Use exactly 4 lines (with newlines)
 - ✅ Include both current bad example AND fix
 - ✅ Provide actionable solutions
@@ -223,11 +236,12 @@ messages: {
 - ✅ Use appropriate severity levels
 - ✅ Use 3-space indentation for lines 2-4
 - ✅ Include emoji icons for visual scanning
+- ✅ **Include CWE ONLY when relevant** (security, high-impact)
 - ✅ Test messages with actual violations
 
 ### DON'T ❌
 
-- ❌ Skip CWE references
+- ❌ Skip CWE when it's clearly relevant (security)
 - ❌ Use vague or unclear examples
 - ❌ Provide only problems without solutions
 - ❌ Include multiple unrelated concepts in one message
@@ -235,6 +249,7 @@ messages: {
 - ❌ Forget to update data object fields
 - ❌ Create biased rules that favor specific cases
 - ❌ Add special logic for certain attributes/cases
+- ❌ Force CWE into unrelated rules
 
 ## Testing Your Rule
 
@@ -245,6 +260,46 @@ messages: {
 5. **Consistency**: Does it match other rules?
 
 Run: `nx lint` on playground to verify formatting
+
+## Rules WITHOUT CWE Examples
+
+When CWE is not relevant, omit it:
+
+### Example: Naming Convention Rule (No CWE)
+
+```typescript
+messages: {
+  wrongNaming:
+    '📚 Domain Naming (Commerce context) | MEDIUM\n' +
+    '   ❌ Current: Variable named "item" instead of "product"\n' +
+    '   ✅ Fix: Use domain terms: "product", "order", "customer"\n' +
+    '   📚 See domain glossary for approved terminology',
+}
+```
+
+### Example: Style/Format Rule (No CWE)
+
+```typescript
+messages: {
+  consistentFormatting:
+    '⚠️ Inconsistent Formatting | LOW\n' +
+    '   ❌ Current: Mixed spacing in object properties\n' +
+    '   ✅ Fix: Use consistent 2-space indentation\n' +
+    '   📚 See project style guide',
+}
+```
+
+### Example: Refactoring Suggestion (No CWE)
+
+```typescript
+messages: {
+  refactorSuggestion:
+    '🔄 Simplification Opportunity | LOW\n' +
+    '   ❌ Current: Nested ternary operators (hard to read)\n' +
+    '   ✅ Fix: Extract to helper function or early returns\n' +
+    '   📚 Improves code maintainability',
+}
+```
 
 ## Resources
 

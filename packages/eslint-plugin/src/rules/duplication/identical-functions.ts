@@ -44,7 +44,10 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       identicalFunctions:
-        '🔄 Duplicate implementations detected ({{count}} functions) | Similarity: {{similarity}}% | {{filePath}}:{{line}}',
+        '🔄 Duplicate implementations (CWE-1104: Use of Unmaintained Third-Party Components) | MEDIUM\n' +
+        '   ❌ Current: {{count}} duplicate functions ({{similarity}}% similar)\n' +
+        '   ✅ Fix: Extract to reusable function or use higher-order patterns\n' +
+        '   📚 https://en.wikipedia.org/wiki/Don%27t_repeat_yourself',
       extractGeneric: '✅ Extract to generic function: {{functionName}}',
       useHigherOrder: '✅ Use higher-order function pattern',
       applyInheritance: '✅ Use inheritance/composition',

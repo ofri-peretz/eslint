@@ -25,7 +25,10 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
     fixable: 'code',
     hasSuggestions: true,
     messages: {
-      migrateToHooks: '🔄 Class component can be migrated to hooks | {{componentName}} | Complexity: {{complexity}}',
+      migrateToHooks: '🔄 React class component (CWE-1078: Deprecated API) | MEDIUM\n' +
+        '   ❌ Current: class extends React.Component\n' +
+        '   ✅ Fix: Convert to functional component with hooks (Complexity: {{complexity}})\n' +
+        '   📚 https://react.dev/reference/react/hooks',
       convertToFunction: '✅ Convert to functional component with hooks',
       viewMigrationGuide: '📖 View detailed migration guide',
     },

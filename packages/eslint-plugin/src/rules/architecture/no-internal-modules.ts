@@ -63,13 +63,10 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
     hasSuggestions: true,
     messages: {
       internalModuleImport:
-        '🚫 Internal module import detected\n' +
-        '   Module: {{modulePath}}\n' +
-        '   Depth: {{depth}} (max allowed: {{maxDepth}})\n' +
-        '   Reason: {{reason}}\n' +
-        '💡 Suggested fix: {{suggestion}}\n' +
-        '📖 Use barrel exports (index files) to expose public APIs\n' +
-        '   Strategy: {{strategy}}',
+        '🚫 Internal module import (CWE-431: Insecure Dependency) | MEDIUM\n' +
+        '   ❌ Current: import from internal/deep module path\n' +
+        '   ✅ Fix: import from {{suggestion}} using barrel exports\n' +
+        '   📚 https://basarat.gitbook.io/typescript/main-1/barrel',
       suggestPublicApi: '📦 Import from public API: {{suggestion}}',
       suggestBarrelExport: '🗂️ Use barrel export: {{suggestion}}',
     },
@@ -349,6 +346,7 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
           reason,
           suggestion: publicApiPath,
           strategy,
+          severity: isForbiddenPath ? 'HIGH' : 'MEDIUM',
         },
         fix,
         suggest: strategy === 'suggest' ? suggest : undefined,

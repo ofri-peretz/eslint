@@ -95,9 +95,9 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       childProcessCommandInjection:
-        '⚠️ Command injection (CWE-78) | {{riskLevel}}\n' +
-        '   ❌ Current: {{method}}("command " + userInput)\n' +
-        '   ✅ Fix: {{alternatives}}\n' +
+        '⚠️ Command injection (CWE-78) | CRITICAL\n' +
+        '   ❌ Current: exec(`git clone ${userRepo}`)\n' +
+        '   ✅ Fix: execFile("git", ["clone", userRepo], {shell: false}) or spawn("git", ["clone", userRepo])\n' +
         '   📚 https://owasp.org/www-community/attacks/Command_Injection',
       useExecFile: '✅ Use execFile() with argument array instead of string interpolation',
       useSpawn: '✅ Use spawn() with separate arguments: spawn(cmd, [arg1, arg2])',

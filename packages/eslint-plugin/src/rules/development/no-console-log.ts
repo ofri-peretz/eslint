@@ -66,7 +66,10 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
     hasSuggestions: false,
     messages: {
       consoleLogFound:
-        '⚠️ {{consoleMethod}} | {{filePath}}:{{line}} | Strategy: {{strategy}}{{conversionInfo}}',
+        '⚠️ console.log (CWE-532: Sensitive Data Logging) | MEDIUM\n' +
+        '   ❌ Current: console.log() at [file:line]\n' +
+        '   ✅ Fix: Remove or replace with logger.debug()\n' +
+        '   📚 https://owasp.org/www-project-log-review-guide/',
       strategyRemove: '🗑️ Remove console.log statement',
       strategyConvert: '🔄 Convert to {{logger}}.{{method}}()',
       strategyComment: '💬 Comment out console.log',
@@ -326,6 +329,8 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
             line: String(line),
             strategy,
             conversionInfo,
+            logger: effectiveLogger,
+            method: targetLoggerMethod,
           },
           fix,
         });

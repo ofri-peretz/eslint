@@ -34,7 +34,10 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
     fixable: 'code',
     hasSuggestions: true,
     messages: {
-      deprecatedAPI: '⚠️ Deprecated API | {{apiName}} → {{replacement}} | Days until removal: {{daysRemaining}}',
+      deprecatedAPI: '⚠️ Deprecated API (CWE-1078: Obsolete Component) | HIGH\n' +
+        '   ❌ Current: Deprecated API usage\n' +
+        '   ✅ Fix: Replace with modern alternative\n' +
+        '   📚 https://developer.mozilla.org/en-US/docs/',
       useReplacement: '✅ Replace with {{replacement}}',
     },
     schema: [
@@ -179,7 +182,10 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
           data: {
             apiName: deprecatedApi.name,
             replacement: deprecatedApi.replacement,
+            deprecatedSince: deprecatedApi.deprecatedSince,
             daysRemaining: String(daysRemaining ?? 'Unknown'),
+            urgency: urgency.toUpperCase(),
+            migrationGuide: deprecatedApi.migrationGuide || 'See documentation',
             ...llmContext,
           },
           suggest: [
@@ -212,7 +218,10 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
           data: {
             apiName: deprecatedApi.name,
             replacement: deprecatedApi.replacement,
+            deprecatedSince: deprecatedApi.deprecatedSince,
             daysRemaining: String(daysRemaining ?? 'Unknown'),
+            urgency: urgency.toUpperCase(),
+            migrationGuide: deprecatedApi.migrationGuide || 'See documentation',
           },
           suggest: [
             {

@@ -25,7 +25,10 @@ export const imgRequiresAlt = createRule<RuleOptions, MessageIds>({
     fixable: 'code',
     hasSuggestions: true,
     messages: {
-      missingAlt: '♿ Image missing alt text | Affects: {{affectedUsers}} | WCAG: {{wcagLevel}}',
+      missingAlt: '♿ Image missing alt text (CWE-252: Missing UI Rendering) | CRITICAL\n' +
+        '   ❌ Current: <img> without alt attribute\n' +
+        '   ✅ Fix: Add alt="{{suggestion}}" or alt="" for decorative images\n' +
+        '   📚 WCAG {{wcagLevel}}: Affects {{affectedUsers}} | https://www.w3.org/WAI/tutorials/images/',
       emptyAlt: '♿ Empty alt text detected | Consider: {{consideration}}',
       addDescriptiveAlt: '✅ Add descriptive alt text',
       useEmptyAlt: '✅ Use empty alt="" for decorative images',
@@ -215,6 +218,7 @@ export const imgRequiresAlt = createRule<RuleOptions, MessageIds>({
           data: {
             affectedUsers: '8% of users',
             wcagLevel: 'A',
+            suggestion: suggestions[0] || 'Descriptive text',
             ...llmContext,
           },
           suggest: [

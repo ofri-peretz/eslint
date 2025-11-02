@@ -58,31 +58,29 @@ export const noCircularDependencies = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       moduleSplit:
-        '🔄 Module Split Required\n\n' +
-        'Cycle: {{cycle}}\n\n' +
-        'ACTION: Split {{moduleToSplit}} into {{splitCount}} files\n{{fileStructure}}\n\n' +
-        'Result: {{result}}',
+        '🔄 Circular Dependency (CWE-407: Inefficient Algorithm) | CRITICAL\n' +
+        '   ❌ Current: Cycle: {{cycle}}\n' +
+        '   ✅ Action: Split {{moduleToSplit}} into 2 files\n' +
+        '   📚 https://en.wikipedia.org/wiki/Circular_dependency',
 
       directImport:
-        '📦 Use Direct Import\n\n' +
-        'Cycle: {{cycle}}\n\n' +
-        'ACTION: In {{currentFile}}, change:\n' +
-        '✗ {{oldImport}}\n' +
-        '✓ {{newImport}}\n\n' +
-        'Why: Barrel exports (index.ts) create cycles',
+        '🔄 Circular Dependency (CWE-407: Inefficient Algorithm) | MEDIUM\n' +
+        '   ❌ Current: {{oldImport}}\n' +
+        '   ✅ Fix: {{newImport}}\n' +
+        '   📚 Barrel exports can create cycles; use direct imports',
 
       extractShared:
-        '🔄 Extract Shared Types\n\n' +
-        'Cycle: {{cycle}}\n\n' +
-        'ACTION: Create shared/types.ts with:\n{{exports}}\n\n' +
-        'Then: Both files import from shared/types.ts\n\n' +
-        'Result: {{result}}',
+        '🔄 Circular Dependency (CWE-407: Inefficient Algorithm) | MEDIUM\n' +
+        '   ❌ Current: Cycle: {{cycle}}\n' +
+        '   ✅ Action: Extract shared types to {{exports}}\n' +
+        '   Result: {{result}}\n' +
+        '   📚 https://en.wikipedia.org/wiki/Dependency_inversion_principle',
 
       dependencyInjection:
-        '🚨 Use Dependency Injection\n\n' +
-        'Cycle: {{cycle}}\n\n' +
-        'ACTION:\n{{steps}}\n\n' +
-        'Result: Both depend on interfaces, not each other',
+        '🔄 Circular Dependency (CWE-407: Inefficient Algorithm) | MEDIUM\n' +
+        '   ❌ Current: Cycle: {{cycle}}\n' +
+        '   ✅ Action: Use dependency injection pattern:\n{{steps}}\n' +
+        '   📚 https://en.wikipedia.org/wiki/Dependency_injection',
     },
     schema: [
       {

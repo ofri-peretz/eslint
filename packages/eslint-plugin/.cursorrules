@@ -18,6 +18,7 @@ Line 4:    📚 [Documentation link or context]
 **Severity Levels:** CRITICAL | HIGH | MEDIUM | LOW
 
 **Icons by Category:**
+
 - 🔒 Security issues (vulnerabilities)
 - ⚠️ Warnings/general issues
 - 🔄 Refactoring/architecture issues
@@ -27,6 +28,7 @@ Line 4:    📚 [Documentation link or context]
 - 🚫 Module/import issues
 
 **CWE References:** https://cwe.mitre.org/
+
 - CWE-89: SQL Injection
 - CWE-78: Command Injection
 - CWE-95: Code Injection (eval, require)
@@ -77,6 +79,7 @@ messages: {
 ## Reference Rules
 
 See `/src/rules/` for optimized examples:
+
 - `security/no-sql-injection.ts` - Security example
 - `architecture/no-circular-dependencies.ts` - Architecture example
 - `development/no-console-log.ts` - Development example
@@ -87,3 +90,33 @@ See `/src/rules/` for optimized examples:
 2. Reference the full guide: `.cursor/rules/eslint-rule-llm-format.md`
 3. Run `nx lint` on the playground app to verify
 4. Ensure message is parseable by both humans and LLMs
+
+## Acceptable Placeholder Usage
+
+Some rules MAY use template placeholders in specific, justified cases:
+
+✅ **ACCEPTABLE Examples:**
+
+- Domain-specific terms (`{{correctTerm}}`) - varies per project glossary
+- Accessibility levels (`{{wcagLevel}}`) - varies per context (A, AA, AAA)
+- Contextual locations (`{{location}}`) - varies by error source (onClick, map, etc.)
+
+❌ **NOT ACCEPTABLE Examples:**
+
+- Main message severity (`{{severity}}`) - should be static (CRITICAL/HIGH/MEDIUM/LOW)
+- CWE references (`{{cweCode}}`) - should be static (CWE-89, CWE-95, etc.)
+- Core examples (`{{currentExample}}`, `{{fixExample}}`) - should have static, concrete examples
+
+**Rules that use acceptable placeholders:**
+
+- `img-requires-alt` - Uses dynamic WCAG level and affected user count (justified)
+- `react-no-inline-functions` - Uses dynamic location context (justified)
+- `enforce-naming` - Uses dynamic domain terms (justified)
+
+**Recent Audit Results (Nov 2, 2025):**
+
+- 5/19 rules: Perfect static format ✅
+- 3/19 rules: Acceptable with justified placeholders 🟡
+- 3/19 rules: FIXED critical template placeholder issues 🔴
+- 8/19 rules: Full review needed ⚠️
+- See: `AUDIT_REPORT_LLM_OPTIMIZATION.md` for complete findings
