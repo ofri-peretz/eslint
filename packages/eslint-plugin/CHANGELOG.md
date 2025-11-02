@@ -1,3 +1,13 @@
+## 0.3.2 (2025-11-02)
+
+### 🩹 Fixes
+
+- resolve 3 LLM optimization issues for 100% clarity ([#1](https://github.com/ofri-peretz/forge-js/issues/1), [#2](https://github.com/ofri-peretz/forge-js/issues/2), [#3](https://github.com/ofri-peretz/forge-js/issues/3))
+
+### ❤️ Thank You
+
+- Ofri Peretz
+
 ## 0.3.1 (2025-11-02)
 
 ### 🩹 Fixes
