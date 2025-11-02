@@ -1,0 +1,119 @@
+name: Check Dependencies
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "**/package.json"
+      - "pnpm-lock.yaml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10.18.3"
+
+jobs:
+  check-dependencies:
+    name: 🔍 Check Dependencies
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: 📥 Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: 📥 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 📊 Get affected packages
+        id: affected
+        run: |
+          AFFECTED=$(pnpm nx affected --base=origin/main --json | jq -r '.projects | join(",")')
+          echo "packages=$AFFECTED" >> $GITHUB_OUTPUT
+          echo "Affected packages: $AFFECTED"
+
+      - name: 🔍 Analyze dependency changes
+        id: deps
+        run: |
+          echo "## 🔍 Dependency Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          AFFECTED="${{ steps.affected.outputs.packages }}"
+          
+          if [ -z "$AFFECTED" ]; then
+            echo "✅ No packages affected" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
+          
+          echo "### Affected Packages:" >> $GITHUB_STEP_SUMMARY
+          IFS=',' read -ra PKGS <<< "$AFFECTED"
+          for pkg in "${PKGS[@]}"; do
+            echo "- \`$pkg\`" >> $GITHUB_STEP_SUMMARY
+          done
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Check for new dependencies in each affected package
+          echo "### New Dependencies:" >> $GITHUB_STEP_SUMMARY
+          
+          HAS_NEW_DEPS=false
+          for pkg in "${PKGS[@]}"; do
+            PKG_PATH=""
+            
+            # Find the package directory
+            if [ -f "packages/$pkg/package.json" ]; then
+              PKG_PATH="packages/$pkg"
+            elif [ -f "apps/$pkg/package.json" ]; then
+              PKG_PATH="apps/$pkg"
+            elif [ -f "$pkg/package.json" ]; then
+              PKG_PATH="$pkg"
+            fi
+            
+            if [ -n "$PKG_PATH" ]; then
+              if git diff origin/main -- "$PKG_PATH/package.json" | grep -q '"dependencies":\|"devDependencies":'; then
+                echo "- **$pkg**: Dependencies updated" >> $GITHUB_STEP_SUMMARY
+                HAS_NEW_DEPS=true
+              fi
+            fi
+          done
+          
+          if [ "$HAS_NEW_DEPS" = false ]; then
+            echo "✅ No new dependencies added" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: 📝 Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = process.env.GITHUB_STEP_SUMMARY;
+            
+            if (!fs.existsSync(summary)) return;
+            
+            const content = fs.readFileSync(summary, 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: content
+            });
