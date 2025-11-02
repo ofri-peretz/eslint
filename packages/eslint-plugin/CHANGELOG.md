@@ -1,3 +1,13 @@
+## 0.3.0 (2025-11-02)
+
+### 🚀 Features
+
+- enhance LLM optimization for rules 15 and 18 ([babd185](https://github.com/ofri-peretz/forge-js/commit/babd185))
+
+### ❤️ Thank You
+
+- Ofri Peretz
+
 ## 0.2.1 (2025-11-02)
 
 ### 🩹 Fixes
