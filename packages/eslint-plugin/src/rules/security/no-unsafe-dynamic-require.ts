@@ -27,7 +27,7 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
       unsafeDynamicRequire:
         '🔒 Dynamic require() (CWE-95) | CRITICAL\n' +
         '   ❌ Current: require(userInput) or require(`./${moduleName}`)\n' +
-        '   ✅ Fix: Whitelist allowed modules: const ALLOWED = ["mod1", "mod2"]; if (!ALLOWED.includes(name)) throw new Error("Not allowed"); require(name)\n' +
+        '   ✅ Fix: Use allowlist: const ALLOWED = ["mod1", "mod2"]; if (!ALLOWED.includes(name)) throw new Error("Not allowed");\n' +
         '   📚 https://owasp.org/www-community/attacks/Code_Injection',
       useStaticImport: '✅ Use static import',
       useAllowlist: '✅ Add path validation with allowlist',

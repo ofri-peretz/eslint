@@ -25,8 +25,8 @@ export const reactNoInlineFunctions = createRule<RuleOptions, MessageIds>({
     fixable: 'code',
     hasSuggestions: true,
     messages: {
-      inlineFunction: '⚡ Performance: Inline function | CWE-1043 (Performance Inefficiency) | MEDIUM\n' +
-        '   ❌ Current: {items.map(item => <button onClick={() => handleClick(item)}/>)}\n' +
+      inlineFunction: '⚡ Performance: Inline function (Optimization) | MEDIUM\n' +
+        '   ❌ Current: Inline JSX prop in render (causes re-render)\n' +
         '   ✅ Fix: Use useCallback or extract to component method\n' +
         '   📚 https://react.dev/reference/react/useCallback',
       useCallback: '✅ Wrap with useCallback',
