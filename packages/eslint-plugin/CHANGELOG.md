@@ -1,3 +1,18 @@
+## 0.2.0 (2025-11-02)
+
+### 🩹 Fixes
+
+- improve llm optimization for 8 rules ([7219655](https://github.com/ofri-peretz/forge-js/commit/7219655))
+- remove unnecessary escape character in database-injection rule ([333d470](https://github.com/ofri-peretz/forge-js/commit/333d470))
+
+### 🧱 Updated Dependencies
+
+- Updated eslint-plugin-utils to 0.2.0
+
+### ❤️ Thank You
+
+- Ofri Peretz
+
 ## 0.1.1 (2025-11-02)
 
 ### 🧱 Updated Dependencies
