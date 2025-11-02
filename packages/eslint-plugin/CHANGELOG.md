@@ -1,3 +1,13 @@
+## 0.3.1 (2025-11-02)
+
+### 🩹 Fixes
+
+- align package versions with git tags (eslint-plugin@0.2.1, utils@0.2.0) ([3fe5e0d](https://github.com/ofri-peretz/forge-js/commit/3fe5e0d))
+
+### ❤️ Thank You
+
+- Ofri Peretz
+
 ## 0.3.0 (2025-11-02)
 
 ### 🚀 Features
