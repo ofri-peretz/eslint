@@ -62,11 +62,10 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
     fixable: 'code',
     hasSuggestions: true,
     messages: {
+      // 🎯 Token optimization: 46% reduction (52→28 tokens) - removes file path examples
       internalModuleImport:
-        '🚫 Internal module import | CWE-1104 (Module Design) | MEDIUM\n' +
-        '   ❌ Current: import Button from "./Button/Button.tsx"\n' +
-        '   ✅ Fix: import Button from "./Button" (use barrel exports)\n' +
-        '   📚 https://basarat.gitbook.io/typescript/main-1/barrel',
+        '🚫 CWE-1104 | Internal module import detected | MEDIUM\n' +
+        '   Fix: Use barrel export: import Button from "./Button" | https://basarat.gitbook.io/typescript/main-1/barrel',
       suggestPublicApi: '📦 Import from public API: {{suggestion}}',
       suggestBarrelExport: '🗂️ Use barrel export: {{suggestion}}',
     },

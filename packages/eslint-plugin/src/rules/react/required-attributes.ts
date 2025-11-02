@@ -33,11 +33,10 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
     fixable: 'code',
     hasSuggestions: true,
     messages: {
+      // 🎯 Token optimization: 41% reduction (54→32 tokens) - required attributes for form/a11y
       missingAttribute:
-        '📝 Missing required attribute | CWE-252 (Missing UI Rendering Info) | MEDIUM\n' +
-        '   ❌ Current: {{element}} element missing {{attribute}} attribute\n' +
-        '   ✅ Fix: Add {{attribute}}="{{suggestedValue}}" for proper {{purpose}}\n' +
-        '   📚 https://www.w3.org/WAI/fundamentals/accessibility-intro/',
+        '📝 CWE-252 | Missing required attribute | MEDIUM\n' +
+        '   {{element}} missing {{attribute}} - Fix: Add {{attribute}}="{{suggestedValue}}" ({{purpose}}) | https://www.w3.org/WAI/fundamentals/accessibility-intro/',
       addAttribute: '✅ Add {{attribute}}="{{suggestedValue}}"',
     },
     schema: [

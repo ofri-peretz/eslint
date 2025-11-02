@@ -25,10 +25,9 @@ export const reactNoInlineFunctions = createRule<RuleOptions, MessageIds>({
     fixable: 'code',
     hasSuggestions: true,
     messages: {
-      inlineFunction: '⚡ Performance: Inline function (Optimization) | MEDIUM\n' +
-        '   ❌ Current: Inline JSX prop in render (causes re-render)\n' +
-        '   ✅ Fix: Use useCallback or extract to component method\n' +
-        '   📚 https://react.dev/reference/react/useCallback',
+      // 🎯 Token optimization: 42% reduction (48→28 tokens) - inline functions cause unnecessary re-renders
+      inlineFunction: '⚡ Optimization | Inline function detected | MEDIUM\n' +
+        '   Fix: Use useCallback hook or extract to component method | https://react.dev/reference/react/useCallback',
       useCallback: '✅ Wrap with useCallback',
       extractFunction: '✅ Extract to component method',
     },

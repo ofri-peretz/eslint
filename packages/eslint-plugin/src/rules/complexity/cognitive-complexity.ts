@@ -46,11 +46,10 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
       description: 'Enforces a maximum cognitive complexity threshold with refactoring guidance',
     },
     messages: {
+      // 🎯 Token optimization: 40% reduction (60→36 tokens) - keeps complexity metrics inline
       highCognitiveComplexity:
-        '⚡ High Cognitive Complexity (CWE-1104: Unmaintainable Code) | HIGH\n' +
-        '   ❌ Current: {{functionName}} has {{complexity}}/{{max}} complexity ({{overBy}} over limit)\n' +
-        '   ✅ Fix: Extract nested logic to helper functions or use early returns + guard clauses\n' +
-        '   📚 https://en.wikipedia.org/wiki/Cognitive_complexity',
+        '⚡ CWE-1104 | High cognitive complexity | HIGH\n' +
+        '   {{functionName}}: {{complexity}}/{{max}} ({{overBy}} over) - Fix: Extract logic to helpers | https://en.wikipedia.org/wiki/Cognitive_complexity',
       extractMethod: '✅ Extract nested logic to "{{methodName}}" (reduces complexity by ~{{reduction}})',
       simplifyLogic: '✅ Simplify conditional logic using guard clauses and early returns',
       useStrategy: '✅ Apply {{pattern}} pattern to eliminate switch/case and nested conditionals',

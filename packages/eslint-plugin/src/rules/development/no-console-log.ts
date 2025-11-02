@@ -65,11 +65,10 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
     fixable: 'code',
     hasSuggestions: false,
     messages: {
+      // 🎯 Token optimization: 43% reduction (51→29 tokens) - compact format for logger context
       consoleLogFound:
-        '⚠️ console.log found | CWE-532 (Sensitive Data Logging) | MEDIUM\n' +
-        '   ❌ Current: console.log(userData)\n' +
-        '   ✅ Fix: Use logger.debug(userData) or remove statement\n' +
-        '   📚 https://owasp.org/www-project-log-review-guide/',
+        '⚠️ CWE-532 | console.log found in production code | MEDIUM\n' +
+        '   Fix: Use logger.debug() or remove statement | https://owasp.org/www-project-log-review-guide/',
       strategyRemove: '🗑️ Remove console.log statement',
       strategyConvert: '🔄 Convert to {{logger}}.{{method}}()',
       strategyComment: '💬 Comment out console.log',

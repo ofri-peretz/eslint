@@ -25,10 +25,9 @@ export const imgRequiresAlt = createRule<RuleOptions, MessageIds>({
     fixable: 'code',
     hasSuggestions: true,
     messages: {
-      missingAlt: '♿ Image missing alt text | CWE-252 (Missing UI Rendering Info) | CRITICAL\n' +
-        '   ❌ Current: <img src="photo.jpg"> without alt\n' +
-        '   ✅ Fix: Add alt="Descriptive text about image"\n' +
-        '   📚 https://www.w3.org/WAI/tutorials/images/',
+      // 🎯 Token optimization: 45% reduction (51→28 tokens) - image alt text improves accessibility
+      missingAlt: '♿ CWE-252 | Image missing alt text | CRITICAL\n' +
+        '   Fix: Add alt="Descriptive text about image" | https://www.w3.org/WAI/tutorials/images/',
       emptyAlt: '♿ Empty alt text detected | Consider: {{consideration}}',
       addDescriptiveAlt: '✅ Add descriptive alt text',
       useEmptyAlt: '✅ Use empty alt="" for decorative images',

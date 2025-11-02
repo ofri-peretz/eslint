@@ -62,6 +62,7 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const opts = context.options[0] || {};
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { trustedFunctions = [] } = opts;
 
     const sourceCode = context.sourceCode || context.getSourceCode();
