@@ -17,10 +17,9 @@
     "publish:utils": "nx run eslint-plugin-utils:publish",
     "publish:cli": "nx run cli:publish",
     "publish:all": "pnpm nx run-many -t build --all && nx release publish",
-    "ci:trigger": "pnpm ./scripts/ci-interactive.sh",
-    "ci:watch": "printf '1\\n\\n1\\n' | pnpm ./scripts/ci-interactive.sh",
-    "ci:logs": "gh run list --workflow='ci.yml' --limit 5",
-    "ci:view": "nx run forge-js:ci"
+    "ci:trigger": "gh workflow run ci.yml --ref local-playground-app && echo '✅ Workflow triggered!'",
+    "ci:status": "tsx scripts/ci-status.ts",
+    "ci": "tsx scripts/ci-status.ts"
   },
   "keywords": [
     "eslint",

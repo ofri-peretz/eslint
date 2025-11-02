@@ -17,6 +17,8 @@ NC='\033[0m' # No Color
 WORKFLOW="ci.yml"
 BRANCH="${1:-local-playground-app}"
 MAX_RUNS=5
+AUTO_TRIGGER="${CI_AUTO_TRIGGER:-0}"
+AUTO_WATCH="${CI_AUTO_WATCH:-0}"
 
 clear
 
@@ -24,6 +26,35 @@ echo -e "${CYAN}╔════════════════════�
 echo -e "${CYAN}║         🚀 Interactive CI Runner & Monitor                     ║${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
 echo ""
+
+# If auto-trigger is enabled, skip menu and go straight to triggering
+if [ "$AUTO_TRIGGER" = "1" ]; then
+    echo -e "${YELLOW}🚀 Triggering CI workflow on branch: ${BRANCH}${NC}"
+    echo ""
+    
+    if gh workflow run "$WORKFLOW" --ref "$BRANCH" 2>/dev/null; then
+        echo -e "${GREEN}✅ CI workflow triggered successfully!${NC}"
+        echo ""
+        sleep 2
+        
+        # Get the new run ID
+        NEW_RUN=$(gh run list --workflow "$WORKFLOW" --limit 1 --json databaseId -q '.[0].databaseId')
+        echo -e "${GREEN}New run ID: ${BLUE}${NEW_RUN}${NC}"
+        echo ""
+        
+        if [ "$AUTO_WATCH" = "1" ]; then
+            echo -e "${CYAN}⏱️  Watching run... (Press Ctrl+C to stop)${NC}"
+            gh run watch "$NEW_RUN" || true
+        else
+            echo -e "${YELLOW}To watch this run:${NC}"
+            echo -e "${BLUE}  gh run watch ${NEW_RUN}${NC}"
+        fi
+    else
+        echo -e "${RED}❌ Failed to trigger CI workflow${NC}"
+        exit 1
+    fi
+    exit 0
+fi
 
 # Function to display menu
 show_menu() {

@@ -59,36 +59,6 @@
         "color": true
       },
       "outputs": []
-    },
-    "ci": {
-      "executor": "nx:run-commands",
-      "options": {
-        "commands": [
-          {
-            "command": "printf '1\\n\\n1\\n' | ./scripts/ci-interactive.sh",
-            "description": "Trigger CI pipeline and watch in real-time"
-          }
-        ],
-        "parallel": false,
-        "color": true
-      },
-      "outputs": []
-    },
-    "ci:trigger": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "./scripts/ci-interactive.sh",
-        "description": "Open interactive CI menu"
-      },
-      "outputs": []
-    },
-    "ci:logs": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "gh run list --workflow='ci.yml' --limit 10",
-        "description": "Show last 10 CI runs"
-      },
-      "outputs": []
     }
   }
 }
