@@ -235,8 +235,9 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
             node,
             messageId: 'missingAttribute',
             data: {
-              attribute,
               element: elementName,
+              attribute,
+              suggestedValue: defaultValue,
               purpose,
               ...llmContext,
             },
