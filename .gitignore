@@ -83,4 +83,5 @@ Thumbs.db
 .github/instructions/nx.instructions.md
 vite.config.*.timestamp*
 vitest.config.*.timestamp*.npmrc
+**/test-report.junit.xml
 **/*.test-report.junit.xml
