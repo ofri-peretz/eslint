@@ -1,16 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
-// import { codecovVitePlugin } from "@codecov/vite-plugin";
-import { mkdirSync } from 'node:fs';
-import { join } from 'node:path';
-
-// Ensure coverage directory exists before any plugins run
-// try {
-//   mkdirSync(join(__dirname, 'coverage', '.tmp'), { recursive: true });
-// } catch (err) {
-//   // Ignore if already exists
-// }
 
 /**
  * Vitest configuration for playground app
@@ -22,7 +12,6 @@ import { join } from 'node:path';
  * - Nx path aliases for project imports
  * - Coverage tracking with v8 provider (industry standard)
  * - JUnit reporting for CI/CD pipeline integration
- * - Codecov plugin for automatic coverage insights and bundle analysis
  *
  * @environment
  * - jsdom: Simulates browser environment for React component testing
@@ -39,24 +28,12 @@ import { join } from 'node:path';
  * - Format: JUnit XML for test analytics
  * - Location: ./test-report.junit.xml
  * - Used by: Codecov for test health tracking
- *
- * @codecov
- * - Plugin: codecovVitePlugin for automatic coverage insights
- * - Only enables bundle analysis in CI environment (with CODECOV_TOKEN)
- * - Provides better coverage visibility and trend analysis
  */
 export default defineConfig({
   root: __dirname,
   plugins: [
     react(),
     nxViteTsPaths(),
-    // Codecov plugin for coverage insights and bundle analysis
-    // Safe configuration: only analyzes in CI when token is present
-    // codecovVitePlugin({
-    //   enableBundleAnalysis: process.env['CODECOV_TOKEN'] !== undefined && process.env['CI'] === 'true',
-    //   bundleName: "playground",
-    //   uploadToken: process.env['CODECOV_TOKEN'],
-    // }),
   ],
   test: {
     name: 'playground',

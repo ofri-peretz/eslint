@@ -1,14 +1,4 @@
 import { defineConfig } from 'vitest/config';
-// import { codecovVitePlugin } from "@codecov/vite-plugin";
-// import { mkdirSync } from 'node:fs';
-// import { join } from 'node:path';
-
-// Ensure coverage directory exists before any plugins run
-// try {
-//   mkdirSync(join(__dirname, 'coverage', '.tmp'), { recursive: true });
-// } catch (err) {
-//   // Ignore if already exists
-// }
 
 /**
  * Vitest configuration for CLI package
@@ -18,7 +8,6 @@ import { defineConfig } from 'vitest/config';
  * - Node environment for running CLI command tests
  * - Coverage tracking with v8 provider (industry standard)
  * - JUnit reporting for CI/CD pipeline integration
- * - Codecov plugin for automatic coverage insights and bundle analysis
  *
  * @coverage
  * - Provider: v8 (outputs coverage-final.json for Codecov)
@@ -30,23 +19,10 @@ import { defineConfig } from 'vitest/config';
  * - Format: JUnit XML for test analytics
  * - Location: ./test-report.junit.xml
  * - Used by: Codecov for test health tracking
- *
- * @codecov
- * - Plugin: codecovVitePlugin for automatic coverage insights
- * - Only enables bundle analysis in CI environment (with CODECOV_TOKEN)
- * - Provides better coverage visibility and trend analysis
  */
 export default defineConfig({
   root: __dirname,
-  plugins: [
-    // Codecov plugin for coverage insights and bundle analysis
-    // Safe configuration: only analyzes in CI when token is present
-    // codecovVitePlugin({
-    //   enableBundleAnalysis: process.env['CODECOV_TOKEN'] !== undefined && process.env['CI'] === 'true',
-    //   bundleName: "cli",
-    //   uploadToken: process.env['CODECOV_TOKEN'],
-    // }),
-  ],
+  plugins: [],
   test: {
     globals: true,
     environment: 'node',

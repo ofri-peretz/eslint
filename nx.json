@@ -60,11 +60,9 @@
         "^production"
       ],
       "outputs": [
-        "{projectRoot}/coverage",
-        "{projectRoot}/.vitest",
-        "{projectRoot}/test-report.junit.xml"
+        "{workspaceRoot}/coverage"
       ],
-      "cache": true
+      "cache": false
     },
     "@nx/js:tsc": {
       "cache": true,

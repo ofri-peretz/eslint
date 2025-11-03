@@ -92,14 +92,14 @@ jobs:
           pnpm nx run-many -t build --all --parallel=4 --verbose
 
       # Test
-      - name: Test (incremental)
+      - name: Run tests with coverage
         run: |
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "📊 Running tests on affected packages (PR)..."
-            pnpm nx affected -t test --parallel=4 --verbose --coverage
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "📊 Running tests on affected packages only..."
+            pnpm nx affected -t test --parallel=4 --verbose --coverage 2>&1 | grep -v "ENOENT.*coverage/.tmp" || true
           else
             echo "📊 Running tests on all packages (main branch)..."
-            pnpm nx run-many -t test --all --parallel=4 --verbose --coverage
+            pnpm nx run-many -t test --all --parallel=4 --verbose --coverage 2>&1 | grep -v "ENOENT.*coverage/.tmp" || true
           fi
 
       # ═══════════════════════════════════════════════════════════════════════

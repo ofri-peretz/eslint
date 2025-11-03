@@ -1,14 +1,4 @@
 import { defineConfig } from 'vitest/config';
-// import { codecovVitePlugin } from "@codecov/vite-plugin";
-// import { mkdirSync } from 'node:fs';
-// import { join } from 'node:path';
-
-// Ensure coverage directory exists before any plugins run
-// try {
-//   mkdirSync(join(__dirname, 'coverage', '.tmp'), { recursive: true });
-// } catch (err) {
-//   // Ignore if already exists
-// }
 
 /**
  * Vitest configuration for eslint-plugin package
@@ -39,13 +29,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   root: __dirname,
   plugins: [
-    // Codecov plugin for coverage insights and bundle analysis
-    // Safe configuration: only analyzes in CI when token is present
-    // codecovVitePlugin({
-    //   enableBundleAnalysis: process.env['CODECOV_TOKEN'] !== undefined && process.env['CI'] === 'true',
-    //   bundleName: "eslint-plugin",
-    //   uploadToken: process.env['CODECOV_TOKEN'],
-    // }),
+    // Codecov plugin disabled - using CI workflow for coverage upload instead
   ],
   test: {
     globals: true,
