@@ -79,6 +79,14 @@ jobs:
       - name: Install dependencies (with cache)
         run: pnpm install --frozen-lockfile
 
+      - name: Verify pnpm installation
+        if: failure()
+        run: |
+          echo "❌ pnpm install failed - likely cache corruption"
+          echo "🔧 Attempting to clear and reinstall..."
+          pnpm store prune
+          pnpm install --no-frozen-lockfile || pnpm install
+
       # ═══════════════════════════════════════════════════════════════════════
       # LAYER 3: TYPESCRIPT INCREMENTAL BUILD CACHE
       # ═══════════════════════════════════════════════════════════════════════

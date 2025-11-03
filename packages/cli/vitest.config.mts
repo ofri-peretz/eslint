@@ -8,10 +8,9 @@ export default defineConfig({
     passWithNoTests: true,
     coverage: {
       provider: 'v8',
-      reporter: ['json', 'text'],  // ← Only json for Codecov (fastest)
+      reporter: ['json'],
       reportOnFailure: true,
       exclude: ['node_modules/', 'dist/', '**/*.test.ts'],
     },
   },
 });
-
