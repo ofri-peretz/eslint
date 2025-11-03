@@ -3,6 +3,13 @@ import { codecovVitePlugin } from "@codecov/vite-plugin";
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
+// Ensure coverage directory exists before any plugins run
+try {
+  mkdirSync(join(__dirname, 'coverage', '.tmp'), { recursive: true });
+} catch (err) {
+  // Ignore if already exists
+}
+
 /**
  * Vitest configuration for eslint-plugin-utils package
  *
@@ -32,19 +39,6 @@ import { join } from 'node:path';
 export default defineConfig({
   root: __dirname,
   plugins: [
-    // Vite plugin to ensure coverage directory exists before codecov plugin runs
-    {
-      name: 'ensure-coverage-dir',
-      configResolved() {
-        // Create coverage directory with .tmp subdirectory for codecov plugin
-        try {
-          const coverageDir = join(__dirname, 'coverage', '.tmp');
-          mkdirSync(coverageDir, { recursive: true });
-        } catch (err) {
-          // Ignore errors if directory already exists
-        }
-      },
-    },
     // Codecov plugin for coverage insights and bundle analysis
     // Safe configuration: only analyzes in CI when token is present
     codecovVitePlugin({
