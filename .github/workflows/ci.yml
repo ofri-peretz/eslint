@@ -153,13 +153,19 @@ jobs:
       # LAYER 8: POST-TEST ACTIONS (RUN IN PARALLEL)
       # ═══════════════════════════════════════════════════════════════════════
 
+      - name: Collect coverage files
+        id: coverage
+        run: |
+          COVERAGE_FILES=$(find ./packages ./apps -name "coverage-final.json" 2>/dev/null | tr '\n' ',' | sed 's/,$//')
+          echo "files=$COVERAGE_FILES" >> $GITHUB_OUTPUT
+          echo "Found coverage files: $COVERAGE_FILES"
+
       - name: Upload coverage to Codecov
+        if: steps.coverage.outputs.files != ''
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: >-
-            ./packages/*/coverage/coverage-final.json,
-            ./apps/*/coverage/coverage-final.json
+          files: ${{ steps.coverage.outputs.files }}
           flags: ${{ github.event_name == 'pull_request' && 'pr' || 'main' }}
           name: codecov-${{ github.event_name == 'pull_request' && 'pr' || 'main' }}
           fail_ci_if_error: false
