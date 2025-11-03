@@ -51,12 +51,12 @@ REQUIRED_HOOKS.forEach(hook => {
 });
 
 // Check if commitlint config exists
-const commitlintConfig = path.join(__dirname, '../commitlint.config.js');
+const commitlintConfig = path.join(__dirname, '../commitlint.config.mjs');
 if (!fs.existsSync(commitlintConfig)) {
-  console.error(`${RED}✗${RESET} commitlint.config.js not found`);
+  console.error(`${RED}✗${RESET} commitlint.config.mjs not found`);
   hasErrors = true;
 } else {
-  console.log(`${GREEN}✓${RESET} commitlint.config.js exists`);
+  console.log(`${GREEN}✓${RESET} commitlint.config.mjs exists`);
 }
 
 // Check if git commit template is configured
