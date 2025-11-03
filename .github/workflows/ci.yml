@@ -72,7 +72,7 @@ jobs:
             **/dist
             **/*.tsbuildinfo
             .nx/cache
-          key: ts-build-${{ runner.os }}-${{ github.ref }}-${{ github.sha }}
+          key: ts-build-${{ runner.os }}-${{ github.ref }}
           restore-keys: |
             ts-build-${{ runner.os }}-${{ github.ref }}-
             ts-build-${{ runner.os }}-
@@ -85,7 +85,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .eslintcache
-          key: eslint-cache-${{ runner.os }}-${{ github.ref }}-${{ github.sha }}
+          key: eslint-cache-${{ runner.os }}-${{ github.ref }}
           restore-keys: |
             eslint-cache-${{ runner.os }}-${{ github.ref }}-
             eslint-cache-${{ runner.os }}-
@@ -101,7 +101,7 @@ jobs:
             **/coverage
             **/test-cache
             **/.vitest
-          key: vitest-cache-${{ runner.os }}-${{ github.ref }}-${{ github.sha }}
+          key: vitest-cache-${{ runner.os }}-${{ github.ref }}
           restore-keys: |
             vitest-cache-${{ runner.os }}-${{ github.ref }}-
             vitest-cache-${{ runner.os }}-
