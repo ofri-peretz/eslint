@@ -4,7 +4,7 @@ import { execSync } from 'child_process';
 import * as readline from 'readline';
 
 const WORKFLOW = 'ci.yml';
-const BRANCH = 'local-playground-app';
+const BRANCH = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8' }).trim();
 
 const colors = {
   reset: '\x1b[0m',
