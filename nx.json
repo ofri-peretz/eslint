@@ -63,7 +63,8 @@
       ],
       "outputs": [
         "{projectRoot}/coverage",
-        "{projectRoot}/.vitest"
+        "{projectRoot}/.vitest",
+        "{projectRoot}/test-report.junit.xml"
       ],
       "cache": true
     },

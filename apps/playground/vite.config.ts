@@ -34,7 +34,11 @@ export default defineConfig(() => ({
     globals: true,
     environment: 'jsdom',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    reporters: ['default'],
+    reporters: ['junit', 'text', 'json'],
+    outputFile: {
+      // 🎯 JUnit reporter for test analytics in Codecov
+      junit: './test-report.junit.xml',
+    },
     coverage: {
       reportsDirectory: '../../coverage/apps/playground',
       provider: 'v8' as const,

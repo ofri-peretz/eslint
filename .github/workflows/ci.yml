@@ -144,10 +144,16 @@ jobs:
           export TSNODE_SKIP_TRANSPILATION=true
           pnpm nx run-many -t build --all --parallel=4 --verbose
 
-      # Test with Vitest cache
+      # Test with Vitest cache - use affected for PRs, all for main
       - name: Test (incremental, cached)
         run: |
-          pnpm nx run-many -t test --all --parallel=4 --verbose --coverage
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "📊 Running tests on affected packages (PR)..."
+            pnpm nx affected -t test --parallel=4 --verbose --coverage
+          else
+            echo "📊 Running tests on all packages (main branch)..."
+            pnpm nx run-many -t test --all --parallel=4 --verbose --coverage
+          fi
 
       # ═══════════════════════════════════════════════════════════════════════
       # LAYER 8: POST-TEST ACTIONS (RUN IN PARALLEL)
@@ -160,6 +166,13 @@ jobs:
           echo "files=$COVERAGE_FILES" >> $GITHUB_OUTPUT
           echo "Found coverage files: $COVERAGE_FILES"
 
+      - name: Collect JUnit test reports
+        id: tests
+        run: |
+          JUNIT_FILES=$(find ./packages ./apps -name "test-report.junit.xml" 2>/dev/null | tr '\n' ',' | sed 's/,$//')
+          echo "files=$JUNIT_FILES" >> $GITHUB_OUTPUT
+          echo "Found JUnit test report files: $JUNIT_FILES"
+
       - name: Upload coverage to Codecov
         if: steps.coverage.outputs.files != ''
         uses: codecov/codecov-action@v5
@@ -168,6 +181,17 @@ jobs:
           files: ${{ steps.coverage.outputs.files }}
           flags: ${{ github.event_name == 'pull_request' && 'pr' || 'main' }}
           name: codecov-${{ github.event_name == 'pull_request' && 'pr' || 'main' }}
+          fail_ci_if_error: false
+        continue-on-error: true
+
+      - name: Upload test analytics to Codecov
+        if: steps.tests.outputs.files != ''
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ${{ steps.tests.outputs.files }}
+          flags: ${{ github.event_name == 'pull_request' && 'test-pr' || 'test-main' }}
+          name: junit-${{ github.event_name == 'pull_request' && 'pr' || 'main' }}
           fail_ci_if_error: false
         continue-on-error: true
 
