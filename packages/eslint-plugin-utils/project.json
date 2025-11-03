@@ -1,12 +1,55 @@
 {
   "name": "eslint-plugin-utils",
-  // ... existing config ...
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/eslint-plugin-utils/src",
+  "projectType": "library",
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": [
+        "{projectRoot}",
+        "dist/{projectRoot}"
+      ],
+      "currentVersionResolver": "git-tag",
+      "fallbackCurrentVersionResolver": "disk"
+    }
+  },
+  "tags": [],
   "targets": {
-    // ... existing targets ...
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "outputPath": "dist/packages/eslint-plugin-utils",
+        "main": "packages/eslint-plugin-utils/src/index.ts",
+        "tsConfig": "packages/eslint-plugin-utils/tsconfig.lib.json",
+        "assets": [
+          "packages/eslint-plugin-utils/*.md"
+        ]
+      }
+    },
     "test": {
       "executor": "nx:run-commands",
       "options": {
         "command": "vitest run --coverage"
+      }
+    },
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm publish dist/{projectRoot} --access public --no-git-checks",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "command": "npm publish dist/packages/eslint-plugin-utils --access public",
+        "cwd": "{workspaceRoot}"
       }
     }
   }
