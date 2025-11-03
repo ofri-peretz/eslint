@@ -57,9 +57,7 @@
     "test": {
       "inputs": [
         "default",
-        "^production",
-        "{workspaceRoot}/jest.config.ts",
-        "{workspaceRoot}/vitest.config.ts"
+        "^production"
       ],
       "outputs": [
         "{projectRoot}/coverage",
