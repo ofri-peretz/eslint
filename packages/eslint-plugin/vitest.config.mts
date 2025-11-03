@@ -2,6 +2,7 @@ import { defineConfig } from 'vitest/config';
 import { codecovVitePlugin } from "@codecov/vite-plugin";
 
 export default defineConfig({
+  root: __dirname,
   plugins: [
     // Put the Codecov vite plugin after all other plugins
     codecovVitePlugin({

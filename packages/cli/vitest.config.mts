@@ -2,6 +2,7 @@ import { defineConfig } from 'vitest/config';
 import { codecovVitePlugin } from "@codecov/vite-plugin";
 
 export default defineConfig({
+  root: __dirname,
   plugins: [
     // Put the Codecov vite plugin after all other plugins
     codecovVitePlugin({
@@ -22,7 +23,7 @@ export default defineConfig({
       exclude: ['node_modules/', 'dist/', '**/*.test.ts'],
     },
     // ✅ JUnit reporter for test analytics in Codecov
-    reporters: ['junit', 'text', 'json'],
+    reporters: ['default', 'junit'],
     outputFile: {
       junit: './test-report.junit.xml',
     },

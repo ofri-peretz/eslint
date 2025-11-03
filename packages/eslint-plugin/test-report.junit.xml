@@ -1,33 +1,33 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="81" failures="0" errors="0" time="0.234091751">
-    <testsuite name="src/tests/detect-eval-with-expression.test.ts" timestamp="2025-11-03T04:00:37.405Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="16" failures="0" errors="0" skipped="0" time="0.051322709">
-        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; Valid Code &gt; valid - no eval calls &gt; valid &gt; const x = Math.eval();" time="0.024933667">
+<testsuites name="vitest tests" tests="81" failures="0" errors="0" time="0.254863501">
+    <testsuite name="src/tests/detect-eval-with-expression.test.ts" timestamp="2025-11-03T04:18:31.153Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="16" failures="0" errors="0" skipped="0" time="0.057150291">
+        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; Valid Code &gt; valid - no eval calls &gt; valid &gt; const x = Math.eval();" time="0.026845542">
         </testcase>
-        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; Valid Code &gt; valid - no eval calls &gt; valid &gt; const obj = { eval: () =&gt; {} }; obj.eval(&quot;code&quot;);" time="0.002854792">
+        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; Valid Code &gt; valid - no eval calls &gt; valid &gt; const obj = { eval: () =&gt; {} }; obj.eval(&quot;code&quot;);" time="0.00338825">
         </testcase>
-        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; Valid Code &gt; valid - no eval calls &gt; valid &gt; function myFunction(data) { return data; }" time="0.003419166">
+        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; Valid Code &gt; valid - no eval calls &gt; valid &gt; function myFunction(data) { return data; }" time="0.002455917">
         </testcase>
-        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; Valid Code &gt; valid - no eval calls &gt; valid &gt; const result = calculateValue();" time="0.001212">
+        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; Valid Code &gt; valid - no eval calls &gt; valid &gt; const result = calculateValue();" time="0.002927958">
         </testcase>
-        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; Dangerous eval() Calls &gt; invalid - eval with expressions &gt; invalid &gt; eval(userInput);" time="0.002422459">
+        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; Dangerous eval() Calls &gt; invalid - eval with expressions &gt; invalid &gt; eval(userInput);" time="0.002725041">
         </testcase>
-        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; Dangerous eval() Calls &gt; invalid - eval with expressions &gt; invalid &gt; eval(`code: ${value}`);" time="0.001790208">
+        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; Dangerous eval() Calls &gt; invalid - eval with expressions &gt; invalid &gt; eval(`code: ${value}`);" time="0.001910167">
         </testcase>
-        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; Dangerous eval() Calls &gt; invalid - eval with expressions &gt; invalid &gt; const result = eval(expression);" time="0.000959083">
+        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; Dangerous eval() Calls &gt; invalid - eval with expressions &gt; invalid &gt; const result = eval(expression);" time="0.001091042">
         </testcase>
         <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; Dangerous eval() Calls &gt; invalid - eval with expressions &gt; invalid &gt; 
             function process(code) {
               return eval(code);
             }
-          " time="0.001776875">
+          " time="0.001979125">
         </testcase>
-        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; eval() in Different Contexts &gt; invalid - eval in various contexts &gt; invalid &gt; const runner = (code) =&gt; eval(code);" time="0.001000917">
+        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; eval() in Different Contexts &gt; invalid - eval in various contexts &gt; invalid &gt; const runner = (code) =&gt; eval(code);" time="0.001155708">
         </testcase>
         <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; eval() in Different Contexts &gt; invalid - eval in various contexts &gt; invalid &gt; 
             if (condition) {
               eval(code);
             }
-          " time="0.001430958">
+          " time="0.001256583">
         </testcase>
         <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; eval() in Different Contexts &gt; invalid - eval in various contexts &gt; invalid &gt; 
             try {
@@ -35,185 +35,183 @@
             } catch (e) {
               console.error(e);
             }
-          " time="0.0018695">
+          " time="0.003016083">
         </testcase>
         <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; Multiple eval() Calls &gt; invalid - multiple evals &gt; invalid &gt; 
             eval(code1);
             eval(code2);
-          " time="0.00280975">
+          " time="0.002960333">
         </testcase>
-        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; eval() with Complex Expressions &gt; invalid - complex expressions &gt; invalid &gt; eval(a || b);" time="0.001151125">
+        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; eval() with Complex Expressions &gt; invalid - complex expressions &gt; invalid &gt; eval(a || b);" time="0.001313875">
         </testcase>
         <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; eval() with Complex Expressions &gt; invalid - complex expressions &gt; invalid &gt; 
             const code = getCode();
             eval(code);
-          " time="0.001011208">
+          " time="0.001092541">
         </testcase>
-        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; Edge Cases &gt; edge cases &gt; valid &gt; const evalString = &quot;eval(code)&quot;; console.log(evalString);" time="0.000926166">
+        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; Edge Cases &gt; edge cases &gt; valid &gt; const evalString = &quot;eval(code)&quot;; console.log(evalString);" time="0.00102175">
         </testcase>
-        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; Edge Cases &gt; edge cases &gt; invalid &gt; (eval)(code);" time="0.000845583">
+        <testcase classname="src/tests/detect-eval-with-expression.test.ts" name="detect-eval-with-expression &gt; Edge Cases &gt; edge cases &gt; invalid &gt; (eval)(code);" time="0.000956625">
         </testcase>
     </testsuite>
-    <testsuite name="src/tests/no-circular-dependencies.test.ts" timestamp="2025-11-03T04:00:37.406Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="3" failures="0" errors="0" skipped="0" time="0.032159167">
+    <testsuite name="src/tests/no-circular-dependencies.test.ts" timestamp="2025-11-03T04:18:31.155Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="3" failures="0" errors="0" skipped="0" time="0.034729084">
         <testcase classname="src/tests/no-circular-dependencies.test.ts" name="no-circular-dependencies &gt; no-circular-dependencies &gt; valid &gt; 
           import { utils } from &apos;./utils&apos;;
           export const result = utils.process();
-        " time="0.026198125">
+        " time="0.028021292">
         </testcase>
         <testcase classname="src/tests/no-circular-dependencies.test.ts" name="no-circular-dependencies &gt; no-circular-dependencies &gt; valid &gt; 
           import { Component } from &apos;./Component&apos;;
           describe(&apos;Component&apos;, () =&gt; {});
-        " time="0.002934958">
+        " time="0.002858708">
         </testcase>
         <testcase classname="src/tests/no-circular-dependencies.test.ts" name="no-circular-dependencies &gt; no-circular-dependencies &gt; valid &gt; 
           const module = await import(&apos;./dynamic-module&apos;);
-        " time="0.002214584">
+        " time="0.003039583">
         </testcase>
     </testsuite>
-    <testsuite name="src/tests/no-console-log.test.ts" timestamp="2025-11-03T04:00:37.407Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="21" failures="0" errors="0" skipped="0" time="0.070331792">
-        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Basic Functionality &gt; basic detection &gt; valid &gt; const logger = console;" time="0.025465167">
+    <testsuite name="src/tests/no-console-log.test.ts" timestamp="2025-11-03T04:18:31.155Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="21" failures="0" errors="0" skipped="0" time="0.079333709">
+        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Basic Functionality &gt; basic detection &gt; valid &gt; const logger = console;" time="0.027022292">
         </testcase>
-        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Basic Functionality &gt; basic detection &gt; valid &gt; console.error(&quot;error message&quot;);" time="0.002318125">
+        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Basic Functionality &gt; basic detection &gt; valid &gt; console.error(&quot;error message&quot;);" time="0.002442875">
         </testcase>
-        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Basic Functionality &gt; basic detection &gt; valid &gt; console.warn(&quot;warning message&quot;);" time="0.002022583">
+        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Basic Functionality &gt; basic detection &gt; valid &gt; console.warn(&quot;warning message&quot;);" time="0.003720666">
         </testcase>
-        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Basic Functionality &gt; basic detection &gt; valid &gt; console.info(&quot;info message&quot;);" time="0.001138917">
+        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Basic Functionality &gt; basic detection &gt; valid &gt; console.info(&quot;info message&quot;);" time="0.001296041">
         </testcase>
-        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Basic Functionality &gt; basic detection &gt; valid &gt; function test() { return true; }" time="0.001679">
+        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Basic Functionality &gt; basic detection &gt; valid &gt; function test() { return true; }" time="0.001735125">
         </testcase>
-        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Basic Functionality &gt; basic detection &gt; invalid &gt; console.log(&quot;test&quot;);" time="0.0033605">
+        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Basic Functionality &gt; basic detection &gt; invalid &gt; console.log(&quot;test&quot;);" time="0.003154625">
         </testcase>
-        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Basic Functionality &gt; basic detection &gt; invalid &gt; console.log(&quot;debug&quot;, data);" time="0.001891958">
+        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Basic Functionality &gt; basic detection &gt; invalid &gt; console.log(&quot;debug&quot;, data);" time="0.001727292">
         </testcase>
         <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Basic Functionality &gt; basic detection &gt; invalid &gt; 
             function debug() {
               console.log(&quot;debugging&quot;);
             }
-          " time="0.00260075">
+          " time="0.002335875">
         </testcase>
-        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Strategy: remove &gt; remove strategy &gt; invalid &gt; console.log(&quot;test&quot;);" time="0.002034958">
+        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Strategy: remove &gt; remove strategy &gt; invalid &gt; console.log(&quot;test&quot;);" time="0.002210583">
         </testcase>
         <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Strategy: remove &gt; remove strategy &gt; invalid &gt; 
 function test() {
   console.log(&quot;debug&quot;);
   return true;
-}" time="0.00367175">
+}" time="0.004514667">
         </testcase>
-        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Strategy: convert &gt; convert strategy &gt; invalid &gt; console.log(&quot;test&quot;);" time="0.00191325">
+        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Strategy: convert &gt; convert strategy &gt; invalid &gt; console.log(&quot;test&quot;);" time="0.002316291">
         </testcase>
-        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Strategy: convert &gt; convert strategy &gt; invalid &gt; console.log(&quot;test&quot;, data);" time="0.003950125">
+        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Strategy: convert &gt; convert strategy &gt; invalid &gt; console.log(&quot;test&quot;, data);" time="0.002215708">
         </testcase>
-        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Strategy: comment &gt; comment strategy &gt; invalid &gt; console.log(&quot;test&quot;);" time="0.002188959">
+        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Strategy: comment &gt; comment strategy &gt; invalid &gt; console.log(&quot;test&quot;);" time="0.003223">
         </testcase>
-        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Strategy: warn &gt; warn strategy &gt; invalid &gt; console.log(&quot;test&quot;);" time="0.001947209">
+        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Strategy: warn &gt; warn strategy &gt; invalid &gt; console.log(&quot;test&quot;);" time="0.002034083">
         </testcase>
-        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; ignorePaths Option &gt; ignore paths &gt; valid &gt; console.log(&quot;test&quot;);" time="0.001230375">
+        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; ignorePaths Option &gt; ignore paths &gt; valid &gt; console.log(&quot;test&quot;);" time="0.001748334">
         </testcase>
-        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; ignorePaths Option &gt; ignore paths &gt; valid &gt; console.log(&quot;test&quot;);" time="0.000935375">
+        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; ignorePaths Option &gt; ignore paths &gt; valid &gt; console.log(&quot;test&quot;);" time="0.003321916">
         </testcase>
-        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; ignorePaths Option &gt; ignore paths &gt; valid &gt; console.log(&quot;test&quot;);" time="0.000995333">
+        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; ignorePaths Option &gt; ignore paths &gt; valid &gt; console.log(&quot;test&quot;);" time="0.001271458">
         </testcase>
-        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; ignorePaths Option &gt; ignore paths &gt; invalid &gt; console.log(&quot;test&quot;);" time="0.001946417">
+        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; ignorePaths Option &gt; ignore paths &gt; invalid &gt; console.log(&quot;test&quot;);" time="0.001625875">
         </testcase>
         <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; maxOccurrences Option &gt; max occurrences limit &gt; invalid &gt; 
 console.log(&quot;first&quot;);
 console.log(&quot;second&quot;);
 console.log(&quot;third&quot;);
-console.log(&quot;fourth&quot;);" time="0.003789334">
+console.log(&quot;fourth&quot;);" time="0.005273041">
         </testcase>
-        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Custom Logger Names &gt; custom logger &gt; invalid &gt; console.log(&quot;test&quot;);" time="0.002356375">
+        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Custom Logger Names &gt; custom logger &gt; invalid &gt; console.log(&quot;test&quot;);" time="0.003003959">
         </testcase>
-        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Custom Logger Names &gt; custom logger &gt; invalid &gt; console.log(&quot;test&quot;);" time="0.001794625">
+        <testcase classname="src/tests/no-console-log.test.ts" name="no-console-log &gt; Custom Logger Names &gt; custom logger &gt; invalid &gt; console.log(&quot;test&quot;);" time="0.001929792">
         </testcase>
     </testsuite>
-    <testsuite name="src/tests/no-internal-modules.test.ts" timestamp="2025-11-03T04:00:37.408Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="41" failures="0" errors="0" skipped="0" time="0.079930291">
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Basic Detection &gt; detect deep imports &gt; valid &gt; import lodash from &apos;lodash&apos;;" time="0.024887458">
+    <testsuite name="src/tests/no-internal-modules.test.ts" timestamp="2025-11-03T04:18:31.156Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="41" failures="0" errors="0" skipped="0" time="0.083650417">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Basic Detection &gt; detect deep imports &gt; valid &gt; import lodash from &apos;lodash&apos;;" time="0.02431425">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Basic Detection &gt; detect deep imports &gt; valid &gt; import { useState } from &apos;react&apos;;" time="0.001806666">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Basic Detection &gt; detect deep imports &gt; valid &gt; import { useState } from &apos;react&apos;;" time="0.001747916">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Basic Detection &gt; detect deep imports &gt; valid &gt; import &apos;@company/design-system&apos;;" time="0.0009625">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Basic Detection &gt; detect deep imports &gt; valid &gt; import &apos;@company/design-system&apos;;" time="0.0009385">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Basic Detection &gt; detect deep imports &gt; valid &gt; import something from &apos;./index&apos;;" time="0.001857709">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Basic Detection &gt; detect deep imports &gt; valid &gt; import something from &apos;./index&apos;;" time="0.00174625">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Basic Detection &gt; detect deep imports &gt; invalid &gt; import get from &apos;lodash/get&apos;;" time="0.002155625">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Basic Detection &gt; detect deep imports &gt; invalid &gt; import get from &apos;lodash/get&apos;;" time="0.001976166">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Basic Detection &gt; detect deep imports &gt; invalid &gt; import { Button } from &apos;@company/ui/components/Button&apos;;" time="0.001382416">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Basic Detection &gt; detect deep imports &gt; invalid &gt; import { Button } from &apos;@company/ui/components/Button&apos;;" time="0.001458666">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Basic Detection &gt; detect deep imports &gt; invalid &gt; import utils from &apos;./utils/helpers&apos;;" time="0.0010485">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Basic Detection &gt; detect deep imports &gt; invalid &gt; import utils from &apos;./utils/helpers&apos;;" time="0.001167458">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Strategy: error &gt; error strategy &gt; invalid &gt; import get from &apos;lodash/get&apos;;" time="0.000928041">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Strategy: error &gt; error strategy &gt; invalid &gt; import get from &apos;lodash/get&apos;;" time="0.000956">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Strategy: autofix &gt; autofix strategy &gt; invalid &gt; import get from &apos;lodash/get&apos;;" time="0.002545417">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Strategy: autofix &gt; autofix strategy &gt; invalid &gt; import get from &apos;lodash/get&apos;;" time="0.002477791">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Strategy: autofix &gt; autofix strategy &gt; invalid &gt; import { Button } from &apos;@company/ui/components/Button&apos;;" time="0.002124125">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Strategy: autofix &gt; autofix strategy &gt; invalid &gt; import { Button } from &apos;@company/ui/components/Button&apos;;" time="0.00271775">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Strategy: autofix &gt; autofix strategy &gt; invalid &gt; import utils from &apos;./utils/helpers/format&apos;;" time="0.003970459">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Strategy: autofix &gt; autofix strategy &gt; invalid &gt; import utils from &apos;./utils/helpers/format&apos;;" time="0.003767125">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Strategy: suggest &gt; suggest strategy &gt; invalid &gt; import get from &apos;lodash/get&apos;;" time="0.00173225">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Strategy: suggest &gt; suggest strategy &gt; invalid &gt; import get from &apos;lodash/get&apos;;" time="0.001648709">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Strategy: suggest &gt; suggest strategy &gt; invalid &gt; import { util } from &apos;./utils/helpers/format&apos;;" time="0.00183475">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Strategy: suggest &gt; suggest strategy &gt; invalid &gt; import { util } from &apos;./utils/helpers/format&apos;;" time="0.001916667">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; maxDepth Option &gt; max depth control &gt; valid &gt; import { Button } from &apos;@company/ui/components&apos;;" time="0.002367">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; maxDepth Option &gt; max depth control &gt; valid &gt; import { Button } from &apos;@company/ui/components&apos;;" time="0.002215375">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; maxDepth Option &gt; max depth control &gt; valid &gt; import get from &apos;lodash/get&apos;;" time="0.001169791">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; maxDepth Option &gt; max depth control &gt; valid &gt; import get from &apos;lodash/get&apos;;" time="0.001217667">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; maxDepth Option &gt; max depth control &gt; valid &gt; import utils from &apos;./utils/helpers&apos;;" time="0.000815375">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; maxDepth Option &gt; max depth control &gt; valid &gt; import utils from &apos;./utils/helpers&apos;;" time="0.001060917">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; maxDepth Option &gt; max depth control &gt; invalid &gt; import get from &apos;lodash/get&apos;;" time="0.000790542">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; maxDepth Option &gt; max depth control &gt; invalid &gt; import get from &apos;lodash/get&apos;;" time="0.000864584">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; maxDepth Option &gt; max depth control &gt; invalid &gt; import { Button } from &apos;@company/ui/components/Button&apos;;" time="0.000913292">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; maxDepth Option &gt; max depth control &gt; invalid &gt; import { Button } from &apos;@company/ui/components/Button&apos;;" time="0.000960416">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; maxDepth Option &gt; max depth control &gt; invalid &gt; import utils from &apos;./utils/helpers/format&apos;;" time="0.000831459">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; maxDepth Option &gt; max depth control &gt; invalid &gt; import utils from &apos;./utils/helpers/format&apos;;" time="0.000881708">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; allow Option &gt; allow patterns &gt; valid &gt; import get from &apos;lodash/get&apos;;" time="0.000869458">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; allow Option &gt; allow patterns &gt; valid &gt; import get from &apos;lodash/get&apos;;" time="0.001732166">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; allow Option &gt; allow patterns &gt; valid &gt; import { Button } from &apos;@company/ui/components/Button&apos;;" time="0.0008425">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; allow Option &gt; allow patterns &gt; valid &gt; import { Button } from &apos;@company/ui/components/Button&apos;;" time="0.002122167">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; allow Option &gt; allow patterns &gt; valid &gt; import utils from &apos;./utils/helpers&apos;;" time="0.000799125">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; allow Option &gt; allow patterns &gt; valid &gt; import utils from &apos;./utils/helpers&apos;;" time="0.001111417">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; allow Option &gt; allow patterns &gt; invalid &gt; import isEmpty from &apos;lodash/isEmpty&apos;;" time="0.000783416">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; allow Option &gt; allow patterns &gt; invalid &gt; import isEmpty from &apos;lodash/isEmpty&apos;;" time="0.001066208">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; forbid Option &gt; forbid patterns &gt; invalid &gt; import get from &apos;lodash/get&apos;;" time="0.00086">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; forbid Option &gt; forbid patterns &gt; invalid &gt; import get from &apos;lodash/get&apos;;" time="0.000949875">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; forbid Option &gt; forbid patterns &gt; invalid &gt; import { Button } from &apos;@company/ui/internal/Button&apos;;" time="0.000969834">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; forbid Option &gt; forbid patterns &gt; invalid &gt; import { Button } from &apos;@company/ui/internal/Button&apos;;" time="0.000842542">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; ignorePaths Option &gt; ignore patterns &gt; valid &gt; import get from &apos;lodash/get&apos;;" time="0.000969167">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; ignorePaths Option &gt; ignore patterns &gt; valid &gt; import get from &apos;lodash/get&apos;;" time="0.000795292">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; ignorePaths Option &gt; ignore patterns &gt; valid &gt; import { Button } from &apos;@company/ui/components/Button&apos;;" time="0.000939167">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; ignorePaths Option &gt; ignore patterns &gt; valid &gt; import { Button } from &apos;@company/ui/components/Button&apos;;" time="0.000759667">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; ignorePaths Option &gt; ignore patterns &gt; valid &gt; import utils from &apos;./test/utils&apos;;" time="0.000785292">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; ignorePaths Option &gt; ignore patterns &gt; valid &gt; import utils from &apos;./test/utils&apos;;" time="0.001222625">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; ignorePaths Option &gt; ignore patterns &gt; invalid &gt; import get from &apos;lodash/get&apos;;" time="0.000809917">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; ignorePaths Option &gt; ignore patterns &gt; invalid &gt; import get from &apos;lodash/get&apos;;" time="0.001025167">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Scoped Packages &gt; scoped package handling &gt; valid &gt; import { useState } from &apos;@org/package&apos;;" time="0.000725708">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Scoped Packages &gt; scoped package handling &gt; valid &gt; import { useState } from &apos;@org/package&apos;;" time="0.000843416">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Scoped Packages &gt; scoped package handling &gt; invalid &gt; import { Button } from &apos;@org/package/components&apos;;" time="0.001025042">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Scoped Packages &gt; scoped package handling &gt; invalid &gt; import { Button } from &apos;@org/package/components&apos;;" time="0.0007895">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Scoped Packages &gt; scoped package handling &gt; invalid &gt; import { util } from &apos;@org/package/utils/helpers&apos;;" time="0.001029208">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Scoped Packages &gt; scoped package handling &gt; invalid &gt; import { util } from &apos;@org/package/utils/helpers&apos;;" time="0.000821167">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Relative Imports &gt; relative import handling &gt; valid &gt; import utils from &apos;./utils&apos;;" time="0.001015792">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Relative Imports &gt; relative import handling &gt; valid &gt; import utils from &apos;./utils&apos;;" time="0.000712375">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Relative Imports &gt; relative import handling &gt; valid &gt; import config from &apos;../config&apos;;" time="0.000765542">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Relative Imports &gt; relative import handling &gt; valid &gt; import config from &apos;../config&apos;;" time="0.000683458">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Relative Imports &gt; relative import handling &gt; invalid &gt; import helper from &apos;./utils/helpers&apos;;" time="0.00071975">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Relative Imports &gt; relative import handling &gt; invalid &gt; import helper from &apos;./utils/helpers&apos;;" time="0.001233041">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Relative Imports &gt; relative import handling &gt; invalid &gt; import format from &apos;../utils/helpers/format&apos;;" time="0.000935042">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Relative Imports &gt; relative import handling &gt; invalid &gt; import format from &apos;../utils/helpers/format&apos;;" time="0.001225208">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Export Statements &gt; export declaration handling &gt; valid &gt; export { Button } from &apos;@company/ui&apos;;" time="0.001483166">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Export Statements &gt; export declaration handling &gt; valid &gt; export { Button } from &apos;@company/ui&apos;;" time="0.001383875">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Export Statements &gt; export declaration handling &gt; invalid &gt; export { Button } from &apos;@company/ui/components/Button&apos;;" time="0.0009675">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Export Statements &gt; export declaration handling &gt; invalid &gt; export { Button } from &apos;@company/ui/components/Button&apos;;" time="0.000843417">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Export Statements &gt; export declaration handling &gt; invalid &gt; export { get } from &apos;lodash/get&apos;;" time="0.003351125">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Export Statements &gt; export declaration handling &gt; invalid &gt; export { get } from &apos;lodash/get&apos;;" time="0.003478542">
         </testcase>
-        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Complex Scenarios &gt; complex patterns &gt; valid &gt; import { Button } from &apos;@company/ui/internal/Button&apos;;" time="0.001046209">
+        <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Complex Scenarios &gt; complex patterns &gt; valid &gt; import { Button } from &apos;@company/ui/internal/Button&apos;;" time="0.001027083">
         </testcase>
         <testcase classname="src/tests/no-internal-modules.test.ts" name="no-internal-modules &gt; Complex Scenarios &gt; complex patterns &gt; invalid &gt; 
 import get from &apos;lodash/get&apos;;
 import isEmpty from &apos;lodash/isEmpty&apos;;
 import { Button } from &apos;@company/ui/components/Button&apos;;
-          " time="0.0027185">
+          " time="0.003574667">
         </testcase>
-    </testsuite>
-    <testsuite name="src/utils/llm-context.test.ts" timestamp="2025-11-03T04:00:37.409Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="0" failures="0" errors="0" skipped="0" time="0.000347792">
     </testsuite>
 </testsuites>
