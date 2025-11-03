@@ -249,7 +249,7 @@ on:
 
 ```
 1. ci.yml (development env)
-   └─ Lint → Build → Test → Coverage upload
+   └─ Lint → 📝 Review Comments → Build → Test → Coverage upload
    
 2. check-coverage.yml (development env)
    └─ Detailed coverage → PR comment

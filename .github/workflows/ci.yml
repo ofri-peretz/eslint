@@ -143,6 +143,19 @@ jobs:
           export ESLINT_CACHE=true
           pnpm nx run-many -t lint --all --parallel=4 --verbose
 
+      # ═══════════════════════════════════════════════════════════════════════
+      # LAYER 7.5: LINTING FEEDBACK (PR ONLY)
+      # ═══════════════════════════════════════════════════════════════════════
+
+      - name: 📝 Lint Review Comments (PR only)
+        if: github.event_name == 'pull_request'
+        uses: reviewdog/action-eslint@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          level: "warning"
+          reporter: "github-pr-review"
+        continue-on-error: true
+
       # Build with TypeScript incremental compilation
       - name: Build (incremental, cached)
         run: |
@@ -162,7 +175,9 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/coverage-final.json
+          files: >-
+            ./packages/*/coverage/coverage-final.json,
+            ./apps/*/coverage/coverage-final.json
           flags: ${{ github.event_name == 'pull_request' && 'pr' || 'main' }}
           name: codecov-${{ github.event_name == 'pull_request' && 'pr' || 'main' }}
           fail_ci_if_error: false

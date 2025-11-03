@@ -1,0 +1,118 @@
+coverage:
+  precision: 2
+  round: down
+  range: "70...100"
+
+comment:
+  layout: "header, diff, flags, components"
+  show_carryforward_flags: true
+  require_changes: false
+  require_base: no
+  branches:
+    - main
+
+# Component management for monorepo packages
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: auto
+        branches:
+          - "!main"  # Don't require on main
+      - type: patch
+        target: auto
+
+  individual_components:
+    # ESLint Plugin package
+    - component_id: eslint_plugin
+      name: "ESLint Plugin"
+      paths:
+        - "packages/eslint-plugin/**"
+      statuses:
+        - type: project
+          target: 85
+          branches:
+            - "!main"
+        - type: patch
+          target: 80
+
+    # CLI package
+    - component_id: cli
+      name: "CLI"
+      paths:
+        - "packages/cli/**"
+      statuses:
+        - type: project
+          target: 75
+          branches:
+            - "!main"
+        - type: patch
+          target: 70
+
+    # ESLint Plugin Utils package
+    - component_id: eslint_plugin_utils
+      name: "ESLint Plugin Utils"
+      paths:
+        - "packages/eslint-plugin-utils/**"
+      statuses:
+        - type: project
+          target: 80
+          branches:
+            - "!main"
+        - type: patch
+          target: 75
+
+    # Playground app
+    - component_id: playground
+      name: "Playground App"
+      paths:
+        - "apps/playground/**"
+      statuses:
+        - type: project
+          target: 60
+          branches:
+            - "!main"
+        - type: patch
+          target: 50
+
+    # Security rules
+    - component_id: security_rules
+      name: "Security Rules"
+      paths:
+        - "packages/eslint-plugin/src/rules/security/**"
+      statuses:
+        - type: project
+          target: 90
+          branches:
+            - "!main"
+
+    # Architecture rules
+    - component_id: architecture_rules
+      name: "Architecture Rules"
+      paths:
+        - "packages/eslint-plugin/src/rules/architecture/**"
+      statuses:
+        - type: project
+          target: 85
+          branches:
+            - "!main"
+
+# Pull request comments
+pr_comments:
+  default_rules:
+    flag_coverage_delta: 0.01
+
+# Status checks
+statuses:
+  project:
+    default:
+      target: 80
+      branches:
+        - "!main"
+  patch:
+    default:
+      target: 75
+  changes:
+    default:
+      branches:
+        - "!main"
