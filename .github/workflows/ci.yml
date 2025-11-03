@@ -32,7 +32,7 @@ jobs:
           fetch-depth: 0
 
       # ═══════════════════════════════════════════════════════════════════════
-      # LAYER 1: PNPM PACKAGE MANAGER CACHING
+      # LAYER 1: PNPM PACKAGE MANAGER SETUP (BEFORE Node setup)
       # ═══════════════════════════════════════════════════════════════════════
 
       - name: Setup pnpm
@@ -40,34 +40,8 @@ jobs:
         with:
           version: 10.18.3
 
-      # Get pnpm store path for caching
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-          echo "STORE_PATH=$(pnpm store path --silent)"
-
-      # Cache pnpm global store (packages)
-      - name: Cache pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: pnpm-store-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            pnpm-store-${{ runner.os }}-
-
-      # Cache pnpm virtual store (symlinks) - critical for speed
-      - name: Cache pnpm virtual store
-        uses: actions/cache@v4
-        with:
-          path: node_modules/.pnpm
-          key: pnpm-vstore-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            pnpm-vstore-${{ runner.os }}-
-
       # ═══════════════════════════════════════════════════════════════════════
-      # LAYER 2: NODE RUNTIME & BUILT-IN CACHING
+      # LAYER 2: NODE RUNTIME & BUILT-IN CACHING (NOW pnpm is available)
       # ═══════════════════════════════════════════════════════════════════════
 
       - name: Setup Node.js
@@ -82,7 +56,7 @@ jobs:
       - name: Verify pnpm installation
         if: failure()
         run: |
-          echo "❌ pnpm install failed - likely cache corruption"
+          echo "❌ pnpm install failed"
           echo "🔧 Attempting to clear and reinstall..."
           pnpm store prune
           pnpm install --no-frozen-lockfile || pnpm install
