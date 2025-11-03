@@ -4,7 +4,6 @@ import { codecovVitePlugin } from "@codecov/vite-plugin";
 export default defineConfig({
   root: __dirname,
   plugins: [
-    // Put the Codecov vite plugin after all other plugins
     codecovVitePlugin({
       enableBundleAnalysis: process.env['CODECOV_TOKEN'] !== undefined,
       bundleName: "cli",
@@ -18,7 +17,7 @@ export default defineConfig({
     passWithNoTests: true,
     coverage: {
       provider: 'v8',
-      reporter: ['json'],
+      reporter: ['json', 'text'],
       reportOnFailure: true,
       exclude: ['node_modules/', 'dist/', '**/*.test.ts'],
     },
