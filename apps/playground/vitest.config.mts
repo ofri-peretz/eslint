@@ -1,16 +1,16 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
-import { codecovVitePlugin } from "@codecov/vite-plugin";
+// import { codecovVitePlugin } from "@codecov/vite-plugin";
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 // Ensure coverage directory exists before any plugins run
-try {
-  mkdirSync(join(__dirname, 'coverage', '.tmp'), { recursive: true });
-} catch (err) {
-  // Ignore if already exists
-}
+// try {
+//   mkdirSync(join(__dirname, 'coverage', '.tmp'), { recursive: true });
+// } catch (err) {
+//   // Ignore if already exists
+// }
 
 /**
  * Vitest configuration for playground app
@@ -52,11 +52,11 @@ export default defineConfig({
     nxViteTsPaths(),
     // Codecov plugin for coverage insights and bundle analysis
     // Safe configuration: only analyzes in CI when token is present
-    codecovVitePlugin({
-      enableBundleAnalysis: process.env['CODECOV_TOKEN'] !== undefined && process.env['CI'] === 'true',
-      bundleName: "playground",
-      uploadToken: process.env['CODECOV_TOKEN'],
-    }),
+    // codecovVitePlugin({
+    //   enableBundleAnalysis: process.env['CODECOV_TOKEN'] !== undefined && process.env['CI'] === 'true',
+    //   bundleName: "playground",
+    //   uploadToken: process.env['CODECOV_TOKEN'],
+    // }),
   ],
   test: {
     name: 'playground',
