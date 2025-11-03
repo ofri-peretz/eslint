@@ -147,7 +147,7 @@ jobs:
       # Test with Vitest cache
       - name: Test (incremental, cached)
         run: |
-          pnpm nx run-many -t test --all --parallel=4 --verbose
+          pnpm nx run-many -t test --all --parallel=4 --verbose --coverage
 
       # ═══════════════════════════════════════════════════════════════════════
       # LAYER 8: POST-TEST ACTIONS (RUN IN PARALLEL)
