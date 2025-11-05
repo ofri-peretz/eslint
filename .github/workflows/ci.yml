@@ -109,14 +109,14 @@ jobs:
       - name: Collect coverage files
         id: coverage
         run: |
-          COVERAGE_FILES=$(find ./packages ./apps -name "coverage-final.json" 2>/dev/null | tr '\n' ',' | sed 's/,$//')
+          COVERAGE_FILES=$(find . -maxdepth 3 -name "coverage-final.json" -type f 2>/dev/null | grep -v node_modules | tr '\n' ',' | sed 's/,$//')
           echo "files=$COVERAGE_FILES" >> $GITHUB_OUTPUT
           echo "Found coverage files: $COVERAGE_FILES"
 
       - name: Collect JUnit test reports
         id: tests
         run: |
-          JUNIT_FILES=$(find ./packages ./apps -name "test-report.junit.xml" 2>/dev/null | tr '\n' ',' | sed 's/,$//')
+          JUNIT_FILES=$(find . -maxdepth 3 -name "test-report.junit.xml" -type f 2>/dev/null | grep -v node_modules | tr '\n' ',' | sed 's/,$//')
           echo "files=$JUNIT_FILES" >> $GITHUB_OUTPUT
           echo "Found JUnit test report files: $JUNIT_FILES"
 

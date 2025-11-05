@@ -8,7 +8,7 @@ import { defineConfig } from 'vitest/config';
  * - Node environment for running ESLint rule tests
  * - Coverage tracking with v8 provider (industry standard)
  * - JUnit reporting for CI/CD pipeline integration
- * - Codecov plugin for automatic coverage insights and bundle analysis
+ * - Coverage upload handled by CI workflows instead of Vite plugin
  *
  * @coverage
  * - Provider: v8 (outputs coverage-final.json for Codecov)
@@ -21,10 +21,9 @@ import { defineConfig } from 'vitest/config';
  * - Location: ./test-report.junit.xml
  * - Used by: Codecov for test health tracking
  *
- * @codecov
- * - Plugin: codecovVitePlugin for automatic coverage insights
- * - Only enables bundle analysis in CI environment (with CODECOV_TOKEN)
- * - Provides better coverage visibility and trend analysis
+ * @note
+ * Codecov plugin disabled - coverage upload is handled by CI workflows instead
+ * for better control and multi-package support
  */
 export default defineConfig({
   root: __dirname,
