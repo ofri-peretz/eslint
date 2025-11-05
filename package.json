@@ -6,7 +6,6 @@
   "main": "index.js",
   "scripts": {
     "prepare": "husky",
-    "postinstall": "nx run forge-js:verify-husky || echo '⚠️ Husky verification had warnings. Run: nx run forge-js:verify-husky-verbose'",
     "lint:workflows": "actionlint",
     "release": "nx release",
     "release:dry-run": "nx release --dry-run",
