@@ -31,6 +31,52 @@ jobs:
         with:
           fetch-depth: 0
 
+
+      # ═══════════════════════════════════════════════════════════════════════
+      # EARLY CHECK: DOCS-ONLY CHANGES (skip full CI if only docs/md changed)
+      # ═══════════════════════════════════════════════════════════════════════
+
+      - name: Check if changes are docs-only
+        id: docs_only
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # Get changed files for PR
+            CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+          else
+            # Get changed files for push to main
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+          fi
+
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+          echo ""
+
+          # Check if all changed files are docs or markdown
+          DOCS_ONLY=true
+          while IFS= read -r file; do
+            # Skip empty lines
+            [[ -z "$file" ]] && continue
+            # Check if file matches docs or markdown patterns
+            if ! [[ "$file" =~ ^docs/ || "$file" =~ \.md$ || "$file" =~ README || "$file" =~ CHANGELOG ]]; then
+              DOCS_ONLY=false
+              break
+            fi
+          done <<< "$CHANGED_FILES"
+
+          if [[ "$DOCS_ONLY" == "true" && -n "$CHANGED_FILES" ]]; then
+            echo "✅ Only documentation and markdown files changed - skipping full CI"
+            echo "docs_only=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚙️  Non-docs files changed - running full CI pipeline"
+            echo "docs_only=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: ✅ Skip CI for docs-only changes
+        if: steps.docs_only.outputs.docs_only == 'true'
+        run: |
+          echo "✅ CI passed automatically - only documentation and markdown files were changed"
+          exit 0
+
       # ═══════════════════════════════════════════════════════════════════════
       # LAYER 1: PNPM PACKAGE MANAGER SETUP (BEFORE Node setup)
       # ═══════════════════════════════════════════════════════════════════════
