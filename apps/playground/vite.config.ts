@@ -1,9 +1,8 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
-import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
+import type { InlineConfig } from 'vite';
 
-export default defineConfig({
+const config: InlineConfig = {
   root: __dirname,
   cacheDir: '../../node_modules/.vite/apps/playground',
   server: {
@@ -14,11 +13,6 @@ export default defineConfig({
     port: 4200,
     host: 'localhost',
   },
-  plugins: [react(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
-  // Uncomment this if you are using workers.
-  // worker: {
-  //  plugins: [ nxViteTsPaths() ],
-  // },
   build: {
     outDir: '../../dist/apps/playground',
     emptyOutDir: true,
@@ -27,4 +21,35 @@ export default defineConfig({
       transformMixedEsModules: true,
     },
   },
-});
+};
+
+// Only load React-specific plugins when actually building/serving/testing
+// This avoids ES module require() issues during Nx project graph analysis
+if (process.env.VITEST || process.argv.some(arg => ['build', 'serve', 'preview'].includes(arg))) {
+  const react = require('@vitejs/plugin-react');
+  const { nxViteTsPaths } = require('@nx/vite/plugins/nx-tsconfig-paths.plugin');
+  const { nxCopyAssetsPlugin } = require('@nx/vite/plugins/nx-copy-assets.plugin');
+
+  config.plugins = [react.default(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])];
+  config.test = {
+    name: 'playground',
+    watch: false,
+    globals: true,
+    environment: 'jsdom',
+    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    passWithNoTests: true,
+    coverage: {
+      provider: 'v8' as const,
+      reporter: ['json', 'text'],
+      reportOnFailure: true,
+      reportsDirectory: './coverage',
+      exclude: ['node_modules/', 'dist/', '**/*.{test,spec}.ts{,x}'],
+    },
+    reporters: ['default', 'junit'],
+    outputFile: {
+      junit: './test-report.junit.xml',
+    },
+  };
+}
+
+export default defineConfig(config);

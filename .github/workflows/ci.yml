@@ -118,7 +118,7 @@ jobs:
           export ESLINT_CACHE=true
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             echo "📝 Linting affected packages only..."
-            pnpm nx affected -t lint --parallel=4 --verbose 2>&1 || true
+            pnpm nx affected -t lint --parallel=4 --verbose
           else
             echo "📝 Linting all packages..."
             pnpm nx run-many -t lint --all --parallel=4 --verbose
@@ -143,7 +143,7 @@ jobs:
           export TSNODE_SKIP_TRANSPILATION=true
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             echo "🔨 Building affected packages only..."
-            pnpm nx affected -t build --parallel=4 --verbose 2>&1 || true
+            pnpm nx affected -t build --parallel=4 --verbose
           else
             echo "🔨 Building all packages..."
             pnpm nx run-many -t build --all --parallel=4 --verbose
@@ -153,11 +153,11 @@ jobs:
       - name: Run tests with coverage
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "📊 Running tests on affected packages only..."
-            pnpm nx affected -t test --parallel=4 --verbose --coverage 2>&1 | grep -v "ENOENT.*coverage/.tmp" || true
+            echo "📊 Running tests on affected packages..."
+            pnpm nx affected -t test --parallel=4 --verbose --coverage
           else
             echo "📊 Running tests on all packages (main branch)..."
-            pnpm nx run-many -t test --all --parallel=4 --verbose --coverage 2>&1 | grep -v "ENOENT.*coverage/.tmp" || true
+            pnpm nx run-many -t test --all --parallel=4 --verbose --coverage
           fi
 
       # ═══════════════════════════════════════════════════════════════════════

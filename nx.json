@@ -60,7 +60,7 @@
         "^production"
       ],
       "outputs": [
-        "{workspaceRoot}/coverage"
+        "{projectRoot}/coverage"
       ],
       "cache": false
     },
