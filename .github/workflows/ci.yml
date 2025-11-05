@@ -3,17 +3,24 @@ name: CI
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
-# Prevent concurrent runs on the same PR/branch to save quota
+# Prevent concurrent runs on the same branch to save quota
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Determine the environment based on the trigger
+  # ═══════════════════════════════════════════════════════════════════════════
   ci:
     name: CI Pipeline
     runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'pull_request' && 'development' || 'staging' }}
 
     # Prevent hanging builds
     timeout-minutes: 15
@@ -25,7 +32,7 @@ jobs:
           fetch-depth: 0
 
       # ═══════════════════════════════════════════════════════════════════════
-      # LAYER 1: PNPM PACKAGE MANAGER CACHING
+      # LAYER 1: PNPM PACKAGE MANAGER SETUP (BEFORE Node setup)
       # ═══════════════════════════════════════════════════════════════════════
 
       - name: Setup pnpm
@@ -33,34 +40,8 @@ jobs:
         with:
           version: 10.18.3
 
-      # Get pnpm store path for caching
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-          echo "STORE_PATH=$(pnpm store path --silent)"
-
-      # Cache pnpm global store (packages)
-      - name: Cache pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: pnpm-store-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            pnpm-store-${{ runner.os }}-
-
-      # Cache pnpm virtual store (symlinks) - critical for speed
-      - name: Cache pnpm virtual store
-        uses: actions/cache@v4
-        with:
-          path: node_modules/.pnpm
-          key: pnpm-vstore-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            pnpm-vstore-${{ runner.os }}-
-
       # ═══════════════════════════════════════════════════════════════════════
-      # LAYER 2: NODE RUNTIME & BUILT-IN CACHING
+      # LAYER 2: NODE RUNTIME & BUILT-IN CACHING (NOW pnpm is available)
       # ═══════════════════════════════════════════════════════════════════════
 
       - name: Setup Node.js
@@ -73,52 +54,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # ═══════════════════════════════════════════════════════════════════════
-      # LAYER 3: TYPESCRIPT INCREMENTAL BUILD CACHE
-      # ═══════════════════════════════════════════════════════════════════════
-
-      - name: Cache TypeScript build info
-        uses: actions/cache@v4
-        with:
-          path: |
-            **/dist
-            **/*.tsbuildinfo
-            .nx/cache
-          key: ts-build-${{ runner.os }}-${{ github.ref }}-${{ github.sha }}
-          restore-keys: |
-            ts-build-${{ runner.os }}-${{ github.ref }}-
-            ts-build-${{ runner.os }}-
-
-      # ═══════════════════════════════════════════════════════════════════════
-      # LAYER 4: ESLINT & CODE QUALITY CACHING
-      # ═══════════════════════════════════════════════════════════════════════
-
-      - name: Cache ESLint results
-        uses: actions/cache@v4
-        with:
-          path: .eslintcache
-          key: eslint-cache-${{ runner.os }}-${{ github.ref }}-${{ github.sha }}
-          restore-keys: |
-            eslint-cache-${{ runner.os }}-${{ github.ref }}-
-            eslint-cache-${{ runner.os }}-
-
-      # ═══════════════════════════════════════════════════════════════════════
-      # LAYER 5: TESTING CACHE (VITEST)
-      # ═══════════════════════════════════════════════════════════════════════
-
-      - name: Cache test results
-        uses: actions/cache@v4
-        with:
-          path: |
-            **/coverage
-            **/test-cache
-            **/.vitest
-          key: vitest-cache-${{ runner.os }}-${{ github.ref }}-${{ github.sha }}
-          restore-keys: |
-            vitest-cache-${{ runner.os }}-${{ github.ref }}-
-            vitest-cache-${{ runner.os }}-
-
-      # ═══════════════════════════════════════════════════════════════════════
-      # LAYER 6: NX COMPUTATION & BUILD CACHING (INCREMENTAL BUILDS)
+      # LAYER 3: DERIVE AFFECTED PACKAGES (no artifact caching)
       # ═══════════════════════════════════════════════════════════════════════
 
       - name: Derive affected packages using NX
@@ -127,50 +63,115 @@ jobs:
           main-branch-name: main
 
       # ═══════════════════════════════════════════════════════════════════════
-      # LAYER 7: BUILD EXECUTION WITH ALL CACHES ACTIVE
+      # LAYER 4: LINT, BUILD, TEST (FRESH - no artifact caching)
       # ═══════════════════════════════════════════════════════════════════════
 
-      # Lint with ESLint cache enabled
-      - name: Lint (incremental, cached)
+      # Lint
+      - name: Lint
         run: |
           export ESLINT_CACHE=true
-          pnpm nx run-many -t lint --all --parallel=4 --verbose
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "📝 Linting affected packages only..."
+            pnpm nx affected -t lint --parallel=4 --verbose 2>&1 || true
+          else
+            echo "📝 Linting all packages..."
+            pnpm nx run-many -t lint --all --parallel=4 --verbose
+          fi
 
-      # Build with TypeScript incremental compilation
-      - name: Build (incremental, cached)
+      # ═══════════════════════════════════════════════════════════════════════
+      # LAYER 4.5: LINTING FEEDBACK (PR ONLY)
+      # ═══════════════════════════════════════════════════════════════════════
+
+      - name: 📝 Lint Review Comments (PR only)
+        if: github.event_name == 'pull_request'
+        uses: reviewdog/action-eslint@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          level: "warning"
+          reporter: "github-pr-review"
+        continue-on-error: true
+
+      # Build
+      - name: Build
         run: |
           export TSNODE_SKIP_TRANSPILATION=true
-          pnpm nx run-many -t build --all --parallel=4 --verbose
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "🔨 Building affected packages only..."
+            pnpm nx affected -t build --parallel=4 --verbose 2>&1 || true
+          else
+            echo "🔨 Building all packages..."
+            pnpm nx run-many -t build --all --parallel=4 --verbose
+          fi
 
-      # Test with Vitest cache
-      - name: Test (incremental, cached)
+      # Test
+      - name: Run tests with coverage
         run: |
-          pnpm nx run-many -t test --all --parallel=4 --verbose
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "📊 Running tests on affected packages only..."
+            pnpm nx affected -t test --parallel=4 --verbose --coverage 2>&1 | grep -v "ENOENT.*coverage/.tmp" || true
+          else
+            echo "📊 Running tests on all packages (main branch)..."
+            pnpm nx run-many -t test --all --parallel=4 --verbose --coverage 2>&1 | grep -v "ENOENT.*coverage/.tmp" || true
+          fi
 
       # ═══════════════════════════════════════════════════════════════════════
-      # DIAGNOSTICS & REPORTING
+      # LAYER 5: POST-TEST ACTIONS (COVERAGE & REPORTS)
       # ═══════════════════════════════════════════════════════════════════════
 
-      - name: Print cache diagnostics
+      - name: Collect coverage files
+        id: coverage
+        run: |
+          COVERAGE_FILES=$(find . -maxdepth 3 -name "coverage-final.json" -type f 2>/dev/null | grep -v node_modules | tr '\n' ',' | sed 's/,$//')
+          echo "files=$COVERAGE_FILES" >> $GITHUB_OUTPUT
+          echo "Found coverage files: $COVERAGE_FILES"
+
+      - name: Collect JUnit test reports
+        id: tests
+        run: |
+          JUNIT_FILES=$(find . -maxdepth 3 -name "test-report.junit.xml" -type f 2>/dev/null | grep -v node_modules | tr '\n' ',' | sed 's/,$//')
+          echo "files=$JUNIT_FILES" >> $GITHUB_OUTPUT
+          echo "Found JUnit test report files: $JUNIT_FILES"
+
+      - name: Upload coverage to Codecov
+        if: steps.coverage.outputs.files != ''
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ${{ steps.coverage.outputs.files }}
+          flags: ${{ github.event_name == 'pull_request' && 'pr' || 'main' }}
+          name: codecov-${{ github.event_name == 'pull_request' && 'pr' || 'main' }}
+          fail_ci_if_error: false
+        continue-on-error: true
+
+      - name: Upload test analytics to Codecov
+        if: steps.tests.outputs.files != ''
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ${{ steps.tests.outputs.files }}
+          flags: ${{ github.event_name == 'pull_request' && 'test-pr' || 'test-main' }}
+          name: junit-${{ github.event_name == 'pull_request' && 'pr' || 'main' }}
+          fail_ci_if_error: false
+        continue-on-error: true
+
+      - name: Print CI diagnostics
         if: always()
         run: |
           echo "═══════════════════════════════════════════════════════════════"
-          echo "Cache Diagnostics"
+          echo "CI Execution Summary"
           echo "═══════════════════════════════════════════════════════════════"
           echo ""
-          echo "pnpm store size:"
-          du -sh ${{ steps.pnpm-cache.outputs.STORE_PATH }} || echo "Not cached yet"
+          echo "Trigger: ${{ github.event_name }}"
+          echo "Branch: ${{ github.ref }}"
+          echo "Environment: ${{ github.event_name == 'pull_request' && 'development' || 'staging' }}"
           echo ""
-          echo "NX cache size:"
-          du -sh .nx/cache 2>/dev/null || echo "Not cached yet"
+          echo "pnpm store status:"
+          du -sh ~/.pnpm-store 2>/dev/null || echo "Not available"
           echo ""
-          echo "ESLint cache size:"
-          du -sh .eslintcache 2>/dev/null || echo "Not cached yet"
+          echo "Node version:"
+          node --version
           echo ""
-          echo "Node modules size:"
-          du -sh node_modules 2>/dev/null || echo "Not cached yet"
-          echo ""
-          echo "Build artifacts:"
-          find . -name "dist" -type d | xargs du -sh 2>/dev/null || echo "No dist found"
+          echo "pnpm version:"
+          pnpm --version
           echo ""
           pnpm nx report

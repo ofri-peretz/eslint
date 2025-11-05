@@ -27,7 +27,7 @@
             "description": "Check hook is executable"
           },
           {
-            "command": "test -f commitlint.config.js || (echo '❌ commitlint.config.js not found' && exit 1)",
+            "command": "test -f commitlint.config.mjs || (echo '❌ commitlint.config.mjs not found' && exit 1)",
             "description": "Check commitlint config exists"
           },
           {

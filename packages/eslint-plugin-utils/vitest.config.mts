@@ -1,14 +1,13 @@
 import { defineConfig } from 'vitest/config';
 
 /**
- * Vitest configuration for eslint-plugin package
+ * Vitest configuration for eslint-plugin-utils package
  *
  * @description
- * Configures Vitest for testing ESLint plugin rules with the following setup:
- * - Node environment for running ESLint rule tests
+ * Configures Vitest for testing ESLint plugin utilities with the following setup:
+ * - Node environment for running utility function tests
  * - Coverage tracking with v8 provider (industry standard)
  * - JUnit reporting for CI/CD pipeline integration
- * - Coverage upload handled by CI workflows instead of Vite plugin
  *
  * @coverage
  * - Provider: v8 (outputs coverage-final.json for Codecov)
@@ -20,16 +19,10 @@ import { defineConfig } from 'vitest/config';
  * - Format: JUnit XML for test analytics
  * - Location: ./test-report.junit.xml
  * - Used by: Codecov for test health tracking
- *
- * @note
- * Codecov plugin disabled - coverage upload is handled by CI workflows instead
- * for better control and multi-package support
  */
 export default defineConfig({
   root: __dirname,
-  plugins: [
-    // Codecov plugin disabled - using CI workflow for coverage upload instead
-  ],
+  plugins: [],
   test: {
     globals: true,
     environment: 'node',
@@ -51,4 +44,3 @@ export default defineConfig({
     },
   },
 });
-

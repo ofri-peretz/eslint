@@ -1,0 +1,93 @@
+name: Prepare Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version-strategy:
+        description: "Version bump strategy"
+        required: true
+        type: choice
+        options:
+          - auto
+          - major
+          - minor
+          - patch
+          - premajor
+          - preminor
+          - prepatch
+          - prerelease
+        default: "auto"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10.18.3"
+
+jobs:
+  prepare:
+    name: 📝 Prepare Release PR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: 📂 Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: 🔄 Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: 📥 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🏗️ Build packages
+        run: pnpm nx run-many -t build --all
+
+      - name: 📝 Prepare release version
+        run: |
+          if [ "${{ inputs.version-strategy }}" != "auto" ]; then
+            echo "📝 Using version strategy: ${{ inputs.version-strategy }}"
+            pnpm nx release version ${{ inputs.version-strategy }} --skip-publish
+          else
+            echo "📝 Using conventional commits to determine version"
+            pnpm nx release version --skip-publish
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📊 Generate summary
+        run: |
+          echo "## 🎉 Release PR Prepared" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Strategy:** ${{ inputs.version-strategy }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "A pull request has been created with the version updates." >> $GITHUB_STEP_SUMMARY
+          echo "Review and merge to trigger the automatic release." >> $GITHUB_STEP_SUMMARY
