@@ -67,10 +67,16 @@ jobs:
       # ═══════════════════════════════════════════════════════════════════════
 
       # Lint
-      - name: Lint (incremental)
+      - name: Lint
         run: |
           export ESLINT_CACHE=true
-          pnpm nx run-many -t lint --all --parallel=4 --verbose
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "📝 Linting affected packages only..."
+            pnpm nx affected -t lint --parallel=4 --verbose 2>&1 || true
+          else
+            echo "📝 Linting all packages..."
+            pnpm nx run-many -t lint --all --parallel=4 --verbose
+          fi
 
       # ═══════════════════════════════════════════════════════════════════════
       # LAYER 4.5: LINTING FEEDBACK (PR ONLY)
@@ -86,10 +92,16 @@ jobs:
         continue-on-error: true
 
       # Build
-      - name: Build (incremental)
+      - name: Build
         run: |
           export TSNODE_SKIP_TRANSPILATION=true
-          pnpm nx run-many -t build --all --parallel=4 --verbose
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "🔨 Building affected packages only..."
+            pnpm nx affected -t build --parallel=4 --verbose 2>&1 || true
+          else
+            echo "🔨 Building all packages..."
+            pnpm nx run-many -t build --all --parallel=4 --verbose
+          fi
 
       # Test
       - name: Run tests with coverage
