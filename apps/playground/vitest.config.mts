@@ -19,7 +19,7 @@ import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
  *
  * @coverage
  * - Provider: v8 (outputs coverage-final.json for Codecov)
- * - Reporters: json (machine-readable), text (console output)
+ * - Reporters: json (machine-readable), text (console output), html (local dev)
  * - Fail on: Does not fail CI on low coverage, only reports metrics
  * - Excludes: Node modules, dist, and test files themselves
  * - ReportsDirectory: ./coverage (local output directory for coverage files)
@@ -45,8 +45,8 @@ export default defineConfig({
     passWithNoTests: true,
     coverage: {
       provider: 'v8' as const,
-      // json: for Codecov upload, text: for console output
-      reporter: ['json', 'text'],
+      // json for Codecov, text for console, html for local dev
+      reporter: ['json', 'text', 'html'],
       reportOnFailure: true,
       // Directory where coverage reports are written (relative to project root)
       reportsDirectory: './coverage',
