@@ -31,7 +31,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       // json for Codecov, text for console, html for local dev
-      reporter: ['json', 'text', 'html'],
+      reporter: ['json', 'text'],
       reportOnFailure: true,
       // Directory where coverage reports are written (relative to project root)
       reportsDirectory: './coverage',
