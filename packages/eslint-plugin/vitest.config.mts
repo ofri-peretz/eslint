@@ -43,6 +43,8 @@ export default defineConfig({
       // Directory where coverage reports are written (relative to project root)
       reportsDirectory: './coverage',
       exclude: ['node_modules/', 'dist/', '**/*.test.ts'],
+      // Clean coverage directory before tests to avoid .tmp issues
+      clean: true,
     },
     // ✅ JUnit reporter for test analytics in Codecov
     reporters: ['default', 'junit'],

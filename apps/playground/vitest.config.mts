@@ -52,6 +52,8 @@ export default defineConfig({
       reportsDirectory: './coverage',
       // Exclude common non-code directories and test files
       exclude: ['node_modules/', 'dist/', '**/*.{test,spec}.ts{,x}'],
+      // Clean coverage directory before tests to avoid .tmp issues
+      clean: true,
     },
     // ✅ JUnit reporter for test analytics in Codecov
     reporters: ['default', 'junit'],
