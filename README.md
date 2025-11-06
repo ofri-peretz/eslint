@@ -1,8 +1,8 @@
 # 🔧 Forge.js
 
-> **LLM-Optimized ESLint Plugin Ecosystem**
+> **Open-Source Tools & Libraries for JavaScript & TypeScript Ecosystems**
 
-A modern TypeScript monorepo providing powerful ESLint rules and utilities designed for better code quality and LLM-enhanced development workflows.
+A modern TypeScript monorepo providing a collection of carefully crafted tools, utilities, and libraries to ease development in the JavaScript and TypeScript ecosystems. Optimized for modern development workflows and LLM-enhanced coding assistants.
 
 [![CI](https://github.com/ofri-peretz/forge-js/actions/workflows/ci.yml/badge.svg)](https://github.com/ofri-peretz/forge-js/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -13,33 +13,37 @@ A modern TypeScript monorepo providing powerful ESLint rules and utilities desig
 
 ## 📦 Packages
 
-This monorepo contains independently versioned packages:
+This monorepo contains independently versioned packages. Below is the current list of published packages with their latest versions:
 
-| Package                                                           | Version                                                                    | Description                                      |
-| ----------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------ |
-| [`@forge-js/eslint-plugin`](./packages/eslint-plugin)             | ![npm](https://img.shields.io/npm/v/@forge-js/eslint-plugin-llm-optimized) | Core ESLint plugin with LLM-optimized rules      |
-| [`@forge-js/eslint-plugin-utils`](./packages/eslint-plugin-utils) | ![npm](https://img.shields.io/npm/v/@forge-js/eslint-plugin-utils)         | Utilities for building TypeScript ESLint plugins |
+> **Note**: This table is automatically updated with each release. For latest version information, visit [npmjs.com/@forge-js](https://www.npmjs.com/search?q=%40forge-js)
+
+| Package | Version | Description | Status |
+|---------|---------|-------------|--------|
+| [`@forge-js/eslint-plugin-llm-optimized`](./packages/eslint-plugin) | [![npm](https://img.shields.io/npm/v/@forge-js/eslint-plugin-llm-optimized)](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) | ESLint plugin with LLM-optimized rules for better code quality in AI-assisted development | ✅ Published |
+| [`@forge-js/eslint-plugin-utils`](./packages/eslint-plugin-utils) | [![npm](https://img.shields.io/npm/v/@forge-js/eslint-plugin-utils)](https://www.npmjs.com/package/@forge-js/eslint-plugin-utils) | Utilities and helpers for building TypeScript-based ESLint plugins | ✅ Published |
+| [`@forge-js/cli`](./packages/cli) | [![npm](https://img.shields.io/npm/v/@forge-js/cli)](https://www.npmjs.com/package/@forge-js/cli) | CLI tools for the Forge ecosystem | 🔄 In Development |
 
 ---
 
 ## 🎯 What is Forge.js?
 
-**Forge.js** is a comprehensive ESLint plugin ecosystem built with TypeScript and optimized for modern development workflows. It provides:
+**Forge.js** is an ecosystem of open-source tools and libraries built with TypeScript to ease development in the JavaScript and TypeScript ecosystems. It provides:
 
-- **🤖 LLM-Optimized Rules**: ESLint rules designed to work seamlessly with AI coding assistants
-- **🏗️ Solid Infrastructure**: Built on proven patterns from `typescript-eslint`
-- **🔧 Developer-Friendly**: Easy to configure, extend, and customize
-- **📊 Type-Safe**: Full TypeScript support with type checking utilities
-- **⚡ Performance**: Optimized for speed without sacrificing accuracy
-- **🧪 Well-Tested**: Comprehensive test coverage with Vitest
+- **🤖 LLM-Aware Tools**: Libraries designed to work seamlessly with AI coding assistants and modern development workflows
+- **🏗️ Solid Infrastructure**: Built on proven patterns and best practices from the community
+- **🔧 Developer-Friendly**: Easy to configure, extend, customize, and integrate
+- **📊 Type-Safe**: Full TypeScript support with comprehensive type checking utilities
+- **⚡ Performance**: Optimized for speed and efficiency without sacrificing accuracy
+- **🧪 Well-Tested**: Comprehensive test coverage with industry-standard tools (Vitest, Codecov)
+- **🔄 Actively Maintained**: Regular updates and responsive to community feedback
 
-### Key Features
+### Current Focus Areas
 
-- **Architecture & Dependency Management**: Enforce module boundaries and prevent circular dependencies
-- **Code Quality**: Detect console logs, enforce naming conventions, and more
-- **Security**: Identify hardcoded secrets and dangerous patterns
-- **Performance**: Optimize bundle size and runtime performance
-- **Accessibility**: Ensure web content is accessible to all users
+- **Code Quality Tools**: ESLint plugins and rules for maintaining high code standards
+- **Architecture & Dependency Management**: Tools for enforcing module boundaries and preventing circular dependencies
+- **Developer Experience**: CLI tools and utilities to streamline common development tasks
+- **Type Safety**: TypeScript utilities and helpers for building robust applications
+- **Performance & Security**: Tools for identifying and fixing performance bottlenecks and security issues
 
 ---
 
@@ -124,7 +128,9 @@ forge-js/
 ├── packages/
 │   ├── eslint-plugin/        # Core ESLint plugin
 │   ├── eslint-plugin-utils/  # Shared utilities
-│   └── cli/                  # CLI tools (internal)
+│   └── cli/                  # CLI tools
+├── apps/
+│   └── playground/           # Testing & demo app
 ├── docs/                     # Documentation
 ├── .github/                  # GitHub Actions workflows
 └── README.md                 # This file
@@ -153,26 +159,26 @@ We welcome contributions! Please see our [Contributing Guide](./docs/CONTRIBUTIN
 
 ---
 
-## 📋 Available Rules
+## 📋 Available Rules (ESLint Plugin)
 
 ### Architecture Rules
 
-| Rule                       | Description               | Auto-fixable |
-| -------------------------- | ------------------------- | ------------ |
-| `no-circular-dependencies` | Prevent circular imports  | ❌           |
-| `no-internal-modules`      | Enforce module boundaries | ❌           |
+| Rule | Description | Auto-fixable |
+|------|-------------|--------------|
+| `no-circular-dependencies` | Prevent circular imports | ❌ |
+| `no-internal-modules` | Enforce module boundaries | ❌ |
 
 ### Development Rules
 
-| Rule             | Description                     | Auto-fixable |
-| ---------------- | ------------------------------- | ------------ |
-| `no-console-log` | Disallow console.log statements | ✅           |
+| Rule | Description | Auto-fixable |
+|------|-------------|--------------|
+| `no-console-log` | Disallow console.log statements | ✅ |
 
 ### Security Rules
 
-| Rule                   | Description                  | Auto-fixable |
-| ---------------------- | ---------------------------- | ------------ |
-| `no-hardcoded-secrets` | Detect hardcoded credentials | ❌           |
+| Rule | Description | Auto-fixable |
+|------|-------------|--------------|
+| `no-hardcoded-secrets` | Detect hardcoded credentials | ❌ |
 
 See the [ESLint Plugin README](./packages/eslint-plugin/README.md) for complete rule documentation.
 
@@ -204,6 +210,7 @@ pnpm nx run eslint-plugin:test --coverage
 - **Package Manager**: pnpm 10.18+
 - **Linting**: ESLint 9.8+
 - **Test Coverage**: 90%+
+- **License**: MIT
 
 ---
 
@@ -226,9 +233,10 @@ See [LICENSE](LICENSE) for full details.
 
 ## 🙏 Acknowledgments
 
-- Inspired by [typescript-eslint](https://typescript-eslint.io/)
+- Inspired by [typescript-eslint](https://typescript-eslint.io/) and the broader TypeScript community
 - Built with [Nx](https://nx.dev/)
 - Tested with [Vitest](https://vitest.dev/)
+- Maintained with [pnpm](https://pnpm.io/)
 
 ---
 

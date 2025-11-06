@@ -26,7 +26,8 @@
   "targetDefaults": {
     "build": {
       "dependsOn": [
-        "^build"
+        "^build",
+        "test"
       ],
       "inputs": [
         "production",
@@ -60,7 +61,7 @@
         "^production"
       ],
       "outputs": [
-        "{workspaceRoot}/coverage"
+        "{projectRoot}/coverage"
       ],
       "cache": false
     },

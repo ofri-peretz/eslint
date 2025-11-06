@@ -21,6 +21,10 @@
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
+      "dependsOn": [
+        "^build",
+        "test"
+      ],
       "outputs": [
         "{options.outputPath}"
       ],
@@ -35,13 +39,18 @@
       }
     },
     "test": {
-      "executor": "nx:run-commands",
+      "executor": "@nx/vite:test",
       "outputs": [
-        "{workspaceRoot}/coverage/packages/eslint-plugin"
+        "{projectRoot}/coverage"
       ],
       "options": {
-        "command": "vitest run",
-        "cwd": "{projectRoot}"
+        "configFile": "packages/eslint-plugin/vitest.config.mts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "coverage": true
+        }
       }
     },
     "nx-release-publish": {

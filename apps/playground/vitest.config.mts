@@ -19,7 +19,7 @@ import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
  *
  * @coverage
  * - Provider: v8 (outputs coverage-final.json for Codecov)
- * - Reporters: json (machine-readable), text (console output)
+ * - Reporters: json (machine-readable), text (console output), html (local dev)
  * - Fail on: Does not fail CI on low coverage, only reports metrics
  * - Excludes: Node modules, dist, and test files themselves
  * - ReportsDirectory: ./coverage (local output directory for coverage files)
@@ -43,15 +43,19 @@ export default defineConfig({
     // Include both test and spec files, supporting multiple extensions
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     passWithNoTests: true,
+    // Global setup runs once before all tests to ensure coverage directories exist
+    globalSetup: ['../../vitest.global-setup.ts'],
     coverage: {
       provider: 'v8' as const,
-      // json: for Codecov upload, text: for console output
+      // json for Codecov, text for console, html for local dev
       reporter: ['json', 'text'],
       reportOnFailure: true,
       // Directory where coverage reports are written (relative to project root)
       reportsDirectory: './coverage',
       // Exclude common non-code directories and test files
       exclude: ['node_modules/', 'dist/', '**/*.{test,spec}.ts{,x}'],
+      // Clean coverage directory on each run (safe now that globalSetup ensures dirs exist)
+      clean: true,
     },
     // ✅ JUnit reporter for test analytics in Codecov
     reporters: ['default', 'junit'],

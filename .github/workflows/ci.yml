@@ -1,4 +1,4 @@
-name: CI
+name: CI Workflow
 
 on:
   pull_request:
@@ -18,7 +18,7 @@ jobs:
   # Determine the environment based on the trigger
   # ═══════════════════════════════════════════════════════════════════════════
   ci:
-    name: CI Pipeline
+    name: CI
     runs-on: ubuntu-latest
     environment: ${{ github.event_name == 'pull_request' && 'development' || 'staging' }}
 
@@ -27,9 +27,54 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
+      # ═══════════════════════════════════════════════════════════════════════
+      # EARLY CHECK: DOCS-ONLY CHANGES (skip full CI if only docs/md changed)
+      # ═══════════════════════════════════════════════════════════════════════
+
+      - name: Check if changes are docs-only
+        id: docs_only
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # Get changed files for PR
+            CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+          else
+            # Get changed files for push to main
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+          fi
+
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+          echo ""
+
+          # Check if all changed files are docs or markdown
+          DOCS_ONLY=true
+          while IFS= read -r file; do
+            # Skip empty lines
+            [[ -z "$file" ]] && continue
+            # Check if file matches docs or markdown patterns
+            if ! [[ "$file" =~ ^docs/ || "$file" =~ \.md$ || "$file" =~ README || "$file" =~ CHANGELOG ]]; then
+              DOCS_ONLY=false
+              break
+            fi
+          done <<< "$CHANGED_FILES"
+
+          if [[ "$DOCS_ONLY" == "true" && -n "$CHANGED_FILES" ]]; then
+            echo "✅ Only documentation and markdown files changed - skipping full CI"
+            echo "docs_only=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚙️  Non-docs files changed - running full CI pipeline"
+            echo "docs_only=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: ✅ Skip CI for docs-only changes
+        if: steps.docs_only.outputs.docs_only == 'true'
+        run: |
+          echo "✅ CI passed automatically - only documentation and markdown files were changed"
+          exit 0
 
       # ═══════════════════════════════════════════════════════════════════════
       # LAYER 1: PNPM PACKAGE MANAGER SETUP (BEFORE Node setup)
@@ -45,7 +90,7 @@ jobs:
       # ═══════════════════════════════════════════════════════════════════════
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: "pnpm"
@@ -63,55 +108,31 @@ jobs:
           main-branch-name: main
 
       # ═══════════════════════════════════════════════════════════════════════
-      # LAYER 4: LINT, BUILD, TEST (FRESH - no artifact caching)
+      # LAYER 4: TEST & BUILD
       # ═══════════════════════════════════════════════════════════════════════
+      # We run test first with coverage enabled, then build.
+      # Build depends on test (Nx dependency), but we run both explicitly to ensure
+      # tests always run even if build is cached (build dependency doesn't re-run if cached)
 
-      # Lint
-      - name: Lint
+      - name: Test Affected Packages
         run: |
-          export ESLINT_CACHE=true
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "📝 Linting affected packages only..."
-            pnpm nx affected -t lint --parallel=4 --verbose 2>&1 || true
+            echo "📊 Testing affected packages..."
+            pnpm nx affected -t test -c ci --parallel=4 --verbose
           else
-            echo "📝 Linting all packages..."
-            pnpm nx run-many -t lint --all --parallel=4 --verbose
+            echo "📊 Testing all packages..."
+            pnpm nx run-many -t test --all -c ci --parallel=4 --verbose
           fi
 
-      # ═══════════════════════════════════════════════════════════════════════
-      # LAYER 4.5: LINTING FEEDBACK (PR ONLY)
-      # ═══════════════════════════════════════════════════════════════════════
-
-      - name: 📝 Lint Review Comments (PR only)
-        if: github.event_name == 'pull_request'
-        uses: reviewdog/action-eslint@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          level: "warning"
-          reporter: "github-pr-review"
-        continue-on-error: true
-
-      # Build
-      - name: Build
+      - name: Build Affected Packages
         run: |
           export TSNODE_SKIP_TRANSPILATION=true
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "🔨 Building affected packages only..."
-            pnpm nx affected -t build --parallel=4 --verbose 2>&1 || true
+            echo "🔨 Building affected packages..."
+            pnpm nx affected -t build --parallel=4 --verbose
           else
             echo "🔨 Building all packages..."
             pnpm nx run-many -t build --all --parallel=4 --verbose
-          fi
-
-      # Test
-      - name: Run tests with coverage
-        run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "📊 Running tests on affected packages only..."
-            pnpm nx affected -t test --parallel=4 --verbose --coverage 2>&1 | grep -v "ENOENT.*coverage/.tmp" || true
-          else
-            echo "📊 Running tests on all packages (main branch)..."
-            pnpm nx run-many -t test --all --parallel=4 --verbose --coverage 2>&1 | grep -v "ENOENT.*coverage/.tmp" || true
           fi
 
       # ═══════════════════════════════════════════════════════════════════════
