@@ -1,4 +1,4 @@
-name: CI
+name: CI Workflow
 
 on:
   pull_request:
@@ -27,7 +27,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -90,7 +90,7 @@ jobs:
       # ═══════════════════════════════════════════════════════════════════════
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: "pnpm"
@@ -108,21 +108,31 @@ jobs:
           main-branch-name: main
 
       # ═══════════════════════════════════════════════════════════════════════
-      # LAYER 4: BUILD & TEST (with automatic test execution via Nx dependencies)
+      # LAYER 4: TEST & BUILD
       # ═══════════════════════════════════════════════════════════════════════
-      # Note: Nx targetDefaults specifies that build depends on test, so running
-      # 'nx affected -t build' automatically runs test first. We explicitly request
-      # coverage for test execution.
+      # We run test first with coverage enabled, then build.
+      # Build depends on test (Nx dependency), but we run both explicitly to ensure
+      # tests always run even if build is cached (build dependency doesn't re-run if cached)
 
-      - name: Build and Test
+      - name: Test Affected Packages
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "📊 Testing affected packages..."
+            pnpm nx affected -t test -c ci --parallel=4 --verbose
+          else
+            echo "📊 Testing all packages..."
+            pnpm nx run-many -t test --all -c ci --parallel=4 --verbose
+          fi
+
+      - name: Build Affected Packages
         run: |
           export TSNODE_SKIP_TRANSPILATION=true
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "🔨 Building affected packages (tests run automatically as dependency)..."
-            pnpm nx affected -t build -c ci --parallel=4 --verbose
+            echo "🔨 Building affected packages..."
+            pnpm nx affected -t build --parallel=4 --verbose
           else
-            echo "🔨 Building all packages (tests run automatically as dependency)..."
-            pnpm nx run-many -t build --all -c ci --parallel=4 --verbose
+            echo "🔨 Building all packages..."
+            pnpm nx run-many -t build --all --parallel=4 --verbose
           fi
 
       # ═══════════════════════════════════════════════════════════════════════
