@@ -48,6 +48,30 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # ═══════════════════════════════════════════════════════════════════════
+      # NX CLOUD - Remote caching for faster builds
+      # ═══════════════════════════════════════════════════════════════════════
+
+      - name: Connect to Nx Cloud
+        run: npx nx connect-to-nx-cloud --quiet
+        env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+
+      # ═══════════════════════════════════════════════════════════════════════
+      # ESLINT CACHE - Persist lint results between runs
+      # ═══════════════════════════════════════════════════════════════════════
+
+      - name: Restore ESLint cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            **/.eslintcache
+            .eslintcache
+          key: eslint-cache-${{ github.ref }}-${{ github.sha }}
+          restore-keys: |
+            eslint-cache-${{ github.ref }}-
+            eslint-cache-
+
+      # ═══════════════════════════════════════════════════════════════════════
       # DERIVE AFFECTED PACKAGES
       # ═══════════════════════════════════════════════════════════════════════
 
@@ -57,10 +81,10 @@ jobs:
           main-branch-name: main
 
       # ═══════════════════════════════════════════════════════════════════════
-      # LINTING
+      # LINTING (Fast thanks to caches)
       # ═══════════════════════════════════════════════════════════════════════
 
-      - name: Lint affected packages
+      - name: Lint affected packages (single pass with cache)
         run: |
           export ESLINT_CACHE=true
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
@@ -70,20 +94,6 @@ jobs:
             echo "📝 Linting all packages..."
             pnpm nx run-many -t lint --all --parallel=4 --verbose
           fi
-
-      # ═══════════════════════════════════════════════════════════════════════
-      # LINTING FEEDBACK (PR ONLY)
-      # ═══════════════════════════════════════════════════════════════════════
-      # ReportDog provides inline PR comments for linting violations
-
-      - name: ESLint Feedback via ReviewDog (PR only)
-        if: github.event_name == 'pull_request'
-        uses: reviewdog/action-eslint@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          level: "warning"
-          reporter: "github-pr-review"
-        continue-on-error: true
 
       # ═══════════════════════════════════════════════════════════════════════
       # DIAGNOSTICS
