@@ -18,7 +18,7 @@ jobs:
   # Determine the environment based on the trigger
   # ═══════════════════════════════════════════════════════════════════════════
   ci:
-    name: CI Pipeline
+    name: CI
     runs-on: ubuntu-latest
     environment: ${{ github.event_name == 'pull_request' && 'development' || 'staging' }}
 
@@ -30,7 +30,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
 
       # ═══════════════════════════════════════════════════════════════════════
       # EARLY CHECK: DOCS-ONLY CHANGES (skip full CI if only docs/md changed)
@@ -109,55 +108,21 @@ jobs:
           main-branch-name: main
 
       # ═══════════════════════════════════════════════════════════════════════
-      # LAYER 4: LINT, BUILD, TEST (FRESH - no artifact caching)
+      # LAYER 4: BUILD & TEST (with automatic test execution via Nx dependencies)
       # ═══════════════════════════════════════════════════════════════════════
+      # Note: Nx targetDefaults specifies that build depends on test, so running
+      # 'nx affected -t build' automatically runs test first. We explicitly request
+      # coverage for test execution.
 
-      # Lint
-      - name: Lint
-        run: |
-          export ESLINT_CACHE=true
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "📝 Linting affected packages only..."
-            pnpm nx affected -t lint --parallel=4 --verbose
-          else
-            echo "📝 Linting all packages..."
-            pnpm nx run-many -t lint --all --parallel=4 --verbose
-          fi
-
-      # ═══════════════════════════════════════════════════════════════════════
-      # LAYER 4.5: LINTING FEEDBACK (PR ONLY)
-      # ═══════════════════════════════════════════════════════════════════════
-
-      - name: 📝 Lint Review Comments (PR only)
-        if: github.event_name == 'pull_request'
-        uses: reviewdog/action-eslint@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          level: "warning"
-          reporter: "github-pr-review"
-        continue-on-error: true
-
-      # Build
-      - name: Build
+      - name: Build and Test
         run: |
           export TSNODE_SKIP_TRANSPILATION=true
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "🔨 Building affected packages only..."
-            pnpm nx affected -t build --parallel=4 --verbose
+            echo "🔨 Building affected packages (tests run automatically as dependency)..."
+            pnpm nx affected -t build -c ci --parallel=4 --verbose
           else
-            echo "🔨 Building all packages..."
-            pnpm nx run-many -t build --all --parallel=4 --verbose
-          fi
-
-      # Test
-      - name: Run tests with coverage
-        run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "📊 Running tests on affected packages..."
-            pnpm nx affected -t test --parallel=4 --verbose --coverage
-          else
-            echo "📊 Running tests on all packages (main branch)..."
-            pnpm nx run-many -t test --all --parallel=4 --verbose --coverage
+            echo "🔨 Building all packages (tests run automatically as dependency)..."
+            pnpm nx run-many -t build --all -c ci --parallel=4 --verbose
           fi
 
       # ═══════════════════════════════════════════════════════════════════════

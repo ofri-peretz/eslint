@@ -35,9 +35,18 @@
       }
     },
     "test": {
-      "executor": "nx:run-commands",
+      "executor": "@nx/vite:test",
+      "outputs": [
+        "{projectRoot}/coverage"
+      ],
       "options": {
-        "command": "vitest run"
+        "configFile": "packages/cli/vitest.config.mts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "coverage": true
+        }
       }
     }
   }

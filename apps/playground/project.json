@@ -7,9 +7,18 @@
   "// targets": "to see all targets run: nx show project playground --web",
   "targets": {
     "test": {
-      "executor": "nx:run-commands",
+      "executor": "@nx/vite:test",
+      "outputs": [
+        "{projectRoot}/coverage"
+      ],
       "options": {
-        "command": "vitest run"
+        "configFile": "apps/playground/vitest.config.mts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "coverage": true
+        }
       }
     }
   }

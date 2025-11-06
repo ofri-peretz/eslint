@@ -1,0 +1,108 @@
+name: CI - Lint
+
+on:
+    pull_request:
+        types: [opened, synchronize, reopened]
+    workflow_dispatch:
+
+# Prevent concurrent runs on the same branch to save quota
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    # ═══════════════════════════════════════════════════════════════════════════
+    # LINTING WORKFLOW (Separate from main CI for faster feedback)
+    # ═══════════════════════════════════════════════════════════════════════════
+    # This workflow runs ESLint via Nx and provides feedback via reviewdog.
+    # Set this as a required check in GitHub branch protection rules.
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    lint:
+        name: ESLint Review
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            # ═══════════════════════════════════════════════════════════════════════
+            # PNPM & NODE SETUP
+            # ═══════════════════════════════════════════════════════════════════════
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 10.18.3
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: "pnpm"
+
+            - name: Install dependencies (with cache)
+              run: pnpm install --frozen-lockfile
+
+            # ═══════════════════════════════════════════════════════════════════════
+            # DERIVE AFFECTED PACKAGES
+            # ═══════════════════════════════════════════════════════════════════════
+
+            - name: Derive affected packages using NX
+              uses: nrwl/nx-set-shas@v4
+              with:
+                  main-branch-name: main
+
+            # ═══════════════════════════════════════════════════════════════════════
+            # LINTING
+            # ═══════════════════════════════════════════════════════════════════════
+
+            - name: Lint affected packages
+              run: |
+                  export ESLINT_CACHE=true
+                  if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+                    echo "📝 Linting affected packages only..."
+                    pnpm nx affected -t lint --parallel=4 --verbose
+                  else
+                    echo "📝 Linting all packages..."
+                    pnpm nx run-many -t lint --all --parallel=4 --verbose
+                  fi
+
+            # ═══════════════════════════════════════════════════════════════════════
+            # LINTING FEEDBACK (PR ONLY)
+            # ═══════════════════════════════════════════════════════════════════════
+            # ReportDog provides inline PR comments for linting violations
+
+            - name: ESLint Feedback via ReviewDog (PR only)
+              if: github.event_name == 'pull_request'
+              uses: reviewdog/action-eslint@v1
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  level: "warning"
+                  reporter: "github-pr-review"
+              continue-on-error: true
+
+            # ═══════════════════════════════════════════════════════════════════════
+            # DIAGNOSTICS
+            # ═══════════════════════════════════════════════════════════════════════
+
+            - name: Print lint diagnostics
+              if: always()
+              run: |
+                  echo "═══════════════════════════════════════════════════════════════"
+                  echo "Lint Workflow Summary"
+                  echo "═══════════════════════════════════════════════════════════════"
+                  echo ""
+                  echo "Trigger: ${{ github.event_name }}"
+                  echo "Branch: ${{ github.ref }}"
+                  echo ""
+                  echo "Node version:"
+                  node --version
+                  echo ""
+                  echo "pnpm version:"
+                  pnpm --version
+                  echo ""
+                  pnpm nx report

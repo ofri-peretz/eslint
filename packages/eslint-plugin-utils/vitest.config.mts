@@ -28,6 +28,8 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.test.ts'],
     passWithNoTests: true,
+    // Global setup runs once before all tests to ensure coverage directories exist
+    globalSetup: ['../../vitest.global-setup.ts'],
     coverage: {
       provider: 'v8',
       // json for Codecov, text for console, html for local dev
@@ -36,6 +38,8 @@ export default defineConfig({
       // Directory where coverage reports are written (relative to project root)
       reportsDirectory: './coverage',
       exclude: ['node_modules/', 'dist/', '**/*.test.ts'],
+      // Clean coverage directory on each run (safe now that globalSetup ensures dirs exist)
+      clean: true,
     },
     // ✅ JUnit reporter for test analytics in Codecov
     reporters: ['default', 'junit'],
