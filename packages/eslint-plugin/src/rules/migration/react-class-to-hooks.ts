@@ -205,7 +205,6 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
           data: {
             componentName,
             complexity,
-            ...llmContext,
           },
           ...(complexity === 'simple' ? {
             suggest: [

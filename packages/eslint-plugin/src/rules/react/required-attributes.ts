@@ -141,6 +141,13 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
     /**
      * Get default suggested value for attribute
      */
+    /**
+     * Check if an element is a form element that should have type/name attributes
+     */
+    const isFormElement = (elementName: string): boolean => {
+      return ['input', 'button', 'select', 'textarea'].includes(elementName.toLowerCase());
+    };
+
     const getDefaultSuggestedValue = (attribute: string, elementName: string): string => {
       if (attribute === 'data-testid') {
         // Generate kebab-case testid from element name
@@ -172,6 +179,11 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
 
           // Check if this element should be ignored for this attribute
           if (ignoreTags.includes(elementName)) {
+            continue;
+          }
+
+          // SKIP: type/name attributes only apply to form elements
+          if ((attribute === 'type' || attribute === 'name') && !isFormElement(elementName)) {
             continue;
           }
 
@@ -239,7 +251,6 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
               attribute,
               suggestedValue: defaultValue,
               purpose,
-              ...llmContext,
             },
             suggest: [
               {

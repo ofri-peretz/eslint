@@ -414,7 +414,6 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
         node,
         messageId: 'highCognitiveComplexity',
         data: {
-          ...llmContext,
           functionName: functionSignature,
           complexity: String(complexity),
           max: String(maxComplexity),

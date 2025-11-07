@@ -134,13 +134,11 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
 
     /**
      * All functions that can execute arbitrary code
+     * NOTE: setTimeout/setInterval are NOT eval-like - they don't execute code strings
      */
     const evalFunctions = [
       'eval',
       'Function',
-      'setTimeout',
-      'setInterval',
-      'new Function',
       ...additionalEvalFunctions
     ];
 
@@ -313,7 +311,6 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
           node,
           messageId: 'evalWithExpression',
           data: {
-            ...llmContext,
             expression,
             patternCategory: pattern?.category || 'dynamic code execution',
             safeAlternative: pattern?.safeAlternative || 'Remove eval entirely',

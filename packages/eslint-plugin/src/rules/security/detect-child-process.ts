@@ -355,7 +355,6 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         node,
         messageId: 'childProcessCommandInjection',
         data: {
-          ...llmContext,
           method,
           args,
           riskLevel,

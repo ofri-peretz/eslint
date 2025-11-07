@@ -185,7 +185,6 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
             daysRemaining: String(daysRemaining ?? 'Unknown'),
             urgency: urgency.toUpperCase(),
             migrationGuide: deprecatedApi.migrationGuide || 'See documentation',
-            ...llmContext,
           },
           suggest: [
             {

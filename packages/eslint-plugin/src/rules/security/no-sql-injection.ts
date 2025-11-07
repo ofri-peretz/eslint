@@ -175,7 +175,6 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
           node,
           messageId: 'sqlInjection',
           data: {
-            ...llmContext,
             filePath: filename,
             line: String(node.loc?.start.line ?? 0),
           },
