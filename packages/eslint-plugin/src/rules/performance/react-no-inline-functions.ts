@@ -204,7 +204,6 @@ export const reactNoInlineFunctions = createRule<RuleOptions, MessageIds>({
           node,
           messageId: 'inlineFunction',
           data: {
-            ...llmContext,
             impact: impact.severity,
             location: arrayInfo.inArray ? `${arrayInfo.method}() call` : 'JSX prop',
           },

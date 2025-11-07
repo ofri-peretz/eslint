@@ -218,7 +218,6 @@ export const imgRequiresAlt = createRule<RuleOptions, MessageIds>({
             affectedUsers: '8% of users',
             wcagLevel: 'A',
             suggestion: suggestions[0] || 'Descriptive text',
-            ...llmContext,
           },
           suggest: [
             {

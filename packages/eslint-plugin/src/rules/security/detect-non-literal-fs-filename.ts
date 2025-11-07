@@ -362,7 +362,6 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
         node,
         messageId: 'fsPathTraversal',
         data: {
-          ...llmContext,
           method,
           path,
           riskLevel,

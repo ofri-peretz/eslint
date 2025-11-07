@@ -174,7 +174,6 @@ export const enforceNaming = createRule<RuleOptions, MessageIds>({
           incorrectTerm: node.name,
           correctTerm: violatedTerm.correct,
           domain,
-          ...llmContext,
         },
         suggest: [
           {

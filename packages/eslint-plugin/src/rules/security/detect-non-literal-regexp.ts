@@ -405,7 +405,6 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
         node,
         messageId: 'regexpReDoS',
         data: {
-          ...llmContext,
           pattern: pattern.substring(0, 30) + (pattern.length > 30 ? '...' : ''),
           riskLevel,
           vulnerability: effectiveVulnerability.vulnerability,

@@ -416,7 +416,6 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
           node: primaryFunction.node,
           messageId: 'identicalFunctions',
           data: {
-            ...llmContext,
             count: String(group.functions.length),
             similarity: String(similarityPercent),
             filePath: filename,

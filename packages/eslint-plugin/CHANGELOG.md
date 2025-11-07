@@ -1,3 +1,19 @@
+## 0.3.3 (2025-11-07)
+
+### 🩹 Fixes
+
+- configs ([55925e4](https://github.com/ofri-peretz/forge-js/commit/55925e4))
+- test config ([37e7ba5](https://github.com/ofri-peretz/forge-js/commit/37e7ba5))
+- drop codecov vite plugin ([4b1ae7e](https://github.com/ofri-peretz/forge-js/commit/4b1ae7e))
+
+### 🧱 Updated Dependencies
+
+- Updated eslint-plugin-utils to 0.2.1
+
+### ❤️ Thank You
+
+- Ofri Peretz
+
 ## 0.3.2 (2025-11-02)
 
 ### 🩹 Fixes

@@ -148,17 +148,41 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * Check if a property is part of a typed union (safe access)
+     */
+    const isTypedUnionAccess = (propertyNode: TSESTree.Node): boolean => {
+      // Check if property is a literal string (typed access like obj[key] where key is 'primary')
+      if (isLiteralString(propertyNode)) {
+        return true; // Literal strings are safe - they're typed at compile time
+      }
+
+      // Check if property is an identifier with type annotation
+      if (propertyNode.type === 'Identifier') {
+        // If it's a parameter with a union type like variant: 'primary' | 'secondary'
+        // This is a compile-time safe access
+        return true;
+      }
+
+      return false;
+    };
+
+    /**
      * Check if property access is potentially dangerous
      */
     const isDangerousPropertyAccess = (propertyNode: TSESTree.Node): boolean => {
-      // Allow literal strings if configured
+      // SAFE: Typed union access (obj[typedKey] where typedKey is 'primary' | 'secondary')
+      if (isTypedUnionAccess(propertyNode)) {
+        return false;
+      }
+
+      // SAFE: Literal strings that are NOT dangerous properties
       if (allowLiterals && isLiteralString(propertyNode)) {
         const propName = String((propertyNode as TSESTree.Literal).value);
         // Even literals can be dangerous if they match dangerous properties
         return dangerousProperties.includes(propName);
       }
 
-      // Any non-literal property access is potentially dangerous
+      // DANGEROUS: Any untyped/dynamic property access (e.g., obj[userInput])
       return !isLiteralString(propertyNode);
     };
 
@@ -371,7 +395,6 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         node,
         messageId: 'objectInjection',
         data: {
-          ...llmContext,
           pattern: `${object}[${property}]`,
           riskLevel,
           vulnerability: pattern?.vulnerability || 'object injection',

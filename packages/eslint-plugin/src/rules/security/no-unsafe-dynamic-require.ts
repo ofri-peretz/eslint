@@ -171,7 +171,6 @@ const module = require(moduleName);`;
             attack: 'Arbitrary Code Execution',
             currentExample: `require(${argText})`,
             fixExample: `const ALLOWED = ['mod1', 'mod2']; if (!ALLOWED.includes(${argText})) throw new Error('Not allowed'); const mod = require(${argText});`,
-            ...llmContext,
           },
         });
       },
