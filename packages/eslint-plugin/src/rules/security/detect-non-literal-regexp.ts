@@ -19,10 +19,12 @@ type MessageIds =
   | 'escapeUserInput';
 
 export interface Options {
-  /** Allow literal string regex patterns (false = stricter) */
+  /** Allow literal string regex patterns. Default: false (stricter) */
   allowLiterals?: boolean;
+  
   /** Additional RegExp creation patterns to check */
   additionalPatterns?: string[];
+  
   /** Maximum allowed pattern length for dynamic regex */
   maxPatternLength?: number;
 }

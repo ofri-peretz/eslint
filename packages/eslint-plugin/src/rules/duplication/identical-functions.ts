@@ -12,8 +12,13 @@ import { generateLLMContext, extractFunctionSignature } from '../../utils/llm-co
 type MessageIds = 'identicalFunctions' | 'extractGeneric' | 'useHigherOrder' | 'applyInheritance';
 
 export interface Options {
+  /** Minimum lines to consider for duplicate detection. Default: 3 */
   minLines?: number;
+  
+  /** Similarity percentage threshold (0-100). Default: 90 */
   similarityThreshold?: number;
+  
+  /** Ignore test files. Default: false */
   ignoreTestFiles?: boolean;
 }
 

@@ -9,7 +9,10 @@ import { generateLLMContext } from '../../utils/llm-context';
 type MessageIds = 'inlineFunction' | 'useCallback' | 'extractFunction';
 
 export interface Options {
+  /** Allow inline functions in event handlers. Default: false */
   allowInEventHandlers?: boolean;
+  
+  /** Minimum array size to trigger warning. Default: 5 */
   minArraySize?: number;
 }
 

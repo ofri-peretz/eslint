@@ -17,9 +17,16 @@ type MessageIds =
   | 'useMongoSanitize';
 
 export interface Options {
+  /** Detect NoSQL injection patterns. Default: true */
   detectNoSQL?: boolean;
+  
+  /** Detect ORM-specific vulnerabilities. Default: true */
   detectORMs?: boolean;
+  
+  /** Trusted data sources that bypass detection */
   trustedSources?: string[];
+  
+  /** Show framework-specific recommendations. Default: true */
   frameworkHints?: boolean;
 }
 

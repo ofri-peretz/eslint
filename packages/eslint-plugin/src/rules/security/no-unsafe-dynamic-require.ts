@@ -9,6 +9,7 @@ import { generateLLMContext } from '../../utils/llm-context';
 type MessageIds = 'unsafeDynamicRequire' | 'useStaticImport' | 'useAllowlist';
 
 export interface Options {
+  /** Allow dynamic import() expressions. Default: false (stricter) */
   allowDynamicImport?: boolean;
 }
 

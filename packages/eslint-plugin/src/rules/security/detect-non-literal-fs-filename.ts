@@ -19,8 +19,9 @@ type MessageIds =
   | 'whitelistExtensions';
 
 export interface Options {
-  /** Allow literal strings (false = stricter) */
+  /** Allow literal strings. Default: false (stricter) */
   allowLiterals?: boolean;
+  
   /** Additional fs methods to check */
   additionalMethods?: string[];
 }

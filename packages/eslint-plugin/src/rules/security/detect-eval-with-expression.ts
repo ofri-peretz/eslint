@@ -19,8 +19,9 @@ type MessageIds =
   | 'useSaferAlternative';
 
 export interface Options {
-  /** Allow eval with literal strings (false = stricter) */
+  /** Allow eval with literal strings. Default: false (stricter) */
   allowLiteralStrings?: boolean;
+  
   /** Additional functions to treat as eval-like */
   additionalEvalFunctions?: string[];
 }

@@ -18,7 +18,10 @@ interface DeprecatedAPI {
 }
 
 export interface Options {
+  /** Array of deprecated APIs to detect */
   apis?: DeprecatedAPI[];
+  
+  /** Days before removal date to start warning */
   warnDaysBeforeRemoval?: number;
 }
 
