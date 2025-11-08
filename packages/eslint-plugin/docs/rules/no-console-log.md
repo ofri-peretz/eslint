@@ -403,6 +403,54 @@ myLogger.info(...)  // Auto-detected 'myLogger' (contains 'log')
 }
 ```
 
+## Type-Safe Configuration (ESLint 9+ & 8)
+
+### ESLint 9+ (Flat Config)
+
+```typescript
+import llmOptimized from '@forge-js/eslint-plugin-llm-optimized';
+import type { NoConsoleLogOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+
+const config: NoConsoleLogOptions = {
+  strategy: 'remove',
+  ignorePaths: ['src/logger/**', 'src/debug/**'],
+  loggerName: 'logger',
+  autoDetectLogger: true,
+};
+
+export default [
+  {
+    plugins: {
+      '@forge-js/llm-optimized': llmOptimized,
+    },
+    rules: {
+      '@forge-js/llm-optimized/development/no-console-log': ['warn', config],
+    },
+  },
+];
+```
+
+### ESLint 8 (Legacy Config with JSDoc Types)
+
+```javascript
+/** @type {import('@forge-js/eslint-plugin-llm-optimized/types').NoConsoleLogOptions} */
+const config = {
+  strategy: 'remove',
+  ignorePaths: ['src/logger/**', 'src/debug/**'],
+  loggerName: 'logger',
+  autoDetectLogger: true,
+};
+
+module.exports = {
+  plugins: ['@forge-js/eslint-plugin-llm-optimized'],
+  rules: {
+    '@forge-js/eslint-plugin-llm-optimized/development/no-console-log': ['warn', config],
+  },
+};
+```
+
+For more examples and patterns, see [CONFIGURATION_EXAMPLES.md](../../src/types/CONFIGURATION_EXAMPLES.md#no-console-log)
+
 ## LLM-Optimized Output
 
 The rule provides minimal, actionable messages optimized for both humans and LLMs:

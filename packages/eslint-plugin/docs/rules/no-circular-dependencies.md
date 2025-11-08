@@ -203,6 +203,60 @@ const logger = new Logger();
 const processor = new Processor(logger); // No cycle!
 ```
 
+## Configuration Examples
+
+### ESLint 9+ (Flat Config)
+
+```typescript
+import llmOptimized from '@forge-js/eslint-plugin-llm-optimized';
+import type { NoCircularDependenciesOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+
+const config: NoCircularDependenciesOptions = {
+  maxDepth: 10,
+  ignorePatterns: ['**/*.test.ts', '**/__mocks__/**'],
+  fixStrategy: 'auto',
+  moduleNamingConvention: 'semantic',
+};
+
+export default [
+  {
+    plugins: {
+      '@forge-js/llm-optimized': llmOptimized,
+    },
+    rules: {
+      '@forge-js/llm-optimized/architecture/no-circular-dependencies': [
+        'error',
+        config,
+      ],
+    },
+  },
+];
+```
+
+### ESLint 8 (Legacy Config with JSDoc Types)
+
+```javascript
+/** @type {import('@forge-js/eslint-plugin-llm-optimized/types').NoCircularDependenciesOptions} */
+const config = {
+  maxDepth: 10,
+  ignorePatterns: ['**/*.test.ts', '**/__mocks__/**'],
+  fixStrategy: 'auto',
+  moduleNamingConvention: 'semantic',
+};
+
+module.exports = {
+  plugins: ['@forge-js/eslint-plugin-llm-optimized'],
+  rules: {
+    '@forge-js/eslint-plugin-llm-optimized/architecture/no-circular-dependencies': [
+      'error',
+      config,
+    ],
+  },
+};
+```
+
+For more examples and patterns, see [CONFIGURATION_EXAMPLES.md](../../src/types/CONFIGURATION_EXAMPLES.md#no-circular-dependencies)
+
 ## Performance Optimizations
 
 This rule includes several performance optimizations:

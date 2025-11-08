@@ -11,6 +11,7 @@ All rule Options interfaces are exported from the barrel file `index.ts` with a 
 ```
 
 **Total Rules:** 19
+
 - **Accessibility:** 1 rule
 - **Architecture:** 2 rules
 - **Complexity:** 1 rule
@@ -39,53 +40,56 @@ import type { ReactNoInlineFunctionsOptions } from '@forge-js/eslint-plugin-llm-
 
 ## Available Types
 
-### Accessibility
-- `ImgRequiresAltOptions`
+All exported types are organized by category. For the **complete and always up-to-date list**, see:
 
-### Architecture
-- `NoCircularDependenciesOptions`
-- `NoInternalModulesOptions`
+**→ [index.ts](./index.ts)** (Single source of truth - all re-exports)
 
-### Complexity
-- `CognitiveComplexityOptions`
+### Current Categories
 
-### Deprecation
-- `NoDeprecatedApiOptions`
+The types are organized into logical categories including (but not limited to):
 
-### Development
-- `NoConsoleLogOptions`
+- **Accessibility** - WCAG compliance and a11y rules
+- **Architecture** - Module organization and dependency management
+- **Complexity** - Code quality and cognitive complexity
+- **Deprecation** - API migration and deprecation guidance
+- **Development** - Development-time checks and best practices
+- **Domain** - Domain-specific naming and terminology
+- **Duplication** - Code duplication and DRY principle
+- **Migration** - Framework/library migration assistance
+- **Performance** - Runtime performance optimization
+- **React** - React-specific component rules
+- **Security** - Security vulnerability detection
 
-### Domain
-- `EnforceNamingOptions`
+Plus:
 
-### Duplication
-- `IdenticalFunctionsOptions`
+- **`AllRulesOptions`** - Combined type containing all rule options keyed by rule name
 
-### Migration
-- `ReactClassToHooksOptions`
+### Viewing All Rules
 
-### Performance
-- `ReactNoInlineFunctionsOptions`
+For the current list of all rules and their exports:
 
-### React
-- `RequiredAttributesOptions`
+```bash
+# Check the barrel file (single source of truth)
+cat src/types/index.ts
 
-### Security
-- `DatabaseInjectionOptions`
-- `DetectChildProcessOptions`
-- `DetectEvalWithExpressionOptions`
-- `DetectNonLiteralFsFilenameOptions`
-- `DetectNonLiteralRegexpOptions`
-- `DetectObjectInjectionOptions`
-- `NoSqlInjectionOptions`
-- `NoUnsafeDynamicRequireOptions`
+# Or see main exports
+cat src/index.ts
+```
 
-### Combined Types
-- `AllRulesOptions` - Interface containing all rule options keyed by rule name
+**Note:** This documentation avoids hardcoded rule counts to remain maintainable as new rules are added (see [ROADMAP.md](../../ROADMAP.md) for planned future rules).
 
 ## Usage Examples
 
-### Example 1: Single Rule Configuration
+For **comprehensive configuration examples** including:
+
+- ESLint 9+ (Flat Config) setup
+- ESLint 8 (Legacy) setup
+- Individual rule configurations
+- Advanced patterns and team standards
+
+→ **See [CONFIGURATION_EXAMPLES.md](./CONFIGURATION_EXAMPLES.md)**
+
+### Quick Example
 
 ```typescript
 import type { ReactNoInlineFunctionsOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
@@ -94,79 +98,6 @@ const config: ReactNoInlineFunctionsOptions = {
   allowInEventHandlers: true,
   minArraySize: 20,
 };
-```
-
-### Example 2: Type-Safe ESLint Configuration
-
-```typescript
-import type { NoCircularDependenciesOptions } from '@forge-js/eslint-plugin-llm-optimized';
-
-const eslintConfig = {
-  plugins: {
-    '@forge-js/llm-optimized': {},
-  },
-  rules: {
-    '@forge-js/llm-optimized/architecture/no-circular-dependencies': [
-      'error',
-      {
-        maxDepth: 10,
-        ignorePatterns: ['**/*.test.ts'],
-        fixStrategy: 'auto',
-      } satisfies NoCircularDependenciesOptions,
-    ],
-  },
-};
-```
-
-### Example 3: Combined Configuration
-
-```typescript
-import type { AllRulesOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
-
-const allRulesConfig: AllRulesOptions = {
-  'react-no-inline-functions': {
-    allowInEventHandlers: true,
-    minArraySize: 20,
-  },
-  'no-circular-dependencies': {
-    maxDepth: 10,
-    fixStrategy: 'module-split',
-  },
-  'no-console-log': {
-    strategy: 'convert',
-    loggerName: 'logger',
-  },
-  'cognitive-complexity': {
-    maxComplexity: 20,
-  },
-};
-```
-
-### Example 4: Configuration Factory Function
-
-```typescript
-import type {
-  ReactNoInlineFunctionsOptions,
-  NoConsoleLogOptions,
-} from '@forge-js/eslint-plugin-llm-optimized';
-
-function createProductionConfig() {
-  const inlineConfig: ReactNoInlineFunctionsOptions = {
-    allowInEventHandlers: false,
-    minArraySize: 5,
-  };
-
-  const consoleConfig: NoConsoleLogOptions = {
-    strategy: 'remove',
-    ignorePaths: [],
-    autoDetectLogger: true,
-  };
-
-  return {
-    inlineConfig,
-    consoleConfig,
-  };
-}
 ```
 
 ## Type Safety Benefits
@@ -183,13 +114,13 @@ By using these exported types, you get:
 
 All exported types follow this naming convention:
 
-| Rule Name | Type Name |
-|-----------|-----------|
-| `img-requires-alt` | `ImgRequiresAltOptions` |
-| `no-circular-dependencies` | `NoCircularDependenciesOptions` |
+| Rule Name                   | Type Name                       |
+| --------------------------- | ------------------------------- |
+| `img-requires-alt`          | `ImgRequiresAltOptions`         |
+| `no-circular-dependencies`  | `NoCircularDependenciesOptions` |
 | `react-no-inline-functions` | `ReactNoInlineFunctionsOptions` |
-| `no-console-log` | `NoConsoleLogOptions` |
-| `cognitive-complexity` | `CognitiveComplexityOptions` |
+| `no-console-log`            | `NoConsoleLogOptions`           |
+| `cognitive-complexity`      | `CognitiveComplexityOptions`    |
 
 ## Implementation Details
 
@@ -213,6 +144,7 @@ export type { Options as NoCircularDependenciesOptions } from '../rules/architec
 ```
 
 This approach:
+
 - ✅ Keeps rule implementations isolated
 - ✅ Maintains a single source of truth for exports
 - ✅ Enables tree-shaking of unused types
@@ -270,21 +202,24 @@ module.exports = {
 
 ```typescript
 // eslint.config.ts
-import type { ReactNoInlineFunctionsOptions, NoCircularDependenciesOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type {
+  ReactNoInlineFunctionsOptions,
+  NoCircularDependenciesOptions,
+} from '@forge-js/eslint-plugin-llm-optimized/types';
 
 type RuleConfig = [string, object?];
 
-const ruleName = (
-  name: string,
-  options?: object
-): RuleConfig => [name, options];
+const ruleName = (name: string, options?: object): RuleConfig => [
+  name,
+  options,
+];
 
 export const reactInlineRule: RuleConfig = ruleName(
   '@forge-js/llm-optimized/performance/react-no-inline-functions',
   {
     allowInEventHandlers: true,
     minArraySize: 20,
-  } satisfies ReactNoInlineFunctionsOptions
+  } satisfies ReactNoInlineFunctionsOptions,
 );
 ```
 
@@ -297,4 +232,3 @@ export const reactInlineRule: RuleConfig = ruleName(
 ## Questions or Issues?
 
 For issues related to specific rule configurations, see the corresponding rule documentation in the `src/rules/` directory.
-

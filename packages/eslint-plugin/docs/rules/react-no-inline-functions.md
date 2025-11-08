@@ -59,16 +59,53 @@ function TodoList({ todos }: Props) {
 
 ## Configuration Examples
 
-```javascript
-{
-  rules: {
-    '@forge-js/react-no-inline-functions': ['warn', {
-      allowInEventHandlers: true,  // Allow simple event handlers
-      minArraySize: 5              // Only warn for large lists
-    }]
-  }
-}
+### ESLint 9+ (Flat Config)
+
+```typescript
+import llmOptimized from '@forge-js/eslint-plugin-llm-optimized';
+import type { ReactNoInlineFunctionsOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+
+const inlineConfig: ReactNoInlineFunctionsOptions = {
+  allowInEventHandlers: true,  // Allow simple event handlers
+  minArraySize: 5              // Only warn for large lists
+};
+
+export default [
+  {
+    plugins: {
+      '@forge-js/llm-optimized': llmOptimized,
+    },
+    rules: {
+      '@forge-js/llm-optimized/performance/react-no-inline-functions': [
+        'warn',
+        inlineConfig,
+      ],
+    },
+  },
+];
 ```
+
+### ESLint 8 (Legacy Config with JSDoc Types)
+
+```javascript
+/** @type {import('@forge-js/eslint-plugin-llm-optimized/types').ReactNoInlineFunctionsOptions} */
+const inlineConfig = {
+  allowInEventHandlers: true,  // Allow simple event handlers
+  minArraySize: 5              // Only warn for large lists
+};
+
+module.exports = {
+  plugins: ['@forge-js/eslint-plugin-llm-optimized'],
+  rules: {
+    '@forge-js/eslint-plugin-llm-optimized/performance/react-no-inline-functions': [
+      'warn',
+      inlineConfig,
+    ],
+  },
+};
+```
+
+For more examples and patterns, see [CONFIGURATION_EXAMPLES.md](../../src/types/CONFIGURATION_EXAMPLES.md#react-no-inline-functions)
 
 ## Performance Impact
 
