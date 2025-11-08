@@ -383,3 +383,52 @@ export const configs = {
  * ```
  */
 export default plugin;
+
+/**
+ * Re-export all rule Options types for convenience
+ * 
+ * These can be imported from either the main package or the types subpath:
+ * 
+ * @example
+ * ```typescript
+ * // From main package
+ * import type { ReactNoInlineFunctionsOptions } from '@forge-js/eslint-plugin-llm-optimized';
+ * 
+ * // From types subpath
+ * import type { ReactNoInlineFunctionsOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+ * ```
+ */
+export type {
+  // Accessibility
+  ImgRequiresAltOptions,
+  // Architecture
+  NoCircularDependenciesOptions,
+  NoInternalModulesOptions,
+  // Complexity
+  CognitiveComplexityOptions,
+  // Deprecation
+  NoDeprecatedApiOptions,
+  // Development
+  NoConsoleLogOptions,
+  // Domain
+  EnforceNamingOptions,
+  // Duplication
+  IdenticalFunctionsOptions,
+  // Migration
+  ReactClassToHooksOptions,
+  // Performance
+  ReactNoInlineFunctionsOptions,
+  // React
+  RequiredAttributesOptions,
+  // Security
+  DatabaseInjectionOptions,
+  DetectChildProcessOptions,
+  DetectEvalWithExpressionOptions,
+  DetectNonLiteralFsFilenameOptions,
+  DetectNonLiteralRegexpOptions,
+  DetectObjectInjectionOptions,
+  NoSqlInjectionOptions,
+  NoUnsafeDynamicRequireOptions,
+  // Combined type
+  AllRulesOptions,
+} from './types/index';
