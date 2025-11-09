@@ -15,7 +15,10 @@ import { generateLLMContext, extractFunctionSignature } from '../../utils/llm-co
 type MessageIds = 'highCognitiveComplexity' | 'extractMethod' | 'simplifyLogic' | 'useStrategy';
 
 export interface Options {
+  /** Maximum allowed cognitive complexity score. Default: 15 */
   maxComplexity?: number;
+  
+  /** Include complexity metrics in error message. Default: false */
   includeMetrics?: boolean;
 }
 

@@ -13,7 +13,10 @@ import {
 type MessageIds = 'sqlInjection' | 'useParameterized' | 'useORM';
 
 export interface Options {
+  /** Allow dynamic table names in queries. Default: false (stricter) */
   allowDynamicTableNames?: boolean;
+  
+  /** Functions considered safe for building queries */
   trustedFunctions?: string[];
 }
 

@@ -16,8 +16,13 @@ interface DomainTerm {
 }
 
 export interface Options {
+  /** Domain context for naming conventions (e.g., 'ecommerce', 'healthcare') */
   domain?: string;
+  
+  /** Array of domain-specific terminology rules */
   terms?: DomainTerm[];
+  
+  /** URL to domain glossary documentation */
   glossaryUrl?: string;
 }
 

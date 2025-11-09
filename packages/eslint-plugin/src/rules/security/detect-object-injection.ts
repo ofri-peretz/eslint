@@ -19,11 +19,13 @@ type MessageIds =
   | 'freezePrototypes';
 
 export interface Options {
-  /** Allow bracket notation with literal strings (false = stricter) */
+  /** Allow bracket notation with literal strings. Default: false (stricter) */
   allowLiterals?: boolean;
+  
   /** Additional object methods to check for injection */
   additionalMethods?: string[];
-  /** Properties to consider dangerous (default: __proto__, prototype, constructor) */
+  
+  /** Properties to consider dangerous. Default: __proto__, prototype, constructor */
   dangerousProperties?: string[];
 }
 

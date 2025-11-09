@@ -43,13 +43,26 @@ const DEFAULT_SEVERITY_MAP: SeverityMapping = {
 };
 
 export interface Options {
+  /** How to handle console.log: 'remove', 'convert', 'comment', or 'warn' */
   strategy?: Strategy;
+  
+  /** File path patterns to ignore */
   ignorePaths?: string[];
-  loggerName?: string; // Name of the logger to use (e.g., 'logger', 'winston')
-  maxOccurrences?: number;
+  
+  /** Name of the logger to use (e.g., 'logger', 'winston'). Default: 'logger' */
+  loggerName?: string;
+  
+  /** Maximum occurrences to report: number (e.g., 5), 'all' (report all instances), or undefined (no limit). Default: undefined */
+  maxOccurrences?: number | 'all';
+  
+  /** Map console methods to logger methods */
   severityMap?: SeverityMapping;
-  autoDetectLogger?: boolean; // Auto-detect logger import in file
-  sourcePatterns?: string[]; // Object names to match (e.g., ['console', 'winston', 'oldLogger']). Defaults to ['console']
+  
+  /** Auto-detect logger import in file. Default: true */
+  autoDetectLogger?: boolean;
+  
+  /** Object names to match (e.g., ['console', 'winston', 'oldLogger']). Default: ['console'] */
+  sourcePatterns?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -96,10 +109,20 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
             description: 'Name of the logger to use for convert strategy (e.g., "logger", "winston")',
           },
           maxOccurrences: {
-            type: 'number',
-            minimum: 0,
+            oneOf: [
+              {
+                type: 'number',
+                minimum: 1,
+                description: 'Maximum number of occurrences to report',
+              },
+              {
+                type: 'string',
+                enum: ['all'],
+                description: 'Report all violations',
+              },
+            ],
             description:
-              'Maximum allowed occurrences (0 = report all, undefined = no limit)',
+              'Maximum occurrences to report: number (e.g., 5), "all" (report all), or undefined (no limit)',
           },
           severityMap: {
             type: 'object',
@@ -262,14 +285,17 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
         const line = node.loc?.start.line ?? 0;
         occurrences.push(line);
 
-        /** Check maxOccurrences limit */
-        if (
+        // ✅ Calculate skip condition (don't return early)
+        // 'all' means report all instances
+        // undefined means no limit
+        // number > 0 means limit to that count
+        const shouldSkipReport = (
           maxOccurrences !== undefined &&
+          maxOccurrences !== 'all' &&
+          typeof maxOccurrences === 'number' &&
           maxOccurrences > 0 &&
           occurrences.length > maxOccurrences
-        ) {
-          return;
-        }
+        );
 
         const sourceCode = context.sourceCode || context.getSourceCode();
         const relativePath = path.relative(process.cwd(), filename);
@@ -319,20 +345,23 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
           conversionInfo = ` → ${effectiveLogger}.${targetLoggerMethod}()`;
         }
 
-        context.report({
-          node,
-          messageId: 'consoleLogFound',
-          data: {
-            consoleMethod: `${sourceObject}.${methodName}`,
-            filePath: relativePath,
-            line: String(line),
-            strategy,
-            conversionInfo,
-            logger: effectiveLogger,
-            method: targetLoggerMethod,
-          },
-          fix,
-        });
+        // ✅ Only report if not exceeding limit
+        if (!shouldSkipReport) {
+          context.report({
+            node,
+            messageId: 'consoleLogFound',
+            data: {
+              consoleMethod: `${sourceObject}.${methodName}`,
+              filePath: relativePath,
+              line: String(line),
+              strategy,
+              conversionInfo,
+              logger: effectiveLogger,
+              method: targetLoggerMethod,
+            },
+            fix,
+          });
+        }
       },
     };
   },

@@ -9,7 +9,10 @@ import { generateLLMContext, extractFunctionSignature } from '../../utils/llm-co
 type MessageIds = 'migrateToHooks' | 'convertToFunction' | 'viewMigrationGuide';
 
 export interface Options {
+  /** Ignore PureComponent classes. Default: false */
   ignorePureRenderComponents?: boolean;
+  
+  /** Allow classes with complex lifecycle patterns. Default: false */
   allowComplexLifecycle?: boolean;
 }
 

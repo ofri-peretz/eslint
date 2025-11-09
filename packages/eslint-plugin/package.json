@@ -5,6 +5,16 @@
   "type": "commonjs",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./types": {
+      "types": "./src/types/index.d.ts",
+      "default": "./src/types/index.js"
+    }
+  },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
   "license": "MIT",
   "homepage": "https://github.com/ofri-peretz/forge-js#readme",

@@ -16,7 +16,10 @@ interface AttributeRule {
 }
 
 export interface Options {
+  /** Array of required attribute rules */
   attributes?: AttributeRule[];
+  
+  /** Component names to ignore for this rule */
   ignoreComponents?: string[];
 }
 

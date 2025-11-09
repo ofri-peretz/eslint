@@ -9,7 +9,10 @@ import { generateLLMContext } from '../../utils/llm-context';
 type MessageIds = 'missingAlt' | 'emptyAlt' | 'addDescriptiveAlt' | 'useEmptyAlt';
 
 export interface Options {
+  /** Allow aria-label as alternative to alt text. Default: false */
   allowAriaLabel?: boolean;
+  
+  /** Allow aria-labelledby as alternative to alt text. Default: false */
   allowAriaLabelledby?: boolean;
 }
 

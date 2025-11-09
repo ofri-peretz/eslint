@@ -25,15 +25,28 @@ type FixStrategy = 'module-split' | 'direct-import' | 'extract-shared' | 'depend
 type ModuleNamingConvention = 'semantic' | 'numbered';
 
 export interface Options {
+  /** Maximum allowed import depth. Default: 5 */
   maxDepth?: number;
+  
+  /** Patterns to ignore when checking for cycles (glob patterns) */
   ignorePatterns?: string[];
+  
+  /** Barrel exports to consider as public APIs */
   barrelExports?: string[];
+  
+  /** Report all cycles found or just the first one. Default: false */
   reportAllCycles?: boolean;
-  // Strategy options
+  
+  /** Strategy for fixing cycles: 'module-split', 'direct-import', 'extract-shared', 'dependency-injection', or 'auto' */
   fixStrategy?: FixStrategy;
+  
+  /** Naming convention for split modules: 'semantic' or 'numbered'. Default: 'semantic' */
   moduleNamingConvention?: ModuleNamingConvention;
-  // Custom suffixes for module split strategy
+  
+  /** Custom suffix for core module in split strategy. Default: '.core' */
   coreModuleSuffix?: string;
+  
+  /** Custom suffix for extended module in split strategy. Default: '.extended' */
   extendedModuleSuffix?: string;
 }
 
@@ -83,7 +96,7 @@ export const noCircularDependencies = createRule<RuleOptions, MessageIds>({
         properties: {
           maxDepth: {
             type: 'number',
-            default: 10,
+            default: 5,
             description: 'Maximum depth to traverse when detecting cycles (performance optimization)',
           },
           ignorePatterns: {

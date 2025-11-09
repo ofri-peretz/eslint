@@ -19,10 +19,12 @@ type MessageIds =
   | 'useShellFalse';
 
 export interface Options {
-  /** Allow exec() with literal strings (false = stricter) */
+  /** Allow exec() with literal strings. Default: false (stricter) */
   allowLiteralStrings?: boolean;
-  /** Allow spawn() with literal arguments (false = stricter) */
+  
+  /** Allow spawn() with literal arguments. Default: false (stricter) */
   allowLiteralSpawn?: boolean;
+  
   /** Additional child_process methods to check */
   additionalMethods?: string[];
 }
