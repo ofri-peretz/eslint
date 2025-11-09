@@ -3,9 +3,6 @@ name: CI Workflow
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 # Prevent concurrent runs on the same branch to save quota
