@@ -96,7 +96,7 @@ export const noCircularDependencies = createRule<RuleOptions, MessageIds>({
         properties: {
           maxDepth: {
             type: 'number',
-            default: 10,
+            default: 5,
             description: 'Maximum depth to traverse when detecting cycles (performance optimization)',
           },
           ignorePatterns: {

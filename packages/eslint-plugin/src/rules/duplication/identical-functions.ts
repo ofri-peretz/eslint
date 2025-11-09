@@ -7,7 +7,7 @@
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
-import { generateLLMContext, extractFunctionSignature } from '../../utils/llm-context';
+import { extractFunctionSignature } from '../../utils/llm-context';
 
 type MessageIds = 'identicalFunctions' | 'extractGeneric' | 'useHigherOrder' | 'applyInheritance';
 
@@ -68,7 +68,7 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
           },
           similarityThreshold: {
             type: 'number',
-            default: 0.85,
+            default: 0.9,
             minimum: 0.5,
             maximum: 1,
             description: 'Similarity threshold (0.5-1.0)',
@@ -85,13 +85,13 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       minLines: 3,
-      similarityThreshold: 0.85,
+      similarityThreshold: 0.9,
       ignoreTestFiles: true,
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
-    const { minLines = 3, similarityThreshold = 0.85, ignoreTestFiles = true } = options;
+    const { minLines = 3, similarityThreshold = 0.9, ignoreTestFiles = true } = options;
 
     const sourceCode = context.sourceCode || context.getSourceCode();
     const filename = context.filename || context.getFilename();
@@ -278,25 +278,6 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
     }
 
     /**
-     * Generate migration examples
-     */
-    function generateMigrationExamples(group: DuplicationGroup): {
-      before: string[];
-      after: string[];
-    } {
-      return {
-        before: group.functions.map(
-          (f) => `${f.name}(${f.params.join(', ')}) → ${f.location}`
-        ),
-        after: group.functions.map((f) => {
-          const unified = generateUnifiedFunction(group);
-          const unifiedName = unified.match(/function (\w+)/)?.[1] || 'handleGeneric';
-          return `${unifiedName}(${f.params.join(', ')}, options) → Unified`;
-        }),
-      };
-    }
-
-    /**
      * Store function information
      */
     function storeFunctionInfo(
@@ -332,90 +313,9 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
       groups.forEach((group) => {
         const refactoringApproach = suggestRefactoringApproach(group);
         const unifiedFunction = generateUnifiedFunction(group);
-        const migrationExamples = generateMigrationExamples(group);
 
         const primaryFunction = group.functions[0];
         const similarityPercent = Math.round(group.similarityScore * 100);
-
-        const llmContext = generateLLMContext('duplication/identical-functions', {
-          severity: 'warning',
-          category: 'performance',
-          filePath: filename,
-          node: primaryFunction.node,
-          details: {
-            duplication: {
-              count: group.functions.length,
-              similarityScore: similarityPercent,
-              totalLines: group.functions.reduce((sum, f) => sum + f.lines, 0),
-              wastedLines: group.functions.reduce((sum, f) => sum + f.lines, 0) - primaryFunction.lines,
-            },
-            locations: group.functions.map((f) => ({
-              name: f.name,
-              location: f.location,
-              lines: f.lines,
-            })),
-            refactoring: {
-              approach: refactoringApproach.approach,
-              pattern: refactoringApproach.pattern,
-              complexity: refactoringApproach.complexity,
-              estimatedTime:
-                refactoringApproach.complexity === 'simple'
-                  ? '10-15 minutes'
-                  : refactoringApproach.complexity === 'moderate'
-                  ? '20-30 minutes'
-                  : '45-60 minutes',
-            },
-            unifiedImplementation: {
-              code: unifiedFunction,
-              benefits: [
-                'Single source of truth',
-                `Reduces ${group.functions.length - 1} duplicate implementations`,
-                'Easier to test and maintain',
-                'Centralizes bug fixes',
-              ],
-              tradeoffs: [
-                refactoringApproach.complexity !== 'simple' && 'Slightly more complex',
-                'Requires updating all call sites',
-                'May need additional parameters',
-              ].filter(Boolean) as string[],
-            },
-            migration: {
-              before: migrationExamples.before,
-              after: migrationExamples.after,
-              steps: [
-                '1. Create unified function with common logic',
-                '2. Extract differences as parameters',
-                '3. Update all call sites',
-                '4. Remove duplicate implementations',
-                '5. Add tests for unified function',
-              ],
-            },
-            impact: {
-              maintainability: 'High - Reduces code duplication',
-              testability: 'Improves - Single function to test',
-              bugs: `${group.functions.length}x chance of inconsistent fixes`,
-              linesReduced: group.functions.reduce((sum, f) => sum + f.lines, 0) - primaryFunction.lines,
-            },
-            technicalDebt: {
-              current: `${group.functions.length} duplicate implementations`,
-              after: '1 unified implementation',
-              maintenance: `Future changes require ${group.functions.length} updates vs 1`,
-            },
-          },
-          quickFix: {
-            automated: false,
-            estimatedEffort: refactoringApproach.complexity === 'simple' ? '10-15 minutes' : '20-45 minutes',
-            changes: [
-              'Extract unified function',
-              'Update all call sites',
-              'Remove duplicate implementations',
-            ],
-          },
-          resources: {
-            docs: 'https://refactoring.guru/extract-method',
-            examples: 'https://rules.sonarsource.com/javascript/RSPEC-4144/',
-          },
-        });
 
         context.report({
           node: primaryFunction.node,

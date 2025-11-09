@@ -247,10 +247,8 @@ const config = {
 module.exports = {
   plugins: ['@forge-js/eslint-plugin-llm-optimized'],
   rules: {
-    '@forge-js/eslint-plugin-llm-optimized/architecture/no-circular-dependencies': [
-      'error',
-      config,
-    ],
+    '@forge-js/eslint-plugin-llm-optimized/architecture/no-circular-dependencies':
+      ['error', config],
   },
 };
 ```

@@ -4,7 +4,6 @@
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
-import { generateLLMContext } from '../../utils/llm-context';
 
 type MessageIds = 'inlineFunction' | 'useCallback' | 'extractFunction';
 
@@ -44,7 +43,7 @@ export const reactNoInlineFunctions = createRule<RuleOptions, MessageIds>({
           },
           minArraySize: {
             type: 'number',
-            default: 10,
+            default: 5,
             description: 'Minimum array size to report inline functions in .map()',
           },
         },
@@ -55,15 +54,12 @@ export const reactNoInlineFunctions = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       allowInEventHandlers: false,
-      minArraySize: 10,
+      minArraySize: 5,
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const { allowInEventHandlers = false, minArraySize = 10 } = options;
-
-    const sourceCode = context.sourceCode || context.getSourceCode();
-    const filename = context.filename || context.getFilename();
 
     /**
      * Check if node is inside JSX
@@ -121,23 +117,6 @@ export const reactNoInlineFunctions = createRule<RuleOptions, MessageIds>({
       };
     };
 
-    /**
-     * Generate optimization suggestion
-     */
-    const getOptimizationSuggestion = (
-      node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression,
-      arrayInfo: ReturnType<typeof isInArrayMethod>
-    ): string => {
-      const params = node.params.map((p: any) => sourceCode.getText(p)).join(', ');
-      const body = sourceCode.getText(node.body);
-      
-      if (arrayInfo.inArray) {
-        return `const handle${arrayInfo.method} = useCallback((${params}) => ${body}, []);`;
-      }
-      
-      return `const handleClick = useCallback((${params}) => ${body}, []);`;
-    };
-
     return {
       'JSXExpressionContainer > ArrowFunctionExpression, JSXExpressionContainer > FunctionExpression'(
         node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression
@@ -155,53 +134,6 @@ export const reactNoInlineFunctions = createRule<RuleOptions, MessageIds>({
 
         const arrayInfo = isInArrayMethod(node);
         const impact = calculateImpact(arrayInfo);
-        const optimization = getOptimizationSuggestion(node, arrayInfo);
-
-        const llmContext = generateLLMContext('performance/react-no-inline-functions', {
-          severity: 'warning',
-          category: 'performance',
-          filePath: filename,
-          node,
-          details: {
-            antiPattern: arrayInfo.inArray ? 'inline-function-in-map' : 'inline-function-in-jsx',
-            performanceImpact: {
-              severity: impact.severity,
-              estimatedSlowdown: impact.estimatedSlowdown,
-              affectsMetric: impact.affectedMetric,
-              userExperience: 'Janky scrolling on mobile devices',
-            },
-            detectedPattern: {
-              code: sourceCode.getText(node),
-              issue: 'Creates new function on every render',
-              frequency: arrayInfo.inArray 
-                ? `Re-creates ${arrayInfo.estimatedSize} functions each render`
-                : 'Re-creates function on every render',
-              memoryCost: arrayInfo.inArray 
-                ? `~1KB per render × 60fps = 60KB/sec garbage`
-                : '~100 bytes per render',
-            },
-            optimizedPattern: {
-              code: optimization,
-              improvement: 'Functions reused across renders',
-              expectedGain: '15-30ms faster render, smoother scrolling',
-              tradeoffs: 'Slightly more code, needs useCallback understanding',
-            },
-            whenToOptimize: {
-              always: 'Lists with >50 items',
-              consider: 'Frequently re-rendering components',
-              skip: 'Static lists, one-time renders',
-              measure: 'Use React DevTools Profiler first',
-            },
-            relatedOptimizations: [
-              'Consider React.memo for child components',
-              'Use virtualization (react-window) for long lists',
-              'Implement pagination if list exceeds 1000 items',
-            ],
-          },
-          resources: {
-            docs: 'https://react.dev/reference/react/useCallback',
-          },
-        });
 
         context.report({
           node,

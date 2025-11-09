@@ -75,10 +75,10 @@ jobs:
         run: |
           if [ "${{ inputs.version-strategy }}" != "auto" ]; then
             echo "📝 Using version strategy: ${{ inputs.version-strategy }}"
-            pnpm nx release version ${{ inputs.version-strategy }} --skip-publish
+            pnpm nx release version ${{ inputs.version-strategy }}
           else
             echo "📝 Using conventional commits to determine version"
-            pnpm nx release version --skip-publish
+            pnpm nx release version
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
