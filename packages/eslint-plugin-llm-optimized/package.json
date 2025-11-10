@@ -1,5 +1,5 @@
 {
-  "name": "eslint-plugin-llm-optimized",
+  "name": "@forge-js/eslint-plugin-llm-optimized",
   "version": "1.0.1",
   "description": "ESLint rules that AI assistants can actually fix - error messages optimized for both human developers and Large Language Models",
   "type": "commonjs",
@@ -50,7 +50,8 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "@forge-js/eslint-plugin-llm-optimized": "^0.4.1"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
