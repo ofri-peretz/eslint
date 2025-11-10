@@ -243,17 +243,17 @@ jobs:
             echo "✅ This was a dry-run preview - no changes committed" >> $GITHUB_STEP_SUMMARY
           else
             echo "## 🎉 Release Complete" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Version Strategy:** ${{ inputs.version-specifier }}" >> $GITHUB_STEP_SUMMARY
-            echo "**Dist Tag:** \`${{ inputs.dist-tag }}\`" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### Published Packages" >> $GITHUB_STEP_SUMMARY
-            echo "- \`@forge-js/eslint-plugin\`" >> $GITHUB_STEP_SUMMARY
-            echo "- \`@forge-js/eslint-plugin-utils\`" >> $GITHUB_STEP_SUMMARY
-            echo "- \`@forge-js/cli\`" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "To install the new version:" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-            echo "pnpm add @forge-js/eslint-plugin@${{ inputs.dist-tag }}" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Dist Tag:** \`${{ inputs.dist-tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Published Packages" >> $GITHUB_STEP_SUMMARY
+          echo "- \`@forge-js/eslint-plugin\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`@forge-js/eslint-plugin-utils\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`@forge-js/cli\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "To install the new version:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "pnpm add @forge-js/eslint-plugin@${{ inputs.dist-tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           fi
