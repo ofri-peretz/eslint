@@ -315,6 +315,7 @@ A: Yes. Each rule can be configured with options. See individual rule documentat
 
 ## Related Packages
 
+- **[eslint-plugin-llm-optimized](https://www.npmjs.com/package/eslint-plugin-llm-optimized)** - Non-scoped version with identical functionality
 - **[@forge-js/eslint-plugin-utils](https://www.npmjs.com/package/@forge-js/eslint-plugin-utils)** - Build your own LLM-optimized rules
 - **[@typescript-eslint/eslint-plugin](https://www.npmjs.com/package/@typescript-eslint/eslint-plugin)** - TypeScript-specific rules
 - **[eslint-plugin-import](https://www.npmjs.com/package/eslint-plugin-import)** - Import/export validation
@@ -357,8 +358,14 @@ If this plugin saves you time, consider sponsoring:
 
 - [GitHub Sponsors](https://github.com/sponsors/ofri-peretz)
 - [Open Collective](https://opencollective.com/forge-js)
+
 # Update to trigger version bump
+
 # Minor fix to trigger version bump
+
 # Update for republish
+
 # Version 0.4.2 with README
+
 # Release new version
+# Release 0.4.4
