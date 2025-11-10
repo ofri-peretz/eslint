@@ -119,7 +119,6 @@
     "projectsRelationship": "independent",
     "version": {
       "conventionalCommits": true,
-      "preVersionCommand": "pnpm nx run-many -t build --projects=eslint-plugin,eslint-plugin-llm-optimized,eslint-plugin-utils,cli",
       "generatorOptions": {
         "updateDependents": "always",
         "currentVersionResolver": "git-tag",
@@ -128,10 +127,13 @@
       "versionActionsOptions": {
         "skipLockFileUpdate": true
       },
-    "release": {
-      "preid": "rc"
-    },
-    "preReleaseCommand": "pnpm nx run-many -t build --projects=eslint-plugin,eslint-plugin-llm-optimized,eslint-plugin-utils,cli",
+      "manifestRootsToUpdate": [
+        "{projectRoot}"
+      ],
+      "release": {
+        "preid": "rc"
+      },
+      "preReleaseCommand": "pnpm nx run-many -t build --projects=eslint-plugin,eslint-plugin-llm-optimized,eslint-plugin-utils,cli",
       "git": {
         "commit": true,
         "commitArgs": "--no-verify",
