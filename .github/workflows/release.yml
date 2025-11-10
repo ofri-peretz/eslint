@@ -177,7 +177,7 @@ jobs:
           git config user.name "Ofri Peretz"
           git config user.email "ofri@snappy.com"
 
-          # Run version command (includes preVersionCommand build)
+          # Run version command (includes preVersionCommand build for manifest updates)
           if [ "${{ inputs.version-specifier }}" != "auto" ]; then
             echo "📝 Using version strategy: ${{ inputs.version-specifier }}"
             pnpm nx release version ${{ inputs.version-specifier }}
@@ -191,7 +191,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # ──────────────────────────────────────────────────────────────────────
-      # PHASE 2: PUBLISH (Packages already built in Phase 1)
+      # PHASE 2: PUBLISH (preReleaseCommand rebuilds with new versions + publish)
       # ──────────────────────────────────────────────────────────────────────
       - name: 🚀 Publish Packages
         id: publish
@@ -203,8 +203,7 @@ jobs:
 
           echo "📝 Publishing with dist tag: ${{ inputs.dist-tag }}"
 
-          # Packages are already built during version preparation
-          # Just publish the dist/ artifacts
+          # preReleaseCommand rebuilds packages with updated versions, then publishes
           pnpm nx release publish --tag ${{ inputs.dist-tag }}
         env:
           NPM_CONFIG_PROVENANCE: true
