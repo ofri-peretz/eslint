@@ -112,12 +112,13 @@
   "release": {
     "projects": [
       "packages/eslint-plugin",
-      "packages/eslint-plugin-utils"
+      "packages/eslint-plugin-utils",
+      "packages/cli"
     ],
     "projectsRelationship": "independent",
     "version": {
       "conventionalCommits": true,
-      "preVersionCommand": "pnpm nx run-many -t build --projects=eslint-plugin,eslint-plugin-utils",
+      "preVersionCommand": "pnpm nx run-many -t build --projects=eslint-plugin,eslint-plugin-utils,cli",
       "generatorOptions": {
         "updateDependents": "always",
         "currentVersionResolver": "git-tag",
