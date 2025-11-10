@@ -168,6 +168,10 @@ jobs:
       - name: 📝 Prepare version
         id: prepare
         run: |
+          # Configure git user for automated commits
+          git config user.name "Ofri Peretz"
+          git config user.email "ofri@snappy.com"
+
           # Construct the dry-run flag if needed (preview without changes)
           DRY_RUN_FLAG=""
           if [ "${{ inputs.dry-run }}" = "true" ]; then
@@ -265,6 +269,10 @@ jobs:
       - name: 🚀 Publish packages
         id: publish
         run: |
+          # Configure git user for automated commits
+          git config user.name "Ofri Peretz"
+          git config user.email "ofri@snappy.com"
+
           echo "📝 Publishing with dist tag: ${{ inputs.dist-tag }}"
 
           # Update nx.json with the selected dist tag (allows tagging for beta/canary)
