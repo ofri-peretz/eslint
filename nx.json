@@ -115,13 +115,6 @@
       "packages/eslint-plugin-utils"
     ],
     "projectsRelationship": "independent",
-    "git": {
-      "commit": true,
-      "commitArgs": "--no-verify",
-      "commitMessage": "chore(release): {version}",
-      "tag": true,
-      "tagMessage": "chore(release): {version}"
-    },
     "version": {
       "conventionalCommits": true,
       "preVersionCommand": "pnpm nx run-many -t build --projects=eslint-plugin,eslint-plugin-utils",
@@ -135,6 +128,13 @@
       },
       "release": {
         "preid": "rc"
+      },
+      "git": {
+        "commit": true,
+        "commitArgs": "--no-verify",
+        "commitMessage": "chore(release): {version}",
+        "tag": true,
+        "tagMessage": "chore(release): {version}"
       }
     },
     "changelog": {
@@ -142,7 +142,13 @@
         "createRelease": "github",
         "file": "CHANGELOG.md"
       },
-      "projectChangelogs": true
+      "projectChangelogs": true,
+      "git": {
+        "commit": true,
+        "commitArgs": "--no-verify",
+        "commitMessage": "chore(release): {version}",
+        "tag": false
+      }
     },
     "releaseTagPattern": "{projectName}@{version}"
   },
