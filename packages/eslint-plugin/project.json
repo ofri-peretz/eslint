@@ -34,7 +34,8 @@
         "tsConfig": "packages/eslint-plugin/tsconfig.lib.json",
         "assets": [
           "packages/eslint-plugin/*.md",
-          "packages/eslint-plugin/docs/**/*.md"
+          "packages/eslint-plugin/docs/**/*.md",
+          "packages/eslint-plugin/package.json"
         ]
       }
     },
