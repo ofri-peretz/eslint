@@ -167,7 +167,7 @@ jobs:
         run: pnpm nx report
 
       # ──────────────────────────────────────────────────────────────────────
-      # PHASE 1: PREPARE VERSION (Determine versions, update changelogs)
+      # PHASE 1: PREPARE VERSION (Build + determine versions + update changelogs)
       # ──────────────────────────────────────────────────────────────────────
       - name: 📝 Prepare Release Version
         id: prepare
@@ -177,7 +177,7 @@ jobs:
           git config user.name "Ofri Peretz"
           git config user.email "ofri@snappy.com"
 
-          # Run version command to determine versions and update changelogs
+          # Run version command (includes preVersionCommand build)
           if [ "${{ inputs.version-specifier }}" != "auto" ]; then
             echo "📝 Using version strategy: ${{ inputs.version-specifier }}"
             pnpm nx release version ${{ inputs.version-specifier }}
@@ -191,9 +191,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # ──────────────────────────────────────────────────────────────────────
-      # PHASE 2: BUILD & PUBLISH (preReleaseCommand builds, then publish)
+      # PHASE 2: PUBLISH (Packages already built in Phase 1)
       # ──────────────────────────────────────────────────────────────────────
-      - name: 🚀 Build & Publish Packages
+      - name: 🚀 Publish Packages
         id: publish
         if: inputs.dry-run == false
         run: |
@@ -203,8 +203,8 @@ jobs:
 
           echo "📝 Publishing with dist tag: ${{ inputs.dist-tag }}"
 
-          # This runs preReleaseCommand (builds packages) then publishes
-          # Both happen in the same environment with shared artifacts!
+          # Packages are already built during version preparation
+          # Just publish the dist/ artifacts
           pnpm nx release publish --tag ${{ inputs.dist-tag }}
         env:
           NPM_CONFIG_PROVENANCE: true
