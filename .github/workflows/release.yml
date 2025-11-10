@@ -263,9 +263,6 @@ jobs:
       - name: 🔍 Print Environment Info
         run: pnpm nx report
 
-      - name: 🏗️ Build packages
-        run: pnpm nx run-many -t build --all
-
       - name: 🚀 Publish packages
         id: publish
         run: |
@@ -275,13 +272,9 @@ jobs:
 
           echo "📝 Publishing with dist tag: ${{ inputs.dist-tag }}"
 
-          # Update nx.json with the selected dist tag (allows tagging for beta/canary)
-          jq '.release.publishTargets.npm.tag = "${{ inputs.dist-tag }}"' nx.json > nx.json.tmp
-          mv nx.json.tmp nx.json
-
           # Actually publish packages to NPM
           # Using Trusted Publishing (OIDC) - no NPM_TOKEN needed
-          pnpm nx release publish
+          pnpm nx release publish --tag ${{ inputs.dist-tag }}
         env:
           NPM_CONFIG_PROVENANCE: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
