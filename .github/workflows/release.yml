@@ -2,46 +2,149 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main
-      - main
+  workflow_dispatch:
+    inputs:
+      # ═════════════════════════════════════════════════════════════════════════
+      # VERSION STRATEGY
+      # ═════════════════════════════════════════════════════════════════════════
+      version-specifier:
+        description: "Version bump strategy (auto = conventional commits)"
+        required: false
+        type: choice
+        options:
+          - auto
+          - major
+          - minor
+          - patch
+          - premajor
+          - preminor
+          - prepatch
+          - prerelease
+        default: "auto"
+
+      # ═════════════════════════════════════════════════════════════════════════
+      # NPM PUBLISHING OPTIONS
+      # ═════════════════════════════════════════════════════════════════════════
+      dist-tag:
+        description: "NPM distribution tag"
+        required: false
+        type: choice
+        options:
+          - latest
+          - next
+          - beta
+          - rc
+          - alpha
+          - canary
+        default: "latest"
+
+      # ═════════════════════════════════════════════════════════════════════════
+      # CONTROL FLOW OPTIONS
+      # ═════════════════════════════════════════════════════════════════════════
+      run-ci:
+        description: "Run CI validation before publishing"
+        required: false
+        type: boolean
+        default: true
+
+      dry-run:
+        description: "Dry run: preview changes without modifying git or NPM"
+        required: false
+        type: boolean
+        default: false
 
 # Prevent concurrent releases
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
+# ═════════════════════════════════════════════════════════════════════════════
+# GLOBAL ENVIRONMENT VARIABLES
+# ═════════════════════════════════════════════════════════════════════════════
 env:
-  NODE_VERSION: "22"
+  NODE_VERSION: "20"
   PNPM_VERSION: "10.18.3"
 
 jobs:
-  release:
-    name: 🚀 Release with NX
+  # ═════════════════════════════════════════════════════════════════════════════
+  # STEP 1: CI VALIDATION (Optional, skippable)
+  # ═════════════════════════════════════════════════════════════════════════════
+  validate-ci:
+    name: ✅ CI Validation
     runs-on: ubuntu-latest
+    if: inputs.run-ci == true
+    timeout-minutes: 15
     permissions:
-      contents: write # Required for creating releases
-      pull-requests: write # Required for creating PRs
-      id-token: write # Required for NPM provenance
+      contents: read
+      id-token: none
 
     steps:
-      - name: 📥 Checkout code
+      - name: 📥 Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Required for NX release
-          persist-credentials: true # Required for pushing changes
+          fetch-depth: 0
 
-      - name: 🔧 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          registry-url: "https://registry.npmjs.org"
-
-      - name: 📦 Setup pnpm
+      - name: ⚙️ Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🔍 Print Environment Info
+        run: pnpm nx report
+
+      - name: 🧪 Test all packages
+        run: pnpm nx run-many -t test --all -c ci --parallel=4 --verbose
+
+      - name: 🏗️ Build all packages
+        run: pnpm nx run-many -t build --all --parallel=4 --verbose
+
+      - name: ✅ CI validation passed
+        run: |
+          echo "## ✅ CI Validation Passed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All tests and builds completed successfully." >> $GITHUB_STEP_SUMMARY
+
+  # ═════════════════════════════════════════════════════════════════════════════
+  # STEP 2: PREPARE RELEASE (Version bump, changelog, tags)
+  # ═════════════════════════════════════════════════════════════════════════════
+  prepare-release:
+    name: 📝 Prepare Release
+    runs-on: ubuntu-latest
+    # Only require CI if it was enabled and run
+    if: always() && (inputs.run-ci == false || needs.validate-ci.result == 'success' || needs.validate-ci.result == 'skipped')
+    needs: [validate-ci]
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      id-token: write
+      pull-requests: write
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: ⚙️ Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
 
       - name: 📂 Get pnpm store directory
         shell: bash
@@ -56,16 +159,142 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      - name: 📥 Install dependencies
+      - name: 📦 Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: 🚀 Run NX Release
-        run: pnpm nx release --skip-publish
+      - name: 🏗️ Build packages
+        run: pnpm nx run-many -t build --all
+
+      - name: 📝 Prepare version
+        id: prepare
+        run: |
+          # Construct the dry-run flag if needed (preview without changes)
+          DRY_RUN_FLAG=""
+          if [ "${{ inputs.dry-run }}" = "true" ]; then
+            echo "🔍 DRY RUN MODE: Previewing changes only"
+            DRY_RUN_FLAG="--dry-run"
+          fi
+
+          # Run version command with correct flags
+          if [ "${{ inputs.version-specifier }}" != "auto" ]; then
+            echo "📝 Using version strategy: ${{ inputs.version-specifier }}"
+            pnpm nx release version ${{ inputs.version-specifier }} $DRY_RUN_FLAG
+          else
+            echo "📝 Using conventional commits to determine version"
+            pnpm nx release version $DRY_RUN_FLAG
+          fi
+
+          echo "status=success" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 📦 Publish to NPM
-        run: pnpm nx release publish
+      - name: 📊 Generate summary
+        run: |
+          if [ "${{ inputs.dry-run }}" = "true" ]; then
+            DRY_RUN_MSG="(DRY RUN - No changes committed)"
+          else
+            DRY_RUN_MSG=""
+          fi
+
+          echo "## 📝 Release Prepared $DRY_RUN_MSG" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version Strategy:** ${{ inputs.version-specifier }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Dist Tag:** ${{ inputs.dist-tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ inputs.dry-run }}" = "true" ]; then
+            echo "✅ This was a dry-run preview" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Version and changelog have been updated." >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # ═════════════════════════════════════════════════════════════════════════════
+  # STEP 3: PUBLISH TO NPM
+  # ═════════════════════════════════════════════════════════════════════════════
+  publish:
+    name: 🚀 Publish to NPM
+    runs-on: ubuntu-latest
+    needs: [validate-ci, prepare-release]
+    if: inputs.dry-run == false && (needs.prepare-release.result == 'success' || needs.prepare-release.result == 'skipped')
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      id-token: write # ← Required for Trusted Publishing (OIDC)
+      pull-requests: write
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: ⚙️ Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: https://registry.npmjs.org/
+          cache: "pnpm"
+
+      - name: 📂 Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: 🔄 Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🔍 Print Environment Info
+        run: pnpm nx report
+
+      - name: 🏗️ Build packages
+        run: pnpm nx run-many -t build --all
+
+      - name: 🚀 Publish packages
+        id: publish
+        run: |
+          echo "📝 Publishing with dist tag: ${{ inputs.dist-tag }}"
+
+          # Update nx.json with the selected dist tag (allows tagging for beta/canary)
+          jq '.release.publishTargets.npm.tag = "${{ inputs.dist-tag }}"' nx.json > nx.json.tmp
+          mv nx.json.tmp nx.json
+
+          # Actually publish packages to NPM
+          # Using Trusted Publishing (OIDC) - no NPM_TOKEN needed
+          pnpm nx release publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📝 Create Release Summary
+        run: |
+          echo "## 🎉 Packages Published Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Dist Tag:** \`${{ inputs.dist-tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Version Strategy:** ${{ inputs.version-specifier }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Published Packages" >> $GITHUB_STEP_SUMMARY
+          echo "- \`@forge-js/eslint-plugin\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`@forge-js/eslint-plugin-utils\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`@forge-js/cli\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: 💬 Notify Release
+        run: |
+          echo "## ✅ Release Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "To install the new version:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "pnpm add @forge-js/eslint-plugin@${{ inputs.dist-tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
