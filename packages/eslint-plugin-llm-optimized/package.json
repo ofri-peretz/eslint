@@ -1,7 +1,7 @@
 {
-  "name": "@forge-js/eslint-plugin-llm-optimized",
-  "version": "0.4.0",
-  "description": "A solid TypeScript-based ESLint plugin infrastructure inspired by typescript-eslint",
+  "name": "eslint-plugin-llm-optimized",
+  "version": "1.0.0",
+  "description": "ESLint rules that AI assistants can actually fix - error messages optimized for both human developers and Large Language Models",
   "type": "commonjs",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
@@ -21,7 +21,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ofri-peretz/forge-js.git",
-    "directory": "packages/eslint-plugin"
+    "directory": "packages/eslint-plugin-llm-optimized"
   },
   "bugs": {
     "url": "https://github.com/ofri-peretz/forge-js/issues"
@@ -50,7 +50,6 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@forge-js/eslint-plugin-utils": "^0.2.0",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
