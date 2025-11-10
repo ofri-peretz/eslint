@@ -162,9 +162,6 @@ jobs:
       - name: 📦 Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: 🏗️ Build packages
-        run: pnpm nx run-many -t build --all
-
       - name: 📝 Prepare version
         id: prepare
         run: |
