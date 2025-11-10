@@ -360,3 +360,4 @@ If this plugin saves you time, consider sponsoring:
 # Update to trigger version bump
 # Minor fix to trigger version bump
 # Update for republish
+# Version 0.4.2 with README
