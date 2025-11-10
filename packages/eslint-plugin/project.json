@@ -33,9 +33,14 @@
         "main": "packages/eslint-plugin/src/index.ts",
         "tsConfig": "packages/eslint-plugin/tsconfig.lib.json",
         "assets": [
-          "packages/eslint-plugin/*.md",
           "packages/eslint-plugin/docs/**/*.md",
-          "packages/eslint-plugin/package.json"
+          "packages/eslint-plugin/README.md",
+          "packages/eslint-plugin/CHANGELOG.md",
+          {
+            "glob": "packages/eslint-plugin/README.md",
+            "input": "packages/eslint-plugin",
+            "output": "./"
+          }
         ]
       }
     },

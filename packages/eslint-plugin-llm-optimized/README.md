@@ -312,7 +312,6 @@ A: Yes. Each rule can be configured with options. See individual rule documentat
 
 ## Related Packages
 
-- **[@forge-js/eslint-plugin-llm-optimized](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized)** - Scoped version with identical functionality
 - **[@forge-js/eslint-plugin-utils](https://www.npmjs.com/package/@forge-js/eslint-plugin-utils)** - Build your own LLM-optimized rules
 - **[@typescript-eslint/eslint-plugin](https://www.npmjs.com/package/@typescript-eslint/eslint-plugin)** - TypeScript-specific rules
 - **[eslint-plugin-import](https://www.npmjs.com/package/eslint-plugin-import)** - Import/export validation

@@ -10,7 +10,7 @@
         "dist/{projectRoot}"
       ],
       "currentVersionResolver": "git-tag",
-            "fallbackCurrentVersionResolver": "disk"
+      "fallbackCurrentVersionResolver": "disk"
     }
   },
   "tags": [],
@@ -29,8 +29,8 @@
         "main": "packages/eslint-plugin-llm-optimized/src/index.ts",
         "tsConfig": "packages/eslint-plugin-llm-optimized/tsconfig.lib.json",
         "assets": [
-          "packages/eslint-plugin-llm-optimized/*.md",
-          "packages/eslint-plugin-llm-optimized/package.json"
+          "packages/eslint-plugin-llm-optimized/README.md",
+          "packages/eslint-plugin-llm-optimized/CHANGELOG.md"
         ]
       }
     },
