@@ -29,7 +29,8 @@
         "main": "packages/eslint-plugin-utils/src/index.ts",
         "tsConfig": "packages/eslint-plugin-utils/tsconfig.lib.json",
         "assets": [
-          "packages/eslint-plugin-utils/*.md"
+          "packages/eslint-plugin-utils/*.md",
+          "packages/eslint-plugin-utils/package.json"
         ]
       }
     },
