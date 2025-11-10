@@ -263,9 +263,6 @@ jobs:
       - name: 🔍 Print Environment Info
         run: pnpm nx report
 
-      - name: 🏗️ Build packages
-        run: pnpm nx run-many -t build --all
-
       - name: 🚀 Publish packages
         id: publish
         run: |
