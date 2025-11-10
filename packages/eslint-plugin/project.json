@@ -54,6 +54,13 @@
         }
       }
     },
+    "create-dist-structure": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "mkdir -p dist/{projectRoot} && cp {projectRoot}/package.json dist/{projectRoot}/",
+        "cwd": "{workspaceRoot}"
+      }
+    },
     "nx-release-publish": {
       "executor": "nx:run-commands",
       "options": {
