@@ -357,3 +357,4 @@ If this plugin saves you time, consider sponsoring:
 
 - [GitHub Sponsors](https://github.com/sponsors/ofri-peretz)
 - [Open Collective](https://opencollective.com/forge-js)
+# Update to trigger version bump
