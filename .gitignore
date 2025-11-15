@@ -82,7 +82,5 @@ Thumbs.db
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 vite.config.*.timestamp*
-vitest.config.*.timestamp*.npmrc
-**/test-report.junit.xml
-**/*.test-report.junit.xml
 vitest.config.*.timestamp*
+**/test-report.junit.xml
