@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-mcp-optimized",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ESLint rules optimized for Model Context Protocol (MCP) - AI assistants can actually fix these",
   "type": "commonjs",
   "main": "./src/index.js",
