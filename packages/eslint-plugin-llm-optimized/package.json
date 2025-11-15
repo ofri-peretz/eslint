@@ -51,7 +51,7 @@
     },
     "dependencies": {
         "tslib": "^2.3.0",
-        "@forge-js/eslint-plugin-llm-optimized": "0.3.3"
+        "@forge-js/eslint-plugin-llm-optimized": "0.4.4"
     },
     "devDependencies": {
         "@typescript-eslint/parser": "^8.46.2",

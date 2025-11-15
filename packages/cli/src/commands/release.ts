@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Command } from 'commander';
 import { execSync } from 'child_process';
 import chalk from 'chalk';
@@ -29,8 +30,9 @@ function createChangesetCommand(): Command {
         spinner.stop();
         execSync(cmd, { stdio: 'inherit' });
         console.log(chalk.green('✅ Changeset created'));
-      } catch (error: any) {
-        spinner.fail(chalk.red(`Failed to create changeset: ${error.message}`));
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        spinner.fail(chalk.red(`Failed to create changeset: ${errorMessage}`));
         process.exit(1);
       }
     });
