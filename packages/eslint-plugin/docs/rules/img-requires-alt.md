@@ -1,8 +1,21 @@
 # img-requires-alt
 
-Enforces `alt` attribute on `<img>` elements for accessibility (WCAG 2.1 Level A compliance).
+> **Keywords:** accessibility, alt text, WCAG, ESLint rule, image accessibility, screen readers, ADA compliance, Section 508, SEO, auto-fix, LLM-optimized, React accessibility
+
+Enforces `alt` attribute on `<img>` elements for accessibility (WCAG 2.1 Level A compliance). This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
 
 ⚠️ This rule **_warns_** by default in the `recommended` config.
+
+## Quick Summary
+
+| Aspect | Details |
+|--------|---------|
+| **WCAG Compliance** | WCAG 2.1 Level A |
+| **Severity** | Warning (accessibility best practice) |
+| **Auto-Fix** | ⚠️ Suggests fixes (manual application) |
+| **Category** | Accessibility |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For** | Web applications, React/Next.js projects, public-facing sites |
 
 ## Rule Details
 
@@ -290,17 +303,30 @@ Suggestions:
 - For non-web projects (Node.js backends, CLIs)
 - In component libraries where images are always decorative
 
+## Comparison with Alternatives
+
+| Feature | img-requires-alt | jsx-a11y/alt-text | eslint-plugin-jsx-a11y |
+|---------|------------------|-------------------|----------------------|
+| **Alt Text Detection** | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Auto-Fix** | ✅ Yes | ⚠️ Limited | ⚠️ Limited |
+| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
+| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
+| **WCAG Compliance** | ✅ WCAG 2.1 Level A | ✅ Yes | ✅ Yes |
+| **Error Quality** | ✅ Structured with examples | ⚠️ Basic | ⚠️ Basic |
+
 ## Related Rules
 
-- `jsx-a11y/alt-text` - React-specific alt text checking
-- `img-redundant-alt` - Detects redundant words in alt text
+- [`required-attributes`](./required-attributes.md) - General React attribute enforcement
+- [`react-no-inline-functions`](./react-no-inline-functions.md) - React performance optimization
+- [`react-class-to-hooks`](./react-class-to-hooks.md) - React modernization
 
 ## Further Reading
 
-- [WCAG 2.1 - Non-text Content](https://www.w3.org/WAI/WCAG21/Understanding/non-text-content.html)
-- [WebAIM: Alternative Text](https://webaim.org/techniques/alttext/)
-- [MDN: The Image Embed element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#accessibility_concerns)
-- [Alt Text Decision Tree](https://www.w3.org/WAI/tutorials/images/decision-tree/)
+- **[WCAG 2.1 - Non-text Content](https://www.w3.org/WAI/WCAG21/Understanding/non-text-content.html)** - WCAG guidelines
+- **[WebAIM: Alternative Text](https://webaim.org/techniques/alttext/)** - Alt text best practices
+- **[MDN: The Image Embed element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#accessibility_concerns)** - Image accessibility
+- **[Alt Text Decision Tree](https://www.w3.org/WAI/tutorials/images/decision-tree/)** - Alt text decision guide
+- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
 
 ## Version
 

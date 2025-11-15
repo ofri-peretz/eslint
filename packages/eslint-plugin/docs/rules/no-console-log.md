@@ -1,6 +1,19 @@
 # no-console-log
 
-Disallow `console.log` with configurable remediation strategies and LLM-optimized output.
+> **Keywords:** console.log, logging, ESLint rule, production logging, structured logging, logger migration, auto-fix, LLM-optimized, code quality, debugging, observability, Winston, Pino
+
+Disallow `console.log` with configurable remediation strategies and LLM-optimized output. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides 4 auto-fix strategies for migrating from console.log to proper logging.
+
+## Quick Summary
+
+| Aspect         | Details                                                        |
+| -------------- | -------------------------------------------------------------- |
+| **Severity**   | Warning (best practice)                                        |
+| **Auto-Fix**   | ✅ Yes (4 strategies: remove, convert, comment, warn)          |
+| **Category**   | Development                                                    |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration                        |
+| **Best For**   | Production applications, teams migrating to structured logging |
+| **Strategies** | Remove, Convert to logger, Comment out, Change to console.warn |
 
 ## Rule Details
 
@@ -24,22 +37,22 @@ flowchart TD
     B -->|🔴 Not Ignored| D{Check maxOccurrences}
     D -->|🔴 Over Limit| C
     D -->|🟢 Within Limit| E[🎯 Apply Strategy]
-    
+
     E --> F{Strategy Type}
     F -->|🗑️ remove| G[Delete statement]
     F -->|🔄 convert| H[Replace with logger.debug]
     F -->|💬 comment| I[Comment out code]
     F -->|⚡ warn| J[Change to console.warn]
-    
+
     G --> K[✅ Report with fix]
     H --> K
     I --> K
     J --> K
-    
+
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
     classDef processNode fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1f2937
-    
+
     class A startNode
     class G,H,I,J errorNode
     class K processNode
@@ -444,7 +457,10 @@ const config = {
 module.exports = {
   plugins: ['@forge-js/eslint-plugin-llm-optimized'],
   rules: {
-    '@forge-js/eslint-plugin-llm-optimized/development/no-console-log': ['warn', config],
+    '@forge-js/eslint-plugin-llm-optimized/development/no-console-log': [
+      'warn',
+      config,
+    ],
   },
 };
 ```
@@ -508,7 +524,7 @@ sequenceDiagram
     participant Dev as 👨‍💻 Developer
     participant ESLint as 🔍 ESLint
     participant Code as 📝 Codebase
-    
+
     Dev->>ESLint: Enable rule with "convert" strategy
     ESLint->>Code: Scan for console.log
     Code-->>ESLint: Found 47 violations
@@ -516,7 +532,7 @@ sequenceDiagram
     Dev->>ESLint: Apply auto-fix
     ESLint->>Code: Replace with logger.debug()
     Code-->>Dev: ✅ Migration complete
-    
+
     Note over Dev,Code: All console.log → logger.debug()
 ```
 
@@ -585,9 +601,54 @@ sequenceDiagram
 | 🤖 LLM-optimized    | ✅ Yes                   | ❌ No                    | ❌ No           |
 | 🔄 Logger migration | ✅ Configurable          | ❌ No                    | ❌ No           |
 
+## Error Message Format
+
+This rule provides LLM-optimized error messages:
+
+```
+⚠️ Console.log detected | MEDIUM
+   ❌ Current: console.log('Debug:', data)
+   ✅ Fix: Use logger.debug('Debug:', data) or remove in production
+   📚 See logging guidelines
+```
+
+**Why this format?**
+
+- **Structured** - AI assistants can parse and understand
+- **Actionable** - Shows both problem and solution
+- **Strategy-aware** - Indicates which remediation strategy to use
+- **Auto-fixable** - AI can apply the fix automatically
+
+## When Not To Use
+
+| Scenario          | Recommendation                                   |
+| ----------------- | ------------------------------------------------ |
+| **Prototyping**   | Disable or use `warn` severity                   |
+| **Tutorials**     | Add to `ignorePaths`                             |
+| **Build Scripts** | Use `ignorePaths: ['scripts']`                   |
+| **Test Files**    | Use `ignorePaths: ['*.test.ts']`                 |
+| **Debugging**     | Use `strategy: 'comment'` to temporarily disable |
+
+## Comparison with Alternatives
+
+| Feature              | no-console-log        | eslint-plugin-no-console | ESLint built-in no-console |
+| -------------------- | --------------------- | ------------------------ | -------------------------- |
+| **Auto-Fix**         | ✅ Yes (4 strategies) | ❌ No                    | ❌ No                      |
+| **Logger Migration** | ✅ Configurable       | ❌ No                    | ❌ No                      |
+| **ignorePaths**      | ✅ Pattern matching   | ❌ No                    | ⚠️ Limited                 |
+| **LLM-Optimized**    | ✅ Yes                | ❌ No                    | ❌ No                      |
+| **ESLint MCP**       | ✅ Optimized          | ❌ No                    | ❌ No                      |
+| **Strategy Options** | ✅ 4 strategies       | ❌ No                    | ❌ No                      |
+
 ## Further Reading
 
-- [ESLint Rules Documentation](https://eslint.org/docs/latest/rules/)
-- [Best Practices for Logging in Node.js](https://blog.logrocket.com/best-practices-logging-node-js/)
-- [Structured Logging with Winston](https://github.com/winstonjs/winston)
-- [MDN: Console API](https://developer.mozilla.org/en-US/docs/Web/API/Console)
+- **[ESLint Rules Documentation](https://eslint.org/docs/latest/rules/)** - Complete ESLint rules reference
+- **[Best Practices for Logging in Node.js](https://blog.logrocket.com/best-practices-logging-node-js/)** - Production logging guide
+- **[Structured Logging with Winston](https://github.com/winstonjs/winston)** - Popular Node.js logging library
+- **[MDN: Console API](https://developer.mozilla.org/en-US/docs/Web/API/Console)** - Console API reference
+- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
+
+## Related Rules
+
+- [`no-sql-injection`](./no-sql-injection.md) - Prevents SQL injection vulnerabilities
+- [`detect-non-literal-fs-filename`](./detect-non-literal-fs-filename.md) - Prevents path traversal

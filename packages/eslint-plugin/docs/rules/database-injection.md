@@ -1,8 +1,21 @@
 # database-injection
 
-Comprehensive database injection detection across SQL, NoSQL, and ORM queries (SonarQube-inspired).
+> **Keywords:** database injection, SQL injection, NoSQL injection, CWE-89, security, ESLint rule, MongoDB injection, ORM security, SonarQube, auto-fix, LLM-optimized, code security
+
+Comprehensive database injection detection across SQL, NoSQL, and ORM queries (SonarQube-inspired). This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
 
 ⚠️ This rule **_errors_** in the `recommended` config.
+
+## Quick Summary
+
+| Aspect | Details |
+|--------|---------|
+| **CWE Reference** | CWE-89 (SQL Injection), CWE-943 (NoSQL Injection) |
+| **Severity** | Critical (security vulnerability) |
+| **Auto-Fix** | ⚠️ Suggests fixes (manual application) |
+| **Category** | Security |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For** | Applications with database interactions (SQL, MongoDB, Redis, ORMs) |
 
 ## Rule Details
 
@@ -226,16 +239,30 @@ Add these to `ignorePatterns`:
 }
 ```
 
+## Comparison with Alternatives
+
+| Feature | database-injection | no-sql-injection | eslint-plugin-security |
+|---------|-------------------|------------------|------------------------|
+| **SQL Detection** | ✅ Yes | ✅ Yes | ⚠️ Limited |
+| **NoSQL Detection** | ✅ Yes (MongoDB, Redis) | ❌ No | ⚠️ Limited |
+| **ORM Support** | ✅ Yes (Sequelize, TypeORM, Prisma) | ⚠️ Limited | ❌ No |
+| **LLM-Optimized** | ✅ Yes | ✅ Yes | ❌ No |
+| **ESLint MCP** | ✅ Optimized | ✅ Optimized | ❌ No |
+| **SonarQube-Inspired** | ✅ Yes | ❌ No | ❌ No |
+
 ## Related Rules
 
-- `no-sql-injection` - SQL-only detection (lighter weight)
-- `no-unsafe-dynamic-require` - Dynamic require security
+- [`no-sql-injection`](./no-sql-injection.md) - SQL-only detection (lighter weight)
+- [`no-unsafe-dynamic-require`](./no-unsafe-dynamic-require.md) - Prevents unsafe module loading
+- [`detect-eval-with-expression`](./detect-eval-with-expression.md) - Prevents code injection
 
 ## Further Reading
 
-- [SonarQube Injection Rules](https://rules.sonarsource.com/javascript/type/Vulnerability/RSPEC-2076)
-- [OWASP NoSQL Injection](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05.6-Testing_for_NoSQL_Injection)
-- [MongoDB Security Checklist](https://www.mongodb.com/docs/manual/administration/security-checklist/)
+- **[SonarQube Injection Rules](https://rules.sonarsource.com/javascript/type/Vulnerability/RSPEC-2076)** - SonarQube injection detection
+- **[OWASP NoSQL Injection](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05.6-Testing_for_NoSQL_Injection)** - NoSQL injection guide
+- **[MongoDB Security Checklist](https://www.mongodb.com/docs/manual/administration/security-checklist/)** - MongoDB security best practices
+- **[CWE-89: SQL Injection](https://cwe.mitre.org/data/definitions/89.html)** - Official CWE entry
+- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
 
 ## Version
 

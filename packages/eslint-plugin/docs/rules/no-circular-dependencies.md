@@ -1,6 +1,19 @@
 # no-circular-dependencies
 
-Detects and reports circular dependencies that cause memory bloat during bundling and potential runtime initialization issues.
+> **Keywords:** circular dependencies, CWE-407, architecture, ESLint rule, module dependencies, bundle size, tree-shaking, memory optimization, build performance, auto-fix, LLM-optimized, barrel exports
+
+Detects and reports circular dependencies that cause memory bloat during bundling and potential runtime initialization issues. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
+
+## Quick Summary
+
+| Aspect | Details |
+|--------|---------|
+| **CWE Reference** | CWE-407 (Circular Dependency) |
+| **Severity** | High (architecture issue) |
+| **Auto-Fix** | ⚠️ Suggests fixes (manual application) |
+| **Category** | Architecture |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For** | Large codebases, monorepos, applications with complex module structures |
 
 ## Rule Details
 
@@ -282,12 +295,56 @@ You might want to disable this rule if:
 | `import/no-cycle`          | ✅             | ❌           | Slow        | ❌            |
 | `no-circular-dependencies` | ✅             | ✅           | Fast        | ✅            |
 
+## Error Message Format
+
+This rule provides LLM-optimized error messages:
+
+```
+🔄 Circular Dependency (CWE-407) | HIGH
+   ❌ Current: A.ts → B.ts → C.ts → A.ts (creates cycle)
+   ✅ Fix: Extract shared types to types.ts, break cycle at C.ts
+   📚 https://en.wikipedia.org/wiki/Circular_dependency
+```
+
+**Why this format?**
+- **Structured** - AI assistants can parse and understand
+- **Actionable** - Shows dependency chain and fix suggestions
+- **Educational** - Includes CWE reference and documentation link
+- **Context-aware** - Different messages for barrel exports vs infrastructure cycles
+
+## When Not To Use It
+
+| Scenario | Recommendation |
+|----------|----------------|
+| **Quick Prototypes** | Disable for prototypes where architecture doesn't matter |
+| **Bundler Handles It** | Rare - most bundlers struggle with cycles |
+| **Legacy Codebases** | Enable gradually during refactoring |
+| **Build Time Priority** | If bundle size is less important |
+
+## Comparison with Alternatives
+
+| Feature | no-circular-dependencies | import/no-cycle | eslint-plugin-import |
+|-------|--------------------------|-----------------|----------------------|
+| **Barrel Export Detection** | ✅ Yes | ❌ No | ⚠️ Limited |
+| **Performance** | ✅ Fast (cached) | ⚠️ Slow | ⚠️ Slow |
+| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
+| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
+| **Infrastructure Detection** | ✅ Yes | ❌ No | ❌ No |
+| **Fix Suggestions** | ✅ Detailed | ⚠️ Basic | ⚠️ Basic |
+
 ## Further Reading
 
-- [Circular Dependencies in JavaScript](https://medium.com/@bluepnume/circular-dependencies-in-javascript-a-k-a-coding-is-not-a-rock-paper-scissors-game-9c2a9eccd4bc)
-- [Rollup Tree-Shaking Issues](https://rollupjs.org/guide/en/#avoiding-circular-dependencies)
-- [Vite Dependency Pre-Bundling](https://vitejs.dev/guide/dep-pre-bundling.html)
-- [Module Initialization Order](https://hacks.mozilla.org/2018/03/es-modules-a-cartoon-deep-dive/)
+- **[Circular Dependencies in JavaScript](https://medium.com/@bluepnume/circular-dependencies-in-javascript-a-k-a-coding-is-not-a-rock-paper-scissors-game-9c2a9eccd4bc)** - Understanding circular dependencies
+- **[Rollup Tree-Shaking Issues](https://rollupjs.org/guide/en/#avoiding-circular-dependencies)** - How bundlers handle cycles
+- **[Vite Dependency Pre-Bundling](https://vitejs.dev/guide/dep-pre-bundling.html)** - Vite's approach to dependencies
+- **[Module Initialization Order](https://hacks.mozilla.org/2018/03/es-modules-a-cartoon-deep-dive/)** - ES modules deep dive
+- **[CWE-407 Documentation](https://cwe.mitre.org/data/definitions/407.html)** - Official CWE entry
+- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
+
+## Related Rules
+
+- [`no-internal-modules`](./no-internal-modules.md) - Prevents importing internal/deep module paths
+- [`enforce-naming`](./enforce-naming.md) - Enforces naming conventions
 
 ## Version
 

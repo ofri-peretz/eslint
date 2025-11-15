@@ -2,6 +2,32 @@
 
 Comprehensive CLI tool for managing releases in the forge-js monorepo.
 
+---
+
+## 🚀 Quick Start
+
+Get started with the CLI in 30 seconds:
+
+```bash
+# 1. Install (in monorepo)
+pnpm install
+
+# 2. Build
+pnpm nx build cli
+
+# 3. Use the CLI
+node dist/packages/cli/bin/forge.js --help
+```
+
+For global access, link the package:
+```bash
+cd dist/packages/cli
+npm link
+forge --help
+```
+
+---
+
 ## Installation
 
 ```bash

@@ -1,8 +1,21 @@
 # detect-eval-with-expression
 
-Detects `eval(variable)` which can allow an attacker to run arbitrary code inside your process.
+> **Keywords:** eval, code injection, CWE-95, security, ESLint rule, remote code execution, RCE, arbitrary code execution, Function constructor, auto-fix, LLM-optimized, code security
+
+Detects `eval(variable)` which can allow an attacker to run arbitrary code inside your process. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
 
 **🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
+
+## Quick Summary
+
+| Aspect | Details |
+|--------|---------|
+| **CWE Reference** | CWE-95 (Code Injection) |
+| **Severity** | Critical (security vulnerability) |
+| **Auto-Fix** | ⚠️ Suggests fixes (manual application) |
+| **Category** | Security |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For** | All applications, especially those handling user input |
 
 ## Rule Details
 
@@ -215,15 +228,26 @@ eval(mathExpr) → Safe math functions
 }
 ```
 
+## Comparison with Alternatives
+
+| Feature | detect-eval-with-expression | eslint-plugin-security | eslint-plugin-sonarjs |
+|---------|---------------------------|------------------------|----------------------|
+| **Code Injection Detection** | ✅ Yes | ⚠️ Limited | ⚠️ Limited |
+| **CWE Reference** | ✅ CWE-95 included | ⚠️ Limited | ⚠️ Limited |
+| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
+| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
+| **Fix Suggestions** | ✅ Detailed | ⚠️ Basic | ⚠️ Basic |
+
 ## Related Rules
 
-- `detect-child-process` - Command injection prevention
-- `detect-non-literal-fs-filename` - Path traversal prevention
-- `detect-object-injection` - Prototype pollution prevention
-- `detect-non-literal-regexp` - ReDoS prevention
+- [`detect-child-process`](./detect-child-process.md) - Prevents command injection
+- [`detect-non-literal-fs-filename`](./detect-non-literal-fs-filename.md) - Prevents path traversal
+- [`detect-object-injection`](./detect-object-injection.md) - Prevents prototype pollution
+- [`detect-non-literal-regexp`](./detect-non-literal-regexp.md) - Prevents ReDoS attacks
 
 ## Further Reading
 
-- [OWASP Code Injection Prevention](https://owasp.org/www-community/attacks/Code_Injection)
-- [Node.js Security Best Practices](https://nodejs.org/en/docs/guides/security/)
-- [CWE-95: Code Injection](https://cwe.mitre.org/data/definitions/95.html)
+- **[OWASP Code Injection Prevention](https://owasp.org/www-community/attacks/Code_Injection)** - Code injection attack guide
+- **[Node.js Security Best Practices](https://nodejs.org/en/docs/guides/security/)** - Node.js security guidelines
+- **[CWE-95: Code Injection](https://cwe.mitre.org/data/definitions/95.html)** - Official CWE entry
+- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration

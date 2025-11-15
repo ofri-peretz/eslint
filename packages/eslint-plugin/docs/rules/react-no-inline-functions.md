@@ -1,8 +1,20 @@
 # react-no-inline-functions
 
-Prevent inline functions in React renders with performance metrics.
+> **Keywords:** React, performance, ESLint rule, inline functions, useCallback, React optimization, re-renders, auto-fix, LLM-optimized, React performance
+
+Prevent inline functions in React renders with performance metrics. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
 
 **💡 Provides suggestions** | **🔧 Automatically fixable**
+
+## Quick Summary
+
+| Aspect | Details |
+|--------|---------|
+| **Severity** | Warning (performance best practice) |
+| **Auto-Fix** | ✅ Yes (suggests useCallback) |
+| **Category** | React / Performance |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For** | React/Next.js applications, performance-critical components |
 
 ## Rule Details
 
@@ -113,6 +125,25 @@ For more examples and patterns, see [CONFIGURATION_EXAMPLES.md](../../src/types/
 | 11-100     | Medium     | 🟡 Moderate    |
 | 100+       | High       | 🔴 Significant |
 
+## Comparison with Alternatives
+
+| Feature | react-no-inline-functions | eslint-plugin-react | react-hooks/exhaustive-deps |
+|---------|--------------------------|---------------------|----------------------------|
+| **Inline Function Detection** | ✅ Yes | ⚠️ Limited | ❌ No |
+| **Performance Metrics** | ✅ Yes | ❌ No | ❌ No |
+| **Auto-Fix** | ✅ Yes | ❌ No | ❌ No |
+| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
+| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
+| **useCallback Suggestions** | ✅ Yes | ❌ No | ⚠️ Limited |
+
 ## Related Rules
 
 - [`react-class-to-hooks`](./react-class-to-hooks.md) - Migration to hooks
+- [`required-attributes`](./required-attributes.md) - React attribute enforcement
+- [`img-requires-alt`](./img-requires-alt.md) - Image accessibility
+
+## Further Reading
+
+- **[React Performance Optimization](https://react.dev/learn/render-and-commit)** - React rendering guide
+- **[useCallback Hook](https://react.dev/reference/react/useCallback)** - useCallback documentation
+- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration

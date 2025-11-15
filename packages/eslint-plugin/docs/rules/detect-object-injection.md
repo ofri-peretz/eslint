@@ -1,8 +1,21 @@
 # detect-object-injection
 
-Detects `variable[key]` as a left- or right-hand assignment operand (prototype pollution).
+> **Keywords:** prototype pollution, CWE-915, security, ESLint rule, object injection, bracket notation, property injection, auto-fix, LLM-optimized, code security
+
+Detects `variable[key]` as a left- or right-hand assignment operand (prototype pollution). This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
 
 **🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
+
+## Quick Summary
+
+| Aspect | Details |
+|--------|---------|
+| **CWE Reference** | CWE-915 (Prototype Pollution) |
+| **Severity** | Critical (security vulnerability) |
+| **Auto-Fix** | ⚠️ Suggests fixes (manual application) |
+| **Category** | Security |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For** | All applications, especially those handling user input for object properties |
 
 ## Rule Details
 
@@ -249,15 +262,27 @@ for (const prop of pollutionAttempts) {
 }
 ```
 
+## Comparison with Alternatives
+
+| Feature | detect-object-injection | eslint-plugin-security | eslint-plugin-sonarjs |
+|---------|------------------------|------------------------|----------------------|
+| **Prototype Pollution Detection** | ✅ Yes | ⚠️ Limited | ⚠️ Limited |
+| **CWE Reference** | ✅ CWE-915 included | ⚠️ Limited | ⚠️ Limited |
+| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
+| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
+| **Fix Suggestions** | ✅ Detailed | ⚠️ Basic | ⚠️ Basic |
+
 ## Related Rules
 
-- `detect-eval-with-expression` - Code injection prevention
-- `detect-child-process` - Command injection prevention
-- `detect-non-literal-fs-filename` - Path traversal prevention
-- `detect-non-literal-regexp` - ReDoS prevention
+- [`detect-eval-with-expression`](./detect-eval-with-expression.md) - Prevents code injection via eval()
+- [`detect-child-process`](./detect-child-process.md) - Prevents command injection
+- [`detect-non-literal-fs-filename`](./detect-non-literal-fs-filename.md) - Prevents path traversal
+- [`no-unsafe-dynamic-require`](./no-unsafe-dynamic-require.md) - Prevents unsafe module loading
+- [`detect-non-literal-regexp`](./detect-non-literal-regexp.md) - Prevents ReDoS attacks
 
 ## Further Reading
 
-- [Prototype Pollution Attacks](https://portswigger.net/web-security/prototype-pollution)
-- [JavaScript Prototype Security](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Inheritance_and_the_prototype_chain)
-- [CWE-915: Object Prototype Modification](https://cwe.mitre.org/data/definitions/915.html)
+- **[Prototype Pollution Attacks](https://portswigger.net/web-security/prototype-pollution)** - Prototype pollution guide
+- **[JavaScript Prototype Security](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Inheritance_and_the_prototype_chain)** - Prototype chain security
+- **[CWE-915: Object Prototype Modification](https://cwe.mitre.org/data/definitions/915.html)** - Official CWE entry
+- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration

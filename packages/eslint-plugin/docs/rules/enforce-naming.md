@@ -1,8 +1,20 @@
 # enforce-naming
 
-Enforce domain-specific naming conventions with business context.
+> **Keywords:** naming conventions, domain-driven design, DDD, ESLint rule, ubiquitous language, business glossary, code consistency, auto-fix, LLM-optimized, code quality
+
+Enforce domain-specific naming conventions with business context. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
 
 **💡 Provides suggestions** | **🔧 Automatically fixable**
+
+## Quick Summary
+
+| Aspect | Details |
+|--------|---------|
+| **Severity** | Warning (code quality) |
+| **Auto-Fix** | ✅ Yes (auto-renames to domain terms) |
+| **Category** | Code Quality |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For** | Domain-driven design projects, teams with business glossaries |
 
 ## Rule Details
 
@@ -315,9 +327,21 @@ When `glossaryUrl` is provided, the rule messages include a link to your busines
 📖 View domain glossary: https://wiki.company.com/glossary
 ```
 
+## Comparison with Alternatives
+
+| Feature | enforce-naming | eslint-plugin-naming-convention | custom rules |
+|---------|----------------|----------------------------------|--------------|
+| **Domain-Specific** | ✅ Yes | ❌ No | ⚠️ Manual |
+| **Business Context** | ✅ Yes | ❌ No | ❌ No |
+| **Auto-Fix** | ✅ Yes | ⚠️ Limited | ❌ No |
+| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
+| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
+| **Glossary Integration** | ✅ Yes | ❌ No | ❌ No |
+
 ## Related Rules
 
 - [`no-deprecated-api`](./no-deprecated-api.md) - Enforces API naming migrations
+- [`no-internal-modules`](./no-internal-modules.md) - Enforces module boundaries
 
 ## Best Practices
 
@@ -330,7 +354,8 @@ When `glossaryUrl` is provided, the rule messages include a link to your busines
 
 ## Further Reading
 
-- [Ubiquitous Language - Martin Fowler](https://martinfowler.com/bliki/UbiquitousLanguage.html)
-- [Domain-Driven Design - Eric Evans](https://www.domainlanguage.com/ddd/)
-- [Bounded Context](https://martinfowler.com/bliki/BoundedContext.html)
+- **[Ubiquitous Language - Martin Fowler](https://martinfowler.com/bliki/UbiquitousLanguage.html)** - Ubiquitous language concept
+- **[Domain-Driven Design - Eric Evans](https://www.domainlanguage.com/ddd/)** - DDD methodology
+- **[Bounded Context](https://martinfowler.com/bliki/BoundedContext.html)** - Bounded context pattern
+- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
 

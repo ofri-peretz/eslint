@@ -1,8 +1,21 @@
 # identical-functions
 
-Detects duplicate function implementations with DRY refactoring suggestions.
+> **Keywords:** code duplication, DRY principle, CWE-1104, ESLint rule, duplicate code, refactoring, SonarQube, auto-fix, LLM-optimized, code quality
+
+Detects duplicate function implementations with DRY refactoring suggestions. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
 
 **🎨 SonarQube-inspired** | **💡 Provides suggestions**
+
+## Quick Summary
+
+| Aspect | Details |
+|--------|---------|
+| **CWE Reference** | CWE-1104 (Code Duplication) |
+| **Severity** | Medium (code quality) |
+| **Auto-Fix** | ⚠️ Suggests fixes (manual application) |
+| **Category** | Code Quality |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For** | Large codebases, teams refactoring legacy code |
 
 ## Rule Details
 
@@ -274,15 +287,32 @@ The rule uses normalized AST comparison:
 3. **Calculate** similarity score (0.0 - 1.0)
 4. **Report** if score > threshold
 
+## Comparison with Alternatives
+
+| Feature | identical-functions | eslint-plugin-sonarjs | jscpd (copy-paste detector) |
+|---------|---------------------|----------------------|----------------------------|
+| **Code Duplication Detection** | ✅ Yes | ⚠️ Limited | ✅ Yes |
+| **CWE Reference** | ✅ CWE-1104 included | ⚠️ Limited | ❌ No |
+| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
+| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
+| **Fix Suggestions** | ✅ Detailed | ⚠️ Basic | ❌ No |
+| **ESLint Integration** | ✅ Native | ✅ Native | ❌ External tool |
+
 ## Related Rules
 
-- [`cognitive-complexity`](./cognitive-complexity.md) - Measures complexity
-- [`no-console-log`](./no-console-log.md) - Code quality
+- [`cognitive-complexity`](./cognitive-complexity.md) - Measures code complexity
+- [`no-console-log`](./no-console-log.md) - Code quality enforcement
+- [`no-deprecated-api`](./no-deprecated-api.md) - API modernization
+
+## Further Reading
+
+- **[CWE-1104: Code Duplication](https://cwe.mitre.org/data/definitions/1104.html)** - Official CWE entry
+- **[DRY Principle](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself)** - Don't Repeat Yourself
+- **[SonarQube RSPEC-4144](https://rules.sonarsource.com/javascript/RSPEC-4144/)** - SonarQube duplication rule
+- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
 
 ## References
 
 Inspired by **SonarQube RSPEC-4144**
-
-- [SonarQube Rule](https://rules.sonarsource.com/javascript/RSPEC-4144/)
 - [DRY Principle](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself)
 
