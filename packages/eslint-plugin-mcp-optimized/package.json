@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-mcp-optimized",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "ESLint rules optimized for Model Context Protocol (MCP) - AI assistants can actually fix these",
   "type": "commonjs",
   "main": "./src/index.js",
@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@forge-js/eslint-plugin-llm-optimized": "0.4.4"
+    "@forge-js/eslint-plugin-llm-optimized": "0.4.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
