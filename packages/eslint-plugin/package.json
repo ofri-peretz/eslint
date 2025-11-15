@@ -50,7 +50,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@forge-js/eslint-plugin-utils": "^0.2.0",
+    "@forge-js/eslint-plugin-utils": "0.2.2",
     "tslib": "^2.3.0"
   },
   "devDependencies": {

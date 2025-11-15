@@ -148,8 +148,8 @@ importers:
   packages/eslint-plugin:
     dependencies:
       '@forge-js/eslint-plugin-utils':
-        specifier: ^0.2.0
-        version: 0.2.0(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
+        specifier: 0.2.2
+        version: 0.2.2(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
@@ -1321,8 +1321,8 @@ packages:
     resolution: {integrity: sha512-WfSDwurk2xsYeympYC6K3MAbSqWEo3IzNwQhSj2V7i18uS+r0jX9kcpMDgbbE5cht9UXIiPxjjTOohgRI3co4w==}
     engines: {node: '>=18.0.0'}
 
-  '@forge-js/eslint-plugin-utils@0.2.0':
-    resolution: {integrity: sha512-NVemw2pQXm64meywIvlkrMSMeRimX2+pqgAQeYW7iCdJwSm0ZFjhacL1I/i5qfIj7ap0liA+EPBou+x9YQMJVw==}
+  '@forge-js/eslint-plugin-utils@0.2.2':
+    resolution: {integrity: sha512-IVmRMumTcuG23yVrx2ewKtawdKmQK5HM1q3t9FL00hgNFnEtjXb4+kEqvPbp/TqL6QNVodu6U70uwZ1b4q/GYg==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       '@typescript-eslint/utils': ^8.46.2
@@ -7218,13 +7218,13 @@ snapshots:
 
   '@forge-js/eslint-plugin-llm-optimized@0.4.4(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)':
     dependencies:
-      '@forge-js/eslint-plugin-utils': 0.2.0(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
+      '@forge-js/eslint-plugin-utils': 0.2.2(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
       tslib: 2.8.1
     transitivePeerDependencies:
       - '@typescript-eslint/utils'
       - typescript
 
-  '@forge-js/eslint-plugin-utils@0.2.0(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)':
+  '@forge-js/eslint-plugin-utils@0.2.2(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)':
     dependencies:
       '@typescript-eslint/utils': 8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3)
       tslib: 2.8.1
