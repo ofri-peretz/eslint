@@ -96,7 +96,23 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # ═══════════════════════════════════════════════════════════════════════
-      # LAYER 3: DERIVE AFFECTED PACKAGES (no artifact caching)
+      # LAYER 3: NX CLOUD CONNECTION (Optional - falls back to local cache if quota exceeded)
+      # ═══════════════════════════════════════════════════════════════════════
+
+      - name: Connect to Nx Cloud (optional)
+        continue-on-error: true
+        run: |
+          if [ -n "${{ secrets.NX_CLOUD_ACCESS_TOKEN }}" ]; then
+            echo "🔗 Connecting to Nx Cloud..."
+            npx nx connect-to-nx-cloud --quiet --no-interactive || echo "⚠️  Nx Cloud connection failed, using local cache"
+          else
+            echo "ℹ️  NX_CLOUD_ACCESS_TOKEN not set, using local cache only"
+          fi
+        env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+
+      # ═══════════════════════════════════════════════════════════════════════
+      # LAYER 4: DERIVE AFFECTED PACKAGES (no artifact caching)
       # ═══════════════════════════════════════════════════════════════════════
 
       - name: Derive affected packages using NX
@@ -105,11 +121,12 @@ jobs:
           main-branch-name: main
 
       # ═══════════════════════════════════════════════════════════════════════
-      # LAYER 4: TEST & BUILD
+      # LAYER 5: TEST & BUILD (with graceful Nx Cloud fallback)
       # ═══════════════════════════════════════════════════════════════════════
       # We run test first with coverage enabled, then build.
       # Build depends on test (Nx dependency), but we run both explicitly to ensure
       # tests always run even if build is cached (build dependency doesn't re-run if cached)
+      # Note: If Nx Cloud quota is exceeded, Nx will automatically fall back to local cache
 
       - name: Test Affected Packages
         run: |
