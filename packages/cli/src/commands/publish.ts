@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { execSync } from 'child_process';
 import chalk from 'chalk';
 import ora from 'ora';
+import type { Ora } from 'ora';
 
 export function createPublishCommand(): Command {
   const publish = new Command('publish')
@@ -60,7 +61,7 @@ function getDistTag(version: string): string {
   return 'latest';
 }
 
-async function publishPackage(packagePath: string, options: any, spinner: ora.Ora) {
+async function publishPackage(packagePath: string, options: any, spinner: Ora) {
   const packageJsonPath = require('path').join(packagePath, 'package.json');
   
   if (!require('fs').existsSync(packageJsonPath)) {
