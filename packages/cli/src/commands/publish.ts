@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { execSync } from 'child_process';
 import chalk from 'chalk';
 import ora from 'ora';
+import type { Ora } from 'ora';
 
 export function createPublishCommand(): Command {
   const publish = new Command('publish')
@@ -37,8 +38,9 @@ export function createPublishCommand(): Command {
         }
 
         spinner.succeed(chalk.green('✨ All packages published successfully!'));
-      } catch (error: any) {
-        spinner.fail(chalk.red(`Failed to publish: ${error.message}`));
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        spinner.fail(chalk.red(`Failed to publish: ${errorMessage}`));
         process.exit(1);
       }
     });
@@ -60,7 +62,7 @@ function getDistTag(version: string): string {
   return 'latest';
 }
 
-async function publishPackage(packagePath: string, options: any, spinner: ora.Ora) {
+async function publishPackage(packagePath: string, options: { dryRun?: boolean; verbose?: boolean }, spinner: Ora) {
   const packageJsonPath = require('path').join(packagePath, 'package.json');
   
   if (!require('fs').existsSync(packageJsonPath)) {
@@ -102,8 +104,9 @@ async function publishPackage(packagePath: string, options: any, spinner: ora.Or
     if (distTag === 'latest' && !options.dryRun) {
       execSync(`npm dist-tag add ${name}@${version} latest`, { stdio: 'pipe' });
     }
-  } catch (error: any) {
-    throw new Error(`Failed to publish ${name}@${version}: ${error.message}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to publish ${name}@${version}: ${errorMessage}`);
   }
 }
 

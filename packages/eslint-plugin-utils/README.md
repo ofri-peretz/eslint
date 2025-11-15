@@ -11,6 +11,57 @@ Most ESLint utilities help you **write rules**. This package helps you write rul
 
 Inspired by [@typescript-eslint/utils](https://typescript-eslint.io/packages/utils/), enhanced for the AI-assisted development era.
 
+---
+
+## 🚀 Quick Start
+
+Create your first LLM-optimized rule in 2 minutes:
+
+```bash
+# 1. Install
+npm install --save-dev @forge-js/eslint-plugin-utils @typescript-eslint/parser typescript
+
+# 2. Create your rule
+```
+
+```typescript
+import { createRule, isMemberExpression } from '@forge-js/eslint-plugin-utils';
+
+export default createRule({
+  name: 'no-console-log',
+  meta: {
+    type: 'problem',
+    docs: { description: 'Disallow console.log' },
+    fixable: 'code',
+    messages: {
+      useLogger: 'Replace console.log with logger.debug() on line {{line}}',
+    },
+    schema: [],
+  },
+  defaultOptions: [],
+  create(context) {
+    return {
+      CallExpression(node) {
+        if (isMemberExpression(node.callee, 'console', 'log')) {
+          context.report({
+            node,
+            messageId: 'useLogger',
+            data: { line: node.loc.start.line },
+            fix(fixer) {
+              return fixer.replaceText(node.callee, 'logger.debug');
+            },
+          });
+        }
+      },
+    };
+  },
+});
+```
+
+**That's it!** Your rule now provides structured error messages that AI assistants can automatically fix.
+
+---
+
 ## Installation
 
 ```bash

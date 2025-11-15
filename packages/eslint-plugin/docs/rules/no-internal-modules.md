@@ -1,6 +1,18 @@
 # no-internal-modules
 
-Prevent importing from internal/deep module paths with configurable strategies and LLM-optimized output.
+> **Keywords:** internal modules, module boundaries, architecture, ESLint rule, public API, encapsulation, module depth, barrel exports, auto-fix, LLM-optimized, code architecture
+
+Prevent importing from internal/deep module paths with configurable strategies and LLM-optimized output. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
+
+## Quick Summary
+
+| Aspect | Details |
+|--------|---------|
+| **Severity** | Warning (architecture best practice) |
+| **Auto-Fix** | ✅ Yes (suggests public API imports) |
+| **Category** | Architecture |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For** | Large codebases, monorepos, libraries with public APIs |
 
 ## Rule Details
 
@@ -596,9 +608,25 @@ import { Button } from './components'; // ✅ Using barrel export
 npx eslint . --fix --rule '@forge-js/no-internal-modules: [error, { strategy: autofix }]'
 ```
 
+## Comparison with Alternatives
+
+| Feature | no-internal-modules | eslint-plugin-import | eslint-plugin-boundaries |
+|---------|---------------------|---------------------|-------------------------|
+| **Module Depth Detection** | ✅ Yes | ⚠️ Limited | ⚠️ Limited |
+| **Auto-Fix** | ✅ Yes | ❌ No | ❌ No |
+| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
+| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
+| **Barrel Export Support** | ✅ Yes | ⚠️ Limited | ⚠️ Limited |
+
+## Related Rules
+
+- [`no-circular-dependencies`](./no-circular-dependencies.md) - Prevents circular dependencies
+- [`enforce-naming`](./enforce-naming.md) - Enforces naming conventions
+
 ## Further Reading
 
-- [Module Boundaries in TypeScript](https://www.typescriptlang.org/docs/handbook/modules.html)
-- [Barrel Exports Pattern](https://basarat.gitbook.io/typescript/main-1/barrel)
-- [Tree Shaking in Webpack](https://webpack.js.org/guides/tree-shaking/)
-- [eslint-plugin-import documentation](https://github.com/import-js/eslint-plugin-import)
+- **[Module Boundaries in TypeScript](https://www.typescriptlang.org/docs/handbook/modules.html)** - TypeScript module system
+- **[Barrel Exports Pattern](https://basarat.gitbook.io/typescript/main-1/barrel)** - Barrel export best practices
+- **[Tree Shaking in Webpack](https://webpack.js.org/guides/tree-shaking/)** - Webpack tree-shaking guide
+- **[eslint-plugin-import documentation](https://github.com/import-js/eslint-plugin-import)** - Import plugin docs
+- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration

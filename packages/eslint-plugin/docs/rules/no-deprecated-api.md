@@ -1,8 +1,21 @@
 # no-deprecated-api
 
-Prevent usage of deprecated APIs with migration context and timeline.
+> **Keywords:** deprecated API, CWE-1078, migration, ESLint rule, API deprecation, code modernization, auto-fix, LLM-optimized, code maintenance
+
+Prevent usage of deprecated APIs with migration context and timeline. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
 
 **💡 Provides suggestions** | **🔧 Automatically fixable**
+
+## Quick Summary
+
+| Aspect | Details |
+|--------|---------|
+| **CWE Reference** | CWE-1078 (Deprecated Components) |
+| **Severity** | Warning (maintenance best practice) |
+| **Auto-Fix** | ✅ Yes (suggests replacement APIs) |
+| **Category** | Code Maintenance |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For** | Projects using libraries with deprecation timelines |
 
 ## Rule Details
 
@@ -109,7 +122,26 @@ newFunction({ data: 'test' });
 | 🔄 **Tech Debt**       | Old code accumulates                        | Proactive migration         |
 | 🛡️ **Security**        | Using insecure legacy APIs                  | Enforce modern alternatives |
 
+## Comparison with Alternatives
+
+| Feature | no-deprecated-api | eslint-plugin-deprecation | TypeScript deprecation |
+|---------|------------------|--------------------------|----------------------|
+| **Custom Deprecations** | ✅ Yes | ⚠️ Limited | ⚠️ JSDoc only |
+| **Timeline Support** | ✅ Yes | ❌ No | ❌ No |
+| **Auto-Fix** | ✅ Yes | ❌ No | ❌ No |
+| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
+| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
+| **Migration Guides** | ✅ Yes | ❌ No | ❌ No |
+
 ## Related Rules
 
 - [`enforce-naming`](./enforce-naming.md) - Domain term enforcement
+- [`react-class-to-hooks`](./react-class-to-hooks.md) - React modernization
+- [`no-unsafe-dynamic-require`](./no-unsafe-dynamic-require.md) - Security enforcement
+
+## Further Reading
+
+- **[CWE-1078: Deprecated Components](https://cwe.mitre.org/data/definitions/1078.html)** - Official CWE entry
+- **[API Deprecation Best Practices](https://google.github.io/styleguide/tsguide.html#deprecation)** - Deprecation guidelines
+- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
 

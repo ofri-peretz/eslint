@@ -29,8 +29,9 @@ function createChangesetCommand(): Command {
         spinner.stop();
         execSync(cmd, { stdio: 'inherit' });
         console.log(chalk.green('✅ Changeset created'));
-      } catch (error: any) {
-        spinner.fail(chalk.red(`Failed to create changeset: ${error.message}`));
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        spinner.fail(chalk.red(`Failed to create changeset: ${errorMessage}`));
         process.exit(1);
       }
     });
@@ -61,8 +62,9 @@ function createVersionCommand(): Command {
         console.log(chalk.dim('   1. Review package.json and CHANGELOG.md changes'));
         console.log(chalk.dim('   2. Commit changes: git commit -am "chore: version packages"'));
         console.log(chalk.dim('   3. Push changes: git push\n'));
-      } catch (error: any) {
-        spinner.fail(chalk.red(`Failed to version packages: ${error.message}`));
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        spinner.fail(chalk.red(`Failed to version packages: ${errorMessage}`));
         process.exit(1);
       }
     });
@@ -86,8 +88,9 @@ function createStatusCommand(): Command {
         }
         
         execSync(cmd, { stdio: 'inherit' });
-      } catch (error: any) {
-        console.error(chalk.red(`Failed to check status: ${error.message}`));
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(chalk.red(`Failed to check status: ${errorMessage}`));
         process.exit(1);
       }
     });

@@ -1,49 +1,50 @@
 {
-    "name": "@forge-js/cli",
-    "version": "0.0.3",
-    "description": "CLI tool for managing releases in the forge-js monorepo",
-    "type": "commonjs",
-    "bin": {
-        "forge": "./bin/forge.js"
-    },
-    "main": "./src/index.js",
-    "scripts": {
-        "build": "tsc",
-        "dev": "node ./bin/forge.js"
-    },
-    "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
-    "license": "MIT",
-    "homepage": "https://github.com/ofri-peretz/forge-js#readme",
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/ofri-peretz/forge-js.git",
-        "directory": "packages/cli"
-    },
-    "bugs": {
-        "url": "https://github.com/ofri-peretz/forge-js/issues"
-    },
-    "publishConfig": {
-        "access": "public"
-    },
-    "keywords": [
-        "cli",
-        "monorepo",
-        "release-management",
-        "nx",
-        "versioning",
-        "semantic-versioning"
-    ],
-    "engines": {
-        "node": ">=18.0.0"
-    },
-    "dependencies": {
-        "chalk": "^4.1.2",
-        "commander": "^12.1.0",
-        "ora": "^5.4.1"
-    },
-    "devDependencies": {
-        "@types/commander": "^2.12.5",
-        "@types/node": "^20.19.9",
-        "typescript": "^5.9.3"
-    }
+  "name": "@forge-js/cli",
+  "version": "1.0.0",
+  "description": "CLI tool for managing releases in the forge-js monorepo",
+  "type": "commonjs",
+  "bin": {
+    "forge": "./bin/forge.js"
+  },
+  "main": "./src/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "node ./bin/forge.js"
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ofri-peretz/forge-js#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/forge-js.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/forge-js/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "cli",
+    "monorepo",
+    "release-management",
+    "nx",
+    "versioning",
+    "semantic-versioning"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^12.1.0",
+    "ora": "^5.4.1",
+    "tslib": "^2.8.1"
+  },
+  "devDependencies": {
+    "@types/commander": "^2.12.5",
+    "@types/node": "^20.19.9",
+    "typescript": "^5.9.3"
+  }
 }

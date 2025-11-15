@@ -1,8 +1,21 @@
 # no-sql-injection
 
-Disallows SQL injection vulnerabilities by detecting string concatenation in SQL queries.
+> **Keywords:** SQL injection, CWE-89, security, ESLint rule, database security, parameterized queries, prepared statements, OWASP, SQL injection prevention, auto-fix, LLM-optimized, code security
+
+Disallows SQL injection vulnerabilities by detecting string concatenation in SQL queries. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
 ⚠️ This rule **_warns_** by default in the `recommended` config.
+
+## Quick Summary
+
+| Aspect | Details |
+|--------|---------|
+| **CWE Reference** | CWE-89 (SQL Injection) |
+| **Severity** | Critical (security vulnerability) |
+| **Auto-Fix** | ✅ Yes (suggests parameterized queries) |
+| **Category** | Security |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For** | Applications with database interactions, security-critical code |
 
 ## Rule Details
 
@@ -93,17 +106,55 @@ const query = `SELECT * FROM users WHERE id = '${safe}'`;
 
 ## When Not To Use It
 
-- When using a type-safe query builder that prevents SQL injection by design (e.g., Prisma, Drizzle)
-- In files that don't interact with databases
-- For hardcoded SQL migrations or seed scripts (add to `ignorePatterns`)
+| Scenario | Recommendation |
+|----------|----------------|
+| **Type-safe query builders** | Disable for Prisma, Drizzle, TypeORM (they prevent SQL injection by design) |
+| **Non-database files** | Add to `ignorePatterns` for files without database interactions |
+| **SQL migrations** | Add migration directories to `ignorePatterns` |
+| **Seed scripts** | Add seed script directories to `ignorePatterns` |
+
+## Error Message Format
+
+This rule provides LLM-optimized error messages:
+
+```
+🔒 SQL Injection (CWE-89) | CRITICAL
+   ❌ Current: `SELECT * FROM users WHERE id = ${userId}`
+   ✅ Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId])
+   📚 https://owasp.org/www-community/attacks/SQL_Injection
+```
+
+**Why this format?**
+- **Structured** - AI assistants can parse and understand
+- **Actionable** - Shows both problem and solution
+- **Educational** - Includes CWE reference and documentation link
+- **Auto-fixable** - AI can apply the fix automatically
+
+## Comparison with Alternatives
+
+| Feature | no-sql-injection | eslint-plugin-security | eslint-plugin-sql |
+|---------|------------------|------------------------|-------------------|
+| **CWE Reference** | ✅ CWE-89 included | ⚠️ Limited | ❌ No |
+| **Auto-Fix** | ✅ Suggests fixes | ❌ No | ⚠️ Limited |
+| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
+| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
+| **Error Quality** | ✅ Structured with examples | ⚠️ Basic | ⚠️ Basic |
 
 ## Further Reading
 
-- [OWASP SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection)
-- [Node.js SQL Injection Prevention](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)
-- [Parameterized Queries Guide](https://bobby-tables.com/)
+- **[OWASP SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection)** - Comprehensive SQL injection guide
+- **[Node.js SQL Injection Prevention](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)** - Prevention cheat sheet
+- **[Parameterized Queries Guide](https://bobby-tables.com/)** - How to prevent SQL injection
+- **[CWE-89 Documentation](https://cwe.mitre.org/data/definitions/89.html)** - Official CWE entry
+- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
 
 ## Version
 
 This rule is available in `@forge-js/eslint-plugin-llm-optimized` v0.0.1+
+
+## Related Rules
+
+- [`no-unsafe-dynamic-require`](./no-unsafe-dynamic-require.md) - Prevents code injection via require()
+- [`detect-eval-with-expression`](./detect-eval-with-expression.md) - Prevents code injection via eval()
+- [`database-injection`](./database-injection.md) - General database injection detection
 

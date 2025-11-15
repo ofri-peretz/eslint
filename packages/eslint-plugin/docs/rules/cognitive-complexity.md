@@ -1,8 +1,20 @@
 # cognitive-complexity
 
-Enforces a maximum cognitive complexity threshold with refactoring guidance.
+> **Keywords:** cognitive complexity, code complexity, SonarQube, ESLint rule, code maintainability, refactoring, code quality, auto-fix, LLM-optimized
+
+Enforces a maximum cognitive complexity threshold with refactoring guidance. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
 
 **🎨 SonarQube-inspired** | **💡 Provides suggestions** | **⚠️ Set to warn in `recommended`**
+
+## Quick Summary
+
+| Aspect | Details |
+|--------|---------|
+| **Severity** | Warning (code quality) |
+| **Auto-Fix** | ⚠️ Suggests fixes (manual application) |
+| **Category** | Code Quality |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For** | All projects, especially large codebases requiring maintainability |
 
 ## Rule Details
 
@@ -334,18 +346,29 @@ function calculateShipping(order: Order) {
 | Readability Focus | ✅ Human-centric           | ❌ Branch-centric     |
 | Better for        | Understanding code         | Test coverage         |
 
+## Comparison with Alternatives
+
+| Feature | cognitive-complexity | eslint-plugin-complexity | SonarQube |
+|---------|---------------------|-------------------------|-----------|
+| **Cognitive Complexity** | ✅ Yes | ❌ Cyclomatic only | ✅ Yes |
+| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
+| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
+| **Fix Suggestions** | ✅ Detailed | ⚠️ Basic | ⚠️ Basic |
+| **ESLint Integration** | ✅ Native | ✅ Native | ❌ External |
+
 ## Related Rules
 
 - [`identical-functions`](./identical-functions.md) - Detects duplicate code
 - [`no-circular-dependencies`](./no-circular-dependencies.md) - Prevents circular imports
+- [`no-internal-modules`](./no-internal-modules.md) - Enforces module boundaries
 
 ## Further Reading
 
-- [Cognitive Complexity - SonarSource](https://www.sonarsource.com/docs/CognitiveComplexity.pdf)
-- [G. Ann Campbell: Cognitive Complexity - A new way of measuring understandability](https://www.sonarsource.com/resources/cognitive-complexity/)
+- **[Cognitive Complexity - SonarSource](https://www.sonarsource.com/docs/CognitiveComplexity.pdf)** - Cognitive complexity white paper
+- **[G. Ann Campbell: Cognitive Complexity](https://www.sonarsource.com/resources/cognitive-complexity/)** - Original cognitive complexity paper
+- **[SonarQube RSPEC-3776](https://rules.sonarsource.com/javascript/RSPEC-3776/)** - SonarQube complexity rule
+- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
 
 ## References
 
 Inspired by **SonarQube RSPEC-3776**
-
-- [SonarQube Rule](https://rules.sonarsource.com/javascript/RSPEC-3776/)

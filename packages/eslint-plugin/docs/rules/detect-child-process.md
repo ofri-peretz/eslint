@@ -1,8 +1,21 @@
 # detect-child-process
 
-Detects instances of `child_process` & non-literal `exec()` calls that may allow command injection.
+> **Keywords:** command injection, CWE-78, security, ESLint rule, child_process, exec, spawn, OS command injection, shell injection, auto-fix, LLM-optimized, code security
+
+Detects instances of `child_process` & non-literal `exec()` calls that may allow command injection. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
 
 **🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
+
+## Quick Summary
+
+| Aspect | Details |
+|--------|---------|
+| **CWE Reference** | CWE-78 (OS Command Injection) |
+| **Severity** | Critical (security vulnerability) |
+| **Auto-Fix** | ⚠️ Suggests fixes (manual application) |
+| **Category** | Security |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For** | Node.js applications, deployment scripts, CI/CD tools |
 
 ## Rule Details
 
@@ -286,16 +299,27 @@ for (const attempt of injectionAttempts) {
 }
 ```
 
+## Comparison with Alternatives
+
+| Feature | detect-child-process | eslint-plugin-security | eslint-plugin-node |
+|---------|---------------------|------------------------|-------------------|
+| **Command Injection Detection** | ✅ Yes | ⚠️ Limited | ⚠️ Limited |
+| **CWE Reference** | ✅ CWE-78 included | ⚠️ Limited | ⚠️ Limited |
+| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
+| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
+| **Fix Suggestions** | ✅ Detailed | ⚠️ Basic | ⚠️ Basic |
+
 ## Related Rules
 
-- `detect-eval-with-expression` - Code injection prevention
-- `detect-non-literal-fs-filename` - Path traversal prevention
-- `detect-object-injection` - Prototype pollution prevention
-- `detect-non-literal-regexp` - ReDoS prevention
+- [`detect-eval-with-expression`](./detect-eval-with-expression.md) - Prevents code injection via eval()
+- [`detect-non-literal-fs-filename`](./detect-non-literal-fs-filename.md) - Prevents path traversal
+- [`detect-object-injection`](./detect-object-injection.md) - Prevents prototype pollution
+- [`detect-non-literal-regexp`](./detect-non-literal-regexp.md) - Prevents ReDoS attacks
 
 ## Further Reading
 
-- [OWASP Command Injection](https://owasp.org/www-community/attacks/Command_Injection)
-- [Node.js Child Process Security](https://nodejs.org/api/child_process.html#child_process_security)
-- [CWE-78: OS Command Injection](https://cwe.mitre.org/data/definitions/78.html)
-- [Execa Library](https://github.com/sindresorhus/execa)
+- **[OWASP Command Injection](https://owasp.org/www-community/attacks/Command_Injection)** - Command injection attack guide
+- **[Node.js Child Process Security](https://nodejs.org/api/child_process.html#child_process_security)** - Node.js child_process security
+- **[CWE-78: OS Command Injection](https://cwe.mitre.org/data/definitions/78.html)** - Official CWE entry
+- **[Execa Library](https://github.com/sindresorhus/execa)** - Safer child process execution
+- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration

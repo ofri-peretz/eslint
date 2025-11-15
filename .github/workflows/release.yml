@@ -177,7 +177,7 @@ jobs:
           git config user.name "Ofri Peretz"
           git config user.email "ofri@snappy.com"
 
-          # Run version command (includes preVersionCommand build)
+          # Run version command (includes preVersionCommand build for manifest updates)
           if [ "${{ inputs.version-specifier }}" != "auto" ]; then
             echo "📝 Using version strategy: ${{ inputs.version-specifier }}"
             pnpm nx release version ${{ inputs.version-specifier }}
@@ -191,7 +191,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # ──────────────────────────────────────────────────────────────────────
-      # PHASE 2: PUBLISH (Packages already built in Phase 1)
+      # PHASE 2: PUBLISH (preReleaseCommand rebuilds with new versions + publish)
       # ──────────────────────────────────────────────────────────────────────
       - name: 🚀 Publish Packages
         id: publish
@@ -203,8 +203,7 @@ jobs:
 
           echo "📝 Publishing with dist tag: ${{ inputs.dist-tag }}"
 
-          # Packages are already built during version preparation
-          # Just publish the dist/ artifacts
+          # preReleaseCommand rebuilds packages with updated versions, then publishes
           pnpm nx release publish --tag ${{ inputs.dist-tag }}
         env:
           NPM_CONFIG_PROVENANCE: true
@@ -250,11 +249,15 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "### Published Packages" >> $GITHUB_STEP_SUMMARY
             echo "- \`@forge-js/eslint-plugin\`" >> $GITHUB_STEP_SUMMARY
+            echo "- \`@forge-js/eslint-plugin-llm-optimized\`" >> $GITHUB_STEP_SUMMARY
             echo "- \`@forge-js/eslint-plugin-utils\`" >> $GITHUB_STEP_SUMMARY
             echo "- \`@forge-js/cli\`" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "To install the new version:" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-            echo "pnpm add @forge-js/eslint-plugin@${{ inputs.dist-tag }}" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "- \`@forge-js/eslint-plugin-llm\`" >> $GITHUB_STEP_SUMMARY
+            echo "- \`@forge-js/eslint-plugin-mcp\`" >> $GITHUB_STEP_SUMMARY
+            echo "- \`@forge-js/eslint-plugin-mcp-optimized\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "To install the new version:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "pnpm add @forge-js/eslint-plugin@${{ inputs.dist-tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           fi

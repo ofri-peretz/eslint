@@ -1,8 +1,21 @@
 # detect-non-literal-regexp
 
-Detects `RegExp(variable)`, which might allow an attacker to DOS your server with a long-running regular expression.
+> **Keywords:** ReDoS, CWE-400, security, ESLint rule, regular expression denial of service, RegExp, regex injection, performance, auto-fix, LLM-optimized, code security
+
+Detects `RegExp(variable)`, which might allow an attacker to DOS your server with a long-running regular expression. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
 
 **🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
+
+## Quick Summary
+
+| Aspect | Details |
+|--------|---------|
+| **CWE Reference** | CWE-400 (ReDoS - Regular Expression Denial of Service) |
+| **Severity** | High (performance/security issue) |
+| **Auto-Fix** | ⚠️ Suggests fixes (manual application) |
+| **Category** | Security |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For** | Applications processing user input with regex, validation libraries |
 
 ## Rule Details
 
@@ -184,15 +197,26 @@ const maliciousInputs = [
 ];
 ```
 
+## Comparison with Alternatives
+
+| Feature | detect-non-literal-regexp | eslint-plugin-security | eslint-plugin-sonarjs |
+|---------|---------------------------|------------------------|----------------------|
+| **ReDoS Detection** | ✅ Yes | ⚠️ Limited | ⚠️ Limited |
+| **CWE Reference** | ✅ CWE-400 included | ⚠️ Limited | ⚠️ Limited |
+| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
+| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
+| **Fix Suggestions** | ✅ Detailed | ⚠️ Basic | ⚠️ Basic |
+
 ## Related Rules
 
-- `detect-eval-with-expression` - Code injection prevention
-- `detect-child-process` - Command injection prevention
-- `detect-non-literal-fs-filename` - Path traversal prevention
-- `detect-object-injection` - Prototype pollution prevention
+- [`detect-eval-with-expression`](./detect-eval-with-expression.md) - Prevents code injection via eval()
+- [`detect-child-process`](./detect-child-process.md) - Prevents command injection
+- [`detect-non-literal-fs-filename`](./detect-non-literal-fs-filename.md) - Prevents path traversal
+- [`detect-object-injection`](./detect-object-injection.md) - Prevents prototype pollution
 
 ## Further Reading
 
-- [OWASP ReDoS Attacks](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)
-- [Safe Regex Library](https://github.com/substack/safe-regex)
-- [CWE-400: Uncontrolled Resource Consumption](https://cwe.mitre.org/data/definitions/400.html)
+- **[OWASP ReDoS Attacks](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)** - ReDoS attack guide
+- **[Safe Regex Library](https://github.com/substack/safe-regex)** - Safe regex patterns
+- **[CWE-400: Uncontrolled Resource Consumption](https://cwe.mitre.org/data/definitions/400.html)** - Official CWE entry
+- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration

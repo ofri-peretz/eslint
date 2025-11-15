@@ -1,8 +1,21 @@
 # detect-non-literal-fs-filename
 
-Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system.
+> **Keywords:** path traversal, CWE-22, security, ESLint rule, file system, fs module, directory traversal, file access, auto-fix, LLM-optimized, code security
+
+Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
 
 **🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
+
+## Quick Summary
+
+| Aspect | Details |
+|--------|---------|
+| **CWE Reference** | CWE-22 (Path Traversal) |
+| **Severity** | High (security vulnerability) |
+| **Auto-Fix** | ⚠️ Suggests fixes (manual application) |
+| **Category** | Security |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For** | Node.js applications, file processing systems, file upload handlers |
 
 ## Rule Details
 
@@ -238,15 +251,26 @@ for (const attack of attacks) {
 }
 ```
 
+## Comparison with Alternatives
+
+| Feature | detect-non-literal-fs-filename | eslint-plugin-security | eslint-plugin-node |
+|---------|-------------------------------|------------------------|-------------------|
+| **Path Traversal Detection** | ✅ Yes | ⚠️ Limited | ⚠️ Limited |
+| **CWE Reference** | ✅ CWE-22 included | ⚠️ Limited | ⚠️ Limited |
+| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
+| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
+| **Fix Suggestions** | ✅ Detailed | ⚠️ Basic | ⚠️ Basic |
+
 ## Related Rules
 
-- `detect-eval-with-expression` - Code injection prevention
-- `detect-child-process` - Command injection prevention
-- `detect-object-injection` - Prototype pollution prevention
-- `detect-non-literal-regexp` - ReDoS prevention
+- [`detect-eval-with-expression`](./detect-eval-with-expression.md) - Prevents code injection via eval()
+- [`detect-child-process`](./detect-child-process.md) - Prevents command injection
+- [`detect-object-injection`](./detect-object-injection.md) - Prevents prototype pollution
+- [`detect-non-literal-regexp`](./detect-non-literal-regexp.md) - Prevents ReDoS attacks
 
 ## Further Reading
 
-- [OWASP Path Traversal](https://owasp.org/www-community/attacks/Path_Traversal)
-- [Node.js File System Security](https://nodejs.org/api/fs.html#file-system)
-- [CWE-22: Path Traversal](https://cwe.mitre.org/data/definitions/22.html)
+- **[OWASP Path Traversal](https://owasp.org/www-community/attacks/Path_Traversal)** - Path traversal attack guide
+- **[Node.js File System Security](https://nodejs.org/api/fs.html#file-system)** - Node.js fs module security
+- **[CWE-22: Path Traversal](https://cwe.mitre.org/data/definitions/22.html)** - Official CWE entry
+- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration

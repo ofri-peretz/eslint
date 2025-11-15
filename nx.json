@@ -61,9 +61,10 @@
         "^production"
       ],
       "outputs": [
-        "{projectRoot}/coverage"
+        "{projectRoot}/coverage",
+        "{projectRoot}/test-report.junit.xml"
       ],
-      "cache": false
+      "cache": true
     },
     "@nx/js:tsc": {
       "cache": true,
@@ -84,6 +85,17 @@
       "inputs": [
         "default",
         "{workspaceRoot}/tsconfig.base.json"
+      ]
+    },
+    "@nx/vite:test": {
+      "cache": true,
+      "inputs": [
+        "default",
+        "^production"
+      ],
+      "outputs": [
+        "{projectRoot}/coverage",
+        "{projectRoot}/test-report.junit.xml"
       ]
     }
   },
@@ -112,13 +124,18 @@
   "release": {
     "projects": [
       "packages/eslint-plugin",
+      "packages/eslint-plugin-llm-optimized",
       "packages/eslint-plugin-utils",
-      "packages/cli"
+      "packages/cli",
+      "packages/eslint-plugin-llm",
+      "packages/eslint-plugin-mcp",
+      "packages/eslint-plugin-mcp-optimized"
     ],
     "projectsRelationship": "independent",
+    "preid": "rc",
     "version": {
+      "preVersionCommand": "pnpm dlx nx run-many -t build",
       "conventionalCommits": true,
-      "preVersionCommand": "pnpm nx run-many -t build --projects=eslint-plugin,eslint-plugin-utils,cli",
       "generatorOptions": {
         "updateDependents": "always",
         "currentVersionResolver": "git-tag",
@@ -127,9 +144,10 @@
       "versionActionsOptions": {
         "skipLockFileUpdate": true
       },
-    "release": {
-      "preid": "rc"
-    },
+      "manifestRootsToUpdate": [
+        "{projectRoot}"
+      ],
+      "preReleaseCommand": "pnpm nx run-many -t build --projects=eslint-plugin,eslint-plugin-llm-optimized,eslint-plugin-utils,cli,eslint-plugin-llm,eslint-plugin-mcp,eslint-plugin-mcp-optimized",
       "git": {
         "commit": true,
         "commitArgs": "--no-verify",
