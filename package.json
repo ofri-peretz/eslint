@@ -19,7 +19,8 @@
     "publish:all": "pnpm nx run-many -t build --all && nx release publish",
     "ci:trigger": "gh workflow run ci.yml --ref local-playground-app && echo '✅ Workflow triggered!'",
     "ci:status": "tsx scripts/ci-status.ts",
-    "ci": "tsx scripts/ci-status.ts"
+    "ci": "tsx scripts/ci-status.ts",
+    "delete-branches": "nx delete-branches"
   },
   "keywords": [
     "eslint",
