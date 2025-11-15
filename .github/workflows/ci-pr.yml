@@ -133,44 +133,8 @@ jobs:
           fi
 
       # ═══════════════════════════════════════════════════════════════════════
-      # LAYER 5: POST-TEST ACTIONS (COVERAGE & REPORTS)
+      # LAYER 5: POST-TEST ACTIONS (DIAGNOSTICS)
       # ═══════════════════════════════════════════════════════════════════════
-
-      - name: Collect coverage files
-        id: coverage
-        run: |
-          COVERAGE_FILES=$(find . -maxdepth 3 -name "coverage-final.json" -type f 2>/dev/null | grep -v node_modules | tr '\n' ',' | sed 's/,$//')
-          echo "files=$COVERAGE_FILES" >> $GITHUB_OUTPUT
-          echo "Found coverage files: $COVERAGE_FILES"
-
-      - name: Collect JUnit test reports
-        id: tests
-        run: |
-          JUNIT_FILES=$(find . -maxdepth 3 -name "test-report.junit.xml" -type f 2>/dev/null | grep -v node_modules | tr '\n' ',' | sed 's/,$//')
-          echo "files=$JUNIT_FILES" >> $GITHUB_OUTPUT
-          echo "Found JUnit test report files: $JUNIT_FILES"
-
-      - name: Upload coverage to Codecov
-        if: steps.coverage.outputs.files != ''
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ${{ steps.coverage.outputs.files }}
-          flags: ${{ github.event_name == 'pull_request' && 'pr' || 'main' }}
-          name: codecov-${{ github.event_name == 'pull_request' && 'pr' || 'main' }}
-          fail_ci_if_error: false
-        continue-on-error: true
-
-      - name: Upload test analytics to Codecov
-        if: steps.tests.outputs.files != ''
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ${{ steps.tests.outputs.files }}
-          flags: ${{ github.event_name == 'pull_request' && 'test-pr' || 'test-main' }}
-          name: junit-${{ github.event_name == 'pull_request' && 'pr' || 'main' }}
-          fail_ci_if_error: false
-        continue-on-error: true
 
       - name: Print CI diagnostics
         if: always()

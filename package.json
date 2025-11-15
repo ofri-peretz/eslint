@@ -5,6 +5,7 @@
   "private": true,
   "main": "index.js",
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "prepare": "husky",
     "lint:workflows": "actionlint",
     "release": "nx release",
@@ -30,7 +31,6 @@
   "license": "ISC",
   "packageManager": "pnpm@10.18.3",
   "devDependencies": {
-    "@codecov/vite-plugin": "^1.9.1",
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
     "@eslint/js": "^9.39.0",
