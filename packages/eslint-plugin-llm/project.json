@@ -1,0 +1,72 @@
+{
+  "name": "eslint-plugin-llm",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/eslint-plugin-llm/src",
+  "projectType": "library",
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": [
+        "{projectRoot}",
+        "dist/{projectRoot}"
+      ],
+      "currentVersionResolver": "git-tag",
+      "fallbackCurrentVersionResolver": "disk"
+    }
+  },
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "dependsOn": [
+        "^build",
+        "test"
+      ],
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "outputPath": "dist/packages/eslint-plugin-llm",
+        "main": "packages/eslint-plugin-llm/src/index.ts",
+        "tsConfig": "packages/eslint-plugin-llm/tsconfig.lib.json",
+        "assets": [
+          "packages/eslint-plugin-llm/README.md",
+          "packages/eslint-plugin-llm/LICENSE",
+          "packages/eslint-plugin-llm/CHANGELOG.md"
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": [
+        "{projectRoot}/coverage"
+      ],
+      "options": {
+        "configFile": "packages/eslint-plugin-llm/vitest.config.mts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "coverage": true
+        }
+      }
+    },
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm publish dist/{projectRoot} --access public --no-git-checks",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "command": "npm publish dist/packages/eslint-plugin-llm --access public",
+        "cwd": "{workspaceRoot}"
+      }
+    }
+  }
+}
+

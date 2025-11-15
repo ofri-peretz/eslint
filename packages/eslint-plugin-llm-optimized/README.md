@@ -24,6 +24,18 @@ Traditional ESLint rules communicate _what's wrong_. This plugin ensures every r
 
 ---
 
+## 📢 Important Notes
+
+> **💡 Tip:** This plugin works best when integrated with AI coding assistants. The structured error messages enable automatic fixes with minimal human intervention.
+
+> **⚠️ Warning:** Some rules may flag patterns that are intentional in your codebase. Use inline comments to disable rules for specific cases when needed.
+
+> **✅ Best Practice:** Start with the `recommended` configuration and gradually enable stricter rules as your team adapts to the patterns.
+
+> **🚀 Quick Start:** For TypeScript projects, ensure you have `typescript-eslint` installed alongside this plugin for full compatibility.
+
+---
+
 ## Rules
 
 💼 Set in the `recommended` configuration.  
@@ -307,6 +319,19 @@ A: No. Use alongside `@typescript-eslint`, `eslint-plugin-import`, etc.
 
 **Q: Can I customize the rules?**  
 A: Yes. Each rule can be configured with options. See individual rule documentation.
+
+---
+
+## 📦 Package Information
+
+> **🔬 A/B Test Package:** This package (`eslint-plugin-llm-optimized`) is an A/B test and serves as a barrel export for the original package `@forge-js/eslint-plugin-llm-optimized`.
+>
+> Both packages provide identical functionality. This package exists to test discoverability and adoption patterns. You can use either package name - they are functionally equivalent.
+
+**Package Options:**
+
+- `eslint-plugin-llm-optimized` (this package - A/B test)
+- `@forge-js/eslint-plugin-llm-optimized` (original package)
 
 ---
 

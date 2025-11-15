@@ -114,10 +114,14 @@
       "packages/eslint-plugin",
       "packages/eslint-plugin-llm-optimized",
       "packages/eslint-plugin-utils",
-      "packages/cli"
+      "packages/cli",
+      "packages/eslint-plugin-llm",
+      "packages/eslint-plugin-mcp",
+      "packages/eslint-plugin-mcp-optimized"
     ],
     "projectsRelationship": "independent",
     "version": {
+      "preVersionCommand": "pnpm dlx nx run-many -t build",
       "conventionalCommits": true,
       "generatorOptions": {
         "updateDependents": "always",

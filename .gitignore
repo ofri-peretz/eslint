@@ -85,3 +85,4 @@ vite.config.*.timestamp*
 vitest.config.*.timestamp*.npmrc
 **/test-report.junit.xml
 **/*.test-report.junit.xml
+vitest.config.*.timestamp*

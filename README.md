@@ -13,15 +13,26 @@ A modern TypeScript monorepo providing a collection of carefully crafted tools, 
 
 ## 📦 Packages
 
-This monorepo contains independently versioned packages. Below is the current list of published packages with their latest versions:
+This monorepo contains independently versioned packages. Below is the complete list of available packages with their latest versions:
 
-> **Note**: This table is automatically updated with each release. For latest version information, visit [npmjs.com/@forge-js](https://www.npmjs.com/search?q=%40forge-js)
+> **Note**: Version badges are dynamically updated from npm. For the latest version information, visit [npmjs.com](https://www.npmjs.com/search?q=forge-js)
 
-| Package | Version | Description | Status |
-|---------|---------|-------------|--------|
+### Core Packages (@forge-js)
+
+| Package                                                             | Version                                                                                                                                           | Description                                                                               | Status       |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------ |
 | [`@forge-js/eslint-plugin-llm-optimized`](./packages/eslint-plugin) | [![npm](https://img.shields.io/npm/v/@forge-js/eslint-plugin-llm-optimized)](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) | ESLint plugin with LLM-optimized rules for better code quality in AI-assisted development | ✅ Published |
-| [`@forge-js/eslint-plugin-utils`](./packages/eslint-plugin-utils) | [![npm](https://img.shields.io/npm/v/@forge-js/eslint-plugin-utils)](https://www.npmjs.com/package/@forge-js/eslint-plugin-utils) | Utilities and helpers for building TypeScript-based ESLint plugins | ✅ Published |
-| [`@forge-js/cli`](./packages/cli) | [![npm](https://img.shields.io/npm/v/@forge-js/cli)](https://www.npmjs.com/package/@forge-js/cli) | CLI tools for the Forge ecosystem | 🔄 In Development |
+| [`@forge-js/eslint-plugin-utils`](./packages/eslint-plugin-utils)   | [![npm](https://img.shields.io/npm/v/@forge-js/eslint-plugin-utils)](https://www.npmjs.com/package/@forge-js/eslint-plugin-utils)                 | Utilities and helpers for building TypeScript-based ESLint plugins                        | ✅ Published |
+| [`@forge-js/cli`](./packages/cli)                                   | [![npm](https://img.shields.io/npm/v/@forge-js/cli)](https://www.npmjs.com/package/@forge-js/cli)                                                 | CLI tools for the Forge ecosystem                                                         | ✅ Published |
+
+### ESLint Plugins (Unscoped)
+
+| Package                                                                 | Version                                                                                                                       | Description                                                                             | Status       |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ------------ |
+| [`eslint-plugin-llm-optimized`](./packages/eslint-plugin-llm-optimized) | [![npm](https://img.shields.io/npm/v/eslint-plugin-llm-optimized)](https://www.npmjs.com/package/eslint-plugin-llm-optimized) | ESLint rules optimized for Large Language Models - AI assistants can actually fix these | ✅ Published |
+| [`eslint-plugin-llm`](./packages/eslint-plugin-llm)                     | [![npm](https://img.shields.io/npm/v/eslint-plugin-llm)](https://www.npmjs.com/package/eslint-plugin-llm)                     | Barrel export package for ESLint rules optimized for LLMs                               | ✅ Published |
+| [`eslint-plugin-mcp`](./packages/eslint-plugin-mcp)                     | [![npm](https://img.shields.io/npm/v/eslint-plugin-mcp)](https://www.npmjs.com/package/eslint-plugin-mcp)                     | ESLint rules optimized for Model Context Protocol (MCP)                                 | ✅ Published |
+| [`eslint-plugin-mcp-optimized`](./packages/eslint-plugin-mcp-optimized) | [![npm](https://img.shields.io/npm/v/eslint-plugin-mcp-optimized)](https://www.npmjs.com/package/eslint-plugin-mcp-optimized) | ESLint rules optimized for Model Context Protocol (MCP) - optimized version             | ✅ Published |
 
 ---
 
@@ -163,22 +174,22 @@ We welcome contributions! Please see our [Contributing Guide](./docs/CONTRIBUTIN
 
 ### Architecture Rules
 
-| Rule | Description | Auto-fixable |
-|------|-------------|--------------|
-| `no-circular-dependencies` | Prevent circular imports | ❌ |
-| `no-internal-modules` | Enforce module boundaries | ❌ |
+| Rule                       | Description               | Auto-fixable |
+| -------------------------- | ------------------------- | ------------ |
+| `no-circular-dependencies` | Prevent circular imports  | ❌           |
+| `no-internal-modules`      | Enforce module boundaries | ❌           |
 
 ### Development Rules
 
-| Rule | Description | Auto-fixable |
-|------|-------------|--------------|
-| `no-console-log` | Disallow console.log statements | ✅ |
+| Rule             | Description                     | Auto-fixable |
+| ---------------- | ------------------------------- | ------------ |
+| `no-console-log` | Disallow console.log statements | ✅           |
 
 ### Security Rules
 
-| Rule | Description | Auto-fixable |
-|------|-------------|--------------|
-| `no-hardcoded-secrets` | Detect hardcoded credentials | ❌ |
+| Rule                   | Description                  | Auto-fixable |
+| ---------------------- | ---------------------------- | ------------ |
+| `no-hardcoded-secrets` | Detect hardcoded credentials | ❌           |
 
 See the [ESLint Plugin README](./packages/eslint-plugin/README.md) for complete rule documentation.
 
