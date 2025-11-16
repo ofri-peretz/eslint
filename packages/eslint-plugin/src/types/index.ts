@@ -30,6 +30,7 @@ import type { Options as NoDeprecatedApiOptions } from '../rules/deprecation/no-
 
 // Development
 import type { Options as NoConsoleLogOptions } from '../rules/development/no-console-log';
+import type { Options as PreferDependencyVersionStrategyOptions } from '../rules/development/prefer-dependency-version-strategy';
 
 // Domain
 import type { Options as EnforceNamingOptions } from '../rules/domain/enforce-naming';
@@ -55,6 +56,8 @@ import type { Options as DetectNonLiteralRegexpOptions } from '../rules/security
 import type { Options as DetectObjectInjectionOptions } from '../rules/security/detect-object-injection';
 import type { Options as NoSqlInjectionOptions } from '../rules/security/no-sql-injection';
 import type { Options as NoUnsafeDynamicRequireOptions } from '../rules/security/no-unsafe-dynamic-require';
+import type { Options as NoHardcodedCredentialsOptions } from '../rules/security/no-hardcoded-credentials';
+import type { Options as NoWeakCryptoOptions } from '../rules/security/no-weak-crypto';
 
 // Export all types with consistent naming
 export type {
@@ -64,6 +67,7 @@ export type {
   CognitiveComplexityOptions,
   NoDeprecatedApiOptions,
   NoConsoleLogOptions,
+  PreferDependencyVersionStrategyOptions,
   EnforceNamingOptions,
   IdenticalFunctionsOptions,
   ReactClassToHooksOptions,
@@ -77,6 +81,8 @@ export type {
   DetectObjectInjectionOptions,
   NoSqlInjectionOptions,
   NoUnsafeDynamicRequireOptions,
+  NoHardcodedCredentialsOptions,
+  NoWeakCryptoOptions,
 };
 
 /**
@@ -103,6 +109,7 @@ export type AllRulesOptions = {
   'cognitive-complexity'?: CognitiveComplexityOptions;
   'no-deprecated-api'?: NoDeprecatedApiOptions;
   'no-console-log'?: NoConsoleLogOptions;
+  'prefer-dependency-version-strategy'?: PreferDependencyVersionStrategyOptions;
   'enforce-naming'?: EnforceNamingOptions;
   'identical-functions'?: IdenticalFunctionsOptions;
   'react-class-to-hooks'?: ReactClassToHooksOptions;
@@ -116,5 +123,7 @@ export type AllRulesOptions = {
   'detect-object-injection'?: DetectObjectInjectionOptions;
   'no-sql-injection'?: NoSqlInjectionOptions;
   'no-unsafe-dynamic-require'?: NoUnsafeDynamicRequireOptions;
+  'no-hardcoded-credentials'?: NoHardcodedCredentialsOptions;
+  'no-weak-crypto'?: NoWeakCryptoOptions;
 };
 
