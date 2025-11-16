@@ -2,76 +2,48 @@
 
 ## Overview
 
-All ESLint rule messages in this package MUST follow the **4-line LLM-optimized format**. This ensures consistency, clarity, and enables LLMs (Large Language Models) to understand and fix violations accurately.
+All ESLint rule messages in this package MUST follow the **2-line LLM-optimized format** using the `formatLLMMessage` utility from `@forge-js/eslint-plugin-utils`. This ensures consistency, clarity, and enables LLMs (Large Language Models) to understand and fix violations accurately.
 
 ## Format Structure
 
-Every error/warning message MUST have exactly 4 lines:
+Every error/warning message MUST use `formatLLMMessage` which produces exactly 2 lines:
 
 ```
-Line 1: [Icon] [Issue Name] (CWE-XXX)? | [Severity Level]
-Line 2:    ❌ Current: [Bad practice example]
-Line 3:    ✅ Fix: [Solution with pattern/code]
-Line 4:    📚 [Documentation Link] or [Context]
+Line 1: [Icon] [CWE?] | [Description] | [SEVERITY]
+Line 2:    Fix: [fix instruction] | [documentation link]
 ```
 
-**Note:** CWE is optional - only include when relevant to the rule type.
+**Note:** CWE is optional - only include when relevant to the rule type (security, high-impact issues).
 
 ## Line Breakdown
 
-### Line 1: Icon + Issue Name + CWE + Severity
+### Line 1: Icon + CWE + Description + Severity
 
-- **Icon**: Use category-specific emoji (🔒 security issues, ⚠️ warnings, 🔄 refactoring/architecture, ♿ accessibility, ⚡ performance, 📚 domain, 🚫 module/import)
-- **Issue Name**: Brief name of the issue/violation
+- **Icon**: Use `MessageIcons` constants from `@forge-js/eslint-plugin-utils` (e.g., `MessageIcons.SECURITY`, `MessageIcons.WARNING`)
 - **CWE Reference**: Include CWE number (CWE-XXX format) **ONLY if relevant to the rule**
   - Include for: Security, high-impact architecture, critical bugs
   - Skip for: Naming conventions, minor style issues, personal preferences
+- **Description**: Full description of the issue (e.g., "SQL Injection detected", "console.log found in production code")
 - **Severity**: One of: `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`
 
 **Example:**
 
 ```
-🔒 SQL Injection (CWE-89) | CRITICAL
+🔒 CWE-89 | SQL Injection detected | CRITICAL
 ```
 
-### Line 2: Current Bad Practice
-
-- Show the problematic code/pattern
-- Use `❌ Current:` prefix
-- Include minimal code snippet or description
-- Indent with 3 spaces for alignment
-
-**Example:**
-
-```
-   ❌ Current: `SELECT * FROM users WHERE id = ${userId}`
-```
-
-### Line 3: Fix with Solution
+### Line 2: Fix Instruction + Documentation
 
 - Show how to fix the issue
-- Use `✅ Fix:` prefix
-- Include working pattern or code
-- May span multiple lines if needed
+- Use `Fix:` prefix (no emoji)
+- Include specific fix instruction with code example
+- Include documentation link separated by `|`
 - Indent with 3 spaces for alignment
 
 **Example:**
 
 ```
-   ✅ Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId])
-```
-
-### Line 4: Documentation
-
-- Provide relevant documentation link
-- Include context about why this matters
-- Use `📚` prefix
-- Indent with 3 spaces for alignment
-
-**Example:**
-
-```
-   📚 https://owasp.org/www-community/attacks/SQL_Injection
+   Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId]) | https://owasp.org/www-community/attacks/SQL_Injection
 ```
 
 ## CWE Reference Guide
@@ -112,13 +84,26 @@ messages: {
 ### Good Message (LLM-Optimized)
 
 ```typescript
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
+
 messages: {
-  sqlInjection:
-    '🔒 SQL Injection (CWE-89) | CRITICAL\n' +
-    '   ❌ Current: `SELECT * FROM users WHERE id = ${userId}`\n' +
-    '   ✅ Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId])\n' +
-    '   📚 https://owasp.org/www-community/attacks/SQL_Injection',
+  sqlInjection: formatLLMMessage({
+    icon: MessageIcons.SECURITY,
+    issueName: 'SQL Injection',
+    cwe: 'CWE-89',
+    description: 'SQL Injection detected',
+    severity: 'CRITICAL',
+    fix: 'Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId])',
+    documentationLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
+  }),
 }
+```
+
+**Output:**
+
+```
+🔒 CWE-89 | SQL Injection detected | CRITICAL
+   Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId]) | https://owasp.org/www-community/attacks/SQL_Injection
 ```
 
 ## Data Object Fields
@@ -156,72 +141,108 @@ context.report({
 ### Generic Rule Template (Works for ALL Categories)
 
 ```typescript
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
+
 messages: {
-  ruleName:
-    '[Icon] [Issue Name] (CWE-XXX) | {{severity}}\n' +
-    '   ❌ Current: {{currentBadExample}}\n' +
-    '   ✅ Fix: {{solution}}\n' +
-    '   📚 {{documentationLink}}',
+  ruleName: formatLLMMessage({
+    icon: MessageIcons.SECURITY, // or appropriate icon
+    issueName: 'Issue Name',
+    cwe: 'CWE-XXX', // optional, only if relevant
+    description: 'Issue description',
+    severity: 'CRITICAL', // or HIGH, MEDIUM, LOW
+    fix: 'Specific fix instruction with code example',
+    documentationLink: 'https://example.com/docs',
+  }),
 }
 ```
 
 ### Example: Security Rule
 
 ```typescript
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
+
 messages: {
-  sqlInjection:
-    '🔒 SQL Injection (CWE-89) | CRITICAL\n' +
-    '   ❌ Current: `SELECT * FROM users WHERE id = ${userId}`\n' +
-    '   ✅ Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId])\n' +
-    '   📚 https://owasp.org/www-community/attacks/SQL_Injection',
+  sqlInjection: formatLLMMessage({
+    icon: MessageIcons.SECURITY,
+    issueName: 'SQL Injection',
+    cwe: 'CWE-89',
+    description: 'SQL Injection detected',
+    severity: 'CRITICAL',
+    fix: 'Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId])',
+    documentationLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
+  }),
 }
 ```
 
 ### Example: Architecture Rule
 
 ```typescript
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
+
 messages: {
-  circularDependency:
-    '🔄 Circular Dependency (CWE-407) | HIGH\n' +
-    '   ❌ Current: A → B → A (creates cycle)\n' +
-    '   ✅ Fix: Split into 3 modules: A.core → B → A.extended\n' +
-    '   📚 https://en.wikipedia.org/wiki/Circular_dependency',
+  circularDependency: formatLLMMessage({
+    icon: MessageIcons.ARCHITECTURE,
+    issueName: 'Circular Dependency',
+    cwe: 'CWE-407',
+    description: 'Circular dependency detected',
+    severity: 'HIGH',
+    fix: 'Extract shared types to types.ts, break cycle at C.ts',
+    documentationLink: 'https://en.wikipedia.org/wiki/Circular_dependency',
+  }),
 }
 ```
 
 ### Example: Performance Rule
 
 ```typescript
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
+
 messages: {
-  inlineFunction:
-    '⚡ Inline Function (CWE-1104) | MEDIUM\n' +
-    '   ❌ Current: Inline function in render causes re-renders\n' +
-    '   ✅ Fix: Use useCallback or extract to component method\n' +
-    '   📚 https://react.dev/reference/react/useCallback',
+  inlineFunction: formatLLMMessage({
+    icon: MessageIcons.PERFORMANCE,
+    issueName: 'Inline Function',
+    cwe: 'CWE-1104',
+    description: 'Inline function in render causes re-renders',
+    severity: 'MEDIUM',
+    fix: 'Use useCallback or extract to component method',
+    documentationLink: 'https://react.dev/reference/react/useCallback',
+  }),
 }
 ```
 
 ### Example: Accessibility Rule
 
 ```typescript
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
+
 messages: {
-  missingAltText:
-    '♿ Missing Alt Text (CWE-252) | CRITICAL\n' +
-    '   ❌ Current: <img> without alt attribute\n' +
-    '   ✅ Fix: Add alt="descriptive text" or alt="" for decorative images\n' +
-    '   📚 https://www.w3.org/WAI/tutorials/images/',
+  missingAltText: formatLLMMessage({
+    icon: MessageIcons.ACCESSIBILITY,
+    issueName: 'Missing Alt Text',
+    cwe: 'CWE-252',
+    description: 'Missing alt attribute on image',
+    severity: 'CRITICAL',
+    fix: 'Add alt="descriptive text" or alt="" for decorative images',
+    documentationLink: 'https://www.w3.org/WAI/tutorials/images/',
+  }),
 }
 ```
 
 ### Example: Code Quality Rule
 
 ```typescript
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
+
 messages: {
-  duplicateFunction:
-    '🔄 Duplicate Implementation (CWE-1104) | MEDIUM\n' +
-    '   ❌ Current: 3 identical functions with 95% similarity\n' +
-    '   ✅ Fix: Extract to shared utility function\n' +
-    '   📚 https://en.wikipedia.org/wiki/Don%27t_repeat_yourself',
+  duplicateFunction: formatLLMMessage({
+    icon: MessageIcons.DUPLICATION,
+    issueName: 'Duplicate Implementation',
+    cwe: 'CWE-1104',
+    description: 'Duplicate function implementation detected',
+    severity: 'MEDIUM',
+    fix: 'Extract to shared utility function',
+    documentationLink: 'https://en.wikipedia.org/wiki/Don%27t_repeat_yourself',
+  }),
 }
 ```
 
@@ -229,13 +250,13 @@ messages: {
 
 ### DO ✅
 
-- ✅ Use exactly 4 lines (with newlines)
-- ✅ Include both current bad example AND fix
+- ✅ **ALWAYS use `formatLLMMessage` utility** from `@forge-js/eslint-plugin-utils`
+- ✅ Use exactly 2 lines (generated by `formatLLMMessage`)
+- ✅ Include specific fix instruction with code example
 - ✅ Provide actionable solutions
 - ✅ Include relevant documentation links
 - ✅ Use appropriate severity levels
-- ✅ Use 3-space indentation for lines 2-4
-- ✅ Include emoji icons for visual scanning
+- ✅ Use `MessageIcons` constants for icons
 - ✅ **Include CWE ONLY when relevant** (security, high-impact)
 - ✅ Test messages with actual violations
 
@@ -268,36 +289,51 @@ When CWE is not relevant, omit it:
 ### Example: Naming Convention Rule (No CWE)
 
 ```typescript
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
+
 messages: {
-  wrongNaming:
-    '📚 Domain Naming (Commerce context) | MEDIUM\n' +
-    '   ❌ Current: Variable named "item" instead of "product"\n' +
-    '   ✅ Fix: Use domain terms: "product", "order", "customer"\n' +
-    '   📚 See domain glossary for approved terminology',
+  wrongNaming: formatLLMMessage({
+    icon: MessageIcons.DOMAIN,
+    issueName: 'Domain Naming',
+    description: 'Domain terminology mismatch',
+    severity: 'MEDIUM',
+    fix: 'Use "{{correctTerm}}" ({{context}}) for ubiquitous language alignment',
+    documentationLink: 'Domain glossary',
+  }),
 }
 ```
 
 ### Example: Style/Format Rule (No CWE)
 
 ```typescript
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
+
 messages: {
-  consistentFormatting:
-    '⚠️ Inconsistent Formatting | LOW\n' +
-    '   ❌ Current: Mixed spacing in object properties\n' +
-    '   ✅ Fix: Use consistent 2-space indentation\n' +
-    '   📚 See project style guide',
+  consistentFormatting: formatLLMMessage({
+    icon: MessageIcons.WARNING,
+    issueName: 'Inconsistent Formatting',
+    description: 'Inconsistent formatting detected',
+    severity: 'LOW',
+    fix: 'Use consistent 2-space indentation',
+    documentationLink: 'See project style guide',
+  }),
 }
 ```
 
 ### Example: Refactoring Suggestion (No CWE)
 
 ```typescript
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
+
 messages: {
-  refactorSuggestion:
-    '🔄 Simplification Opportunity | LOW\n' +
-    '   ❌ Current: Nested ternary operators (hard to read)\n' +
-    '   ✅ Fix: Extract to helper function or early returns\n' +
-    '   📚 Improves code maintainability',
+  refactorSuggestion: formatLLMMessage({
+    icon: MessageIcons.MIGRATION,
+    issueName: 'Simplification Opportunity',
+    description: 'Nested ternary operators (hard to read)',
+    severity: 'LOW',
+    fix: 'Extract to helper function or early returns',
+    documentationLink: 'Improves code maintainability',
+  }),
 }
 ```
 

@@ -606,10 +606,8 @@ sequenceDiagram
 This rule provides LLM-optimized error messages:
 
 ```
-⚠️ Console.log detected | MEDIUM
-   ❌ Current: console.log('Debug:', data)
-   ✅ Fix: Use logger.debug('Debug:', data) or remove in production
-   📚 See logging guidelines
+⚠️ CWE-532 | console.log found in production code | MEDIUM
+   Fix: Use logger.debug() or remove statement | https://eslint.org/docs/latest/rules/no-console
 ```
 
 **Why this format?**

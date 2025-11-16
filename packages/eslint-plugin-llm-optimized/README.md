@@ -262,27 +262,24 @@ Choose a preset that matches your needs:
 
 ## What Error Messages Look Like
 
-When you run ESLint, you'll see structured, actionable messages:
+When you run ESLint, you'll see structured, actionable messages in a 2-line format optimized for AI assistants:
 
 ```bash
 src/api.ts
-  42:15  error  🔒 SQL Injection (CWE-89) | CRITICAL
-                  ❌ Current: `SELECT * FROM users WHERE id = ${userId}`
-                  ✅ Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId])
-                  📚 https://owasp.org/www-community/attacks/SQL_Injection
+  42:15  error  🔒 CWE-89 | SQL Injection detected | CRITICAL
+                  Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId]) | https://owasp.org/www-community/attacks/SQL_Injection
 
-  58:3   warning  ⚠️ Console.log detected | MEDIUM
-                  ❌ Current: console.log('Debug:', data)
-                  ✅ Fix: Use logger.debug('Debug:', data) or remove in production
-                  📚 See logging guidelines
+  58:3   warning  ⚠️ CWE-532 | console.log found in production code | MEDIUM
+                  Fix: Use logger.debug() or remove statement | https://eslint.org/docs/latest/rules/no-console
 
-  71:12  error  🔄 Circular Dependency (CWE-407) | HIGH
-                  ❌ Current: A.ts → B.ts → C.ts → A.ts (creates cycle)
-                  ✅ Fix: Extract shared types to types.ts, break cycle at C.ts
-                  📚 https://en.wikipedia.org/wiki/Circular_dependency
+  71:12  error  🔄 CWE-407 | Circular dependency detected | HIGH
+                  Fix: Extract shared types to types.ts, break cycle at C.ts | https://en.wikipedia.org/wiki/Circular_dependency
 ```
 
-These structured messages enable AI assistants to automatically understand and apply fixes.
+These structured messages enable AI assistants to automatically understand and apply fixes. Each message follows a consistent format:
+
+- **Line 1:** Icon, CWE reference (if applicable), description, severity
+- **Line 2:** Specific fix instruction with documentation link
 
 ---
 

@@ -92,10 +92,8 @@ flowchart TD
 Each rule configured with LLM-optimal format:
 
 ```
-🔒 CWE-89 SQL Injection | Severity: Critical
-❌ const query = `SELECT * FROM users WHERE id = ${userId}`;
-✅ const query = 'SELECT * FROM users WHERE id = ?'; db.query(query, [userId]);
-📚 https://owasp.org/www-community/attacks/SQL_Injection
+🔒 CWE-89 | SQL Injection detected | CRITICAL
+   Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId]) | https://owasp.org/www-community/attacks/SQL_Injection
 ```
 
 **What this means:**
@@ -460,11 +458,8 @@ export default createRule({
         if (isSQLQuery(node)) {
           context.report({
             node,
-            message: `🚨 SQL Injection (CWE-89) | Severity: Critical
-❌ const query = \`SELECT * FROM users WHERE id = \${userId}\`;
-✅ const query = 'SELECT * FROM users WHERE id = ?'; 
-   db.query(query, [userId]);
-📚 https://owasp.org/www-community/attacks/SQL_Injection`,
+            message: `🔒 CWE-89 | SQL Injection detected | CRITICAL
+   Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId]) | https://owasp.org/www-community/attacks/SQL_Injection`,
             fix(fixer) {
               // Suggest conversion to parameterized
               return convertToParameterized(node, fixer);

@@ -87,15 +87,11 @@ When you run ESLint, you'll see structured, actionable messages:
 
 ```bash
 src/api.ts
-  42:15  error  🔒 SQL Injection (CWE-89) | CRITICAL
-                  ❌ Current: `SELECT * FROM users WHERE id = ${userId}`
-                  ✅ Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId])
-                  📚 https://owasp.org/www-community/attacks/SQL_Injection
+  42:15  error  🔒 CWE-89 | SQL Injection detected | CRITICAL
+                  Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId]) | https://owasp.org/www-community/attacks/SQL_Injection
 
-  58:3   warning  ⚠️ Console.log detected | MEDIUM
-                  ❌ Current: console.log('Debug:', data)
-                  ✅ Fix: Use logger.debug('Debug:', data) or remove in production
-                  📚 See logging guidelines
+  58:3   warning  ⚠️ CWE-532 | console.log found in production code | MEDIUM
+                  Fix: Use logger.debug() or remove statement | https://eslint.org/docs/latest/rules/no-console
 ```
 
 These structured messages enable AI assistants to automatically understand and apply fixes through ESLint MCP.

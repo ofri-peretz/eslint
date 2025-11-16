@@ -1,16 +1,14 @@
 # ESLint Plugin - LLM-Optimized Message Format
 
-You are working in the @forge-js/eslint-plugin package. When creating or modifying ESLint rule messages, ALWAYS follow the 4-line LLM-optimized format.
+You are working in the @forge-js/eslint-plugin package. When creating or modifying ESLint rule messages, **ALWAYS use `formatLLMMessage` utility** from `@forge-js/eslint-plugin-utils`.
 
 ## Format Standard
 
-Every error/warning message MUST have exactly 4 lines:
+Every error/warning message MUST use `formatLLMMessage` which produces exactly 2 lines:
 
 ```
-Line 1: [Icon] [Issue Name] (CWE-XXX) | [Severity]
-Line 2:    ❌ Current: [Bad practice example]
-Line 3:    ✅ Fix: [Solution with pattern]
-Line 4:    📚 [Documentation link or context]
+Line 1: [Icon] [CWE?] | [Description] | [SEVERITY]
+Line 2:    Fix: [fix instruction] | [documentation link]
 ```
 
 ## Quick Reference
@@ -44,25 +42,30 @@ Line 4:    📚 [Documentation link or context]
 ## Implementation Template
 
 ```typescript
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
+
 messages: {
-  ruleName:
-    '[ICON] [Issue Name] (CWE-XXX) | [SEVERITY]\n' +
-    '   ❌ Current: [bad example]\n' +
-    '   ✅ Fix: [good solution]\n' +
-    '   📚 [link or context]',
+  ruleName: formatLLMMessage({
+    icon: MessageIcons.SECURITY, // or appropriate icon
+    issueName: 'Issue Name',
+    cwe: 'CWE-XXX', // optional, only if relevant
+    description: 'Issue description',
+    severity: 'CRITICAL', // or HIGH, MEDIUM, LOW
+    fix: 'Specific fix instruction with code example',
+    documentationLink: 'https://example.com/docs',
+  }),
 }
 ```
 
 ## DO's ✅
 
-- Include CWE references
-- Use 4 lines with newlines (\n)
-- Include both bad example AND fix
-- Provide actionable solutions
+- **ALWAYS use `formatLLMMessage` utility**
+- Import from `@forge-js/eslint-plugin-utils`
+- Use `MessageIcons` constants for icons
+- Include CWE references when relevant (security, high-impact)
+- Provide specific fix instructions with code examples
 - Link to documentation
-- Use correct severity level
-- Indent lines 2-4 with 3 spaces
-- Use emoji for visual scanning
+- Use correct severity level (CRITICAL, HIGH, MEDIUM, LOW)
 - Test on playground app
 
 ## DON'Ts ❌

@@ -300,10 +300,8 @@ You might want to disable this rule if:
 This rule provides LLM-optimized error messages:
 
 ```
-🔄 Circular Dependency (CWE-407) | HIGH
-   ❌ Current: A.ts → B.ts → C.ts → A.ts (creates cycle)
-   ✅ Fix: Extract shared types to types.ts, break cycle at C.ts
-   📚 https://en.wikipedia.org/wiki/Circular_dependency
+🔄 CWE-407 | Circular dependency detected | HIGH
+   Fix: Extract shared types to types.ts, break cycle at C.ts | https://en.wikipedia.org/wiki/Circular_dependency
 ```
 
 **Why this format?**

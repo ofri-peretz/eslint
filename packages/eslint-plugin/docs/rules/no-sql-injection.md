@@ -118,10 +118,8 @@ const query = `SELECT * FROM users WHERE id = '${safe}'`;
 This rule provides LLM-optimized error messages:
 
 ```
-🔒 SQL Injection (CWE-89) | CRITICAL
-   ❌ Current: `SELECT * FROM users WHERE id = ${userId}`
-   ✅ Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId])
-   📚 https://owasp.org/www-community/attacks/SQL_Injection
+🔒 CWE-89 | SQL Injection detected | CRITICAL
+   Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId]) | https://owasp.org/www-community/attacks/SQL_Injection
 ```
 
 **Why this format?**

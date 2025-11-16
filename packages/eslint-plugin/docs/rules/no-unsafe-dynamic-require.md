@@ -118,10 +118,8 @@ const module = await import(`./plugins/${pluginName}`);
 This rule provides LLM-optimized error messages:
 
 ```
-🚨 Security: Unsafe Dynamic Require | require(userInput) | src/plugins.ts:42
-   ❌ Current: const module = require(userProvidedPath)
-   ✅ Fix: Use whitelist: const allowed = { 'plugin1': './plugins/plugin1' }; require(allowed[userInput])
-   📚 https://nodejs.org/en/docs/guides/security/
+🚨 CWE-407 | Unsafe dynamic require detected | CRITICAL
+   Fix: Use whitelist: const allowed = { 'plugin1': './plugins/plugin1' }; require(allowed[userInput]) | https://nodejs.org/en/docs/guides/security/
 ```
 
 **Why this format?**

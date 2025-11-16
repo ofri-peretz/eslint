@@ -239,6 +239,31 @@ messages: {
   '   📚 See: https://docs.npmjs.com/...';
 ```
 
+**✅ CORRECT FORMAT** - Use `formatLLMMessage`:
+
+```typescript
+// ✅ CORRECT FORMAT - ALWAYS USE
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
+
+messages: {
+  preferStrategy: formatLLMMessage({
+    icon: MessageIcons.PACKAGE,
+    issueName: 'Dependency Version Strategy',
+    description: 'Dependency "{{name}}" should use {{strategy}} version',
+    severity: 'MEDIUM',
+    fix: 'Change "{{current}}" to "{{expected}}" for version flexibility',
+    documentationLink: 'https://docs.npmjs.com/cli/v10/configuring-npm/package-json#dependencies',
+  }),
+}
+```
+
+**Output:**
+
+```
+📦 Dependency "{{name}}" should use {{strategy}} version | MEDIUM
+   Fix: Change "{{current}}" to "{{expected}}" for version flexibility | https://docs.npmjs.com/cli/v10/configuring-npm/package-json#dependencies
+```
+
 **Available Icons:**
 
 - `MessageIcons.SECURITY` (🔒) - Security issues
