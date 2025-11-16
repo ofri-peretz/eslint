@@ -99,9 +99,11 @@ export default [
 
 ## 📚 Documentation
 
-- **[Contributing Guide](./docs/CONTRIBUTING.md)** - How to contribute, release process, and development workflow
+- **[Contributing Guide](./CONTRIBUTING.md)** - How to contribute, release process, and development workflow
 - **[ESLint Plugin Documentation](./packages/eslint-plugin/README.md)** - Available rules and configuration
 - **[Utils API Documentation](./packages/eslint-plugin-utils/README.md)** - API documentation for plugin utilities
+- **[AI Agent Guides](./packages/eslint-plugin/AGENTS.md)** - LLM-optimized documentation for AI assistants
+- **[Support](./.github/SUPPORT.md)** - Getting help and support resources
 
 ---
 

@@ -16,6 +16,12 @@
 
 - **New Rule: `no-missing-cors-check`** - Detects missing CORS origin validation (wildcard origins) and suggests proper origin validation functions. CWE-346 compliance.
 
+- **New Rule: `no-insecure-comparison`** - Detects insecure comparison operators (==, !=) that can lead to type coercion vulnerabilities and suggests using strict equality (===, !==). Auto-fixable. CWE-697 compliance.
+
+- **New Rule: `no-missing-authentication`** - Detects missing authentication checks in route handlers (Express, Fastify) and suggests adding authentication middleware. CWE-287 compliance.
+
+- **New Rule: `no-privilege-escalation`** - Detects potential privilege escalation vulnerabilities where user input is used to assign roles or permissions without proper validation. Suggests adding role checks. CWE-269 compliance.
+
 - **New Rule: `prefer-dependency-version-strategy`** - Enforce consistent version strategy (caret, tilde, exact, etc.) for package.json dependencies. Complements `@nx/dependency-checks` by ensuring version specifier format consistency. Supports workspace, file, and link protocols for monorepo compatibility. Auto-fixable with configurable strategies.
 
 ## 0.3.3 (2025-11-07)

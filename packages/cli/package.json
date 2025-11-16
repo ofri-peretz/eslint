@@ -1,6 +1,6 @@
 {
   "name": "@forge-js/cli",
-  "version": "2.3.0",
+  "version": "2.5.2",
   "description": "CLI tool for managing releases in the forge-js monorepo",
   "type": "commonjs",
   "bin": {
@@ -25,6 +25,14 @@
   "publishConfig": {
     "access": "public"
   },
+  "files": [
+    "src/",
+    "bin/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "AGENTS.md"
+  ],
   "keywords": [
     "cli",
     "monorepo",

@@ -1,0 +1,40 @@
+# Code Owners
+# This file defines code ownership for the forge-js monorepo
+# Used by GitHub for PR reviews and AI/LLM discoverability
+
+# Global owners
+* @ofri-peretz
+
+# Core ESLint Plugin
+/packages/eslint-plugin/ @ofri-peretz
+/packages/eslint-plugin/src/ @ofri-peretz
+/packages/eslint-plugin/docs/ @ofri-peretz
+
+# ESLint Plugin Utils
+/packages/eslint-plugin-utils/ @ofri-peretz
+/packages/eslint-plugin-utils/src/ @ofri-peretz
+
+# CLI Tools
+/packages/cli/ @ofri-peretz
+/packages/cli/src/ @ofri-peretz
+
+# Barrel Export Packages
+/packages/eslint-plugin-llm/ @ofri-peretz
+/packages/eslint-plugin-llm-optimized/ @ofri-peretz
+/packages/eslint-plugin-mcp/ @ofri-peretz
+/packages/eslint-plugin-mcp-optimized/ @ofri-peretz
+
+# Documentation
+/docs/ @ofri-peretz
+README.md @ofri-peretz
+CONTRIBUTING.md @ofri-peretz
+
+# GitHub Configuration
+/.github/ @ofri-peretz
+/.github/workflows/ @ofri-peretz
+
+# Configuration Files
+/nx.json @ofri-peretz
+/package.json @ofri-peretz
+/tsconfig.base.json @ofri-peretz
+

@@ -63,6 +63,9 @@ import type { Options as NoUnvalidatedUserInputOptions } from '../rules/security
 import type { Options as NoUnsanitizedHtmlOptions } from '../rules/security/no-unsanitized-html';
 import type { Options as NoUnescapedUrlParameterOptions } from '../rules/security/no-unescaped-url-parameter';
 import type { Options as NoMissingCorsCheckOptions } from '../rules/security/no-missing-cors-check';
+import type { Options as NoInsecureComparisonOptions } from '../rules/security/no-insecure-comparison';
+import type { Options as NoMissingAuthenticationOptions } from '../rules/security/no-missing-authentication';
+import type { Options as NoPrivilegeEscalationOptions } from '../rules/security/no-privilege-escalation';
 
 // Export all types with consistent naming
 export type {
@@ -93,6 +96,9 @@ export type {
   NoUnsanitizedHtmlOptions,
   NoUnescapedUrlParameterOptions,
   NoMissingCorsCheckOptions,
+  NoInsecureComparisonOptions,
+  NoMissingAuthenticationOptions,
+  NoPrivilegeEscalationOptions,
 };
 
 /**
@@ -140,5 +146,8 @@ export type AllRulesOptions = {
   'no-unsanitized-html'?: NoUnsanitizedHtmlOptions;
   'no-unescaped-url-parameter'?: NoUnescapedUrlParameterOptions;
   'no-missing-cors-check'?: NoMissingCorsCheckOptions;
+  'no-insecure-comparison'?: NoInsecureComparisonOptions;
+  'no-missing-authentication'?: NoMissingAuthenticationOptions;
+  'no-privilege-escalation'?: NoPrivilegeEscalationOptions;
 };
 

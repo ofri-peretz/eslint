@@ -112,6 +112,9 @@ Traditional ESLint rules communicate _what's wrong_. This plugin ensures every r
 | [no-unsanitized-html](./docs/rules/no-unsanitized-html.md)                       | Detect unsanitized HTML injection (XSS prevention)        | 💼  |     |     | 💡  |
 | [no-unescaped-url-parameter](./docs/rules/no-unescaped-url-parameter.md)         | Detect unescaped URL parameters (XSS prevention)          |     | ⚠️  |     | 💡  |
 | [no-missing-cors-check](./docs/rules/no-missing-cors-check.md)                   | Detect missing CORS origin validation                     |     | ⚠️  |     | 💡  |
+| [no-insecure-comparison](./docs/rules/no-insecure-comparison.md)                 | Detect insecure comparison operators (==, !=)             |     | ⚠️  | 🔧  | 💡  |
+| [no-missing-authentication](./docs/rules/no-missing-authentication.md)           | Detect missing authentication checks in route handlers    |     | ⚠️  |     | 💡  |
+| [no-privilege-escalation](./docs/rules/no-privilege-escalation.md)               | Detect potential privilege escalation vulnerabilities     |     | ⚠️  |     | 💡  |
 
 ### Accessibility
 

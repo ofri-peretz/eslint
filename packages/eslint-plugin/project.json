@@ -36,6 +36,8 @@
           "packages/eslint-plugin/docs/**/*.md",
           "packages/eslint-plugin/README.md",
           "packages/eslint-plugin/CHANGELOG.md",
+          "packages/eslint-plugin/LICENSE",
+          "packages/eslint-plugin/AGENTS.md",
           {
             "glob": "packages/eslint-plugin/README.md",
             "input": "packages/eslint-plugin",
@@ -61,9 +63,13 @@
     },
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": ["{options.outputFile}"],
+      "outputs": [
+        "{options.outputFile}"
+      ],
       "options": {
-        "lintFilePatterns": ["packages/eslint-plugin/**/*.{ts,tsx,js,jsx}"]
+        "lintFilePatterns": [
+          "packages/eslint-plugin/**/*.{ts,tsx,js,jsx}"
+        ]
       }
     },
     "nx-release-publish": {
@@ -75,9 +81,6 @@
         "command": "pnpm publish dist/{projectRoot} --access public --no-git-checks",
         "cwd": "{workspaceRoot}"
       }
-      // ^nx-release-publish means: publish all dependencies first
-      // Safe because: eslint-plugin depends on eslint-plugin-utils (no circular deps)
-      // Publish order: eslint-plugin-utils → eslint-plugin → dependents
     },
     "publish": {
       "executor": "nx:run-commands",
