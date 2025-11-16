@@ -32,6 +32,10 @@ import { detectObjectInjection } from './rules/security/detect-object-injection'
 import { noHardcodedCredentials } from './rules/security/no-hardcoded-credentials';
 import { noWeakCrypto } from './rules/security/no-weak-crypto';
 import { noInsufficientRandom } from './rules/security/no-insufficient-random';
+import { noUnvalidatedUserInput } from './rules/security/no-unvalidated-user-input';
+import { noUnsanitizedHtml } from './rules/security/no-unsanitized-html';
+import { noUnescapedUrlParameter } from './rules/security/no-unescaped-url-parameter';
+import { noMissingCorsCheck } from './rules/security/no-missing-cors-check';
 
 // Migration rules
 import { reactClassToHooks } from './rules/migration/react-class-to-hooks';
@@ -91,6 +95,10 @@ export const rules = {
   'no-hardcoded-credentials': noHardcodedCredentials,
   'no-weak-crypto': noWeakCrypto,
   'no-insufficient-random': noInsufficientRandom,
+  'no-unvalidated-user-input': noUnvalidatedUserInput,
+  'no-unsanitized-html': noUnsanitizedHtml,
+  'no-unescaped-url-parameter': noUnescapedUrlParameter,
+  'no-missing-cors-check': noMissingCorsCheck,
   'react-class-to-hooks': reactClassToHooks,
   'react-no-inline-functions': reactNoInlineFunctions,
   'img-requires-alt': imgRequiresAlt,
@@ -116,6 +124,10 @@ export const rules = {
   'security/no-hardcoded-credentials': noHardcodedCredentials,
   'security/no-weak-crypto': noWeakCrypto,
   'security/no-insufficient-random': noInsufficientRandom,
+  'security/no-unvalidated-user-input': noUnvalidatedUserInput,
+  'security/no-unsanitized-html': noUnsanitizedHtml,
+  'security/no-unescaped-url-parameter': noUnescapedUrlParameter,
+  'security/no-missing-cors-check': noMissingCorsCheck,
   'migration/react-class-to-hooks': reactClassToHooks,
   'performance/react-no-inline-functions': reactNoInlineFunctions,
   'accessibility/img-requires-alt': imgRequiresAlt,
@@ -220,6 +232,10 @@ export const configs = {
       '@forge-js/llm-optimized/security/no-hardcoded-credentials': 'warn',
       '@forge-js/llm-optimized/security/no-weak-crypto': 'warn',
       '@forge-js/llm-optimized/security/no-insufficient-random': 'warn',
+      '@forge-js/llm-optimized/security/no-unvalidated-user-input': 'warn',
+      '@forge-js/llm-optimized/security/no-unsanitized-html': 'error',
+      '@forge-js/llm-optimized/security/no-unescaped-url-parameter': 'warn',
+      '@forge-js/llm-optimized/security/no-missing-cors-check': 'warn',
       '@forge-js/llm-optimized/accessibility/img-requires-alt': 'warn',
       '@forge-js/llm-optimized/complexity/cognitive-complexity': 'warn',
       '@forge-js/llm-optimized/duplication/identical-functions': 'warn',

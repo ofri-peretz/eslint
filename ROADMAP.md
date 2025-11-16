@@ -95,7 +95,7 @@ Priority: **CRITICAL** - Adds 12 new security vulnerabilities
   - Priority: HIGH
 - [ ] **no-missing-cors-check** (CWE-346)
   - Detects missing CORS validation
-  - Checks: Wildcard CORS, missing origin check
+  - Checks: Wildcard CORS, missing origin checkdsc
   - Priority: HIGH
 
 ### S3: Access Control (3 rules)
@@ -180,7 +180,7 @@ Priority: **HIGH** - Improves maintainability and readability
 
 ### Q2: Maintainability (3 rules)
 
-- [ ] **no-commented-code** 
+- [ ] **no-commented-code**
   - Detects commented-out code blocks
   - Suggestions: Remove or use version control
   - Priority: LOW

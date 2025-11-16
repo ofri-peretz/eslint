@@ -6,6 +6,16 @@
 
 - **New Rule: `no-weak-crypto`** - Detects use of weak cryptography algorithms (MD5, SHA1, DES, 3DES, RC4) and suggests secure alternatives (SHA-256, AES-256-GCM, bcrypt, scrypt). CWE-327 compliance.
 
+- **New Rule: `no-insufficient-random`** - Detects weak random number generation (Math.random() and custom weak PRNGs) and suggests using crypto.getRandomValues() for cryptographically secure randomness. CWE-338 compliance.
+
+- **New Rule: `no-unvalidated-user-input`** - Detects unvalidated user input usage (req.body, req.query, req.params, etc.) and suggests using validation libraries (Zod, Joi, Yup, class-validator). CWE-20 compliance.
+
+- **New Rule: `no-unsanitized-html`** - Detects unsanitized HTML injection vulnerabilities (innerHTML assignments, dangerouslySetInnerHTML) and suggests using sanitization libraries (DOMPurify, sanitize-html). CWE-79 (XSS) compliance.
+
+- **New Rule: `no-unescaped-url-parameter`** - Detects unescaped URL parameters in template literals and string concatenations that could lead to XSS attacks. Suggests using encodeURIComponent() or URLSearchParams. CWE-79 compliance.
+
+- **New Rule: `no-missing-cors-check`** - Detects missing CORS origin validation (wildcard origins) and suggests proper origin validation functions. CWE-346 compliance.
+
 - **New Rule: `prefer-dependency-version-strategy`** - Enforce consistent version strategy (caret, tilde, exact, etc.) for package.json dependencies. Complements `@nx/dependency-checks` by ensuring version specifier format consistency. Supports workspace, file, and link protocols for monorepo compatibility. Auto-fixable with configurable strategies.
 
 ## 0.3.3 (2025-11-07)

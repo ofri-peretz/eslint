@@ -250,7 +250,6 @@ export const noInsufficientRandom = createRule<RuleOptions, MessageIds>({
         
         if (pattern) {
           const safeAlternative = pattern.alternatives[0];
-          const suggestions = generateSuggestions(pattern);
           
           context.report({
             node: node.callee,
@@ -259,15 +258,7 @@ export const noInsufficientRandom = createRule<RuleOptions, MessageIds>({
               pattern: pattern.name,
               safeAlternative: `Use ${safeAlternative}: ${pattern.example.good}`,
             },
-            suggest: suggestions.map(step => ({
-              messageId: step.messageId,
-              fix: (fixer: TSESLint.RuleFixer) => {
-                return fixer.replaceText(
-                  node,
-                  'crypto.getRandomValues(new Uint32Array(1))[0] / (0xFFFFFFFF + 1)'
-                );
-              },
-            })),
+            // Custom patterns cannot be safely auto-fixed - error message provides guidance
           });
         }
       }
