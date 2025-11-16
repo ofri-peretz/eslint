@@ -4,8 +4,9 @@
 
 A modern TypeScript monorepo providing a collection of carefully crafted tools, utilities, and libraries to ease development in the JavaScript and TypeScript ecosystems. Optimized for modern development workflows and LLM-enhanced coding assistants.
 
-[![CI](https://github.com/ofri-peretz/forge-js/actions/workflows/ci.yml/badge.svg)](https://github.com/ofri-peretz/forge-js/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
 [![pnpm](https://img.shields.io/badge/maintained%20with-pnpm-cc00ff.svg)](https://pnpm.io/)
 [![Nx](https://img.shields.io/badge/built%20with-Nx-143055.svg)](https://nx.dev/)
 
