@@ -120,6 +120,7 @@ jobs:
   release:
     name: 🚀 Release & Publish
     runs-on: ubuntu-latest
+    environment: production
     # Only require CI if it was enabled and run
     if: always() && (inputs.run-ci == false || needs.validate-ci.result == 'success' || needs.validate-ci.result == 'skipped')
     needs: [validate-ci]
@@ -233,26 +234,28 @@ jobs:
             git push origin "$RELEASE_BRANCH" || exit 1
             git push origin --tags || exit 1
             
-            # Create PR
+            # Create PR using GitHub CLI (always available in GitHub Actions)
             PR_TITLE="chore(release): Update package versions"
             PR_BODY=$(printf "🤖 **Automated Release PR**\n\nThis PR contains:\n- Package version updates\n- CHANGELOG updates\n- Git tags: %s\n\n**Note:** Packages are being published to npm in parallel with this PR." "$TAGS")
             
-            if command -v gh &> /dev/null; then
-              PR_URL=$(gh pr create \
-                --title "$PR_TITLE" \
-                --body "$PR_BODY" \
-                --base main \
-                --head "$RELEASE_BRANCH" \
-                --label "release" \
-                --json url --jq '.url' 2>&1) || {
-                PR_URL="https://github.com/${{ github.repository }}/compare/main...$RELEASE_BRANCH?expand=1"
-              }
-            else
-              PR_URL="https://github.com/${{ github.repository }}/compare/main...$RELEASE_BRANCH?expand=1"
-            fi
+            # GitHub CLI is always available in GitHub Actions
+            PR_URL=$(gh pr create \
+              --title "$PR_TITLE" \
+              --body "$PR_BODY" \
+              --base main \
+              --head "$RELEASE_BRANCH" \
+              --label "release" \
+              --json url --jq '.url' 2>&1)
             
-            echo "✅ Created release PR: $PR_URL"
-            echo "pr_url=$PR_URL" >> $GITHUB_ENV
+            if [ $? -eq 0 ]; then
+              echo "✅ Created release PR: $PR_URL"
+              echo "pr_url=$PR_URL" >> $GITHUB_ENV
+            else
+              echo "⚠️  Failed to create PR via CLI, but branch is pushed:"
+              echo "   https://github.com/${{ github.repository }}/compare/main...$RELEASE_BRANCH?expand=1"
+              echo "   Error: $PR_URL"
+              # Don't fail the workflow - publishing can still proceed
+            fi
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -275,8 +278,59 @@ jobs:
           git config user.name "Ofri Peretz"
           git config user.email "ofriperetzdev@gmail.com"
 
-          # Publish packages (nx release publish uses tags to determine what to publish)
-          pnpm nx release publish --tag ${{ inputs.dist-tag }}
+          # Verify npm authentication (Trusted Publishing via OIDC)
+          echo "🔍 Verifying npm authentication..."
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "❌ NODE_AUTH_TOKEN not found"
+            echo "   Trusted Publishing should set this automatically"
+            echo "   Check npm org settings: https://www.npmjs.com/org/forge-js/settings/publishing"
+            exit 1
+          fi
+          echo "✅ NODE_AUTH_TOKEN found (Trusted Publishing working)"
+
+          # Verify .npmrc is being used (for scoped packages)
+          if [ -f ".npmrc" ]; then
+            echo "✅ .npmrc found - will configure @forge-js scope registry"
+            echo "   Scoped packages: @forge-js/eslint-plugin-llm-optimized, @forge-js/eslint-plugin-utils, @forge-js/cli"
+            echo "   Unscoped packages: eslint-plugin-llm-optimized, eslint-plugin-llm, eslint-plugin-mcp, eslint-plugin-mcp-optimized"
+          fi
+
+          # Publish packages
+          # Nx automatically handles dependency order via "^nx-release-publish" in project.json
+          # Publish order: eslint-plugin-utils → eslint-plugin → dependents
+          echo ""
+          echo "📤 Publishing packages with nx release publish..."
+          echo "   Nx will publish in dependency order based on project.json 'dependsOn' configuration"
+          echo ""
+
+          if pnpm nx release publish --tag ${{ inputs.dist-tag }}; then
+            echo "✅ All packages published successfully"
+          else
+            EXIT_CODE=$?
+            echo ""
+            echo "❌ Publishing failed with exit code: $EXIT_CODE"
+            echo ""
+            echo "🔍 Troubleshooting by package type:"
+            echo ""
+            echo "For Scoped Packages (@forge-js/*):"
+            echo "  → Trusted Publishing should work automatically"
+            echo "  → Verify: https://www.npmjs.com/org/forge-js/settings/publishing"
+            echo "  → Packages: @forge-js/eslint-plugin-llm-optimized, @forge-js/eslint-plugin-utils, @forge-js/cli"
+            echo ""
+            echo "For Unscoped Packages (eslint-plugin-*):"
+            echo "  → Trusted Publishing requires npm support approval"
+            echo "  → Contact npm support OR use NPM_TOKEN fallback"
+            echo "  → Packages: eslint-plugin-llm-optimized, eslint-plugin-llm, eslint-plugin-mcp, eslint-plugin-mcp-optimized"
+            echo ""
+            echo "If you see 404 errors for unscoped packages:"
+            echo "  → This is expected - Trusted Publishing doesn't work for unscoped packages by default"
+            echo "  → Options:"
+            echo "    1. Contact npm support: https://github.com/npm/feedback/discussions"
+            echo "    2. Add NPM_TOKEN secret for unscoped packages (fallback)"
+            echo "    3. Move packages to @forge-js scope (recommended)"
+            echo ""
+            exit $EXIT_CODE
+          fi
         env:
           NPM_CONFIG_PROVENANCE: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
