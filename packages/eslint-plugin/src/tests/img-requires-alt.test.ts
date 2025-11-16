@@ -351,5 +351,231 @@ describe('img-requires-alt', () => {
       invalid: [],
     });
   });
+
+  describe('Uncovered Lines', () => {
+    // Lines 89-91: getAltValue edge cases
+    ruleTester.run('line 89-91 - getAltValue edge cases', imgRequiresAlt, {
+      valid: [
+        // alt attribute with no value (empty alt)
+        {
+          code: '<img src="photo.jpg" alt />',
+        },
+        // alt attribute with empty string value
+        {
+          code: '<img src="photo.jpg" alt="" />',
+        },
+        // JSXSpreadAttribute before alt (to test getAltValue with spread)
+        {
+          code: '<img {...props} alt="test" />',
+        },
+      ],
+      invalid: [
+        // alt attribute with dynamic value (alt={undefined} or alt={variable})
+        {
+          code: '<img src="photo.jpg" alt={undefined} />',
+          errors: [
+            {
+              messageId: 'missingAlt',
+              suggestions: [
+                {
+                  messageId: 'addDescriptiveAlt',
+                  output: '<img src="photo.jpg" alt={undefined} alt="TODO: Add descriptive text" />',
+                },
+                {
+                  messageId: 'useEmptyAlt',
+                  output: '<img src="photo.jpg" alt={undefined} alt="" />',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          code: '<img src="photo.jpg" alt={imageAlt} />',
+          errors: [
+            {
+              messageId: 'missingAlt',
+              suggestions: [
+                {
+                  messageId: 'addDescriptiveAlt',
+                  output: '<img src="photo.jpg" alt={imageAlt} alt="TODO: Add descriptive text" />',
+                },
+                {
+                  messageId: 'useEmptyAlt',
+                  output: '<img src="photo.jpg" alt={imageAlt} alt="" />',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    // Line 149: filename-based suggestion in suggestAltText
+    ruleTester.run('line 149 - filename-based suggestion', imgRequiresAlt, {
+      valid: [],
+      invalid: [
+        {
+          code: '<img src="/images/beautiful-sunset.jpg" />',
+          errors: [
+            {
+              messageId: 'missingAlt',
+              suggestions: [
+                {
+                  messageId: 'addDescriptiveAlt',
+                  output: '<img src="/images/beautiful-sunset.jpg" alt="TODO: Add descriptive text" />',
+                },
+                {
+                  messageId: 'useEmptyAlt',
+                  output: '<img src="/images/beautiful-sunset.jpg" alt="" />',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          code: '<img src="user_profile_picture.png" />',
+          errors: [
+            {
+              messageId: 'missingAlt',
+              suggestions: [
+                {
+                  messageId: 'addDescriptiveAlt',
+                  output: '<img src="user_profile_picture.png" alt="TODO: Add descriptive text" />',
+                },
+                {
+                  messageId: 'useEmptyAlt',
+                  output: '<img src="user_profile_picture.png" alt="" />',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          code: '<img src="https://example.com/images/product-hero.jpg" />',
+          errors: [
+            {
+              messageId: 'missingAlt',
+              suggestions: [
+                {
+                  messageId: 'addDescriptiveAlt',
+                  output: '<img src="https://example.com/images/product-hero.jpg" alt="TODO: Add descriptive text" />',
+                },
+                {
+                  messageId: 'useEmptyAlt',
+                  output: '<img src="https://example.com/images/product-hero.jpg" alt="" />',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    // Lines 196-213: Fixer with no attributes (lastAttr is undefined)
+    ruleTester.run('line 196-213 - fixer with no attributes', imgRequiresAlt, {
+      valid: [],
+      invalid: [
+        // Image with only src attribute (to test lastAttr handling)
+        {
+          code: '<img src="photo.jpg" />',
+          errors: [
+            {
+              messageId: 'missingAlt',
+              suggestions: [
+                {
+                  messageId: 'addDescriptiveAlt',
+                  output: '<img src="photo.jpg" alt="TODO: Add descriptive text" />',
+                },
+                {
+                  messageId: 'useEmptyAlt',
+                  output: '<img src="photo.jpg" alt="" />',
+                },
+              ],
+            },
+          ],
+        },
+        // Image with multiple attributes to test lastAttr fallback
+        {
+          code: '<img src="photo.jpg" className="image" id="img1" />',
+          errors: [
+            {
+              messageId: 'missingAlt',
+              suggestions: [
+                {
+                  messageId: 'addDescriptiveAlt',
+                  output: '<img src="photo.jpg" className="image" id="img1" alt="TODO: Add descriptive text" />',
+                },
+                {
+                  messageId: 'useEmptyAlt',
+                  output: '<img src="photo.jpg" className="image" id="img1" alt="" />',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    // Line 171: alt={undefined} or alt={variable} - treat as missing
+    ruleTester.run('line 171 - dynamic alt value treated as missing', imgRequiresAlt, {
+      valid: [],
+      invalid: [
+        {
+          code: '<img src="photo.jpg" alt={undefined} />',
+          errors: [
+            {
+              messageId: 'missingAlt',
+              suggestions: [
+                {
+                  messageId: 'addDescriptiveAlt',
+                  output: '<img src="photo.jpg" alt={undefined} alt="TODO: Add descriptive text" />',
+                },
+                {
+                  messageId: 'useEmptyAlt',
+                  output: '<img src="photo.jpg" alt={undefined} alt="" />',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          code: '<img src="photo.jpg" alt={altText} />',
+          errors: [
+            {
+              messageId: 'missingAlt',
+              suggestions: [
+                {
+                  messageId: 'addDescriptiveAlt',
+                  output: '<img src="photo.jpg" alt={altText} alt="TODO: Add descriptive text" />',
+                },
+                {
+                  messageId: 'useEmptyAlt',
+                  output: '<img src="photo.jpg" alt={altText} alt="" />',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          code: '<img src="photo.jpg" alt={getAltText()} />',
+          errors: [
+            {
+              messageId: 'missingAlt',
+              suggestions: [
+                {
+                  messageId: 'addDescriptiveAlt',
+                  output: '<img src="photo.jpg" alt={getAltText()} alt="TODO: Add descriptive text" />',
+                },
+                {
+                  messageId: 'useEmptyAlt',
+                  output: '<img src="photo.jpg" alt={getAltText()} alt="" />',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+  });
 });
 

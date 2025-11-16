@@ -188,7 +188,8 @@ export const preferDependencyVersionStrategy = createRule<
             !version.includes(' - ')
           ) {
             // If it's just a version, suggest caret as default for ranges
-            expectedVersion = `^${version}`;
+            // Use baseVersion to avoid double-prefixing (e.g., ^^18.0.0)
+            expectedVersion = `^${baseVersion}`;
             needsFix = true;
           }
           break;

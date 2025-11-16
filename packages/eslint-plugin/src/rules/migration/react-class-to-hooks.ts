@@ -118,6 +118,7 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
         componentWillUnmount: 'useEffect cleanup',
         shouldComponentUpdate: 'React.memo',
         getDerivedStateFromProps: 'useState + useEffect',
+        getSnapshotBeforeUpdate: 'useEffect', // Complex lifecycle, no simple hook equivalent
       };
 
       for (const member of classBody) {
@@ -152,7 +153,15 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
         if (!node.id) return;
 
         const componentName = node.id.name;
-        const { complexity } = analyzeLifecycleMethods(node);
+        const { complexity, methods: lifecycleMethods } = analyzeLifecycleMethods(node);
+
+        // Check if component has render() method (fixer doesn't handle it properly)
+        const hasRenderMethod = node.body.body.some(
+          (member) =>
+            member.type === 'MethodDefinition' &&
+            member.key.type === 'Identifier' &&
+            member.key.name === 'render'
+        );
 
         // Skip if too complex and option is set
         if (complexity === 'complex' && allowComplexLifecycle) {
@@ -166,7 +175,9 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
             componentName,
             complexity,
           },
-          ...(complexity === 'simple' ? {
+          // Only provide suggestions for simple components without lifecycle methods or render()
+          // The fixer doesn't work properly for components with lifecycle methods or render()
+          ...(complexity === 'simple' && lifecycleMethods.length === 0 && !hasRenderMethod ? {
             suggest: [
               {
                 messageId: 'convertToFunction' as const,

@@ -277,5 +277,26 @@ describe('no-sql-injection', () => {
       ],
     });
   });
+
+  describe('Uncovered Lines', () => {
+    // Line 114: Return false when isUnsafeSQLExpression returns false
+    // This is the fallback case when the expression doesn't match unsafe patterns
+    ruleTester.run('line 114 - safe expression fallback', noSqlInjection, {
+      valid: [
+        // Expression that doesn't match SQL patterns
+        {
+          code: 'const text = `Hello ${name}`;',
+        },
+        {
+          code: 'const message = `User ${userId} logged in at ${timestamp}`;',
+        },
+        // BinaryExpression with literals on both sides (safe)
+        {
+          code: 'const result = "SELECT" + " * FROM users";',
+        },
+      ],
+      invalid: [],
+    });
+  });
 });
 

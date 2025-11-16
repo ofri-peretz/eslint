@@ -258,5 +258,172 @@ console.log("fourth");`,
       ],
     });
   });
+
+  describe('Edge Cases - Uncovered Lines', () => {
+    // Lines 199-205: ImportDeclaration detection of logger patterns
+    ruleTester.run('line 199-205 - import declaration logger detection', noConsoleLog, {
+      valid: [],
+      invalid: [
+        {
+          code: `
+            import logger from 'winston';
+            logger.info("test");
+            console.log("debug");
+          `,
+          options: [{ strategy: 'convert', loggerName: 'logger' }],
+          output: `
+            import logger from 'winston';
+            logger.info("test");
+            logger.debug("debug");
+          `,
+          errors: [{
+            messageId: 'consoleLogFound',
+          }],
+        },
+        {
+          code: `
+            import log from 'pino';
+            log.info("test");
+            console.log("debug");
+          `,
+          options: [{ strategy: 'convert', loggerName: 'log' }],
+          output: `
+            import log from 'pino';
+            log.info("test");
+            log.debug("debug");
+          `,
+          errors: [{
+            messageId: 'consoleLogFound',
+          }],
+        },
+        {
+          code: `
+            import { createLogger as winston } from 'winston';
+            winston().info("test");
+            console.log("debug");
+          `,
+          options: [{ strategy: 'convert', loggerName: 'winston' }],
+          output: `
+            import { createLogger as winston } from 'winston';
+            winston().info("test");
+            winston.debug("debug");
+          `,
+          errors: [{
+            messageId: 'consoleLogFound',
+          }],
+        },
+      ],
+    });
+
+    // Lines 217-220: VariableDeclaration detection of logger patterns via require
+    ruleTester.run('line 217-220 - require logger detection', noConsoleLog, {
+      valid: [],
+      invalid: [
+        {
+          code: `
+            const logger = require('winston');
+            logger.info("test");
+            console.log("debug");
+          `,
+          options: [{ strategy: 'convert', loggerName: 'logger' }],
+          output: `
+            const logger = require('winston');
+            logger.info("test");
+            logger.debug("debug");
+          `,
+          errors: [{
+            messageId: 'consoleLogFound',
+          }],
+        },
+        {
+          code: `
+            const log = require('pino');
+            log.info("test");
+            console.log("debug");
+          `,
+          options: [{ strategy: 'convert', loggerName: 'log' }],
+          output: `
+            const log = require('pino');
+            log.info("test");
+            log.debug("debug");
+          `,
+          errors: [{
+            messageId: 'consoleLogFound',
+          }],
+        },
+        {
+          code: `
+            const winston = require('winston');
+            winston.info("test");
+            console.log("debug");
+          `,
+          options: [{ strategy: 'convert', loggerName: 'winston' }],
+          output: `
+            const winston = require('winston');
+            winston.info("test");
+            winston.debug("debug");
+          `,
+          errors: [{
+            messageId: 'consoleLogFound',
+          }],
+        },
+      ],
+    });
+
+    // Line 276: Early return when CallExpression doesn't match expected structure
+    ruleTester.run('line 276 - call expression structure check', noConsoleLog, {
+      valid: [
+        {
+          code: 'someFunction();',
+        },
+        {
+          code: 'obj.method();',
+        },
+        {
+          code: 'obj["method"]();',
+        },
+        {
+          code: 'obj[0]();',
+        },
+      ],
+      invalid: [],
+    });
+
+    // Line 345: Default case in fixer (returns null)
+    // The default case returns null when strategy is not 'remove', 'convert', 'comment', or 'warn'
+    // This is defensive code. We can't easily test it because all valid strategies are handled.
+    // The 'warn' strategy is handled, so this test verifies the warn path works.
+    ruleTester.run('line 345 - warn strategy fixer', noConsoleLog, {
+      valid: [],
+      invalid: [
+        {
+          code: 'console.log("test");',
+          options: [{ strategy: 'warn' }],
+          output: 'console.warn("test");',
+          errors: [{
+            messageId: 'consoleLogFound',
+          }],
+        },
+      ],
+    });
+
+    // Line 396: Return null when no statement found - test getContainingStatement edge case
+    // The findParentStatement function returns null when it can't find a parent statement.
+    // This is defensive code that's hard to trigger with valid code, as console.log() is always
+    // part of an ExpressionStatement. The null check prevents crashes if the AST structure is unexpected.
+    // We test that the rule works normally, and the null case is defensive.
+    ruleTester.run('line 396 - getContainingStatement normal case', noConsoleLog, {
+      valid: [],
+      invalid: [
+        {
+          code: 'console.log("test");',
+          output: '',
+          errors: [{
+            messageId: 'consoleLogFound',
+          }],
+        },
+      ],
+    });
+  });
 });
 

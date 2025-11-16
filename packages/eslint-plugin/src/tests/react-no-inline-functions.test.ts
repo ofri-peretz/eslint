@@ -124,5 +124,59 @@ describe('react-no-inline-functions', () => {
       ],
     });
   });
+
+  describe('Uncovered Lines', () => {
+    // Lines 80-82: isInJSX returns false
+    ruleTester.run('line 80-82 - not in JSX', reactNoInlineFunctions, {
+      valid: [
+        {
+          code: 'const fn = () => console.log("test");',
+        },
+        {
+          code: 'function test() { return () => {}; }',
+        },
+      ],
+      invalid: [],
+    });
+
+    // Line 113: estimatedSize > 50 in calculateImpact
+    ruleTester.run('line 113 - high severity for large arrays', reactNoInlineFunctions, {
+      valid: [],
+      invalid: [
+        {
+          code: '<div>{largeArray.map(() => <span>test</span>)}</div>',
+          options: [{ minArraySize: 50 }],
+          errors: [{ messageId: 'inlineFunction' }],
+        },
+      ],
+    });
+
+    // Line 138: isInJSXExpressionContainer returns false
+    ruleTester.run('line 138 - not in JSXExpressionContainer', reactNoInlineFunctions, {
+      valid: [
+        {
+          code: 'const fn = () => items.map(x => x);',
+        },
+      ],
+      invalid: [],
+    });
+
+    // Lines 182-184: Event handler check in CallExpression visitor
+    ruleTester.run('line 182-184 - event handler in CallExpression', reactNoInlineFunctions, {
+      valid: [
+        {
+          code: '<button onClick={items.map(() => handleClick)}>Click</button>',
+          options: [{ allowInEventHandlers: true }],
+        },
+      ],
+      invalid: [
+        {
+          code: '<div>{items.map(() => <span>test</span>)}</div>',
+          options: [{ allowInEventHandlers: true }],
+          errors: [{ messageId: 'inlineFunction' }],
+        },
+      ],
+    });
+  });
 });
 

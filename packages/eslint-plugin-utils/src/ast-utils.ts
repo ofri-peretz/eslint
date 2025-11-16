@@ -66,18 +66,36 @@ export function isMemberExpression(
 
   const names = Array.isArray(objectName) ? objectName : [objectName];
   
-  // Check object
+  // For nested paths like ['foo', 'bar'], we need to check that
+  // node.object matches the path foo.bar
+  // For 'foo.bar.baz', node.object should be the MemberExpression for 'foo.bar'
+  if (names.length > 1) {
+    // Build the expected chain by traversing backwards
+    // For ['foo', 'bar'], we expect: Identifier('foo').Identifier('bar')
   let current: TSESTree.Node = node.object;
+    
+    // Check from the last name to the first
   for (let i = names.length - 1; i >= 0; i--) {
-    if (current.type !== 'Identifier' || current.name !== names[i]) {
+      if (i === 0) {
+        // First name should be an Identifier
+        if (current.type !== 'Identifier' || current.name !== names[0]) {
+          return false;
+        }
+      } else {
+        // Other names should be properties of MemberExpressions
+        if (current.type !== 'MemberExpression') {
       return false;
     }
-    if (i > 0) {
-      const parent = node.object;
-      if (parent.type !== 'MemberExpression') {
+        if (current.property.type !== 'Identifier' || current.property.name !== names[i]) {
         return false;
       }
-      current = parent.object;
+        current = current.object;
+      }
+    }
+  } else {
+    // Simple case: single object name
+    if (node.object.type !== 'Identifier' || node.object.name !== names[0]) {
+      return false;
     }
   }
 

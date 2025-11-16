@@ -351,5 +351,45 @@ import { Button } from '@company/ui';
     });
   });
 
+  describe('Edge Cases - getViolationReason fallback (line 257)', () => {
+    ruleTester.run('edge case - violation reason fallback', noInternalModules, {
+      valid: [
+        // Line 257 is the fallback return in getViolationReason when
+        // isForbiddenPath is false AND depth <= maxDepth.
+        // However, this path should never be reached because reportViolation
+        // is only called when isForbiddenPath is true OR depth > maxDepth.
+        // This test verifies that depth exactly equal to maxDepth is allowed.
+        {
+          code: "import { util } from './utils/helpers';",
+          options: [{ maxDepth: 1, forbid: [] }],
+        },
+      ],
+      invalid: [
+        // To actually trigger a violation that would use the fallback reason,
+        // we need depth > maxDepth. But in that case, it uses the "Exceeds maximum depth" message.
+        // The fallback on line 257 is defensive code that shouldn't be reached.
+        // We test it indirectly by ensuring violations work correctly.
+        {
+          code: "import { util } from './utils/helpers/format';",
+          options: [{ maxDepth: 1, forbid: [] }],
+          errors: [{ messageId: 'internalModuleImport' }],
+        },
+      ],
+    });
+  });
+
+  describe('Edge Cases - warn strategy', () => {
+    ruleTester.run('warn strategy', noInternalModules, {
+      valid: [],
+      invalid: [
+        {
+          code: "import get from 'lodash/get';",
+          options: [{ strategy: 'warn', maxDepth: 0 }],
+          errors: [{ messageId: 'internalModuleImport' }],
+        },
+      ],
+    });
+  });
+
 });
 

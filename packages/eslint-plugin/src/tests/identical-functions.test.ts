@@ -105,6 +105,15 @@ describe('identical-functions', () => {
           `,
           options: [{ minLines: 3 }],
         },
+        // Line 107: ignoreTestFiles option
+        {
+          code: `
+            function testA() { return 1; }
+            function testB() { return 1; }
+          `,
+          filename: '/path/to/file.test.ts',
+          options: [{ ignoreTestFiles: true }],
+        },
       ],
       invalid: [
         {
@@ -117,6 +126,69 @@ describe('identical-functions', () => {
             function processB(data) {
               if (!data) return null;
               return data.value;
+            }
+          `,
+          options: [{ minLines: 2, similarityThreshold: 0.9 }],
+          errors: [{ messageId: 'identicalFunctions' }],
+        },
+      ],
+    });
+  });
+
+  describe('Uncovered Lines', () => {
+    // Lines 139, 144-176: Levenshtein distance algorithm
+    // Test when str2 is longer than str1 (line 139)
+    // Test different string comparisons to cover the algorithm
+    ruleTester.run('line 139, 144-176 - Levenshtein distance', identicalFunctions, {
+      valid: [],
+      invalid: [
+        {
+          code: `
+            function processLong(data) {
+              if (!data) return null;
+              return data.value.toUpperCase();
+            }
+            
+            function processShort(x) {
+              if (!x) return null;
+              return x.value.toUpperCase();
+            }
+          `,
+          options: [{ minLines: 3, similarityThreshold: 0.7 }],
+          errors: [{ messageId: 'identicalFunctions' }],
+        },
+        {
+          code: `
+            function formatUser(user) {
+              const name = user.name;
+              const email = user.email;
+              return { name, email };
+            }
+            
+            function formatPerson(person) {
+              const name = person.name;
+              const email = person.email;
+              return { name, email };
+            }
+          `,
+          options: [{ minLines: 4, similarityThreshold: 0.8 }],
+          errors: [{ messageId: 'identicalFunctions' }],
+        },
+      ],
+    });
+
+    // Line 279: Default return in suggestRefactoring
+    ruleTester.run('line 279 - default refactoring suggestion', identicalFunctions, {
+      valid: [],
+      invalid: [
+        {
+          code: `
+            function funcA() {
+              return Math.random();
+            }
+            
+            function funcB() {
+              return Math.random();
             }
           `,
           options: [{ minLines: 2, similarityThreshold: 0.9 }],

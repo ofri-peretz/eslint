@@ -187,6 +187,24 @@ describe('detect-eval-with-expression', () => {
     });
   });
 
+  describe('Uncovered Lines', () => {
+    // Line 219: Default case in generateRefactoringSteps
+    // This is triggered when the pattern doesn't match 'json', 'math', 'object', or 'template'
+    ruleTester.run('line 219 - default case in generateRefactoringSteps', detectEvalWithExpression, {
+      valid: [],
+      invalid: [
+        {
+          code: 'eval("someOtherPattern" + value);',
+          errors: [{ messageId: 'evalWithExpression' }],
+        },
+        {
+          code: 'eval("customPattern" + data);',
+          errors: [{ messageId: 'evalWithExpression' }],
+        },
+      ],
+    });
+  });
+
   describe('Pattern Detection - Math (lines 194-200)', () => {
     ruleTester.run('pattern detection - math', detectEvalWithExpression, {
       valid: [],
@@ -286,6 +304,16 @@ describe('detect-eval-with-expression', () => {
     ruleTester.run('function constructor in call expression', detectEvalWithExpression, {
       valid: [],
       invalid: [
+        // Lines 298-300: Function constructor detection in CallExpression context
+        // This covers the case where Function is called as a function, not as a constructor
+        {
+          code: 'Function(code);',
+          errors: [{ messageId: 'evalWithExpression' }],
+        },
+        {
+          code: 'Function("arg1", "arg2", "return arg1 + arg2");',
+          errors: [{ messageId: 'evalWithExpression' }],
+        },
         {
           code: 'new Function(code);',
           errors: [{ messageId: 'evalWithExpression' }],

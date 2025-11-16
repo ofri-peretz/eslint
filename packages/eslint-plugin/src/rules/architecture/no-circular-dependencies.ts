@@ -9,6 +9,12 @@
  * 
  * @llm-optimized This rule provides structured, actionable error messages
  * that include the full cycle chain and specific fix suggestions.
+ * 
+ * @coverage-note
+ * This rule requires file system access (fs.readFileSync) and context.getCwd()
+ * to work properly. Full test coverage requires integration tests with actual
+ * file system setup, as RuleTester doesn't provide full file system context.
+ * Unit tests can only cover option parsing and basic rule structure.
  */
 import { createRule } from '../../utils/create-rule';
 import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';

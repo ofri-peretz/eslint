@@ -65,7 +65,15 @@ export default defineConfig({
       reportOnFailure: true,
       // Directory where coverage reports are written (relative to project root)
       reportsDirectory: './coverage',
-      exclude: ['node_modules/', 'dist/', '**/*.test.ts'],
+      // Exclude utils package - it has its own test suite and coverage
+      exclude: [
+        'node_modules/',
+        'dist/',
+        '**/*.test.ts',
+        '../eslint-plugin-utils/**',
+        '**/eslint-plugin-utils/**',
+        '**/node_modules/**',
+      ],
       // Clean coverage directory on each run (safe now that globalSetup ensures dirs exist)
       clean: true,
     },

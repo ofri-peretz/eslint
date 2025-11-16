@@ -231,5 +231,89 @@ describe('required-attributes', () => {
       ],
     });
   });
+
+  describe('Uncovered Lines', () => {
+    // Lines 100-115: JSXMemberExpression handling in getElementName
+    ruleTester.run('line 100-115 - JSXMemberExpression', requiredAttributes, {
+      valid: [],
+      invalid: [
+        {
+          code: '<Box.Item />',
+          options: [{ 
+            attributes: [{ attribute: 'data-testid' }] 
+          }],
+          errors: [
+            {
+              messageId: 'missingAttribute',
+              suggestions: [
+                {
+                  messageId: 'addAttribute',
+                  output: '<Box.Item data-testid="box.item" />',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          code: '<Container.Header.Title />',
+          options: [{ 
+            attributes: [{ attribute: 'aria-label' }] 
+          }],
+          errors: [
+            {
+              messageId: 'missingAttribute',
+              suggestions: [
+                {
+                  messageId: 'addAttribute',
+                  output: '<Container.Header.Title aria-label="TODO: Add descriptive label" />',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    // Lines 160-161: getDefaultSuggestedValue for data-testid
+    ruleTester.run('line 160-161 - data-testid kebab case', requiredAttributes, {
+      valid: [],
+      invalid: [
+        {
+          code: '<MyComponent />',
+          options: [{ 
+            attributes: [{ attribute: 'data-testid' }] 
+          }],
+          errors: [
+            {
+              messageId: 'missingAttribute',
+              suggestions: [
+                {
+                  messageId: 'addAttribute',
+                  output: '<MyComponent data-testid="my-component" />',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          code: '<UserProfile />',
+          options: [{ 
+            attributes: [{ attribute: 'data-testid' }] 
+          }],
+          errors: [
+            {
+              messageId: 'missingAttribute',
+              suggestions: [
+                {
+                  messageId: 'addAttribute',
+                  output: '<UserProfile data-testid="user-profile" />',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+  });
 });
 

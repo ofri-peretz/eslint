@@ -93,6 +93,13 @@ describe('prefer-dependency-version-strategy', () => {
   });
 
   describe('Edge Cases', () => {
+    // Lines 119-124: Invalid strategy validation
+    // Note: This cannot be tested with RuleTester because ESLint validates the config schema
+    // before the rule code executes. The rule's validation happens during rule creation,
+    // but ESLint's schema validation prevents invalid options from reaching the rule.
+    // This is actually correct behavior - invalid options should be caught by schema validation.
+    // To test this, we would need integration tests that bypass schema validation.
+
     ruleTester.run('edge cases - package.json properties', preferDependencyVersionStrategy, {
       valid: [
         // Test Property visitor for dependencies (lines 244-245)
@@ -106,6 +113,11 @@ describe('prefer-dependency-version-strategy', () => {
         },
         {
           code: 'const packageJson = { peerDependencies: { "react": "^18.0.0" } };',
+          options: [{ strategy: 'caret' }],
+        },
+        // Test Property visitor with non-ObjectExpression value (line 244)
+        {
+          code: 'const packageJson = { dependencies: "invalid" };',
           options: [{ strategy: 'caret' }],
         },
         // Test ObjectExpression with non-version values (line 257 - return false)
@@ -164,7 +176,15 @@ describe('prefer-dependency-version-strategy', () => {
           options: [{ strategy: 'range' }],
         },
       ],
-      invalid: [],
+      invalid: [
+        // Lines 191-192: Range strategy - when version is just a version (not a range), suggest caret
+        {
+          code: 'const deps = { "react": "18.0.0" };',
+          options: [{ strategy: 'range' }],
+          errors: [{ messageId: 'preferStrategy' }],
+          output: 'const deps = { "react": "^18.0.0" };',
+        },
+      ],
     });
 
     ruleTester.run('edge cases - any strategy', preferDependencyVersionStrategy, {
