@@ -1,5 +1,20 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-name: Release
+name: Release Scoped Packages
+
+# ═════════════════════════════════════════════════════════════════════════════
+# WORKFLOW PURPOSE: Publish SCOPED packages (@forge-js/*) only
+# ═════════════════════════════════════════════════════════════════════════════
+#
+# Packages handled by this workflow:
+#   - @forge-js/eslint-plugin-llm-optimized (project: eslint-plugin)
+#   - @forge-js/eslint-plugin-utils (project: eslint-plugin-utils)
+#   - @forge-js/cli (project: cli)
+#
+# Authentication: Trusted Publishing (OIDC) via NODE_AUTH_TOKEN
+# Scope: @forge-js (configured in setup-node@v6)
+#
+# For UNscoped packages, use: release-unscoped.yml
+# ═════════════════════════════════════════════════════════════════════════════
 
 on:
   workflow_dispatch:
@@ -144,12 +159,16 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: ⚙️ Setup Node.js
+      - name: ⚙️ Setup Node.js (Trusted Publishing for Scoped Packages)
         uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: https://registry.npmjs.org/
           cache: "pnpm"
+          scope: "@forge-js"
+          # Trusted Publishing (OIDC) is automatically configured for @forge-js scope
+          # via NODE_AUTH_TOKEN environment variable
+          # This ensures scoped packages use Trusted Publishing, not NPM_TOKEN
 
       - name: 📂 Get pnpm store directory
         shell: bash
@@ -168,79 +187,50 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # ──────────────────────────────────────────────────────────────────────
-      # CONFIGURE NPM AUTHENTICATION
+      # VERIFY TRUSTED PUBLISHING (SCOPED PACKAGES ONLY)
       # ──────────────────────────────────────────────────────────────────────
-      - name: 🔐 Configure npm Authentication
+      - name: 🔍 Verify Trusted Publishing
         if: inputs.dry-run == false
         run: |
-          echo "🔐 Configuring npm authentication..."
-
-          # Trusted Publishing (OIDC) is automatically configured by setup-node@v6
-          # for scoped packages via NODE_AUTH_TOKEN
-
-          # For unscoped packages, we need to configure NPM_TOKEN
-          if [ -n "${{ secrets.NPM_TOKEN }}" ]; then
-            echo "📝 Configuring NPM_TOKEN for unscoped packages..."
-            
-            # Create/update .npmrc with token for unscoped packages
-            # This will be used for: eslint-plugin-llm, eslint-plugin-mcp, etc.
-            if [ -f ".npmrc" ]; then
-              echo "✅ .npmrc exists, appending token configuration"
-            else
-              echo "📝 Creating .npmrc for token configuration"
-            fi
-            
-            # Add token to .npmrc for default registry (unscoped packages)
-            # Scoped packages will use Trusted Publishing via NODE_AUTH_TOKEN
-            echo "" >> .npmrc
-            echo "# NPM_TOKEN for unscoped packages (Granular Access Token)" >> .npmrc
-            echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> .npmrc
-            
-            echo "✅ NPM_TOKEN configured for unscoped packages"
-          else
-            echo "ℹ️  NPM_TOKEN not available - unscoped packages will use Trusted Publishing (if configured)"
-          fi
-
+          echo "🔍 Verifying Trusted Publishing for scoped packages..."
           echo ""
-          echo "📊 Authentication Summary:"
-          if [ -n "$NODE_AUTH_TOKEN" ]; then
-            echo "  ✅ Trusted Publishing (OIDC): Available for scoped packages (@forge-js/*)"
+          echo "📦 This workflow publishes SCOPED packages only:"
+          echo "   - @forge-js/eslint-plugin-llm-optimized"
+          echo "   - @forge-js/eslint-plugin-utils"
+          echo "   - @forge-js/cli"
+          echo ""
+          echo "📦 For UNscoped packages, use: release-unscoped.yml workflow"
+          echo ""
+
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "❌ NODE_AUTH_TOKEN not found - Trusted Publishing not configured"
+            echo "   Check: https://www.npmjs.com/org/forge-js/settings/publishing"
+            exit 1
           fi
-          if [ -n "${{ secrets.NPM_TOKEN }}" ]; then
-            echo "  ✅ NPM_TOKEN: Available for unscoped packages (eslint-plugin-*)"
-          fi
+
+          echo "✅ Trusted Publishing configured (NODE_AUTH_TOKEN found)"
+          echo "   Scope: @forge-js (set in setup-node@v6)"
+          echo "   Authentication: OIDC via Trusted Publishing"
 
       # ──────────────────────────────────────────────────────────────────────
-      # QUICK PRE-FLIGHT CHECK
+      # QUICK PRE-FLIGHT CHECK (SCOPED PACKAGES ONLY)
       # ──────────────────────────────────────────────────────────────────────
       - name: 🔍 Quick Pre-Flight Check
         if: inputs.dry-run == false
         run: |
-          # Verify NPM authentication (Trusted Publishing / OIDC or NPM_TOKEN fallback)
-          echo "🔍 Checking npm authentication methods..."
+          # Verify Trusted Publishing (OIDC) for scoped packages
+          echo "🔍 Checking Trusted Publishing authentication..."
 
           if [ -n "$NODE_AUTH_TOKEN" ]; then
-            echo "✅ NODE_AUTH_TOKEN found (Trusted Publishing available for scoped packages)"
+            echo "✅ NODE_AUTH_TOKEN found (Trusted Publishing available)"
+            echo "   Scope: @forge-js (configured in setup-node@v6)"
           else
-            echo "⚠️  NODE_AUTH_TOKEN not found - Trusted Publishing not configured"
-            echo "   Will use NPM_TOKEN fallback if available"
-          fi
-
-          if [ -n "${{ secrets.NPM_TOKEN }}" ]; then
-            echo "✅ NPM_TOKEN found (available for unscoped packages and fallback)"
-          else
-            echo "⚠️  NPM_TOKEN not found - unscoped packages will fail"
-            echo "   Scoped packages can use Trusted Publishing"
-          fi
-
-          # At least one authentication method must be available
-          if [ -z "$NODE_AUTH_TOKEN" ] && [ -z "${{ secrets.NPM_TOKEN }}" ]; then
-            echo "❌ No npm authentication method available!"
-            echo "   Either configure Trusted Publishing OR add NPM_TOKEN secret"
+            echo "❌ NODE_AUTH_TOKEN not found - Trusted Publishing not configured"
+            echo "   Check: https://www.npmjs.com/org/forge-js/settings/publishing"
             exit 1
           fi
 
-          echo "✅ NPM authentication ready"
+          echo "✅ Authentication ready for scoped packages"
 
       # ──────────────────────────────────────────────────────────────────────
       # PHASE 1: PREPARE VERSION (Build + determine versions + update changelogs)
@@ -253,14 +243,52 @@ jobs:
           git config user.name "Ofri Peretz"
           git config user.email "ofriperetzdev@gmail.com"
 
-          # Function to run version command
+          # Explicit list of scoped packages
+          # Projects: eslint-plugin → @forge-js/eslint-plugin-llm-optimized
+          #           eslint-plugin-utils → @forge-js/eslint-plugin-utils
+          #           cli → @forge-js/cli
+          SCOPED_PROJECTS="eslint-plugin,eslint-plugin-utils,cli"
+
+          # Get affected projects and filter to only scoped packages
+          echo "🔍 Detecting affected scoped packages..."
+          AFFECTED_PROJECTS=$(pnpm nx show projects --affected --base=HEAD~1 2>/dev/null | grep -E "^($(echo $SCOPED_PROJECTS | tr ',' '|'))$" | tr '\n' ',' | sed 's/,$//' || echo "")
+
+          if [ -z "$AFFECTED_PROJECTS" ]; then
+            echo "ℹ️  No affected scoped packages detected"
+            echo "   Checking all scoped packages for changes..."
+            # Fallback: check if any scoped project has changes
+            for PROJECT in $(echo $SCOPED_PROJECTS | tr ',' ' '); do
+              if git diff --quiet HEAD~1 HEAD -- "packages/$PROJECT" 2>/dev/null; then
+                echo "   - $PROJECT: no changes"
+              else
+                echo "   - $PROJECT: has changes"
+                if [ -z "$AFFECTED_PROJECTS" ]; then
+                  AFFECTED_PROJECTS="$PROJECT"
+                else
+                  AFFECTED_PROJECTS="$AFFECTED_PROJECTS,$PROJECT"
+                fi
+              fi
+            done
+          fi
+
+          if [ -z "$AFFECTED_PROJECTS" ]; then
+            echo "✅ No scoped packages have changes - nothing to release"
+            echo "status=skipped" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "📦 Affected SCOPED packages: $AFFECTED_PROJECTS"
+          echo "   (filtered from explicit list: $SCOPED_PROJECTS)"
+          echo ""
+
+          # Function to run version command with affected projects only
           run_version_command() {
             if [ "${{ inputs.version-specifier }}" != "auto" ]; then
               echo "📝 Using version strategy: ${{ inputs.version-specifier }}"
-              pnpm nx release version ${{ inputs.version-specifier }}
+              pnpm nx release version ${{ inputs.version-specifier }} --projects=$AFFECTED_PROJECTS
             else
               echo "📝 Using conventional commits to determine version"
-              pnpm nx release version
+              pnpm nx release version --projects=$AFFECTED_PROJECTS
             fi
           }
 
@@ -521,12 +549,19 @@ jobs:
       # ──────────────────────────────────────────────────────────────────────
       # PHASE 3: PUBLISH PACKAGES
       # ──────────────────────────────────────────────────────────────────────
-      # Publish packages that were affected by the latest commits (based on tags)
-      - name: 🚀 Publish Packages
+      # Publish SCOPED packages that were affected by the latest commits (based on tags)
+      - name: 🚀 Publish Scoped Packages
         id: publish
         if: inputs.dry-run == false
         run: |
-          echo "🚀 Publishing packages with dist tag: ${{ inputs.dist-tag }}"
+          echo "🚀 Publishing SCOPED packages with dist tag: ${{ inputs.dist-tag }}"
+          echo ""
+          echo "📦 This workflow publishes SCOPED packages only (@forge-js/*):"
+          echo "   - @forge-js/eslint-plugin-llm-optimized"
+          echo "   - @forge-js/eslint-plugin-utils"
+          echo "   - @forge-js/cli"
+          echo ""
+          echo "📦 For UNscoped packages, use: release-unscoped.yml workflow"
           echo ""
           echo "📦 Nx will automatically publish only packages affected by recent commits"
           echo "   (determined by git tags created in the version step)"
@@ -536,49 +571,26 @@ jobs:
           git config user.name "Ofri Peretz"
           git config user.email "ofriperetzdev@gmail.com"
 
-          # Verify npm authentication
-          echo "🔍 Verifying npm authentication..."
-
-          AUTH_METHODS_AVAILABLE=0
-
-          if [ -n "$NODE_AUTH_TOKEN" ]; then
-            echo "✅ NODE_AUTH_TOKEN found (Trusted Publishing available for scoped packages)"
-            AUTH_METHODS_AVAILABLE=$((AUTH_METHODS_AVAILABLE + 1))
-          else
-            echo "⚠️  NODE_AUTH_TOKEN not found (Trusted Publishing not configured)"
-          fi
-
-          if [ -n "${{ secrets.NPM_TOKEN }}" ]; then
-            echo "✅ NPM_TOKEN found (available for unscoped packages and fallback)"
-            AUTH_METHODS_AVAILABLE=$((AUTH_METHODS_AVAILABLE + 1))
-          else
-            echo "⚠️  NPM_TOKEN not found"
-          fi
-
-          if [ "$AUTH_METHODS_AVAILABLE" -eq 0 ]; then
-            echo "❌ No authentication method available!"
-            echo "   Configure Trusted Publishing OR add NPM_TOKEN secret"
+          # Verify Trusted Publishing is available
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "❌ NODE_AUTH_TOKEN not found - Trusted Publishing not configured"
+            echo "   Check: https://www.npmjs.com/org/forge-js/settings/publishing"
             exit 1
           fi
 
-          echo "✅ Authentication verified"
+          echo "✅ Trusted Publishing verified (NODE_AUTH_TOKEN found)"
+          echo "   Scope: @forge-js (configured in setup-node@v6)"
+          echo "   Authentication: OIDC via Trusted Publishing"
 
           # Verify .npmrc configuration
           if [ -f ".npmrc" ]; then
             echo "✅ .npmrc found"
-            echo "   Scoped packages (@forge-js/*): Using Trusted Publishing (OIDC)"
-            echo "   Unscoped packages (eslint-plugin-*): Using NPM_TOKEN (if configured)"
+            echo "   All packages in this workflow use Trusted Publishing (OIDC)"
             echo ""
-            echo "   Package breakdown:"
+            echo "   Packages being published:"
             echo "   - @forge-js/eslint-plugin-llm-optimized → Trusted Publishing"
             echo "   - @forge-js/eslint-plugin-utils → Trusted Publishing"
             echo "   - @forge-js/cli → Trusted Publishing"
-            echo "   - eslint-plugin-llm-optimized → NPM_TOKEN"
-            echo "   - eslint-plugin-llm → NPM_TOKEN"
-            echo "   - eslint-plugin-mcp → NPM_TOKEN"
-            echo "   - eslint-plugin-mcp-optimized → NPM_TOKEN"
-          else
-            echo "⚠️  .npmrc not found - only Trusted Publishing will work"
           fi
 
           # Publish packages
@@ -589,8 +601,43 @@ jobs:
           echo "   Nx will publish in dependency order based on project.json 'dependsOn' configuration"
           echo ""
 
+          # Explicit list of scoped packages
+          SCOPED_PROJECTS="eslint-plugin,eslint-plugin-utils,cli"
+
+          # Get affected projects and filter to only scoped packages
+          echo "🔍 Detecting affected scoped packages for publishing..."
+          AFFECTED_PROJECTS=$(pnpm nx show projects --affected --base=HEAD~1 2>/dev/null | grep -E "^($(echo $SCOPED_PROJECTS | tr ',' '|'))$" | tr '\n' ',' | sed 's/,$//' || echo "")
+
+          if [ -z "$AFFECTED_PROJECTS" ]; then
+            echo "ℹ️  No affected scoped packages detected"
+            echo "   Checking for packages with new tags (from version step)..."
+            # Check for packages that have new tags (created in version step)
+            for PROJECT in $(echo $SCOPED_PROJECTS | tr ',' ' '); do
+              # Check if there's a new tag for this project
+              LATEST_TAG=$(git tag --sort=-version:refname | grep "^${PROJECT}@" | head -n 1)
+              if [ -n "$LATEST_TAG" ]; then
+                # Check if tag is new (not in remote or different from previous)
+                if [ -z "$AFFECTED_PROJECTS" ]; then
+                  AFFECTED_PROJECTS="$PROJECT"
+                else
+                  AFFECTED_PROJECTS="$AFFECTED_PROJECTS,$PROJECT"
+                fi
+                echo "   - $PROJECT: has new tag $LATEST_TAG"
+              fi
+            done
+          fi
+
+          if [ -z "$AFFECTED_PROJECTS" ]; then
+            echo "✅ No scoped packages to publish - nothing was versioned"
+            exit 0
+          fi
+
+          echo "📦 Publishing affected SCOPED packages: $AFFECTED_PROJECTS"
+          echo "   (filtered from explicit list: $SCOPED_PROJECTS)"
+          echo ""
+
           # Run publish command and capture output
-          PUBLISH_OUTPUT=$(pnpm nx release publish --tag ${{ inputs.dist-tag }} 2>&1) || PUBLISH_EXIT=$?
+          PUBLISH_OUTPUT=$(pnpm nx release publish --tag ${{ inputs.dist-tag }} --projects=$AFFECTED_PROJECTS 2>&1) || PUBLISH_EXIT=$?
 
           # Check if publish succeeded
           if [ -z "$PUBLISH_EXIT" ] || [ "$PUBLISH_EXIT" -eq 0 ]; then
@@ -669,8 +716,8 @@ jobs:
         env:
           NPM_CONFIG_PROVENANCE: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # NPM_TOKEN is used via .npmrc configuration (set in Configure npm Authentication step)
-          # NODE_AUTH_TOKEN is automatically set by setup-node@v6 for Trusted Publishing
+          # NODE_AUTH_TOKEN is automatically set by setup-node@v6 for Trusted Publishing (scoped packages)
+          # NPM_TOKEN is NOT needed - this workflow only handles scoped packages
 
       # ──────────────────────────────────────────────────────────────────────
       # DRY RUN: Just preview changes
@@ -683,13 +730,29 @@ jobs:
           # Construct the dry-run flag
           DRY_RUN_FLAG="--dry-run"
 
+          # Explicit list of scoped packages
+          SCOPED_PROJECTS="eslint-plugin,eslint-plugin-utils,cli"
+
+          # Get affected projects and filter to only scoped packages
+          echo "🔍 Detecting affected scoped packages for dry-run..."
+          AFFECTED_PROJECTS=$(pnpm nx show projects --affected --base=HEAD~1 2>/dev/null | grep -E "^($(echo $SCOPED_PROJECTS | tr ',' '|'))$" | tr '\n' ',' | sed 's/,$//' || echo "")
+
+          if [ -z "$AFFECTED_PROJECTS" ]; then
+            echo "ℹ️  No affected scoped packages detected - will preview all scoped packages"
+            AFFECTED_PROJECTS="$SCOPED_PROJECTS"
+          fi
+
+          echo "📦 DRY RUN: Previewing affected SCOPED packages: $AFFECTED_PROJECTS"
+          echo "   (filtered from explicit list: $SCOPED_PROJECTS)"
+          echo ""
+
           # Preview version changes
           if [ "${{ inputs.version-specifier }}" != "auto" ]; then
             echo "📝 Previewing version strategy: ${{ inputs.version-specifier }}"
-            pnpm nx release version ${{ inputs.version-specifier }} $DRY_RUN_FLAG
+            pnpm nx release version ${{ inputs.version-specifier }} --projects=$AFFECTED_PROJECTS $DRY_RUN_FLAG
           else
             echo "📝 Previewing conventional commits version"
-            pnpm nx release version $DRY_RUN_FLAG
+            pnpm nx release version --projects=$AFFECTED_PROJECTS $DRY_RUN_FLAG
           fi
 
       # ──────────────────────────────────────────────────────────────────────
