@@ -45,7 +45,7 @@ on:
         description: "Run CI validation before publishing (slows down release)"
         required: false
         type: boolean
-        default: false
+        default: true
 
       dry-run:
         description: "Dry run: preview changes without modifying git or NPM"
@@ -407,7 +407,22 @@ jobs:
             # Push branch with commits and tags
             echo "📤 Pushing release branch with commits and tags..."
             git push origin "$RELEASE_BRANCH" || exit 1
-            git push origin --tags || exit 1
+            
+            # Push tags (ignore errors if tags already exist - they may have been pushed in a previous attempt)
+            echo "📤 Pushing tags..."
+            if git push origin --tags 2>&1 | tee /tmp/tag-push.log; then
+              echo "✅ Tags pushed successfully"
+            else
+              TAG_PUSH_EXIT=${PIPESTATUS[0]}
+              if grep -q "already exists\|Everything up-to-date" /tmp/tag-push.log; then
+                echo "⚠️  Some tags already exist on remote (from previous attempt)"
+                echo "   This is safe - tags are already pushed, continuing..."
+              else
+                echo "❌ Tag push failed with unexpected error:"
+                cat /tmp/tag-push.log
+                exit $TAG_PUSH_EXIT
+              fi
+            fi
             
             # Create PR using GitHub CLI (always available in GitHub Actions)
             PR_TITLE="chore(release): Update package versions"
