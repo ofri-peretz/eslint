@@ -7,7 +7,7 @@
 
 > **Keywords:** ESLint plugin, ESLint MCP, Model Context Protocol, MCP server, AI assistant, auto-fix, code quality, security rules, TypeScript ESLint, automated code fixes, GitHub Copilot, Cursor AI, Claude AI, structured error messages, CWE references, deterministic fixes, @eslint/mcp, MCP optimized
 
-This package is a barrel export that re-exports everything from `@forge-js/eslint-plugin-llm-optimized`. It provides **20+ ESLint rules** with error messages optimized for both human developers and Large Language Models, specifically designed to maximize capabilities when used with ESLint's Model Context Protocol (MCP) integration.
+This package is a barrel export that re-exports everything from `@forge-js/eslint-plugin-llm-optimized`. It provides **30+ ESLint rules** with error messages optimized for both human developers and Large Language Models, specifically designed to maximize capabilities when used with ESLint's Model Context Protocol (MCP) integration.
 
 **Designed for ESLint MCP:** This package is specifically optimized to maximize capabilities when used with ESLint's [Model Context Protocol (MCP)](https://eslint.org/docs/latest/use/mcp) integration, enabling seamless AI assistant interactions through structured, parseable error messages across a wide range of security, architecture, performance, and code quality rules.
 
@@ -22,7 +22,7 @@ This package is a barrel export that re-exports everything from `@forge-js/eslin
 | **AI Assistant Compatibility** | ✅ Optimized for LLMs via MCP | ❌ Generic error messages |
 | **Auto-Fix Rate** | ✅ 60-80% of violations auto-fixed | ⚠️ 20-30% auto-fixable |
 | **Error Message Quality** | ✅ Structured with examples, fixes, documentation | ⚠️ Basic "what's wrong" messages |
-| **Security Rules** | ✅ 8 comprehensive security rules with CWE references | ⚠️ Limited security coverage |
+| **Security Rules** | ✅ 18 comprehensive security rules with CWE references | ⚠️ Limited security coverage |
 | **MCP Integration** | ✅ Works seamlessly with @eslint/mcp | ❌ No MCP support |
 | **Functionality** | ✅ Identical to @forge-js/eslint-plugin-llm-optimized | N/A |
 
@@ -134,8 +134,8 @@ export default [
 | Preset | Rules Included | Best For |
 |--------|---------------|----------|
 | **`recommended`** | 10 rules (3 security, 2 architecture, 2 development, 3 others) | Most projects - balanced enforcement |
-| **`strict`** | All 20+ rules as errors | Maximum code quality enforcement |
-| **`security`** | 8 security rules only | Security-critical applications |
+| **`strict`** | All 30+ rules as errors | Maximum code quality enforcement |
+| **`security`** | 18 security rules only | Security-critical applications |
 | **`react`** | 3 React-specific rules | React/Next.js projects |
 | **`sonarqube`** | 2 SonarQube-inspired rules | Teams using SonarQube |
 
@@ -185,20 +185,70 @@ This plugin works seamlessly with ESLint's official MCP server. Learn more about
 
 ## Available Rules
 
-This package includes **20+ rules** across 10 categories:
+This package includes **30+ rules** across 10 categories. All rules are functionally identical to `@forge-js/eslint-plugin-llm-optimized`.
 
-- **Security** (8 rules): SQL injection, eval detection, path traversal, ReDoS, and more
-- **Architecture** (2 rules): Circular dependencies, internal module boundaries
-- **Development** (1 rule): Console.log detection
-- **React** (3 rules): Inline functions, required attributes, class-to-hooks migration
-- **Performance** (1 rule): React inline functions
-- **Accessibility** (1 rule): Image alt text requirements
-- **Complexity** (1 rule): Cognitive complexity limits
-- **Duplication** (1 rule): Identical function detection
-- **Migration** (1 rule): React class to hooks
-- **Deprecation** (1 rule): Deprecated API usage
+💼 Set in the `recommended` configuration.  
+⚠️ Set to warn in the `recommended` configuration.  
+🔧 Automatically fixable by the `--fix` CLI option.  
+💡 Manually fixable by editor suggestions.  
+🎨 SonarQube-inspired rule.
 
-See the [full rule documentation](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) for complete details, examples, and configuration options.
+### Security Rules (18 rules)
+
+| Rule Name | Description | CWE | Auto-fixable |
+|-----------|-------------|-----|--------------|
+| `mcp-optimized/no-sql-injection` | Prevent SQL injection with string concatenation detection | CWE-89 | No |
+| `mcp-optimized/no-unsafe-dynamic-require` | Forbid dynamic require() calls with non-literal arguments | CWE-95 | No |
+| `mcp-optimized/database-injection` | Comprehensive injection detection (SQL, NoSQL, ORM) | CWE-89 | No |
+| `mcp-optimized/detect-eval-with-expression` | Detect eval() with dynamic expressions (RCE prevention) | CWE-95 | No |
+| `mcp-optimized/detect-child-process` | Detect command injection in child_process calls | CWE-78 | No |
+| `mcp-optimized/detect-non-literal-fs-filename` | Detect path traversal in fs operations | CWE-22 | No |
+| `mcp-optimized/detect-non-literal-regexp` | Detect ReDoS vulnerabilities in RegExp construction | CWE-400 | No |
+| `mcp-optimized/detect-object-injection` | Detect prototype pollution in object property access | CWE-915 | No |
+| `mcp-optimized/no-hardcoded-credentials` | Detect hardcoded passwords, API keys, and tokens | CWE-798 | Yes |
+| `mcp-optimized/no-weak-crypto` | Detect weak cryptography algorithms (MD5, SHA1, DES) | CWE-327 | Yes |
+| `mcp-optimized/no-insufficient-random` | Detect weak random number generation (Math.random()) | CWE-330 | No |
+| `mcp-optimized/no-unvalidated-user-input` | Detect unvalidated user input usage (req.body, req.query) | CWE-20 | No |
+| `mcp-optimized/no-unsanitized-html` | Detect unsanitized HTML injection (XSS prevention) | CWE-79 | No |
+| `mcp-optimized/no-unescaped-url-parameter` | Detect unescaped URL parameters (XSS prevention) | CWE-79 | No |
+| `mcp-optimized/no-missing-cors-check` | Detect missing CORS origin validation | CWE-942 | No |
+| `mcp-optimized/no-insecure-comparison` | Detect insecure comparison operators (==, !=) | CWE-697 | Yes |
+| `mcp-optimized/no-missing-authentication` | Detect missing authentication checks in route handlers | CWE-306 | No |
+| `mcp-optimized/no-privilege-escalation` | Detect potential privilege escalation vulnerabilities | CWE-269 | No |
+
+### Architecture Rules (2 rules)
+
+| Rule Name | Description | Auto-fixable |
+|-----------|-------------|--------------|
+| `mcp-optimized/no-circular-dependencies` | Detect circular dependencies with full chain analysis | No |
+| `mcp-optimized/no-internal-modules` | Forbid importing internal/deep module paths | No |
+
+### Development Rules (2 rules)
+
+| Rule Name | Description | Auto-fixable |
+|-----------|-------------|--------------|
+| `mcp-optimized/no-console-log` | Disallow console.log with configurable strategies | Yes |
+| `mcp-optimized/prefer-dependency-version-strategy` | Enforce consistent version strategy (caret, tilde, exact, etc.) | Yes |
+
+### React Rules (3 rules)
+
+| Rule Name | Description | Auto-fixable |
+|-----------|-------------|--------------|
+| `mcp-optimized/react-no-inline-functions` | Prevent inline functions in React renders | Yes |
+| `mcp-optimized/required-attributes` | Enforce required attributes on React components | No |
+| `mcp-optimized/react-class-to-hooks` | Suggest migrating React class components to hooks | No |
+
+### Other Rules (5 rules)
+
+| Rule Name | Description | Auto-fixable |
+|-----------|-------------|--------------|
+| `mcp-optimized/img-requires-alt` | Enforce alt text on images for WCAG compliance | No |
+| `mcp-optimized/cognitive-complexity` 🎨 | Limit cognitive complexity with detailed metrics | No |
+| `mcp-optimized/identical-functions` 🎨 | Detect duplicate function implementations | No |
+| `mcp-optimized/no-deprecated-api` | Prevent usage of deprecated APIs with migration paths | Yes |
+| `mcp-optimized/enforce-naming` | Enforce domain-specific naming conventions | Yes |
+
+**See the [full rule documentation](https://github.com/ofri-peretz/forge-js/tree/main/packages/eslint-plugin/docs/rules) for complete details, examples, and configuration options.**
 
 ---
 
@@ -327,7 +377,7 @@ This ESLint plugin package is specifically designed and optimized for ESLint MCP
 2. **ESLint MCP Optimized:** Specifically designed to maximize capabilities with [ESLint MCP](https://eslint.org/docs/latest/use/mcp) and `@eslint/mcp`
 3. **Structured Error Messages:** Every error includes the problem, the fix, and documentation links
 4. **High Auto-Fix Rate:** 60-80% of violations can be automatically fixed by AI assistants
-5. **Comprehensive Security:** 8 security rules with CWE references
+5. **Comprehensive Security:** 18 security rules with CWE references
 6. **Seamless AI Integration:** Works perfectly with Cursor, VS Code Copilot, and other MCP-compatible tools
 7. **Production Ready:** Actively maintained, MIT licensed
 

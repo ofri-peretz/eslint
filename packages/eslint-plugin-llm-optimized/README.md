@@ -7,7 +7,7 @@
 
 > **Keywords:** ESLint plugin, LLM-optimized, AI assistant, auto-fix, ESLint MCP, Model Context Protocol, code quality, security rules, TypeScript ESLint, automated code fixes, GitHub Copilot, Cursor AI, Claude AI, structured error messages, CWE references, deterministic fixes
 
-This plugin provides **20+ ESLint rules** with error messages optimized for both human developers and Large Language Models. Each rule is designed to be auto-fixable and includes structured context that enables AI assistants to understand the violation and apply consistent fixes.
+This plugin provides **30+ ESLint rules** with error messages optimized for both human developers and Large Language Models. Each rule is designed to be auto-fixable and includes structured context that enables AI assistants to understand the violation and apply consistent fixes.
 
 **Designed for ESLint MCP:** This package is specifically optimized to maximize capabilities when used with ESLint's [Model Context Protocol (MCP)](https://eslint.org/docs/latest/use/mcp) integration, enabling seamless AI assistant interactions through structured, parseable error messages.
 
@@ -15,18 +15,18 @@ This plugin provides **20+ ESLint rules** with error messages optimized for both
 
 ## Why Choose This Plugin?
 
-| Feature                        | This Plugin                                           | Standard ESLint Plugins          |
-| ------------------------------ | ----------------------------------------------------- | -------------------------------- |
-| **AI Assistant Compatibility** | ✅ Optimized for LLMs (Copilot, Cursor, Claude)       | ❌ Generic error messages        |
-| **Auto-Fix Rate**              | ✅ 60-80% of violations auto-fixed                    | ⚠️ 20-30% auto-fixable           |
-| **Error Message Quality**      | ✅ Structured with examples, fixes, documentation     | ⚠️ Basic "what's wrong" messages |
-| **ESLint MCP Support**         | ✅ Fully optimized for MCP integration                | ❌ No MCP optimization           |
-| **Security Rules**             | ✅ 8 comprehensive security rules with CWE references | ⚠️ Limited security coverage     |
-| **Deterministic Fixes**        | ✅ Same violation = same fix every time               | ⚠️ Inconsistent fixes            |
-| **Documentation Links**        | ✅ Every error includes relevant docs                 | ❌ No documentation links        |
-| **TypeScript Support**         | ✅ Full TypeScript support                            | ✅ TypeScript support            |
-| **React Rules**                | ✅ 3 React-specific rules                             | ✅ React rules available         |
-| **Performance Impact**         | ✅ <10ms overhead per file                            | ✅ Low overhead                  |
+| Feature                        | This Plugin                                            | Standard ESLint Plugins          |
+| ------------------------------ | ------------------------------------------------------ | -------------------------------- |
+| **AI Assistant Compatibility** | ✅ Optimized for LLMs (Copilot, Cursor, Claude)        | ❌ Generic error messages        |
+| **Auto-Fix Rate**              | ✅ 60-80% of violations auto-fixed                     | ⚠️ 20-30% auto-fixable           |
+| **Error Message Quality**      | ✅ Structured with examples, fixes, documentation      | ⚠️ Basic "what's wrong" messages |
+| **ESLint MCP Support**         | ✅ Fully optimized for MCP integration                 | ❌ No MCP optimization           |
+| **Security Rules**             | ✅ 18 comprehensive security rules with CWE references | ⚠️ Limited security coverage     |
+| **Deterministic Fixes**        | ✅ Same violation = same fix every time                | ⚠️ Inconsistent fixes            |
+| **Documentation Links**        | ✅ Every error includes relevant docs                  | ❌ No documentation links        |
+| **TypeScript Support**         | ✅ Full TypeScript support                             | ✅ TypeScript support            |
+| **React Rules**                | ✅ 3 React-specific rules                              | ✅ React rules available         |
+| **Performance Impact**         | ✅ <10ms overhead per file                             | ✅ Low overhead                  |
 
 **Best for:** Teams using AI coding assistants (GitHub Copilot, Cursor, Claude), projects requiring consistent code quality, security-critical applications, and organizations scaling code standards across multiple teams.
 
@@ -251,8 +251,8 @@ Choose a preset that matches your needs:
 | Preset            | Rules Included                                                 | Best For                             |
 | ----------------- | -------------------------------------------------------------- | ------------------------------------ |
 | **`recommended`** | 10 rules (3 security, 2 architecture, 2 development, 3 others) | Most projects - balanced enforcement |
-| **`strict`**      | All 20+ rules as errors                                        | Maximum code quality enforcement     |
-| **`security`**    | 8 security rules only                                          | Security-critical applications       |
+| **`strict`**      | All 30+ rules as errors                                        | Maximum code quality enforcement     |
+| **`security`**    | 18 security rules only                                         | Security-critical applications       |
 | **`react`**       | 3 React-specific rules                                         | React/Next.js projects               |
 | **`sonarqube`**   | 2 SonarQube-inspired rules                                     | Teams using SonarQube                |
 
@@ -302,16 +302,16 @@ Enable auto-fix in your CI/CD:
 
 ## Key Benefits & Metrics
 
-| Benefit                      | Metric                      | Impact                               |
-| ---------------------------- | --------------------------- | ------------------------------------ |
-| **Auto-Fix Rate**            | 60-80% of violations        | Reduces manual review time by 60-80% |
-| **Error Message Quality**    | Structured with examples    | Faster developer understanding       |
-| **AI Assistant Integration** | 100% compatible             | Seamless AI-powered fixes            |
-| **Security Coverage**        | 8 rules with CWE references | Comprehensive security scanning      |
-| **Performance Overhead**     | <10ms per file              | Negligible impact on build times     |
-| **Deterministic Fixes**      | Same violation = same fix   | Consistent code quality              |
-| **Documentation Links**      | Every error includes docs   | Self-documenting errors              |
-| **Team Scalability**         | Works across all teams      | Standardized code quality            |
+| Benefit                      | Metric                       | Impact                               |
+| ---------------------------- | ---------------------------- | ------------------------------------ |
+| **Auto-Fix Rate**            | 60-80% of violations         | Reduces manual review time by 60-80% |
+| **Error Message Quality**    | Structured with examples     | Faster developer understanding       |
+| **AI Assistant Integration** | 100% compatible              | Seamless AI-powered fixes            |
+| **Security Coverage**        | 18 rules with CWE references | Comprehensive security scanning      |
+| **Performance Overhead**     | <10ms per file               | Negligible impact on build times     |
+| **Deterministic Fixes**      | Same violation = same fix    | Consistent code quality              |
+| **Documentation Links**      | Every error includes docs    | Self-documenting errors              |
+| **Team Scalability**         | Works across all teams       | Standardized code quality            |
 
 ## Use Cases & Scenarios
 
@@ -327,7 +327,7 @@ Enable auto-fix in your CI/CD:
 
 **Scenario:** Application handles sensitive data, requires security-first approach.
 
-**Solution:** Use `configs.security` preset with 8 comprehensive security rules including SQL injection, eval detection, path traversal, and more.
+**Solution:** Use `configs.security` preset with 18 comprehensive security rules including SQL injection, eval detection, path traversal, and more.
 
 **Result:** Security vulnerabilities caught at development time with CWE references and fix suggestions.
 
@@ -647,9 +647,9 @@ This ESLint plugin is specifically designed for AI-assisted development workflow
 1. **Structured Error Messages:** Every error includes the problem, the fix, and documentation links in a parseable format
 2. **High Auto-Fix Rate:** 60-80% of violations can be automatically fixed by AI assistants
 3. **ESLint MCP Optimized:** Fully compatible with ESLint's [Model Context Protocol (MCP)](https://eslint.org/docs/latest/use/mcp) for seamless AI integration
-4. **Comprehensive Security:** 8 security rules with CWE references catch vulnerabilities early
+4. **Comprehensive Security:** 18 security rules with CWE references catch vulnerabilities early
 5. **Deterministic Fixes:** Same violation always produces the same fix, ensuring consistency
-6. **Wide Rule Coverage:** 20+ rules across security, architecture, React, performance, and code quality
+6. **Wide Rule Coverage:** 30+ rules across security, architecture, React, performance, and code quality
 7. **Zero Learning Curve:** Error messages teach developers and AI assistants simultaneously
 8. **Production Ready:** Used in real projects, actively maintained, MIT licensed
 
