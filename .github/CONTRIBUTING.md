@@ -1,5 +1,7 @@
 # 📚 Contributing & Release Guide
 
+> **Note:** This is documentation for contributors. For general project information, see the [main README](../README.md).
+
 Welcome! This document explains how to contribute and release packages for Forge.js.
 
 ---
