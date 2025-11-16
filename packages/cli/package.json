@@ -1,6 +1,6 @@
 {
   "name": "@forge-js/cli",
-  "version": "2.1.0",
+  "version": "1.2.0",
   "description": "CLI tool for managing releases in the forge-js monorepo",
   "type": "commonjs",
   "bin": {

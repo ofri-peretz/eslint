@@ -204,7 +204,26 @@ No special configuration needed for Trusted Publishing - npm handles OIDC automa
 2. Verify GitHub repository is added as trusted publisher
 3. Ensure you own the package scope
 
-### Error: "npm ERR! Not Found"
+### Error: "404 Not Found - PUT https://registry.npmjs.org/eslint-plugin-xxx - Not found"
+
+**Cause:** Trusted Publishing (OIDC) doesn't work for unscoped packages without npm support approval
+
+**Solution:**
+1. **For unscoped packages** (e.g., `eslint-plugin-llm-optimized`, `eslint-plugin-mcp`):
+   - Contact npm support to enable Trusted Publishing for your specific unscoped packages
+   - OR use `NPM_TOKEN` secret as fallback (uncomment in workflow)
+   - OR move packages to a scope (e.g., `@forge-js/eslint-plugin-llm-optimized`)
+
+2. **For scoped packages** (`@forge-js/*`):
+   - Trusted Publishing works automatically if configured in npm organization settings
+   - Verify GitHub repository is added as trusted publisher in npm organization settings
+
+3. **Quick fix (temporary):**
+   - Add `NPM_TOKEN: ${{ secrets.NPM_TOKEN }}` to workflow env for unscoped packages
+   - Generate token at npmjs.com → Access Tokens → Generate New Token (Automation)
+   - Add as GitHub secret: `NPM_TOKEN`
+
+### Error: "npm ERR! Not Found" (Package doesn't exist)
 
 **Cause:** Package not found on npm (private package?)
 

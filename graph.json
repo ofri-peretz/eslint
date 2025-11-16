@@ -1,0 +1,2430 @@
+{
+  "graph": {
+    "nodes": {
+      "eslint-plugin-llm-optimized": {
+        "name": "eslint-plugin-llm-optimized",
+        "type": "lib",
+        "data": {
+          "root": "packages/eslint-plugin-llm-optimized",
+          "targets": {
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "packages/eslint-plugin-llm-optimized",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.js",
+                "{workspaceRoot}/eslint.config.mjs"
+              ],
+              "outputs": [
+                "{projectRoot}/.eslintcache"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:test": {
+              "options": {
+                "cwd": "packages/eslint-plugin-llm-optimized",
+                "command": "vitest"
+              },
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{projectRoot}/coverage"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Run Vite tests",
+                "help": {
+                  "command": "pnpm exec vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "typecheck": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/tsconfig.base.json"
+              ],
+              "options": {
+                "cwd": "packages/eslint-plugin-llm-optimized",
+                "command": "tsc --noEmit -p tsconfig.lib.json"
+              },
+              "metadata": {
+                "description": "Runs type-checking for the project.",
+                "technologies": [
+                  "typescript"
+                ],
+                "help": {
+                  "command": "pnpm exec tsc -p tsconfig.lib.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects eslint-plugin-llm-optimized --includeDependentProjects -- pnpm exec nx build-deps eslint-plugin-llm-optimized"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "nx-release-publish": {
+              "executor": "nx:run-commands",
+              "dependsOn": [
+                "^nx-release-publish"
+              ],
+              "options": {
+                "command": "pnpm publish dist/packages/eslint-plugin-llm-optimized --access public --no-git-checks",
+                "cwd": ""
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@nx/js:tsc",
+              "dependsOn": [
+                "^build",
+                "test"
+              ],
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "dist/packages/eslint-plugin-llm-optimized",
+                "main": "packages/eslint-plugin-llm-optimized/src/index.ts",
+                "tsConfig": "packages/eslint-plugin-llm-optimized/tsconfig.lib.json",
+                "assets": [
+                  "packages/eslint-plugin-llm-optimized/README.md",
+                  "packages/eslint-plugin-llm-optimized/CHANGELOG.md"
+                ]
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "production",
+                "^production"
+              ]
+            },
+            "test": {
+              "executor": "@nx/vite:test",
+              "outputs": [
+                "{projectRoot}/coverage"
+              ],
+              "options": {
+                "configFile": "packages/eslint-plugin-llm-optimized/vitest.config.mts",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "coverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production"
+              ]
+            },
+            "publish": {
+              "executor": "nx:run-commands",
+              "dependsOn": [
+                "build"
+              ],
+              "options": {
+                "command": "npm publish dist/packages/eslint-plugin-llm-optimized --access public",
+                "cwd": ""
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "metadata": {
+            "targetGroups": {},
+            "description": "ESLint rules that AI assistants can actually fix - error messages optimized for both human developers and Large Language Models",
+            "js": {
+              "packageName": "eslint-plugin-llm-optimized",
+              "packageVersion": "2.1.0",
+              "packageExports": {
+                ".": {
+                  "types": "./src/index.d.ts",
+                  "default": "./src/index.js"
+                },
+                "./types": {
+                  "types": "./src/types/index.d.ts",
+                  "default": "./src/types/index.js"
+                }
+              },
+              "packageMain": "./src/index.js",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "name": "eslint-plugin-llm-optimized",
+          "tags": [
+            "npm:public",
+            "npm:eslint",
+            "npm:eslint-plugin",
+            "npm:typescript",
+            "npm:linting",
+            "npm:llm-optimized",
+            "npm:code-quality",
+            "npm:ast",
+            "npm:static-analysis"
+          ],
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "packages/eslint-plugin-llm-optimized/src",
+          "projectType": "library",
+          "release": {
+            "version": {
+              "manifestRootsToUpdate": [
+                "{projectRoot}",
+                "dist/{projectRoot}"
+              ],
+              "currentVersionResolver": "git-tag",
+              "fallbackCurrentVersionResolver": "disk"
+            }
+          },
+          "implicitDependencies": []
+        }
+      },
+      "eslint-plugin-mcp-optimized": {
+        "name": "eslint-plugin-mcp-optimized",
+        "type": "lib",
+        "data": {
+          "root": "packages/eslint-plugin-mcp-optimized",
+          "targets": {
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "packages/eslint-plugin-mcp-optimized",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.js",
+                "{workspaceRoot}/eslint.config.mjs"
+              ],
+              "outputs": [
+                "{projectRoot}/.eslintcache"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:test": {
+              "options": {
+                "cwd": "packages/eslint-plugin-mcp-optimized",
+                "command": "vitest"
+              },
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{projectRoot}/coverage"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Run Vite tests",
+                "help": {
+                  "command": "pnpm exec vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "typecheck": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/tsconfig.base.json"
+              ],
+              "options": {
+                "cwd": "packages/eslint-plugin-mcp-optimized",
+                "command": "tsc --noEmit -p tsconfig.lib.json"
+              },
+              "metadata": {
+                "description": "Runs type-checking for the project.",
+                "technologies": [
+                  "typescript"
+                ],
+                "help": {
+                  "command": "pnpm exec tsc -p tsconfig.lib.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects eslint-plugin-mcp-optimized --includeDependentProjects -- pnpm exec nx build-deps eslint-plugin-mcp-optimized"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "nx-release-publish": {
+              "executor": "nx:run-commands",
+              "dependsOn": [
+                "^nx-release-publish"
+              ],
+              "options": {
+                "command": "pnpm publish dist/packages/eslint-plugin-mcp-optimized --access public --no-git-checks",
+                "cwd": ""
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@nx/js:tsc",
+              "dependsOn": [
+                "^build",
+                "test"
+              ],
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "dist/packages/eslint-plugin-mcp-optimized",
+                "main": "packages/eslint-plugin-mcp-optimized/src/index.ts",
+                "tsConfig": "packages/eslint-plugin-mcp-optimized/tsconfig.lib.json",
+                "assets": [
+                  "packages/eslint-plugin-mcp-optimized/README.md",
+                  "packages/eslint-plugin-mcp-optimized/LICENSE",
+                  "packages/eslint-plugin-mcp-optimized/CHANGELOG.md"
+                ]
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "production",
+                "^production"
+              ]
+            },
+            "test": {
+              "executor": "@nx/vite:test",
+              "outputs": [
+                "{projectRoot}/coverage"
+              ],
+              "options": {
+                "configFile": "packages/eslint-plugin-mcp-optimized/vitest.config.mts",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "coverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production"
+              ]
+            },
+            "publish": {
+              "executor": "nx:run-commands",
+              "dependsOn": [
+                "build"
+              ],
+              "options": {
+                "command": "npm publish dist/packages/eslint-plugin-mcp-optimized --access public",
+                "cwd": ""
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "metadata": {
+            "targetGroups": {},
+            "description": "ESLint rules optimized for Model Context Protocol (MCP) - AI assistants can actually fix these",
+            "js": {
+              "packageName": "eslint-plugin-mcp-optimized",
+              "packageVersion": "0.3.0",
+              "packageExports": {
+                ".": {
+                  "types": "./src/index.d.ts",
+                  "default": "./src/index.js"
+                },
+                "./types": {
+                  "types": "./src/types/index.d.ts",
+                  "default": "./src/types/index.js"
+                }
+              },
+              "packageMain": "./src/index.js",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "name": "eslint-plugin-mcp-optimized",
+          "tags": [
+            "npm:public",
+            "npm:eslint",
+            "npm:eslint-plugin",
+            "npm:typescript",
+            "npm:linting",
+            "npm:mcp",
+            "npm:mcp-optimized",
+            "npm:model-context-protocol",
+            "npm:ai",
+            "npm:code-quality",
+            "npm:ast",
+            "npm:static-analysis"
+          ],
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "packages/eslint-plugin-mcp-optimized/src",
+          "projectType": "library",
+          "release": {
+            "version": {
+              "manifestRootsToUpdate": [
+                "{projectRoot}",
+                "dist/{projectRoot}"
+              ],
+              "currentVersionResolver": "git-tag",
+              "fallbackCurrentVersionResolver": "disk"
+            }
+          },
+          "implicitDependencies": []
+        }
+      },
+      "eslint-plugin-utils": {
+        "name": "eslint-plugin-utils",
+        "type": "lib",
+        "data": {
+          "root": "packages/eslint-plugin-utils",
+          "targets": {
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "packages/eslint-plugin-utils",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.js",
+                "{workspaceRoot}/eslint.config.mjs"
+              ],
+              "outputs": [
+                "{projectRoot}/.eslintcache"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:test": {
+              "options": {
+                "cwd": "packages/eslint-plugin-utils",
+                "command": "vitest"
+              },
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{projectRoot}/coverage"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Run Vite tests",
+                "help": {
+                  "command": "pnpm exec vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "typecheck": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/tsconfig.base.json"
+              ],
+              "options": {
+                "cwd": "packages/eslint-plugin-utils",
+                "command": "tsc --noEmit -p tsconfig.lib.json"
+              },
+              "metadata": {
+                "description": "Runs type-checking for the project.",
+                "technologies": [
+                  "typescript"
+                ],
+                "help": {
+                  "command": "pnpm exec tsc -p tsconfig.lib.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects eslint-plugin-utils --includeDependentProjects -- pnpm exec nx build-deps eslint-plugin-utils"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "nx-release-publish": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm publish dist/packages/eslint-plugin-utils --access public --no-git-checks",
+                "cwd": ""
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@nx/js:tsc",
+              "dependsOn": [
+                "^build",
+                "test"
+              ],
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "dist/packages/eslint-plugin-utils",
+                "main": "packages/eslint-plugin-utils/src/index.ts",
+                "tsConfig": "packages/eslint-plugin-utils/tsconfig.lib.json",
+                "assets": [
+                  "packages/eslint-plugin-utils/*.md",
+                  "packages/eslint-plugin-utils/LICENSE",
+                  "packages/eslint-plugin-utils/package.json"
+                ]
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "production",
+                "^production"
+              ]
+            },
+            "test": {
+              "executor": "@nx/vite:test",
+              "outputs": [
+                "{projectRoot}/coverage"
+              ],
+              "options": {
+                "configFile": "packages/eslint-plugin-utils/vitest.config.mts",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "coverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production"
+              ]
+            },
+            "publish": {
+              "executor": "nx:run-commands",
+              "dependsOn": [
+                "build"
+              ],
+              "options": {
+                "command": "npm publish dist/packages/eslint-plugin-utils --access public",
+                "cwd": ""
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "metadata": {
+            "targetGroups": {},
+            "description": "Utilities for building LLM-optimized ESLint rules",
+            "js": {
+              "packageName": "@forge-js/eslint-plugin-utils",
+              "packageVersion": "1.1.0",
+              "packageMain": "./src/index.js",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "name": "eslint-plugin-utils",
+          "tags": [
+            "npm:public",
+            "npm:eslint",
+            "npm:eslint-plugin",
+            "npm:typescript",
+            "npm:utilities",
+            "npm:ast",
+            "npm:type-checking",
+            "npm:plugin-development"
+          ],
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "packages/eslint-plugin-utils/src",
+          "projectType": "library",
+          "release": {
+            "version": {
+              "manifestRootsToUpdate": [
+                "{projectRoot}",
+                "dist/{projectRoot}"
+              ],
+              "currentVersionResolver": "git-tag",
+              "fallbackCurrentVersionResolver": "disk"
+            }
+          },
+          "implicitDependencies": []
+        }
+      },
+      "eslint-plugin-llm": {
+        "name": "eslint-plugin-llm",
+        "type": "lib",
+        "data": {
+          "root": "packages/eslint-plugin-llm",
+          "targets": {
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "packages/eslint-plugin-llm",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.js",
+                "{workspaceRoot}/eslint.config.mjs"
+              ],
+              "outputs": [
+                "{projectRoot}/.eslintcache"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:test": {
+              "options": {
+                "cwd": "packages/eslint-plugin-llm",
+                "command": "vitest"
+              },
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{projectRoot}/coverage"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Run Vite tests",
+                "help": {
+                  "command": "pnpm exec vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "typecheck": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/tsconfig.base.json"
+              ],
+              "options": {
+                "cwd": "packages/eslint-plugin-llm",
+                "command": "tsc --noEmit -p tsconfig.lib.json"
+              },
+              "metadata": {
+                "description": "Runs type-checking for the project.",
+                "technologies": [
+                  "typescript"
+                ],
+                "help": {
+                  "command": "pnpm exec tsc -p tsconfig.lib.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects eslint-plugin-llm --includeDependentProjects -- pnpm exec nx build-deps eslint-plugin-llm"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "nx-release-publish": {
+              "executor": "nx:run-commands",
+              "dependsOn": [
+                "^nx-release-publish"
+              ],
+              "options": {
+                "command": "pnpm publish dist/packages/eslint-plugin-llm --access public --no-git-checks",
+                "cwd": ""
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@nx/js:tsc",
+              "dependsOn": [
+                "^build",
+                "test"
+              ],
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "dist/packages/eslint-plugin-llm",
+                "main": "packages/eslint-plugin-llm/src/index.ts",
+                "tsConfig": "packages/eslint-plugin-llm/tsconfig.lib.json",
+                "assets": [
+                  "packages/eslint-plugin-llm/README.md",
+                  "packages/eslint-plugin-llm/LICENSE",
+                  "packages/eslint-plugin-llm/CHANGELOG.md"
+                ]
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "production",
+                "^production"
+              ]
+            },
+            "test": {
+              "executor": "@nx/vite:test",
+              "outputs": [
+                "{projectRoot}/coverage"
+              ],
+              "options": {
+                "configFile": "packages/eslint-plugin-llm/vitest.config.mts",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "coverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production"
+              ]
+            },
+            "publish": {
+              "executor": "nx:run-commands",
+              "dependsOn": [
+                "build"
+              ],
+              "options": {
+                "command": "npm publish dist/packages/eslint-plugin-llm --access public",
+                "cwd": ""
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "metadata": {
+            "targetGroups": {},
+            "description": "ESLint rules optimized for Large Language Models - AI assistants can actually fix these",
+            "js": {
+              "packageName": "eslint-plugin-llm",
+              "packageVersion": "0.3.0",
+              "packageExports": {
+                ".": {
+                  "types": "./src/index.d.ts",
+                  "default": "./src/index.js"
+                },
+                "./types": {
+                  "types": "./src/types/index.d.ts",
+                  "default": "./src/types/index.js"
+                }
+              },
+              "packageMain": "./src/index.js",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "name": "eslint-plugin-llm",
+          "tags": [
+            "npm:public",
+            "npm:eslint",
+            "npm:eslint-plugin",
+            "npm:typescript",
+            "npm:linting",
+            "npm:llm",
+            "npm:ai",
+            "npm:code-quality",
+            "npm:ast",
+            "npm:static-analysis"
+          ],
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "packages/eslint-plugin-llm/src",
+          "projectType": "library",
+          "release": {
+            "version": {
+              "manifestRootsToUpdate": [
+                "{projectRoot}",
+                "dist/{projectRoot}"
+              ],
+              "currentVersionResolver": "git-tag",
+              "fallbackCurrentVersionResolver": "disk"
+            }
+          },
+          "implicitDependencies": []
+        }
+      },
+      "eslint-plugin-mcp": {
+        "name": "eslint-plugin-mcp",
+        "type": "lib",
+        "data": {
+          "root": "packages/eslint-plugin-mcp",
+          "targets": {
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "packages/eslint-plugin-mcp",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.js",
+                "{workspaceRoot}/eslint.config.mjs"
+              ],
+              "outputs": [
+                "{projectRoot}/.eslintcache"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:test": {
+              "options": {
+                "cwd": "packages/eslint-plugin-mcp",
+                "command": "vitest"
+              },
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{projectRoot}/coverage"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Run Vite tests",
+                "help": {
+                  "command": "pnpm exec vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "typecheck": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/tsconfig.base.json"
+              ],
+              "options": {
+                "cwd": "packages/eslint-plugin-mcp",
+                "command": "tsc --noEmit -p tsconfig.lib.json"
+              },
+              "metadata": {
+                "description": "Runs type-checking for the project.",
+                "technologies": [
+                  "typescript"
+                ],
+                "help": {
+                  "command": "pnpm exec tsc -p tsconfig.lib.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects eslint-plugin-mcp --includeDependentProjects -- pnpm exec nx build-deps eslint-plugin-mcp"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "nx-release-publish": {
+              "executor": "nx:run-commands",
+              "dependsOn": [
+                "^nx-release-publish"
+              ],
+              "options": {
+                "command": "pnpm publish dist/packages/eslint-plugin-mcp --access public --no-git-checks",
+                "cwd": ""
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@nx/js:tsc",
+              "dependsOn": [
+                "^build",
+                "test"
+              ],
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "dist/packages/eslint-plugin-mcp",
+                "main": "packages/eslint-plugin-mcp/src/index.ts",
+                "tsConfig": "packages/eslint-plugin-mcp/tsconfig.lib.json",
+                "assets": [
+                  "packages/eslint-plugin-mcp/README.md",
+                  "packages/eslint-plugin-mcp/LICENSE",
+                  "packages/eslint-plugin-mcp/CHANGELOG.md"
+                ]
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "production",
+                "^production"
+              ]
+            },
+            "test": {
+              "executor": "@nx/vite:test",
+              "outputs": [
+                "{projectRoot}/coverage"
+              ],
+              "options": {
+                "configFile": "packages/eslint-plugin-mcp/vitest.config.mts",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "coverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production"
+              ]
+            },
+            "publish": {
+              "executor": "nx:run-commands",
+              "dependsOn": [
+                "build"
+              ],
+              "options": {
+                "command": "npm publish dist/packages/eslint-plugin-mcp --access public",
+                "cwd": ""
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "metadata": {
+            "targetGroups": {},
+            "description": "ESLint rules optimized for Model Context Protocol (MCP) - AI assistants can actually fix these",
+            "js": {
+              "packageName": "eslint-plugin-mcp",
+              "packageVersion": "0.3.0",
+              "packageExports": {
+                ".": {
+                  "types": "./src/index.d.ts",
+                  "default": "./src/index.js"
+                },
+                "./types": {
+                  "types": "./src/types/index.d.ts",
+                  "default": "./src/types/index.js"
+                }
+              },
+              "packageMain": "./src/index.js",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "name": "eslint-plugin-mcp",
+          "tags": [
+            "npm:public",
+            "npm:eslint",
+            "npm:eslint-plugin",
+            "npm:typescript",
+            "npm:linting",
+            "npm:mcp",
+            "npm:model-context-protocol",
+            "npm:ai",
+            "npm:code-quality",
+            "npm:ast",
+            "npm:static-analysis"
+          ],
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "packages/eslint-plugin-mcp/src",
+          "projectType": "library",
+          "release": {
+            "version": {
+              "manifestRootsToUpdate": [
+                "{projectRoot}",
+                "dist/{projectRoot}"
+              ],
+              "currentVersionResolver": "git-tag",
+              "fallbackCurrentVersionResolver": "disk"
+            }
+          },
+          "implicitDependencies": []
+        }
+      },
+      "eslint-plugin": {
+        "name": "eslint-plugin",
+        "type": "lib",
+        "data": {
+          "root": "packages/eslint-plugin",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "options": {
+                "lintFilePatterns": [
+                  "packages/eslint-plugin/**/*.{ts,tsx,js,jsx}"
+                ]
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.js",
+                "{workspaceRoot}/eslint.config.mjs"
+              ],
+              "cache": true
+            },
+            "vite:test": {
+              "options": {
+                "cwd": "packages/eslint-plugin",
+                "command": "vitest"
+              },
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{projectRoot}/coverage"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Run Vite tests",
+                "help": {
+                  "command": "pnpm exec vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "typecheck": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/tsconfig.base.json"
+              ],
+              "options": {
+                "cwd": "packages/eslint-plugin",
+                "command": "tsc --noEmit -p tsconfig.lib.json"
+              },
+              "metadata": {
+                "description": "Runs type-checking for the project.",
+                "technologies": [
+                  "typescript"
+                ],
+                "help": {
+                  "command": "pnpm exec tsc -p tsconfig.lib.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects eslint-plugin --includeDependentProjects -- pnpm exec nx build-deps eslint-plugin"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "nx-release-publish": {
+              "executor": "nx:run-commands",
+              "dependsOn": [
+                "^nx-release-publish"
+              ],
+              "options": {
+                "command": "pnpm publish dist/packages/eslint-plugin --access public --no-git-checks",
+                "cwd": ""
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@nx/js:tsc",
+              "dependsOn": [
+                "^build",
+                "test"
+              ],
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "dist/packages/eslint-plugin",
+                "main": "packages/eslint-plugin/src/index.ts",
+                "tsConfig": "packages/eslint-plugin/tsconfig.lib.json",
+                "assets": [
+                  "packages/eslint-plugin/docs/**/*.md",
+                  "packages/eslint-plugin/README.md",
+                  "packages/eslint-plugin/CHANGELOG.md",
+                  {
+                    "glob": "packages/eslint-plugin/README.md",
+                    "input": "packages/eslint-plugin",
+                    "output": "./"
+                  }
+                ]
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "production",
+                "^production"
+              ]
+            },
+            "test": {
+              "executor": "@nx/vite:test",
+              "outputs": [
+                "{projectRoot}/coverage"
+              ],
+              "options": {
+                "configFile": "packages/eslint-plugin/vitest.config.mts",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "coverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production"
+              ]
+            },
+            "publish": {
+              "executor": "nx:run-commands",
+              "dependsOn": [
+                "build"
+              ],
+              "options": {
+                "command": "npm publish dist/packages/eslint-plugin --access public",
+                "cwd": ""
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "metadata": {
+            "targetGroups": {},
+            "description": "A solid TypeScript-based ESLint plugin infrastructure inspired by typescript-eslint",
+            "js": {
+              "packageName": "@forge-js/eslint-plugin-llm-optimized",
+              "packageVersion": "1.1.0",
+              "packageExports": {
+                ".": {
+                  "types": "./src/index.d.ts",
+                  "default": "./src/index.js"
+                },
+                "./types": {
+                  "types": "./src/types/index.d.ts",
+                  "default": "./src/types/index.js"
+                }
+              },
+              "packageMain": "./src/index.js",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "name": "eslint-plugin",
+          "tags": [
+            "npm:public",
+            "npm:eslint",
+            "npm:eslint-plugin",
+            "npm:typescript",
+            "npm:linting",
+            "npm:llm-optimized",
+            "npm:code-quality",
+            "npm:ast",
+            "npm:static-analysis"
+          ],
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "packages/eslint-plugin/src",
+          "projectType": "library",
+          "release": {
+            "version": {
+              "manifestRootsToUpdate": [
+                "{projectRoot}",
+                "dist/{projectRoot}"
+              ],
+              "currentVersionResolver": "git-tag",
+              "fallbackCurrentVersionResolver": "disk",
+              "generatorOptions": {
+                "packageRoot": "{projectRoot}",
+                "currentVersionResolver": "git-tag"
+              }
+            }
+          },
+          "implicitDependencies": []
+        }
+      },
+      "playground": {
+        "name": "playground",
+        "type": "app",
+        "data": {
+          "root": "apps/playground",
+          "targets": {
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "apps/playground",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.js",
+                "{workspaceRoot}/eslint.config.mjs"
+              ],
+              "outputs": [
+                "{projectRoot}/.eslintcache"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "options": {
+                "cwd": "apps/playground",
+                "command": "vite build"
+              },
+              "cache": true,
+              "dependsOn": [
+                "^build",
+                "test"
+              ],
+              "inputs": [
+                "production",
+                "^production"
+              ],
+              "outputs": [
+                "{projectRoot}/dist",
+                "{projectRoot}/.tsbuildinfo"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Run Vite build",
+                "help": {
+                  "command": "pnpm exec vite build --help",
+                  "example": {
+                    "options": {
+                      "sourcemap": true,
+                      "manifest": "manifest.json"
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {
+                "production": {}
+              },
+              "parallelism": true
+            },
+            "serve": {
+              "continuous": true,
+              "options": {
+                "cwd": "apps/playground",
+                "command": "vite"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Starts Vite dev server",
+                "help": {
+                  "command": "pnpm exec vite --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                },
+                "deprecated": "Use devTargetName instead. This option will be removed in Nx 22."
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "dev": {
+              "continuous": true,
+              "options": {
+                "cwd": "apps/playground",
+                "command": "vite"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Starts Vite dev server",
+                "help": {
+                  "command": "pnpm exec vite --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "preview": {
+              "continuous": true,
+              "dependsOn": [
+                "build"
+              ],
+              "options": {
+                "cwd": "apps/playground",
+                "command": "vite preview"
+              },
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Locally preview Vite production build",
+                "help": {
+                  "command": "pnpm exec vite preview --help",
+                  "example": {
+                    "options": {
+                      "port": 3000
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve-static": {
+              "continuous": true,
+              "executor": "@nx/web:file-server",
+              "options": {
+                "buildTarget": "build",
+                "spa": true
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "typecheck": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/tsconfig.base.json"
+              ],
+              "metadata": {
+                "description": "Runs type-checking for the project.",
+                "technologies": [
+                  "typescript",
+                  "typescript"
+                ],
+                "help": {
+                  "command": "pnpm exec tsc -p tsconfig.app.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "options": {
+                "cwd": "apps/playground",
+                "command": "tsc --noEmit -p tsconfig.app.json"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects playground --includeDependentProjects -- pnpm exec nx build-deps playground"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:test": {
+              "options": {
+                "cwd": "apps/playground",
+                "command": "vitest"
+              },
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{projectRoot}/coverage"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Run Vite tests",
+                "help": {
+                  "command": "pnpm exec vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "test": {
+              "executor": "@nx/vite:test",
+              "outputs": [
+                "{projectRoot}/coverage"
+              ],
+              "options": {
+                "configFile": "apps/playground/vitest.config.mts",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "coverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production"
+              ]
+            }
+          },
+          "projectType": "application",
+          "metadata": {},
+          "name": "playground",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "apps/playground/src",
+          "tags": [],
+          "implicitDependencies": []
+        }
+      },
+      "cli": {
+        "name": "cli",
+        "type": "lib",
+        "data": {
+          "root": "packages/cli",
+          "targets": {
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "packages/cli",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.js",
+                "{workspaceRoot}/eslint.config.mjs"
+              ],
+              "outputs": [
+                "{projectRoot}/.eslintcache"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "vite:test": {
+              "options": {
+                "cwd": "packages/cli",
+                "command": "vitest"
+              },
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "vitest"
+                  ]
+                },
+                {
+                  "env": "CI"
+                }
+              ],
+              "outputs": [
+                "{projectRoot}/coverage"
+              ],
+              "metadata": {
+                "technologies": [
+                  "vite"
+                ],
+                "description": "Run Vite tests",
+                "help": {
+                  "command": "pnpm exec vitest --help",
+                  "example": {
+                    "options": {
+                      "bail": 1,
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "typecheck": {
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/tsconfig.base.json"
+              ],
+              "options": {
+                "cwd": "packages/cli",
+                "command": "tsc --noEmit -p tsconfig.json"
+              },
+              "metadata": {
+                "description": "Runs type-checking for the project.",
+                "technologies": [
+                  "typescript"
+                ],
+                "help": {
+                  "command": "pnpm exec tsc -p tsconfig.json --help",
+                  "example": {
+                    "options": {
+                      "noEmit": true
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build-deps": {
+              "dependsOn": [
+                "^build"
+              ],
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "executor": "nx:noop"
+            },
+            "watch-deps": {
+              "continuous": true,
+              "dependsOn": [
+                "build-deps"
+              ],
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm exec nx watch --projects cli --includeDependentProjects -- pnpm exec nx build-deps cli"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "dev": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "dev"
+              },
+              "metadata": {
+                "scriptContent": "node ./bin/forge.js",
+                "runCommand": "pnpm run dev"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "nx-release-publish": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "pnpm publish dist/packages/cli --access public --no-git-checks",
+                "cwd": ""
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@nx/js:tsc",
+              "dependsOn": [
+                "^build",
+                "test"
+              ],
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "dist/packages/cli",
+                "main": "packages/cli/src/index.ts",
+                "tsConfig": "packages/cli/tsconfig.json",
+                "assets": [
+                  "packages/cli/README.md",
+                  "packages/cli/package.json",
+                  {
+                    "glob": "*",
+                    "input": "packages/cli/bin",
+                    "output": "bin"
+                  }
+                ]
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "production",
+                "^production"
+              ]
+            },
+            "publish": {
+              "executor": "nx:run-commands",
+              "dependsOn": [
+                "build"
+              ],
+              "options": {
+                "command": "npm publish dist/packages/cli --access public",
+                "cwd": ""
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "test": {
+              "executor": "@nx/vite:test",
+              "outputs": [
+                "{projectRoot}/coverage"
+              ],
+              "options": {
+                "configFile": "packages/cli/vitest.config.mts",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "coverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production"
+              ]
+            }
+          },
+          "metadata": {
+            "targetGroups": {
+              "NPM Scripts": [
+                "dev"
+              ]
+            },
+            "description": "CLI tool for managing releases in the forge-js monorepo",
+            "js": {
+              "packageName": "@forge-js/cli",
+              "packageVersion": "2.1.0",
+              "packageMain": "./src/index.js",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "name": "cli",
+          "tags": [
+            "npm:public",
+            "npm:cli",
+            "npm:monorepo",
+            "npm:release-management",
+            "npm:nx",
+            "npm:versioning",
+            "npm:semantic-versioning"
+          ],
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "packages/cli/src",
+          "projectType": "library",
+          "release": {
+            "version": {
+              "manifestRootsToUpdate": [
+                "{projectRoot}",
+                "dist/{projectRoot}"
+              ],
+              "currentVersionResolver": "git-tag",
+              "fallbackCurrentVersionResolver": "disk"
+            }
+          },
+          "implicitDependencies": []
+        }
+      },
+      "forge-js": {
+        "name": "forge-js",
+        "type": "lib",
+        "data": {
+          "root": ".",
+          "name": "forge-js",
+          "tags": [
+            "npm:private",
+            "npm:eslint",
+            "npm:eslint-plugin",
+            "npm:typescript",
+            "npm:linting"
+          ],
+          "metadata": {
+            "targetGroups": {
+              "NPM Scripts": [
+                "preinstall",
+                "prepare",
+                "lint:workflows",
+                "release",
+                "release:dry-run",
+                "release:first",
+                "release:publish",
+                "release:version",
+                "publish:plugin",
+                "publish:utils",
+                "publish:cli",
+                "publish:all",
+                "ci:trigger",
+                "ci:status",
+                "ci",
+                "sync-tags",
+                "sync-tags:dry-run",
+                "check-links",
+                "check-versions"
+              ]
+            },
+            "description": "ESLint plugin monorepo with LLM-optimized rules",
+            "js": {
+              "packageName": "forge-js",
+              "packageVersion": "1.0.0",
+              "packageMain": "index.js",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "targets": {
+            "preinstall": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "preinstall"
+              },
+              "metadata": {
+                "scriptContent": "npx only-allow pnpm",
+                "runCommand": "pnpm run preinstall"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "prepare": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "prepare"
+              },
+              "metadata": {
+                "scriptContent": "husky",
+                "runCommand": "pnpm run prepare"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint:workflows": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "lint:workflows"
+              },
+              "metadata": {
+                "scriptContent": "actionlint",
+                "runCommand": "pnpm run lint:workflows"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "release": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "release"
+              },
+              "metadata": {
+                "scriptContent": "nx release",
+                "runCommand": "pnpm run release"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "release:dry-run": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "release:dry-run"
+              },
+              "metadata": {
+                "scriptContent": "nx release --dry-run",
+                "runCommand": "pnpm run release:dry-run"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "release:first": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "release:first"
+              },
+              "metadata": {
+                "scriptContent": "nx release --first-release",
+                "runCommand": "pnpm run release:first"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "release:publish": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "release:publish"
+              },
+              "metadata": {
+                "scriptContent": "nx release publish",
+                "runCommand": "pnpm run release:publish"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "release:version": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "release:version"
+              },
+              "metadata": {
+                "scriptContent": "nx release --skip-publish",
+                "runCommand": "pnpm run release:version"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "publish:plugin": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "publish:plugin"
+              },
+              "metadata": {
+                "scriptContent": "nx run eslint-plugin:publish",
+                "runCommand": "pnpm run publish:plugin"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "publish:utils": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "publish:utils"
+              },
+              "metadata": {
+                "scriptContent": "nx run eslint-plugin-utils:publish",
+                "runCommand": "pnpm run publish:utils"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "publish:cli": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "publish:cli"
+              },
+              "metadata": {
+                "scriptContent": "nx run cli:publish",
+                "runCommand": "pnpm run publish:cli"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "publish:all": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "publish:all"
+              },
+              "metadata": {
+                "scriptContent": "pnpm nx run-many -t build --all && nx release publish",
+                "runCommand": "pnpm run publish:all"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "ci:trigger": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "ci:trigger"
+              },
+              "metadata": {
+                "scriptContent": "gh workflow run ci.yml --ref local-playground-app && echo '✅ Workflow triggered!'",
+                "runCommand": "pnpm run ci:trigger"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "ci:status": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "ci:status"
+              },
+              "metadata": {
+                "scriptContent": "tsx scripts/ci-status.ts",
+                "runCommand": "pnpm run ci:status"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "ci": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "ci"
+              },
+              "metadata": {
+                "scriptContent": "tsx scripts/ci-status.ts",
+                "runCommand": "pnpm run ci"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "sync-tags": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "sync-tags"
+              },
+              "metadata": {
+                "scriptContent": "tsx scripts/sync-git-tags.ts",
+                "runCommand": "pnpm run sync-tags"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "sync-tags:dry-run": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "sync-tags:dry-run"
+              },
+              "metadata": {
+                "scriptContent": "tsx scripts/sync-git-tags.ts --dry-run",
+                "runCommand": "pnpm run sync-tags:dry-run"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "check-links": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "check-links"
+              },
+              "metadata": {
+                "scriptContent": "tsx scripts/check-markdown-links.ts",
+                "runCommand": "pnpm run check-links"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "check-versions": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "check-versions"
+              },
+              "metadata": {
+                "scriptContent": "tsx scripts/check-version-alignment.ts",
+                "runCommand": "pnpm run check-versions"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "delete-branches": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "./scripts/delete-branches.sh",
+                "cwd": "",
+                "forwardAllArgs": true
+              },
+              "cache": false,
+              "configurations": {},
+              "parallelism": true
+            },
+            "local-registry": {
+              "executor": "@nx/js:verdaccio",
+              "options": {
+                "port": 4873,
+                "config": ".verdaccio/config.yml",
+                "storage": "tmp/local-registry/storage"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "continuous": true
+            },
+            "verify-husky": {
+              "executor": "nx:run-commands",
+              "options": {
+                "commands": [
+                  {
+                    "command": "test -d .husky || (echo '❌ .husky directory not found. Run: pnpm install' && exit 1)",
+                    "description": "Check .husky directory exists"
+                  },
+                  {
+                    "command": "test -f .husky/commit-msg || (echo '❌ commit-msg hook not found. Run: pnpm install' && exit 1)",
+                    "description": "Check commit-msg hook exists"
+                  },
+                  {
+                    "command": "test -x .husky/commit-msg || (echo '❌ commit-msg hook not executable. Run: chmod +x .husky/*' && exit 1)",
+                    "description": "Check hook is executable"
+                  },
+                  {
+                    "command": "test -f commitlint.config.mjs || (echo '❌ commitlint.config.mjs not found' && exit 1)",
+                    "description": "Check commitlint config exists"
+                  },
+                  {
+                    "command": "git config --get commit.template > /dev/null 2>&1 || git config commit.template .gitmessage",
+                    "description": "Configure git commit template"
+                  },
+                  {
+                    "command": "echo 'feat: test message' | npx --no commitlint > /dev/null 2>&1 || (echo '❌ commitlint not working' && exit 1)",
+                    "description": "Test commitlint with valid message"
+                  },
+                  {
+                    "command": "echo 'invalid message' | npx --no commitlint > /dev/null 2>&1 && (echo '❌ commitlint not rejecting invalid messages' && exit 1) || true",
+                    "description": "Test commitlint with invalid message"
+                  },
+                  {
+                    "command": "echo '✅ Husky verification passed!'",
+                    "description": "Success message"
+                  }
+                ],
+                "parallel": false,
+                "color": true
+              },
+              "outputs": [],
+              "configurations": {},
+              "parallelism": true
+            },
+            "verify-husky-verbose": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "node scripts/verify-husky.js",
+                "color": true
+              },
+              "outputs": [],
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "$schema": "node_modules/nx/schemas/project-schema.json",
+          "implicitDependencies": []
+        }
+      }
+    },
+    "dependencies": {
+      "eslint-plugin-llm-optimized": [
+        {
+          "source": "eslint-plugin-llm-optimized",
+          "target": "eslint-plugin",
+          "type": "static"
+        }
+      ],
+      "eslint-plugin-mcp-optimized": [
+        {
+          "source": "eslint-plugin-mcp-optimized",
+          "target": "eslint-plugin",
+          "type": "static"
+        }
+      ],
+      "eslint-plugin-utils": [],
+      "eslint-plugin-llm": [
+        {
+          "source": "eslint-plugin-llm",
+          "target": "eslint-plugin",
+          "type": "static"
+        }
+      ],
+      "eslint-plugin-mcp": [
+        {
+          "source": "eslint-plugin-mcp",
+          "target": "eslint-plugin",
+          "type": "static"
+        }
+      ],
+      "eslint-plugin": [
+        {
+          "source": "eslint-plugin",
+          "target": "eslint-plugin-utils",
+          "type": "static"
+        }
+      ],
+      "playground": [],
+      "cli": [],
+      "forge-js": []
+    }
+  }
+}

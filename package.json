@@ -24,7 +24,8 @@
     "sync-tags": "tsx scripts/sync-git-tags.ts",
     "sync-tags:dry-run": "tsx scripts/sync-git-tags.ts --dry-run",
     "check-links": "tsx scripts/check-markdown-links.ts",
-    "check-versions": "tsx scripts/check-version-alignment.ts"
+    "check-versions": "tsx scripts/check-version-alignment.ts",
+    "setup-branch-protection": "bash scripts/setup-branch-protection.sh"
   },
   "keywords": [
     "eslint",
