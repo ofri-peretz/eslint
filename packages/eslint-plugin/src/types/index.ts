@@ -59,6 +59,10 @@ import type { Options as NoUnsafeDynamicRequireOptions } from '../rules/security
 import type { Options as NoHardcodedCredentialsOptions } from '../rules/security/no-hardcoded-credentials';
 import type { Options as NoWeakCryptoOptions } from '../rules/security/no-weak-crypto';
 import type { Options as NoInsufficientRandomOptions } from '../rules/security/no-insufficient-random';
+import type { Options as NoUnvalidatedUserInputOptions } from '../rules/security/no-unvalidated-user-input';
+import type { Options as NoUnsanitizedHtmlOptions } from '../rules/security/no-unsanitized-html';
+import type { Options as NoUnescapedUrlParameterOptions } from '../rules/security/no-unescaped-url-parameter';
+import type { Options as NoMissingCorsCheckOptions } from '../rules/security/no-missing-cors-check';
 
 // Export all types with consistent naming
 export type {
@@ -85,6 +89,10 @@ export type {
   NoHardcodedCredentialsOptions,
   NoWeakCryptoOptions,
   NoInsufficientRandomOptions,
+  NoUnvalidatedUserInputOptions,
+  NoUnsanitizedHtmlOptions,
+  NoUnescapedUrlParameterOptions,
+  NoMissingCorsCheckOptions,
 };
 
 /**
@@ -128,5 +136,9 @@ export type AllRulesOptions = {
   'no-hardcoded-credentials'?: NoHardcodedCredentialsOptions;
   'no-weak-crypto'?: NoWeakCryptoOptions;
   'no-insufficient-random'?: NoInsufficientRandomOptions;
+  'no-unvalidated-user-input'?: NoUnvalidatedUserInputOptions;
+  'no-unsanitized-html'?: NoUnsanitizedHtmlOptions;
+  'no-unescaped-url-parameter'?: NoUnescapedUrlParameterOptions;
+  'no-missing-cors-check'?: NoMissingCorsCheckOptions;
 };
 
