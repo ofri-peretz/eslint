@@ -124,7 +124,22 @@ export const reactNoInlineFunctions = createRule<RuleOptions, MessageIds>({
       };
     };
 
+    /**
+     * Check if node is inside JSXExpressionContainer (directly or nested)
+     */
+    const isInJSXExpressionContainer = (node: TSESTree.Node): boolean => {
+      let current: TSESTree.Node | undefined = node;
+      while (current) {
+        if (current.type === 'JSXExpressionContainer') {
+          return true;
+        }
+        current = current.parent;
+      }
+      return false;
+    };
+
     return {
+      // Match direct children of JSXExpressionContainer
       'JSXExpressionContainer > ArrowFunctionExpression, JSXExpressionContainer > FunctionExpression'(
         node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression
       ) {
@@ -137,6 +152,39 @@ export const reactNoInlineFunctions = createRule<RuleOptions, MessageIds>({
           if (attr.name.type === 'JSXIdentifier' && attr.name.name.startsWith('on')) {
             return; // Allow if configured
           }
+        }
+
+        const arrayInfo = isInArrayMethod(node);
+        const impact = calculateImpact(arrayInfo);
+
+        context.report({
+          node,
+          messageId: 'inlineFunction',
+          data: {
+            impact: impact.severity,
+            location: arrayInfo.inArray ? `${arrayInfo.method}() call` : 'JSX prop',
+          },
+        });
+      },
+      
+      // Also match arrow functions inside CallExpressions within JSXExpressionContainer
+      // This catches cases like {items.map(() => ...)}
+      'CallExpression > ArrowFunctionExpression, CallExpression > FunctionExpression'(
+        node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression
+      ) {
+        // Only check if we're inside a JSXExpressionContainer
+        if (!isInJSXExpressionContainer(node)) return;
+        
+        // Check if it's in an event handler prop
+        let current: TSESTree.Node | undefined = node;
+        while (current) {
+          if (current.type === 'JSXAttribute') {
+            const attr = current as TSESTree.JSXAttribute;
+            if (allowInEventHandlers && attr.name.type === 'JSXIdentifier' && attr.name.name.startsWith('on')) {
+              return; // Allow if configured
+            }
+          }
+          current = current.parent;
         }
 
         const arrayInfo = isInArrayMethod(node);

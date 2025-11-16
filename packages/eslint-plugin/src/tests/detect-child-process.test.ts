@@ -167,5 +167,36 @@ describe('detect-child-process', () => {
       ],
     });
   });
+
+  describe('Edge Cases - Coverage', () => {
+    ruleTester.run('edge cases - default case in switch (line 251)', detectChildProcess, {
+      valid: [],
+      invalid: [
+        // Test with execFileSync to trigger default case in generateRefactoringSteps (line 251)
+        {
+          code: 'child_process.execFileSync(userCommand, args);',
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        // Test with fork to trigger default case
+        {
+          code: 'child_process.fork(userScript);',
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+      ],
+    });
+
+    ruleTester.run('edge cases - non-dangerous method (line 290)', detectChildProcess, {
+      valid: [
+        // Test with a method that's NOT in dangerousMethods to cover line 290
+        // Note: child_process doesn't have many other methods, but if one exists that's not dangerous,
+        // it should be valid. However, since we can't easily test this without modifying the rule,
+        // we'll test with a method that might not be in the default list
+        {
+          code: 'child_process.someOtherMethod(command);',
+        },
+      ],
+      invalid: [],
+    });
+  });
 });
 

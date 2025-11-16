@@ -91,5 +91,99 @@ describe('prefer-dependency-version-strategy', () => {
       invalid: [],
     });
   });
+
+  describe('Edge Cases', () => {
+    ruleTester.run('edge cases - package.json properties', preferDependencyVersionStrategy, {
+      valid: [
+        // Test Property visitor for dependencies (lines 244-245)
+        {
+          code: 'const packageJson = { dependencies: { "react": "^18.0.0" } };',
+          options: [{ strategy: 'caret' }],
+        },
+        {
+          code: 'const packageJson = { devDependencies: { "typescript": "^5.0.0" } };',
+          options: [{ strategy: 'caret' }],
+        },
+        {
+          code: 'const packageJson = { peerDependencies: { "react": "^18.0.0" } };',
+          options: [{ strategy: 'caret' }],
+        },
+        // Test ObjectExpression with non-version values (line 257 - return false)
+        {
+          code: 'const obj = { name: "test", value: 123 };',
+          options: [{ strategy: 'caret' }],
+        },
+        {
+          code: 'const obj = { text: "hello world" };',
+          options: [{ strategy: 'caret' }],
+        },
+      ],
+      invalid: [
+        // Test Property visitor for dependencies with wrong strategy
+        {
+          code: 'const packageJson = { dependencies: { "react": "~18.0.0" } };',
+          options: [{ strategy: 'caret' }],
+          errors: [{ messageId: 'preferStrategy' }],
+          output: 'const packageJson = { dependencies: { "react": "^18.0.0" } };',
+        },
+        {
+          code: 'const packageJson = { devDependencies: { "typescript": "^5.0.0" } };',
+          options: [{ strategy: 'exact' }],
+          errors: [{ messageId: 'preferStrategy' }],
+          output: 'const packageJson = { devDependencies: { "typescript": "5.0.0" } };',
+        },
+        {
+          code: 'const packageJson = { peerDependencies: { "react": "^18.0.0" } };',
+          options: [{ strategy: 'tilde' }],
+          errors: [{ messageId: 'preferStrategy' }],
+          output: 'const packageJson = { peerDependencies: { "react": "~18.0.0" } };',
+        },
+      ],
+    });
+
+    ruleTester.run('edge cases - range strategy', preferDependencyVersionStrategy, {
+      valid: [
+        {
+          code: 'const deps = { "react": ">=18.0.0 <19.0.0" };',
+          options: [{ strategy: 'range' }],
+        },
+        {
+          code: 'const deps = { "react": "18.0.0 || 19.0.0" };',
+          options: [{ strategy: 'range' }],
+        },
+        {
+          code: 'const deps = { "react": "<=18.0.0" };',
+          options: [{ strategy: 'range' }],
+        },
+        {
+          code: 'const deps = { "react": ">18.0.0" };',
+          options: [{ strategy: 'range' }],
+        },
+        {
+          code: 'const deps = { "react": "18.0.0 - 19.0.0" };',
+          options: [{ strategy: 'range' }],
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('edge cases - any strategy', preferDependencyVersionStrategy, {
+      valid: [
+        {
+          code: 'const deps = { "react": "^18.0.0" };',
+          options: [{ strategy: 'any' }],
+        },
+        {
+          code: 'const deps = { "react": "~18.0.0" };',
+          options: [{ strategy: 'any' }],
+        },
+        {
+          code: 'const deps = { "react": "18.0.0" };',
+          options: [{ strategy: 'any' }],
+        },
+      ],
+      invalid: [],
+    });
+  });
 });
 

@@ -85,8 +85,42 @@ describe('react-no-inline-functions', () => {
         },
       ],
       invalid: [
-        // Note: Rule may not detect inline functions in map() callbacks
-        // This is a rule limitation
+        // Test inline function in JSXExpressionContainer (line 77-82) - not in JSXAttribute
+        {
+          code: '<div>{() => console.log("test")}</div>',
+          errors: [{ messageId: 'inlineFunction' }],
+        },
+        {
+          code: '<div>{function test() { return "test"; }}</div>',
+          errors: [{ messageId: 'inlineFunction' }],
+        },
+        // Test inline function in array methods (lines 92-96)
+        {
+          code: '<div>{items.map(() => <span>test</span>)}</div>',
+          errors: [{ messageId: 'inlineFunction' }],
+        },
+        {
+          code: '<div>{items.forEach(() => console.log("test"))}</div>',
+          errors: [{ messageId: 'inlineFunction' }],
+        },
+        {
+          code: '<div>{items.filter(() => true)}</div>',
+          errors: [{ messageId: 'inlineFunction' }],
+        },
+        {
+          code: '<div>{items.reduce(() => 0, 0)}</div>',
+          errors: [{ messageId: 'inlineFunction' }],
+        },
+        {
+          code: '<div>{items.sort(() => 0)}</div>',
+          errors: [{ messageId: 'inlineFunction' }],
+        },
+        // Test large array size (line 113 - estimatedSize > 50)
+        {
+          code: '<div>{largeArray.map(() => <span>test</span>)}</div>',
+          options: [{ minArraySize: 50 }],
+          errors: [{ messageId: 'inlineFunction' }],
+        },
       ],
     });
   });

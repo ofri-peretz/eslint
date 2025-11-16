@@ -230,7 +230,8 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
         const childKeys = ['body', 'test', 'consequent', 'alternate', 'init', 'update',
                           'left', 'right', 'argument', 'arguments', 'callee', 'object',
                           'property', 'elements', 'properties', 'expression', 'expressions',
-                          'declarations', 'declaration', 'specifiers', 'source', 'key', 'value'];
+                          'declarations', 'declaration', 'specifiers', 'source', 'key', 'value',
+                          'handler', 'block', 'finalizer']; // handler for TryStatement.catch, block/finalizer for TryStatement
 
         for (const key of childKeys) {
           const child = (n as unknown as Record<string, unknown>)[key];

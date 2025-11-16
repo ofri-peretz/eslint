@@ -252,6 +252,10 @@ describe('img-requires-alt', () => {
         {
           code: '<Image src="photo.jpg" />',
         },
+        // Image with JSXSpreadAttribute (to cover line 89-91 in getAltValue)
+        {
+          code: '<img src="photo.jpg" {...props} alt="Description" />',
+        },
       ],
       invalid: [
         {
@@ -272,7 +276,79 @@ describe('img-requires-alt', () => {
             },
           ],
         },
+        // Image with JSXSpreadAttribute but no alt (to cover line 89-91)
+        // Note: The rule may not detect this case if spread attributes are present
+        // This test covers the getAltValue function's handling of non-JSXAttribute types
+        {
+          code: '<img {...props} src="photo.jpg" />',
+          errors: [
+            {
+              messageId: 'missingAlt',
+              suggestions: [
+                {
+                  messageId: 'addDescriptiveAlt',
+                  output: '<img {...props} src="photo.jpg" alt="TODO: Add descriptive text" />',
+                },
+                {
+                  messageId: 'useEmptyAlt',
+                  output: '<img {...props} src="photo.jpg" alt="" />',
+                },
+              ],
+            },
+          ],
+        },
+        // Image with filename-based suggestion (to cover line 149)
+        {
+          code: '<img src="/images/beautiful-sunset.jpg" />',
+          errors: [
+            {
+              messageId: 'missingAlt',
+              suggestions: [
+                {
+                  messageId: 'addDescriptiveAlt',
+                  output: '<img src="/images/beautiful-sunset.jpg" alt="TODO: Add descriptive text" />',
+                },
+                {
+                  messageId: 'useEmptyAlt',
+                  output: '<img src="/images/beautiful-sunset.jpg" alt="" />',
+                },
+              ],
+            },
+          ],
+        },
+        // Image with no attributes except src (to cover lines 196-213 - no lastAttr case)
+        {
+          code: '<img src="photo.jpg" />',
+          errors: [
+            {
+              messageId: 'missingAlt',
+              suggestions: [
+                {
+                  messageId: 'addDescriptiveAlt',
+                  output: '<img src="photo.jpg" alt="TODO: Add descriptive text" />',
+                },
+                {
+                  messageId: 'useEmptyAlt',
+                  output: '<img src="photo.jpg" alt="" />',
+                },
+              ],
+            },
+          ],
+        },
       ],
+    });
+  });
+
+  describe('Edge Cases - hasAriaLabel', () => {
+    ruleTester.run('edge cases - aria-label with JSXSpreadAttribute (line 107)', imgRequiresAlt, {
+      valid: [
+        // Test with JSXSpreadAttribute to cover line 107 (attr.type !== 'JSXAttribute')
+        {
+          code: '<img src="photo.jpg" {...props} aria-label="Description" />',
+          options: [{ allowAriaLabel: true }],
+        },
+      ],
+      invalid: [],
     });
   });
 });

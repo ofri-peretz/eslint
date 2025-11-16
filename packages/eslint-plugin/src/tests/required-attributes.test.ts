@@ -131,8 +131,104 @@ describe('required-attributes', () => {
             }] 
           }],
         },
+        // Test ignoreTags option (line 61)
+        {
+          code: '<span />',
+          options: [{ 
+            attributes: [{ 
+              attribute: 'aria-label',
+              ignoreTags: ['span']
+            }] 
+          }],
+        },
+        // Test that type/name only apply to form elements (line 193)
+        {
+          code: '<div />',
+          options: [{ 
+            attributes: [{ attribute: 'type' }] 
+          }],
+        },
+        {
+          code: '<span />',
+          options: [{ 
+            attributes: [{ attribute: 'name' }] 
+          }],
+        },
       ],
-      invalid: [],
+      invalid: [
+        // Test aria- attribute handling (line 164)
+        {
+          code: '<button />',
+          options: [{ 
+            attributes: [{ attribute: 'aria-label' }] 
+          }],
+          errors: [
+            {
+              messageId: 'missingAttribute',
+              suggestions: [
+                {
+                  messageId: 'addAttribute',
+                  output: '<button aria-label="TODO: Add descriptive label" />',
+                },
+              ],
+            },
+          ],
+        },
+        // Test tabIndex attribute handling (line 167)
+        {
+          code: '<div />',
+          options: [{ 
+            attributes: [{ attribute: 'tabIndex' }] 
+          }],
+          errors: [
+            {
+              messageId: 'missingAttribute',
+              suggestions: [
+                {
+                  messageId: 'addAttribute',
+                  output: '<div tabIndex="0" />',
+                },
+              ],
+            },
+          ],
+        },
+        // Test type attribute on form element (should be required)
+        {
+          code: '<input />',
+          options: [{ 
+            attributes: [{ attribute: 'type' }] 
+          }],
+          errors: [
+            {
+              messageId: 'missingAttribute',
+              suggestions: [
+                {
+                  messageId: 'addAttribute',
+                  output: '<input type="TODO" />',
+                },
+              ],
+            },
+          ],
+        },
+        // Test name attribute on form element (should be required)
+        {
+          code: '<input />',
+          options: [{ 
+            attributes: [{ attribute: 'name' }] 
+          }],
+          errors: [
+            {
+              messageId: 'missingAttribute',
+              suggestions: [
+                {
+                  messageId: 'addAttribute',
+                  output: '<input name="TODO" />',
+                },
+              ],
+            },
+          ],
+        },
+      ],
     });
   });
 });
