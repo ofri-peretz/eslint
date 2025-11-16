@@ -8,6 +8,7 @@
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
+import { extractFunctionSignature } from '../../utils/llm-context';
 
 /**
  * Message IDs for cognitive complexity violations and suggestions
@@ -90,6 +91,7 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const { maxComplexity = 15 } = options;
+    const filename = context.filename || context.getFilename();
 
     /**
      * Calculate cognitive complexity for a function
