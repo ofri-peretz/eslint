@@ -125,9 +125,12 @@ jobs:
     needs: [validate-ci]
     timeout-minutes: 15
     permissions:
-      contents: write
+      contents:
+        write # Required to push commits and tags
+        # NOTE: Branch protection must allow GitHub Actions to bypass
+        # Configure in: Settings → Branches → main → "Allow specified actors to bypass"
+        # Add: "GitHub Actions" or this workflow
       id-token: write # ← Required for Trusted Publishing (OIDC)
-      pull-requests: write
 
     steps:
       - name: 📥 Checkout repository
@@ -248,8 +251,33 @@ jobs:
             echo "✅ Git working directory is clean"
           fi
 
-          # Check if there are changes to release (dry-run first)
-          echo "🔍 Checking if there are changes to release..."
+          # Check git tags alignment with package.json versions
+          echo "🔍 Verifying git tags alignment with package.json versions..."
+          TAG_MISMATCH=false
+          for pkg in eslint-plugin eslint-plugin-llm-optimized eslint-plugin-utils cli eslint-plugin-llm eslint-plugin-mcp eslint-plugin-mcp-optimized; do
+            if [ -f "packages/$pkg/package.json" ]; then
+              PKG_VERSION=$(cat packages/$pkg/package.json | grep '"version"' | cut -d'"' -f4)
+              LATEST_TAG=$(git tag | grep "^${pkg}@" | sort -V | tail -1 || echo "")
+              if [ -n "$LATEST_TAG" ]; then
+                TAG_VERSION=$(echo "$LATEST_TAG" | cut -d'@' -f2)
+                if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+                  echo "⚠️  Warning: $pkg version mismatch - package.json=$PKG_VERSION, tag=$TAG_VERSION"
+                  TAG_MISMATCH=true
+                fi
+              else
+                echo "ℹ️  No existing tag for $pkg (first release or tag format changed)"
+              fi
+            fi
+          done
+          if [ "$TAG_MISMATCH" = "true" ]; then
+            echo "⚠️  Version mismatches detected - nx release version will align them"
+            echo "   This is expected if versions were manually updated"
+          else
+            echo "✅ All package versions align with git tags"
+          fi
+
+          # Check for potential tag conflicts (tags that would be created)
+          echo "🔍 Checking for potential tag conflicts..."
           DRY_RUN_OUTPUT=$(pnpm nx release version --dry-run 2>&1 || true)
           if echo "$DRY_RUN_OUTPUT" | grep -q "No changes detected"; then
             echo "ℹ️  No changes detected for release"
@@ -257,6 +285,42 @@ jobs:
             echo "   The release will skip version bumping"
           else
             echo "✅ Changes detected - release will proceed"
+            # Extract potential new versions from dry-run output
+            POTENTIAL_TAGS=$(echo "$DRY_RUN_OUTPUT" | grep -oE '[a-z-]+@[0-9]+\.[0-9]+\.[0-9]+' || echo "")
+            if [ -n "$POTENTIAL_TAGS" ]; then
+              echo "📝 Potential new tags to be created:"
+              echo "$POTENTIAL_TAGS" | while read tag; do
+                if git rev-parse "$tag" >/dev/null 2>&1; then
+                  echo "⚠️  Warning: Tag $tag already exists - this may cause issues"
+                else
+                  echo "   ✅ $tag (will be created)"
+                fi
+              done
+            fi
+          fi
+
+          # Verify we have all necessary tags reachable from main
+          echo "🔍 Verifying tag reachability from main branch..."
+          MISSING_TAGS=false
+          for pkg in eslint-plugin eslint-plugin-llm-optimized eslint-plugin-utils cli eslint-plugin-llm eslint-plugin-mcp eslint-plugin-mcp-optimized; do
+            if [ -f "packages/$pkg/package.json" ]; then
+              PKG_VERSION=$(cat packages/$pkg/package.json | grep '"version"' | cut -d'"' -f4)
+              EXPECTED_TAG="${pkg}@${PKG_VERSION}"
+              if git rev-parse "$EXPECTED_TAG" >/dev/null 2>&1; then
+                # Check if tag is reachable from current HEAD
+                if ! git merge-base --is-ancestor "$EXPECTED_TAG" HEAD 2>/dev/null; then
+                  echo "⚠️  Warning: Tag $EXPECTED_TAG exists but is not reachable from main"
+                  echo "   This may cause version resolution issues"
+                  MISSING_TAGS=true
+                fi
+              fi
+            fi
+          done
+          if [ "$MISSING_TAGS" = "true" ]; then
+            echo "⚠️  Some tags are not reachable - this may affect version resolution"
+            echo "   Nx will use fallback version resolution (disk-based) if needed"
+          else
+            echo "✅ All existing tags are reachable from main branch"
           fi
 
           echo "✅ All pre-flight checks passed"
@@ -286,7 +350,122 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # ──────────────────────────────────────────────────────────────────────
-      # PHASE 2: PUBLISH (preReleaseCommand rebuilds with new versions + publish)
+      # PHASE 2: PUSH VERSION CHANGES TO REPOSITORY
+      # ──────────────────────────────────────────────────────────────────────
+      # After nx release version, we need to push the commits and tags to main
+      # This ensures the repository reflects the new versions that were published
+      #
+      # IMPORTANT: For this to work with branch protection:
+      # 1. Branch protection must allow GitHub Actions to bypass protection
+      #    (Settings → Branches → Branch protection → Allow specified actors to bypass)
+      # 2. Add "GitHub Actions" or this workflow to the bypass list
+      # 3. OR configure branch protection to allow this specific workflow
+      #
+      # If branch protection cannot be bypassed, the workflow will fail here
+      # and you'll need to either:
+      # - Configure branch protection to allow this workflow
+      # - Or manually merge the version changes via PR
+      - name: 📤 Push Version Changes to Repository
+        if: inputs.dry-run == false
+        run: |
+          echo "📤 Pushing version changes to main branch..."
+          echo ""
+          echo "ℹ️  Note: This workflow requires branch protection to allow GitHub Actions"
+          echo "   If push fails, configure branch protection to allow this workflow to bypass"
+          echo ""
+
+          # Check if there are commits to push (nx release version creates commits)
+          if git diff --quiet HEAD origin/main; then
+            echo "ℹ️  No local changes to push (versions already match remote)"
+            echo "skip_push=true" >> $GITHUB_ENV
+          else
+            # Get the commits that were created by nx release version
+            COMMITS_TO_PUSH=$(git log origin/main..HEAD --oneline | wc -l)
+            TAGS_TO_PUSH=$(git tag --list --no-merged origin/main | wc -l)
+            
+            echo "📝 Found $COMMITS_TO_PUSH commit(s) and $TAGS_TO_PUSH tag(s) to push"
+            echo ""
+            
+            # Fetch latest from origin to check for conflicts
+            git fetch origin main
+            
+            # Check if main has moved ahead (someone pushed while we were running)
+            if ! git merge-base --is-ancestor origin/main HEAD; then
+              echo "⚠️  Warning: Main branch has moved ahead"
+              echo "   Attempting to rebase local changes on top of origin/main..."
+              git rebase origin/main || {
+                echo "❌ Rebase failed - conflicts detected"
+                echo "   Please resolve conflicts manually and re-run the workflow"
+                exit 1
+              }
+            fi
+            
+            # Push commits to main (will work if branch protection allows GitHub Actions)
+            echo "📤 Pushing commits to main..."
+            echo "   Using GITHUB_TOKEN with contents:write permission"
+            echo "   This should bypass branch protection if configured correctly"
+            echo ""
+            
+            if git push origin main 2>&1; then
+              echo "✅ Successfully pushed commits to main"
+              PUSH_SUCCESS=true
+            else
+              PUSH_ERROR=$?
+              echo ""
+              echo "❌ Failed to push commits to main (exit code: $PUSH_ERROR)"
+              echo ""
+              echo "🔧 This usually means branch protection is blocking the push."
+              echo "   To fix this, configure branch protection to allow this workflow:"
+              echo ""
+              echo "   1. Go to: Settings → Branches → Branch protection rules → main"
+              echo "   2. Under 'Restrict who can push to matching branches'"
+              echo "   3. Add 'GitHub Actions' or this workflow to the bypass list"
+              echo "   OR"
+              echo "   4. Disable 'Require pull request reviews' for this workflow"
+              echo "   OR"
+              echo "   5. Add this workflow to 'Allow specified actors to bypass'"
+              echo ""
+              echo "   Workflow name: Release"
+              echo "   Workflow file: .github/workflows/release.yml"
+              echo ""
+              exit 1
+            fi
+            
+            # Push tags (tags can usually be pushed even with branch protection)
+            # Handle tag conflicts gracefully - if tag exists, skip it
+            echo ""
+            echo "🏷️  Pushing tags..."
+            TAG_PUSH_OUTPUT=$(git push origin --tags 2>&1) || TAG_PUSH_EXIT=$?
+            if [ "$TAG_PUSH_EXIT" -eq 0 ]; then
+              echo "✅ Successfully pushed all tags"
+            else
+              # Check if error is due to existing tags (this is OK)
+              if echo "$TAG_PUSH_OUTPUT" | grep -q "already exists"; then
+                echo "ℹ️  Some tags already exist remotely (this is OK)"
+                echo "   Existing tags will be skipped"
+                # Try to push only new tags
+                NEW_TAGS=$(git tag --list --no-merged origin/main 2>/dev/null || echo "")
+                if [ -n "$NEW_TAGS" ]; then
+                  echo "📝 Pushing only new tags..."
+                  echo "$NEW_TAGS" | while read tag; do
+                    git push origin "$tag" 2>&1 || echo "   ⚠️  Failed to push $tag (may already exist)"
+                  done
+                fi
+              else
+                echo "⚠️  Warning: Tag push failed with unexpected error"
+                echo "$TAG_PUSH_OUTPUT"
+                echo "   This may be non-critical - tags will be created on next release"
+              fi
+            fi
+            
+            echo ""
+            echo "✅ Successfully pushed all version changes to main"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ──────────────────────────────────────────────────────────────────────
+      # PHASE 3: PUBLISH (preReleaseCommand rebuilds with new versions + publish)
       # ──────────────────────────────────────────────────────────────────────
       - name: 🚀 Publish Packages
         id: publish
@@ -297,6 +476,39 @@ jobs:
           git config user.email "ofri@snappy.com"
 
           echo "📝 Publishing with dist tag: ${{ inputs.dist-tag }}"
+          echo ""
+
+          # Pre-check: Verify versions to be published don't already exist on npm
+          echo "🔍 Pre-checking npm registry for version conflicts..."
+          PUBLISH_FAILED=false
+          for pkg in "@forge-js/eslint-plugin" "@forge-js/eslint-plugin-llm-optimized" "@forge-js/eslint-plugin-utils" "@forge-js/cli" "eslint-plugin-llm" "eslint-plugin-mcp" "eslint-plugin-mcp-optimized"; do
+            # Get package name from path
+            if [[ "$pkg" == @* ]]; then
+              PKG_NAME="$pkg"
+            else
+              PKG_NAME="$pkg"
+            fi
+            
+            # Get version from dist package.json
+            PKG_DIR=$(echo "$pkg" | sed 's/@forge-js\///' | sed 's/eslint-plugin/eslint-plugin/')
+            if [ -f "dist/packages/$PKG_DIR/package.json" ]; then
+              VERSION=$(cat dist/packages/$PKG_DIR/package.json | grep '"version"' | cut -d'"' -f4)
+              if npm view "$PKG_NAME@$VERSION" version >/dev/null 2>&1; then
+                echo "⚠️  Warning: $PKG_NAME@$VERSION already exists on npm"
+                echo "   This package will be skipped during publish"
+                PUBLISH_FAILED=true
+              else
+                echo "✅ $PKG_NAME@$VERSION is ready to publish"
+              fi
+            fi
+          done
+          if [ "$PUBLISH_FAILED" = "true" ]; then
+            echo ""
+            echo "⚠️  Some versions already exist on npm"
+            echo "   Nx will skip publishing these packages automatically"
+            echo "   This is expected if you're re-running a release"
+          fi
+          echo ""
 
           # Note: Trusted Publishing (OIDC) works for scoped packages (@forge-js/*)
           # For unscoped packages (eslint-plugin-llm-optimized, eslint-plugin-mcp, etc.),
