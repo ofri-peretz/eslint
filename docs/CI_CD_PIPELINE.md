@@ -6,13 +6,11 @@ This repository uses a comprehensive CI/CD setup with GitHub Actions, optimized 
 
 ## Workflows
 
-| Workflow                                                     | Trigger      | Purpose                | Status    |
-| ------------------------------------------------------------ | ------------ | ---------------------- | --------- |
-| [`ci.yml`](.github/workflows/ci.yml)                         | Push, PR     | Continuous Integration | ✅ Active |
-| [`release.yml`](.github/workflows/release.yml)               | Push to main | Automated Releases     | ✅ Active |
-| [`publish-manual.yml`](.github/workflows/publish-manual.yml) | Manual       | Manual Publishing      | ✅ Active |
-| [`canary-release.yml`](.github/workflows/canary-release.yml) | Push to main | Canary Releases        | ✅ Active |
-| [`lint-workflows.yml`](.github/workflows/lint-workflows.yml) | PR, Push     | Workflow Linting       | ✅ Active |
+| Workflow                                          | Trigger  | Purpose                | Status    |
+| ------------------------------------------------- | -------- | ---------------------- | --------- |
+| [`ci-pr.yml`](../.github/workflows/ci-pr.yml)     | Push, PR | Continuous Integration | ✅ Active |
+| [`release.yml`](../.github/workflows/release.yml) | Manual   | Automated Releases     | ✅ Active |
+| [`lint-pr.yml`](../.github/workflows/lint-pr.yml) | PR, Push | Workflow Linting       | ✅ Active |
 
 **📌 Note:** These workflows use [GitHub Environments](./ENVIRONMENTS.md) for environment-specific controls (development, staging, production). See [`ENVIRONMENTS.md`](./ENVIRONMENTS.md) for details.
 
@@ -195,34 +193,34 @@ This project uses **Codecov** for comprehensive code coverage tracking. Coverage
 flowchart TD
     A["📤 PR Submitted"] --> B["CI: Lint/Build/Test"]
     A --> C["📊 Check Coverage"]
-    
+
     B --> D{Both Pass?}
     C --> D
-    
+
     D -->|✅| E["📤 Upload to Codecov<br/>Parallel execution"]
     D -->|❌| F["❌ Blocks PR"]
-    
+
     E --> G["🎯 Codecov Reports<br/>Dashboard + PR Comments"]
     G --> H["📝 Merge PR"]
     F --> H
-    
+
     classDef successNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px
     classDef processNode fill:#eff6ff,stroke:#2563eb,stroke-width:2px
-    
+
     class E,G successNode
     class B,C processNode
 ```
 
 ### What You Get
 
-| Feature | Coverage |
-|---------|----------|
-| 🔴 Line coverage % | Tracked per PR and overall |
-| 🔵 Branch coverage | Included in reports |
-| 🟢 Coverage trends | Historical graphs on Codecov dashboard |
-| 📈 Diff coverage | Shows coverage impact of your changes |
-| 📝 PR comments | Auto-comments with coverage summary |
-| 🎯 Badges | Add to README: `[![codecov](https://codecov.io/gh/YOUR_ORG/forge-js/graph/badge.svg)](https://codecov.io/gh/YOUR_ORG/forge-js)` |
+| Feature            | Coverage                                                                                                                        |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| 🔴 Line coverage % | Tracked per PR and overall                                                                                                      |
+| 🔵 Branch coverage | Included in reports                                                                                                             |
+| 🟢 Coverage trends | Historical graphs on Codecov dashboard                                                                                          |
+| 📈 Diff coverage   | Shows coverage impact of your changes                                                                                           |
+| 📝 PR comments     | Auto-comments with coverage summary                                                                                             |
+| 🎯 Badges          | Add to README: `[![codecov](https://codecov.io/gh/YOUR_ORG/forge-js/graph/badge.svg)](https://codecov.io/gh/YOUR_ORG/forge-js)` |
 
 ### Accessing Reports
 
@@ -235,11 +233,13 @@ flowchart TD
 Both workflows run Codecov uploads in **parallel** with other post-test actions:
 
 **ci.yml** (`main` branch):
+
 - Runs after tests complete
 - Executes concurrently with cache diagnostics
 - Flag: `unittests`
 
 **check-coverage.yml** (`pull_request` trigger):
+
 - Runs after coverage analysis
 - Executes concurrently with PR comments
 - Flag: `pr-checks`

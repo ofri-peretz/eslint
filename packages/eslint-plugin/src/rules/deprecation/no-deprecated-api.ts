@@ -3,6 +3,7 @@
  * Detects deprecated API usage with replacement context and migration timeline
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { generateLLMContext } from '../../utils/llm-context';
 
@@ -38,8 +39,15 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
     hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 44% reduction (48→27 tokens) - removes verbose labels
-      deprecatedAPI: '⚠️ CWE-1078 | Deprecated API detected | HIGH\n' +
-        '   Fix: Migrate to recommended alternative with timeline guidance | https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference',
+      deprecatedAPI: formatLLMMessage({
+        icon: MessageIcons.DEPRECATION,
+        issueName: 'Deprecated API',
+        cwe: 'CWE-1078',
+        description: 'Deprecated API detected',
+        severity: 'HIGH',
+        fix: 'Migrate to recommended alternative with timeline guidance',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference',
+      }),
       useReplacement: '✅ Replace with {{replacement}}',
     },
     schema: [
@@ -146,7 +154,7 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
         const urgency = getUrgencyLevel(daysRemaining);
         const apiChanges = getAPIChanges(deprecatedApi, node);
 
-        const llmContext = generateLLMContext('deprecation/no-deprecated-api', {
+        const _llmContext = generateLLMContext('deprecation/no-deprecated-api', {
           severity: urgency === 'critical' ? 'error' : 'warning',
           category: 'deprecation',
           filePath: filename,

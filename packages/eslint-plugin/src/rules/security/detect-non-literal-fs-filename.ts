@@ -7,6 +7,7 @@
  * @see https://cwe.mitre.org/data/definitions/22.html
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
+import { formatLLMMessage } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { generateLLMContext } from '../../utils/llm-context';
 
@@ -96,9 +97,15 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       // 🎯 Token optimization: 39% reduction (49→30 tokens) - template variables still work
-      fsPathTraversal:
-        '🔑 CWE-22 | Path traversal vulnerability | {{riskLevel}}\n' +
-        '   Fix: {{safePattern}} | https://owasp.org/www-community/attacks/Path_Traversal',
+      fsPathTraversal: formatLLMMessage({
+        icon: '🔑',
+        issueName: 'Path traversal',
+        cwe: 'CWE-22',
+        description: 'Path traversal vulnerability',
+        severity: '{{riskLevel}}',
+        fix: '{{safePattern}}',
+        documentationLink: 'https://owasp.org/www-community/attacks/Path_Traversal',
+      }),
       usePathResolve: '✅ Use path.resolve() to normalize paths and prevent traversal',
       validatePath: '✅ Validate resolved path starts with allowed base directory',
       useBasename: '✅ Use path.basename() to strip directory components',
@@ -307,7 +314,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
       const steps = operation ? generateRefactoringSteps(operation) : 'Review file system access patterns';
       const safePattern = operation?.safePattern || 'Use path.resolve() with validation';
 
-      const llmContext = generateLLMContext('security/detect-non-literal-fs-filename', {
+      const _llmContext = generateLLMContext('security/detect-non-literal-fs-filename', {
         severity: riskLevel.toLowerCase() as 'error' | 'warning',
         category: 'security',
         filePath: context.filename || context.getFilename(),

@@ -20,7 +20,11 @@
     "ci:trigger": "gh workflow run ci.yml --ref local-playground-app && echo '✅ Workflow triggered!'",
     "ci:status": "tsx scripts/ci-status.ts",
     "ci": "tsx scripts/ci-status.ts",
-    "delete-branches": "nx delete-branches"
+    "delete-branches": "nx delete-branches",
+    "sync-tags": "tsx scripts/sync-git-tags.ts",
+    "sync-tags:dry-run": "tsx scripts/sync-git-tags.ts --dry-run",
+    "check-links": "tsx scripts/check-markdown-links.ts",
+    "check-versions": "tsx scripts/check-version-alignment.ts"
   },
   "keywords": [
     "eslint",

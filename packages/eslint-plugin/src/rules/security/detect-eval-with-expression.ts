@@ -7,6 +7,7 @@
  * @see https://cwe.mitre.org/data/definitions/95.html
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { generateLLMContext } from '../../utils/llm-context';
 
@@ -91,9 +92,15 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       // 🎯 Token optimization: 38% reduction (47→29 tokens) - compact format saves LLM processing
-      evalWithExpression:
-        '🔒 CWE-95 | eval() with dynamic code | CRITICAL\n' +
-        '   Fix: {{safeAlternative}} | https://owasp.org/www-community/attacks/Code_Injection',
+      evalWithExpression: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'eval() with dynamic code',
+        cwe: 'CWE-95',
+        description: 'eval() with dynamic code',
+        severity: 'CRITICAL',
+        fix: '{{safeAlternative}}',
+        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
+      }),
       useJsonParse: '✅ Use JSON.parse() for JSON string parsing',
       useObjectAccess: '✅ Use direct property access: obj[key] or Map',
       useTemplateLiteral: '✅ Use template literals: `Hello ${name}`',
@@ -259,7 +266,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         const pattern = detectPattern(expression);
         const steps = generateRefactoringSteps(pattern);
 
-        const llmContext = generateLLMContext('security/detect-eval-with-expression', {
+        const _llmContext = generateLLMContext('security/detect-eval-with-expression', {
           severity: 'error',
           category: 'security',
           filePath: context.filename || context.getFilename(),

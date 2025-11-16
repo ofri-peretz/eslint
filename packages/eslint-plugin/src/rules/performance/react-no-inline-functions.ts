@@ -3,6 +3,7 @@
  * Detects inline functions in React renders with performance impact context
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 
 type MessageIds = 'inlineFunction' | 'useCallback' | 'extractFunction';
@@ -28,8 +29,14 @@ export const reactNoInlineFunctions = createRule<RuleOptions, MessageIds>({
     hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 42% reduction (48→28 tokens) - inline functions cause unnecessary re-renders
-      inlineFunction: '⚡ Optimization | Inline function detected | MEDIUM\n' +
-        '   Fix: Use useCallback hook or extract to component method | https://react.dev/reference/react/useCallback',
+      inlineFunction: formatLLMMessage({
+        icon: MessageIcons.PERFORMANCE,
+        issueName: 'Inline function',
+        description: 'Inline function detected',
+        severity: 'MEDIUM',
+        fix: 'Use useCallback hook or extract to component method',
+        documentationLink: 'https://react.dev/reference/react/useCallback',
+      }),
       useCallback: '✅ Wrap with useCallback',
       extractFunction: '✅ Extract to component method',
     },

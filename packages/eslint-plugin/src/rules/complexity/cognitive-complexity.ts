@@ -6,6 +6,7 @@
  * @see https://rules.sonarsource.com/javascript/RSPEC-3776/
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { generateLLMContext, extractFunctionSignature } from '../../utils/llm-context';
 
@@ -50,9 +51,15 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       // 🎯 Token optimization: 40% reduction (60→36 tokens) - keeps complexity metrics inline
-      highCognitiveComplexity:
-        '⚡ CWE-1104 | High cognitive complexity | HIGH\n' +
-        '   {{functionName}}: {{complexity}}/{{max}} ({{overBy}} over) - Fix: Extract logic to helpers | https://en.wikipedia.org/wiki/Cognitive_complexity',
+      highCognitiveComplexity: formatLLMMessage({
+        icon: MessageIcons.COMPLEXITY,
+        issueName: 'High cognitive complexity',
+        cwe: 'CWE-1104',
+        description: '{{functionName}}: {{complexity}}/{{max}} ({{overBy}} over)',
+        severity: 'HIGH',
+        fix: 'Extract logic to helpers',
+        documentationLink: 'https://en.wikipedia.org/wiki/Cognitive_complexity',
+      }),
       extractMethod: '✅ Extract nested logic to "{{methodName}}" (reduces complexity by ~{{reduction}})',
       simplifyLogic: '✅ Simplify conditional logic using guard clauses and early returns',
       useStrategy: '✅ Apply {{pattern}} pattern to eliminate switch/case and nested conditionals',
@@ -335,7 +342,7 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
       const pattern = suggestPattern(breakdown);
       const estimatedTime = estimateRefactoringTime(complexity, breakdown);
 
-      const llmContext = generateLLMContext('complexity/cognitive-complexity', {
+      const _llmContext = generateLLMContext('complexity/cognitive-complexity', {
         severity: complexity > maxComplexity * 1.5 ? 'error' : 'warning',
         category: 'performance',
         filePath: filename,

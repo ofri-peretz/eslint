@@ -12,6 +12,7 @@
  */
 import { createRule } from '../../utils/create-rule';
 import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -74,21 +75,45 @@ export const noCircularDependencies = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       // 🎯 Token optimization: 45% reduction (~70→38 tokens per message) for architecture clarity
-      moduleSplit:
-        '🔄 CWE-407 | Circular dependency detected | CRITICAL\n' +
-        '   Fix: Split {{moduleToSplit}} into .{{coreFile}} and .{{extendedFile}} | https://en.wikipedia.org/wiki/Circular_dependency',
+      moduleSplit: formatLLMMessage({
+        icon: MessageIcons.ARCHITECTURE,
+        issueName: 'Circular dependency',
+        cwe: 'CWE-407',
+        description: 'Circular dependency detected',
+        severity: 'CRITICAL',
+        fix: 'Split {{moduleToSplit}} into .{{coreFile}} and .{{extendedFile}}',
+        documentationLink: 'https://en.wikipedia.org/wiki/Circular_dependency',
+      }),
 
-      directImport:
-        '🔄 CWE-407 | Circular dependency detected | MEDIUM\n' +
-        '   Fix: {{newImport}} (direct imports preferred over barrel exports) | https://en.wikipedia.org/wiki/Circular_dependency',
+      directImport: formatLLMMessage({
+        icon: MessageIcons.ARCHITECTURE,
+        issueName: 'Circular dependency',
+        cwe: 'CWE-407',
+        description: 'Circular dependency detected',
+        severity: 'MEDIUM',
+        fix: '{{newImport}} (direct imports preferred over barrel exports)',
+        documentationLink: 'https://en.wikipedia.org/wiki/Circular_dependency',
+      }),
 
-      extractShared:
-        '🔄 CWE-407 | Circular dependency detected | MEDIUM\n' +
-        '   Fix: Extract shared types to {{exports}} file | https://en.wikipedia.org/wiki/Dependency_inversion_principle',
+      extractShared: formatLLMMessage({
+        icon: MessageIcons.ARCHITECTURE,
+        issueName: 'Circular dependency',
+        cwe: 'CWE-407',
+        description: 'Circular dependency detected',
+        severity: 'MEDIUM',
+        fix: 'Extract shared types to {{exports}} file',
+        documentationLink: 'https://en.wikipedia.org/wiki/Dependency_inversion_principle',
+      }),
 
-      dependencyInjection:
-        '🔄 CWE-407 | Circular dependency detected | MEDIUM\n' +
-        '   Fix: Use dependency injection pattern to break cycle | https://en.wikipedia.org/wiki/Dependency_injection',
+      dependencyInjection: formatLLMMessage({
+        icon: MessageIcons.ARCHITECTURE,
+        issueName: 'Circular dependency',
+        cwe: 'CWE-407',
+        description: 'Circular dependency detected',
+        severity: 'MEDIUM',
+        fix: 'Use dependency injection pattern to break cycle',
+        documentationLink: 'https://en.wikipedia.org/wiki/Dependency_injection',
+      }),
     },
     schema: [
       {

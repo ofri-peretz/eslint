@@ -6,6 +6,7 @@
  * @see https://rules.sonarsource.com/javascript/RSPEC-3649/
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { generateLLMContext, containsSecurityKeywords } from '../../utils/llm-context';
 
@@ -51,9 +52,15 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
     messages: {
       // 🎯 Token optimization: 42% reduction (52→30 tokens) by removing ❌/✅ labels
       // This compact format: same clarity, faster LLM processing, lower API costs
-      databaseInjection:
-        '🔒 CWE-89 | SQL Injection detected | CRITICAL\n' +
-        '   Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId]) | https://owasp.org/www-community/attacks/SQL_Injection',
+      databaseInjection: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'SQL Injection',
+        cwe: 'CWE-89',
+        description: 'SQL Injection detected',
+        severity: 'CRITICAL',
+        fix: 'Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId])',
+        documentationLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
+      }),
       usePrisma: '✅ Use Prisma ORM (recommended)',
       useTypeORM: '✅ Use TypeORM with QueryBuilder',
       useParameterized: '✅ Use parameterized query',
@@ -97,7 +104,7 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
-    const { detectNoSQL = true, frameworkHints = true } = options;
+    const { detectNoSQL = true, frameworkHints: _frameworkHints = true } = options;
 
     const sourceCode = context.sourceCode || context.getSourceCode();
     const filename = context.filename || context.getFilename();
@@ -316,7 +323,7 @@ const user = await User.findOne({ email: userEmail });`,
       const alternatives = generateSecureAlternative('SQL');
       const securityContext = containsSecurityKeywords(text);
 
-      const llmContext = generateLLMContext('security/database-injection', {
+      const _llmContext = generateLLMContext('security/database-injection', {
         severity: 'error',
         category: 'security',
         filePath: filename,
@@ -435,7 +442,7 @@ const user = await User.findOne({ email: userEmail });`,
       const vulnDetails = analyzeVulnerability(node, 'NoSQL');
       const alternatives = generateSecureAlternative('NoSQL');
 
-      const llmContext = generateLLMContext('security/database-injection', {
+      const _llmContext = generateLLMContext('security/database-injection', {
         severity: 'error',
         category: 'security',
         filePath: filename,
