@@ -232,11 +232,13 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
             suggest: [
               {
                 messageId: 'useEncodeURIComponent',
-                fix: (fixer: TSESLint.RuleFixer) => null,
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                fix: (_fixer: TSESLint.RuleFixer) => null,
               },
               {
                 messageId: 'useURLSearchParams',
-                fix: (fixer: TSESLint.RuleFixer) => null,
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                fix: (_fixer: TSESLint.RuleFixer) => null,
               },
             ],
           });
@@ -251,8 +253,6 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
 
       // Check for string concatenation in URL construction
       if (node.operator === '+') {
-        const text = sourceCode.getText(node);
-        
         if (!isUrlConstruction(node, sourceCode)) {
           return;
         }
@@ -292,7 +292,8 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
               suggest: [
                 {
                   messageId: 'useEncodeURIComponent',
-                  fix: (fixer: TSESLint.RuleFixer) => null,
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                  fix: (_fixer: TSESLint.RuleFixer) => null,
                 },
               ],
             });
