@@ -52,6 +52,9 @@
     },
     "nx-release-publish": {
       "executor": "nx:run-commands",
+      "dependsOn": [
+        "^nx-release-publish"
+      ],
       "options": {
         "command": "pnpm publish dist/{projectRoot} --access public --no-git-checks",
         "cwd": "{workspaceRoot}"

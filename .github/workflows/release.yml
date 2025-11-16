@@ -298,7 +298,15 @@ jobs:
 
           echo "📝 Publishing with dist tag: ${{ inputs.dist-tag }}"
 
-          # Note: For OIDC (Trusted Publishing), npm whoami doesn't work until npm config is set
+          # Note: Trusted Publishing (OIDC) works for scoped packages (@forge-js/*)
+          # For unscoped packages (eslint-plugin-llm-optimized, eslint-plugin-mcp, etc.),
+          # Trusted Publishing requires npm support approval OR use NPM_TOKEN fallback
+          # 
+          # If you see 404 errors for unscoped packages, you need to either:
+          # 1. Contact npm support to enable Trusted Publishing for unscoped packages
+          # 2. Use NPM_TOKEN secret for unscoped packages (fallback)
+          # 3. Move packages to @forge-js scope
+          #
           # The actual publish command will validate authentication
           # If auth fails, publish will fail with a clear error message
 
@@ -308,6 +316,8 @@ jobs:
         env:
           NPM_CONFIG_PROVENANCE: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Uncomment below if you need NPM_TOKEN for unscoped packages:
+          # NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       # ──────────────────────────────────────────────────────────────────────
       # DRY RUN: Just preview changes

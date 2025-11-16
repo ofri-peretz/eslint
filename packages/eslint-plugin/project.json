@@ -68,10 +68,16 @@
     },
     "nx-release-publish": {
       "executor": "nx:run-commands",
+      "dependsOn": [
+        "^nx-release-publish"
+      ],
       "options": {
         "command": "pnpm publish dist/{projectRoot} --access public --no-git-checks",
         "cwd": "{workspaceRoot}"
       }
+      // ^nx-release-publish means: publish all dependencies first
+      // Safe because: eslint-plugin depends on eslint-plugin-utils (no circular deps)
+      // Publish order: eslint-plugin-utils → eslint-plugin → dependents
     },
     "publish": {
       "executor": "nx:run-commands",
