@@ -48,15 +48,6 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # ═══════════════════════════════════════════════════════════════════════
-      # NX CLOUD - Remote caching for faster builds
-      # ═══════════════════════════════════════════════════════════════════════
-
-      - name: Connect to Nx Cloud
-        run: npx nx connect-to-nx-cloud --quiet
-        env:
-          NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
-
-      # ═══════════════════════════════════════════════════════════════════════
       # ESLINT CACHE - Persist lint results between runs
       # ═══════════════════════════════════════════════════════════════════════
 
@@ -87,6 +78,7 @@ jobs:
       - name: Lint affected packages (single pass with cache)
         run: |
           export ESLINT_CACHE=true
+
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             echo "📝 Linting affected packages only..."
             pnpm nx affected -t lint --parallel=4 --verbose
@@ -94,6 +86,9 @@ jobs:
             echo "📝 Linting all packages..."
             pnpm nx run-many -t lint --all --parallel=4 --verbose
           fi
+        env:
+          # Nx Cloud disabled - using local cache only
+          NX_SKIP_NX_CLOUD: "true"
 
       # ═══════════════════════════════════════════════════════════════════════
       # DIAGNOSTICS
@@ -114,5 +109,7 @@ jobs:
           echo ""
           echo "pnpm version:"
           pnpm --version
+          echo ""
+          echo "Nx Cloud: Disabled (using local cache only)"
           echo ""
           pnpm nx report

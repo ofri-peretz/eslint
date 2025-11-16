@@ -1,0 +1,241 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Release Unscoped Packages
+
+# ═════════════════════════════════════════════════════════════════════════════
+# WORKFLOW PURPOSE: Publish UNscoped packages (eslint-plugin-*) only
+# ═════════════════════════════════════════════════════════════════════════════
+#
+# Packages handled by this workflow:
+#   - eslint-plugin-llm (project: eslint-plugin-llm)
+#   - eslint-plugin-mcp (project: eslint-plugin-mcp)
+#   - eslint-plugin-llm-optimized (project: eslint-plugin-llm-optimized)
+#   - eslint-plugin-mcp-optimized (project: eslint-plugin-mcp-optimized)
+#
+# Authentication: NPM_TOKEN (Granular Access Token) via .npmrc
+# Scope: NONE (unscoped packages)
+#
+# For SCOPED packages (@forge-js/*), use: release.yml
+# ═════════════════════════════════════════════════════════════════════════════
+
+on:
+  workflow_dispatch:
+    inputs:
+      version-specifier:
+        description: "Version bump strategy (auto = conventional commits)"
+        required: false
+        type: choice
+        options:
+          [auto, major, minor, patch, premajor, preminor, prepatch, prerelease]
+        default: "auto"
+      dist-tag:
+        description: "NPM distribution tag"
+        required: false
+        type: choice
+        options: [latest, next, beta, rc, alpha, canary]
+        default: "latest"
+      dry-run:
+        description: "Dry run: preview changes without modifying git or NPM"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "10.18.3"
+
+jobs:
+  release-unscoped:
+    name: 🚀 Release Unscoped Packages
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      id-token: none # Not needed for unscoped packages (using NPM_TOKEN)
+      pull-requests: write
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          ref: main
+
+      - name: ⚙️ Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: ⚙️ Setup Node.js (NPM_TOKEN for Unscoped)
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: https://registry.npmjs.org/
+          cache: "pnpm"
+          # NO scope set - unscoped packages use NPM_TOKEN (Granular Access Token)
+          # This ensures unscoped packages don't try to use Trusted Publishing
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🔍 Verify NPM_TOKEN
+        if: inputs.dry-run == false
+        run: |
+          if [ -z "${{ secrets.NPM_TOKEN }}" ]; then
+            echo "❌ NPM_TOKEN not found"
+            echo "   Generate Granular Access Token at: https://www.npmjs.com/settings/[username]/tokens"
+            echo "   Add as GitHub secret: gh secret set NPM_TOKEN"
+            exit 1
+          fi
+          echo "✅ NPM_TOKEN found (Granular Access Token)"
+
+      - name: 🔐 Configure npm Authentication
+        if: inputs.dry-run == false
+        run: |
+          echo "🔐 Configuring npm authentication for unscoped packages..."
+
+          # Configure .npmrc with NPM_TOKEN for unscoped packages
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> .npmrc
+
+          echo "✅ NPM_TOKEN configured in .npmrc"
+
+      - name: 📝 Prepare Release Version (Unscoped Only)
+        if: inputs.dry-run == false
+        run: |
+          git config user.name "Ofri Peretz"
+          git config user.email "ofriperetzdev@gmail.com"
+
+          # Explicit list of unscoped packages
+          UNSCOPED_PROJECTS="eslint-plugin-llm,eslint-plugin-mcp,eslint-plugin-llm-optimized,eslint-plugin-mcp-optimized"
+
+          # Get affected projects and filter to only unscoped packages
+          echo "🔍 Detecting affected unscoped packages..."
+          AFFECTED_PROJECTS=$(pnpm nx show projects --affected --base=HEAD~1 2>/dev/null | grep -E "^($(echo $UNSCOPED_PROJECTS | tr ',' '|'))$" | tr '\n' ',' | sed 's/,$//' || echo "")
+
+          if [ -z "$AFFECTED_PROJECTS" ]; then
+            echo "ℹ️  No affected unscoped packages detected"
+            echo "   Checking all unscoped packages for changes..."
+            # Fallback: check if any unscoped project has changes
+            for PROJECT in $(echo $UNSCOPED_PROJECTS | tr ',' ' '); do
+              if git diff --quiet HEAD~1 HEAD -- "packages/$PROJECT" 2>/dev/null; then
+                echo "   - $PROJECT: no changes"
+              else
+                echo "   - $PROJECT: has changes"
+                if [ -z "$AFFECTED_PROJECTS" ]; then
+                  AFFECTED_PROJECTS="$PROJECT"
+                else
+                  AFFECTED_PROJECTS="$AFFECTED_PROJECTS,$PROJECT"
+                fi
+              fi
+            done
+          fi
+
+          if [ -z "$AFFECTED_PROJECTS" ]; then
+            echo "✅ No unscoped packages have changes - nothing to release"
+            exit 0
+          fi
+
+          echo "📦 Affected UNscoped packages: $AFFECTED_PROJECTS"
+          echo "   (filtered from explicit list: $UNSCOPED_PROJECTS)"
+          echo ""
+
+          if [ "${{ inputs.version-specifier }}" != "auto" ]; then
+            echo "📝 Using version strategy: ${{ inputs.version-specifier }}"
+            pnpm nx release version ${{ inputs.version-specifier }} --projects=$AFFECTED_PROJECTS
+          else
+            echo "📝 Using conventional commits to determine version"
+            pnpm nx release version --projects=$AFFECTED_PROJECTS
+          fi
+        env:
+          # Nx Cloud disabled - using local cache only
+          NX_SKIP_NX_CLOUD: "true"
+
+      - name: 🚀 Publish Unscoped Packages
+        if: inputs.dry-run == false
+        run: |
+          echo "🚀 Publishing UNscoped packages with NPM_TOKEN (Granular Access Token)"
+          echo ""
+
+          git config user.name "Ofri Peretz"
+          git config user.email "ofriperetzdev@gmail.com"
+
+          # Explicit list of unscoped packages
+          UNSCOPED_PROJECTS="eslint-plugin-llm,eslint-plugin-mcp,eslint-plugin-llm-optimized,eslint-plugin-mcp-optimized"
+
+          # Get affected projects and filter to only unscoped packages
+          echo "🔍 Detecting affected unscoped packages for publishing..."
+          AFFECTED_PROJECTS=$(pnpm nx show projects --affected --base=HEAD~1 2>/dev/null | grep -E "^($(echo $UNSCOPED_PROJECTS | tr ',' '|'))$" | tr '\n' ',' | sed 's/,$//' || echo "")
+
+          if [ -z "$AFFECTED_PROJECTS" ]; then
+            echo "ℹ️  No affected unscoped packages detected"
+            echo "   Checking for packages with new tags (from version step)..."
+            # Check for packages that have new tags (created in version step)
+            for PROJECT in $(echo $UNSCOPED_PROJECTS | tr ',' ' '); do
+              # Check if there's a new tag for this project
+              LATEST_TAG=$(git tag --sort=-version:refname | grep "^${PROJECT}@" | head -n 1)
+              if [ -n "$LATEST_TAG" ]; then
+                # Check if tag is new (not in remote or different from previous)
+                if [ -z "$AFFECTED_PROJECTS" ]; then
+                  AFFECTED_PROJECTS="$PROJECT"
+                else
+                  AFFECTED_PROJECTS="$AFFECTED_PROJECTS,$PROJECT"
+                fi
+                echo "   - $PROJECT: has new tag $LATEST_TAG"
+              fi
+            done
+          fi
+
+          if [ -z "$AFFECTED_PROJECTS" ]; then
+            echo "✅ No unscoped packages to publish - nothing was versioned"
+            exit 0
+          fi
+
+          echo "📦 Publishing affected UNscoped packages: $AFFECTED_PROJECTS"
+          echo "   (filtered from explicit list: $UNSCOPED_PROJECTS)"
+          echo ""
+
+          pnpm nx release publish --tag ${{ inputs.dist-tag }} --projects=$AFFECTED_PROJECTS
+        env:
+          NPM_CONFIG_PROVENANCE: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # NPM_TOKEN is configured in .npmrc in previous step
+          # Nx Cloud disabled - using local cache only
+          NX_SKIP_NX_CLOUD: "true"
+
+      - name: 🔍 Dry Run Preview
+        if: inputs.dry-run == true
+        run: |
+          echo "🔍 DRY RUN: Previewing UNscoped package releases"
+          echo ""
+
+          # Explicit list of unscoped packages
+          UNSCOPED_PROJECTS="eslint-plugin-llm,eslint-plugin-mcp,eslint-plugin-llm-optimized,eslint-plugin-mcp-optimized"
+
+          # Get affected projects and filter to only unscoped packages
+          echo "🔍 Detecting affected unscoped packages for dry-run..."
+          AFFECTED_PROJECTS=$(pnpm nx show projects --affected --base=HEAD~1 2>/dev/null | grep -E "^($(echo $UNSCOPED_PROJECTS | tr ',' '|'))$" | tr '\n' ',' | sed 's/,$//' || echo "")
+
+          if [ -z "$AFFECTED_PROJECTS" ]; then
+            echo "ℹ️  No affected unscoped packages detected - will preview all unscoped packages"
+            AFFECTED_PROJECTS="$UNSCOPED_PROJECTS"
+          fi
+
+          echo "📦 DRY RUN: Previewing affected UNscoped packages: $AFFECTED_PROJECTS"
+          echo "   (filtered from explicit list: $UNSCOPED_PROJECTS)"
+          echo ""
+
+          if [ "${{ inputs.version-specifier }}" != "auto" ]; then
+            echo "📝 Previewing version strategy: ${{ inputs.version-specifier }}"
+            pnpm nx release version ${{ inputs.version-specifier }} --projects=$AFFECTED_PROJECTS --dry-run
+          else
+            echo "📝 Previewing conventional commits version"
+            pnpm nx release version --projects=$AFFECTED_PROJECTS --dry-run
+          fi
+        env:
+          # Nx Cloud disabled - using local cache only
+          NX_SKIP_NX_CLOUD: "true"

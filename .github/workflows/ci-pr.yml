@@ -103,22 +103,6 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # ═══════════════════════════════════════════════════════════════════════
-      # LAYER 3: NX CLOUD CONNECTION (Optional - falls back to local cache if quota exceeded)
-      # ═══════════════════════════════════════════════════════════════════════
-
-      - name: Connect to Nx Cloud (optional)
-        continue-on-error: true
-        run: |
-          if [ -n "${{ secrets.NX_CLOUD_ACCESS_TOKEN }}" ]; then
-            echo "🔗 Connecting to Nx Cloud..."
-            npx nx connect-to-nx-cloud --quiet --no-interactive || echo "⚠️  Nx Cloud connection failed, using local cache"
-          else
-            echo "ℹ️  NX_CLOUD_ACCESS_TOKEN not set, using local cache only"
-          fi
-        env:
-          NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
-
-      # ═══════════════════════════════════════════════════════════════════════
       # LAYER 4: DERIVE AFFECTED PACKAGES (no artifact caching)
       # ═══════════════════════════════════════════════════════════════════════
 
@@ -144,6 +128,9 @@ jobs:
             echo "📊 Testing all packages..."
             pnpm nx run-many -t test --all -c ci --parallel=4 --verbose
           fi
+        env:
+          # Nx Cloud disabled - using local cache only
+          NX_SKIP_NX_CLOUD: "true"
 
       - name: Build Affected Packages
         run: |
@@ -155,6 +142,9 @@ jobs:
             echo "🔨 Building all packages..."
             pnpm nx run-many -t build --all --parallel=4 --verbose
           fi
+        env:
+          # Nx Cloud disabled - using local cache only
+          NX_SKIP_NX_CLOUD: "true"
 
       # ═══════════════════════════════════════════════════════════════════════
       # LAYER 6: RELEASE VALIDATION (Dry-run to catch release issues early)
@@ -237,6 +227,9 @@ jobs:
           # 1. It requires version changes to already exist
           # 2. The preReleaseCommand build is already validated by the build step above
           # 3. NPM authentication and package conflicts are checked in the release workflow itself
+        env:
+          # Nx Cloud disabled - using local cache only
+          NX_SKIP_NX_CLOUD: "true"
 
       # ═══════════════════════════════════════════════════════════════════════
       # LAYER 7: POST-TEST ACTIONS (DIAGNOSTICS)
@@ -261,5 +254,7 @@ jobs:
           echo ""
           echo "pnpm version:"
           pnpm --version
+          echo ""
+          echo "Nx Cloud: Disabled (using local cache only)"
           echo ""
           pnpm nx report
