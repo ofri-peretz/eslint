@@ -148,7 +148,7 @@ importers:
   packages/eslint-plugin:
     dependencies:
       '@forge-js/eslint-plugin-utils':
-        specifier: 1.0.2
+        specifier: ^1.0.2
         version: 1.0.2(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
       tslib:
         specifier: ^2.3.0
@@ -167,7 +167,7 @@ importers:
   packages/eslint-plugin-llm:
     dependencies:
       '@forge-js/eslint-plugin-llm-optimized':
-        specifier: 1.0.0
+        specifier: ^1.0.0
         version: 1.0.0(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
       tslib:
         specifier: ^2.3.0
@@ -205,7 +205,7 @@ importers:
   packages/eslint-plugin-mcp:
     dependencies:
       '@forge-js/eslint-plugin-llm-optimized':
-        specifier: 1.0.0
+        specifier: ^1.0.0
         version: 1.0.0(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
       tslib:
         specifier: ^2.3.0
