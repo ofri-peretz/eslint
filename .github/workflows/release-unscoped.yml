@@ -83,24 +83,6 @@ jobs:
       - name: 📦 Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: 🔗 Configure Nx Cloud (Optional)
-        continue-on-error: true
-        run: |
-          if [ -n "${{ secrets.NX_CLOUD_ACCESS_TOKEN }}" ]; then
-            echo "🔗 Connecting to Nx Cloud..."
-            if npx nx connect-to-nx-cloud --quiet --no-interactive; then
-              echo "✅ Nx Cloud connected successfully"
-            else
-              echo "⚠️  Nx Cloud connection failed, using local cache only"
-              echo "NX_SKIP_NX_CLOUD=true" >> $GITHUB_ENV
-            fi
-          else
-            echo "ℹ️  NX_CLOUD_ACCESS_TOKEN not set, using local cache only"
-            echo "NX_SKIP_NX_CLOUD=true" >> $GITHUB_ENV
-          fi
-        env:
-          NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
-
       - name: 🔍 Verify NPM_TOKEN
         if: inputs.dry-run == false
         run: |
@@ -162,64 +144,16 @@ jobs:
           echo "   (filtered from explicit list: $UNSCOPED_PROJECTS)"
           echo ""
 
-          # Function to run version command with Nx Cloud error handling
-          run_version_command() {
-            if [ "${{ inputs.version-specifier }}" != "auto" ]; then
-              echo "📝 Using version strategy: ${{ inputs.version-specifier }}"
-              VERSION_CMD="pnpm nx release version ${{ inputs.version-specifier }} --projects=$AFFECTED_PROJECTS"
-            else
-              echo "📝 Using conventional commits to determine version"
-              VERSION_CMD="pnpm nx release version --projects=$AFFECTED_PROJECTS"
-            fi
-            
-            # First attempt with Nx Cloud (if enabled)
-            set +e  # Don't exit on error - we'll handle it
-            eval "$VERSION_CMD" 2>&1 | tee /tmp/nx-release-output.log
-            VERSION_EXIT=${PIPESTATUS[0]}
-            set -e  # Re-enable exit on error
-            
-            # If command failed, check if it's Nx Cloud related
-            if [ "$VERSION_EXIT" -ne 0 ]; then
-              # Check for any Nx Cloud related errors (quota, connection, auth, etc.)
-              if grep -qiE "(nx.?cloud|quota|rate limit|429|too many requests|exceeded|connection.*failed|authentication.*failed|unauthorized|NX_CLOUD.*quota|rate.*limit.*exceeded|429.*Too Many Requests)" /tmp/nx-release-output.log; then
-                echo ""
-                echo "⚠️  Nx Cloud error detected - disabling Nx Cloud and retrying..."
-                echo "   Error details:"
-                grep -iE "(nx.?cloud|quota|rate limit|429|too many requests|exceeded|connection|authentication|unauthorized|NX_CLOUD)" /tmp/nx-release-output.log | head -5 || true
-                echo ""
-                echo "NX_SKIP_NX_CLOUD=true" >> $GITHUB_ENV
-                export NX_SKIP_NX_CLOUD=true
-                
-                # Retry without Nx Cloud - this should succeed
-                echo "📝 Retrying version command without Nx Cloud (using local cache only)..."
-                set +e  # Don't exit on error for retry
-                eval "$VERSION_CMD"
-                RETRY_EXIT=$?  # Capture exit code (no pipe in retry)
-                set -e
-                
-                if [ "$RETRY_EXIT" -ne 0 ]; then
-                  echo "❌ Version command failed even without Nx Cloud - this is a real error"
-                  exit $RETRY_EXIT
-                else
-                  echo "✅ Version command succeeded without Nx Cloud"
-                fi
-              else
-                # Not an Nx Cloud error - this is a real error
-                echo "❌ Version command failed with non-Nx Cloud error - exiting"
-                exit $VERSION_EXIT
-              fi
-            else
-              echo "✅ Version command succeeded with Nx Cloud"
-            fi
-          }
-
-          run_version_command
-          
-          # Cleanup temporary log files
-          rm -f /tmp/nx-release-output.log 2>/dev/null || true
+          if [ "${{ inputs.version-specifier }}" != "auto" ]; then
+            echo "📝 Using version strategy: ${{ inputs.version-specifier }}"
+            pnpm nx release version ${{ inputs.version-specifier }} --projects=$AFFECTED_PROJECTS
+          else
+            echo "📝 Using conventional commits to determine version"
+            pnpm nx release version --projects=$AFFECTED_PROJECTS
+          fi
         env:
-          # Skip Nx Cloud if connection failed or token not set (falls back to local cache)
-          NX_SKIP_NX_CLOUD: ${{ env.NX_SKIP_NX_CLOUD || 'false' }}
+          # Nx Cloud disabled - using local cache only
+          NX_SKIP_NX_CLOUD: "true"
 
       - name: 🚀 Publish Unscoped Packages
         if: inputs.dry-run == false
@@ -265,61 +199,13 @@ jobs:
           echo "   (filtered from explicit list: $UNSCOPED_PROJECTS)"
           echo ""
 
-          # Function to run publish command with Nx Cloud error handling
-          run_publish_command() {
-            PUBLISH_CMD="pnpm nx release publish --tag ${{ inputs.dist-tag }} --projects=$AFFECTED_PROJECTS"
-            
-            # First attempt with Nx Cloud (if enabled)
-            set +e  # Don't exit on error - we'll handle it
-            eval "$PUBLISH_CMD" 2>&1 | tee /tmp/publish-output.log
-            PUBLISH_EXIT=${PIPESTATUS[0]}
-            set -e  # Re-enable exit on error
-            
-            # If command failed, check if it's Nx Cloud related
-            if [ "$PUBLISH_EXIT" -ne 0 ]; then
-              # Check for any Nx Cloud related errors (quota, connection, auth, etc.)
-              if grep -qiE "(nx.?cloud|quota|rate limit|429|too many requests|exceeded|connection.*failed|authentication.*failed|unauthorized|NX_CLOUD.*quota|rate.*limit.*exceeded|429.*Too Many Requests)" /tmp/publish-output.log; then
-                echo ""
-                echo "⚠️  Nx Cloud error detected - disabling Nx Cloud and retrying..."
-                echo "   Error details:"
-                grep -iE "(nx.?cloud|quota|rate limit|429|too many requests|exceeded|connection|authentication|unauthorized|NX_CLOUD)" /tmp/publish-output.log | head -5 || true
-                echo ""
-                echo "NX_SKIP_NX_CLOUD=true" >> $GITHUB_ENV
-                export NX_SKIP_NX_CLOUD=true
-                
-                # Retry without Nx Cloud - this should succeed
-                echo "🚀 Retrying publish command without Nx Cloud (using local cache only)..."
-                set +e  # Don't exit on error for retry
-                eval "$PUBLISH_CMD"
-                RETRY_EXIT=$?  # Capture exit code (no pipe in retry)
-                set -e
-                
-                if [ "$RETRY_EXIT" -ne 0 ]; then
-                  echo "❌ Publish failed even without Nx Cloud - this is a real error"
-                  exit $RETRY_EXIT
-                else
-                  echo "✅ Publish succeeded without Nx Cloud"
-                fi
-              else
-                # Not an Nx Cloud error - this is a real error
-                echo "❌ Publish failed with non-Nx Cloud error - exiting"
-                exit $PUBLISH_EXIT
-              fi
-            else
-              echo "✅ Publish succeeded with Nx Cloud"
-            fi
-          }
-
-          run_publish_command
-          
-          # Cleanup temporary log files
-          rm -f /tmp/publish-output.log 2>/dev/null || true
+          pnpm nx release publish --tag ${{ inputs.dist-tag }} --projects=$AFFECTED_PROJECTS
         env:
           NPM_CONFIG_PROVENANCE: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # NPM_TOKEN is configured in .npmrc in previous step
-          # Skip Nx Cloud if connection failed or token not set (falls back to local cache)
-          NX_SKIP_NX_CLOUD: ${{ env.NX_SKIP_NX_CLOUD || 'false' }}
+          # Nx Cloud disabled - using local cache only
+          NX_SKIP_NX_CLOUD: "true"
 
       - name: 🔍 Dry Run Preview
         if: inputs.dry-run == true
@@ -343,61 +229,13 @@ jobs:
           echo "   (filtered from explicit list: $UNSCOPED_PROJECTS)"
           echo ""
 
-          # Function to run dry-run version command with Nx Cloud error handling
-          run_dry_run_version() {
-            if [ "${{ inputs.version-specifier }}" != "auto" ]; then
-              echo "📝 Previewing version strategy: ${{ inputs.version-specifier }}"
-              VERSION_CMD="pnpm nx release version ${{ inputs.version-specifier }} --projects=$AFFECTED_PROJECTS --dry-run"
-            else
-              echo "📝 Previewing conventional commits version"
-              VERSION_CMD="pnpm nx release version --projects=$AFFECTED_PROJECTS --dry-run"
-            fi
-            
-            # First attempt with Nx Cloud (if enabled)
-            set +e  # Don't exit on error - we'll handle it
-            eval "$VERSION_CMD" 2>&1 | tee /tmp/dry-run-output.log
-            VERSION_EXIT=${PIPESTATUS[0]}
-            set -e  # Re-enable exit on error
-            
-            # If command failed, check if it's Nx Cloud related
-            if [ "$VERSION_EXIT" -ne 0 ]; then
-              # Check for any Nx Cloud related errors (quota, connection, auth, etc.)
-              if grep -qiE "(nx.?cloud|quota|rate limit|429|too many requests|exceeded|connection.*failed|authentication.*failed|unauthorized|NX_CLOUD.*quota|rate.*limit.*exceeded|429.*Too Many Requests)" /tmp/dry-run-output.log; then
-                echo ""
-                echo "⚠️  Nx Cloud error detected - disabling Nx Cloud and retrying..."
-                echo "   Error details:"
-                grep -iE "(nx.?cloud|quota|rate limit|429|too many requests|exceeded|connection|authentication|unauthorized|NX_CLOUD)" /tmp/dry-run-output.log | head -5 || true
-                echo ""
-                echo "NX_SKIP_NX_CLOUD=true" >> $GITHUB_ENV
-                export NX_SKIP_NX_CLOUD=true
-                
-                # Retry without Nx Cloud - this should succeed
-                echo "📝 Retrying dry-run version command without Nx Cloud (using local cache only)..."
-                set +e  # Don't exit on error for retry
-                eval "$VERSION_CMD"
-                RETRY_EXIT=$?  # Capture exit code (no pipe in retry)
-                set -e
-                
-                if [ "$RETRY_EXIT" -ne 0 ]; then
-                  echo "❌ Dry-run failed even without Nx Cloud - this is a real error"
-                  exit $RETRY_EXIT
-                else
-                  echo "✅ Dry-run succeeded without Nx Cloud"
-                fi
-              else
-                # Not an Nx Cloud error - this is a real error
-                echo "❌ Dry-run failed with non-Nx Cloud error - exiting"
-                exit $VERSION_EXIT
-              fi
-            else
-              echo "✅ Dry-run succeeded with Nx Cloud"
-            fi
-          }
-
-          run_dry_run_version
-          
-          # Cleanup temporary log files
-          rm -f /tmp/dry-run-output.log 2>/dev/null || true
+          if [ "${{ inputs.version-specifier }}" != "auto" ]; then
+            echo "📝 Previewing version strategy: ${{ inputs.version-specifier }}"
+            pnpm nx release version ${{ inputs.version-specifier }} --projects=$AFFECTED_PROJECTS --dry-run
+          else
+            echo "📝 Previewing conventional commits version"
+            pnpm nx release version --projects=$AFFECTED_PROJECTS --dry-run
+          fi
         env:
-          # Skip Nx Cloud if connection failed or token not set (falls back to local cache)
-          NX_SKIP_NX_CLOUD: ${{ env.NX_SKIP_NX_CLOUD || 'false' }}
+          # Nx Cloud disabled - using local cache only
+          NX_SKIP_NX_CLOUD: "true"

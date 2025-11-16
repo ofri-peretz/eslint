@@ -48,28 +48,6 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # ═══════════════════════════════════════════════════════════════════════
-      # NX CLOUD - Remote caching for faster builds
-      # ═══════════════════════════════════════════════════════════════════════
-
-      - name: 🔗 Configure Nx Cloud (Optional)
-        continue-on-error: true
-        run: |
-          if [ -n "${{ secrets.NX_CLOUD_ACCESS_TOKEN }}" ]; then
-            echo "🔗 Connecting to Nx Cloud..."
-            if npx nx connect-to-nx-cloud --quiet --no-interactive; then
-              echo "✅ Nx Cloud connected successfully"
-            else
-              echo "⚠️  Nx Cloud connection failed, using local cache only"
-              echo "NX_SKIP_NX_CLOUD=true" >> $GITHUB_ENV
-            fi
-          else
-            echo "ℹ️  NX_CLOUD_ACCESS_TOKEN not set, using local cache only"
-            echo "NX_SKIP_NX_CLOUD=true" >> $GITHUB_ENV
-          fi
-        env:
-          NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
-
-      # ═══════════════════════════════════════════════════════════════════════
       # ESLINT CACHE - Persist lint results between runs
       # ═══════════════════════════════════════════════════════════════════════
 
@@ -101,64 +79,16 @@ jobs:
         run: |
           export ESLINT_CACHE=true
 
-          # Function to run lint with error handling for Nx Cloud failures
-          run_lint() {
-            if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-              echo "📝 Linting affected packages only..."
-              LINT_CMD="pnpm nx affected -t lint --parallel=4 --verbose"
-            else
-              echo "📝 Linting all packages..."
-              LINT_CMD="pnpm nx run-many -t lint --all --parallel=4 --verbose"
-            fi
-            
-            # First attempt with Nx Cloud (if enabled)
-            set +e  # Don't exit on error - we'll handle it
-            eval "$LINT_CMD" 2>&1 | tee /tmp/lint-output.log
-            LINT_EXIT=${PIPESTATUS[0]}
-            set -e  # Re-enable exit on error
-            
-            # If command failed, check if it's Nx Cloud related
-            if [ "$LINT_EXIT" -ne 0 ]; then
-              # Check for any Nx Cloud related errors (quota, connection, auth, etc.)
-              if grep -qiE "(nx.?cloud|quota|rate limit|429|too many requests|exceeded|connection.*failed|authentication.*failed|unauthorized|NX_CLOUD.*quota|rate.*limit.*exceeded|429.*Too Many Requests)" /tmp/lint-output.log; then
-                echo ""
-                echo "⚠️  Nx Cloud error detected - disabling Nx Cloud and retrying..."
-                echo "   Error details:"
-                grep -iE "(nx.?cloud|quota|rate limit|429|too many requests|exceeded|connection|authentication|unauthorized|NX_CLOUD)" /tmp/lint-output.log | head -5 || true
-                echo ""
-                echo "NX_SKIP_NX_CLOUD=true" >> $GITHUB_ENV
-                export NX_SKIP_NX_CLOUD=true
-                
-                # Retry without Nx Cloud - this should succeed
-                echo "📝 Retrying lint without Nx Cloud (using local cache only)..."
-                set +e  # Don't exit on error for retry
-                eval "$LINT_CMD"
-                RETRY_EXIT=$?  # Capture exit code (no pipe in retry)
-                set -e
-                
-                if [ "$RETRY_EXIT" -ne 0 ]; then
-                  echo "❌ Lint failed even without Nx Cloud - this is a real error"
-                  exit $RETRY_EXIT
-                else
-                  echo "✅ Lint succeeded without Nx Cloud"
-                fi
-              else
-                # Not an Nx Cloud error - this is a real linting error
-                echo "❌ Lint failed with non-Nx Cloud error - exiting"
-                exit $LINT_EXIT
-              fi
-            else
-              echo "✅ Lint succeeded with Nx Cloud"
-            fi
-          }
-
-          run_lint
-
-          # Cleanup temporary log files
-          rm -f /tmp/lint-output.log 2>/dev/null || true
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "📝 Linting affected packages only..."
+            pnpm nx affected -t lint --parallel=4 --verbose
+          else
+            echo "📝 Linting all packages..."
+            pnpm nx run-many -t lint --all --parallel=4 --verbose
+          fi
         env:
-          # Skip Nx Cloud if connection failed or token not set (falls back to local cache)
-          NX_SKIP_NX_CLOUD: ${{ env.NX_SKIP_NX_CLOUD || 'false' }}
+          # Nx Cloud disabled - using local cache only
+          NX_SKIP_NX_CLOUD: "true"
 
       # ═══════════════════════════════════════════════════════════════════════
       # DIAGNOSTICS
@@ -180,11 +110,6 @@ jobs:
           echo "pnpm version:"
           pnpm --version
           echo ""
-          echo "Nx Cloud status:"
-          if [ "${{ env.NX_SKIP_NX_CLOUD }}" == "true" ]; then
-            echo "  ⚠️  Nx Cloud disabled (using local cache only)"
-          else
-            echo "  ✅ Nx Cloud enabled (if token configured)"
-          fi
+          echo "Nx Cloud: Disabled (using local cache only)"
           echo ""
           pnpm nx report
