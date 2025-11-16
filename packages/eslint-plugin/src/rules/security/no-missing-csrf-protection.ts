@@ -203,7 +203,7 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
               suggest: [
                 {
                   messageId: 'addCsrfValidation',
-                  fix(fixer) {
+                  fix(fixer: TSESLint.RuleFixer) {
                     // Add CSRF middleware after the first argument (path)
                     const firstArg = node.arguments[0];
                     if (firstArg) {

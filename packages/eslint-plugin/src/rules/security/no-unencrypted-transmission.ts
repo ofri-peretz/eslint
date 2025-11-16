@@ -224,20 +224,20 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
             safeAlternative,
           },
           suggest: [
-            {
-              messageId: 'useHttps',
-              data: {
-                protocol,
-                secureProtocol,
-              },
-              fix(fixer) {
-                if (secureProtocol && secureProtocol !== 'secure protocol') {
-                  // Replace the insecure protocol with secure one
-                  const newValue = value.replace(new RegExp(protocol.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), secureProtocol);
-                  return fixer.replaceText(node, JSON.stringify(newValue));
-                }
-                return null;
-              },
+              {
+                messageId: 'useHttps',
+                data: {
+                  protocol,
+                  secureProtocol,
+                },
+                fix(fixer: TSESLint.RuleFixer) {
+                  if (secureProtocol && secureProtocol !== 'secure protocol') {
+                    // Replace the insecure protocol with secure one
+                    const newValue = value.replace(new RegExp(protocol.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), secureProtocol);
+                    return fixer.replaceText(node, JSON.stringify(newValue));
+                  }
+                  return null;
+                },
             },
           ],
         });

@@ -375,7 +375,7 @@ export const noInsecureCookieSettings = createRule<RuleOptions, MessageIds>({
                 suggest: [
                   {
                     messageId: 'addSecureFlags',
-                    fix(fixer) {
+                    fix(fixer: TSESLint.RuleFixer) {
                       // Find the last property in the object
                       const properties = optionsArg.properties;
                       if (properties.length === 0) {
