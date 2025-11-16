@@ -28,6 +28,8 @@ type RuleOptions = [Options?];
 /**
  * Check if a node is inside a CORS configuration
  * Currently unused - kept for future use
+ * @coverage-note This function is intentionally unused and kept for future enhancements.
+ * It cannot be tested directly as it's not called by any code path.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function isInsideCorsConfig(
