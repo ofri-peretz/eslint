@@ -51,8 +51,21 @@ jobs:
       # NX CLOUD - Remote caching for faster builds
       # ═══════════════════════════════════════════════════════════════════════
 
-      - name: Connect to Nx Cloud
-        run: npx nx connect-to-nx-cloud --quiet
+      - name: 🔗 Configure Nx Cloud (Optional)
+        continue-on-error: true
+        run: |
+          if [ -n "${{ secrets.NX_CLOUD_ACCESS_TOKEN }}" ]; then
+            echo "🔗 Connecting to Nx Cloud..."
+            if npx nx connect-to-nx-cloud --quiet --no-interactive; then
+              echo "✅ Nx Cloud connected successfully"
+            else
+              echo "⚠️  Nx Cloud connection failed, using local cache only"
+              echo "NX_SKIP_NX_CLOUD=true" >> $GITHUB_ENV
+            fi
+          else
+            echo "ℹ️  NX_CLOUD_ACCESS_TOKEN not set, using local cache only"
+            echo "NX_SKIP_NX_CLOUD=true" >> $GITHUB_ENV
+          fi
         env:
           NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
 
@@ -94,6 +107,9 @@ jobs:
             echo "📝 Linting all packages..."
             pnpm nx run-many -t lint --all --parallel=4 --verbose
           fi
+        env:
+          # Skip Nx Cloud if connection failed or token not set (falls back to local cache)
+          NX_SKIP_NX_CLOUD: ${{ env.NX_SKIP_NX_CLOUD || 'false' }}
 
       # ═══════════════════════════════════════════════════════════════════════
       # DIAGNOSTICS

@@ -187,6 +187,27 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # ──────────────────────────────────────────────────────────────────────
+      # CONFIGURE NX CLOUD (Optional - skip if unavailable)
+      # ──────────────────────────────────────────────────────────────────────
+      - name: 🔗 Configure Nx Cloud (Optional)
+        continue-on-error: true
+        run: |
+          if [ -n "${{ secrets.NX_CLOUD_ACCESS_TOKEN }}" ]; then
+            echo "🔗 Connecting to Nx Cloud..."
+            if npx nx connect-to-nx-cloud --quiet --no-interactive; then
+              echo "✅ Nx Cloud connected successfully"
+            else
+              echo "⚠️  Nx Cloud connection failed, using local cache only"
+              echo "NX_SKIP_NX_CLOUD=true" >> $GITHUB_ENV
+            fi
+          else
+            echo "ℹ️  NX_CLOUD_ACCESS_TOKEN not set, using local cache only"
+            echo "NX_SKIP_NX_CLOUD=true" >> $GITHUB_ENV
+          fi
+        env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+
+      # ──────────────────────────────────────────────────────────────────────
       # VERIFY TRUSTED PUBLISHING (SCOPED PACKAGES ONLY)
       # ──────────────────────────────────────────────────────────────────────
       - name: 🔍 Verify Trusted Publishing
@@ -638,8 +659,6 @@ jobs:
 
           # Run publish command and capture output
           PUBLISH_OUTPUT=$(pnpm nx release publish --tag ${{ inputs.dist-tag }} --projects=$AFFECTED_PROJECTS 2>&1) || PUBLISH_EXIT=$?
-
-          # Check if publish succeeded
           if [ -z "$PUBLISH_EXIT" ] || [ "$PUBLISH_EXIT" -eq 0 ]; then
             echo "✅ All packages published successfully"
           else
@@ -718,6 +737,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # NODE_AUTH_TOKEN is automatically set by setup-node@v6 for Trusted Publishing (scoped packages)
           # NPM_TOKEN is NOT needed - this workflow only handles scoped packages
+          # Skip Nx Cloud if connection failed or token not set (falls back to local cache)
+          NX_SKIP_NX_CLOUD: ${{ env.NX_SKIP_NX_CLOUD || 'false' }}
 
       # ──────────────────────────────────────────────────────────────────────
       # DRY RUN: Just preview changes
