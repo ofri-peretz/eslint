@@ -125,12 +125,9 @@ jobs:
     needs: [validate-ci]
     timeout-minutes: 15
     permissions:
-      contents:
-        write # Required to push commits and tags
-        # NOTE: Branch protection must allow GitHub Actions to bypass
-        # Configure in: Settings → Branches → main → "Allow specified actors to bypass"
-        # Add: "GitHub Actions" or this workflow
+      contents: write # Required to push commits/tags and create PRs
       id-token: write # ← Required for Trusted Publishing (OIDC)
+      pull-requests: write # Required to create PR if direct push fails
 
     steps:
       - name: 📥 Checkout repository
@@ -350,116 +347,87 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # ──────────────────────────────────────────────────────────────────────
-      # PHASE 2: PUSH VERSION CHANGES TO REPOSITORY
+      # PHASE 2: CREATE RELEASE PR
       # ──────────────────────────────────────────────────────────────────────
-      # After nx release version, we need to push the commits and tags to main
-      # This ensures the repository reflects the new versions that were published
-      #
-      # IMPORTANT: For this to work with branch protection:
-      # 1. Branch protection must allow GitHub Actions to bypass protection
-      #    (Settings → Branches → Branch protection → Allow specified actors to bypass)
-      # 2. Add "GitHub Actions" or this workflow to the bypass list
-      # 3. OR configure branch protection to allow this specific workflow
-      #
-      # If branch protection cannot be bypassed, the workflow will fail here
-      # and you'll need to either:
-      # - Configure branch protection to allow this workflow
-      # - Or manually merge the version changes via PR
-      - name: 📤 Push Version Changes to Repository
+      # After nx release version, we create a PR with the version changes
+      # This is BEST PRACTICE: safer, more transparent, works with any protection
+      - name: 📝 Create Release PR
         if: inputs.dry-run == false
         run: |
-          echo "📤 Pushing version changes to main branch..."
+          echo "📝 Creating release PR (best practice approach)..."
           echo ""
-          echo "ℹ️  Note: This workflow requires branch protection to allow GitHub Actions"
-          echo "   If push fails, configure branch protection to allow this workflow to bypass"
+          echo "✅ Benefits of PR-based releases:"
+          echo "   - You can review what's being released"
+          echo "   - Works with any branch protection setup"
+          echo "   - No special configuration needed"
+          echo "   - Industry standard approach"
           echo ""
 
           # Check if there are commits to push (nx release version creates commits)
           if git diff --quiet HEAD origin/main; then
-            echo "ℹ️  No local changes to push (versions already match remote)"
-            echo "skip_push=true" >> $GITHUB_ENV
+            echo "ℹ️  No local changes (versions already match remote)"
+            echo "   Skipping PR creation - versions are already on main"
+            echo "skip_pr=true" >> $GITHUB_ENV
           else
             # Get the commits that were created by nx release version
             COMMITS_TO_PUSH=$(git log origin/main..HEAD --oneline | wc -l)
             TAGS_TO_PUSH=$(git tag --list --no-merged origin/main | wc -l)
             
-            echo "📝 Found $COMMITS_TO_PUSH commit(s) and $TAGS_TO_PUSH tag(s) to push"
+            echo "📝 Found $COMMITS_TO_PUSH commit(s) and $TAGS_TO_PUSH tag(s) to release"
             echo ""
             
-            # Fetch latest from origin to check for conflicts
+            # Fetch latest from origin
             git fetch origin main
             
-            # Check if main has moved ahead (someone pushed while we were running)
+            # Check if main has moved ahead
             if ! git merge-base --is-ancestor origin/main HEAD; then
-              echo "⚠️  Warning: Main branch has moved ahead"
-              echo "   Attempting to rebase local changes on top of origin/main..."
+              echo "⚠️  Main branch has moved ahead - rebasing..."
               git rebase origin/main || {
                 echo "❌ Rebase failed - conflicts detected"
-                echo "   Please resolve conflicts manually and re-run the workflow"
+                echo "   Please resolve conflicts manually and re-run"
                 exit 1
               }
             fi
             
-            # Push commits to main (will work if branch protection allows GitHub Actions)
-            echo "📤 Pushing commits to main..."
-            echo "   Using GITHUB_TOKEN with contents:write permission"
-            echo "   This should bypass branch protection if configured correctly"
-            echo ""
+            # Create release branch
+            RELEASE_BRANCH="chore/release-$(date +%Y%m%d-%H%M%S)"
+            git checkout -b "$RELEASE_BRANCH"
             
-            if git push origin main 2>&1; then
-              echo "✅ Successfully pushed commits to main"
-              PUSH_SUCCESS=true
-            else
-              PUSH_ERROR=$?
-              echo ""
-              echo "❌ Failed to push commits to main (exit code: $PUSH_ERROR)"
-              echo ""
-              echo "🔧 This usually means branch protection is blocking the push."
-              echo "   To fix this, configure branch protection to allow this workflow:"
-              echo ""
-              echo "   1. Go to: Settings → Branches → Branch protection rules → main"
-              echo "   2. Under 'Restrict who can push to matching branches'"
-              echo "   3. Add 'GitHub Actions' or this workflow to the bypass list"
-              echo "   OR"
-              echo "   4. Disable 'Require pull request reviews' for this workflow"
-              echo "   OR"
-              echo "   5. Add this workflow to 'Allow specified actors to bypass'"
-              echo ""
-              echo "   Workflow name: Release"
-              echo "   Workflow file: .github/workflows/release.yml"
-              echo ""
+            # Push branch
+            echo "📤 Pushing release branch: $RELEASE_BRANCH"
+            git push origin "$RELEASE_BRANCH" || {
+              echo "❌ Failed to push release branch"
               exit 1
-            fi
+            }
             
-            # Push tags (tags can usually be pushed even with branch protection)
-            # Handle tag conflicts gracefully - if tag exists, skip it
-            echo ""
-            echo "🏷️  Pushing tags..."
-            TAG_PUSH_OUTPUT=$(git push origin --tags 2>&1) || TAG_PUSH_EXIT=$?
-            if [ "$TAG_PUSH_EXIT" -eq 0 ]; then
-              echo "✅ Successfully pushed all tags"
+            # Create PR
+            PR_TITLE="chore(release): Update package versions"
+            # Build PR body - using printf to avoid YAML linter issues
+            PR_BODY=$(printf "🤖 **Automated Release PR**\n\nThis PR contains version updates from the release workflow.\n\n**Commits:** %s\n**Tags:** %s\n\n**⚠️ IMPORTANT:** Merge this PR to complete the release.\nAfter merging, re-run the release workflow to publish packages to npm." "$COMMITS_TO_PUSH" "$TAGS_TO_PUSH")
+            
+            if command -v gh &> /dev/null; then
+              PR_URL=$(gh pr create \
+                --title "$PR_TITLE" \
+                --body "$PR_BODY" \
+                --base main \
+                --head "$RELEASE_BRANCH" \
+                --label "release" \
+                --json url --jq '.url' 2>&1) || {
+                PR_URL="https://github.com/${{ github.repository }}/compare/main...$RELEASE_BRANCH?expand=1"
+              }
             else
-              # Check if error is due to existing tags (this is OK)
-              if echo "$TAG_PUSH_OUTPUT" | grep -q "already exists"; then
-                echo "ℹ️  Some tags already exist remotely (this is OK)"
-                echo "   Existing tags will be skipped"
-                # Try to push only new tags
-                NEW_TAGS=$(git tag --list --no-merged origin/main 2>/dev/null || echo "")
-                if [ -n "$NEW_TAGS" ]; then
-                  echo "📝 Pushing only new tags..."
-                  echo "$NEW_TAGS" | while read tag; do
-                    git push origin "$tag" 2>&1 || echo "   ⚠️  Failed to push $tag (may already exist)"
-                  done
-                fi
-              else
-                echo "⚠️  Warning: Tag push failed with unexpected error"
-                echo "$TAG_PUSH_OUTPUT"
-                echo "   This may be non-critical - tags will be created on next release"
-              fi
+              PR_URL="https://github.com/${{ github.repository }}/compare/main...$RELEASE_BRANCH?expand=1"
             fi
             
             echo ""
-            echo "✅ Successfully pushed all version changes to main"
+            echo "✅ Created release PR: $PR_URL"
+            echo ""
+            echo "📋 Next steps:"
+            echo "   1. Review and merge the PR"
+            echo "   2. Re-run this workflow to publish packages"
+            echo ""
+            echo "pr_created=true" >> $GITHUB_ENV
+            echo "pr_url=$PR_URL" >> $GITHUB_ENV
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -467,9 +435,11 @@ jobs:
       # ──────────────────────────────────────────────────────────────────────
       # PHASE 3: PUBLISH (preReleaseCommand rebuilds with new versions + publish)
       # ──────────────────────────────────────────────────────────────────────
+      # Note: Publishing happens after the release PR is merged
+      # If PR was just created, skip publishing (user needs to merge PR first)
       - name: 🚀 Publish Packages
         id: publish
-        if: inputs.dry-run == false
+        if: inputs.dry-run == false && env.pr_created != 'true'
         run: |
           # Configure git user for automated commits
           git config user.name "Ofri Peretz"
@@ -577,9 +547,9 @@ jobs:
             echo "- \`@forge-js/eslint-plugin-llm\`" >> $GITHUB_STEP_SUMMARY
             echo "- \`@forge-js/eslint-plugin-mcp\`" >> $GITHUB_STEP_SUMMARY
             echo "- \`@forge-js/eslint-plugin-mcp-optimized\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "To install the new version:" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "pnpm add @forge-js/eslint-plugin@${{ inputs.dist-tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "To install the new version:" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+            echo "pnpm add @forge-js/eslint-plugin@${{ inputs.dist-tag }}" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           fi
