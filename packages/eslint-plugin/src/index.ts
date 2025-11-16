@@ -31,6 +31,7 @@ import { detectNonLiteralRegexp } from './rules/security/detect-non-literal-rege
 import { detectObjectInjection } from './rules/security/detect-object-injection';
 import { noHardcodedCredentials } from './rules/security/no-hardcoded-credentials';
 import { noWeakCrypto } from './rules/security/no-weak-crypto';
+import { noInsufficientRandom } from './rules/security/no-insufficient-random';
 
 // Migration rules
 import { reactClassToHooks } from './rules/migration/react-class-to-hooks';
@@ -89,6 +90,7 @@ export const rules = {
   'detect-object-injection': detectObjectInjection,
   'no-hardcoded-credentials': noHardcodedCredentials,
   'no-weak-crypto': noWeakCrypto,
+  'no-insufficient-random': noInsufficientRandom,
   'react-class-to-hooks': reactClassToHooks,
   'react-no-inline-functions': reactNoInlineFunctions,
   'img-requires-alt': imgRequiresAlt,
@@ -113,6 +115,7 @@ export const rules = {
   'security/detect-object-injection': detectObjectInjection,
   'security/no-hardcoded-credentials': noHardcodedCredentials,
   'security/no-weak-crypto': noWeakCrypto,
+  'security/no-insufficient-random': noInsufficientRandom,
   'migration/react-class-to-hooks': reactClassToHooks,
   'performance/react-no-inline-functions': reactNoInlineFunctions,
   'accessibility/img-requires-alt': imgRequiresAlt,
@@ -216,6 +219,7 @@ export const configs = {
       '@forge-js/llm-optimized/security/database-injection': 'error',
       '@forge-js/llm-optimized/security/no-hardcoded-credentials': 'warn',
       '@forge-js/llm-optimized/security/no-weak-crypto': 'warn',
+      '@forge-js/llm-optimized/security/no-insufficient-random': 'warn',
       '@forge-js/llm-optimized/accessibility/img-requires-alt': 'warn',
       '@forge-js/llm-optimized/complexity/cognitive-complexity': 'warn',
       '@forge-js/llm-optimized/duplication/identical-functions': 'warn',
@@ -442,6 +446,7 @@ export type {
   NoUnsafeDynamicRequireOptions,
   NoHardcodedCredentialsOptions,
   NoWeakCryptoOptions,
+  NoInsufficientRandomOptions,
   PreferDependencyVersionStrategyOptions,
   // Combined type
   AllRulesOptions,

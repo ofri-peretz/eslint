@@ -58,6 +58,7 @@ import type { Options as NoSqlInjectionOptions } from '../rules/security/no-sql-
 import type { Options as NoUnsafeDynamicRequireOptions } from '../rules/security/no-unsafe-dynamic-require';
 import type { Options as NoHardcodedCredentialsOptions } from '../rules/security/no-hardcoded-credentials';
 import type { Options as NoWeakCryptoOptions } from '../rules/security/no-weak-crypto';
+import type { Options as NoInsufficientRandomOptions } from '../rules/security/no-insufficient-random';
 
 // Export all types with consistent naming
 export type {
@@ -83,6 +84,7 @@ export type {
   NoUnsafeDynamicRequireOptions,
   NoHardcodedCredentialsOptions,
   NoWeakCryptoOptions,
+  NoInsufficientRandomOptions,
 };
 
 /**
@@ -125,5 +127,6 @@ export type AllRulesOptions = {
   'no-unsafe-dynamic-require'?: NoUnsafeDynamicRequireOptions;
   'no-hardcoded-credentials'?: NoHardcodedCredentialsOptions;
   'no-weak-crypto'?: NoWeakCryptoOptions;
+  'no-insufficient-random'?: NoInsufficientRandomOptions;
 };
 
