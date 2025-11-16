@@ -27,7 +27,7 @@ describe('getParserServices', () => {
     program: {} as ts.Program,
     esTreeNodeToTSNodeMap: new Map(),
     tsNodeToESTreeNodeMap: new Map(),
-  } as ParserServices;
+  } as unknown as ParserServices;
 
   it('should return parser services from sourceCode.parserServices (ESLint 9)', () => {
     const context = {
@@ -98,7 +98,7 @@ describe('hasParserServices', () => {
     program: {} as ts.Program,
     esTreeNodeToTSNodeMap: new Map(),
     tsNodeToESTreeNodeMap: new Map(),
-  } as ParserServices;
+  } as unknown as ParserServices;
 
   it('should return true when parser services are available (ESLint 9)', () => {
     const context = {
@@ -151,13 +151,14 @@ describe('getTypeOfNode', () => {
   let mockTsNode: ts.Node;
   let mockType: ts.Type;
   let mockParserServices: ParserServices;
+  let testNode: TSESTree.Node;
 
   beforeEach(() => {
     mockType = {
       flags: ts.TypeFlags.String,
     } as ts.Type;
 
-    const testNode = {} as TSESTree.Node;
+    testNode = {} as TSESTree.Node;
     mockTsNode = {} as ts.Node;
 
     mockChecker = {
@@ -173,15 +174,14 @@ describe('getTypeOfNode', () => {
 
     mockParserServices = {
       program: mockProgram,
-      esTreeNodeToTSNodeMap: map as any,
+      esTreeNodeToTSNodeMap: map as ParserServices['esTreeNodeToTSNodeMap'],
       tsNodeToESTreeNodeMap: new Map(),
-    } as ParserServices;
+    } as unknown as ParserServices;
   });
 
   it('should get type from TypeScript checker', () => {
-    // Get the node that was added to the map in beforeEach
-    const node = Array.from(mockParserServices.esTreeNodeToTSNodeMap.keys())[0];
-    const result = getTypeOfNode(node, mockParserServices);
+    // Use the testNode directly since WeakMaps don't have keys() method
+    const result = getTypeOfNode(testNode, mockParserServices);
 
     expect(mockProgram.getTypeChecker).toHaveBeenCalled();
     expect(mockChecker.getTypeAtLocation).toHaveBeenCalledWith(mockTsNode);
@@ -190,12 +190,12 @@ describe('getTypeOfNode', () => {
 
   it('should throw error when program is not available', () => {
     const node = {} as TSESTree.Node;
-    const servicesWithoutProgram = {
+    const servicesWithoutProgram: Partial<ParserServices> & { program?: undefined } = {
       ...mockParserServices,
       program: undefined,
     };
 
-    expect(() => getTypeOfNode(node, servicesWithoutProgram as any)).toThrow(
+    expect(() => getTypeOfNode(node, servicesWithoutProgram as ParserServices)).toThrow(
       'Program is not available'
     );
   });

@@ -14,7 +14,7 @@ import { createRule } from '../../utils/create-rule';
 
 type VersionStrategy = 'caret' | 'tilde' | 'exact' | 'range' | 'any';
 
-interface Options {
+export interface Options {
   strategy?: VersionStrategy;
   allowWorkspace?: boolean;
   allowFile?: boolean;

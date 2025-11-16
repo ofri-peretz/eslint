@@ -29,6 +29,8 @@ import { detectChildProcess } from './rules/security/detect-child-process';
 import { detectNonLiteralFsFilename } from './rules/security/detect-non-literal-fs-filename';
 import { detectNonLiteralRegexp } from './rules/security/detect-non-literal-regexp';
 import { detectObjectInjection } from './rules/security/detect-object-injection';
+import { noHardcodedCredentials } from './rules/security/no-hardcoded-credentials';
+import { noWeakCrypto } from './rules/security/no-weak-crypto';
 
 // Migration rules
 import { reactClassToHooks } from './rules/migration/react-class-to-hooks';
@@ -85,6 +87,8 @@ export const rules = {
   'detect-non-literal-fs-filename': detectNonLiteralFsFilename,
   'detect-non-literal-regexp': detectNonLiteralRegexp,
   'detect-object-injection': detectObjectInjection,
+  'no-hardcoded-credentials': noHardcodedCredentials,
+  'no-weak-crypto': noWeakCrypto,
   'react-class-to-hooks': reactClassToHooks,
   'react-no-inline-functions': reactNoInlineFunctions,
   'img-requires-alt': imgRequiresAlt,
@@ -107,6 +111,8 @@ export const rules = {
   'security/detect-non-literal-fs-filename': detectNonLiteralFsFilename,
   'security/detect-non-literal-regexp': detectNonLiteralRegexp,
   'security/detect-object-injection': detectObjectInjection,
+  'security/no-hardcoded-credentials': noHardcodedCredentials,
+  'security/no-weak-crypto': noWeakCrypto,
   'migration/react-class-to-hooks': reactClassToHooks,
   'performance/react-no-inline-functions': reactNoInlineFunctions,
   'accessibility/img-requires-alt': imgRequiresAlt,
@@ -208,6 +214,8 @@ export const configs = {
       '@forge-js/llm-optimized/security/no-sql-injection': 'error',
       '@forge-js/llm-optimized/security/no-unsafe-dynamic-require': 'error',
       '@forge-js/llm-optimized/security/database-injection': 'error',
+      '@forge-js/llm-optimized/security/no-hardcoded-credentials': 'warn',
+      '@forge-js/llm-optimized/security/no-weak-crypto': 'warn',
       '@forge-js/llm-optimized/accessibility/img-requires-alt': 'warn',
       '@forge-js/llm-optimized/complexity/cognitive-complexity': 'warn',
       '@forge-js/llm-optimized/duplication/identical-functions': 'warn',
@@ -432,6 +440,9 @@ export type {
   DetectObjectInjectionOptions,
   NoSqlInjectionOptions,
   NoUnsafeDynamicRequireOptions,
+  NoHardcodedCredentialsOptions,
+  NoWeakCryptoOptions,
+  PreferDependencyVersionStrategyOptions,
   // Combined type
   AllRulesOptions,
 } from './types/index';

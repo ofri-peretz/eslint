@@ -20,6 +20,7 @@ import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll, beforeEach, afterEach } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noCircularDependencies } from '../rules/architecture/no-circular-dependencies';
+import type { Options } from '../rules/architecture/no-circular-dependencies';
 import * as fs from 'fs';
 import * as path from 'path';
 import { tmpdir } from 'os';
@@ -1054,7 +1055,7 @@ describe('no-circular-dependencies', () => {
           {
             code: fs.readFileSync(fileA, 'utf-8'),
             filename: fileA,
-            options: [{ fixStrategy: 'invalid-strategy' as any }],
+            options: [{ fixStrategy: 'invalid-strategy' as unknown as Options['fixStrategy'] }],
             errors: [
               {
                 messageId: 'moduleSplit',
@@ -1179,7 +1180,7 @@ describe('no-circular-dependencies', () => {
     });
 
     it('should test minimal cycle filtering (line 683-685)', () => {
-      const fileA = createFile(tempDir, 'a.ts', "import { b } from './b';\nexport const a = 'a';");
+      createFile(tempDir, 'a.ts', "import { b } from './b';\nexport const a = 'a';");
       createFile(tempDir, 'b.ts', "import { c } from './c';\nexport const b = 'b';");
       createFile(tempDir, 'c.ts', "import { b } from './b';\nexport const c = 'c';");
       const fileD = createFile(tempDir, 'd.ts', "import { a } from './a';\nexport const d = 'd';");

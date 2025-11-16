@@ -3,19 +3,22 @@
 ## Overview
 
 This roadmap outlines the next 40+ ESLint rules to implement, based on analysis of:
+
 - **SonarQube RSPEC** rules (Java/JavaScript)
 - **Popular ESLint plugins** (eslint, @typescript-eslint, react, etc.)
 - **Security standards** (CWE, OWASP, MITRE)
 - **Code quality frameworks** (Clean Code, Design Patterns)
+- **CodeRabbit AI suggestions** (Common security and quality patterns from PR reviews)
 
-**Current Status**: 19 rules implemented (38% coverage)
-**Target**: 60 rules (100% comprehensive coverage)
+**Current Status**: 22 rules implemented (33% coverage)
+**Target**: 70 rules (100% comprehensive coverage)
 
 ---
 
-## 📊 Current Implementation (19 Rules)
+## 📊 Current Implementation (22 Rules)
 
-### Security (8 rules) ✅
+### Security (11 rules) ✅
+
 - [x] no-sql-injection
 - [x] database-injection
 - [x] no-unsafe-dynamic-require
@@ -24,138 +27,167 @@ This roadmap outlines the next 40+ ESLint rules to implement, based on analysis 
 - [x] detect-non-literal-fs-filename
 - [x] detect-non-literal-regexp
 - [x] detect-object-injection
+- [x] no-hardcoded-credentials
+- [x] no-weak-crypto
+- [x] no-insufficient-random
 
 ### Architecture (2 rules) ✅
+
 - [x] no-circular-dependencies
 - [x] no-internal-modules
 
 ### Quality (3 rules) ✅
+
 - [x] cognitive-complexity
 - [x] identical-functions
 - [x] no-console-log
 
 ### Best Practices (4 rules) ✅
+
 - [x] no-deprecated-api
 - [x] react-no-inline-functions
 - [x] img-requires-alt
 - [x] required-attributes
 
 ### Other (2 rules) ✅
+
 - [x] enforce-naming
 - [x] react-class-to-hooks
 
 ---
 
-## 🚀 PHASE 1: Security Rules (12 new rules)
+## 🚀 PHASE 1: Security Rules (14 new rules)
 
 Priority: **CRITICAL** - Adds 12 new security vulnerabilities
 
-### S1: Authentication & Authorization (3 rules)
-- [ ] **no-hardcoded-credentials** (CWE-798)
+### S1: Authentication & Authorization (3 rules) ✅
+
+- [x] **no-hardcoded-credentials** (CWE-798)
   - Detects hardcoded passwords, API keys, tokens
   - Checks: String literals in code matching patterns
   - Priority: CRITICAL
-  
-- [ ] **no-weak-crypto** (CWE-327)
+- [x] **no-weak-crypto** (CWE-327)
   - Detects use of weak cryptography algorithms
   - Checks: MD5, SHA1, DES usage
   - Alternatives: SHA-256, bcrypt, scrypt
   - Priority: CRITICAL
-  
-- [ ] **no-insufficient-random** (CWE-338)
+- [x] **no-insufficient-random** (CWE-338)
   - Detects weak random number generation
   - Checks: Math.random(), weak PRNG
   - Alternatives: crypto.getRandomValues()
   - Priority: HIGH
 
 ### S2: Input Validation (4 rules)
+
 - [ ] **no-unvalidated-user-input** (CWE-20)
   - Detects unvalidated user input usage
   - Checks: Direct use of req.body, req.query
   - Alternatives: Use validation library (Zod, Joi)
   - Priority: HIGH
-  
 - [ ] **no-unsanitized-html** (CWE-79, XSS)
   - Detects unsanitized HTML injection
   - Checks: dangerouslySetInnerHTML, innerHTML
   - Alternatives: textContent or sanitize library
   - Priority: CRITICAL
-  
 - [ ] **no-unescaped-url-parameter** (CWE-79)
   - Detects unescaped URL parameters
   - Checks: URL construction without encoding
   - Priority: HIGH
-  
 - [ ] **no-missing-cors-check** (CWE-346)
   - Detects missing CORS validation
   - Checks: Wildcard CORS, missing origin check
   - Priority: HIGH
 
 ### S3: Access Control (3 rules)
+
 - [ ] **no-missing-authentication** (CWE-287)
   - Detects missing authentication checks
   - Checks: Public endpoints without auth
   - Priority: CRITICAL
-  
 - [ ] **no-privilege-escalation** (CWE-269)
   - Detects potential privilege escalation
   - Checks: Role checks, permission bypass
   - Priority: HIGH
-  
 - [ ] **no-insecure-comparison** (CWE-697)
   - Detects insecure comparison (loose equality)
   - Checks: == instead of ===
   - Priority: HIGH
 
+### S6: Session & Cookie Security (2 rules) 🔍 CodeRabbit Suggestion
+
+- [ ] **no-insecure-cookie-settings** (CWE-614)
+  - Detects insecure cookie configurations
+  - Checks: Missing httpOnly, secure, sameSite flags
+  - Alternatives: Set httpOnly: true, secure: true, sameSite: 'strict'
+  - Priority: HIGH
+- [ ] **no-missing-csrf-protection** (CWE-352)
+  - Detects missing CSRF token validation
+  - Checks: POST/PUT/DELETE without CSRF token check
+  - Alternatives: Use CSRF middleware, validate tokens
+  - Priority: HIGH
+
 ### S4: Data Protection (2 rules)
+
 - [ ] **no-exposed-sensitive-data** (CWE-200)
   - Detects exposure of PII/sensitive data
   - Checks: SSN, credit card numbers in logs
   - Priority: CRITICAL
-  
 - [ ] **no-unencrypted-transmission** (CWE-319)
   - Detects unencrypted data transmission
   - Checks: HTTP vs HTTPS, plain text protocols
   - Priority: HIGH
 
+### S5: ReDoS & Regex Security (2 rules)
+
+- [ ] **no-redos-vulnerable-regex** (CWE-400)
+  - Detects ReDoS-vulnerable regex patterns in code
+  - Checks: Nested quantifiers (a+)+, (a*)*, (a?)? patterns
+  - Detects: Exponential backtracking patterns
+  - Alternatives: Atomic groups, possessive quantifiers, or restructure
+  - Priority: HIGH
+  - Note: Complements `detect-non-literal-regexp` by checking literal regex patterns
+- [ ] **no-unsafe-regex-construction** (CWE-400)
+  - Detects unsafe regex construction patterns
+  - Checks: User input in regex without escaping, dynamic flags
+  - Alternatives: Escape special chars, validate patterns, use safe-regex library
+  - Priority: HIGH
+  - Note: Extends `detect-non-literal-regexp` with pattern analysis
+
 ---
 
-## 🏗️ PHASE 2: Code Quality Rules (10 new rules)
+## 🏗️ PHASE 2: Code Quality Rules (12 new rules)
 
 Priority: **HIGH** - Improves maintainability and readability
 
 ### Q1: Complexity & Readability (4 rules)
+
 - [ ] **max-function-length** (Similar to code-duplication)
   - Detects overly long functions
   - Threshold: ~50 lines
   - Priority: MEDIUM
-  
 - [ ] **max-nested-depth** (Similar to cognitive-complexity)
   - Detects excessive nesting levels
   - Threshold: 4 levels
   - Priority: MEDIUM
-  
 - [ ] **no-magic-numbers** (CWE-1025)
   - Detects unexplained magic numbers in code
   - Exceptions: -1, 0, 1, 2, 100
   - Priority: LOW
-  
 - [ ] **no-overly-complex-boolean** (Similar to cognitive-complexity)
   - Detects complex boolean expressions
   - Suggests simplification strategies
   - Priority: MEDIUM
 
 ### Q2: Maintainability (3 rules)
+
 - [ ] **no-commented-code** 
   - Detects commented-out code blocks
   - Suggestions: Remove or use version control
   - Priority: LOW
-  
 - [ ] **consistent-variable-naming**
   - Enforces naming conventions (camelCase, snake_case)
   - Configurable per scope
   - Priority: LOW
-  
 - [ ] **max-parameters**
   - Detects functions with too many parameters
   - Threshold: 4-5 parameters
@@ -163,69 +195,87 @@ Priority: **HIGH** - Improves maintainability and readability
   - Priority: MEDIUM
 
 ### Q3: Error Handling (3 rules)
+
 - [ ] **no-unhandled-promise** (CWE-1024)
   - Detects unhandled Promise rejections
   - Suggests: .catch() or try/catch
   - Priority: HIGH
-  
 - [ ] **no-silent-errors**
   - Detects empty catch blocks
   - Requires error logging or handling
   - Priority: MEDIUM
-  
 - [ ] **no-missing-error-context**
   - Detects thrown errors without context
   - Requires: Error message + stack trace
   - Priority: MEDIUM
 
+### Q4: Null Safety & Type Guards (2 rules) 🔍 CodeRabbit Suggestion
+
+- [ ] **no-missing-null-checks** (CWE-476)
+  - Detects potential null pointer dereferences
+  - Checks: Property access without null/undefined checks
+  - Alternatives: Optional chaining (?.), nullish coalescing (??), explicit checks
+  - Priority: HIGH
+- [ ] **no-unsafe-type-narrowing**
+  - Detects unsafe type narrowing patterns
+  - Checks: Type assertions without guards, any usage
+  - Alternatives: Type guards, proper narrowing, validation
+  - Priority: MEDIUM
+
 ---
 
-## ⚡ PHASE 3: Performance Rules (8 new rules)
+## ⚡ PHASE 3: Performance Rules (9 new rules)
 
 Priority: **MEDIUM** - Optimizes runtime performance
 
 ### P1: Rendering (3 rules)
+
 - [ ] **no-unnecessary-rerenders** (React-specific)
   - Detects prevented re-renders
   - Suggestions: useMemo, useCallback
   - Priority: MEDIUM
-  
 - [ ] **no-large-bundles**
   - Detects large imports/modules
   - Suggests: Code splitting, lazy loading
   - Priority: MEDIUM
-  
 - [ ] **no-inefficient-selectors** (React)
   - Detects inefficient CSS selectors
   - Suggests: Class-based instead of deep selectors
   - Priority: LOW
 
 ### P2: Memory & Resources (3 rules)
+
 - [ ] **no-memory-leak-listeners**
   - Detects event listeners not cleaned up
   - Requires: removeEventListener in cleanup
   - Priority: HIGH
-  
 - [ ] **no-unbounded-cache**
   - Detects caches without size limits
   - Suggests: LRU cache, TTL
   - Priority: MEDIUM
-  
 - [ ] **no-excessive-iterations**
   - Detects O(n²) or O(n³) algorithms
   - Suggests: Use Set/Map for lookups
   - Priority: MEDIUM
 
 ### P3: Async Operations (2 rules)
+
 - [ ] **no-blocking-operations**
   - Detects blocking operations in async code
   - Checks: Synchronous file I/O in async
   - Priority: MEDIUM
-  
 - [ ] **no-race-conditions**
   - Detects potential race conditions
   - Suggests: Mutex, promises, async/await patterns
   - Priority: MEDIUM
+
+### P4: Time-of-Check-Time-of-Use (TOCTOU) (1 rule) 🔍 CodeRabbit Suggestion
+
+- [ ] **no-toctou-vulnerability** (CWE-367)
+  - Detects Time-of-Check-Time-of-Use vulnerabilities
+  - Checks: File operations between check and use, race conditions in file access
+  - Alternatives: Atomic operations, proper locking, use fs.promises
+  - Priority: HIGH
 
 ---
 
@@ -234,32 +284,30 @@ Priority: **MEDIUM** - Optimizes runtime performance
 Priority: **MEDIUM** - Improves UX and compliance
 
 ### A1: Accessibility (3 rules)
+
 - [ ] **no-keyboard-inaccessible-elements**
   - Detects clickable divs without keyboard support
   - Requires: tabIndex, ARIA roles
   - Priority: MEDIUM
-  
 - [ ] **no-missing-aria-labels**
   - Detects elements missing ARIA labels
   - Suggests: aria-label, aria-labelledby
   - Priority: MEDIUM
-  
 - [ ] **no-color-contrast-issues**
   - Detects insufficient color contrast
   - Threshold: WCAG AA standard (4.5:1)
   - Priority: MEDIUM
 
 ### A2: Visual Quality (3 rules)
+
 - [ ] **consistent-component-structure**
   - Enforces consistent component organization
   - Configurable: Imports → Types → Component
   - Priority: LOW
-  
 - [ ] **no-unused-imports**
   - Detects unused import statements
   - Auto-fix: Remove them
   - Priority: LOW
-  
 - [ ] **no-unused-variables**
   - Detects unused variable declarations
   - Exceptions: Intentional with underscore prefix
@@ -267,31 +315,44 @@ Priority: **MEDIUM** - Improves UX and compliance
 
 ---
 
-## 🏛️ PHASE 5: Architecture Rules (4 new rules)
+## 🏛️ PHASE 5: Architecture Rules (6 new rules)
 
 Priority: **HIGH** - Ensures scalability and maintainability
 
 ### AR1: Dependency Management (2 rules)
+
 - [ ] **no-version-conflicts** (CWE-1104)
   - Detects version mismatches in dependencies
   - Checks: package.json consistency
   - Priority: MEDIUM
-  
 - [ ] **no-external-api-calls-in-utils**
   - Detects network calls in utility functions
   - Requires: Dependency injection for network
   - Priority: HIGH
 
 ### AR2: Module Organization (2 rules)
+
 - [ ] **enforce-module-boundaries**
   - Enforces NX/monorepo boundaries
   - Checks: Imports within allowed scopes
   - Priority: HIGH
-  
 - [ ] **no-implicit-barrel-exports**
   - Detects implicit re-exports causing cycles
   - Requires: Explicit export statements
   - Priority: MEDIUM
+
+### AR3: Security Headers & Configuration (2 rules) 🔍 CodeRabbit Suggestion
+
+- [ ] **no-missing-security-headers** (CWE-693)
+  - Detects missing security headers in HTTP responses
+  - Checks: Content-Security-Policy, X-Frame-Options, X-Content-Type-Options
+  - Alternatives: Set security headers middleware
+  - Priority: HIGH
+- [ ] **no-insecure-redirects** (CWE-601)
+  - Detects open redirect vulnerabilities
+  - Checks: Redirects without validation, user-controlled redirect URLs
+  - Alternatives: Whitelist allowed domains, validate redirect targets
+  - Priority: HIGH
 
 ---
 
@@ -300,21 +361,19 @@ Priority: **HIGH** - Ensures scalability and maintainability
 Priority: **MEDIUM** - Improves developer experience
 
 ### T1: TypeScript-Specific (4 rules)
+
 - [ ] **no-unsafe-type-assertions**
   - Detects risky `as unknown as T` patterns
   - Suggests: Type guards, proper narrowing
   - Priority: MEDIUM
-  
 - [ ] **no-implicit-any** (Similar to TypeScript strict)
   - Detects implicit `any` types
   - Requires: Explicit typing
   - Priority: HIGH
-  
 - [ ] **no-unnecessary-generics**
   - Detects unused type parameters
   - Suggests: Remove or use concrete type
   - Priority: LOW
-  
 - [ ] **consistent-return-types**
   - Enforces explicit return type annotations
   - Configurable per scope
@@ -357,23 +416,27 @@ Priority vs Impact vs Effort:
 ## 📈 Release Plan
 
 ### v0.4.0 - Security Focus (Next Release)
+
 - [ ] Phase 1: All 12 security rules
 - [ ] LLM optimization: 100% for all
 - [ ] Documentation: Complete
 - Timeline: 2-3 weeks
 
 ### v0.5.0 - Quality Focus
+
 - [ ] Phase 2: All 10 quality rules
 - [ ] Phase 3: Performance rules (partial)
 - Timeline: 3-4 weeks
 
 ### v0.6.0 - Complete Suite
+
 - [ ] Phase 3: Remaining performance rules
 - [ ] Phase 4: Accessibility rules
 - [ ] Phase 5: Architecture rules
 - Timeline: 4-5 weeks
 
 ### v1.0.0 - Production Ready
+
 - [ ] Phase 6: Type safety rules
 - [ ] Full documentation
 - [ ] Community feedback integration
@@ -385,12 +448,12 @@ Priority vs Impact vs Effort:
 ## 📊 Coverage Comparison
 
 ```
-After Phase 1 (Security):  31 rules (52%)
-After Phase 2 (Quality):   41 rules (68%)
-After Phase 3 (Perf):      49 rules (82%)
-After Phase 4 (A11y):      55 rules (92%)
-After Phase 5 (Arch):      59 rules (98%)
-After Phase 6 (Types):     63 rules (100%)
+After Phase 1 (Security):  33 rules (52%)
+After Phase 2 (Quality):   45 rules (71%)
+After Phase 3 (Perf):      54 rules (86%)
+After Phase 4 (A11y):      60 rules (95%)
+After Phase 5 (Arch):      66 rules (100%)
+After Phase 6 (Types):     70 rules (100%)
 ```
 
 ---
@@ -398,21 +461,25 @@ After Phase 6 (Types):     63 rules (100%)
 ## 🔗 Reference Standards
 
 ### Security Standards
+
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/) - Web application security risks
 - [CWE/SANS Top 25](https://cwe.mitre.org/top25/) - Most dangerous weaknesses
 - [MITRE ATT&CK](https://attack.mitre.org/) - Adversary tactics & techniques
 
 ### Code Quality Standards
+
 - [SonarQube RSPEC](https://rules.sonarsource.com/) - 800+ rules for multiple languages
 - [ESLint Official Rules](https://eslint.org/docs/rules/) - 80+ recommended rules
 - [Clean Code](https://www.oreilly.com/library/view/clean-code-a/9780136083238/) - Martin's principles
 
 ### Performance Standards
+
 - [Web.dev Performance](https://web.dev/performance/) - Google's performance guide
 - [React Best Practices](https://react.dev/) - Official React documentation
 - [Core Web Vitals](https://web.dev/vitals/) - User experience metrics
 
 ### Accessibility Standards
+
 - [WCAG 2.1](https://www.w3.org/WAI/WCAG21/quickref/) - Web Content Accessibility Guidelines
 - [WAI-ARIA](https://www.w3.org/WAI/ARIA/apg/) - Accessible Rich Internet Applications
 
@@ -421,6 +488,7 @@ After Phase 6 (Types):     63 rules (100%)
 ## 🎓 Implementation Guidelines
 
 ### For Each Rule, Include:
+
 1. **Test Suite** - Comprehensive test cases
 2. **LLM Optimization** - 100% format compliance
 3. **Documentation** - Rule guide with examples
@@ -429,6 +497,7 @@ After Phase 6 (Types):     63 rules (100%)
 6. **Performance** - No false positives/negatives
 
 ### Template Structure:
+
 ```typescript
 // Rule: [name]
 // CWE: [code] - [title]
@@ -454,7 +523,7 @@ interface RuleContext {
 - [ ] Phase 1 complete: 31 total rules (52%)
 - [ ] Phase 4 complete: 55 total rules (92%)
 - [ ] Phase 6 complete: 63 total rules (100%)
-- [ ] >90% test coverage on all rules
+- [ ] > 90% test coverage on all rules
 - [ ] Community adoption: 100+ weekly downloads
 - [ ] Production grade: Zero critical bugs
 

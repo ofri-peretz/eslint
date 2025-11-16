@@ -105,6 +105,8 @@ Traditional ESLint rules communicate _what's wrong_. This plugin ensures every r
 | [detect-non-literal-fs-filename](./docs/rules/detect-non-literal-fs-filename.md) | Detect path traversal in fs operations                    | 💼  |     |     | 💡  |
 | [detect-non-literal-regexp](./docs/rules/detect-non-literal-regexp.md)           | Detect ReDoS vulnerabilities in RegExp construction       | 💼  |     |     | 💡  |
 | [detect-object-injection](./docs/rules/detect-object-injection.md)               | Detect prototype pollution in object property access      | 💼  |     |     | 💡  |
+| [no-hardcoded-credentials](./docs/rules/no-hardcoded-credentials.md)             | Detect hardcoded passwords, API keys, and tokens          |     | ⚠️  | 🔧  | 💡  |
+| [no-weak-crypto](./docs/rules/no-weak-crypto.md)                                 | Detect weak cryptography algorithms (MD5, SHA1, DES)      |     | ⚠️  | 🔧  | 💡  |
 
 ### Accessibility
 
