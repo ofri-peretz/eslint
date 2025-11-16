@@ -139,6 +139,7 @@
       "generatorOptions": {
         "updateDependents": "always",
         "currentVersionResolver": "git-tag",
+        "fallbackCurrentVersionResolver": "disk",
         "specifierSource": "conventional-commits"
       },
       "versionActionsOptions": {
