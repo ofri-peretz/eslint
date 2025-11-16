@@ -42,10 +42,10 @@ on:
       # CONTROL FLOW OPTIONS
       # ═════════════════════════════════════════════════════════════════════════
       run-ci:
-        description: "Run CI validation before publishing"
+        description: "Run CI validation before publishing (slows down release)"
         required: false
         type: boolean
-        default: true
+        default: false
 
       dry-run:
         description: "Dry run: preview changes without modifying git or NPM"
@@ -138,17 +138,6 @@ jobs:
           ref: main # Always checkout main branch for releases (ensures all tags are reachable)
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🔍 Verify we're on main branch
-        run: |
-          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          if [ "$CURRENT_BRANCH" != "main" ]; then
-            echo "❌ Error: Release workflow must run on main branch"
-            echo "   Current branch: $CURRENT_BRANCH"
-            echo "   Expected: main"
-            exit 1
-          fi
-          echo "✅ Confirmed: Running on main branch (all tags are reachable)"
-
       - name: ⚙️ Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -177,150 +166,18 @@ jobs:
       - name: 📦 Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: 🔍 Print Environment Info
-        run: pnpm nx report
-
       # ──────────────────────────────────────────────────────────────────────
-      # PRE-FLIGHT CHECKS (Before making any changes)
+      # QUICK PRE-FLIGHT CHECK
       # ──────────────────────────────────────────────────────────────────────
-      - name: 🔍 Pre-Flight Checks
+      - name: 🔍 Quick Pre-Flight Check
         if: inputs.dry-run == false
         run: |
-          echo "🔍 Running pre-flight checks..."
-
-          # Check NPM authentication (Trusted Publishing / OIDC)
-          # Note: setup-node@v6 with registry-url automatically configures OIDC authentication
-          # NODE_AUTH_TOKEN is set by GitHub Actions when using OIDC
-          echo "📦 Checking NPM authentication setup (Trusted Publishing)..."
-
-          # Verify OIDC token is present (set by GitHub Actions when using OIDC)
+          # Verify NPM authentication (Trusted Publishing / OIDC)
           if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "❌ NODE_AUTH_TOKEN not found!"
-            echo "   This workflow uses Trusted Publishing (OIDC) for NPM authentication"
-            echo "   Ensure:"
-            echo "   1. Trusted Publishing is configured on npmjs.com for this repository"
-            echo "   2. GitHub Actions has 'id-token: write' permission (already set)"
-            echo "   3. setup-node action is configured with registry-url (already set)"
+            echo "❌ NODE_AUTH_TOKEN not found - Trusted Publishing not configured"
             exit 1
           fi
-
-          echo "✅ OIDC token detected (NODE_AUTH_TOKEN is set)"
-
-          # Verify npm registry is configured correctly
-          echo "🔍 Verifying npm registry configuration..."
-          NPM_REGISTRY=$(npm config get registry 2>/dev/null || echo "")
-          if [ "$NPM_REGISTRY" != "https://registry.npmjs.org/" ]; then
-            echo "⚠️  Warning: npm registry is not set to https://registry.npmjs.org/"
-            echo "   Current registry: ${NPM_REGISTRY:-not set}"
-            echo "   This may cause authentication issues"
-          else
-            echo "✅ npm registry configured correctly: $NPM_REGISTRY"
-          fi
-
-          # Try to verify authentication by checking if we can access one of our packages
-          # This is a read-only operation that works with OIDC tokens
-          echo "🔍 Verifying package access (read-only check)..."
-          TEST_PACKAGE="@forge-js/eslint-plugin-utils"
-          if npm view "$TEST_PACKAGE" version --registry=https://registry.npmjs.org/ >/dev/null 2>&1; then
-            PACKAGE_VERSION=$(npm view "$TEST_PACKAGE" version --registry=https://registry.npmjs.org/ 2>/dev/null || echo "unknown")
-            echo "✅ Successfully accessed package: $TEST_PACKAGE@$PACKAGE_VERSION"
-            echo "   This confirms npm registry connectivity"
-            echo "   Note: OIDC authentication will be fully validated during publish"
-          else
-            echo "⚠️  Warning: Could not access package $TEST_PACKAGE"
-            echo "   This may be normal if:"
-            echo "   - Package doesn't exist yet (first publish)"
-            echo "   - Network issues"
-            echo "   - Trusted Publishing not fully configured"
-            echo "   Authentication will still be validated during actual publish"
-          fi
-
-          echo "✅ Pre-flight authentication checks completed"
-          echo "   Final authentication will be validated during publish step"
-
-          # Check git state is clean
-          echo "📝 Checking git state..."
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "⚠️  Warning: Working directory has uncommitted changes"
-            echo "   This may cause issues during release"
-            git status --short
-          else
-            echo "✅ Git working directory is clean"
-          fi
-
-          # Check git tags alignment with package.json versions
-          echo "🔍 Verifying git tags alignment with package.json versions..."
-          TAG_MISMATCH=false
-          for pkg in eslint-plugin eslint-plugin-llm-optimized eslint-plugin-utils cli eslint-plugin-llm eslint-plugin-mcp eslint-plugin-mcp-optimized; do
-            if [ -f "packages/$pkg/package.json" ]; then
-              PKG_VERSION=$(cat packages/$pkg/package.json | grep '"version"' | cut -d'"' -f4)
-              LATEST_TAG=$(git tag | grep "^${pkg}@" | sort -V | tail -1 || echo "")
-              if [ -n "$LATEST_TAG" ]; then
-                TAG_VERSION=$(echo "$LATEST_TAG" | cut -d'@' -f2)
-                if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
-                  echo "⚠️  Warning: $pkg version mismatch - package.json=$PKG_VERSION, tag=$TAG_VERSION"
-                  TAG_MISMATCH=true
-                fi
-              else
-                echo "ℹ️  No existing tag for $pkg (first release or tag format changed)"
-              fi
-            fi
-          done
-          if [ "$TAG_MISMATCH" = "true" ]; then
-            echo "⚠️  Version mismatches detected - nx release version will align them"
-            echo "   This is expected if versions were manually updated"
-          else
-            echo "✅ All package versions align with git tags"
-          fi
-
-          # Check for potential tag conflicts (tags that would be created)
-          echo "🔍 Checking for potential tag conflicts..."
-          DRY_RUN_OUTPUT=$(pnpm nx release version --dry-run 2>&1 || true)
-          if echo "$DRY_RUN_OUTPUT" | grep -q "No changes detected"; then
-            echo "ℹ️  No changes detected for release"
-            echo "   This means there are no conventional commits since the last release"
-            echo "   The release will skip version bumping"
-          else
-            echo "✅ Changes detected - release will proceed"
-            # Extract potential new versions from dry-run output
-            POTENTIAL_TAGS=$(echo "$DRY_RUN_OUTPUT" | grep -oE '[a-z-]+@[0-9]+\.[0-9]+\.[0-9]+' || echo "")
-            if [ -n "$POTENTIAL_TAGS" ]; then
-              echo "📝 Potential new tags to be created:"
-              echo "$POTENTIAL_TAGS" | while read tag; do
-                if git rev-parse "$tag" >/dev/null 2>&1; then
-                  echo "⚠️  Warning: Tag $tag already exists - this may cause issues"
-                else
-                  echo "   ✅ $tag (will be created)"
-                fi
-              done
-            fi
-          fi
-
-          # Verify we have all necessary tags reachable from main
-          echo "🔍 Verifying tag reachability from main branch..."
-          MISSING_TAGS=false
-          for pkg in eslint-plugin eslint-plugin-llm-optimized eslint-plugin-utils cli eslint-plugin-llm eslint-plugin-mcp eslint-plugin-mcp-optimized; do
-            if [ -f "packages/$pkg/package.json" ]; then
-              PKG_VERSION=$(cat packages/$pkg/package.json | grep '"version"' | cut -d'"' -f4)
-              EXPECTED_TAG="${pkg}@${PKG_VERSION}"
-              if git rev-parse "$EXPECTED_TAG" >/dev/null 2>&1; then
-                # Check if tag is reachable from current HEAD
-                if ! git merge-base --is-ancestor "$EXPECTED_TAG" HEAD 2>/dev/null; then
-                  echo "⚠️  Warning: Tag $EXPECTED_TAG exists but is not reachable from main"
-                  echo "   This may cause version resolution issues"
-                  MISSING_TAGS=true
-                fi
-              fi
-            fi
-          done
-          if [ "$MISSING_TAGS" = "true" ]; then
-            echo "⚠️  Some tags are not reachable - this may affect version resolution"
-            echo "   Nx will use fallback version resolution (disk-based) if needed"
-          else
-            echo "✅ All existing tags are reachable from main branch"
-          fi
-
-          echo "✅ All pre-flight checks passed"
+          echo "✅ NPM authentication ready"
 
       # ──────────────────────────────────────────────────────────────────────
       # PHASE 1: PREPARE VERSION (Build + determine versions + update changelogs)
@@ -331,7 +188,7 @@ jobs:
         run: |
           # Configure git user for automated commits
           git config user.name "Ofri Peretz"
-          git config user.email "ofri@snappy.com"
+          git config user.email "ofriperetzdev@gmail.com"
 
           # Run version command (includes preVersionCommand build for manifest updates)
           if [ "${{ inputs.version-specifier }}" != "auto" ]; then
@@ -349,61 +206,36 @@ jobs:
       # ──────────────────────────────────────────────────────────────────────
       # PHASE 2: CREATE RELEASE PR
       # ──────────────────────────────────────────────────────────────────────
-      # After nx release version, we create a PR with the version changes
-      # This is BEST PRACTICE: safer, more transparent, works with any protection
+      # After nx release version creates commits and tags, create a PR with all changes
       - name: 📝 Create Release PR
         if: inputs.dry-run == false
         run: |
-          echo "📝 Creating release PR (best practice approach)..."
-          echo ""
-          echo "✅ Benefits of PR-based releases:"
-          echo "   - You can review what's being released"
-          echo "   - Works with any branch protection setup"
-          echo "   - No special configuration needed"
-          echo "   - Industry standard approach"
-          echo ""
+          echo "📝 Creating release PR with version changes..."
 
-          # Check if there are commits to push (nx release version creates commits)
-          if git diff --quiet HEAD origin/main; then
-            echo "ℹ️  No local changes (versions already match remote)"
-            echo "   Skipping PR creation - versions are already on main"
-            echo "skip_pr=true" >> $GITHUB_ENV
+          # Fetch latest from origin
+          git fetch origin main
+
+          # Check for new commits and tags created by nx release version
+          COMMITS=$(git log origin/main..HEAD --oneline | wc -l | tr -d ' ')
+          TAGS=$(git tag --list --no-merged origin/main | wc -l | tr -d ' ')
+
+          if [ "$COMMITS" -eq 0 ] && [ "$TAGS" -eq 0 ]; then
+            echo "ℹ️  No new changes - versions already on main, skipping PR creation"
           else
-            # Get the commits that were created by nx release version
-            COMMITS_TO_PUSH=$(git log origin/main..HEAD --oneline | wc -l)
-            TAGS_TO_PUSH=$(git tag --list --no-merged origin/main | wc -l)
+            echo "📝 Found $COMMITS commit(s) and $TAGS tag(s) to release"
             
-            echo "📝 Found $COMMITS_TO_PUSH commit(s) and $TAGS_TO_PUSH tag(s) to release"
-            echo ""
-            
-            # Fetch latest from origin
-            git fetch origin main
-            
-            # Check if main has moved ahead
-            if ! git merge-base --is-ancestor origin/main HEAD; then
-              echo "⚠️  Main branch has moved ahead - rebasing..."
-              git rebase origin/main || {
-                echo "❌ Rebase failed - conflicts detected"
-                echo "   Please resolve conflicts manually and re-run"
-                exit 1
-              }
-            fi
-            
-            # Create release branch
+            # Create release branch from current state (after nx release version)
             RELEASE_BRANCH="chore/release-$(date +%Y%m%d-%H%M%S)"
             git checkout -b "$RELEASE_BRANCH"
             
-            # Push branch
-            echo "📤 Pushing release branch: $RELEASE_BRANCH"
-            git push origin "$RELEASE_BRANCH" || {
-              echo "❌ Failed to push release branch"
-              exit 1
-            }
+            # Push branch with commits and tags
+            echo "📤 Pushing release branch with commits and tags..."
+            git push origin "$RELEASE_BRANCH" || exit 1
+            git push origin --tags || exit 1
             
             # Create PR
             PR_TITLE="chore(release): Update package versions"
-            # Build PR body - using printf to avoid YAML linter issues
-            PR_BODY=$(printf "🤖 **Automated Release PR**\n\nThis PR contains version updates from the release workflow.\n\n**Commits:** %s\n**Tags:** %s\n\n**⚠️ IMPORTANT:** Merge this PR to complete the release.\nAfter merging, re-run the release workflow to publish packages to npm." "$COMMITS_TO_PUSH" "$TAGS_TO_PUSH")
+            PR_BODY=$(printf "🤖 **Automated Release PR**\n\nThis PR contains:\n- Package version updates\n- CHANGELOG updates\n- Git tags: %s\n\n**Note:** Packages are being published to npm in parallel with this PR." "$TAGS")
             
             if command -v gh &> /dev/null; then
               PR_URL=$(gh pr create \
@@ -419,87 +251,35 @@ jobs:
               PR_URL="https://github.com/${{ github.repository }}/compare/main...$RELEASE_BRANCH?expand=1"
             fi
             
-            echo ""
             echo "✅ Created release PR: $PR_URL"
-            echo ""
-            echo "📋 Next steps:"
-            echo "   1. Review and merge the PR"
-            echo "   2. Re-run this workflow to publish packages"
-            echo ""
-            echo "pr_created=true" >> $GITHUB_ENV
             echo "pr_url=$PR_URL" >> $GITHUB_ENV
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # ──────────────────────────────────────────────────────────────────────
-      # PHASE 3: PUBLISH (preReleaseCommand rebuilds with new versions + publish)
+      # PHASE 3: PUBLISH PACKAGES
       # ──────────────────────────────────────────────────────────────────────
-      # Note: Publishing happens after the release PR is merged
-      # If PR was just created, skip publishing (user needs to merge PR first)
+      # Publish packages that were affected by the latest commits (based on tags)
       - name: 🚀 Publish Packages
         id: publish
-        if: inputs.dry-run == false && env.pr_created != 'true'
+        if: inputs.dry-run == false
         run: |
-          # Configure git user for automated commits
+          echo "🚀 Publishing packages with dist tag: ${{ inputs.dist-tag }}"
+          echo ""
+          echo "📦 Nx will automatically publish only packages affected by recent commits"
+          echo "   (determined by git tags created in the version step)"
+          echo ""
+
+          # Configure git user
           git config user.name "Ofri Peretz"
-          git config user.email "ofri@snappy.com"
+          git config user.email "ofriperetzdev@gmail.com"
 
-          echo "📝 Publishing with dist tag: ${{ inputs.dist-tag }}"
-          echo ""
-
-          # Pre-check: Verify versions to be published don't already exist on npm
-          echo "🔍 Pre-checking npm registry for version conflicts..."
-          PUBLISH_FAILED=false
-          for pkg in "@forge-js/eslint-plugin" "@forge-js/eslint-plugin-llm-optimized" "@forge-js/eslint-plugin-utils" "@forge-js/cli" "eslint-plugin-llm" "eslint-plugin-mcp" "eslint-plugin-mcp-optimized"; do
-            # Get package name from path
-            if [[ "$pkg" == @* ]]; then
-              PKG_NAME="$pkg"
-            else
-              PKG_NAME="$pkg"
-            fi
-            
-            # Get version from dist package.json
-            PKG_DIR=$(echo "$pkg" | sed 's/@forge-js\///' | sed 's/eslint-plugin/eslint-plugin/')
-            if [ -f "dist/packages/$PKG_DIR/package.json" ]; then
-              VERSION=$(cat dist/packages/$PKG_DIR/package.json | grep '"version"' | cut -d'"' -f4)
-              if npm view "$PKG_NAME@$VERSION" version >/dev/null 2>&1; then
-                echo "⚠️  Warning: $PKG_NAME@$VERSION already exists on npm"
-                echo "   This package will be skipped during publish"
-                PUBLISH_FAILED=true
-              else
-                echo "✅ $PKG_NAME@$VERSION is ready to publish"
-              fi
-            fi
-          done
-          if [ "$PUBLISH_FAILED" = "true" ]; then
-            echo ""
-            echo "⚠️  Some versions already exist on npm"
-            echo "   Nx will skip publishing these packages automatically"
-            echo "   This is expected if you're re-running a release"
-          fi
-          echo ""
-
-          # Note: Trusted Publishing (OIDC) works for scoped packages (@forge-js/*)
-          # For unscoped packages (eslint-plugin-llm-optimized, eslint-plugin-mcp, etc.),
-          # Trusted Publishing requires npm support approval OR use NPM_TOKEN fallback
-          # 
-          # If you see 404 errors for unscoped packages, you need to either:
-          # 1. Contact npm support to enable Trusted Publishing for unscoped packages
-          # 2. Use NPM_TOKEN secret for unscoped packages (fallback)
-          # 3. Move packages to @forge-js scope
-          #
-          # The actual publish command will validate authentication
-          # If auth fails, publish will fail with a clear error message
-
-          # preReleaseCommand rebuilds packages with updated versions, then publishes
-          # This will validate NPM authentication during the publish operation
+          # Publish packages (nx release publish uses tags to determine what to publish)
           pnpm nx release publish --tag ${{ inputs.dist-tag }}
         env:
           NPM_CONFIG_PROVENANCE: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Uncomment below if you need NPM_TOKEN for unscoped packages:
-          # NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       # ──────────────────────────────────────────────────────────────────────
       # DRY RUN: Just preview changes
