@@ -116,6 +116,20 @@ Traditional ESLint rules communicate _what's wrong_. This plugin ensures every r
 | [detect-non-literal-fs-filename](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/detect-non-literal-fs-filename.md) | Detect path traversal in fs operations                    | 💼  |     |     | 💡  |
 | [detect-non-literal-regexp](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/detect-non-literal-regexp.md)           | Detect ReDoS vulnerabilities in RegExp construction       | 💼  |     |     | 💡  |
 | [detect-object-injection](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/detect-object-injection.md)               | Detect prototype pollution in object property access      | 💼  |     |     | 💡  |
+| [no-hardcoded-credentials](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-hardcoded-credentials.md)             | Detect hardcoded passwords, API keys, and tokens          |     | ⚠️  | 🔧  | 💡  |
+| [no-weak-crypto](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-weak-crypto.md)                                 | Detect weak cryptography algorithms (MD5, SHA1, DES)      |     | ⚠️  | 🔧  | 💡  |
+| [no-insufficient-random](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-insufficient-random.md)                 | Detect weak random number generation (Math.random())      |     | ⚠️  |     | 💡  |
+| [no-unvalidated-user-input](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unvalidated-user-input.md)           | Detect unvalidated user input usage (req.body, req.query) |     | ⚠️  |     | 💡  |
+| [no-unsanitized-html](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unsanitized-html.md)                       | Detect unsanitized HTML injection (XSS prevention)        | 💼  |     |     | 💡  |
+| [no-unescaped-url-parameter](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unescaped-url-parameter.md)         | Detect unescaped URL parameters (XSS prevention)          |     | ⚠️  |     | 💡  |
+| [no-missing-cors-check](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-missing-cors-check.md)                   | Detect missing CORS origin validation                     |     | ⚠️  |     | 💡  |
+| [no-insecure-comparison](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-insecure-comparison.md)                 | Detect insecure comparison operators (==, !=)             |     | ⚠️  | 🔧  | 💡  |
+| [no-missing-authentication](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-missing-authentication.md)           | Detect missing authentication checks in route handlers    |     | ⚠️  |     | 💡  |
+| [no-privilege-escalation](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-privilege-escalation.md)               | Detect potential privilege escalation vulnerabilities     |     | ⚠️  |     | 💡  |
+| [no-insecure-cookie-settings](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-insecure-cookie-settings.md)       | Detect insecure cookie configurations (missing flags)     | 💼  |     | 🔧  | 💡  |
+| [no-missing-csrf-protection](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-missing-csrf-protection.md)         | Detect missing CSRF token validation in requests          | 💼  |     |     | 💡  |
+| [no-exposed-sensitive-data](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-exposed-sensitive-data.md)           | Detect exposure of PII/sensitive data in logs             | 💼  |     |     | 💡  |
+| [no-unencrypted-transmission](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unencrypted-transmission.md)       | Detect unencrypted data transmission (HTTP vs HTTPS)      | 💼  |     | 🔧  | 💡  |
 
 ### Accessibility
 
@@ -327,7 +341,7 @@ Enable auto-fix in your CI/CD:
 
 **Scenario:** Application handles sensitive data, requires security-first approach.
 
-**Solution:** Use `configs.security` preset with 18 comprehensive security rules including SQL injection, eval detection, path traversal, and more.
+**Solution:** Use `configs.security` preset with 18 comprehensive security rules including SQL injection, eval detection, path traversal, cookie security, CSRF protection, and more.
 
 **Result:** Security vulnerabilities caught at development time with CWE references and fix suggestions.
 
@@ -534,25 +548,25 @@ Once configured, AI assistants can:
 
 ### vs. @typescript-eslint/eslint-plugin
 
-| Aspect             | eslint-plugin-llm-optimized       | @typescript-eslint/eslint-plugin |
-| ------------------ | --------------------------------- | -------------------------------- |
-| **Focus**          | LLM-optimized messages + security | TypeScript-specific rules        |
-| **AI Integration** | ✅ Optimized for AI assistants    | ⚠️ Standard messages             |
-| **Security Rules** | ✅ 8 comprehensive security rules | ⚠️ Limited security              |
-| **Auto-Fix Rate**  | ✅ 60-80%                         | ⚠️ 30-40%                        |
-| **Use Together?**  | ✅ Yes - complementary            | ✅ Yes - complementary           |
+| Aspect             | eslint-plugin-llm-optimized        | @typescript-eslint/eslint-plugin |
+| ------------------ | ---------------------------------- | -------------------------------- |
+| **Focus**          | LLM-optimized messages + security  | TypeScript-specific rules        |
+| **AI Integration** | ✅ Optimized for AI assistants     | ⚠️ Standard messages             |
+| **Security Rules** | ✅ 18 comprehensive security rules | ⚠️ Limited security              |
+| **Auto-Fix Rate**  | ✅ 60-80%                          | ⚠️ 30-40%                        |
+| **Use Together?**  | ✅ Yes - complementary             | ✅ Yes - complementary           |
 
 **Recommendation:** Use both! `@typescript-eslint` for TypeScript-specific rules, this plugin for LLM-optimized security and code quality.
 
 ### vs. eslint-plugin-security
 
-| Aspect              | eslint-plugin-llm-optimized    | eslint-plugin-security |
-| ------------------- | ------------------------------ | ---------------------- |
-| **Security Rules**  | ✅ 8 rules with CWE references | ✅ 10+ security rules  |
-| **AI Optimization** | ✅ LLM-optimized messages      | ❌ Standard messages   |
-| **Auto-Fix**        | ✅ Many rules auto-fixable     | ⚠️ Limited auto-fix    |
-| **Error Quality**   | ✅ Structured with examples    | ⚠️ Basic messages      |
-| **Documentation**   | ✅ Links in every error        | ⚠️ External docs       |
+| Aspect              | eslint-plugin-llm-optimized     | eslint-plugin-security |
+| ------------------- | ------------------------------- | ---------------------- |
+| **Security Rules**  | ✅ 18 rules with CWE references | ✅ 10+ security rules  |
+| **AI Optimization** | ✅ LLM-optimized messages       | ❌ Standard messages   |
+| **Auto-Fix**        | ✅ Many rules auto-fixable      | ⚠️ Limited auto-fix    |
+| **Error Quality**   | ✅ Structured with examples     | ⚠️ Basic messages      |
+| **Documentation**   | ✅ Links in every error         | ⚠️ External docs       |
 
 **Recommendation:** This plugin provides better AI integration and structured messages. Use `eslint-plugin-security` if you need additional security rules not covered here.
 
