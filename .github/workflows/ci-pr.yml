@@ -143,13 +143,61 @@ jobs:
 
       - name: Test Affected Packages
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "📊 Testing affected packages..."
-            pnpm nx affected -t test -c ci --parallel=4 --verbose
-          else
-            echo "📊 Testing all packages..."
-            pnpm nx run-many -t test --all -c ci --parallel=4 --verbose
-          fi
+          # Function to run test with error handling for Nx Cloud failures
+          run_test() {
+            if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              echo "📊 Testing affected packages..."
+              TEST_CMD="pnpm nx affected -t test -c ci --parallel=4 --verbose"
+            else
+              echo "📊 Testing all packages..."
+              TEST_CMD="pnpm nx run-many -t test --all -c ci --parallel=4 --verbose"
+            fi
+            
+            # First attempt with Nx Cloud (if enabled)
+            set +e  # Don't exit on error - we'll handle it
+            eval "$TEST_CMD" 2>&1 | tee /tmp/test-output.log
+            TEST_EXIT=${PIPESTATUS[0]}
+            set -e  # Re-enable exit on error
+            
+            # If command failed, check if it's Nx Cloud related
+            if [ "$TEST_EXIT" -ne 0 ]; then
+              # Check for any Nx Cloud related errors (quota, connection, auth, etc.)
+              if grep -qiE "(nx.?cloud|quota|rate limit|429|too many requests|exceeded|connection.*failed|authentication.*failed|unauthorized|NX_CLOUD.*quota|rate.*limit.*exceeded|429.*Too Many Requests)" /tmp/test-output.log; then
+                echo ""
+                echo "⚠️  Nx Cloud error detected - disabling Nx Cloud and retrying..."
+                echo "   Error details:"
+                grep -iE "(nx.?cloud|quota|rate limit|429|too many requests|exceeded|connection|authentication|unauthorized|NX_CLOUD)" /tmp/test-output.log | head -5 || true
+                echo ""
+                echo "NX_SKIP_NX_CLOUD=true" >> $GITHUB_ENV
+                export NX_SKIP_NX_CLOUD=true
+                
+                # Retry without Nx Cloud - this should succeed
+                echo "📊 Retrying test without Nx Cloud (using local cache only)..."
+                set +e  # Don't exit on error for retry
+                eval "$TEST_CMD"
+                RETRY_EXIT=$?  # Capture exit code (no pipe in retry)
+                set -e
+                
+                if [ "$RETRY_EXIT" -ne 0 ]; then
+                  echo "❌ Test failed even without Nx Cloud - this is a real error"
+                  exit $RETRY_EXIT
+                else
+                  echo "✅ Test succeeded without Nx Cloud"
+                fi
+              else
+                # Not an Nx Cloud error - this is a real test error
+                echo "❌ Test failed with non-Nx Cloud error - exiting"
+                exit $TEST_EXIT
+              fi
+            else
+              echo "✅ Test succeeded with Nx Cloud"
+            fi
+          }
+
+          run_test
+          
+          # Cleanup temporary log files
+          rm -f /tmp/test-output.log 2>/dev/null || true
         env:
           # Skip Nx Cloud if connection failed or token not set (falls back to local cache)
           NX_SKIP_NX_CLOUD: ${{ env.NX_SKIP_NX_CLOUD || 'false' }}
@@ -157,13 +205,62 @@ jobs:
       - name: Build Affected Packages
         run: |
           export TSNODE_SKIP_TRANSPILATION=true
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "🔨 Building affected packages..."
-            pnpm nx affected -t build --parallel=4 --verbose
-          else
-            echo "🔨 Building all packages..."
-            pnpm nx run-many -t build --all --parallel=4 --verbose
-          fi
+
+          # Function to run build with error handling for Nx Cloud failures
+          run_build() {
+            if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              echo "🔨 Building affected packages..."
+              BUILD_CMD="pnpm nx affected -t build --parallel=4 --verbose"
+            else
+              echo "🔨 Building all packages..."
+              BUILD_CMD="pnpm nx run-many -t build --all --parallel=4 --verbose"
+            fi
+            
+            # First attempt with Nx Cloud (if enabled)
+            set +e  # Don't exit on error - we'll handle it
+            eval "$BUILD_CMD" 2>&1 | tee /tmp/build-output.log
+            BUILD_EXIT=${PIPESTATUS[0]}
+            set -e  # Re-enable exit on error
+            
+            # If command failed, check if it's Nx Cloud related
+            if [ "$BUILD_EXIT" -ne 0 ]; then
+              # Check for any Nx Cloud related errors (quota, connection, auth, etc.)
+              if grep -qiE "(nx.?cloud|quota|rate limit|429|too many requests|exceeded|connection.*failed|authentication.*failed|unauthorized|NX_CLOUD.*quota|rate.*limit.*exceeded|429.*Too Many Requests)" /tmp/build-output.log; then
+                echo ""
+                echo "⚠️  Nx Cloud error detected - disabling Nx Cloud and retrying..."
+                echo "   Error details:"
+                grep -iE "(nx.?cloud|quota|rate limit|429|too many requests|exceeded|connection|authentication|unauthorized|NX_CLOUD)" /tmp/build-output.log | head -5 || true
+                echo ""
+                echo "NX_SKIP_NX_CLOUD=true" >> $GITHUB_ENV
+                export NX_SKIP_NX_CLOUD=true
+                
+                # Retry without Nx Cloud - this should succeed
+                echo "🔨 Retrying build without Nx Cloud (using local cache only)..."
+                set +e  # Don't exit on error for retry
+                eval "$BUILD_CMD"
+                RETRY_EXIT=$?  # Capture exit code (no pipe in retry)
+                set -e
+                
+                if [ "$RETRY_EXIT" -ne 0 ]; then
+                  echo "❌ Build failed even without Nx Cloud - this is a real error"
+                  exit $RETRY_EXIT
+                else
+                  echo "✅ Build succeeded without Nx Cloud"
+                fi
+              else
+                # Not an Nx Cloud error - this is a real build error
+                echo "❌ Build failed with non-Nx Cloud error - exiting"
+                exit $BUILD_EXIT
+              fi
+            else
+              echo "✅ Build succeeded with Nx Cloud"
+            fi
+          }
+
+          run_build
+          
+          # Cleanup temporary log files
+          rm -f /tmp/build-output.log 2>/dev/null || true
         env:
           # Skip Nx Cloud if connection failed or token not set (falls back to local cache)
           NX_SKIP_NX_CLOUD: ${{ env.NX_SKIP_NX_CLOUD || 'false' }}
@@ -189,9 +286,56 @@ jobs:
           echo "This checks if a release would succeed without making any changes."
           echo ""
 
+          # Function to run release validation with Nx Cloud error handling
+          run_release_validation() {
+            VALIDATION_CMD="pnpm nx release version --dry-run"
+            
+            # First attempt with Nx Cloud (if enabled)
+            set +e  # Don't exit on error - we'll handle it
+            RELEASE_OUTPUT=$(eval "$VALIDATION_CMD" 2>&1)
+            RELEASE_EXIT_CODE=$?
+            set -e  # Re-enable exit on error
+            
+            # If command failed, check if it's Nx Cloud related
+            if [ "$RELEASE_EXIT_CODE" -ne 0 ]; then
+              # Check for any Nx Cloud related errors (quota, connection, auth, etc.)
+              if echo "$RELEASE_OUTPUT" | grep -qiE "(nx.?cloud|quota|rate limit|429|too many requests|exceeded|connection.*failed|authentication.*failed|unauthorized|NX_CLOUD.*quota|rate.*limit.*exceeded|429.*Too Many Requests)"; then
+                echo ""
+                echo "⚠️  Nx Cloud error detected - disabling Nx Cloud and retrying..."
+                echo "   Error details:"
+                echo "$RELEASE_OUTPUT" | grep -iE "(nx.?cloud|quota|rate limit|429|too many requests|exceeded|connection|authentication|unauthorized|NX_CLOUD)" | head -5 || true
+                echo ""
+                echo "NX_SKIP_NX_CLOUD=true" >> $GITHUB_ENV
+                export NX_SKIP_NX_CLOUD=true
+                
+                # Retry without Nx Cloud - this should succeed
+                echo "📝 Retrying release validation without Nx Cloud (using local cache only)..."
+                set +e  # Don't exit on error for retry
+                RELEASE_OUTPUT=$(eval "$VALIDATION_CMD" 2>&1)
+                RELEASE_EXIT_CODE=$?
+                set -e
+                
+                if [ "$RELEASE_EXIT_CODE" -ne 0 ]; then
+                  # Not an Nx Cloud error - return for further handling
+                  return $RELEASE_EXIT_CODE
+                else
+                  echo "✅ Release validation succeeded without Nx Cloud"
+                  return 0
+                fi
+              else
+                # Not an Nx Cloud error - return for further handling
+                return $RELEASE_EXIT_CODE
+              fi
+            else
+              echo "✅ Release validation succeeded with Nx Cloud"
+              return 0
+            fi
+          }
+
           # Run release version dry-run (validates version calculation and preVersionCommand)
           echo "📝 Validating version calculation and preVersionCommand build..."
-          RELEASE_OUTPUT=$(pnpm nx release version --dry-run 2>&1) || RELEASE_EXIT_CODE=$?
+          run_release_validation
+          RELEASE_EXIT_CODE=$?
           echo "$RELEASE_OUTPUT"
 
           # Check if there are changes to release (this is OK, not an error)
@@ -249,6 +393,12 @@ jobs:
           # 1. It requires version changes to already exist
           # 2. The preReleaseCommand build is already validated by the build step above
           # 3. NPM authentication and package conflicts are checked in the release workflow itself
+          
+          # Cleanup temporary log files
+          rm -f /tmp/*-output.log /tmp/*-release-output.log 2>/dev/null || true
+        env:
+          # Skip Nx Cloud if connection failed or token not set (falls back to local cache)
+          NX_SKIP_NX_CLOUD: ${{ env.NX_SKIP_NX_CLOUD || 'false' }}
 
       # ═══════════════════════════════════════════════════════════════════════
       # LAYER 7: POST-TEST ACTIONS (DIAGNOSTICS)
@@ -273,5 +423,12 @@ jobs:
           echo ""
           echo "pnpm version:"
           pnpm --version
+          echo ""
+          echo "Nx Cloud status:"
+          if [ "${{ env.NX_SKIP_NX_CLOUD }}" == "true" ]; then
+            echo "  ⚠️  Nx Cloud disabled (using local cache only)"
+          else
+            echo "  ✅ Nx Cloud enabled (if token configured)"
+          fi
           echo ""
           pnpm nx report

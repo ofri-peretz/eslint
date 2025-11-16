@@ -46,6 +46,38 @@ This directory contains checklists and guidelines for common development tasks i
 
 **⚠️ CRITICAL:** Must use `formatLLMMessage` utility for all error messages!
 
+### 3. 🔄 GitHub Workflow Maintenance
+
+**File:** [`workflow-maintenance-checklist.md`](./workflow-maintenance-checklist.md)
+
+**When to use:**
+
+- Adding a new GitHub Actions workflow
+- Updating an existing workflow
+- Changing workflow patterns/format (requires updating ALL workflows)
+- Adding new error handling patterns
+- Modifying Nx Cloud integration
+
+**Key Steps:**
+
+- ✅ Workflow structure and naming
+- ✅ **Nx Cloud integration (REQUIRED for all Nx commands)**
+  - Configure Nx Cloud step with error handling
+  - Wrap ALL Nx commands with Nx Cloud error handling pattern
+  - Add `NX_SKIP_NX_CLOUD` environment variable
+- ✅ **Error pattern matching** (enhanced patterns)
+- ✅ **Cleanup** of temporary log files
+- ✅ **Diagnostics** with Nx Cloud status
+- ✅ **Consistency checks** across all workflows
+
+**⚠️ CRITICAL:** 
+- ALL workflows using Nx commands MUST have Nx Cloud error handling
+- When changing patterns, update ALL 4 workflows:
+  - `lint-pr.yml`
+  - `ci-pr.yml`
+  - `release.yml`
+  - `release-unscoped.yml`
+
 ## 🎯 Quick Reference
 
 ### Package Type Decision
