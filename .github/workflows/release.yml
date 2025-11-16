@@ -188,15 +188,55 @@ jobs:
         run: |
           echo "🔍 Running pre-flight checks..."
 
-          # Check NPM authentication
-          echo "📦 Checking NPM authentication..."
-          if ! npm whoami --registry=https://registry.npmjs.org/ 2>/dev/null; then
-            echo "❌ NPM authentication failed!"
-            echo "   Ensure NPM_TOKEN secret is configured correctly"
-            echo "   Or use Trusted Publishing (OIDC) for authentication"
+          # Check NPM authentication (Trusted Publishing / OIDC)
+          # Note: setup-node@v6 with registry-url automatically configures OIDC authentication
+          # NODE_AUTH_TOKEN is set by GitHub Actions when using OIDC
+          echo "📦 Checking NPM authentication setup (Trusted Publishing)..."
+
+          # Verify OIDC token is present (set by GitHub Actions when using OIDC)
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "❌ NODE_AUTH_TOKEN not found!"
+            echo "   This workflow uses Trusted Publishing (OIDC) for NPM authentication"
+            echo "   Ensure:"
+            echo "   1. Trusted Publishing is configured on npmjs.com for this repository"
+            echo "   2. GitHub Actions has 'id-token: write' permission (already set)"
+            echo "   3. setup-node action is configured with registry-url (already set)"
             exit 1
           fi
-          echo "✅ NPM authentication verified"
+
+          echo "✅ OIDC token detected (NODE_AUTH_TOKEN is set)"
+
+          # Verify npm registry is configured correctly
+          echo "🔍 Verifying npm registry configuration..."
+          NPM_REGISTRY=$(npm config get registry 2>/dev/null || echo "")
+          if [ "$NPM_REGISTRY" != "https://registry.npmjs.org/" ]; then
+            echo "⚠️  Warning: npm registry is not set to https://registry.npmjs.org/"
+            echo "   Current registry: ${NPM_REGISTRY:-not set}"
+            echo "   This may cause authentication issues"
+          else
+            echo "✅ npm registry configured correctly: $NPM_REGISTRY"
+          fi
+
+          # Try to verify authentication by checking if we can access one of our packages
+          # This is a read-only operation that works with OIDC tokens
+          echo "🔍 Verifying package access (read-only check)..."
+          TEST_PACKAGE="@forge-js/eslint-plugin-utils"
+          if npm view "$TEST_PACKAGE" version --registry=https://registry.npmjs.org/ >/dev/null 2>&1; then
+            PACKAGE_VERSION=$(npm view "$TEST_PACKAGE" version --registry=https://registry.npmjs.org/ 2>/dev/null || echo "unknown")
+            echo "✅ Successfully accessed package: $TEST_PACKAGE@$PACKAGE_VERSION"
+            echo "   This confirms npm registry connectivity"
+            echo "   Note: OIDC authentication will be fully validated during publish"
+          else
+            echo "⚠️  Warning: Could not access package $TEST_PACKAGE"
+            echo "   This may be normal if:"
+            echo "   - Package doesn't exist yet (first publish)"
+            echo "   - Network issues"
+            echo "   - Trusted Publishing not fully configured"
+            echo "   Authentication will still be validated during actual publish"
+          fi
+
+          echo "✅ Pre-flight authentication checks completed"
+          echo "   Final authentication will be validated during publish step"
 
           # Check git state is clean
           echo "📝 Checking git state..."
@@ -258,15 +298,12 @@ jobs:
 
           echo "📝 Publishing with dist tag: ${{ inputs.dist-tag }}"
 
-          # Verify NPM auth one more time before publishing
-          echo "🔐 Verifying NPM authentication before publish..."
-          if ! npm whoami --registry=https://registry.npmjs.org/ 2>/dev/null; then
-            echo "❌ NPM authentication failed right before publish!"
-            echo "   This should not happen if pre-flight checks passed"
-            exit 1
-          fi
+          # Note: For OIDC (Trusted Publishing), npm whoami doesn't work until npm config is set
+          # The actual publish command will validate authentication
+          # If auth fails, publish will fail with a clear error message
 
           # preReleaseCommand rebuilds packages with updated versions, then publishes
+          # This will validate NPM authentication during the publish operation
           pnpm nx release publish --tag ${{ inputs.dist-tag }}
         env:
           NPM_CONFIG_PROVENANCE: true
