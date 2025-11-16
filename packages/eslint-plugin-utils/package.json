@@ -1,6 +1,6 @@
 {
   "name": "@forge-js/eslint-plugin-utils",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Utilities for building LLM-optimized ESLint rules",
   "type": "commonjs",
   "main": "./src/index.js",
