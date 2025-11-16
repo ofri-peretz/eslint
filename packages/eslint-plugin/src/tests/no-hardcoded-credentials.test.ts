@@ -463,7 +463,7 @@ describe('no-hardcoded-credentials', () => {
           ],
         },
         {
-          code: 'const query = `${someVar}_sk_live_FAKE_LIVE_KEY_FOR_TESTING_PURPOSES_ONLY_123456_suffix`;',
+          code: 'const query = `sk_live_FAKE_LIVE_KEY_FOR_TESTING_PURPOSES_ONLY_123456${someVar}`;',
           errors: [
             {
               messageId: 'hardcodedCredential',
