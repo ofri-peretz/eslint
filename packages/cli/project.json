@@ -30,6 +30,9 @@
         "tsConfig": "packages/cli/tsconfig.json",
         "assets": [
           "packages/cli/README.md",
+          "packages/cli/LICENSE",
+          "packages/cli/CHANGELOG.md",
+          "packages/cli/AGENTS.md",
           "packages/cli/package.json",
           {
             "glob": "*",

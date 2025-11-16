@@ -31,7 +31,8 @@
         "assets": [
           "packages/eslint-plugin-llm/README.md",
           "packages/eslint-plugin-llm/LICENSE",
-          "packages/eslint-plugin-llm/CHANGELOG.md"
+          "packages/eslint-plugin-llm/CHANGELOG.md",
+          "packages/eslint-plugin-llm/AGENTS.md"
         ]
       }
     },

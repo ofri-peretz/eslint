@@ -31,7 +31,8 @@
         "assets": [
           "packages/eslint-plugin-utils/*.md",
           "packages/eslint-plugin-utils/LICENSE",
-          "packages/eslint-plugin-utils/package.json"
+          "packages/eslint-plugin-utils/package.json",
+          "packages/eslint-plugin-utils/AGENTS.md"
         ]
       }
     },

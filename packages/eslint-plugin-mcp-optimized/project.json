@@ -31,7 +31,8 @@
         "assets": [
           "packages/eslint-plugin-mcp-optimized/README.md",
           "packages/eslint-plugin-mcp-optimized/LICENSE",
-          "packages/eslint-plugin-mcp-optimized/CHANGELOG.md"
+          "packages/eslint-plugin-mcp-optimized/CHANGELOG.md",
+          "packages/eslint-plugin-mcp-optimized/AGENTS.md"
         ]
       }
     },

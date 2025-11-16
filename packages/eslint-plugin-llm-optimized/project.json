@@ -30,7 +30,9 @@
         "tsConfig": "packages/eslint-plugin-llm-optimized/tsconfig.lib.json",
         "assets": [
           "packages/eslint-plugin-llm-optimized/README.md",
-          "packages/eslint-plugin-llm-optimized/CHANGELOG.md"
+          "packages/eslint-plugin-llm-optimized/CHANGELOG.md",
+          "packages/eslint-plugin-llm-optimized/LICENSE",
+          "packages/eslint-plugin-llm-optimized/AGENTS.md"
         ]
       }
     },
