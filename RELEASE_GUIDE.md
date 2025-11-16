@@ -4,6 +4,39 @@
 
 ✅ **Tests are now passing** - Fixed Vitest path resolution issue
 
+## Pre-Release Checklist
+
+Before releasing any package, ensure:
+
+1. ✅ **All README.md files are up-to-date**
+   - Verify rule counts (currently 30+ rules, 18 security rules)
+   - Ensure all package READMEs reflect current functionality
+   - Check that version numbers, feature lists, and examples are accurate
+   - Verify all plugin READMEs (eslint-plugin, eslint-plugin-llm, eslint-plugin-llm-optimized, eslint-plugin-mcp, eslint-plugin-mcp-optimized) are synchronized
+
+2. ✅ **All AGENTS.md files are included in package artifacts**
+   - Verify `AGENTS.md` is in the `files` array in package.json
+   - Ensure `AGENTS.md` is included in build assets in project.json
+
+3. ✅ **All documentation files are included in builds**
+   - README.md
+   - LICENSE
+   - CHANGELOG.md
+   - AGENTS.md
+   - Verify these are in both package.json `files` and project.json `assets`
+
+4. ✅ **Tests pass**
+   - Run `pnpm nx run-many -t test --all`
+   - Fix any failing tests before release
+
+5. ✅ **Build succeeds**
+   - Run `pnpm nx run-many -t build --all`
+   - Verify all dist folders contain expected files
+
+6. ✅ **Conventional commits**
+   - Use conventional commit format: `type(scope): description`
+   - Types: feat, fix, docs, chore, refactor, etc.
+
 ## Step-by-Step Release Process
 
 ### 1. Commit Current Changes
