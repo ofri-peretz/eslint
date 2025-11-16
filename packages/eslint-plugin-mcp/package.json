@@ -11,8 +11,8 @@
       "default": "./src/index.js"
     },
     "./types": {
-      "types": "./src/types/index.d.ts",
-      "default": "./src/types/index.js"
+      "types": "@forge-js/eslint-plugin-llm-optimized/src/index.d.ts",
+      "default": "@forge-js/eslint-plugin-llm-optimized/src/index.js"
     }
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
@@ -52,12 +52,15 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "tslib": "^2.3.0",
-    "@forge-js/eslint-plugin-llm-optimized": "^1.0.0"
+    "tslib": "^2.3.0"
+  },
+  "peerDependencies": {
+    "@forge-js/eslint-plugin-llm-optimized": "^1.2.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
     "@typescript-eslint/rule-tester": "^8.46.2",
+    "@forge-js/eslint-plugin-llm-optimized": "^1.2.0",
     "vitest": "^4.0.6"
   }
 }
