@@ -191,13 +191,188 @@ jobs:
           git config user.name "Ofri Peretz"
           git config user.email "ofriperetzdev@gmail.com"
 
-          # Run version command (includes preVersionCommand build for manifest updates)
-          if [ "${{ inputs.version-specifier }}" != "auto" ]; then
-            echo "📝 Using version strategy: ${{ inputs.version-specifier }}"
-            pnpm nx release version ${{ inputs.version-specifier }}
-          else
-            echo "📝 Using conventional commits to determine version"
-            pnpm nx release version
+          # Function to run version command
+          run_version_command() {
+            if [ "${{ inputs.version-specifier }}" != "auto" ]; then
+              echo "📝 Using version strategy: ${{ inputs.version-specifier }}"
+              pnpm nx release version ${{ inputs.version-specifier }}
+            else
+              echo "📝 Using conventional commits to determine version"
+              pnpm nx release version
+            fi
+          }
+
+          # Try to run version command
+          if ! run_version_command 2>&1 | tee /tmp/nx-release-output.log; then
+            EXIT_CODE=${PIPESTATUS[0]}
+            echo ""
+            echo "⚠️  Version command failed with exit code: $EXIT_CODE"
+            
+            # Check if the error is about existing tags
+            if grep -q "tag.*already exists" /tmp/nx-release-output.log; then
+              echo "🧹 Detected existing tags from previous failed release attempt"
+              echo "   Checking if corresponding npm versions exist..."
+              
+              # Extract tag names from error message
+              CONFLICTING_TAGS=$(grep -oE '[a-z-]+@[0-9]+\.[0-9]+\.[0-9]+' /tmp/nx-release-output.log | sort -u || echo "")
+              
+              if [ -n "$CONFLICTING_TAGS" ]; then
+                for TAG in $CONFLICTING_TAGS; do
+                  # Extract project name and version from tag (format: project@version)
+                  PROJECT=$(echo "$TAG" | cut -d'@' -f1)
+                  VERSION=$(echo "$TAG" | cut -d'@' -f2)
+                  
+                  echo "   🔍 Checking tag: $TAG"
+                  
+                  # Get package name from project.json or package.json
+                  PACKAGE_NAME=""
+                  if [ -f "packages/${PROJECT}/package.json" ]; then
+                    PACKAGE_NAME=$(node -p "require('./packages/${PROJECT}/package.json').name" 2>/dev/null || echo "")
+                  fi
+                  
+                  if [ -z "$PACKAGE_NAME" ]; then
+                    # Try to map project name to package name
+                    case "$PROJECT" in
+                      "eslint-plugin")
+                        PACKAGE_NAME="@forge-js/eslint-plugin-llm-optimized"
+                        ;;
+                      "eslint-plugin-utils")
+                        PACKAGE_NAME="@forge-js/eslint-plugin-utils"
+                        ;;
+                      "cli")
+                        PACKAGE_NAME="@forge-js/cli"
+                        ;;
+                      *)
+                        PACKAGE_NAME="$PROJECT"
+                        ;;
+                    esac
+                  fi
+                  
+                  # Check if version exists on npm
+                  echo "      Checking npm for: $PACKAGE_NAME@$VERSION"
+                  if npm view "${PACKAGE_NAME}@${VERSION}" version >/dev/null 2>&1; then
+                    echo "      ✅ Version $VERSION exists on npm - skipping tag deletion"
+                    echo "      ℹ️  Package already published, will skip in publish step"
+                  else
+                    echo "      ❌ Version $VERSION does NOT exist on npm"
+                    echo "      🗑️  Deleting tag $TAG (tag exists but npm version doesn't)"
+                    git tag -d "$TAG" 2>/dev/null || true
+                    git push origin ":refs/tags/$TAG" 2>/dev/null || true
+                    echo "      ✅ Tag deleted - will be recreated by nx release version"
+                  fi
+                done
+                
+                echo "   ✅ Cleaned up tags where npm versions don't exist"
+                echo "   🔄 Retrying version command (will recreate deleted tags)..."
+                run_version_command
+                
+                # Verify tags were recreated
+                echo "   🔍 Verifying tags were recreated..."
+                for TAG in $CONFLICTING_TAGS; do
+                  PROJECT=$(echo "$TAG" | cut -d'@' -f1)
+                  VERSION=$(echo "$TAG" | cut -d'@' -f2)
+                  
+                  if [ -f "packages/${PROJECT}/package.json" ]; then
+                    PACKAGE_NAME=$(node -p "require('./packages/${PROJECT}/package.json').name" 2>/dev/null || echo "")
+                    if [ -z "$PACKAGE_NAME" ]; then
+                      case "$PROJECT" in
+                        "eslint-plugin")
+                          PACKAGE_NAME="@forge-js/eslint-plugin-llm-optimized"
+                          ;;
+                        "eslint-plugin-utils")
+                          PACKAGE_NAME="@forge-js/eslint-plugin-utils"
+                          ;;
+                        "cli")
+                          PACKAGE_NAME="@forge-js/cli"
+                          ;;
+                        *)
+                          PACKAGE_NAME="$PROJECT"
+                          ;;
+                      esac
+                    fi
+                    
+                    # Only check if npm version doesn't exist (we deleted the tag for these)
+                    if ! npm view "${PACKAGE_NAME}@${VERSION}" version >/dev/null 2>&1; then
+                      if git rev-parse "$TAG" >/dev/null 2>&1; then
+                        echo "      ✅ Tag $TAG was successfully recreated"
+                      else
+                        echo "      ⚠️  Warning: Tag $TAG was not recreated, creating manually..."
+                        # Get the current commit (where package.json was updated)
+                        COMMIT_SHA=$(git rev-parse HEAD)
+                        git tag "$TAG" "$COMMIT_SHA"
+                        echo "      ✅ Manually created tag $TAG"
+                      fi
+                    fi
+                  fi
+                done
+              else
+                # Fallback: try to extract from updated package.json files
+                echo "   🔍 Attempting to extract from package.json files..."
+                UPDATED_FILES=$(git diff --name-only HEAD packages/*/package.json dist/packages/*/package.json 2>/dev/null || echo "")
+                
+                if [ -n "$UPDATED_FILES" ]; then
+                  for FILE in $UPDATED_FILES; do
+                    if [ -f "$FILE" ]; then
+                      PACKAGE_NAME=$(node -p "require('./$FILE').name" 2>/dev/null || echo "")
+                      NEW_VERSION=$(node -p "require('./$FILE').version" 2>/dev/null || echo "")
+                      
+                      if [ -n "$PACKAGE_NAME" ] && [ -n "$NEW_VERSION" ]; then
+                        # Map to project name
+                        PROJECT=$(echo "$FILE" | sed -n 's|.*packages/\([^/]*\)/.*|\1|p')
+                        if [ -n "$PROJECT" ]; then
+                          TAG="${PROJECT}@${NEW_VERSION}"
+                          if git rev-parse "$TAG" >/dev/null 2>&1; then
+                            # Check npm
+                            if ! npm view "${PACKAGE_NAME}@${NEW_VERSION}" version >/dev/null 2>&1; then
+                              echo "   🗑️  Deleting tag $TAG (npm version doesn't exist)"
+                              git tag -d "$TAG" 2>/dev/null || true
+                              git push origin ":refs/tags/$TAG" 2>/dev/null || true
+                              echo "   ✅ Tag deleted - will be recreated by nx release version"
+                            fi
+                          fi
+                        fi
+                      fi
+                    fi
+                  done
+                  
+                  echo "   ✅ Cleaned up tags where npm versions don't exist"
+                  echo "   🔄 Retrying version command (will recreate deleted tags)..."
+                  run_version_command
+                  
+                  # Verify tags were recreated for packages that need publishing
+                  echo "   🔍 Verifying tags were recreated for unpublished packages..."
+                  for FILE in $UPDATED_FILES; do
+                    if [ -f "$FILE" ]; then
+                      PACKAGE_NAME=$(node -p "require('./$FILE').name" 2>/dev/null || echo "")
+                      NEW_VERSION=$(node -p "require('./$FILE').version" 2>/dev/null || echo "")
+                      PROJECT=$(echo "$FILE" | sed -n 's|.*packages/\([^/]*\)/.*|\1|p')
+                      
+                      if [ -n "$PACKAGE_NAME" ] && [ -n "$NEW_VERSION" ] && [ -n "$PROJECT" ]; then
+                        TAG="${PROJECT}@${NEW_VERSION}"
+                        # Only verify if npm version doesn't exist (we want to publish this)
+                        if ! npm view "${PACKAGE_NAME}@${NEW_VERSION}" version >/dev/null 2>&1; then
+                          if git rev-parse "$TAG" >/dev/null 2>&1; then
+                            echo "      ✅ Tag $TAG was successfully recreated"
+                          else
+                            echo "      ⚠️  Warning: Tag $TAG was not recreated, creating manually..."
+                            COMMIT_SHA=$(git rev-parse HEAD)
+                            git tag "$TAG" "$COMMIT_SHA"
+                            echo "      ✅ Manually created tag $TAG"
+                          fi
+                        fi
+                      fi
+                    fi
+                  done
+                else
+                  echo "   ❌ Could not determine which tags to check"
+                  exit $EXIT_CODE
+                fi
+              fi
+            else
+              echo "   ❌ Version command failed for a different reason"
+              cat /tmp/nx-release-output.log
+              exit $EXIT_CODE
+            fi
           fi
 
           echo "status=success" >> $GITHUB_OUTPUT
