@@ -235,6 +235,34 @@ describe('no-missing-cors-check', () => {
       ],
       invalid: [],
     });
+
+    ruleTester.run('edge cases - literal in CORS context via property', noMissingCorsCheck, {
+      valid: [],
+      invalid: [
+        {
+          code: 'app.use(cors({ origin: "*", allowedOrigins: ["https://example.com"] }));',
+          errors: [
+            {
+              messageId: 'missingCorsCheck',
+            },
+          ],
+        },
+      ],
+    });
+
+    ruleTester.run('edge cases - literal in isActualCorsContext', noMissingCorsCheck, {
+      valid: [],
+      invalid: [
+        {
+          code: 'const config = { origin: "*" }; app.use(cors(config));',
+          errors: [
+            {
+              messageId: 'missingCorsCheck',
+            },
+          ],
+        },
+      ],
+    });
   });
 });
 

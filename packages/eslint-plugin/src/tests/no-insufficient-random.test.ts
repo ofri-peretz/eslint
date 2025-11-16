@@ -202,5 +202,45 @@ describe('no-insufficient-random', () => {
       },
     ],
   });
+
+  // Test additionalWeakPatterns option
+  ruleTester.run('no-insufficient-random with additionalWeakPatterns', noInsufficientRandom, {
+    valid: [],
+    invalid: [
+      {
+        code: 'const random = weakRandom();',
+        options: [{ additionalWeakPatterns: ['weakRandom'] }],
+        errors: [
+          {
+            messageId: 'insufficientRandom',
+            // Custom patterns provide suggestions but no auto-fix
+            // RuleTester filters suggestions where fix returns null
+          },
+        ],
+      },
+      {
+        code: 'const value = customRandom();',
+        options: [{ additionalWeakPatterns: ['customRandom'] }],
+        errors: [
+          {
+            messageId: 'insufficientRandom',
+            // Custom patterns provide suggestions but no auto-fix
+            // RuleTester filters suggestions where fix returns null
+          },
+        ],
+      },
+      {
+        code: 'const id = myRandom();',
+        options: [{ additionalWeakPatterns: ['myRandom'] }],
+        errors: [
+          {
+            messageId: 'insufficientRandom',
+            // Custom patterns provide suggestions but no auto-fix
+            // RuleTester filters suggestions where fix returns null
+          },
+        ],
+      },
+    ],
+  });
 });
 

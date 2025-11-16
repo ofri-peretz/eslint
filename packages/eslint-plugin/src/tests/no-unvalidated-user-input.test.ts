@@ -343,6 +343,106 @@ describe('no-unvalidated-user-input', () => {
       ],
       invalid: [],
     });
+
+    ruleTester.run('edge cases - checkIdentifier function', noUnvalidatedUserInput, {
+      valid: [],
+      invalid: [
+        {
+          code: 'const userInput = req.body;',
+          errors: [
+            {
+              messageId: 'unvalidatedInput',
+            },
+          ],
+        },
+        {
+          code: 'const input = req.query;',
+          errors: [
+            {
+              messageId: 'unvalidatedInput',
+            },
+          ],
+        },
+      ],
+    });
+
+    ruleTester.run('edge cases - validation example for different input sources', noUnvalidatedUserInput, {
+      valid: [],
+      invalid: [
+        {
+          code: 'const data = input;',
+          errors: [
+            {
+              messageId: 'unvalidatedInput',
+            },
+          ],
+        },
+      ],
+    });
+
+    ruleTester.run('edge cases - trusted libraries in validation calls', noUnvalidatedUserInput, {
+      valid: [
+        {
+          code: 'const data = myValidator.parse(req.body);',
+          options: [{ trustedLibraries: ['myValidator'] }],
+        },
+        {
+          code: 'const result = customLib.validate(req.query);',
+          options: [{ trustedLibraries: ['customLib'] }],
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('edge cases - direct validation function calls', noUnvalidatedUserInput, {
+      valid: [
+        {
+          code: 'const dto = plainToClass(Dto, req.body);',
+        },
+        {
+          code: 'const result = transform(req.body);',
+        },
+        {
+          code: 'validate(req.body);',
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('edge cases - checkObjectPattern with CallExpression validation', noUnvalidatedUserInput, {
+      valid: [
+        {
+          code: 'const { value } = schema.validate(req.body);',
+        },
+        {
+          code: 'const { data } = myLib.parse(req.query);',
+          options: [{ trustedLibraries: ['myLib'] }],
+        },
+        {
+          code: 'const { result } = plainToClass(Dto, req.body);',
+        },
+      ],
+      invalid: [
+        {
+          code: 'const { page, limit } = req.query;',
+          errors: [
+            {
+              messageId: 'unvalidatedInput',
+            },
+          ],
+        },
+      ],
+    });
+
+    ruleTester.run('edge cases - checkObjectPattern with ignorePatterns', noUnvalidatedUserInput, {
+      valid: [
+        {
+          code: 'const { page, limit } = safeQuery;',
+          options: [{ ignorePatterns: ['safeQuery'] }],
+        },
+      ],
+      invalid: [],
+    });
   });
 });
 

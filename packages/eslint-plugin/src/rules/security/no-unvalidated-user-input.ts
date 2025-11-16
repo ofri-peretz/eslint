@@ -315,9 +315,27 @@ export const noUnvalidatedUserInput = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      // Check for generic input patterns
+      // Skip if this identifier is assigned from a user input source (MemberExpression)
+      // For cases like: const userInput = req.body;
+      // We should only report on req.body, not on userInput
+      // But don't skip if the init is the same identifier (e.g., const data = input;)
+      if (node.parent && node.parent.type === 'VariableDeclarator' && node.parent.init) {
+        const init = node.parent.init;
+        // Only skip if init is a MemberExpression (like req.body) that will be caught by checkMemberExpression
+        // Don't skip if init is the same identifier (like input) - we want to report on it
+        if (init.type === 'MemberExpression') {
+          const initText = sourceCode.getText(init);
+          // Check if init matches any user input pattern
+          const initMatchesPattern = UNVALIDATED_INPUT_PATTERNS.some(p => p.pattern.test(initText));
+          if (initMatchesPattern) {
+            return; // Skip - the init (e.g., req.body) will be reported by checkMemberExpression
+          }
+        }
+      }
+
+      // Check for generic input patterns (userInput, input)
       const matchedPattern = UNVALIDATED_INPUT_PATTERNS.find(p => 
-        p.name === 'userInput' && p.pattern.test(text)
+        (p.name === 'userInput' || p.name === 'input') && p.pattern.test(text)
       );
       
       if (matchedPattern) {

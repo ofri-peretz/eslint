@@ -376,6 +376,62 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
                     });
                   }
                 }
+              } else if (arg.type === 'Identifier') {
+                // Check if this identifier was assigned an object literal with origin: "*"
+                // For cases like: const config = { origin: "*" }; app.use(cors(config));
+                const varName = arg.name;
+                // Traverse the AST to find the variable declaration
+                let current: TSESTree.Node | null = node;
+                while (current) {
+                  if (current.type === 'Program' || current.type === 'FunctionDeclaration' || current.type === 'FunctionExpression' || current.type === 'ArrowFunctionExpression') {
+                    // Search for variable declarations in this scope
+                    const scopeBody = current.type === 'Program' ? current.body : 
+                                     (current.type === 'FunctionDeclaration' || current.type === 'FunctionExpression' || current.type === 'ArrowFunctionExpression') ? 
+                                     (current.body.type === 'BlockStatement' ? current.body.body : []) : [];
+                    
+                    for (const stmt of scopeBody) {
+                      if (stmt.type === 'VariableDeclaration') {
+                        for (const declarator of stmt.declarations) {
+                          if (declarator.id.type === 'Identifier' && declarator.id.name === varName && declarator.init) {
+                            // Check if init is an object literal with origin: "*"
+                            if (declarator.init.type === 'ObjectExpression') {
+                              for (const prop of declarator.init.properties) {
+                                if (prop.type === 'Property' && 
+                                    prop.key.type === 'Identifier' && 
+                                    prop.key.name === 'origin' &&
+                                    prop.value.type === 'Literal' &&
+                                    prop.value.value === '*') {
+                                  context.report({
+                                    node: arg,
+                                    messageId: 'missingCorsCheck',
+                                    data: {
+                                      issue: 'Wildcard CORS origin (*) allows all origins',
+                                      safeAlternative: 'Use origin validation: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } } }));',
+                                    },
+                                    suggest: [
+                                      {
+                                        messageId: 'useOriginValidation',
+                                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                                        fix: (_fixer: TSESLint.RuleFixer) => null,
+                                      },
+                                    ],
+                                  });
+                                  return; // Found and reported, exit
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                    break; // Only check the immediate scope
+                  }
+                  if (current.parent) {
+                    current = current.parent as TSESTree.Node;
+                  } else {
+                    break;
+                  }
+                }
               }
             }
           }
