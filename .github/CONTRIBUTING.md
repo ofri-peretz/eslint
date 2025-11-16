@@ -9,9 +9,11 @@ Welcome! This document explains how to contribute and release packages for Forge
 ## 🚀 Quick Navigation
 
 ### For Releasing Code
+
 - **[RELEASE_QUICK_START.md](./RELEASE_QUICK_START.md)** - How to release packages
 
 ### For Setting Up Authentication
+
 - **[TRUSTED_PUBLISHING_SETUP.md](./TRUSTED_PUBLISHING_SETUP.md)** - Secure npm publishing (recommended)
 - **[NPM_SETUP_QUICK_REFERENCE.md](./NPM_SETUP_QUICK_REFERENCE.md)** - NPM token setup (alternative)
 
@@ -21,23 +23,25 @@ Welcome! This document explains how to contribute and release packages for Forge
 
 ### 3 Workflows
 
-| Workflow | Trigger | What it does |
-|----------|---------|------------|
-| **ci-pr.yml** | Pull Request | Tests & builds code |
-| **lint-pr.yml** | Pull Request | Lints code (ESLint) |
-| **release.yml** | Manual | Prepares & publishes release |
+| Workflow        | Trigger      | What it does                 |
+| --------------- | ------------ | ---------------------------- |
+| **ci-pr.yml**   | Pull Request | Tests & builds code          |
+| **lint-pr.yml** | Pull Request | Lints code (ESLint)          |
+| **release.yml** | Manual       | Prepares & publishes release |
 
 ---
 
 ## 📖 How to Release
 
 ### 1. Ensure Main is Ready
+
 ```bash
 # All PRs merged to main
 # ci-pr.yml and lint-pr.yml pass ✅
 ```
 
 ### 2. Run Release Workflow
+
 ```bash
 # Default: auto version (from commits), latest tag
 gh workflow run release.yml
@@ -49,6 +53,7 @@ gh workflow run release.yml -f dry-run=true  # preview only
 ```
 
 ### 3. Monitor Progress
+
 ```bash
 # List recent releases
 gh run list --workflow release.yml
@@ -63,12 +68,12 @@ gh run view <run-id> --log
 
 All optional. Sensible defaults provided.
 
-| Parameter | Default | Options |
-|-----------|---------|---------|
-| `version-specifier` | `auto` | auto, major, minor, patch, prerelease |
-| `dist-tag` | `latest` | latest, beta, rc, alpha, canary, next |
-| `run-ci` | `true` | true, false |
-| `dry-run` | `false` | true, false |
+| Parameter           | Default  | Options                               |
+| ------------------- | -------- | ------------------------------------- |
+| `version-specifier` | `auto`   | auto, major, minor, patch, prerelease |
+| `dist-tag`          | `latest` | latest, beta, rc, alpha, canary, next |
+| `run-ci`            | `true`   | true, false                           |
+| `dry-run`           | `false`  | true, false                           |
 
 ---
 
@@ -100,12 +105,14 @@ All optional. Sensible defaults provided.
 Choose one setup method:
 
 ### Option 1: Trusted Publishing (Recommended)
+
 - **Secure:** Temporary tokens, no storage
 - **Maintenance:** Zero (auto-renewed)
 - **Setup time:** 5 minutes
 - **See:** [TRUSTED_PUBLISHING_SETUP.md](./TRUSTED_PUBLISHING_SETUP.md)
 
 ### Option 2: NPM Token
+
 - **Setup time:** 2 minutes
 - **Maintenance:** Annual rotation
 - **See:** [NPM_SETUP_QUICK_REFERENCE.md](./NPM_SETUP_QUICK_REFERENCE.md)
@@ -124,6 +131,7 @@ Choose one setup method:
 ## 🆘 Quick Help
 
 ### Release Failed?
+
 ```bash
 # Check logs
 gh run view <run-id> --log
@@ -133,9 +141,11 @@ gh run rerun <run-id>
 ```
 
 ### Authentication Issues?
+
 - See: [TRUSTED_PUBLISHING_SETUP.md](./TRUSTED_PUBLISHING_SETUP.md) or [NPM_SETUP_QUICK_REFERENCE.md](./NPM_SETUP_QUICK_REFERENCE.md)
 
 ### Want to Learn More?
+
 - See: [RELEASE_QUICK_START.md](./RELEASE_QUICK_START.md)
 
 ---
