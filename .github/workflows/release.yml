@@ -511,7 +511,8 @@ jobs:
             echo ""
             
             # Check for "already published" errors (403/409) - these are safe to ignore
-            ALREADY_PUBLISHED_COUNT=$(echo "$PUBLISH_OUTPUT" | grep -c "already published\|cannot publish over\|E403\|E409" || echo "0")
+            ALREADY_PUBLISHED_COUNT=$(echo "$PUBLISH_OUTPUT" | grep -c "already published\|cannot publish over\|E403\|E409" || true)
+            ALREADY_PUBLISHED_COUNT=${ALREADY_PUBLISHED_COUNT:-0}
             UNEXPECTED_ERRORS=$(echo "$PUBLISH_OUTPUT" | grep -v "already published\|cannot publish over\|E403\|E409" | grep -i "error\|failed" || echo "")
             
             if [ "$ALREADY_PUBLISHED_COUNT" -gt 0 ]; then
@@ -527,25 +528,43 @@ jobs:
               echo ""
               echo "$PUBLISH_OUTPUT" | grep -i "error\|failed" | grep -v "already published\|cannot publish over\|E403\|E409" || echo "$PUBLISH_OUTPUT"
               echo ""
-              echo "🔍 Troubleshooting by package type:"
-              echo ""
-              echo "For Scoped Packages (@forge-js/*):"
-              echo "  → Trusted Publishing should work automatically"
-              echo "  → Verify: https://www.npmjs.com/org/forge-js/settings/publishing"
-              echo "  → Packages: @forge-js/eslint-plugin-llm-optimized, @forge-js/eslint-plugin-utils, @forge-js/cli"
-              echo ""
-              echo "For Unscoped Packages (eslint-plugin-*):"
-              echo "  → Trusted Publishing requires npm support approval"
-              echo "  → Contact npm support OR use NPM_TOKEN fallback"
-              echo "  → Packages: eslint-plugin-llm-optimized, eslint-plugin-llm, eslint-plugin-mcp, eslint-plugin-mcp-optimized"
-              echo ""
-              echo "If you see 404 errors for unscoped packages:"
-              echo "  → This is expected - Trusted Publishing doesn't work for unscoped packages by default"
-              echo "  → Options:"
-              echo "    1. Contact npm support: https://github.com/npm/feedback/discussions"
-              echo "    2. Add NPM_TOKEN secret for unscoped packages (fallback)"
-              echo "    3. Move packages to @forge-js scope (recommended)"
-              echo ""
+              
+              # Check specifically for 404 errors
+              if echo "$PUBLISH_OUTPUT" | grep -q "E404\|404 Not Found"; then
+                echo "🔍 404 Error Analysis:"
+                echo ""
+                echo "404 errors mean the package doesn't exist in npm registry."
+                echo ""
+                echo "For Scoped Packages (@forge-js/*) with 404:"
+                echo "  ❌ This indicates Trusted Publishing is NOT working"
+                echo "  → The package should be created automatically on first publish"
+                echo "  → 404 means npm can't find/create the package"
+                echo "  → Check: https://www.npmjs.com/org/forge-js/settings/publishing"
+                echo "  → Verify GitHub Actions is listed as a Trusted Publisher"
+                echo "  → Ensure the workflow has 'id-token: write' permission"
+                echo ""
+                echo "For Unscoped Packages (eslint-plugin-*) with 404:"
+                echo "  → Trusted Publishing doesn't work for unscoped packages by default"
+                echo "  → Options:"
+                echo "    1. Contact npm support: https://github.com/npm/feedback/discussions"
+                echo "    2. Add NPM_TOKEN secret for unscoped packages (fallback)"
+                echo "    3. Move packages to @forge-js scope (recommended)"
+                echo ""
+              else
+                echo "🔍 Troubleshooting by package type:"
+                echo ""
+                echo "For Scoped Packages (@forge-js/*):"
+                echo "  → Trusted Publishing should work automatically"
+                echo "  → Verify: https://www.npmjs.com/org/forge-js/settings/publishing"
+                echo "  → Packages: @forge-js/eslint-plugin-llm-optimized, @forge-js/eslint-plugin-utils, @forge-js/cli"
+                echo ""
+                echo "For Unscoped Packages (eslint-plugin-*):"
+                echo "  → Trusted Publishing requires npm support approval"
+                echo "  → Contact npm support OR use NPM_TOKEN fallback"
+                echo "  → Packages: eslint-plugin-llm-optimized, eslint-plugin-llm, eslint-plugin-mcp, eslint-plugin-mcp-optimized"
+                echo ""
+              fi
+              
               exit ${PUBLISH_EXIT:-1}
             else
               # Only "already published" errors - safe to continue
