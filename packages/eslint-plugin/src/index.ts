@@ -29,6 +29,7 @@ import { detectChildProcess } from './rules/security/detect-child-process';
 import { detectNonLiteralFsFilename } from './rules/security/detect-non-literal-fs-filename';
 import { detectNonLiteralRegexp } from './rules/security/detect-non-literal-regexp';
 import { detectObjectInjection } from './rules/security/detect-object-injection';
+import { noHardcodedCredentials } from './rules/security/no-hardcoded-credentials';
 
 // Migration rules
 import { reactClassToHooks } from './rules/migration/react-class-to-hooks';
@@ -85,6 +86,7 @@ export const rules = {
   'detect-non-literal-fs-filename': detectNonLiteralFsFilename,
   'detect-non-literal-regexp': detectNonLiteralRegexp,
   'detect-object-injection': detectObjectInjection,
+  'no-hardcoded-credentials': noHardcodedCredentials,
   'react-class-to-hooks': reactClassToHooks,
   'react-no-inline-functions': reactNoInlineFunctions,
   'img-requires-alt': imgRequiresAlt,
@@ -107,6 +109,7 @@ export const rules = {
   'security/detect-non-literal-fs-filename': detectNonLiteralFsFilename,
   'security/detect-non-literal-regexp': detectNonLiteralRegexp,
   'security/detect-object-injection': detectObjectInjection,
+  'security/no-hardcoded-credentials': noHardcodedCredentials,
   'migration/react-class-to-hooks': reactClassToHooks,
   'performance/react-no-inline-functions': reactNoInlineFunctions,
   'accessibility/img-requires-alt': imgRequiresAlt,

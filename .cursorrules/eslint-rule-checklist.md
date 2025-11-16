@@ -41,13 +41,19 @@ alwaysApply: true
 
 ### 2. Testing ✅
 
-- [ ] **Unit tests created** in `packages/eslint-plugin/src/rules/{category}/__tests__/{rule-name}.test.ts`
+- [ ] **Unit tests created** in `packages/eslint-plugin/src/tests/{rule-name}.test.ts`
 - [ ] **Test coverage includes:**
   - [ ] Valid cases (should pass)
   - [ ] Invalid cases (should fail)
   - [ ] Auto-fix cases (if rule is fixable)
   - [ ] Edge cases
   - [ ] Configuration options (if rule has options)
+- [ ] **100% test coverage policy (REQUIRED):**
+  - [ ] Run `pnpm nx test eslint-plugin --coverage` to verify coverage
+  - [ ] Achieve 100% line coverage for the rule implementation
+  - [ ] Achieve 100% branch coverage for the rule implementation
+  - [ ] All uncovered lines must be documented with `@coverage-note` comments explaining why they cannot be tested
+  - [ ] Integration tests added if rule requires file system access or special context
 - [ ] **Tests pass:** `pnpm nx test eslint-plugin`
 - [ ] **Build succeeds:** `pnpm nx build eslint-plugin`
 - [ ] **No lint errors:** `pnpm nx lint eslint-plugin`
