@@ -134,7 +134,7 @@
     "projectsRelationship": "independent",
     "preid": "rc",
     "version": {
-      "preVersionCommand": "pnpm dlx nx run-many -t build",
+      "preVersionCommand": "pnpm nx run-many -t build",
       "conventionalCommits": true,
       "generatorOptions": {
         "updateDependents": "always",
