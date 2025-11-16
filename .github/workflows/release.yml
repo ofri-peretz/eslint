@@ -168,16 +168,78 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # ──────────────────────────────────────────────────────────────────────
+      # CONFIGURE NPM AUTHENTICATION
+      # ──────────────────────────────────────────────────────────────────────
+      - name: 🔐 Configure npm Authentication
+        if: inputs.dry-run == false
+        run: |
+          echo "🔐 Configuring npm authentication..."
+
+          # Trusted Publishing (OIDC) is automatically configured by setup-node@v6
+          # for scoped packages via NODE_AUTH_TOKEN
+
+          # For unscoped packages, we need to configure NPM_TOKEN
+          if [ -n "${{ secrets.NPM_TOKEN }}" ]; then
+            echo "📝 Configuring NPM_TOKEN for unscoped packages..."
+            
+            # Create/update .npmrc with token for unscoped packages
+            # This will be used for: eslint-plugin-llm, eslint-plugin-mcp, etc.
+            if [ -f ".npmrc" ]; then
+              echo "✅ .npmrc exists, appending token configuration"
+            else
+              echo "📝 Creating .npmrc for token configuration"
+            fi
+            
+            # Add token to .npmrc for default registry (unscoped packages)
+            # Scoped packages will use Trusted Publishing via NODE_AUTH_TOKEN
+            echo "" >> .npmrc
+            echo "# NPM_TOKEN for unscoped packages (Granular Access Token)" >> .npmrc
+            echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> .npmrc
+            
+            echo "✅ NPM_TOKEN configured for unscoped packages"
+          else
+            echo "ℹ️  NPM_TOKEN not available - unscoped packages will use Trusted Publishing (if configured)"
+          fi
+
+          echo ""
+          echo "📊 Authentication Summary:"
+          if [ -n "$NODE_AUTH_TOKEN" ]; then
+            echo "  ✅ Trusted Publishing (OIDC): Available for scoped packages (@forge-js/*)"
+          fi
+          if [ -n "${{ secrets.NPM_TOKEN }}" ]; then
+            echo "  ✅ NPM_TOKEN: Available for unscoped packages (eslint-plugin-*)"
+          fi
+
+      # ──────────────────────────────────────────────────────────────────────
       # QUICK PRE-FLIGHT CHECK
       # ──────────────────────────────────────────────────────────────────────
       - name: 🔍 Quick Pre-Flight Check
         if: inputs.dry-run == false
         run: |
-          # Verify NPM authentication (Trusted Publishing / OIDC)
-          if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "❌ NODE_AUTH_TOKEN not found - Trusted Publishing not configured"
+          # Verify NPM authentication (Trusted Publishing / OIDC or NPM_TOKEN fallback)
+          echo "🔍 Checking npm authentication methods..."
+
+          if [ -n "$NODE_AUTH_TOKEN" ]; then
+            echo "✅ NODE_AUTH_TOKEN found (Trusted Publishing available for scoped packages)"
+          else
+            echo "⚠️  NODE_AUTH_TOKEN not found - Trusted Publishing not configured"
+            echo "   Will use NPM_TOKEN fallback if available"
+          fi
+
+          if [ -n "${{ secrets.NPM_TOKEN }}" ]; then
+            echo "✅ NPM_TOKEN found (available for unscoped packages and fallback)"
+          else
+            echo "⚠️  NPM_TOKEN not found - unscoped packages will fail"
+            echo "   Scoped packages can use Trusted Publishing"
+          fi
+
+          # At least one authentication method must be available
+          if [ -z "$NODE_AUTH_TOKEN" ] && [ -z "${{ secrets.NPM_TOKEN }}" ]; then
+            echo "❌ No npm authentication method available!"
+            echo "   Either configure Trusted Publishing OR add NPM_TOKEN secret"
             exit 1
           fi
+
           echo "✅ NPM authentication ready"
 
       # ──────────────────────────────────────────────────────────────────────
@@ -474,21 +536,49 @@ jobs:
           git config user.name "Ofri Peretz"
           git config user.email "ofriperetzdev@gmail.com"
 
-          # Verify npm authentication (Trusted Publishing via OIDC)
+          # Verify npm authentication
           echo "🔍 Verifying npm authentication..."
-          if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "❌ NODE_AUTH_TOKEN not found"
-            echo "   Trusted Publishing should set this automatically"
-            echo "   Check npm org settings: https://www.npmjs.com/org/forge-js/settings/publishing"
+
+          AUTH_METHODS_AVAILABLE=0
+
+          if [ -n "$NODE_AUTH_TOKEN" ]; then
+            echo "✅ NODE_AUTH_TOKEN found (Trusted Publishing available for scoped packages)"
+            AUTH_METHODS_AVAILABLE=$((AUTH_METHODS_AVAILABLE + 1))
+          else
+            echo "⚠️  NODE_AUTH_TOKEN not found (Trusted Publishing not configured)"
+          fi
+
+          if [ -n "${{ secrets.NPM_TOKEN }}" ]; then
+            echo "✅ NPM_TOKEN found (available for unscoped packages and fallback)"
+            AUTH_METHODS_AVAILABLE=$((AUTH_METHODS_AVAILABLE + 1))
+          else
+            echo "⚠️  NPM_TOKEN not found"
+          fi
+
+          if [ "$AUTH_METHODS_AVAILABLE" -eq 0 ]; then
+            echo "❌ No authentication method available!"
+            echo "   Configure Trusted Publishing OR add NPM_TOKEN secret"
             exit 1
           fi
-          echo "✅ NODE_AUTH_TOKEN found (Trusted Publishing working)"
 
-          # Verify .npmrc is being used (for scoped packages)
+          echo "✅ Authentication verified"
+
+          # Verify .npmrc configuration
           if [ -f ".npmrc" ]; then
-            echo "✅ .npmrc found - will configure @forge-js scope registry"
-            echo "   Scoped packages: @forge-js/eslint-plugin-llm-optimized, @forge-js/eslint-plugin-utils, @forge-js/cli"
-            echo "   Unscoped packages: eslint-plugin-llm-optimized, eslint-plugin-llm, eslint-plugin-mcp, eslint-plugin-mcp-optimized"
+            echo "✅ .npmrc found"
+            echo "   Scoped packages (@forge-js/*): Using Trusted Publishing (OIDC)"
+            echo "   Unscoped packages (eslint-plugin-*): Using NPM_TOKEN (if configured)"
+            echo ""
+            echo "   Package breakdown:"
+            echo "   - @forge-js/eslint-plugin-llm-optimized → Trusted Publishing"
+            echo "   - @forge-js/eslint-plugin-utils → Trusted Publishing"
+            echo "   - @forge-js/cli → Trusted Publishing"
+            echo "   - eslint-plugin-llm-optimized → NPM_TOKEN"
+            echo "   - eslint-plugin-llm → NPM_TOKEN"
+            echo "   - eslint-plugin-mcp → NPM_TOKEN"
+            echo "   - eslint-plugin-mcp-optimized → NPM_TOKEN"
+          else
+            echo "⚠️  .npmrc not found - only Trusted Publishing will work"
           fi
 
           # Publish packages
@@ -545,10 +635,13 @@ jobs:
                 echo ""
                 echo "For Unscoped Packages (eslint-plugin-*) with 404:"
                 echo "  → Trusted Publishing doesn't work for unscoped packages by default"
+                echo "  → NPM_TOKEN (Granular Access Token) should be configured"
+                echo "  → Verify NPM_TOKEN secret is set in GitHub repository secrets"
+                echo "  → Check token has 'Publish packages' permission"
                 echo "  → Options:"
-                echo "    1. Contact npm support: https://github.com/npm/feedback/discussions"
-                echo "    2. Add NPM_TOKEN secret for unscoped packages (fallback)"
-                echo "    3. Move packages to @forge-js scope (recommended)"
+                echo "    1. Verify NPM_TOKEN secret is correctly set"
+                echo "    2. Check token permissions include 'Publish packages'"
+                echo "    3. Move packages to @forge-js scope (recommended long-term)"
                 echo ""
               else
                 echo "🔍 Troubleshooting by package type:"
@@ -559,9 +652,10 @@ jobs:
                 echo "  → Packages: @forge-js/eslint-plugin-llm-optimized, @forge-js/eslint-plugin-utils, @forge-js/cli"
                 echo ""
                 echo "For Unscoped Packages (eslint-plugin-*):"
-                echo "  → Trusted Publishing requires npm support approval"
-                echo "  → Contact npm support OR use NPM_TOKEN fallback"
+                echo "  → Trusted Publishing doesn't work for unscoped packages"
+                echo "  → Using NPM_TOKEN (Granular Access Token) - verify it's configured"
                 echo "  → Packages: eslint-plugin-llm-optimized, eslint-plugin-llm, eslint-plugin-mcp, eslint-plugin-mcp-optimized"
+                echo "  → Check: NPM_TOKEN secret exists and has 'Publish packages' permission"
                 echo ""
               fi
               
@@ -575,6 +669,8 @@ jobs:
         env:
           NPM_CONFIG_PROVENANCE: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # NPM_TOKEN is used via .npmrc configuration (set in Configure npm Authentication step)
+          # NODE_AUTH_TOKEN is automatically set by setup-node@v6 for Trusted Publishing
 
       # ──────────────────────────────────────────────────────────────────────
       # DRY RUN: Just preview changes
