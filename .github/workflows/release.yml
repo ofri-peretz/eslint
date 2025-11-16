@@ -612,6 +612,17 @@ jobs:
           echo "✅ Trusted Publishing verified (NODE_AUTH_TOKEN found)"
           echo "   Scope: @forge-js (configured in setup-node@v6)"
           echo "   Authentication: OIDC via Trusted Publishing"
+          
+          # Verify Trusted Publishing is working by checking npm whoami
+          echo ""
+          echo "🔍 Verifying npm authentication..."
+          if npm whoami --registry=https://registry.npmjs.org/ 2>&1 | grep -q "@forge-js"; then
+            NPM_USER=$(npm whoami --registry=https://registry.npmjs.org/ 2>&1)
+            echo "✅ Authenticated as: $NPM_USER"
+          else
+            echo "⚠️  Warning: Could not verify npm authentication"
+            echo "   This might indicate Trusted Publishing configuration issue"
+          fi
 
           # Verify .npmrc configuration
           if [ -f ".npmrc" ]; then
@@ -623,6 +634,18 @@ jobs:
             echo "   - @forge-js/eslint-plugin-utils → Trusted Publishing"
             echo "   - @forge-js/cli → Trusted Publishing"
           fi
+          
+          # Check if packages exist on npm (for diagnostics)
+          echo ""
+          echo "🔍 Checking package availability on npm..."
+          for PACKAGE in "@forge-js/eslint-plugin-llm-optimized" "@forge-js/eslint-plugin-utils" "@forge-js/cli"; do
+            if npm view "$PACKAGE" version >/dev/null 2>&1; then
+              LATEST_VERSION=$(npm view "$PACKAGE" version 2>/dev/null || echo "unknown")
+              echo "   ✅ $PACKAGE exists (latest: $LATEST_VERSION)"
+            else
+              echo "   ⚠️  $PACKAGE not found on npm (first publish or Trusted Publishing not configured)"
+            fi
+          done
 
           # Publish packages
           # Nx automatically handles dependency order via "^nx-release-publish" in project.json
@@ -666,6 +689,30 @@ jobs:
           echo "📦 Publishing affected SCOPED packages: $AFFECTED_PROJECTS"
           echo "   (filtered from explicit list: $SCOPED_PROJECTS)"
           echo ""
+          
+          # Verify package versions in dist before publishing
+          echo "🔍 Verifying package versions in dist folders..."
+          for PROJECT in $(echo $AFFECTED_PROJECTS | tr ',' ' '); do
+            if [ -f "dist/packages/${PROJECT}/package.json" ]; then
+              DIST_VERSION=$(node -p "require('./dist/packages/${PROJECT}/package.json').version" 2>/dev/null || echo "unknown")
+              SOURCE_VERSION=$(node -p "require('./packages/${PROJECT}/package.json').version" 2>/dev/null || echo "unknown")
+              PACKAGE_NAME=$(node -p "require('./dist/packages/${PROJECT}/package.json').name" 2>/dev/null || echo "unknown")
+              
+              echo "   📦 $PACKAGE_NAME:"
+              echo "      Source: $SOURCE_VERSION"
+              echo "      Dist: $DIST_VERSION"
+              
+              if [ "$DIST_VERSION" != "$SOURCE_VERSION" ] && [ "$DIST_VERSION" != "unknown" ] && [ "$SOURCE_VERSION" != "unknown" ]; then
+                echo "      ⚠️  Version mismatch detected!"
+                echo "      → Rebuilding to sync versions..."
+                pnpm nx build "$PROJECT" || echo "      ❌ Build failed"
+              fi
+            else
+              echo "   ⚠️  dist/packages/${PROJECT}/package.json not found - building..."
+              pnpm nx build "$PROJECT" || echo "   ❌ Build failed for $PROJECT"
+            fi
+          done
+          echo ""
 
           # Run publish command and capture output
           PUBLISH_OUTPUT=$(pnpm nx release publish --tag ${{ inputs.dist-tag }} --projects=$AFFECTED_PROJECTS 2>&1) || PUBLISH_EXIT=$?
@@ -699,15 +746,30 @@ jobs:
               if echo "$PUBLISH_OUTPUT" | grep -q "E404\|404 Not Found"; then
                 echo "🔍 404 Error Analysis:"
                 echo ""
-                echo "404 errors mean the package doesn't exist in npm registry."
+                echo "404 errors mean npm can't find the package to publish to."
                 echo ""
                 echo "For Scoped Packages (@forge-js/*) with 404:"
-                echo "  ❌ This indicates Trusted Publishing is NOT working"
-                echo "  → The package should be created automatically on first publish"
-                echo "  → 404 means npm can't find/create the package"
-                echo "  → Check: https://www.npmjs.com/org/forge-js/settings/publishing"
-                echo "  → Verify GitHub Actions is listed as a Trusted Publisher"
-                echo "  → Ensure the workflow has 'id-token: write' permission"
+                echo "  ❌ This indicates Trusted Publishing configuration issue"
+                echo ""
+                echo "  Possible causes:"
+                echo "  1. Trusted Publishing not enabled for this package in npm org"
+                echo "  2. Package not properly associated with @forge-js org"
+                echo "  3. GitHub Actions not configured as Trusted Publisher"
+                echo ""
+                echo "  Fix steps:"
+                echo "  1. Go to: https://www.npmjs.com/org/forge-js/settings/publishing"
+                echo "  2. Verify 'GitHub Actions' is listed as a Trusted Publisher"
+                echo "  3. Ensure the package name matches exactly: @forge-js/eslint-plugin-llm-optimized"
+                echo "  4. If package doesn't exist, manually publish first version:"
+                echo "     npm publish --access public (from local machine with npm login)"
+                echo "  5. Then Trusted Publishing should work for subsequent versions"
+                echo ""
+                echo "  Current workflow permissions:"
+                echo "  - id-token: write ✅ (required for Trusted Publishing)"
+                echo "  - NODE_AUTH_TOKEN: $([ -n "$NODE_AUTH_TOKEN" ] && echo "✅ Set" || echo "❌ Missing")"
+                echo ""
+                echo "  Verify npm authentication:"
+                npm whoami --registry=https://registry.npmjs.org/ 2>&1 || echo "  ❌ Not authenticated"
                 echo ""
                 echo "For Unscoped Packages (eslint-plugin-*) with 404:"
                 echo "  → Trusted Publishing doesn't work for unscoped packages by default"
