@@ -88,7 +88,6 @@ function isInsideAuthMiddleware(
       }
       
       const callee = callExpr.callee;
-      const callText = sourceCode.getText(callExpr);
       
       // Check if it's an authentication middleware call
       if (callee.type === 'Identifier') {
