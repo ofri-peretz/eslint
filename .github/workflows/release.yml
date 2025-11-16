@@ -358,7 +358,19 @@ jobs:
                 
                 echo "   ✅ Cleaned up tags where npm versions don't exist"
                 echo "   🔄 Retrying version command (will recreate deleted tags)..."
-                run_version_command
+                
+                # Retry the version command
+                if [ "${{ inputs.version-specifier }}" != "auto" ]; then
+                  pnpm nx release version ${{ inputs.version-specifier }} --projects=$AFFECTED_PROJECTS 2>&1 | tee /tmp/nx-release-output.log
+                else
+                  pnpm nx release version --projects=$AFFECTED_PROJECTS 2>&1 | tee /tmp/nx-release-output.log
+                fi
+                RETRY_EXIT_CODE=${PIPESTATUS[0]}
+                if [ "$RETRY_EXIT_CODE" -ne 0 ]; then
+                  echo "   ❌ Retry failed with exit code: $RETRY_EXIT_CODE"
+                  cat /tmp/nx-release-output.log
+                  exit $RETRY_EXIT_CODE
+                fi
                 
                 # Verify tags were recreated
                 echo "   🔍 Verifying tags were recreated..."
@@ -431,7 +443,19 @@ jobs:
                   
                   echo "   ✅ Cleaned up tags where npm versions don't exist"
                   echo "   🔄 Retrying version command (will recreate deleted tags)..."
-                  run_version_command
+                  
+                  # Retry the version command
+                  if [ "${{ inputs.version-specifier }}" != "auto" ]; then
+                    pnpm nx release version ${{ inputs.version-specifier }} --projects=$AFFECTED_PROJECTS 2>&1 | tee /tmp/nx-release-output.log
+                  else
+                    pnpm nx release version --projects=$AFFECTED_PROJECTS 2>&1 | tee /tmp/nx-release-output.log
+                  fi
+                  RETRY_EXIT_CODE=${PIPESTATUS[0]}
+                  if [ "$RETRY_EXIT_CODE" -ne 0 ]; then
+                    echo "   ❌ Retry failed with exit code: $RETRY_EXIT_CODE"
+                    cat /tmp/nx-release-output.log
+                    exit $RETRY_EXIT_CODE
+                  fi
                   
                   # Verify tags were recreated for packages that need publishing
                   echo "   🔍 Verifying tags were recreated for unpublished packages..."
