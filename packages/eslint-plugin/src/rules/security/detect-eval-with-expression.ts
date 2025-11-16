@@ -9,7 +9,6 @@
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
-import { generateLLMContext } from '../../utils/llm-context';
 
 type MessageIds =
   | 'evalWithExpression'
@@ -265,55 +264,6 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         const expression = extractExpression(node);
         const pattern = detectPattern(expression);
         const steps = generateRefactoringSteps(pattern);
-
-        const _llmContext = generateLLMContext('security/detect-eval-with-expression', {
-          severity: 'error',
-          category: 'security',
-          filePath: context.filename || context.getFilename(),
-          node,
-          details: {
-            vulnerability: {
-              type: 'Remote Code Execution (RCE)',
-              cwe: 'CWE-95: Code Injection',
-              owasp: 'A03:2021-Injection',
-              cvss: '9.8 Critical'
-            },
-            pattern: {
-              category: pattern?.category || 'dynamic',
-              detected: pattern ? 'Yes' : 'No',
-              safeAlternative: pattern?.safeAlternative || 'Remove eval entirely'
-            },
-            exploitability: {
-              difficulty: 'Easy',
-              impact: 'Complete server compromise',
-              prerequisites: 'User input reaches eval function'
-            },
-            remediation: {
-              effort: pattern?.effort || '15-30 minutes',
-              priority: 'Critical - Fix immediately',
-              automated: false,
-              steps: [
-                'Remove eval() usage',
-                'Replace with safe alternative',
-                'Add input validation',
-                'Test thoroughly'
-              ]
-            }
-          },
-          quickFix: {
-            automated: false,
-            estimatedEffort: pattern?.effort || '15-30 minutes',
-            changes: [
-              `Replace eval(${expression}) with safe alternative`,
-              'Add input validation',
-              'Use static analysis instead of dynamic execution'
-            ]
-          },
-          resources: {
-            docs: 'https://owasp.org/www-community/attacks/Code_Injection',
-            examples: 'https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html'
-          }
-        });
 
         context.report({
           node,

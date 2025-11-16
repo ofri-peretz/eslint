@@ -5,9 +5,6 @@
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
-import {
-  generateLLMContext,
-} from '../../utils/llm-context';
 
 type MessageIds = 'sqlInjection' | 'useParameterized' | 'useORM';
 
@@ -127,57 +124,6 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
         }
 
         const queryText = sourceCode.getText(node);
-        const _llmContext = generateLLMContext('security/no-sql-injection', {
-          severity: 'error',
-          category: 'security',
-          filePath: filename,
-          node,
-          details: {
-            vulnerability: 'SQL Injection',
-            cveExamples: ['CVE-2023-1234', 'CVE-2022-5678'],
-            severity: 'CRITICAL',
-            unsafePattern: {
-              code: queryText,
-              why: 'User input directly interpolated into SQL query',
-              attackVector:
-                'Attacker can inject malicious SQL (e.g., OR 1=1--)',
-              impact:
-                'Full database access, data theft, data loss, privilege escalation',
-            },
-            securePattern: {
-              code: 'db.query("SELECT * FROM users WHERE id = $1", [userId])',
-              why: 'Parameterized queries prevent injection',
-              benefits: [
-                'SQL and data are separated',
-                'Database driver handles escaping',
-                'Impossible to inject SQL commands',
-              ],
-            },
-            realWorldImpact: {
-              incident: 'Similar vulnerabilities cost companies $2M+ annually',
-              lesson: 'Never trust user input in SQL queries',
-            },
-            quickFix: {
-              automated: true,
-              estimatedEffort: '2-5 minutes',
-              changes: [
-                'Replace template literal with parameterized query',
-                'Move dynamic values to parameters array',
-                'Add input validation middleware',
-              ],
-            },
-            compliance: {
-              pciDss: 'Requirement 6.5.1 - Injection flaws',
-              owasp: 'A03:2021 - Injection',
-              cwe: 'CWE-89: SQL Injection',
-            },
-          },
-          resources: {
-            docs: 'https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html',
-            examples:
-              'https://portswigger.net/web-security/sql-injection/cheat-sheet',
-          },
-        });
 
         context.report({
           node,
@@ -216,7 +162,6 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
       BinaryExpression(node: TSESTree.BinaryExpression) {
         if (node.operator !== '+') return;
 
-        const _text = sourceCode.getText(node);
         if (!containsSQLKeywords(node)) return;
         if (!containsUnsafeInterpolation(node)) return;
 
