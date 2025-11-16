@@ -36,6 +36,9 @@ import { noUnvalidatedUserInput } from './rules/security/no-unvalidated-user-inp
 import { noUnsanitizedHtml } from './rules/security/no-unsanitized-html';
 import { noUnescapedUrlParameter } from './rules/security/no-unescaped-url-parameter';
 import { noMissingCorsCheck } from './rules/security/no-missing-cors-check';
+import { noInsecureComparison } from './rules/security/no-insecure-comparison';
+import { noMissingAuthentication } from './rules/security/no-missing-authentication';
+import { noPrivilegeEscalation } from './rules/security/no-privilege-escalation';
 
 // Migration rules
 import { reactClassToHooks } from './rules/migration/react-class-to-hooks';
@@ -99,6 +102,9 @@ export const rules = {
   'no-unsanitized-html': noUnsanitizedHtml,
   'no-unescaped-url-parameter': noUnescapedUrlParameter,
   'no-missing-cors-check': noMissingCorsCheck,
+  'no-insecure-comparison': noInsecureComparison,
+  'no-missing-authentication': noMissingAuthentication,
+  'no-privilege-escalation': noPrivilegeEscalation,
   'react-class-to-hooks': reactClassToHooks,
   'react-no-inline-functions': reactNoInlineFunctions,
   'img-requires-alt': imgRequiresAlt,
@@ -128,6 +134,9 @@ export const rules = {
   'security/no-unsanitized-html': noUnsanitizedHtml,
   'security/no-unescaped-url-parameter': noUnescapedUrlParameter,
   'security/no-missing-cors-check': noMissingCorsCheck,
+  'security/no-insecure-comparison': noInsecureComparison,
+  'security/no-missing-authentication': noMissingAuthentication,
+  'security/no-privilege-escalation': noPrivilegeEscalation,
   'migration/react-class-to-hooks': reactClassToHooks,
   'performance/react-no-inline-functions': reactNoInlineFunctions,
   'accessibility/img-requires-alt': imgRequiresAlt,
@@ -236,6 +245,9 @@ export const configs = {
       '@forge-js/llm-optimized/security/no-unsanitized-html': 'error',
       '@forge-js/llm-optimized/security/no-unescaped-url-parameter': 'warn',
       '@forge-js/llm-optimized/security/no-missing-cors-check': 'warn',
+      '@forge-js/llm-optimized/security/no-insecure-comparison': 'warn',
+      '@forge-js/llm-optimized/security/no-missing-authentication': 'warn',
+      '@forge-js/llm-optimized/security/no-privilege-escalation': 'warn',
       '@forge-js/llm-optimized/accessibility/img-requires-alt': 'warn',
       '@forge-js/llm-optimized/complexity/cognitive-complexity': 'warn',
       '@forge-js/llm-optimized/duplication/identical-functions': 'warn',
@@ -259,6 +271,16 @@ export const configs = {
       '@forge-js/llm-optimized/security/no-sql-injection': 'error',
       '@forge-js/llm-optimized/security/no-unsafe-dynamic-require': 'error',
       '@forge-js/llm-optimized/security/database-injection': 'error',
+      '@forge-js/llm-optimized/security/no-hardcoded-credentials': 'error',
+      '@forge-js/llm-optimized/security/no-weak-crypto': 'error',
+      '@forge-js/llm-optimized/security/no-insufficient-random': 'error',
+      '@forge-js/llm-optimized/security/no-unvalidated-user-input': 'error',
+      '@forge-js/llm-optimized/security/no-unsanitized-html': 'error',
+      '@forge-js/llm-optimized/security/no-unescaped-url-parameter': 'error',
+      '@forge-js/llm-optimized/security/no-missing-cors-check': 'error',
+      '@forge-js/llm-optimized/security/no-insecure-comparison': 'error',
+      '@forge-js/llm-optimized/security/no-missing-authentication': 'error',
+      '@forge-js/llm-optimized/security/no-privilege-escalation': 'error',
       '@forge-js/llm-optimized/accessibility/img-requires-alt': 'error',
       '@forge-js/llm-optimized/performance/react-no-inline-functions': 'error',
       '@forge-js/llm-optimized/complexity/cognitive-complexity': 'error',
@@ -270,7 +292,7 @@ export const configs = {
    * Security-focused configuration
    * 
    * Enables all security rules for maximum protection
-   * Includes comprehensive database injection detection (SonarQube-inspired)
+   * Includes comprehensive security vulnerability detection
    */
   security: {
     plugins: {
@@ -280,6 +302,21 @@ export const configs = {
       '@forge-js/llm-optimized/security/no-sql-injection': 'error',
       '@forge-js/llm-optimized/security/no-unsafe-dynamic-require': 'error',
       '@forge-js/llm-optimized/security/database-injection': 'error',
+      '@forge-js/llm-optimized/security/detect-eval-with-expression': 'error',
+      '@forge-js/llm-optimized/security/detect-child-process': 'error',
+      '@forge-js/llm-optimized/security/detect-non-literal-fs-filename': 'error',
+      '@forge-js/llm-optimized/security/detect-non-literal-regexp': 'error',
+      '@forge-js/llm-optimized/security/detect-object-injection': 'error',
+      '@forge-js/llm-optimized/security/no-hardcoded-credentials': 'error',
+      '@forge-js/llm-optimized/security/no-weak-crypto': 'error',
+      '@forge-js/llm-optimized/security/no-insufficient-random': 'error',
+      '@forge-js/llm-optimized/security/no-unvalidated-user-input': 'error',
+      '@forge-js/llm-optimized/security/no-unsanitized-html': 'error',
+      '@forge-js/llm-optimized/security/no-unescaped-url-parameter': 'error',
+      '@forge-js/llm-optimized/security/no-missing-cors-check': 'error',
+      '@forge-js/llm-optimized/security/no-insecure-comparison': 'error',
+      '@forge-js/llm-optimized/security/no-missing-authentication': 'error',
+      '@forge-js/llm-optimized/security/no-privilege-escalation': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 
