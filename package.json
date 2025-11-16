@@ -1,9 +1,17 @@
 {
   "name": "forge-js",
   "version": "1.0.0",
-  "description": "ESLint plugin monorepo with LLM-optimized rules",
+  "description": "Open-source tools and libraries for JavaScript & TypeScript ecosystems - ESLint plugins with LLM-optimized rules, utilities, and CLI tools in an Nx monorepo",
   "private": true,
   "main": "index.js",
+  "homepage": "https://github.com/ofri-peretz/forge-js#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/forge-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/forge-js/issues"
+  },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "prepare": "husky",
@@ -31,7 +39,29 @@
     "eslint",
     "eslint-plugin",
     "typescript",
-    "linting"
+    "linting",
+    "llm-optimized",
+    "ai-assistant",
+    "code-quality",
+    "static-analysis",
+    "ast",
+    "nx",
+    "monorepo",
+    "cli",
+    "utilities",
+    "security",
+    "accessibility",
+    "react",
+    "performance",
+    "mcp",
+    "model-context-protocol",
+    "github-copilot",
+    "cursor-ai",
+    "claude-ai",
+    "auto-fix",
+    "deterministic-fixes",
+    "cwe",
+    "vulnerability-detection"
   ],
   "author": "",
   "license": "ISC",

@@ -25,6 +25,14 @@
   "publishConfig": {
     "access": "public"
   },
+  "files": [
+    "src/",
+    "bin/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "AGENTS.md"
+  ],
   "keywords": [
     "cli",
     "monorepo",
