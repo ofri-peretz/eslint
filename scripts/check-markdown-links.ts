@@ -123,12 +123,26 @@ function validateAnchorLink(url: string, fileContent: string): { valid: boolean;
   if (!url.startsWith('#')) return { valid: true };
 
   const anchor = url.slice(1);
-  // Check for heading with this anchor
-  const headingRegex = new RegExp(`^#{1,6}\\s+.*${anchor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'im');
-  // Also check for HTML anchors
-  const htmlAnchorRegex = new RegExp(`id=["']${anchor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`, 'i');
-
-  if (!headingRegex.test(fileContent) && !htmlAnchorRegex.test(fileContent)) {
+  
+  // Use string search instead of regex for safety (prevents ReDoS)
+  const lines = fileContent.split('\n');
+  const anchorLower = anchor.toLowerCase();
+  
+  // Check for heading with this anchor (markdown headings are converted to lowercase IDs with special chars replaced)
+  const hasHeading = lines.some(line => {
+    const match = line.match(/^#{1,6}\s+(.+)$/);
+    if (!match) return false;
+    const headingId = match[1].toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-');
+    return headingId.includes(anchorLower) || match[1].toLowerCase().includes(anchorLower);
+  });
+  
+  // Check for HTML anchors using simple string checks
+  const hasHtmlAnchor = fileContent.includes(`id="${anchor}"`) ||
+    fileContent.includes(`id='${anchor}'`);
+  
+  if (!hasHeading && !hasHtmlAnchor) {
     return { valid: false, message: `Anchor #${anchor} not found in file` };
   }
   return { valid: true };
