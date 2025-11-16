@@ -313,7 +313,7 @@ export const noExposedSensitiveData = createRule<RuleOptions, MessageIds>({
             suggest: [
               {
                 messageId: 'sanitizeData',
-                fix(fixer) {
+                fix(fixer: TSESLint.RuleFixer) {
                   // Suggest removing or masking the sensitive data
                   return fixer.replaceText(node, '"***REDACTED***"');
                 },

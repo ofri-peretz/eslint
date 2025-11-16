@@ -47,7 +47,7 @@ function isInsideCookieConfig(
         const memberExpr = callExpr.callee;
         if (memberExpr.property.type === 'Identifier' && memberExpr.property.name === 'cookie') {
           // Check if the node is an argument of this call
-          if (callExpr.arguments.some(arg => arg === node || (arg.type === 'ObjectExpression' && sourceCode.getText(arg).includes(sourceCode.getText(node))))) {
+          if (callExpr.arguments.some((arg: TSESTree.Node) => arg === node || (arg.type === 'ObjectExpression' && sourceCode.getText(arg).includes(sourceCode.getText(node))))) {
             return true;
           }
         }
@@ -244,7 +244,7 @@ export const noInsecureCookieSettings = createRule<RuleOptions, MessageIds>({
           suggest: [
             {
               messageId: 'addSecureFlags',
-              fix(fixer) {
+              fix(fixer: TSESLint.RuleFixer) {
                 // Find the last property in the object
                 const properties = node.properties;
                 if (properties.length === 0) {
@@ -325,7 +325,7 @@ export const noInsecureCookieSettings = createRule<RuleOptions, MessageIds>({
             suggest: [
               {
                 messageId: 'addSecureFlags',
-                fix(fixer) {
+                fix(fixer: TSESLint.RuleFixer) {
                   // Add options as third argument
                   const lastArg = node.arguments[node.arguments.length - 1];
                   const insertPosition = lastArg.range[1];
