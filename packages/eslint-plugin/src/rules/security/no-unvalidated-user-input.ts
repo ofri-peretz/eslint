@@ -65,7 +65,7 @@ function isInsideValidationCall(
       const callExpr = current.parent as TSESTree.CallExpression;
       
       // Verify that current is actually an argument of this call
-      const isArgument = callExpr.arguments.some(arg => arg === current);
+      const isArgument = callExpr.arguments.some((arg: TSESTree.CallExpressionArgument) => arg === current);
       if (!isArgument) {
         // Not an argument, continue traversing
         if ('parent' in current && current.parent) {
@@ -416,7 +416,7 @@ export const noUnvalidatedUserInput = createRule<RuleOptions, MessageIds>({
             }
             
             // If init is not a validation call, check if arguments are validated
-            const hasValidatedArg = init.arguments.some(arg => {
+            const hasValidatedArg = init.arguments.some((arg: TSESTree.CallExpressionArgument) => {
               if (arg.type === 'MemberExpression' || arg.type === 'Identifier') {
                 return isInsideValidationCall(arg, sourceCode, trustedLibraries);
               }

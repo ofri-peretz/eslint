@@ -307,7 +307,7 @@ export const noUnsanitizedHtml = createRule<RuleOptions, MessageIds>({
           // Check if it's an object with __html property
           if (expression.type === 'ObjectExpression') {
             const htmlProperty = expression.properties.find(
-              (prop): prop is TSESTree.Property =>
+              (prop: TSESTree.ObjectExpression['properties'][number]): prop is TSESTree.Property =>
                 prop.type === 'Property' &&
                 prop.key.type === 'Identifier' &&
                 prop.key.name === '__html'
