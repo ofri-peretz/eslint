@@ -157,7 +157,7 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
 
         // Check if component has render() method (fixer doesn't handle it properly)
         const hasRenderMethod = node.body.body.some(
-          (member) =>
+          (member: TSESTree.ClassElement) =>
             member.type === 'MethodDefinition' &&
             member.key.type === 'Identifier' &&
             member.key.name === 'render'

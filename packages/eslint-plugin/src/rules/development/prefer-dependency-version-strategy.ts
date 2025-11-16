@@ -249,7 +249,7 @@ export const preferDependencyVersionStrategy = createRule<
       // Also check object literals (for testing and general use)
       ObjectExpression(node: TSESTree.ObjectExpression) {
         // Only check if it looks like a dependencies object (has string keys and version-like values)
-        const hasVersionLikeValues = node.properties.some(prop => {
+        const hasVersionLikeValues = node.properties.some((prop: TSESTree.Property | TSESTree.SpreadElement) => {
           if (prop.type === 'Property' && prop.value.type === 'Literal') {
             const value = String(prop.value.value);
             // Check if value looks like a version (starts with ^, ~, or is a semantic version)
