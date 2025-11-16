@@ -4,10 +4,9 @@
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import {
   generateLLMContext,
-  formatLLMMessage,
-  containsSecurityKeywords,
 } from '../../utils/llm-context';
 
 type MessageIds = 'sqlInjection' | 'useParameterized' | 'useORM';
@@ -33,9 +32,15 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
     fixable: 'code',
     hasSuggestions: true,
     messages: {
-      sqlInjection:
-        '🔒 CWE-89 | SQL Injection detected | CRITICAL\n' +
-        '   Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId]) | https://owasp.org/www-community/attacks/SQL_Injection',
+      sqlInjection: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'SQL Injection',
+        cwe: 'CWE-89',
+        description: 'SQL Injection detected',
+        severity: 'CRITICAL',
+        fix: 'Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId])',
+        documentationLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
+      }),
       useParameterized: '✅ Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId])',
       useORM: '✅ Use ORM/Query Builder: db.user.findWhere({ id: userId })',
     },
@@ -122,7 +127,7 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
         }
 
         const queryText = sourceCode.getText(node);
-        const llmContext = generateLLMContext('security/no-sql-injection', {
+        const _llmContext = generateLLMContext('security/no-sql-injection', {
           severity: 'error',
           category: 'security',
           filePath: filename,
@@ -211,7 +216,7 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
       BinaryExpression(node: TSESTree.BinaryExpression) {
         if (node.operator !== '+') return;
 
-        const text = sourceCode.getText(node);
+        const _text = sourceCode.getText(node);
         if (!containsSQLKeywords(node)) return;
         if (!containsUnsafeInterpolation(node)) return;
 

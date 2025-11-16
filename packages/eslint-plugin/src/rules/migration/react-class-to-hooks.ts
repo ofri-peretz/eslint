@@ -3,8 +3,9 @@
  * Detects React class components that can be migrated to hooks with transformation context
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
-import { generateLLMContext, extractFunctionSignature } from '../../utils/llm-context';
+import { generateLLMContext } from '../../utils/llm-context';
 
 type MessageIds = 'migrateToHooks' | 'convertToFunction' | 'viewMigrationGuide';
 
@@ -29,8 +30,15 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
     hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 44% reduction (64→36 tokens) - class to hooks migration simplified
-      migrateToHooks: '🔄 CWE-1078 | React class component detected | MEDIUM\n' +
-        '   Fix: Use functional component with useEffect/useState (Complexity: {{complexity}}) | https://react.dev/reference/react/hooks',
+      migrateToHooks: formatLLMMessage({
+        icon: MessageIcons.MIGRATION,
+        issueName: 'React class component',
+        cwe: 'CWE-1078',
+        description: 'React class component detected',
+        severity: 'MEDIUM',
+        fix: 'Use functional component with useEffect/useState (Complexity: {{complexity}})',
+        documentationLink: 'https://react.dev/reference/react/hooks',
+      }),
       convertToFunction: '✅ Convert to functional component with hooks',
       viewMigrationGuide: '📖 View detailed migration guide',
     },
@@ -59,7 +67,7 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
-    const { ignorePureRenderComponents = false, allowComplexLifecycle = false } = options;
+    const { ignorePureRenderComponents: _ignorePureRenderComponents = false, allowComplexLifecycle = false } = options;
 
     const sourceCode = context.sourceCode || context.getSourceCode();
     const filename = context.filename || context.getFilename();
@@ -163,7 +171,7 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        const llmContext = generateLLMContext('migration/react-class-to-hooks', {
+        const _llmContext = generateLLMContext('migration/react-class-to-hooks', {
           severity: 'warning',
           category: 'migration',
           filePath: filename,

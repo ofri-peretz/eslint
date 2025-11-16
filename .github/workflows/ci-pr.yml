@@ -150,7 +150,69 @@ jobs:
           fi
 
       # ═══════════════════════════════════════════════════════════════════════
-      # LAYER 5: POST-TEST ACTIONS (DIAGNOSTICS)
+      # LAYER 6: RELEASE VALIDATION (Dry-run to catch release issues early)
+      # ═══════════════════════════════════════════════════════════════════════
+      # This step validates that a release would succeed without actually
+      # making any changes. It catches issues like:
+      # - No changes to release
+      # - Invalid version calculations
+      # - Build failures during preReleaseCommand
+      # - Package version conflicts
+
+      - name: 🔍 Validate Release (Dry-Run)
+        continue-on-error: false
+        run: |
+          echo "═══════════════════════════════════════════════════════════════"
+          echo "🔍 Release Validation (Dry-Run)"
+          echo "═══════════════════════════════════════════════════════════════"
+          echo ""
+          echo "Running release dry-run to validate release process..."
+          echo "This checks if a release would succeed without making any changes."
+          echo ""
+
+          # Run release version dry-run (validates version calculation and preVersionCommand)
+          echo "📝 Validating version calculation and preVersionCommand build..."
+          RELEASE_OUTPUT=$(pnpm nx release version --dry-run 2>&1) || RELEASE_EXIT_CODE=$?
+          echo "$RELEASE_OUTPUT"
+
+          # Check if there are changes to release (this is OK, not an error)
+          if echo "$RELEASE_OUTPUT" | grep -q "No changes detected"; then
+            echo ""
+            echo "ℹ️  No changes detected for release (this is OK for PRs)"
+            echo "   This means there are no conventional commits since the last release."
+            echo "   The release workflow would skip version bumping in this case."
+            echo ""
+            echo "✅ Release validation passed (no changes to release)"
+          elif [ -n "$RELEASE_EXIT_CODE" ] && [ "$RELEASE_EXIT_CODE" -ne 0 ]; then
+            echo ""
+            echo "❌ Release validation failed!"
+            echo ""
+            echo "This means the release workflow would fail. Common issues:"
+            echo "  - Build failures during preVersionCommand"
+            echo "  - Invalid version strategy"
+            echo "  - Package version conflicts"
+            echo "  - Git state issues"
+            echo ""
+            echo "Review the output above for details."
+            exit 1
+          else
+            echo ""
+            echo "✅ Version calculation validated"
+            echo ""
+            echo "📦 Packages that would be released:"
+            echo "$RELEASE_OUTPUT" | grep -E "(→|@forge-js|would be released)" || echo "$RELEASE_OUTPUT" | tail -20
+            echo ""
+            echo "✅ Release validation passed!"
+            echo "   The release workflow should succeed when run."
+          fi
+
+          # Note: We don't validate publish --dry-run here because:
+          # 1. It requires version changes to already exist
+          # 2. The preReleaseCommand build is already validated by the build step above
+          # 3. NPM authentication and package conflicts are checked in the release workflow itself
+
+      # ═══════════════════════════════════════════════════════════════════════
+      # LAYER 7: POST-TEST ACTIONS (DIAGNOSTICS)
       # ═══════════════════════════════════════════════════════════════════════
 
       - name: Print CI diagnostics

@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Added
+
+- **New Rule: `prefer-dependency-version-strategy`** - Enforce consistent version strategy (caret, tilde, exact, etc.) for package.json dependencies. Complements `@nx/dependency-checks` by ensuring version specifier format consistency. Supports workspace, file, and link protocols for monorepo compatibility. Auto-fixable with configurable strategies.
+
 ## 0.3.3 (2025-11-07)
 
 ### 🩹 Fixes

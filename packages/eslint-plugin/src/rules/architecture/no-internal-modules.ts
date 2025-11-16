@@ -14,6 +14,7 @@
  * @see https://basarat.gitbook.io/typescript/main-1/barrel
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
+import { formatLLMMessage } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 
 /**
@@ -63,9 +64,15 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
     hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 46% reduction (52→28 tokens) - removes file path examples
-      internalModuleImport:
-        '🚫 CWE-1104 | Internal module import detected | MEDIUM\n' +
-        '   Fix: Use barrel export: import Button from "./Button" | https://basarat.gitbook.io/typescript/main-1/barrel',
+      internalModuleImport: formatLLMMessage({
+        icon: '🚫',
+        issueName: 'Internal module import',
+        cwe: 'CWE-1104',
+        description: 'Internal module import detected',
+        severity: 'MEDIUM',
+        fix: 'Use barrel export: import Button from "./Button"',
+        documentationLink: 'https://basarat.gitbook.io/typescript/main-1/barrel',
+      }),
       suggestPublicApi: '📦 Import from public API: {{suggestion}}',
       suggestBarrelExport: '🗂️ Use barrel export: {{suggestion}}',
     },

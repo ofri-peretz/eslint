@@ -148,8 +148,8 @@ importers:
   packages/eslint-plugin:
     dependencies:
       '@forge-js/eslint-plugin-utils':
-        specifier: 0.2.2
-        version: 0.2.2(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
+        specifier: 1.0.2
+        version: 1.0.2(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
@@ -167,8 +167,8 @@ importers:
   packages/eslint-plugin-llm:
     dependencies:
       '@forge-js/eslint-plugin-llm-optimized':
-        specifier: 0.4.4
-        version: 0.4.4(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
+        specifier: 1.0.0
+        version: 1.0.0(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
@@ -186,8 +186,8 @@ importers:
   packages/eslint-plugin-llm-optimized:
     dependencies:
       '@forge-js/eslint-plugin-llm-optimized':
-        specifier: 0.4.4
-        version: 0.4.4(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
+        specifier: ^1.0.0
+        version: 1.0.0(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
@@ -205,8 +205,8 @@ importers:
   packages/eslint-plugin-mcp:
     dependencies:
       '@forge-js/eslint-plugin-llm-optimized':
-        specifier: 0.4.4
-        version: 0.4.4(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
+        specifier: 1.0.0
+        version: 1.0.0(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
@@ -224,8 +224,8 @@ importers:
   packages/eslint-plugin-mcp-optimized:
     dependencies:
       '@forge-js/eslint-plugin-llm-optimized':
-        specifier: 0.4.4
-        version: 0.4.4(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
+        specifier: ^1.0.0
+        version: 1.0.0(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
@@ -1317,12 +1317,19 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@forge-js/eslint-plugin-llm-optimized@0.4.4':
-    resolution: {integrity: sha512-WfSDwurk2xsYeympYC6K3MAbSqWEo3IzNwQhSj2V7i18uS+r0jX9kcpMDgbbE5cht9UXIiPxjjTOohgRI3co4w==}
+  '@forge-js/eslint-plugin-llm-optimized@1.0.0':
+    resolution: {integrity: sha512-aExMZRDkqeQnLXX3xdcjROHdVYuov+yHI9aEDmexM9XHoKOnDCa0GU8ttdrZ6cvyObCfxvPWOXd44fxQbHdeCg==}
     engines: {node: '>=18.0.0'}
 
-  '@forge-js/eslint-plugin-utils@0.2.2':
-    resolution: {integrity: sha512-IVmRMumTcuG23yVrx2ewKtawdKmQK5HM1q3t9FL00hgNFnEtjXb4+kEqvPbp/TqL6QNVodu6U70uwZ1b4q/GYg==}
+  '@forge-js/eslint-plugin-utils@1.0.0':
+    resolution: {integrity: sha512-tuPriOr+bJ81AqDsOhM/FJWD/FjT2ljUpSspfbVcdGWho1y/v8bxfyzVVaqQ0umUNoLUvNJS7DnbQzjPnI2FOw==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      '@typescript-eslint/utils': ^8.46.2
+      typescript: '>=4.0.0'
+
+  '@forge-js/eslint-plugin-utils@1.0.2':
+    resolution: {integrity: sha512-2hwGzOpG5d1g3+HK96NxpwzSue0k5KyuvEzPP6UPfbpnYVFNnc3J3Sp6LQn/l7h5W812jsswa9OkRgsdmhgSZA==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       '@typescript-eslint/utils': ^8.46.2
@@ -7216,15 +7223,21 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@forge-js/eslint-plugin-llm-optimized@0.4.4(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)':
+  '@forge-js/eslint-plugin-llm-optimized@1.0.0(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)':
     dependencies:
-      '@forge-js/eslint-plugin-utils': 0.2.2(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
+      '@forge-js/eslint-plugin-utils': 1.0.0(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
       tslib: 2.8.1
     transitivePeerDependencies:
       - '@typescript-eslint/utils'
       - typescript
 
-  '@forge-js/eslint-plugin-utils@0.2.2(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)':
+  '@forge-js/eslint-plugin-utils@1.0.0(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)':
+    dependencies:
+      '@typescript-eslint/utils': 8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3)
+      tslib: 2.8.1
+      typescript: 5.9.3
+
+  '@forge-js/eslint-plugin-utils@1.0.2(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)':
     dependencies:
       '@typescript-eslint/utils': 8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3)
       tslib: 2.8.1

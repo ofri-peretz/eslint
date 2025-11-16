@@ -7,6 +7,7 @@
  * @see https://cwe.mitre.org/data/definitions/400.html
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { generateLLMContext } from '../../utils/llm-context';
 
@@ -97,9 +98,15 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       // 🎯 Token optimization: 41% reduction (51→30 tokens) - compact template variables
-      regexpReDoS:
-        '⚠️ CWE-400 | ReDoS vulnerability detected | {{riskLevel}}\n' +
-        '   Fix: {{safeAlternative}} | https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
+      regexpReDoS: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'ReDoS vulnerability',
+        cwe: 'CWE-400',
+        description: 'ReDoS vulnerability detected',
+        severity: '{{riskLevel}}',
+        fix: '{{safeAlternative}}',
+        documentationLink: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
+      }),
       useStaticRegex: '✅ Use pre-defined RegExp constants instead of dynamic construction',
       validateInput: '✅ Validate and escape user input before RegExp construction',
       useRegexLibrary: '✅ Consider safe-regex library or re2 for validation',
@@ -350,7 +357,7 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
       const riskLevel = determineRiskLevel(effectiveVulnerability, pattern);
       const steps = generateRefactoringSteps(effectiveVulnerability);
 
-      const llmContext = generateLLMContext('security/detect-non-literal-regexp', {
+      const _llmContext = generateLLMContext('security/detect-non-literal-regexp', {
         severity: riskLevel.toLowerCase() as 'error' | 'warning',
         category: 'security',
         filePath: context.filename || context.getFilename(),

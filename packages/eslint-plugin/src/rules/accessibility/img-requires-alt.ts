@@ -3,6 +3,7 @@
  * Enforce alt text on images with user impact context
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { generateLLMContext } from '../../utils/llm-context';
 
@@ -29,8 +30,15 @@ export const imgRequiresAlt = createRule<RuleOptions, MessageIds>({
     hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 45% reduction (51→28 tokens) - image alt text improves accessibility
-      missingAlt: '♿ CWE-252 | Image missing alt text | CRITICAL\n' +
-        '   Fix: Add alt="Descriptive text about image" | https://www.w3.org/WAI/tutorials/images/',
+      missingAlt: formatLLMMessage({
+        icon: MessageIcons.ACCESSIBILITY,
+        issueName: 'Image missing alt text',
+        cwe: 'CWE-252',
+        description: 'Image missing alt text',
+        severity: 'CRITICAL',
+        fix: 'Add alt="Descriptive text about image"',
+        documentationLink: 'https://www.w3.org/WAI/tutorials/images/',
+      }),
       emptyAlt: '♿ Empty alt text detected | Consider: {{consideration}}',
       addDescriptiveAlt: '✅ Add descriptive alt text',
       useEmptyAlt: '✅ Use empty alt="" for decorative images',
@@ -62,7 +70,7 @@ export const imgRequiresAlt = createRule<RuleOptions, MessageIds>({
     const options = context.options[0] || {};
     const { allowAriaLabel = false, allowAriaLabelledby = false } = options;
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const _sourceCode = context.sourceCode || context.getSourceCode();
     const filename = context.filename || context.getFilename();
 
     /**
@@ -70,7 +78,7 @@ export const imgRequiresAlt = createRule<RuleOptions, MessageIds>({
      */
     const hasAltAttribute = (node: TSESTree.JSXOpeningElement): boolean => {
       return node.attributes.some(
-        (attr: any) => attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier' && attr.name.name === 'alt'
+        (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) => attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier' && attr.name.name === 'alt'
       );
     };
 
@@ -79,7 +87,7 @@ export const imgRequiresAlt = createRule<RuleOptions, MessageIds>({
      */
     const getAltValue = (node: TSESTree.JSXOpeningElement): string | null => {
       const altAttr = node.attributes.find(
-        (attr: any) => attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier' && attr.name.name === 'alt'
+        (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier' && attr.name.name === 'alt'
       );
 
       if (!altAttr || altAttr.type !== 'JSXAttribute') return null;
@@ -99,7 +107,7 @@ export const imgRequiresAlt = createRule<RuleOptions, MessageIds>({
     const hasAriaLabel = (node: TSESTree.JSXOpeningElement): boolean => {
       if (!allowAriaLabel && !allowAriaLabelledby) return false;
 
-      return node.attributes.some((attr: any) => {
+      return node.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) => {
         if (attr.type !== 'JSXAttribute' || attr.name.type !== 'JSXIdentifier') return false;
         
         return (
@@ -118,7 +126,7 @@ export const imgRequiresAlt = createRule<RuleOptions, MessageIds>({
       surroundingText: string;
     } => {
       const srcAttr = node.attributes.find(
-        (attr: any) => attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier' && attr.name.name === 'src'
+        (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier' && attr.name.name === 'src'
       );
 
       let src: string | undefined;
@@ -176,7 +184,7 @@ export const imgRequiresAlt = createRule<RuleOptions, MessageIds>({
         const imageContext = getImageContext(node);
         const suggestions = suggestAltText(imageContext);
 
-        const llmContext = generateLLMContext('accessibility/img-requires-alt', {
+        const _llmContext = generateLLMContext('accessibility/img-requires-alt', {
           severity: 'error',
           category: 'accessibility',
           filePath: filename,

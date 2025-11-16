@@ -66,7 +66,7 @@ Traditional ESLint rules communicate _what's wrong_. This plugin ensures every r
 - **Lower review burden** - 60-80% of violations auto-fixed before human review
 - **Faster onboarding** - New developers learn patterns from every error message
 
-**For organizations scaling code quality:** See [ESLint + LLMs: Leadership Strategy](../../../docs/ESLINT_LEADERSHIP_STRATEGY.md) for implementation approaches, ROI calculations, and deployment strategies.
+**For organizations scaling code quality:** See [ESLint + LLMs: Leadership Strategy](https://github.com/ofri-peretz/forge-js/blob/main/docs/ESLINT_LEADERSHIP_STRATEGY.md) for implementation approaches, ROI calculations, and deployment strategies.
 
 ---
 
@@ -81,9 +81,10 @@ Traditional ESLint rules communicate _what's wrong_. This plugin ensures every r
 
 ### Development
 
-| Name                                             | Description                                       | 💼  | ⚠️  | 🔧  | 💡  |
-| ------------------------------------------------ | ------------------------------------------------- | --- | --- | --- | --- |
-| [no-console-log](./docs/rules/no-console-log.md) | Disallow console.log with configurable strategies |     | ⚠️  | 🔧  |     |
+| Name                                                                                     | Description                                                     | 💼  | ⚠️  | 🔧  | 💡  |
+| ---------------------------------------------------------------------------------------- | --------------------------------------------------------------- | --- | --- | --- | --- |
+| [no-console-log](./docs/rules/no-console-log.md)                                         | Disallow console.log with configurable strategies               |     | ⚠️  | 🔧  |     |
+| [prefer-dependency-version-strategy](./docs/rules/prefer-dependency-version-strategy.md) | Enforce consistent version strategy (caret, tilde, exact, etc.) |     | ⚠️  | 🔧  |     |
 
 ### Architecture
 
@@ -613,7 +614,7 @@ Contributions welcome! See [CONTRIBUTING.md](https://github.com/ofri-peretz/forg
 
 ## For Teams & Organizations
 
-Managing code quality across teams? Check out [ESLint + LLMs: Leadership Strategy](../../../docs/ESLINT_LEADERSHIP_STRATEGY.md) for:
+Managing code quality across teams? Check out [ESLint + LLMs: Leadership Strategy](https://github.com/ofri-peretz/forge-js/blob/main/docs/ESLINT_LEADERSHIP_STRATEGY.md) for:
 
 - Standards enforcement patterns
 - Implementation roadmaps

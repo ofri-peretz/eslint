@@ -14,6 +14,7 @@ import type { TSESLint } from '@forge-js/eslint-plugin-utils';
 
 // Development rules
 import { noConsoleLog } from './rules/development/no-console-log';
+import { preferDependencyVersionStrategy } from './rules/development/prefer-dependency-version-strategy';
 
 // Architecture rules
 import { noCircularDependencies } from './rules/architecture/no-circular-dependencies';
@@ -73,6 +74,7 @@ import { identicalFunctions } from './rules/duplication/identical-functions';
 export const rules = {
   // Flat rule names (for easier usage)
   'no-console-log': noConsoleLog,
+  'prefer-dependency-version-strategy': preferDependencyVersionStrategy,
   'no-circular-dependencies': noCircularDependencies,
   'no-internal-modules': noInternalModules,
   'no-sql-injection': noSqlInjection,
@@ -94,6 +96,7 @@ export const rules = {
   
   // Categorized rule names (for better organization)
   'development/no-console-log': noConsoleLog,
+  'development/prefer-dependency-version-strategy': preferDependencyVersionStrategy,
   'architecture/no-circular-dependencies': noCircularDependencies,
   'architecture/no-internal-modules': noInternalModules,
   'security/no-sql-injection': noSqlInjection,

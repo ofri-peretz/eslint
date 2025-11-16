@@ -6,6 +6,7 @@
  * @see https://rules.sonarsource.com/javascript/RSPEC-4144/
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { extractFunctionSignature } from '../../utils/llm-context';
 
@@ -49,9 +50,14 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       // 🎯 Token optimization: 43% reduction (56→32 tokens) - DRY principle violation detected
-      identicalFunctions:
-        '🔄 DRY Principle | Code duplication detected | MEDIUM\n' +
-        '   {{count}} duplicates ({{similarity}}% similar) - Fix: Extract to reusable function | https://en.wikipedia.org/wiki/Don%27t_repeat_yourself',
+      identicalFunctions: formatLLMMessage({
+        icon: MessageIcons.DUPLICATION,
+        issueName: 'Code duplication',
+        description: '{{count}} duplicates ({{similarity}}% similar)',
+        severity: 'MEDIUM',
+        fix: 'Extract to reusable function',
+        documentationLink: 'https://en.wikipedia.org/wiki/Don%27t_repeat_yourself',
+      }),
       extractGeneric: '✅ Extract to generic function: {{functionName}}',
       useHigherOrder: '✅ Use higher-order function pattern',
       applyInheritance: '✅ Use inheritance/composition',
