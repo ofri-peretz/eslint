@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-llm",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "ESLint rules optimized for Large Language Models - AI assistants can actually fix these",
   "type": "commonjs",
   "main": "./src/index.js",
