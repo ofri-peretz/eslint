@@ -3,6 +3,7 @@
  * Enforce domain-specific naming conventions with business context
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { generateLLMContext } from '../../utils/llm-context';
 
@@ -39,8 +40,15 @@ export const enforceNaming = createRule<RuleOptions, MessageIds>({
     hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 46% reduction (56→30 tokens) - domain terminology keeps code clear
-      wrongTerminology: '📚 CWE-216 | Domain terminology mismatch | MEDIUM\n' +
-        '   Fix: Use "{{correctTerm}}" ({{context}}) for ubiquitous language alignment | Domain glossary',
+      wrongTerminology: formatLLMMessage({
+        icon: MessageIcons.QUALITY,
+        issueName: 'Domain terminology mismatch',
+        cwe: 'CWE-216',
+        description: 'Domain terminology mismatch',
+        severity: 'MEDIUM',
+        fix: 'Use "{{correctTerm}}" ({{context}}) for ubiquitous language alignment',
+        documentationLink: 'Domain glossary',
+      }),
       useDomainTerm: '✅ Replace with "{{correctTerm}}"',
       viewGlossary: '📖 View domain glossary',
     },
@@ -87,7 +95,7 @@ export const enforceNaming = createRule<RuleOptions, MessageIds>({
     const options = context.options[0] || {};
     const { domain = 'general', terms = [], glossaryUrl } = options;
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const _sourceCode = context.sourceCode || context.getSourceCode();
     const filename = context.filename || context.getFilename();
 
     /**
@@ -129,7 +137,7 @@ export const enforceNaming = createRule<RuleOptions, MessageIds>({
     ) => {
       const replacement = generateReplacement(node.name, violatedTerm);
 
-      const llmContext = generateLLMContext('domain/enforce-naming', {
+      const _llmContext = generateLLMContext('domain/enforce-naming', {
         severity: 'warning',
         category: 'domain',
         filePath: filename,

@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 
 /**
  * Vitest configuration for eslint-plugin package
@@ -9,6 +10,7 @@ import { defineConfig } from 'vitest/config';
  * - Coverage tracking with v8 provider (industry standard)
  * - JUnit reporting for CI/CD pipeline integration
  * - Coverage upload handled by CI workflows instead of Vite plugin
+ * - Nx TypeScript path resolution for monorepo imports
  *
  * @coverage
  * - Provider: v8 (outputs coverage-final.json for Codecov)
@@ -28,6 +30,25 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   root: __dirname,
   plugins: [
+    /**
+     * Resolves TypeScript path aliases from tsconfig.base.json
+     * 
+     * @why-needed
+     * Vitest runs in Node.js and doesn't automatically resolve TypeScript path aliases
+     * (like @forge-js/eslint-plugin-utils) defined in tsconfig.base.json.
+     * Without this plugin, tests fail with "Cannot read properties of undefined" errors
+     * when importing from monorepo packages.
+     * 
+     * @note
+     * This is only needed for the test environment. Production builds use TypeScript
+     * compilation which resolves paths during build time, and published packages use
+     * normal Node.js module resolution.
+     * 
+     * @see
+     * - tsconfig.base.json for path alias definitions
+     * - @nx/vite/plugins/nx-tsconfig-paths.plugin for implementation details
+     */
+    nxViteTsPaths(),
     // Codecov plugin disabled - using CI workflow for coverage upload instead
   ],
   test: {

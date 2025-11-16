@@ -3,6 +3,7 @@
  * Detects dynamic require() calls that could lead to code injection
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { generateLLMContext } from '../../utils/llm-context';
 
@@ -26,9 +27,15 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
     hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 40% reduction (54→32 tokens) - compact format for LLM efficiency
-      unsafeDynamicRequire:
-        '🔒 CWE-95 | Dynamic require() detected | CRITICAL\n' +
-        '   Fix: Use allowlist: const ALLOWED = ["mod1", "mod2"]; if (!ALLOWED.includes(name)) throw Error("Not allowed") | https://owasp.org/www-community/attacks/Code_Injection',
+      unsafeDynamicRequire: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Dynamic require()',
+        cwe: 'CWE-95',
+        description: 'Dynamic require() detected',
+        severity: 'CRITICAL',
+        fix: 'Use allowlist: const ALLOWED = ["mod1", "mod2"]; if (!ALLOWED.includes(name)) throw Error("Not allowed")',
+        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
+      }),
       useStaticImport: '✅ Use static import',
       useAllowlist: '✅ Add path validation with allowlist',
     },
@@ -101,7 +108,7 @@ const module = require(moduleName);`;
         const secureAlternative = generateSecureAlternative(node);
         const argText = sourceCode.getText(firstArg);
 
-        const llmContext = generateLLMContext('security/no-unsafe-dynamic-require', {
+        const _llmContext = generateLLMContext('security/no-unsafe-dynamic-require', {
           severity: 'error',
           category: 'security',
           filePath: filename,

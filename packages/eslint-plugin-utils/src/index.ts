@@ -14,6 +14,7 @@
 export * from './rule-creator';
 export * from './ast-utils';
 export * from './type-utils';
+export * from './llm-message-format';
 
 /**
  * Re-export commonly used types and utilities from @typescript-eslint/utils

@@ -1,6 +1,6 @@
 {
   "name": "@forge-js/eslint-plugin-llm-optimized",
-  "version": "0.4.4",
+  "version": "1.1.0",
   "description": "A solid TypeScript-based ESLint plugin infrastructure inspired by typescript-eslint",
   "type": "commonjs",
   "main": "./src/index.js",
@@ -50,7 +50,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@forge-js/eslint-plugin-utils": "0.2.2",
+    "@forge-js/eslint-plugin-utils": "^1.0.2",
     "tslib": "^2.3.0"
   },
   "devDependencies": {

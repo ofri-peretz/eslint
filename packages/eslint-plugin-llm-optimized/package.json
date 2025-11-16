@@ -1,61 +1,61 @@
 {
-    "name": "eslint-plugin-llm-optimized",
-    "version": "1.0.2",
-    "description": "ESLint rules that AI assistants can actually fix - error messages optimized for both human developers and Large Language Models",
-    "type": "commonjs",
-    "main": "./src/index.js",
-    "types": "./src/index.d.ts",
-    "exports": {
-        ".": {
-            "types": "./src/index.d.ts",
-            "default": "./src/index.js"
-        },
-        "./types": {
-            "types": "./src/types/index.d.ts",
-            "default": "./src/types/index.js"
-        }
+  "name": "eslint-plugin-llm-optimized",
+  "version": "2.1.0",
+  "description": "ESLint rules that AI assistants can actually fix - error messages optimized for both human developers and Large Language Models",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
     },
-    "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
-    "license": "MIT",
-    "homepage": "https://github.com/ofri-peretz/forge-js#readme",
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/ofri-peretz/forge-js.git",
-        "directory": "packages/eslint-plugin-llm-optimized"
-    },
-    "bugs": {
-        "url": "https://github.com/ofri-peretz/forge-js/issues"
-    },
-    "publishConfig": {
-        "access": "public"
-    },
-    "files": [
-        "src/",
-        "dist/",
-        "README.md",
-        "LICENSE",
-        "CHANGELOG.md"
-    ],
-    "keywords": [
-        "eslint",
-        "eslint-plugin",
-        "typescript",
-        "linting",
-        "llm-optimized",
-        "code-quality",
-        "ast",
-        "static-analysis"
-    ],
-    "engines": {
-        "node": ">=18.0.0"
-    },
-    "dependencies": {
-        "tslib": "^2.3.0",
-        "@forge-js/eslint-plugin-llm-optimized": "0.4.4"
-    },
-    "devDependencies": {
-        "@typescript-eslint/parser": "^8.46.2",
-        "@typescript-eslint/rule-tester": "^8.46.2",
-        "vitest": "^4.0.4"
+    "./types": {
+      "types": "./src/types/index.d.ts",
+      "default": "./src/types/index.js"
     }
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ofri-peretz/forge-js#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/forge-js.git",
+    "directory": "packages/eslint-plugin-llm-optimized"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/forge-js/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "keywords": [
+    "eslint",
+    "eslint-plugin",
+    "typescript",
+    "linting",
+    "llm-optimized",
+    "code-quality",
+    "ast",
+    "static-analysis"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "@forge-js/eslint-plugin-llm-optimized": "^1.0.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.46.2",
+    "@typescript-eslint/rule-tester": "^8.46.2",
+    "vitest": "^4.0.4"
+  }
 }

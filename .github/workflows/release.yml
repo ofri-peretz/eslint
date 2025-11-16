@@ -83,6 +83,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          fetch-tags: true # Fetch tags for completeness (though not strictly needed for CI validation)
 
       - name: ⚙️ Setup pnpm
         uses: pnpm/action-setup@v4
@@ -133,7 +134,20 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          fetch-tags: true
+          ref: main # Always checkout main branch for releases (ensures all tags are reachable)
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔍 Verify we're on main branch
+        run: |
+          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          if [ "$CURRENT_BRANCH" != "main" ]; then
+            echo "❌ Error: Release workflow must run on main branch"
+            echo "   Current branch: $CURRENT_BRANCH"
+            echo "   Expected: main"
+            exit 1
+          fi
+          echo "✅ Confirmed: Running on main branch (all tags are reachable)"
 
       - name: ⚙️ Setup pnpm
         uses: pnpm/action-setup@v4
@@ -165,6 +179,47 @@ jobs:
 
       - name: 🔍 Print Environment Info
         run: pnpm nx report
+
+      # ──────────────────────────────────────────────────────────────────────
+      # PRE-FLIGHT CHECKS (Before making any changes)
+      # ──────────────────────────────────────────────────────────────────────
+      - name: 🔍 Pre-Flight Checks
+        if: inputs.dry-run == false
+        run: |
+          echo "🔍 Running pre-flight checks..."
+
+          # Check NPM authentication
+          echo "📦 Checking NPM authentication..."
+          if ! npm whoami --registry=https://registry.npmjs.org/ 2>/dev/null; then
+            echo "❌ NPM authentication failed!"
+            echo "   Ensure NPM_TOKEN secret is configured correctly"
+            echo "   Or use Trusted Publishing (OIDC) for authentication"
+            exit 1
+          fi
+          echo "✅ NPM authentication verified"
+
+          # Check git state is clean
+          echo "📝 Checking git state..."
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "⚠️  Warning: Working directory has uncommitted changes"
+            echo "   This may cause issues during release"
+            git status --short
+          else
+            echo "✅ Git working directory is clean"
+          fi
+
+          # Check if there are changes to release (dry-run first)
+          echo "🔍 Checking if there are changes to release..."
+          DRY_RUN_OUTPUT=$(pnpm nx release version --dry-run 2>&1 || true)
+          if echo "$DRY_RUN_OUTPUT" | grep -q "No changes detected"; then
+            echo "ℹ️  No changes detected for release"
+            echo "   This means there are no conventional commits since the last release"
+            echo "   The release will skip version bumping"
+          else
+            echo "✅ Changes detected - release will proceed"
+          fi
+
+          echo "✅ All pre-flight checks passed"
 
       # ──────────────────────────────────────────────────────────────────────
       # PHASE 1: PREPARE VERSION (Build + determine versions + update changelogs)
@@ -202,6 +257,14 @@ jobs:
           git config user.email "ofri@snappy.com"
 
           echo "📝 Publishing with dist tag: ${{ inputs.dist-tag }}"
+
+          # Verify NPM auth one more time before publishing
+          echo "🔐 Verifying NPM authentication before publish..."
+          if ! npm whoami --registry=https://registry.npmjs.org/ 2>/dev/null; then
+            echo "❌ NPM authentication failed right before publish!"
+            echo "   This should not happen if pre-flight checks passed"
+            exit 1
+          fi
 
           # preReleaseCommand rebuilds packages with updated versions, then publishes
           pnpm nx release publish --tag ${{ inputs.dist-tag }}

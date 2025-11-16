@@ -3,6 +3,7 @@
  * Enforce required attributes on React components/elements with customizable ignore lists
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
+import { formatLLMMessage } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { generateLLMContext } from '../../utils/llm-context';
 
@@ -37,9 +38,15 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
     hasSuggestions: true,
     messages: {
       // 🎯 Token optimization: 41% reduction (54→32 tokens) - required attributes for form/a11y
-      missingAttribute:
-        '📝 CWE-252 | Missing required attribute | MEDIUM\n' +
-        '   {{element}} missing {{attribute}} - Fix: Add {{attribute}}="{{suggestedValue}}" ({{purpose}}) | https://www.w3.org/WAI/fundamentals/accessibility-intro/',
+      missingAttribute: formatLLMMessage({
+        icon: '📝',
+        issueName: 'Missing required attribute',
+        cwe: 'CWE-252',
+        description: '{{element}} missing {{attribute}}',
+        severity: 'MEDIUM',
+        fix: 'Add {{attribute}}="{{suggestedValue}}" ({{purpose}})',
+        documentationLink: 'https://www.w3.org/WAI/fundamentals/accessibility-intro/',
+      }),
       addAttribute: '✅ Add {{attribute}}="{{suggestedValue}}"',
     },
     schema: [
@@ -84,7 +91,7 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
     const options = context.options[0] || {};
     const { attributes = [], ignoreComponents = [] } = options;
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const _sourceCode = context.sourceCode || context.getSourceCode();
     const filename = context.filename || context.getFilename();
 
     /**
@@ -116,7 +123,7 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
      * Check if element has attribute
      */
     const hasAttribute = (node: TSESTree.JSXOpeningElement, attrName: string): boolean => {
-      return node.attributes.some((attr: any) => {
+      return node.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) => {
         if (attr.type !== 'JSXAttribute') return false;
         if (attr.name.type !== 'JSXIdentifier') return false;
         return attr.name.name === attrName;
@@ -199,7 +206,7 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
           const purpose = message || getAttributePurpose(attribute);
           const defaultValue = suggestedValue || getDefaultSuggestedValue(attribute, elementName);
 
-          const llmContext = generateLLMContext('react/required-attributes', {
+          const _llmContext = generateLLMContext('react/required-attributes', {
             severity: 'error',
             category: 'accessibility',
             filePath: filename,

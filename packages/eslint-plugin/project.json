@@ -59,6 +59,13 @@
         }
       }
     },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["packages/eslint-plugin/**/*.{ts,tsx,js,jsx}"]
+      }
+    },
     "nx-release-publish": {
       "executor": "nx:run-commands",
       "options": {

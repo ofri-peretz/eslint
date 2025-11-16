@@ -134,11 +134,12 @@
     "projectsRelationship": "independent",
     "preid": "rc",
     "version": {
-      "preVersionCommand": "pnpm dlx nx run-many -t build",
+      "preVersionCommand": "pnpm nx run-many -t build",
       "conventionalCommits": true,
       "generatorOptions": {
         "updateDependents": "always",
         "currentVersionResolver": "git-tag",
+        "fallbackCurrentVersionResolver": "disk",
         "specifierSource": "conventional-commits"
       },
       "versionActionsOptions": {

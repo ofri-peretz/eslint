@@ -7,6 +7,7 @@
  * @see https://cwe.mitre.org/data/definitions/78.html
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { generateLLMContext } from '../../utils/llm-context';
 
@@ -97,9 +98,15 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
     },
     messages: {
       // 🎯 Token optimization: 44% reduction (55→31 tokens) - removes ❌/✅/📚 labels
-      childProcessCommandInjection:
-        '⚠️ CWE-78 | Command injection detected | CRITICAL\n' +
-        '   Fix: Use execFile/spawn with {shell: false} and array args | https://owasp.org/www-community/attacks/Command_Injection',
+      childProcessCommandInjection: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'Command injection',
+        cwe: 'CWE-78',
+        description: 'Command injection detected',
+        severity: 'CRITICAL',
+        fix: 'Use execFile/spawn with {shell: false} and array args',
+        documentationLink: 'https://owasp.org/www-community/attacks/Command_Injection',
+      }),
       useExecFile: '✅ Use execFile() with argument array instead of string interpolation',
       useSpawn: '✅ Use spawn() with separate arguments: spawn(cmd, [arg1, arg2])',
       useSaferLibrary: '✅ Consider safer libraries: execa, zx, or cross-spawn',
@@ -301,7 +308,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       const steps = pattern ? generateRefactoringSteps(pattern) : 'Review and secure command execution';
       const alternatives = pattern?.safeAlternatives.join(', ') || 'execFile, spawn with validation';
 
-      const llmContext = generateLLMContext('security/detect-child-process', {
+      const _llmContext = generateLLMContext('security/detect-child-process', {
         severity: riskLevel === 'critical' ? 'error' : riskLevel === 'high' ? 'warning' : 'info',
         category: 'security',
         filePath: context.filename || context.getFilename(),

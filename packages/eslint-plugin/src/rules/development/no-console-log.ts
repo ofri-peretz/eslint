@@ -3,6 +3,7 @@
  * Disallows console.log with configurable strategies and LLM-optimized output
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import * as path from 'path';
 
@@ -79,9 +80,15 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
     hasSuggestions: false,
     messages: {
       // 🎯 Token optimization: 43% reduction (51→29 tokens) - compact format for logger context
-      consoleLogFound:
-        '⚠️ CWE-532 | console.log found in production code | MEDIUM\n' +
-        '   Fix: Use logger.debug() or remove statement | https://owasp.org/www-project-log-review-guide/',
+      consoleLogFound: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'console.log in production',
+        cwe: 'CWE-532',
+        description: 'console.log found in production code',
+        severity: 'MEDIUM',
+        fix: 'Use logger.debug() or remove statement',
+        documentationLink: 'https://owasp.org/www-project-log-review-guide/',
+      }),
       strategyRemove: '🗑️ Remove console.log statement',
       strategyConvert: '🔄 Convert to {{logger}}.{{method}}()',
       strategyComment: '💬 Comment out console.log',

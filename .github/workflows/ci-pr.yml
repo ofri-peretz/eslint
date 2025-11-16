@@ -27,6 +27,13 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          fetch-tags: true
+
+      # Note: Nx's git-tag resolver only sees tags reachable from current HEAD.
+      # PR branches may not include commits where tags were created on main.
+      # The fallbackCurrentVersionResolver: "disk" in nx.json will read from package.json
+      # when git-tag fails, but it only triggers when NO tag is found, not when an old tag is found.
+      # For PR validation, we accept that version resolution may be imperfect.
 
       # ═══════════════════════════════════════════════════════════════════════
       # EARLY CHECK: DOCS-ONLY CHANGES (skip full CI if only docs/md changed)
@@ -150,7 +157,89 @@ jobs:
           fi
 
       # ═══════════════════════════════════════════════════════════════════════
-      # LAYER 5: POST-TEST ACTIONS (DIAGNOSTICS)
+      # LAYER 6: RELEASE VALIDATION (Dry-run to catch release issues early)
+      # ═══════════════════════════════════════════════════════════════════════
+      # This step validates that a release would succeed without actually
+      # making any changes. It catches issues like:
+      # - No changes to release
+      # - Invalid version calculations
+      # - Build failures during preReleaseCommand
+      # - Package version conflicts
+
+      - name: 🔍 Validate Release (Dry-Run)
+        continue-on-error: false
+        run: |
+          echo "═══════════════════════════════════════════════════════════════"
+          echo "🔍 Release Validation (Dry-Run)"
+          echo "═══════════════════════════════════════════════════════════════"
+          echo ""
+          echo "Running release dry-run to validate release process..."
+          echo "This checks if a release would succeed without making any changes."
+          echo ""
+
+          # Run release version dry-run (validates version calculation and preVersionCommand)
+          echo "📝 Validating version calculation and preVersionCommand build..."
+          RELEASE_OUTPUT=$(pnpm nx release version --dry-run 2>&1) || RELEASE_EXIT_CODE=$?
+          echo "$RELEASE_OUTPUT"
+
+          # Check if there are changes to release (this is OK, not an error)
+          if echo "$RELEASE_OUTPUT" | grep -q "No changes detected"; then
+            echo ""
+            echo "ℹ️  No changes detected for release (this is OK for PRs)"
+            echo "   This means there are no conventional commits since the last release."
+            echo "   The release workflow would skip version bumping in this case."
+            echo ""
+            echo "✅ Release validation passed (no changes to release)"
+          elif [ -n "$RELEASE_EXIT_CODE" ] && [ "$RELEASE_EXIT_CODE" -ne 0 ]; then
+            # Check if the error is about version range mismatch (common in PRs with old tags)
+            # This happens when Nx resolves an old tag that conflicts with package.json
+            # It's acceptable for PR validation since main branch will have correct tags
+            if echo "$RELEASE_OUTPUT" | grep -q "preserveMatchingDependencyRanges.*outside the current range"; then
+              echo ""
+              echo "⚠️  Release validation warning: Version range mismatch detected"
+              echo ""
+              echo "This is expected for PR branches because:"
+              echo "  - PR branch may not include commits where newer tags were created"
+              echo "  - Nx's git-tag resolver only sees tags reachable from current HEAD"
+              echo "  - Nx resolved an old tag version that conflicts with package.json"
+              echo ""
+              echo "✅ This is acceptable for PR validation. The actual release on main will:"
+              echo "  - Have access to all tags (tags are reachable from main)"
+              echo "  - Resolve correct versions from git tags"
+              echo "  - Work correctly with package.json dependencies"
+              echo ""
+              echo "✅ Allowing PR to proceed (version resolution will be correct on main)"
+            else
+              echo ""
+              echo "❌ Release validation failed!"
+              echo ""
+              echo "This means the release workflow would fail. Common issues:"
+              echo "  - Build failures during preVersionCommand"
+              echo "  - Invalid version strategy"
+              echo "  - Package version conflicts"
+              echo "  - Git state issues"
+              echo ""
+              echo "Review the output above for details."
+              exit 1
+            fi
+          else
+            echo ""
+            echo "✅ Version calculation validated"
+            echo ""
+            echo "📦 Packages that would be released:"
+            echo "$RELEASE_OUTPUT" | grep -E "(→|@forge-js|would be released)" || echo "$RELEASE_OUTPUT" | tail -20
+            echo ""
+            echo "✅ Release validation passed!"
+            echo "   The release workflow should succeed when run."
+          fi
+
+          # Note: We don't validate publish --dry-run here because:
+          # 1. It requires version changes to already exist
+          # 2. The preReleaseCommand build is already validated by the build step above
+          # 3. NPM authentication and package conflicts are checked in the release workflow itself
+
+      # ═══════════════════════════════════════════════════════════════════════
+      # LAYER 7: POST-TEST ACTIONS (DIAGNOSTICS)
       # ═══════════════════════════════════════════════════════════════════════
 
       - name: Print CI diagnostics
