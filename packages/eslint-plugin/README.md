@@ -7,7 +7,7 @@
 
 > **Keywords:** ESLint plugin, LLM-optimized, AI assistant, auto-fix, ESLint MCP, Model Context Protocol, code quality, security rules, TypeScript ESLint, automated code fixes, GitHub Copilot, Cursor AI, Claude AI, structured error messages, CWE references, deterministic fixes
 
-This plugin provides **20+ ESLint rules** with error messages optimized for both human developers and Large Language Models. Each rule is designed to be auto-fixable and includes structured context that enables AI assistants to understand the violation and apply consistent fixes.
+This plugin provides **30+ ESLint rules** with error messages optimized for both human developers and Large Language Models. Each rule is designed to be auto-fixable and includes structured context that enables AI assistants to understand the violation and apply consistent fixes.
 
 **Designed for ESLint MCP:** This package is specifically optimized to maximize capabilities when used with ESLint's [Model Context Protocol (MCP)](https://eslint.org/docs/latest/use/mcp) integration, enabling seamless AI assistant interactions through structured, parseable error messages.
 
@@ -21,7 +21,7 @@ This plugin provides **20+ ESLint rules** with error messages optimized for both
 | **Auto-Fix Rate**              | ✅ 60-80% of violations auto-fixed                    | ⚠️ 20-30% auto-fixable           |
 | **Error Message Quality**      | ✅ Structured with examples, fixes, documentation     | ⚠️ Basic "what's wrong" messages |
 | **ESLint MCP Support**         | ✅ Fully optimized for MCP integration                | ❌ No MCP optimization           |
-| **Security Rules**             | ✅ 8 comprehensive security rules with CWE references | ⚠️ Limited security coverage     |
+| **Security Rules**             | ✅ 18 comprehensive security rules with CWE references | ⚠️ Limited security coverage     |
 | **Deterministic Fixes**        | ✅ Same violation = same fix every time               | ⚠️ Inconsistent fixes            |
 | **Documentation Links**        | ✅ Every error includes relevant docs                 | ❌ No documentation links        |
 | **TypeScript Support**         | ✅ Full TypeScript support                            | ✅ TypeScript support            |
@@ -115,6 +115,10 @@ Traditional ESLint rules communicate _what's wrong_. This plugin ensures every r
 | [no-insecure-comparison](./docs/rules/no-insecure-comparison.md)                 | Detect insecure comparison operators (==, !=)             |     | ⚠️  | 🔧  | 💡  |
 | [no-missing-authentication](./docs/rules/no-missing-authentication.md)           | Detect missing authentication checks in route handlers    |     | ⚠️  |     | 💡  |
 | [no-privilege-escalation](./docs/rules/no-privilege-escalation.md)               | Detect potential privilege escalation vulnerabilities     |     | ⚠️  |     | 💡  |
+| [no-insecure-cookie-settings](./docs/rules/no-insecure-cookie-settings.md)     | Detect insecure cookie configurations (missing flags)     | 💼  |     | 🔧  | 💡  |
+| [no-missing-csrf-protection](./docs/rules/no-missing-csrf-protection.md)       | Detect missing CSRF token validation in requests         | 💼  |     |     | 💡  |
+| [no-exposed-sensitive-data](./docs/rules/no-exposed-sensitive-data.md)         | Detect exposure of PII/sensitive data in logs            | 💼  |     |     | 💡  |
+| [no-unencrypted-transmission](./docs/rules/no-unencrypted-transmission.md)     | Detect unencrypted data transmission (HTTP vs HTTPS)      | 💼  |     | 🔧  | 💡  |
 
 ### Accessibility
 

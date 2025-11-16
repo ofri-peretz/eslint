@@ -39,6 +39,10 @@ import { noMissingCorsCheck } from './rules/security/no-missing-cors-check';
 import { noInsecureComparison } from './rules/security/no-insecure-comparison';
 import { noMissingAuthentication } from './rules/security/no-missing-authentication';
 import { noPrivilegeEscalation } from './rules/security/no-privilege-escalation';
+import { noInsecureCookieSettings } from './rules/security/no-insecure-cookie-settings';
+import { noMissingCsrfProtection } from './rules/security/no-missing-csrf-protection';
+import { noExposedSensitiveData } from './rules/security/no-exposed-sensitive-data';
+import { noUnencryptedTransmission } from './rules/security/no-unencrypted-transmission';
 
 // Migration rules
 import { reactClassToHooks } from './rules/migration/react-class-to-hooks';
@@ -105,6 +109,10 @@ export const rules = {
   'no-insecure-comparison': noInsecureComparison,
   'no-missing-authentication': noMissingAuthentication,
   'no-privilege-escalation': noPrivilegeEscalation,
+  'no-insecure-cookie-settings': noInsecureCookieSettings,
+  'no-missing-csrf-protection': noMissingCsrfProtection,
+  'no-exposed-sensitive-data': noExposedSensitiveData,
+  'no-unencrypted-transmission': noUnencryptedTransmission,
   'react-class-to-hooks': reactClassToHooks,
   'react-no-inline-functions': reactNoInlineFunctions,
   'img-requires-alt': imgRequiresAlt,
@@ -137,6 +145,10 @@ export const rules = {
   'security/no-insecure-comparison': noInsecureComparison,
   'security/no-missing-authentication': noMissingAuthentication,
   'security/no-privilege-escalation': noPrivilegeEscalation,
+  'security/no-insecure-cookie-settings': noInsecureCookieSettings,
+  'security/no-missing-csrf-protection': noMissingCsrfProtection,
+  'security/no-exposed-sensitive-data': noExposedSensitiveData,
+  'security/no-unencrypted-transmission': noUnencryptedTransmission,
   'migration/react-class-to-hooks': reactClassToHooks,
   'performance/react-no-inline-functions': reactNoInlineFunctions,
   'accessibility/img-requires-alt': imgRequiresAlt,
@@ -248,6 +260,10 @@ export const configs = {
       '@forge-js/llm-optimized/security/no-insecure-comparison': 'warn',
       '@forge-js/llm-optimized/security/no-missing-authentication': 'warn',
       '@forge-js/llm-optimized/security/no-privilege-escalation': 'warn',
+      '@forge-js/llm-optimized/security/no-insecure-cookie-settings': 'warn',
+      '@forge-js/llm-optimized/security/no-missing-csrf-protection': 'warn',
+      '@forge-js/llm-optimized/security/no-exposed-sensitive-data': 'error',
+      '@forge-js/llm-optimized/security/no-unencrypted-transmission': 'warn',
       '@forge-js/llm-optimized/accessibility/img-requires-alt': 'warn',
       '@forge-js/llm-optimized/complexity/cognitive-complexity': 'warn',
       '@forge-js/llm-optimized/duplication/identical-functions': 'warn',
@@ -281,6 +297,10 @@ export const configs = {
       '@forge-js/llm-optimized/security/no-insecure-comparison': 'error',
       '@forge-js/llm-optimized/security/no-missing-authentication': 'error',
       '@forge-js/llm-optimized/security/no-privilege-escalation': 'error',
+      '@forge-js/llm-optimized/security/no-insecure-cookie-settings': 'error',
+      '@forge-js/llm-optimized/security/no-missing-csrf-protection': 'error',
+      '@forge-js/llm-optimized/security/no-exposed-sensitive-data': 'error',
+      '@forge-js/llm-optimized/security/no-unencrypted-transmission': 'error',
       '@forge-js/llm-optimized/accessibility/img-requires-alt': 'error',
       '@forge-js/llm-optimized/performance/react-no-inline-functions': 'error',
       '@forge-js/llm-optimized/complexity/cognitive-complexity': 'error',
@@ -317,6 +337,10 @@ export const configs = {
       '@forge-js/llm-optimized/security/no-insecure-comparison': 'error',
       '@forge-js/llm-optimized/security/no-missing-authentication': 'error',
       '@forge-js/llm-optimized/security/no-privilege-escalation': 'error',
+      '@forge-js/llm-optimized/security/no-insecure-cookie-settings': 'error',
+      '@forge-js/llm-optimized/security/no-missing-csrf-protection': 'error',
+      '@forge-js/llm-optimized/security/no-exposed-sensitive-data': 'error',
+      '@forge-js/llm-optimized/security/no-unencrypted-transmission': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 

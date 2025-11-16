@@ -217,6 +217,10 @@ This package includes **30+ rules** across 10 categories. All rules are function
 | `mcp/no-insecure-comparison`         | Detect insecure comparison operators (==, !=)             | CWE-697 | Yes          |
 | `mcp/no-missing-authentication`      | Detect missing authentication checks in route handlers    | CWE-306 | No           |
 | `mcp/no-privilege-escalation`        | Detect potential privilege escalation vulnerabilities     | CWE-269 | No           |
+| `mcp/no-insecure-cookie-settings`    | Detect insecure cookie configurations (missing flags)     | CWE-614 | Yes          |
+| `mcp/no-missing-csrf-protection`     | Detect missing CSRF token validation in requests         | CWE-352 | No           |
+| `mcp/no-exposed-sensitive-data`      | Detect exposure of PII/sensitive data in logs            | CWE-200 | No           |
+| `mcp/no-unencrypted-transmission`    | Detect unencrypted data transmission (HTTP vs HTTPS)      | CWE-319 | Yes          |
 
 ### Architecture Rules (2 rules)
 

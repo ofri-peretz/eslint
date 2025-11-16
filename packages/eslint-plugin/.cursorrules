@@ -123,3 +123,158 @@ Some rules MAY use template placeholders in specific, justified cases:
 - 3/19 rules: FIXED critical template placeholder issues 🔴
 - 8/19 rules: Full review needed ⚠️
 - See: `AUDIT_REPORT_LLM_OPTIMIZATION.md` for complete findings
+
+---
+
+## 📋 New Lint Rule Implementation Checklist
+
+When implementing a new ESLint rule, follow this comprehensive checklist below.
+
+### Phase 1: Rule Implementation
+
+- [ ] **Create rule file** (`packages/eslint-plugin/src/rules/{category}/{rule-name}.ts`)
+  - [ ] Implement rule logic with AST traversal
+  - [ ] Add proper TypeScript types
+  - [ ] Use `createRule` utility from `../../utils/create-rule`
+  - [ ] Use `formatLLMMessage` for error messages (see format standard above)
+  - [ ] Include CWE reference in error message
+  - [ ] Add auto-fix suggestions where appropriate
+
+- [ ] **Create test file** (`packages/eslint-plugin/src/tests/{rule-name}.test.ts`)
+  - [ ] Add valid test cases (should not trigger rule)
+  - [ ] Add invalid test cases (should trigger rule)
+  - [ ] Test edge cases and false positives
+  - [ ] Test auto-fix suggestions (if applicable)
+  - [ ] Aim for 100% code coverage
+  - [ ] Use `RuleTester` from `@typescript-eslint/rule-tester`
+
+- [ ] **Register rule** (`packages/eslint-plugin/src/index.ts`)
+  - [ ] Add to flat rule names (e.g., `'no-rule-name': ruleFunction`)
+  - [ ] Add to categorized rule names (e.g., `'security/no-rule-name': ruleFunction`)
+  - [ ] Export rule function
+
+- [ ] **Update configs** (`packages/eslint-plugin/src/index.ts`)
+  - [ ] Add to `recommended` config (if appropriate)
+  - [ ] Add to `strict` config (if appropriate)
+  - [ ] Add to category-specific configs (e.g., `security` config)
+  - [ ] Set appropriate severity level (`error` or `warn`)
+
+### Phase 2: Documentation
+
+- [ ] **Create rule documentation** (`packages/eslint-plugin/docs/rules/{rule-name}.md`)
+  - [ ] Follow AEO (AI Engine Optimization) guidelines
+  - [ ] Use mermaid diagrams for visual flows
+  - [ ] Use tables instead of long paragraphs
+  - [ ] Include rule metadata table
+  - [ ] Include examples (valid/invalid code)
+  - [ ] Include configuration options
+  - [ ] Include CWE reference and security context
+  - [ ] Include auto-fix information
+  - [ ] Include related rules
+
+- [ ] **Update main README** (`packages/eslint-plugin/README.md`)
+  - [ ] Add rule to appropriate category table
+  - [ ] Add rule link to documentation
+  - [ ] Update rule count (currently 30+ rules, 18 security rules)
+  - [ ] Mark appropriate icons (💼 ⚠️ 🔧 💡)
+
+- [ ] **Update all package READMEs**
+  - [ ] `packages/eslint-plugin-llm/README.md`
+  - [ ] `packages/eslint-plugin-mcp/README.md`
+  - [ ] `packages/eslint-plugin-mcp-optimized/README.md`
+  - [ ] `packages/eslint-plugin-llm-optimized/README.md` (if different from main)
+  - [ ] Update rule counts and feature lists
+
+- [ ] **Update AGENTS.md** (`packages/eslint-plugin/AGENTS.md`)
+  - [ ] Add rule to rule categories table
+  - [ ] Include rule name, description, CWE, auto-fixable status
+  - [ ] Update rule counts
+
+### Phase 3: Release Preparation
+
+- [ ] **Update CHANGELOG.md** (`packages/eslint-plugin/CHANGELOG.md`)
+  - [ ] Add entry for new rule(s)
+  - [ ] Include rule name, description, CWE reference
+  - [ ] Mark as feature addition
+
+- [ ] **Update ROADMAP.md** (`ROADMAP.md` in repository root)
+  - [ ] Mark rule as completed: `- [x]` instead of `- [ ]`
+  - [ ] Update status if applicable
+
+- [ ] **Verify tests pass**
+  - [ ] Run `pnpm nx run eslint-plugin:test`
+  - [ ] Ensure 100% test coverage for new rule
+  - [ ] Fix any failing tests
+
+- [ ] **Verify build succeeds**
+  - [ ] Run `pnpm nx run eslint-plugin:build`
+  - [ ] Check dist folder contains rule files
+
+- [ ] **Verify documentation is included**
+  - [ ] Check `package.json` `files` array includes `docs/`
+  - [ ] Check `project.json` `assets` includes `docs/rules/*.md`
+  - [ ] Verify README.md, LICENSE, CHANGELOG.md, AGENTS.md are included
+
+### AEO-Optimized Documentation Template
+
+When creating rule documentation, follow this structure:
+
+```markdown
+# Rule Name
+
+## Metadata
+
+| Property | Value |
+|----------|-------|
+| **CWE** | CWE-XXX |
+| **Severity** | HIGH/MEDIUM/LOW |
+| **Auto-fixable** | Yes/No |
+| **Category** | Security/Development/Architecture/etc. |
+
+## Overview
+
+[Brief description with mermaid diagram showing detection flow]
+
+## Examples
+
+### ❌ Invalid
+
+[Code examples that trigger the rule]
+
+### ✅ Valid
+
+[Code examples that don't trigger the rule]
+
+## Configuration
+
+[Configuration options table]
+
+## Related Rules
+
+[Links to related rules]
+```
+
+### Quality Standards
+
+- **Test Coverage**: Aim for 100% code coverage
+- **Documentation**: AEO-optimized with tables, mermaid diagrams, minimal prose
+- **Error Messages**: Use `formatLLMMessage` with structured context (see format standard above)
+- **Auto-fixes**: Provide suggestions where safe and deterministic
+- **CWE References**: Include CWE number and link in error messages
+- **Type Safety**: Full TypeScript support with proper types
+
+### Current Status
+
+- **Total Rules**: 30+ rules
+- **Security Rules**: 18 rules
+- **Recently Added**:
+  - ✅ `no-insecure-cookie-settings` (CWE-614)
+  - ✅ `no-missing-csrf-protection` (CWE-352)
+  - ✅ `no-exposed-sensitive-data` (CWE-200)
+  - ✅ `no-unencrypted-transmission` (CWE-319)
+
+### Related Documents
+
+- [RELEASE_GUIDE.md](../../RELEASE_GUIDE.md) - Release preparation checklist
+- [ROADMAP.md](../../ROADMAP.md) - Planned rules and features
+- [CONTRIBUTING.md](../../CONTRIBUTING.md) - Contribution guidelines
