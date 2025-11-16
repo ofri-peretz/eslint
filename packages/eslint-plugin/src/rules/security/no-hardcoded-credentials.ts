@@ -229,7 +229,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
     );
 
     // Compile ignore patterns to regex
-    const compiledIgnorePatterns = ignorePatterns.map(pattern => new RegExp(pattern));
+    const compiledIgnorePatterns = ignorePatterns.map((pattern: string) => new RegExp(pattern));
 
     const detectionOptions = {
       minLength,
@@ -292,13 +292,13 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
           {
             messageId: 'useEnvironmentVariable',
             data: { envVarName },
-            fix: (fixer) => {
+            fix: (fixer: TSESLint.RuleFixer) => {
               return fixer.replaceText(node, `process.env.${envVarName} || '${value}'`);
             },
           },
           {
             messageId: 'useSecretManager',
-            fix: (fixer) => {
+            fix: (fixer: TSESLint.RuleFixer) => {
               return fixer.replaceText(node, `await getSecret('${envVarName.toLowerCase()}')`);
             },
           },
@@ -315,7 +315,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         // Check template literal parts for credentials
         // Only check if there are no interpolations (static template literal)
         if (node.expressions.length === 0) {
-          const fullText = node.quasis.map(q => q.value.raw).join('');
+          const fullText = node.quasis.map((q: TSESTree.TemplateElement) => q.value.raw).join('');
           const { isCredential, type } = looksLikeCredential(
             fullText,
             detectionOptions,
@@ -334,13 +334,13 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
                 {
                   messageId: 'useEnvironmentVariable',
                   data: { envVarName: 'API_KEY' },
-                  fix: (fixer) => {
+                  fix: (fixer: TSESLint.RuleFixer) => {
                     return fixer.replaceText(node, `process.env.API_KEY || \`${fullText}\``);
                   },
                 },
                 {
                   messageId: 'useSecretManager',
-                  fix: (fixer) => {
+                  fix: (fixer: TSESLint.RuleFixer) => {
                     return fixer.replaceText(node, `await getSecret('api_key')`);
                   },
                 },

@@ -246,7 +246,7 @@ export const noWeakCrypto = createRule<RuleOptions, MessageIds>({
       allowInTests = false,
       additionalWeakAlgorithms = [],
       trustedLibraries = ['crypto', 'crypto-js'],
-    } = options;
+    } = options as Options;
 
     const filename = context.getFilename();
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
@@ -301,7 +301,7 @@ export const noWeakCrypto = createRule<RuleOptions, MessageIds>({
                     },
                     suggest: refactoringSteps.map(step => ({
                       messageId: step.messageId,
-                      fix: (fixer) => {
+                      fix: (fixer: TSESLint.RuleFixer) => {
                         // Replace the weak algorithm with a safe one
                         if (weakPattern.category === 'hash') {
                           return fixer.replaceText(arg, `"sha256"`);
@@ -345,7 +345,7 @@ export const noWeakCrypto = createRule<RuleOptions, MessageIds>({
                   suggest: [
                     {
                       messageId: weakPattern.category === 'hash' ? 'useSha256' : 'useAes256',
-                      fix: (fixer) => {
+                      fix: (fixer: TSESLint.RuleFixer) => {
                         if (weakPattern.category === 'hash') {
                           return fixer.replaceText(arg, `"sha256"`);
                         } else if (weakPattern.category === 'encryption') {
