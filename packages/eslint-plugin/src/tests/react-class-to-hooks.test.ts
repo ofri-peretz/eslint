@@ -227,8 +227,18 @@ describe('react-class-to-hooks', () => {
           `,
           options: [{ allowComplexLifecycle: true }],
         },
-        // Note: getSnapshotBeforeUpdate is not in lifecycleMap, so it's not detected as complex
-        // The component will be treated as simple and will report an error
+        {
+          code: `
+            class MyComponent extends Component {
+              getSnapshotBeforeUpdate() {
+                return null;
+              }
+            }
+          `,
+          // getSnapshotBeforeUpdate is now in lifecycleMap and detected as complex
+          // With allowComplexLifecycle: true, the rule skips it (no error)
+          options: [{ allowComplexLifecycle: true }],
+        },
       ],
       invalid: [
         {
@@ -250,27 +260,10 @@ describe('react-class-to-hooks', () => {
               }
             }
           `,
+          // getSnapshotBeforeUpdate is now detected as complex
+          // With allowComplexLifecycle: false, it reports an error
           options: [{ allowComplexLifecycle: false }],
           errors: [{ messageId: 'migrateToHooks' }],
-        },
-        {
-          code: `
-            class MyComponent extends Component {
-              getSnapshotBeforeUpdate() {
-                return null;
-              }
-            }
-          `,
-          // Note: getSnapshotBeforeUpdate is not in lifecycleMap, so it's not detected as complex
-          // Even with allowComplexLifecycle: true, it will still report because it's treated as simple
-          // But it has a lifecycle method, so no suggestions
-          options: [{ allowComplexLifecycle: true }],
-          errors: [
-            {
-              messageId: 'migrateToHooks',
-              // Rule no longer provides suggestions for components with lifecycle methods
-            },
-          ],
         },
       ],
     });
