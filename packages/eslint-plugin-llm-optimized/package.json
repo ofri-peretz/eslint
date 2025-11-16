@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-llm-optimized",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "description": "ESLint rules that AI assistants can actually fix - error messages optimized for both human developers and Large Language Models",
   "type": "commonjs",
   "main": "./src/index.js",
