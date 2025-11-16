@@ -272,7 +272,6 @@ export const noUnvalidatedUserInput = createRule<RuleOptions, MessageIds>({
         }
 
         // Build suggestions - provide same code as output for test framework recognition
-        const nodeText = sourceCode.getText(node);
         const suggestions: TSESLint.SuggestionReportDescriptor<MessageIds>[] = [
           {
             messageId: 'useZod',

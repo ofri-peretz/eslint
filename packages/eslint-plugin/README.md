@@ -107,6 +107,11 @@ Traditional ESLint rules communicate _what's wrong_. This plugin ensures every r
 | [detect-object-injection](./docs/rules/detect-object-injection.md)               | Detect prototype pollution in object property access      | 💼  |     |     | 💡  |
 | [no-hardcoded-credentials](./docs/rules/no-hardcoded-credentials.md)             | Detect hardcoded passwords, API keys, and tokens          |     | ⚠️  | 🔧  | 💡  |
 | [no-weak-crypto](./docs/rules/no-weak-crypto.md)                                 | Detect weak cryptography algorithms (MD5, SHA1, DES)      |     | ⚠️  | 🔧  | 💡  |
+| [no-insufficient-random](./docs/rules/no-insufficient-random.md)                 | Detect weak random number generation (Math.random())      |     | ⚠️  |     | 💡  |
+| [no-unvalidated-user-input](./docs/rules/no-unvalidated-user-input.md)           | Detect unvalidated user input usage (req.body, req.query) |     | ⚠️  |     | 💡  |
+| [no-unsanitized-html](./docs/rules/no-unsanitized-html.md)                       | Detect unsanitized HTML injection (XSS prevention)        | 💼  |     |     | 💡  |
+| [no-unescaped-url-parameter](./docs/rules/no-unescaped-url-parameter.md)         | Detect unescaped URL parameters (XSS prevention)          |     | ⚠️  |     | 💡  |
+| [no-missing-cors-check](./docs/rules/no-missing-cors-check.md)                   | Detect missing CORS origin validation                     |     | ⚠️  |     | 💡  |
 
 ### Accessibility
 
