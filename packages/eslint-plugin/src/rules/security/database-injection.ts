@@ -125,6 +125,15 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
     ];
 
     /**
+     * NoSQL query patterns in template literals (e.g., `this.name === "${userName}"`)
+     */
+    const NOSQL_QUERY_PATTERNS = [
+      /this\.\w+\s*===?\s*["']/i,  // this.name === "value"
+      /this\.\w+\s*!==?\s*["']/i,   // this.name !== "value"
+      /\$\w+\s*===?\s*["']/i,       // $where === "value"
+    ];
+
+    /**
      * Check if text contains SQL keywords
      */
     function containsSQLKeywords(text: string): boolean {
@@ -205,20 +214,17 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
     }
 
     /**
-     * Check template literal for SQL injection
+     * Check template literal for SQL or NoSQL injection
      */
     function checkTemplateLiteral(node: TSESTree.TemplateLiteral) {
       const text = sourceCode.getText(node);
       
-      if (!containsSQLKeywords(text)) return;
-      if (node.expressions.length === 0) return;
-
+      // Check for SQL injection
+      if (containsSQLKeywords(text) && node.expressions.length > 0) {
       // Check if any expression is tainted
       const taintedExprs = node.expressions.filter((expr: TSESTree.Expression | TSESTree.SpreadElement) => isTainted(expr).tainted);
-      if (taintedExprs.length === 0) return;
-
+        if (taintedExprs.length > 0) {
       const vulnDetails = analyzeVulnerability(node, 'SQL');
-
       context.report({
         node,
         messageId: 'databaseInjection',
@@ -234,6 +240,37 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
           docLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
         },
       });
+          return;
+        }
+      }
+
+      // Check for NoSQL injection patterns in template literals
+      if (detectNoSQL && node.expressions.length > 0) {
+        const hasNoSQLPattern = NOSQL_QUERY_PATTERNS.some(pattern => pattern.test(text));
+        if (hasNoSQLPattern) {
+          // Check if any expression is tainted
+          const taintedExprs = node.expressions.filter((expr: TSESTree.Expression | TSESTree.SpreadElement) => isTainted(expr).tainted);
+          if (taintedExprs.length > 0) {
+            const vulnDetails = analyzeVulnerability(node, 'NoSQL');
+            context.report({
+              node,
+              messageId: 'databaseInjection',
+              data: {
+                type: vulnDetails.type,
+                severity: vulnDetails.severity.toUpperCase(),
+                filePath: filename,
+                line: String(node.loc?.start.line ?? 0),
+                cwe: vulnDetails.cwe,
+                cweCode: vulnDetails.cwe.replace('CWE-', ''),
+                currentExample: `const query = \`this.name === "${'${userName}'}"\``,
+                fixExample: `Sanitize input: const query = \`this.name === "\${mongoSanitize(userName)}"\``,
+                docLink: 'https://owasp.org/www-community/attacks/NoSQL_Injection',
+              },
+            });
+            return;
+          }
+        }
+      }
     }
 
     /**
@@ -266,9 +303,50 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
       });
     }
 
+    /**
+     * Check binary expression (string concatenation) for SQL injection
+     */
+    function checkBinaryExpression(node: TSESTree.BinaryExpression) {
+      // Only check string concatenation with + operator
+      if (node.operator !== '+') return;
+
+      // Get the full text of the binary expression
+      const text = sourceCode.getText(node);
+      
+      // Check if it contains SQL keywords
+      if (!containsSQLKeywords(text)) return;
+
+      // Check if any part of the expression is tainted
+      const taintInfo = isTainted(node);
+      if (!taintInfo.tainted) {
+        // Also check left and right sides individually
+        const leftTainted = isTainted(node.left).tainted;
+        const rightTainted = isTainted(node.right).tainted;
+        if (!leftTainted && !rightTainted) return;
+      }
+
+      const vulnDetails = analyzeVulnerability(node, 'SQL');
+      context.report({
+        node,
+        messageId: 'databaseInjection',
+        data: {
+          type: vulnDetails.type,
+          severity: vulnDetails.severity.toUpperCase(),
+          filePath: filename,
+          line: String(node.loc?.start.line ?? 0),
+          cwe: vulnDetails.cwe,
+          cweCode: vulnDetails.cwe.replace('CWE-', ''),
+          currentExample: `const query = "SELECT * FROM users WHERE name = '" + userName + "'"`,
+          fixExample: `Use parameterized: db.query("SELECT * FROM users WHERE name = ?", [userName])`,
+          docLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
+        },
+      });
+    }
+
     return {
       TemplateLiteral: checkTemplateLiteral,
       CallExpression: checkNoSQLOperation,
+      BinaryExpression: checkBinaryExpression,
     };
   },
 });

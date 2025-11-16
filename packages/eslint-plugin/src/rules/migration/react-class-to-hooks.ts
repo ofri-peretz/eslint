@@ -76,13 +76,29 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
     const isReactComponent = (node: TSESTree.ClassDeclaration): boolean => {
       if (!node.superClass) return false;
       
-      const superClass = sourceCode.getText(node.superClass);
+      // Check for Identifier (e.g., Component, PureComponent)
+      if (node.superClass.type === 'Identifier') {
+        return (
+          node.superClass.name === 'Component' ||
+          node.superClass.name === 'PureComponent'
+        );
+      }
+      
+      // Check for MemberExpression (e.g., React.Component, React.PureComponent)
+      if (node.superClass.type === 'MemberExpression') {
+        if (
+          node.superClass.object.type === 'Identifier' &&
+          node.superClass.object.name === 'React' &&
+          node.superClass.property.type === 'Identifier'
+        ) {
       return (
-        superClass === 'Component' ||
-        superClass === 'React.Component' ||
-        superClass === 'PureComponent' ||
-        superClass === 'React.PureComponent'
-      );
+            node.superClass.property.name === 'Component' ||
+            node.superClass.property.name === 'PureComponent'
+          );
+        }
+      }
+      
+      return false;
     };
 
     /**
@@ -161,7 +177,8 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
                   // This is a simplified transformation
                   // Real implementation would need more sophisticated AST manipulation
                   const funcText = classText
-                    .replace(/class\s+(\w+)\s+extends\s+\w+\.\w+/, 'function $1(props)')
+                    // Match: class Name extends React.Component or class Name extends Component
+                    .replace(/class\s+(\w+)\s+extends\s+(\w+\.)?\w+/, 'function $1(props)')
                     .replace(/this\.props\./g, 'props.')
                     .replace(/this\.state\.(\w+)/g, (_: string, name: string) => name);
 

@@ -1,2 +1,11 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Auto-fix linting issues for all projects
+echo "🔧 Running lint with --fix for all projects..."
+pnpm nx run-many -t lint --all --fix
+
+# Run tests
+echo "🧪 Running tests..."
 pnpm nx run eslint-plugin:test
 

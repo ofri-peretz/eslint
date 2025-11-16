@@ -118,6 +118,8 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
         if (n.type === 'IfStatement') {
           complexity += 1 + currentNesting;
           breakdown.conditionals++;
+          // Traverse the test condition to count logical operators
+          traverse(n.test, currentNesting);
           traverse(n.consequent, currentNesting + 1);
           if (n.alternate) {
             if (n.alternate.type === 'IfStatement') {

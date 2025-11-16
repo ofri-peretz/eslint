@@ -103,14 +103,15 @@ export const preferDependencyVersionStrategy = createRule<
       overrides: {},
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    const options = context.options[0] || {};
     const {
       strategy = 'caret',
       allowWorkspace = true,
       allowFile = true,
       allowLink = true,
       overrides = {},
-    } = (options || {}) as Options;
+    } = options;
 
     // Validate strategy
     const validStrategies: VersionStrategy[] = ['caret', 'tilde', 'exact', 'range', 'any'];
@@ -138,8 +139,9 @@ export const preferDependencyVersionStrategy = createRule<
       if (allowFile && version.startsWith('file:')) return;
       if (allowLink && version.startsWith('link:')) return;
 
-      // Skip if not a semantic version
-      if (!version.match(/^\d+\.\d+\.\d+/)) return;
+      // Skip if not a semantic version (allow prefixes like ^, ~)
+      // Match patterns like: 1.0.0, ^1.0.0, ~1.0.0, >=1.0.0, etc.
+      if (!version.match(/^[\^~<>=]?\d+\.\d+\.\d+/)) return;
 
       // Check for package-specific override
       const packageStrategy = overrides[depName] || strategy;
@@ -151,24 +153,26 @@ export const preferDependencyVersionStrategy = createRule<
       let needsFix = false;
 
       // Determine expected format based on strategy (package override or default)
+      // First, extract the base version (remove any existing prefix)
+      const baseVersion = version.replace(/^[\^~<>=]+/, '');
+      
       switch (packageStrategy) {
         case 'caret':
           if (!version.startsWith('^')) {
-            expectedVersion = `^${version}`;
+            expectedVersion = `^${baseVersion}`;
             needsFix = true;
           }
           break;
         case 'tilde':
           if (!version.startsWith('~')) {
-            expectedVersion = `~${version}`;
+            expectedVersion = `~${baseVersion}`;
             needsFix = true;
           }
           break;
         case 'exact': {
-          // Remove any prefix
-          const exactVersion = version.replace(/^[^0-9]+/, '');
-          if (version !== exactVersion) {
-            expectedVersion = exactVersion;
+          // Remove any prefix to get exact version
+          if (version !== baseVersion) {
+            expectedVersion = baseVersion;
             needsFix = true;
           }
           break;
@@ -207,13 +211,11 @@ export const preferDependencyVersionStrategy = createRule<
       }
     }
 
-    return {
-      'Property[key.value="dependencies"], Property[key.value="devDependencies"], Property[key.value="peerDependencies"]'(
-        node: TSESTree.Property
-      ) {
-        if (node.value.type !== 'ObjectExpression') return;
-
-        for (const prop of node.value.properties) {
+    /**
+     * Check an object expression for dependency version violations
+     */
+    const checkObjectExpression = (node: TSESTree.ObjectExpression) => {
+      for (const prop of node.properties) {
           if (
             prop.type === 'Property' &&
             prop.key &&
@@ -231,6 +233,32 @@ export const preferDependencyVersionStrategy = createRule<
               checkVersion(prop, depName, prop.value.value);
             }
           }
+      }
+    };
+
+    return {
+      // Check package.json dependencies properties
+      'Property[key.value="dependencies"], Property[key.value="devDependencies"], Property[key.value="peerDependencies"]'(
+        node: TSESTree.Property
+      ) {
+        if (node.value.type !== 'ObjectExpression') return;
+        checkObjectExpression(node.value);
+      },
+      
+      // Also check object literals (for testing and general use)
+      ObjectExpression(node: TSESTree.ObjectExpression) {
+        // Only check if it looks like a dependencies object (has string keys and version-like values)
+        const hasVersionLikeValues = node.properties.some(prop => {
+          if (prop.type === 'Property' && prop.value.type === 'Literal') {
+            const value = String(prop.value.value);
+            // Check if value looks like a version (starts with ^, ~, or is a semantic version)
+            return /^[\^~]?\d+\.\d+\.\d+/.test(value) || value.startsWith('workspace:');
+          }
+          return false;
+        });
+        
+        if (hasVersionLikeValues) {
+          checkObjectExpression(node);
         }
       },
     };

@@ -94,6 +94,11 @@ export const enforceNaming = createRule<RuleOptions, MessageIds>({
     const options = context.options[0] || {};
     const { domain = 'general', terms = [] } = options;
 
+    // Early return if no terms configured
+    if (!terms || terms.length === 0) {
+      return {};
+    }
+
     /**
      * Check if identifier violates domain terms
      */
@@ -139,6 +144,7 @@ export const enforceNaming = createRule<RuleOptions, MessageIds>({
         data: {
           incorrectTerm: node.name,
           correctTerm: violatedTerm.correct,
+          context: violatedTerm.context || domain,
           domain,
         },
         suggest: [

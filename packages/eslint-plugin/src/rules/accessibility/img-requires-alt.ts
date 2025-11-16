@@ -158,18 +158,25 @@ export const imgRequiresAlt = createRule<RuleOptions, MessageIds>({
     };
 
     return {
-      'JSXOpeningElement[name.name="img"]'(node: TSESTree.JSXOpeningElement) {
+      JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
+        // Check if this is an img element
+        if (node.name.type !== 'JSXIdentifier' || node.name.name !== 'img') {
+          return;
+        }
         // Check if has alt or aria-label
         if (hasAltAttribute(node)) {
           const altValue = getAltValue(node);
           
-          // Check if alt is empty (could be decorative)
-          if (altValue === '') {
+          // If alt value is null, it means alt={undefined} or alt={variable} - still missing
+          if (altValue === null) {
+            // alt attribute exists but value is dynamic/undefined - treat as missing
+          } else if (altValue === '') {
             // Empty alt is valid for decorative images, but we can suggest verification
             return;
+          } else {
+            // Has valid alt text
+            return;
           }
-          
-          return; // Has alt text
         }
 
         if (hasAriaLabel(node)) {

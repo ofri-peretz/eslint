@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-llm-optimized",
-  "version": "2.0.1",
+  "version": "1.0.2",
   "description": "ESLint rules that AI assistants can actually fix - error messages optimized for both human developers and Large Language Models",
   "type": "commonjs",
   "main": "./src/index.js",
@@ -11,8 +11,8 @@
       "default": "./src/index.js"
     },
     "./types": {
-      "types": "@forge-js/eslint-plugin-llm-optimized/src/index.d.ts",
-      "default": "@forge-js/eslint-plugin-llm-optimized/src/index.js"
+      "types": "./src/types/index.d.ts",
+      "default": "./src/types/index.js"
     }
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
@@ -50,15 +50,12 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "tslib": "^2.3.0"
-  },
-  "peerDependencies": {
-    "@forge-js/eslint-plugin-llm-optimized": "^1.2.0"
+    "tslib": "^2.3.0",
+    "@forge-js/eslint-plugin-llm-optimized": "^1.0.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
     "@typescript-eslint/rule-tester": "^8.46.2",
-    "@forge-js/eslint-plugin-llm-optimized": "^1.2.0",
     "vitest": "^4.0.4"
   }
 }

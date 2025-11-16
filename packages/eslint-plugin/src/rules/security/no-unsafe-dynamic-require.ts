@@ -61,6 +61,25 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
     const sourceCode = context.sourceCode || context.getSourceCode();
 
     /**
+     * Track variables that reference require
+     * Maps variable name to the node where it was assigned
+     */
+    const requireVariables = new Set<string>();
+
+    /**
+     * Check if a node is a reference to require
+     */
+    const isRequireReference = (node: TSESTree.Node): boolean => {
+      if (node.type === 'Identifier' && node.name === 'require') {
+        return true;
+      }
+      if (node.type === 'Identifier' && requireVariables.has(node.name)) {
+        return true;
+      }
+      return false;
+    };
+
+    /**
      * Check if argument is dynamic (not a literal)
      */
     const isDynamicArgument = (arg: TSESTree.Expression | TSESTree.SpreadElement): boolean => {
@@ -70,9 +89,23 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
     };
 
     return {
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        // Track when require is assigned to a variable
+        if (node.id.type === 'Identifier' && node.init) {
+          if (node.init.type === 'Identifier' && node.init.name === 'require') {
+            requireVariables.add(node.id.name);
+          }
+        }
+      },
+
       CallExpression(node: TSESTree.CallExpression) {
-        // Check for require() calls
-        if (node.callee.type !== 'Identifier' || node.callee.name !== 'require') {
+        // Check for require() calls (direct or via variable)
+        if (node.callee.type !== 'Identifier') {
+          return;
+        }
+
+        // Check if callee is require or a variable that references require
+        if (!isRequireReference(node.callee)) {
           return;
         }
 
@@ -93,8 +126,8 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
           data: {
             risk: 'CRITICAL',
             attack: 'Arbitrary Code Execution',
-            currentExample: `require(${argText})`,
-            fixExample: `const ALLOWED = ['mod1', 'mod2']; if (!ALLOWED.includes(${argText})) throw new Error('Not allowed'); const mod = require(${argText});`,
+            currentExample: `${sourceCode.getText(node.callee)}(${argText})`,
+            fixExample: `const ALLOWED = ['mod1', 'mod2']; if (!ALLOWED.includes(${argText})) throw new Error('Not allowed'); const mod = ${sourceCode.getText(node.callee)}(${argText});`,
           },
         });
       },

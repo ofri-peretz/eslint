@@ -67,8 +67,7 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const opts = context.options[0] || {};
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { trustedFunctions = [] } = opts;
+    const { allowDynamicTableNames = false } = opts;
 
     const sourceCode = context.sourceCode || context.getSourceCode();
     const filename = context.filename || context.getFilename();
@@ -77,7 +76,9 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
      * Check if a node contains SQL keywords
      */
     const containsSQLKeywords = (node: TSESTree.Node): boolean => {
+      // Use getText for all node types - it works correctly for template literals
       const text = sourceCode.getText(node).toLowerCase();
+      
       const sqlKeywords = [
         'select',
         'insert',
@@ -113,6 +114,33 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
       return false;
     };
 
+    /**
+     * Check if template literal only has dynamic table name (if option allows it)
+     */
+    const isOnlyDynamicTableName = (node: TSESTree.TemplateLiteral): boolean => {
+      if (!allowDynamicTableNames) {
+        return false;
+      }
+      
+      // Must have exactly one expression (the table name)
+      if (node.expressions.length !== 1) {
+        return false;
+      }
+      
+      // Check if the pattern is just "SELECT * FROM ${tableName}" (no WHERE clause)
+      // sourceCode.getText(node) returns the template literal with backticks
+      const text = sourceCode.getText(node).toLowerCase();
+      
+      // Pattern: `SELECT * FROM ${tableName}` - must match the full template literal
+      // The text will be like: `select * from ${tablename}`
+      const tableNameOnlyPattern = /^`select\s+\*\s+from\s+\$\{[^}]+\}`$/;
+      
+      // Also check if it has WHERE or other clauses (still unsafe)
+      const hasWhereOrOtherClauses = /where|order\s+by|group\s+by|having|limit|offset/i.test(text);
+      
+      return !hasWhereOrOtherClauses && tableNameOnlyPattern.test(text);
+    };
+
     return {
       // Check template literals
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
@@ -120,6 +148,11 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
           !containsSQLKeywords(node) ||
           !containsUnsafeInterpolation(node)
         ) {
+          return;
+        }
+
+        // Allow dynamic table names if option is set and it's only a table name
+        if (isOnlyDynamicTableName(node)) {
           return;
         }
 

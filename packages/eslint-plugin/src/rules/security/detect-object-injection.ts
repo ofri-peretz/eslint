@@ -147,6 +147,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       dangerousProperties = ['__proto__', 'prototype', 'constructor']
     } = options;
 
+    // Track MemberExpressions that are part of AssignmentExpressions to avoid double-reporting
+    const handledMemberExpressions = new WeakSet<TSESTree.MemberExpression>();
+
     /**
      * Check if a node is a literal string (potentially safe)
      */
@@ -163,13 +166,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return true; // Literal strings are safe - they're typed at compile time
       }
 
-      // Check if property is an identifier with type annotation
-      if (propertyNode.type === 'Identifier') {
-        // If it's a parameter with a union type like variant: 'primary' | 'secondary'
-        // This is a compile-time safe access
-        return true;
-      }
-
+      // Note: We cannot check TypeScript types at runtime in ESLint rules
+      // So we cannot verify if an Identifier is actually a typed union
+      // For safety, we treat all identifiers as potentially dangerous
+      // Only literal strings are considered safe
       return false;
     };
 
@@ -177,20 +177,34 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * Check if property access is potentially dangerous
      */
     const isDangerousPropertyAccess = (propertyNode: TSESTree.Node): boolean => {
+      // Check if it's a literal string first
+      if (isLiteralString(propertyNode)) {
+        const propName = String((propertyNode as TSESTree.Literal).value);
+        
+        // DANGEROUS: Literal strings that match dangerous properties (always flag these)
+        // Check this BEFORE checking typed union access
+        if (dangerousProperties.includes(propName)) {
+          return true;
+        }
+        
       // SAFE: Typed union access (obj[typedKey] where typedKey is 'primary' | 'secondary')
+        // Only safe if it's NOT a dangerous property
       if (isTypedUnionAccess(propertyNode)) {
         return false;
       }
 
-      // SAFE: Literal strings that are NOT dangerous properties
-      if (allowLiterals && isLiteralString(propertyNode)) {
-        const propName = String((propertyNode as TSESTree.Literal).value);
-        // Even literals can be dangerous if they match dangerous properties
-        return dangerousProperties.includes(propName);
+        // SAFE: Literal strings that are NOT dangerous properties (if allowLiterals is true)
+        if (allowLiterals) {
+          return false;
+        }
+        
+        // If allowLiterals is false, non-dangerous literal strings are still considered safe
+        // (they're static and known at compile time)
+        return false;
       }
 
       // DANGEROUS: Any untyped/dynamic property access (e.g., obj[userInput])
-      return !isLiteralString(propertyNode);
+      return true;
     };
 
     /**
@@ -240,6 +254,12 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      */
     const isHighRiskAssignment = (node: TSESTree.AssignmentExpression): boolean => {
       if (node.left.type !== 'MemberExpression') {
+        return false;
+      }
+
+      // Only check computed member access (bracket notation)
+      // Dot notation (obj.name) is safe
+      if (!node.left.computed) {
         return false;
       }
 
@@ -340,6 +360,11 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return;
       }
 
+      // Mark the MemberExpression as handled to avoid double-reporting
+      if (node.left.type === 'MemberExpression') {
+        handledMemberExpressions.add(node.left);
+      }
+
       const { object, property, isAssignment, pattern } = extractPropertyAccess(node);
 
       const riskLevel = determineRiskLevel(pattern, isAssignment);
@@ -389,12 +414,19 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      const { object, property, isAssignment, pattern } = extractPropertyAccess(node);
-
-      // Skip if this is part of an assignment (already handled above)
-      if (isAssignment) {
+      // Skip if this MemberExpression was already handled as part of an AssignmentExpression
+      if (handledMemberExpressions.has(node)) {
         return;
       }
+
+      // Also check parent - if it's an AssignmentExpression and this node is the left side, skip
+      // (This handles cases where WeakSet check didn't work due to visitor order)
+      const parent = node.parent as TSESTree.Node | undefined;
+      if (parent && parent.type === 'AssignmentExpression' && parent.left === node) {
+        return;
+      }
+
+      const { object, property, isAssignment, pattern } = extractPropertyAccess(node);
 
       const riskLevel = determineRiskLevel(pattern, isAssignment);
       const steps = generateRefactoringSteps(pattern);

@@ -87,6 +87,11 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
     const options = context.options[0] || {};
     const { apis = [], warnDaysBeforeRemoval = 90 } = options;
 
+    // Early return if no deprecated APIs configured
+    if (!apis || apis.length === 0) {
+      return {};
+    }
+
     /**
      * Calculate days until removal
      */
