@@ -8,14 +8,14 @@ Detects hardcoded passwords, API keys, tokens, and other sensitive credentials i
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-798 (Use of Hard-coded Credentials) |
-| **Severity** | Critical (security vulnerability) |
-| **Auto-Fix** | ✅ Yes (suggests environment variables or secret managers) |
-| **Category** | Security |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
-| **Best For** | All applications handling sensitive data, API integrations, database connections |
+| Aspect            | Details                                                                          |
+| ----------------- | -------------------------------------------------------------------------------- |
+| **CWE Reference** | CWE-798 (Use of Hard-coded Credentials)                                          |
+| **Severity**      | Critical (security vulnerability)                                                |
+| **Auto-Fix**      | ✅ Yes (suggests environment variables or secret managers)                       |
+| **Category**      | Security                                                                         |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                          |
+| **Best For**      | All applications handling sensitive data, API integrations, database connections |
 
 ## Rule Details
 
@@ -23,12 +23,12 @@ Hardcoded credentials are one of the most common security vulnerabilities. This 
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| 🔒 **Security** | Credentials exposed in git history | Use environment variables |
-| 🐛 **Data Breach** | API keys can be stolen from code | Secret management services |
+| Issue                 | Impact                              | Solution                   |
+| --------------------- | ----------------------------------- | -------------------------- |
+| 🔒 **Security**       | Credentials exposed in git history  | Use environment variables  |
+| 🐛 **Data Breach**    | API keys can be stolen from code    | Secret management services |
 | 🔐 **Access Control** | Passwords visible to all developers | AWS Secrets Manager, Vault |
-| 📊 **Compliance** | Violates security best practices | CI/CD secret injection |
+| 📊 **Compliance**     | Violates security best practices    | CI/CD secret injection     |
 
 ## Detection Patterns
 
@@ -47,19 +47,20 @@ The rule detects:
 
 ```typescript
 // Hardcoded API key
-const apiKey = "sk_live_FAKE_LIVE_KEY_FOR_TESTING_PURPOSES_ONLY_1234567890";
+const apiKey = 'sk_live_FAKE_LIVE_KEY_FOR_TESTING_PURPOSES_ONLY_1234567890';
 
 // Hardcoded password
-const password = "admin123";
+const password = 'admin123';
 
 // Hardcoded JWT token
-const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+const token =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
 
 // Database connection string with credentials
-const dbUrl = "mysql://user:password@localhost:3306/dbname";
+const dbUrl = 'mysql://user:password@localhost:3306/dbname';
 
 // AWS access key
-const awsKey = "AKIAIOSFODNN7EXAMPLE";
+const awsKey = 'AKIAIOSFODNN7EXAMPLE';
 ```
 
 ### ✅ Correct
@@ -101,15 +102,15 @@ const s3 = new AWS.S3(); // Uses IAM role
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `ignorePatterns` | `string[]` | `[]` | Regex patterns to ignore (e.g., `['^test-']` for test keys) |
-| `allowInTests` | `boolean` | `false` | Allow credentials in test files (`.test.ts`, `.spec.ts`) |
-| `minLength` | `number` | `8` | Minimum length for credential detection (except common passwords) |
-| `detectApiKeys` | `boolean` | `true` | Detect API keys (Stripe, AWS, etc.) |
-| `detectPasswords` | `boolean` | `true` | Detect common weak passwords |
-| `detectTokens` | `boolean` | `true` | Detect JWT and OAuth tokens |
-| `detectDatabaseStrings` | `boolean` | `true` | Detect database connection strings with credentials |
+| Option                  | Type       | Default | Description                                                       |
+| ----------------------- | ---------- | ------- | ----------------------------------------------------------------- |
+| `ignorePatterns`        | `string[]` | `[]`    | Regex patterns to ignore (e.g., `['^test-']` for test keys)       |
+| `allowInTests`          | `boolean`  | `false` | Allow credentials in test files (`.test.ts`, `.spec.ts`)          |
+| `minLength`             | `number`   | `8`     | Minimum length for credential detection (except common passwords) |
+| `detectApiKeys`         | `boolean`  | `true`  | Detect API keys (Stripe, AWS, etc.)                               |
+| `detectPasswords`       | `boolean`  | `true`  | Detect common weak passwords                                      |
+| `detectTokens`          | `boolean`  | `true`  | Detect JWT and OAuth tokens                                       |
+| `detectDatabaseStrings` | `boolean`  | `true`  | Detect database connection strings with credentials               |
 
 ### Ignoring Test Credentials
 
@@ -170,16 +171,16 @@ flowchart TD
     K -->|No| L{Secret Key Pattern?}
     L -->|Yes| G
     L -->|No| C
-    
+
     G --> M[💡 Suggest Fixes]
     M --> N[Environment Variable]
     M --> O[Secret Manager]
-    
+
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
     classDef processNode fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1f2937
     classDef skipNode fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#1f2937
-    
+
     class A startNode
     class G errorNode
     class E,F,H,I,J,K,L processNode
@@ -218,7 +219,7 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class ApiService {
   constructor(private config: ConfigService) {}
-  
+
   getApiKey() {
     return this.config.get<string>('API_KEY');
   }
@@ -250,4 +251,3 @@ echo ".env" >> .gitignore
 ## Version History
 
 - **1.3.0** - Initial release with comprehensive credential detection patterns
-
