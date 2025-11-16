@@ -9,7 +9,6 @@
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
-import { generateLLMContext } from '../../utils/llm-context';
 
 type MessageIds =
   | 'childProcessCommandInjection'
@@ -307,58 +306,6 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       const riskLevel = determineRiskLevel(pattern, isDynamic);
       const steps = pattern ? generateRefactoringSteps(pattern) : 'Review and secure command execution';
       const alternatives = pattern?.safeAlternatives.join(', ') || 'execFile, spawn with validation';
-
-      const _llmContext = generateLLMContext('security/detect-child-process', {
-        severity: riskLevel === 'critical' ? 'error' : riskLevel === 'high' ? 'warning' : 'info',
-        category: 'security',
-        filePath: context.filename || context.getFilename(),
-        node,
-        details: {
-          vulnerability: {
-            type: pattern?.vulnerability || 'command-injection',
-            cwe: 'CWE-78: OS Command Injection',
-            owasp: 'A03:2021-Injection',
-            cvss: riskLevel === 'critical' ? '9.8' : riskLevel === 'high' ? '8.1' : '6.5'
-          },
-          command: {
-            method,
-            dangerous: pattern?.dangerous || false,
-            dynamicArguments: isDynamic,
-            shellInjectionRisk: method.includes('exec') && isDynamic
-          },
-          exploitability: {
-            difficulty: isDynamic ? 'Easy' : 'Medium',
-            impact: 'Complete server compromise, data exfiltration',
-            prerequisites: 'User input reaches command execution'
-          },
-          remediation: {
-            effort: pattern?.effort || '15-30 minutes',
-            priority: `${riskLevel} - Fix immediately`,
-            automated: false,
-            steps: [
-              `Replace ${method}() with safer alternative`,
-              'Use argument arrays instead of string interpolation',
-              'Add shell: false option',
-              'Validate all inputs',
-              'Test with malicious commands'
-            ]
-          }
-        },
-        quickFix: {
-          automated: false,
-          estimatedEffort: pattern?.effort || '15-30 minutes',
-          changes: [
-            `Replace ${method}(${args}) with safe alternative`,
-            'Split command and arguments into array',
-            'Add input validation',
-            'Use shell: false option'
-          ]
-        },
-        resources: {
-          docs: 'https://owasp.org/www-community/attacks/Command_Injection',
-          examples: 'https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html',
-        }
-      });
 
       context.report({
         node,

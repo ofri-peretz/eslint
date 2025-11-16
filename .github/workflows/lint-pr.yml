@@ -81,10 +81,10 @@ jobs:
 
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             echo "📝 Linting affected packages only..."
-            pnpm nx affected -t lint --parallel=4 --verbose
+            pnpm nx affected -t lint --parallel=4 --verbose -- --max-warnings=0
           else
             echo "📝 Linting all packages..."
-            pnpm nx run-many -t lint --all --parallel=4 --verbose
+            pnpm nx run-many -t lint --all --parallel=4 --verbose -- --max-warnings=0
           fi
         env:
           # Nx Cloud disabled - using local cache only

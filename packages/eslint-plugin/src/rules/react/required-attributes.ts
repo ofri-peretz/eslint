@@ -5,7 +5,6 @@
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
-import { generateLLMContext } from '../../utils/llm-context';
 
 type MessageIds = 'missingAttribute' | 'addAttribute';
 
@@ -90,9 +89,6 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const { attributes = [], ignoreComponents = [] } = options;
-
-    const _sourceCode = context.sourceCode || context.getSourceCode();
-    const filename = context.filename || context.getFilename();
 
     /**
      * Get element name from JSX opening element
@@ -205,53 +201,6 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
           // Attribute is missing - report violation
           const purpose = message || getAttributePurpose(attribute);
           const defaultValue = suggestedValue || getDefaultSuggestedValue(attribute, elementName);
-
-          const _llmContext = generateLLMContext('react/required-attributes', {
-            severity: 'error',
-            category: 'accessibility',
-            filePath: filename,
-            node,
-            details: {
-              missingAttribute: attribute,
-              element: elementName,
-              purpose,
-              impact: {
-                testing: attribute === 'data-testid' ? 'Tests cannot reliably select this element' : undefined,
-                accessibility: attribute.startsWith('aria-') || attribute === 'alt' 
-                  ? 'Screen reader users cannot understand this element' 
-                  : undefined,
-                navigation: attribute === 'tabIndex' ? 'Keyboard users cannot navigate to this element' : undefined,
-              },
-              quickFix: {
-                automated: true,
-                suggestedValue: defaultValue,
-                explanation: `Add ${attribute}="${defaultValue}" to the element`,
-              },
-              whyRequired: {
-                context: purpose,
-                examples: [
-                  `<${elementName} ${attribute}="${defaultValue}">`,
-                ],
-              },
-              ignoringThisRule: {
-                perElement: `Add "${elementName}" to ignoreTags for ${attribute}`,
-                globally: `Add "${elementName}" to ignoreComponents`,
-                example: `{
-  attributes: [{
-    attribute: "${attribute}",
-    ignoreTags: ["${elementName}"]
-  }]
-}`,
-              },
-            },
-            resources: {
-              docs: attribute.startsWith('aria-') 
-                ? 'https://www.w3.org/WAI/ARIA/apg/'
-                : attribute === 'data-testid'
-                ? 'https://testing-library.com/docs/queries/bytestid'
-                : undefined,
-            },
-          });
 
           context.report({
             node,

@@ -9,7 +9,6 @@
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
-import { generateLLMContext } from '../../utils/llm-context';
 
 type MessageIds =
   | 'objectInjection'
@@ -145,7 +144,6 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     const options = context.options[0] || {};
     const {
       allowLiterals = false,
-      additionalMethods: _additionalMethods = [],
       dangerousProperties = ['__proto__', 'prototype', 'constructor']
     } = options;
 
@@ -269,7 +267,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     /**
      * Generate refactoring steps based on the pattern
      */
-    const generateRefactoringSteps = (pattern: ObjectInjectionPattern | null, _isAssignment: boolean): string => {
+    const generateRefactoringSteps = (pattern: ObjectInjectionPattern | null): string => {
       if (!pattern) {
         return [
           '   1. Create a whitelist of allowed property names',
@@ -342,63 +340,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      const { object, property, propertyNode, isAssignment, pattern } = extractPropertyAccess(node);
+      const { object, property, isAssignment, pattern } = extractPropertyAccess(node);
 
       const riskLevel = determineRiskLevel(pattern, isAssignment);
-      const steps = generateRefactoringSteps(pattern, isAssignment);
-
-      const _llmContext = generateLLMContext('security/detect-object-injection', {
-        severity: riskLevel.toLowerCase() as 'error' | 'warning',
-        category: 'security',
-        filePath: context.filename || context.getFilename(),
-        node,
-        details: {
-          vulnerability: {
-            type: pattern?.vulnerability || 'object-injection',
-            cwe: 'CWE-915: Improperly Controlled Modification of Object Prototype',
-            owasp: 'A01:2021-Broken Access Control',
-            cvss: riskLevel === 'CRITICAL' ? '8.1' : riskLevel === 'HIGH' ? '7.1' : '5.3'
-          },
-          objectAccess: {
-            object,
-            property: property.replace(/['"]/g, ''),
-            isAssignment,
-            dangerousProperty: pattern ? true : false,
-            propertyType: isLiteralString(propertyNode) ? 'literal' : 'dynamic'
-          },
-          exploitability: {
-            difficulty: isLiteralString(propertyNode) ? 'Medium' : 'Easy',
-            impact: 'Prototype pollution, property injection, method manipulation',
-            prerequisites: 'User input reaches object property assignment'
-          },
-          remediation: {
-            effort: pattern?.effort || '10-15 minutes',
-            priority: `${riskLevel} - Fix immediately`,
-            automated: false,
-            steps: [
-              `Replace ${object}[${property}] with safe property access`,
-              'Use Map or whitelist for dynamic properties',
-              'Add property name validation',
-              'Implement hasOwnProperty checks',
-              'Test with malicious property names'
-            ]
-          }
-        },
-        quickFix: {
-          automated: false,
-          estimatedEffort: pattern?.effort || '10-15 minutes',
-          changes: [
-            `Replace ${object}[${property}] with safe alternative`,
-            'Use Map for key-value storage',
-            'Add property whitelisting',
-            'Use hasOwnProperty validation'
-          ]
-        },
-        resources: {
-          docs: 'https://portswigger.net/web-security/prototype-pollution',
-          examples: 'https://github.com/HoLyVieR/prototype-pollution-nsec18/blob/master/paper/JavaScript_prototype_pollution_attack_in_NodeJS.pdf'
-        }
-      });
+      const steps = generateRefactoringSteps(pattern);
 
       context.report({
         node,
@@ -444,7 +389,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      const { object, property, propertyNode: _propertyNode, isAssignment, pattern } = extractPropertyAccess(node);
+      const { object, property, isAssignment, pattern } = extractPropertyAccess(node);
 
       // Skip if this is part of an assignment (already handled above)
       if (isAssignment) {
@@ -452,7 +397,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       }
 
       const riskLevel = determineRiskLevel(pattern, isAssignment);
-      const steps = generateRefactoringSteps(pattern, isAssignment);
+      const steps = generateRefactoringSteps(pattern);
 
       context.report({
         node,

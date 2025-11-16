@@ -5,7 +5,6 @@
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
-import { generateLLMContext } from '../../utils/llm-context';
 
 type MessageIds = 'wrongTerminology' | 'useDomainTerm' | 'viewGlossary';
 
@@ -93,10 +92,7 @@ export const enforceNaming = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
-    const { domain = 'general', terms = [], glossaryUrl } = options;
-
-    const _sourceCode = context.sourceCode || context.getSourceCode();
-    const filename = context.filename || context.getFilename();
+    const { domain = 'general', terms = [] } = options;
 
     /**
      * Check if identifier violates domain terms
@@ -136,49 +132,6 @@ export const enforceNaming = createRule<RuleOptions, MessageIds>({
       violatedTerm: DomainTerm
     ) => {
       const replacement = generateReplacement(node.name, violatedTerm);
-
-      const _llmContext = generateLLMContext('domain/enforce-naming', {
-        severity: 'warning',
-        category: 'domain',
-        filePath: filename,
-        node,
-        details: {
-          domain,
-          ubiquitousLanguage: {
-            incorrectTerm: node.name,
-            correctTerm: violatedTerm.correct,
-            businessContext: violatedTerm.context,
-            examples: violatedTerm.examples || [],
-          },
-          whyItMatters: {
-            consistency: 'Shared language reduces miscommunication',
-            onboarding: 'New developers learn domain concepts faster',
-            businessAlignment: 'Code reflects actual business processes',
-            documentation: 'Terms match product specs and user stories',
-          },
-          migration: {
-            affectedIdentifier: node.name,
-            suggestedReplacement: replacement,
-            refactoringScope: 'File-level (can expand to codebase)',
-            estimatedEffort: '2-5 minutes for rename refactor',
-          },
-          domainDrivenDesign: {
-            principle: 'Ubiquitous Language',
-            goal: 'Same terms in code, docs, and conversations',
-            antiPattern: `Using "${node.name}" when business calls it "${violatedTerm.correct}"`,
-            benefit: 'Developers and domain experts speak the same language',
-          },
-          glossary: glossaryUrl
-            ? {
-                url: glossaryUrl,
-                usage: 'Refer to glossary for approved terms',
-              }
-            : undefined,
-        },
-        resources: {
-          docs: glossaryUrl || 'https://martinfowler.com/bliki/UbiquitousLanguage.html',
-        },
-      });
 
       context.report({
         node,

@@ -8,7 +8,6 @@
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
-import { generateLLMContext, extractFunctionSignature } from '../../utils/llm-context';
 
 /**
  * Message IDs for cognitive complexity violations and suggestions
@@ -90,10 +89,7 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
-    const { maxComplexity = 15, includeMetrics = true } = options;
-
-    const sourceCode = context.sourceCode || context.getSourceCode();
-    const filename = context.filename || context.getFilename();
+    const { maxComplexity = 15 } = options;
 
     /**
      * Calculate cognitive complexity for a function
@@ -341,84 +337,6 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
       const suggestions = suggestExtractions(node, breakdown);
       const pattern = suggestPattern(breakdown);
       const estimatedTime = estimateRefactoringTime(complexity, breakdown);
-
-      const _llmContext = generateLLMContext('complexity/cognitive-complexity', {
-        severity: complexity > maxComplexity * 1.5 ? 'error' : 'warning',
-        category: 'performance',
-        filePath: filename,
-        node,
-        details: {
-          complexity: {
-            current: complexity,
-            threshold: maxComplexity,
-            overBy: complexity - maxComplexity,
-            severity: complexity > maxComplexity * 2 ? 'critical' : 'high',
-          },
-          breakdown: {
-            conditionals: breakdown.conditionals,
-            loops: breakdown.loops,
-            switches: breakdown.switches,
-            nesting: breakdown.nesting,
-            logicalOperators: breakdown.logicalOperators,
-            catches: breakdown.catches,
-            recursion: breakdown.recursion,
-          },
-          hotspots: [
-            breakdown.conditionals > 3 && `Too many conditionals (${breakdown.conditionals})`,
-            breakdown.loops > 2 && `Too many loops (${breakdown.loops})`,
-            breakdown.nesting > 3 && `Deep nesting (${breakdown.nesting} levels)`,
-            breakdown.switches > 1 && `Multiple switch statements (${breakdown.switches})`,
-          ].filter(Boolean) as string[],
-          refactoringPlan: {
-            pattern,
-            estimatedTime,
-            suggestions: suggestions.map((s) => ({
-              methodName: s.name,
-              reason: s.reason,
-              complexityReduction: s.estimatedComplexityReduction,
-              priority: s.estimatedComplexityReduction > 5 ? 'high' : 'medium',
-            })),
-            steps: [
-              'Identify the most complex nested blocks',
-              'Extract repeated logic to helper functions',
-              `Apply ${pattern}`,
-              'Add unit tests for extracted methods',
-              'Verify complexity reduced below threshold',
-            ],
-          },
-          example: {
-            before: sourceCode.getText(node).slice(0, 200) + '...',
-            afterPattern:
-              pattern === 'Strategy Pattern'
-                ? 'Use strategy objects to replace switch/case logic'
-                : pattern === 'Guard Clauses + Early Return'
-                ? 'Replace nested if-else with early returns'
-                : 'Extract methods to reduce nesting',
-          },
-          impact: {
-            maintainability: 'Hard to understand, test, and modify',
-            bugRisk: 'Higher chance of introducing bugs',
-            onboarding: 'Slows down new team members',
-            technicalDebt: `Estimated ${estimatedTime} to refactor`,
-          },
-          metrics: includeMetrics
-            ? {
-                cyclomaticComplexity: complexity,
-                halsteadVolume: breakdown.logicalOperators * 2 + complexity,
-                maintainabilityIndex: Math.max(0, 100 - complexity * 3),
-              }
-            : undefined,
-        },
-        quickFix: {
-          automated: false,
-          estimatedEffort: estimatedTime,
-          changes: suggestions.map((s) => s.reason),
-        },
-        resources: {
-          docs: 'https://www.sonarsource.com/docs/CognitiveComplexity.pdf',
-          examples: 'https://rules.sonarsource.com/javascript/RSPEC-3776/',
-        },
-      });
 
       context.report({
         node,

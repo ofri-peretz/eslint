@@ -9,7 +9,6 @@
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
-import { generateLLMContext } from '../../utils/llm-context';
 
 type MessageIds =
   | 'regexpReDoS'
@@ -324,7 +323,7 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      const { pattern, patternNode, constructor, isDynamic, length } = extractPattern(node);
+      const { pattern, patternNode, isDynamic, length } = extractPattern(node);
 
       // Allow literals if configured and pattern is reasonable length
       if (allowLiterals && patternNode && isLiteralString(patternNode) && length <= maxPatternLength) {
@@ -356,59 +355,6 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
 
       const riskLevel = determineRiskLevel(effectiveVulnerability, pattern);
       const steps = generateRefactoringSteps(effectiveVulnerability);
-
-      const _llmContext = generateLLMContext('security/detect-non-literal-regexp', {
-        severity: riskLevel.toLowerCase() as 'error' | 'warning',
-        category: 'security',
-        filePath: context.filename || context.getFilename(),
-        node,
-        details: {
-          vulnerability: {
-            type: effectiveVulnerability.vulnerability,
-            cwe: 'CWE-400: Uncontrolled Resource Consumption',
-            owasp: 'A01:2021-Broken Access Control',
-            cvss: riskLevel === 'CRITICAL' ? '7.5' : riskLevel === 'HIGH' ? '6.5' : '4.3'
-          },
-          regex: {
-            constructor,
-            pattern: pattern.substring(0, 50) + (pattern.length > 50 ? '...' : ''),
-            isDynamic,
-            hasReDoSPatterns: hasReDoSPatterns(pattern),
-            length
-          },
-          exploitability: {
-            difficulty: isDynamic ? 'Easy' : 'Medium',
-            impact: 'Server DoS, resource exhaustion, service unavailability',
-            prerequisites: 'User input reaches RegExp constructor'
-          },
-          remediation: {
-            effort: effectiveVulnerability.effort,
-            priority: `${riskLevel} - Fix immediately`,
-            automated: false,
-            steps: [
-              `Replace ${constructor}(${pattern}) with safe alternative`,
-              'Avoid dynamic RegExp construction',
-              'Use static patterns or proper input escaping',
-              'Test with malicious regex patterns',
-              'Monitor regex performance'
-            ]
-          }
-        },
-        quickFix: {
-          automated: false,
-          estimatedEffort: effectiveVulnerability.effort,
-          changes: [
-            `Replace ${constructor}(${pattern}) with static RegExp`,
-            'Create whitelist of allowed patterns',
-            'Add input validation and escaping',
-            'Use safe-regex library for validation'
-          ]
-        },
-        resources: {
-          docs: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
-          examples: 'https://github.com/substack/safe-regex'
-        }
-      });
 
       context.report({
         node,

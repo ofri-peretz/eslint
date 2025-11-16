@@ -5,7 +5,6 @@
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
-import { generateLLMContext } from '../../utils/llm-context';
 
 type MessageIds = 'missingAlt' | 'emptyAlt' | 'addDescriptiveAlt' | 'useEmptyAlt';
 
@@ -69,9 +68,6 @@ export const imgRequiresAlt = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const { allowAriaLabel = false, allowAriaLabelledby = false } = options;
-
-    const _sourceCode = context.sourceCode || context.getSourceCode();
-    const filename = context.filename || context.getFilename();
 
     /**
      * Check if element has alt attribute
@@ -183,44 +179,6 @@ export const imgRequiresAlt = createRule<RuleOptions, MessageIds>({
         // Missing alt text
         const imageContext = getImageContext(node);
         const suggestions = suggestAltText(imageContext);
-
-        const _llmContext = generateLLMContext('accessibility/img-requires-alt', {
-          severity: 'error',
-          category: 'accessibility',
-          filePath: filename,
-          node,
-          details: {
-            a11yViolation: 'missing-alt-text',
-            wcagLevel: 'A (required)',
-            wcagCriterion: '1.1.1 Non-text Content',
-            userImpact: {
-              affectedUsers: 'Screen reader users (8% of web users)',
-              experience: 'User hears "image" or filename instead of context',
-              severity: 'high',
-              legalRisk: 'ADA compliance violation ($55k-$75k fines)',
-            },
-            contextualFix: {
-              imageContext,
-              suggestedAltText: suggestions,
-              rationale: 'Alt text should describe what\'s in the image and its purpose',
-            },
-            bestPractices: {
-              decorativeImages: 'Use alt="" for purely decorative images',
-              complexImages: 'Use aria-describedby for detailed descriptions',
-              iconButtons: 'Use aria-label on the button, not the icon',
-              charts: 'Provide text alternative or data table',
-            },
-            testingTools: {
-              screenReader: 'Test with NVDA (Windows) or VoiceOver (Mac)',
-              automated: 'Run: npm run test:a11y',
-              manual: 'Try navigating with Tab key only',
-            },
-          },
-          resources: {
-            docs: 'https://www.w3.org/WAI/tutorials/images/',
-            examples: 'https://www.w3.org/WAI/WCAG21/Understanding/non-text-content.html',
-          },
-        });
 
         context.report({
           node,

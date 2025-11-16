@@ -9,7 +9,6 @@
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
-import { generateLLMContext } from '../../utils/llm-context';
 
 type MessageIds =
   | 'fsPathTraversal'
@@ -313,58 +312,6 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
       const riskLevel = determineRiskLevel(operation || FS_OPERATIONS[0], path);
       const steps = operation ? generateRefactoringSteps(operation) : 'Review file system access patterns';
       const safePattern = operation?.safePattern || 'Use path.resolve() with validation';
-
-      const _llmContext = generateLLMContext('security/detect-non-literal-fs-filename', {
-        severity: riskLevel.toLowerCase() as 'error' | 'warning',
-        category: 'security',
-        filePath: context.filename || context.getFilename(),
-        node,
-        details: {
-          vulnerability: {
-            type: operation?.vulnerability || 'path-traversal',
-            cwe: 'CWE-22: Path Traversal',
-            owasp: 'A01:2021-Broken Access Control',
-            cvss: riskLevel === 'CRITICAL' ? '8.1' : riskLevel === 'HIGH' ? '7.5' : '5.3'
-          },
-          fileSystem: {
-            method,
-            dangerous: operation?.dangerous || false,
-            pathArgument: path,
-            hasTraversalPatterns: hasTraversalPatterns(path)
-          },
-          exploitability: {
-            difficulty: hasTraversalPatterns(path) ? 'Easy' : 'Medium',
-            impact: 'Arbitrary file read/write, data exfiltration, server compromise',
-            prerequisites: 'User input reaches file system operations'
-          },
-          remediation: {
-            effort: operation?.effort || '15-20 minutes',
-            priority: `${riskLevel} - Fix immediately`,
-            automated: false,
-            steps: [
-              `Replace ${method}(${path}) with safe pattern`,
-              'Use path.resolve() and validate containment',
-              'Define SAFE_DIR constants for allowed operations',
-              'Add input validation and sanitization',
-              'Test with malicious path inputs'
-            ]
-          }
-        },
-        quickFix: {
-          automated: false,
-          estimatedEffort: operation?.effort || '15-20 minutes',
-          changes: [
-            `Replace ${method}(${path}) with safe file access pattern`,
-            'Add path validation to prevent directory traversal',
-            'Use path.join() or path.resolve() with base directory checks',
-            'Define constants for safe directories'
-          ]
-        },
-        resources: {
-          docs: 'https://owasp.org/www-community/attacks/Path_Traversal',
-          examples: 'https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html'
-        }
-      });
 
       context.report({
         node,

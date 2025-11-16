@@ -5,7 +5,6 @@
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
-import { generateLLMContext } from '../../utils/llm-context';
 
 type MessageIds = 'migrateToHooks' | 'convertToFunction' | 'viewMigrationGuide';
 
@@ -67,10 +66,9 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
-    const { ignorePureRenderComponents: _ignorePureRenderComponents = false, allowComplexLifecycle = false } = options;
+    const { allowComplexLifecycle = false } = options;
 
     const sourceCode = context.sourceCode || context.getSourceCode();
-    const filename = context.filename || context.getFilename();
 
     /**
      * Check if class extends React.Component
@@ -132,83 +130,18 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
       return { methods: lifecycleMethods, suggestedHooks, complexity };
     };
 
-    /**
-     * Extract state properties
-     */
-    const extractStateProperties = (node: TSESTree.ClassDeclaration): string[] => {
-      const stateProps: string[] = [];
-      
-      // Look for state initialization in constructor or class property
-      for (const member of node.body.body) {
-        if (member.type === 'PropertyDefinition' && member.key.type === 'Identifier') {
-          if (member.key.name === 'state') {
-            // Extract state property names
-            if (member.value && member.value.type === 'ObjectExpression') {
-              for (const prop of member.value.properties) {
-                if (prop.type === 'Property' && prop.key.type === 'Identifier') {
-                  stateProps.push(prop.key.name);
-                }
-              }
-            }
-          }
-        }
-      }
-
-      return stateProps;
-    };
-
     return {
       ClassDeclaration(node: TSESTree.ClassDeclaration) {
         if (!isReactComponent(node)) return;
         if (!node.id) return;
 
         const componentName = node.id.name;
-        const { methods, suggestedHooks, complexity } = analyzeLifecycleMethods(node);
-        const stateProperties = extractStateProperties(node);
+        const { complexity } = analyzeLifecycleMethods(node);
 
         // Skip if too complex and option is set
         if (complexity === 'complex' && allowComplexLifecycle) {
           return;
         }
-
-        const _llmContext = generateLLMContext('migration/react-class-to-hooks', {
-          severity: 'warning',
-          category: 'migration',
-          filePath: filename,
-          node,
-          details: {
-            component: componentName,
-            currentPattern: 'React.Component',
-            targetPattern: 'functional component with hooks',
-            complexity,
-            detectedHooks: {
-              state: stateProperties,
-              lifecycle: methods,
-              suggestedHooks,
-            },
-            migrationStrategy: {
-              steps: [
-                '1. Convert class to function',
-                '2. Replace this.state with useState hooks',
-                `3. Convert ${methods.join(', ') || 'lifecycle methods'} to useEffect`,
-                '4. Replace this.setState with state setters',
-                '5. Convert class methods to regular functions or useCallback',
-              ],
-              estimatedEffort: complexity === 'simple' ? '5 minutes' : complexity === 'medium' ? '15 minutes' : '30+ minutes',
-              autoFixable: complexity === 'simple',
-              breakingChanges: [],
-            },
-            codeTransformation: {
-              before: sourceCode.getText(node),
-              stateCount: stateProperties.length,
-              lifecycleCount: methods.length,
-            },
-          },
-          resources: {
-            docs: 'https://react.dev/reference/react/hooks',
-            migration: 'https://react.dev/learn/hooks-intro',
-          },
-        });
 
         context.report({
           node,

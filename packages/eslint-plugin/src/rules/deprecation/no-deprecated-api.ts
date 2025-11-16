@@ -5,7 +5,6 @@
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
-import { generateLLMContext } from '../../utils/llm-context';
 
 type MessageIds = 'deprecatedAPI' | 'useReplacement';
 
@@ -88,9 +87,6 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
     const options = context.options[0] || {};
     const { apis = [], warnDaysBeforeRemoval = 90 } = options;
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
-    const filename = context.filename || context.getFilename();
-
     /**
      * Calculate days until removal
      */
@@ -114,32 +110,6 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
       return 'medium';
     };
 
-    /**
-     * Extract API signature changes
-     */
-    const getAPIChanges = (deprecatedApi: DeprecatedAPI, node: TSESTree.Node): {
-      oldSignature: string;
-      newSignature: string;
-      behaviorChanges: string[];
-    } => {
-      const oldSignature = sourceCode.getText(node);
-      
-      // Simple replacement (can be enhanced)
-      const newSignature = oldSignature.replace(
-        deprecatedApi.name,
-        deprecatedApi.replacement
-      );
-
-      return {
-        oldSignature,
-        newSignature,
-        behaviorChanges: [
-          `API name changed: ${deprecatedApi.name} → ${deprecatedApi.replacement}`,
-          deprecatedApi.reason,
-        ],
-      };
-    };
-
     return {
       // Check member expressions (e.g., obj.deprecatedMethod())
       MemberExpression(node: TSESTree.MemberExpression) {
@@ -152,39 +122,6 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
 
         const daysRemaining = calculateDaysRemaining(deprecatedApi.removalDate);
         const urgency = getUrgencyLevel(daysRemaining);
-        const apiChanges = getAPIChanges(deprecatedApi, node);
-
-        const _llmContext = generateLLMContext('deprecation/no-deprecated-api', {
-          severity: urgency === 'critical' ? 'error' : 'warning',
-          category: 'deprecation',
-          filePath: filename,
-          node,
-          details: {
-            deprecatedAPI: deprecatedApi.name,
-            replacement: deprecatedApi.replacement,
-            deprecatedSince: deprecatedApi.deprecatedSince,
-            removalDate: deprecatedApi.removalDate || 'Not specified',
-            daysUntilRemoval: daysRemaining !== null ? daysRemaining : 'Unknown',
-            urgency,
-            reason: deprecatedApi.reason,
-            apiChanges,
-            contextAwareReplacement: {
-              currentUsage: sourceCode.getText(node),
-              suggestedFix: apiChanges.newSignature,
-              additionalChanges: apiChanges.behaviorChanges,
-            },
-            impactAnalysis: {
-              usagesInFile: 1, // Would need full file scan to count
-              estimatedMigrationTime: '5-10 minutes',
-            },
-            migrationResources: {
-              guide: deprecatedApi.migrationGuide || 'No guide provided',
-            },
-          },
-          resources: {
-            docs: deprecatedApi.migrationGuide,
-          },
-        });
 
         context.report({
           node,
