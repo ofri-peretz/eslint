@@ -66,7 +66,7 @@ function isInReactRenderContext(node: TSESTree.Node): boolean {
                    parent.body;
 
       if (body && body.type === 'BlockStatement') {
-        const hasJSX = body.body.some(stmt =>
+        const hasJSX = body.body.some((stmt: TSESTree.Statement) =>
           stmt.type === 'ReturnStatement' &&
           stmt.argument &&
           (stmt.argument.type === 'JSXElement' || stmt.argument.type === 'JSXFragment')
