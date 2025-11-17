@@ -7,7 +7,7 @@
 
 > **Keywords:** ESLint plugin, ESLint MCP, Model Context Protocol, MCP server, AI assistant, auto-fix, code quality, security rules, TypeScript ESLint, automated code fixes, GitHub Copilot, Cursor AI, Claude AI, structured error messages, CWE references, deterministic fixes, @eslint/mcp
 
-This package is a barrel export that re-exports everything from `@forge-js/eslint-plugin-llm-optimized`. It provides **30+ ESLint rules** with error messages optimized for both human developers and Large Language Models, specifically designed to maximize capabilities when used with ESLint's Model Context Protocol (MCP) integration.
+This package is a barrel export that re-exports everything from `@forge-js/eslint-plugin-llm-optimized`. It provides **62+ ESLint rules** with error messages optimized for both human developers and Large Language Models, specifically designed to maximize capabilities when used with ESLint's Model Context Protocol (MCP) integration.
 
 **Designed for ESLint MCP:** This package is specifically optimized to maximize capabilities when used with ESLint's [Model Context Protocol (MCP)](https://eslint.org/docs/latest/use/mcp) integration, enabling seamless AI assistant interactions through structured, parseable error messages across a wide range of security, architecture, performance, and code quality rules.
 
@@ -218,8 +218,8 @@ This package includes **30+ rules** across 10 categories. All rules are function
 | `mcp/no-missing-authentication`      | Detect missing authentication checks in route handlers    | CWE-306 | No           |
 | `mcp/no-privilege-escalation`        | Detect potential privilege escalation vulnerabilities     | CWE-269 | No           |
 | `mcp/no-insecure-cookie-settings`    | Detect insecure cookie configurations (missing flags)     | CWE-614 | Yes          |
-| `mcp/no-missing-csrf-protection`     | Detect missing CSRF token validation in requests         | CWE-352 | No           |
-| `mcp/no-exposed-sensitive-data`      | Detect exposure of PII/sensitive data in logs            | CWE-200 | No           |
+| `mcp/no-missing-csrf-protection`     | Detect missing CSRF token validation in requests          | CWE-352 | No           |
+| `mcp/no-exposed-sensitive-data`      | Detect exposure of PII/sensitive data in logs             | CWE-200 | No           |
 | `mcp/no-unencrypted-transmission`    | Detect unencrypted data transmission (HTTP vs HTTPS)      | CWE-319 | Yes          |
 
 ### Architecture Rules (2 rules)

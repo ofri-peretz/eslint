@@ -211,14 +211,15 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      ignorePatterns = [],
+ignorePatterns = [],
       allowInTests = false,
       minLength = 8,
       detectApiKeys = true,
       detectPasswords = true,
       detectTokens = true,
       detectDatabaseStrings = true,
-    } = options;
+    
+}: Options = options || {};
 
     const filename = context.filename || context.getFilename();
     const isTestFile = allowInTests && (

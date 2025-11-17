@@ -18,7 +18,7 @@
 
 ## Description
 
-A solid TypeScript-based ESLint plugin infrastructure inspired by typescript-eslint. Provides 20+ ESLint rules with error messages optimized for both human developers and Large Language Models. Each rule is designed to be auto-fixable and includes structured context that enables AI assistants to understand the violation and apply consistent fixes.
+A solid TypeScript-based ESLint plugin infrastructure inspired by typescript-eslint. Provides 62+ ESLint rules with error messages optimized for both human developers and Large Language Models. Each rule is designed to be auto-fixable and includes structured context that enables AI assistants to understand the violation and apply consistent fixes.
 
 ## Keywords
 
@@ -80,14 +80,14 @@ export default [
 | Preset          | Rules Included                                                 | Best For                             |
 | --------------- | -------------------------------------------------------------- | ------------------------------------ |
 | **recommended** | 10 rules (3 security, 2 architecture, 2 development, 3 others) | Most projects - balanced enforcement |
-| **strict**      | All 20+ rules as errors                                        | Maximum code quality enforcement     |
-| **security**    | 8 security rules only                                          | Security-critical applications       |
+| **strict**      | All 62+ rules as errors                                        | Maximum code quality enforcement     |
+| **security**    | 27 security rules only                                         | Security-critical applications       |
 | **react**       | 3 React-specific rules                                         | React/Next.js projects               |
 | **sonarqube**   | 2 SonarQube-inspired rules                                     | Teams using SonarQube                |
 
 ## Rule Categories
 
-### Security Rules (18 rules)
+### Security Rules (27 rules)
 
 | Rule Name                      | Description                                               | CWE     | Auto-fixable |
 | ------------------------------ | --------------------------------------------------------- | ------- | ------------ |
@@ -110,7 +110,7 @@ export default [
 | no-missing-authentication      | Detect missing authentication checks in route handlers    | CWE-306 | No           |
 | no-privilege-escalation        | Detect potential privilege escalation vulnerabilities     | CWE-269 | No           |
 
-### Architecture Rules (2 rules)
+### Architecture Rules (5 rules)
 
 | Rule Name                | Description                                           | CWE     | Auto-fixable |
 | ------------------------ | ----------------------------------------------------- | ------- | ------------ |
@@ -132,7 +132,7 @@ export default [
 | required-attributes       | Enforce required attributes on React components   | N/A      | No           |
 | react-class-to-hooks      | Suggest migrating React class components to hooks | N/A      | No           |
 
-### Other Rules (5 rules)
+### Other Rules (29 rules)
 
 | Rule Name            | Description                                           | CWE      | Auto-fixable |
 | -------------------- | ----------------------------------------------------- | -------- | ------------ |
@@ -169,7 +169,7 @@ Line 2: Specific fix instruction with documentation link
 | **ESLint MCP support**   | Full              | Fully compatible with ESLint's Model Context Protocol                              |
 | **TypeScript support**   | Full              | Full TypeScript support with comprehensive type checking                           |
 | **Performance overhead** | <10ms per file    | Efficient AST traversal with caching                                               |
-| **Total rules**          | 30+               | Comprehensive coverage across security, architecture, development, React, and more |
+| **Total rules**          | 62+               | Comprehensive coverage across security, architecture, development, React, and more |
 | **Presets available**    | 5                 | recommended, strict, security, react, sonarqube                                    |
 
 ## ESLint MCP Integration
@@ -217,8 +217,8 @@ import llmOptimized from '@forge-js/eslint-plugin-llm-optimized';
 | Export                             | Type   | Description                                                    |
 | ---------------------------------- | ------ | -------------------------------------------------------------- |
 | `llmOptimized.configs.recommended` | Config | 10 rules (3 security, 2 architecture, 2 development, 3 others) |
-| `llmOptimized.configs.strict`      | Config | All 30+ rules as errors                                        |
-| `llmOptimized.configs.security`    | Config | 18 security rules only                                         |
+| `llmOptimized.configs.strict`      | Config | All 62+ rules as errors                                        |
+| `llmOptimized.configs.security`    | Config | 27 security rules only                                         |
 | `llmOptimized.configs.react`       | Config | 3 React-specific rules                                         |
 | `llmOptimized.configs.sonarqube`   | Config | 2 SonarQube-inspired rules                                     |
 | `llmOptimized.rules`               | Object | All individual rules accessible by name                        |

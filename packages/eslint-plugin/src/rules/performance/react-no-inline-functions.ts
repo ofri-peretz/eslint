@@ -66,7 +66,9 @@ export const reactNoInlineFunctions = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
-    const { allowInEventHandlers = false, minArraySize = 10 } = options;
+    const {
+allowInEventHandlers = false, minArraySize = 10 
+}: Options = options || {};
 
     /**
      * Check if node is inside JSX

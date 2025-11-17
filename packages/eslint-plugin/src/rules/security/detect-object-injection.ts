@@ -143,9 +143,10 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      allowLiterals = false,
+allowLiterals = false,
       dangerousProperties = ['__proto__', 'prototype', 'constructor']
-    } = options;
+    
+}: Options = options || {};
 
     // Track MemberExpressions that are part of AssignmentExpressions to avoid double-reporting
     const handledMemberExpressions = new WeakSet<TSESTree.MemberExpression>();

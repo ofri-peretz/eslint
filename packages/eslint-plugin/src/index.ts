@@ -19,6 +19,8 @@ import { preferDependencyVersionStrategy } from './rules/development/prefer-depe
 // Architecture rules
 import { noCircularDependencies } from './rules/architecture/no-circular-dependencies';
 import { noInternalModules } from './rules/architecture/no-internal-modules';
+import { noCrossDomainImports } from './rules/architecture/no-cross-domain-imports';
+import { enforceDependencyDirection } from './rules/architecture/enforce-dependency-direction';
 
 // Security rules
 import { noSqlInjection } from './rules/security/no-sql-injection';
@@ -43,6 +45,44 @@ import { noInsecureCookieSettings } from './rules/security/no-insecure-cookie-se
 import { noMissingCsrfProtection } from './rules/security/no-missing-csrf-protection';
 import { noExposedSensitiveData } from './rules/security/no-exposed-sensitive-data';
 import { noUnencryptedTransmission } from './rules/security/no-unencrypted-transmission';
+import { noRedosVulnerableRegex } from './rules/security/no-redos-vulnerable-regex';
+import { noUnsafeRegexConstruction } from './rules/security/no-unsafe-regex-construction';
+import { noSensitiveDataExposure } from './rules/security/no-sensitive-data-exposure';
+
+// Quality rules
+import { noCommentedCode } from './rules/quality/no-commented-code';
+import { maxParameters } from './rules/quality/max-parameters';
+import { noMissingNullChecks } from './rules/quality/no-missing-null-checks';
+import { noUnsafeTypeNarrowing } from './rules/quality/no-unsafe-type-narrowing';
+
+// Error handling rules
+import { noUnhandledPromise } from './rules/error-handling/no-unhandled-promise';
+import { noSilentErrors } from './rules/error-handling/no-silent-errors';
+import { noMissingErrorContext } from './rules/error-handling/no-missing-error-context';
+
+// Performance rules
+import { noUnnecessaryRerenders } from './rules/performance/no-unnecessary-rerenders';
+import { noMemoryLeakListeners } from './rules/performance/no-memory-leak-listeners';
+import { noBlockingOperations } from './rules/performance/no-blocking-operations';
+import { noUnboundedCache } from './rules/performance/no-unbounded-cache';
+import { detectNPlusOneQueries } from './rules/performance/detect-n-plus-one-queries';
+import { reactRenderOptimization } from './rules/performance/react-render-optimization';
+
+// Accessibility rules
+import { noKeyboardInaccessibleElements } from './rules/accessibility/no-keyboard-inaccessible-elements';
+import { noMissingAriaLabels } from './rules/accessibility/no-missing-aria-labels';
+
+// TypeScript rules
+// Note: TypeScript-specific rules that duplicate TSC functionality have been removed.
+// Use @typescript-eslint/eslint-plugin for proper TypeScript linting with type information.
+
+// Additional security rules
+import { noToctouVulnerability } from './rules/security/no-toctou-vulnerability';
+import { noMissingSecurityHeaders } from './rules/security/no-missing-security-headers';
+import { noInsecureRedirects } from './rules/security/no-insecure-redirects';
+
+// Architecture rules
+import { noExternalApiCallsInUtils } from './rules/architecture/no-external-api-calls-in-utils';
 
 // Migration rules
 import { reactClassToHooks } from './rules/migration/react-class-to-hooks';
@@ -52,6 +92,9 @@ import { reactNoInlineFunctions } from './rules/performance/react-no-inline-func
 
 // Accessibility rules
 import { imgRequiresAlt } from './rules/accessibility/img-requires-alt';
+
+// API rules
+import { enforceRestConventions } from './rules/api/enforce-rest-conventions';
 
 // React rules
 import { requiredAttributes } from './rules/react/required-attributes';
@@ -64,6 +107,11 @@ import { enforceNaming } from './rules/domain/enforce-naming';
 
 // Complexity rules
 import { cognitiveComplexity } from './rules/complexity/cognitive-complexity';
+import { nestedComplexityHotspots } from './rules/complexity/nested-complexity-hotspots';
+
+// DDD rules
+import { dddAnemicDomainModel } from './rules/ddd/ddd-anemic-domain-model';
+import { dddValueObjectImmutability } from './rules/ddd/ddd-value-object-immutability';
 
 // Duplication rules
 import { identicalFunctions } from './rules/duplication/identical-functions';
@@ -113,6 +161,34 @@ export const rules = {
   'no-missing-csrf-protection': noMissingCsrfProtection,
   'no-exposed-sensitive-data': noExposedSensitiveData,
   'no-unencrypted-transmission': noUnencryptedTransmission,
+  'no-redos-vulnerable-regex': noRedosVulnerableRegex,
+  'no-unsafe-regex-construction': noUnsafeRegexConstruction,
+  'no-commented-code': noCommentedCode,
+  'max-parameters': maxParameters,
+  'no-unhandled-promise': noUnhandledPromise,
+  'no-silent-errors': noSilentErrors,
+  'no-missing-error-context': noMissingErrorContext,
+  'no-missing-null-checks': noMissingNullChecks,
+  'no-unsafe-type-narrowing': noUnsafeTypeNarrowing,
+  'no-unnecessary-rerenders': noUnnecessaryRerenders,
+  'no-memory-leak-listeners': noMemoryLeakListeners,
+  'no-blocking-operations': noBlockingOperations,
+  'no-unbounded-cache': noUnboundedCache,
+  'detect-n-plus-one-queries': detectNPlusOneQueries,
+  'react-render-optimization': reactRenderOptimization,
+  'no-keyboard-inaccessible-elements': noKeyboardInaccessibleElements,
+  'no-missing-aria-labels': noMissingAriaLabels,
+  'no-toctou-vulnerability': noToctouVulnerability,
+  'no-missing-security-headers': noMissingSecurityHeaders,
+  'no-insecure-redirects': noInsecureRedirects,
+  'no-external-api-calls-in-utils': noExternalApiCallsInUtils,
+  'no-cross-domain-imports': noCrossDomainImports,
+  'enforce-dependency-direction': enforceDependencyDirection,
+  'nested-complexity-hotspots': nestedComplexityHotspots,
+  'no-sensitive-data-exposure': noSensitiveDataExposure,
+  'ddd-anemic-domain-model': dddAnemicDomainModel,
+  'ddd-value-object-immutability': dddValueObjectImmutability,
+  'enforce-rest-conventions': enforceRestConventions,
   'react-class-to-hooks': reactClassToHooks,
   'react-no-inline-functions': reactNoInlineFunctions,
   'img-requires-alt': imgRequiresAlt,
@@ -149,6 +225,34 @@ export const rules = {
   'security/no-missing-csrf-protection': noMissingCsrfProtection,
   'security/no-exposed-sensitive-data': noExposedSensitiveData,
   'security/no-unencrypted-transmission': noUnencryptedTransmission,
+  'security/no-redos-vulnerable-regex': noRedosVulnerableRegex,
+  'security/no-unsafe-regex-construction': noUnsafeRegexConstruction,
+  'quality/no-commented-code': noCommentedCode,
+  'quality/max-parameters': maxParameters,
+  'quality/no-missing-null-checks': noMissingNullChecks,
+  'quality/no-unsafe-type-narrowing': noUnsafeTypeNarrowing,
+  'error-handling/no-unhandled-promise': noUnhandledPromise,
+  'error-handling/no-silent-errors': noSilentErrors,
+  'error-handling/no-missing-error-context': noMissingErrorContext,
+  'performance/no-unnecessary-rerenders': noUnnecessaryRerenders,
+  'performance/no-memory-leak-listeners': noMemoryLeakListeners,
+  'performance/no-blocking-operations': noBlockingOperations,
+  'performance/no-unbounded-cache': noUnboundedCache,
+  'performance/detect-n-plus-one-queries': detectNPlusOneQueries,
+  'performance/react-render-optimization': reactRenderOptimization,
+  'accessibility/no-keyboard-inaccessible-elements': noKeyboardInaccessibleElements,
+  'accessibility/no-missing-aria-labels': noMissingAriaLabels,
+  'security/no-toctou-vulnerability': noToctouVulnerability,
+  'security/no-missing-security-headers': noMissingSecurityHeaders,
+  'security/no-insecure-redirects': noInsecureRedirects,
+  'architecture/no-external-api-calls-in-utils': noExternalApiCallsInUtils,
+  'architecture/no-cross-domain-imports': noCrossDomainImports,
+  'architecture/enforce-dependency-direction': enforceDependencyDirection,
+  'complexity/nested-complexity-hotspots': nestedComplexityHotspots,
+  'security/no-sensitive-data-exposure': noSensitiveDataExposure,
+  'ddd/ddd-anemic-domain-model': dddAnemicDomainModel,
+  'ddd/ddd-value-object-immutability': dddValueObjectImmutability,
+  'api/enforce-rest-conventions': enforceRestConventions,
   'migration/react-class-to-hooks': reactClassToHooks,
   'performance/react-no-inline-functions': reactNoInlineFunctions,
   'accessibility/img-requires-alt': imgRequiresAlt,
@@ -266,7 +370,16 @@ export const configs = {
       '@forge-js/llm-optimized/security/no-unencrypted-transmission': 'warn',
       '@forge-js/llm-optimized/accessibility/img-requires-alt': 'warn',
       '@forge-js/llm-optimized/complexity/cognitive-complexity': 'warn',
+      '@forge-js/llm-optimized/complexity/nested-complexity-hotspots': 'warn',
       '@forge-js/llm-optimized/duplication/identical-functions': 'warn',
+      '@forge-js/llm-optimized/performance/detect-n-plus-one-queries': 'warn',
+      '@forge-js/llm-optimized/performance/react-render-optimization': 'warn',
+      '@forge-js/llm-optimized/architecture/no-cross-domain-imports': 'warn',
+      '@forge-js/llm-optimized/architecture/enforce-dependency-direction': 'warn',
+      '@forge-js/llm-optimized/security/no-sensitive-data-exposure': 'warn',
+      '@forge-js/llm-optimized/ddd/ddd-anemic-domain-model': 'warn',
+      '@forge-js/llm-optimized/ddd/ddd-value-object-immutability': 'warn',
+      '@forge-js/llm-optimized/api/enforce-rest-conventions': 'warn',
     },
   } satisfies TSESLint.FlatConfig.Config,
   
@@ -304,7 +417,16 @@ export const configs = {
       '@forge-js/llm-optimized/accessibility/img-requires-alt': 'error',
       '@forge-js/llm-optimized/performance/react-no-inline-functions': 'error',
       '@forge-js/llm-optimized/complexity/cognitive-complexity': 'error',
+      '@forge-js/llm-optimized/complexity/nested-complexity-hotspots': 'error',
       '@forge-js/llm-optimized/duplication/identical-functions': 'error',
+      '@forge-js/llm-optimized/performance/detect-n-plus-one-queries': 'error',
+      '@forge-js/llm-optimized/performance/react-render-optimization': 'error',
+      '@forge-js/llm-optimized/architecture/no-cross-domain-imports': 'error',
+      '@forge-js/llm-optimized/architecture/enforce-dependency-direction': 'error',
+      '@forge-js/llm-optimized/security/no-sensitive-data-exposure': 'error',
+      '@forge-js/llm-optimized/ddd/ddd-anemic-domain-model': 'error',
+      '@forge-js/llm-optimized/ddd/ddd-value-object-immutability': 'error',
+      '@forge-js/llm-optimized/api/enforce-rest-conventions': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 
@@ -341,6 +463,9 @@ export const configs = {
       '@forge-js/llm-optimized/security/no-missing-csrf-protection': 'error',
       '@forge-js/llm-optimized/security/no-exposed-sensitive-data': 'error',
       '@forge-js/llm-optimized/security/no-unencrypted-transmission': 'error',
+      '@forge-js/llm-optimized/security/no-redos-vulnerable-regex': 'error',
+      '@forge-js/llm-optimized/security/no-unsafe-regex-construction': 'error',
+      '@forge-js/llm-optimized/security/no-sensitive-data-exposure': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 
@@ -356,6 +481,9 @@ export const configs = {
     rules: {
       '@forge-js/llm-optimized/architecture/no-circular-dependencies': 'error',
       '@forge-js/llm-optimized/architecture/no-internal-modules': 'error',
+      '@forge-js/llm-optimized/architecture/no-cross-domain-imports': 'error',
+      '@forge-js/llm-optimized/architecture/enforce-dependency-direction': 'error',
+      '@forge-js/llm-optimized/architecture/no-external-api-calls-in-utils': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 
@@ -416,6 +544,12 @@ export const configs = {
     },
     rules: {
       '@forge-js/llm-optimized/performance/react-no-inline-functions': 'warn',
+      '@forge-js/llm-optimized/performance/detect-n-plus-one-queries': 'warn',
+      '@forge-js/llm-optimized/performance/react-render-optimization': 'warn',
+      '@forge-js/llm-optimized/performance/no-unnecessary-rerenders': 'warn',
+      '@forge-js/llm-optimized/performance/no-memory-leak-listeners': 'warn',
+      '@forge-js/llm-optimized/performance/no-blocking-operations': 'warn',
+      '@forge-js/llm-optimized/performance/no-unbounded-cache': 'warn',
     },
   } satisfies TSESLint.FlatConfig.Config,
 
@@ -430,6 +564,8 @@ export const configs = {
     },
     rules: {
       '@forge-js/llm-optimized/domain/enforce-naming': 'warn',
+      '@forge-js/llm-optimized/ddd/ddd-anemic-domain-model': 'warn',
+      '@forge-js/llm-optimized/ddd/ddd-value-object-immutability': 'warn',
     },
   } satisfies TSESLint.FlatConfig.Config,
 
@@ -447,10 +583,12 @@ export const configs = {
     },
     rules: {
       '@forge-js/llm-optimized/complexity/cognitive-complexity': 'warn',
+      '@forge-js/llm-optimized/complexity/nested-complexity-hotspots': 'warn',
       '@forge-js/llm-optimized/duplication/identical-functions': 'warn',
       '@forge-js/llm-optimized/security/database-injection': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
+
 } satisfies Record<string, TSESLint.FlatConfig.Config>;
 
 /**
@@ -525,6 +663,8 @@ export type {
   NoWeakCryptoOptions,
   NoInsufficientRandomOptions,
   PreferDependencyVersionStrategyOptions,
+  NoRedosVulnerableRegexOptions,
+  NoUnsafeRegexConstructionOptions,
   // Combined type
   AllRulesOptions,
 } from './types/index';

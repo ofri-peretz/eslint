@@ -90,7 +90,9 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
-    const { maxComplexity = 15 } = options;
+    const {
+maxComplexity = 15 
+}: Options = options || {};
     const filename = context.filename || context.getFilename();
 
     /**

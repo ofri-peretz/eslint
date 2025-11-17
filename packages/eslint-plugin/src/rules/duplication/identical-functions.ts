@@ -97,7 +97,9 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
-    const { minLines = 3, similarityThreshold = 0.9, ignoreTestFiles = true } = options;
+    const {
+minLines = 3, similarityThreshold = 0.9, ignoreTestFiles = true 
+}: Options = options || {};
 
     const sourceCode = context.sourceCode || context.getSourceCode();
     const filename = context.filename || context.getFilename();

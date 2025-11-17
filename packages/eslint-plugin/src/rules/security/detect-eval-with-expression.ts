@@ -135,9 +135,10 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      allowLiteralStrings = false,
+allowLiteralStrings = false,
       additionalEvalFunctions = []
-    } = options;
+    
+}: Options = options || {};
 
     /**
      * All functions that can execute arbitrary code

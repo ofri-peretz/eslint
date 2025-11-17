@@ -66,7 +66,9 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
-    const { allowComplexLifecycle = false } = options;
+    const {
+allowComplexLifecycle = false 
+}: Options = options || {};
 
     const sourceCode = context.sourceCode || context.getSourceCode();
 

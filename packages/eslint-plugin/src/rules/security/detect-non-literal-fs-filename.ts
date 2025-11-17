@@ -146,9 +146,10 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      allowLiterals = false,
+allowLiterals = false,
       additionalMethods = []
-    } = options;
+    
+}: Options = options || {};
 
     /**
      * File system methods that can be dangerous with user input

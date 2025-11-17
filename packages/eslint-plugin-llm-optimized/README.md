@@ -7,7 +7,7 @@
 
 > **Keywords:** ESLint plugin, LLM-optimized, AI assistant, auto-fix, ESLint MCP, Model Context Protocol, code quality, security rules, TypeScript ESLint, automated code fixes, GitHub Copilot, Cursor AI, Claude AI, structured error messages, CWE references, deterministic fixes
 
-This plugin provides **30+ ESLint rules** with error messages optimized for both human developers and Large Language Models. Each rule is designed to be auto-fixable and includes structured context that enables AI assistants to understand the violation and apply consistent fixes.
+This plugin provides **62+ ESLint rules** with error messages optimized for both human developers and Large Language Models. Each rule is designed to be auto-fixable and includes structured context that enables AI assistants to understand the violation and apply consistent fixes.
 
 **Designed for ESLint MCP:** This package is specifically optimized to maximize capabilities when used with ESLint's [Model Context Protocol (MCP)](https://eslint.org/docs/latest/use/mcp) integration, enabling seamless AI assistant interactions through structured, parseable error messages.
 

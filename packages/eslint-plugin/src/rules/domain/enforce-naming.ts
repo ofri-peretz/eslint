@@ -92,7 +92,9 @@ export const enforceNaming = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
-    const { domain = 'general', terms = [] } = options;
+    const {
+domain = 'general', terms = [] 
+}: Options = options || {};
 
     // Early return if no terms configured
     if (!terms || terms.length === 0) {

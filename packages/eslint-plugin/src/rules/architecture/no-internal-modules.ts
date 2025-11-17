@@ -127,12 +127,13 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      strategy = 'error',
+strategy = 'error',
       ignorePaths = [],
       allow = [],
       forbid = [],
       maxDepth = 1,
-    } = options;
+    
+}: Options = options || {};
 
     /**
      * Check if a module path matches a glob pattern.

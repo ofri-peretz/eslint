@@ -148,9 +148,10 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      allowLiterals = false,
+allowLiterals = false,
       maxPatternLength = 100
-    } = options;
+    
+}: Options = options || {};
 
     /**
      * Check if a node is a literal string (potentially safe)

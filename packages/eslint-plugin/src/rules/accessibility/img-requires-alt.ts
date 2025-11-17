@@ -67,7 +67,9 @@ export const imgRequiresAlt = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
-    const { allowAriaLabel = false, allowAriaLabelledby = false } = options;
+    const {
+allowAriaLabel = false, allowAriaLabelledby = false 
+}: Options = options || {};
 
     /**
      * Check if element has alt attribute

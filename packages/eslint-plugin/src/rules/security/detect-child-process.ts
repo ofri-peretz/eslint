@@ -147,10 +147,11 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      allowLiteralStrings = false,
+allowLiteralStrings = false,
       allowLiteralSpawn = false,
       additionalMethods = []
-    } = options;
+    
+}: Options = options || {};
 
     /**
      * Child process methods that can be dangerous

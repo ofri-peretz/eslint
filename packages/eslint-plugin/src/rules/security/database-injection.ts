@@ -103,7 +103,9 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
-    const { detectNoSQL = true } = options;
+    const {
+detectNoSQL = true 
+}: Options = options || {};
 
     const sourceCode = context.sourceCode || context.getSourceCode();
     const filename = context.filename || context.getFilename();
