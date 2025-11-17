@@ -52,10 +52,48 @@ function isEmptyCatchBlock(catchClause: TSESTree.CatchClause): boolean {
 /**
  * Check if catch block has a comment explaining why it's empty
  */
-function hasExplanatoryComment(): boolean {
-  // This is a simplified check - in practice, you'd need to check for comments
-  // near the catch block
-  return false; // Simplified for now
+function hasExplanatoryComment(
+  catchClause: TSESTree.CatchClause,
+  sourceCode: TSESLint.SourceCode
+): boolean {
+  // Check for comments before the catch clause
+  const comments = sourceCode.getAllComments();
+  const catchStart = catchClause.loc?.start;
+
+  if (!catchStart || !comments.length) {
+    return false;
+  }
+
+  // Look for explanatory comments near the catch clause
+  const explanatoryPatterns = [
+    /intentional/i,
+    /expected/i,
+    /ignore/i,
+    /silent/i,
+    /noop/i,
+    /no-op/i,
+    /by design/i,
+    /known issue/i,
+    /legacy/i,
+    /third.?party/i,
+    /framework/i,
+    /library/i,
+    /not implemented/i,
+    /todo/i,
+    /fixme/i,
+  ];
+
+  // Check comments before the catch clause (within 2 lines)
+  for (const comment of comments) {
+    if (comment.loc && catchStart.line - comment.loc.end.line <= 2) {
+      const commentText = comment.value.toLowerCase();
+      if (explanatoryPatterns.some(pattern => pattern.test(commentText))) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 export const noSilentErrors = createRule<RuleOptions, MessageIds>({
@@ -118,6 +156,7 @@ allowWithComment = false,
       return {};
     }
 
+    const sourceCode = context.sourceCode || context.getSourceCode();
 
     /**
      * Check catch clauses
@@ -128,7 +167,7 @@ allowWithComment = false,
       }
 
       // Check if comment explains why it's empty
-      if (allowWithComment && hasExplanatoryComment()) {
+      if (allowWithComment && hasExplanatoryComment(node, sourceCode)) {
         return;
       }
 

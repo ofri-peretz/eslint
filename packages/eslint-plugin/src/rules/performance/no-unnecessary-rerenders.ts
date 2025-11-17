@@ -27,16 +27,62 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
- * Check if a node is in a React component render
- * Note: Currently unused, keeping for future implementation
+ * Check if a node is in a React component render context
  */
-/*
-function isInRender(): boolean {
-  // Simplified check - would need more sophisticated analysis
-  // to determine if we're in a component render function
-  return true; // Simplified for now
+function isInReactRenderContext(node: TSESTree.Node): boolean {
+  let current: TSESTree.Node | null = node;
+  let depth = 0;
+  const maxDepth = 15;
+
+  while (current && depth < maxDepth) {
+    const parent = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+    if (!parent) break;
+
+    // Check if we're in JSX
+    if (parent.type === 'JSXElement' || parent.type === 'JSXFragment') {
+      return true;
+    }
+
+    // Check if we're in a JSX attribute
+    if (parent.type === 'JSXAttribute') {
+      return true;
+    }
+
+    // Check if we're in a function that's likely a React component
+    if (parent.type === 'FunctionDeclaration' || parent.type === 'FunctionExpression' ||
+        parent.type === 'ArrowFunctionExpression') {
+
+      // Check function name patterns (Component, useCallback, etc.)
+      if (parent.type === 'FunctionDeclaration' && parent.id) {
+        const name = parent.id.name;
+        if (name && /^[A-Z]/.test(name)) { // PascalCase suggests React component
+          return true;
+        }
+      }
+
+      // Check for JSX return statement
+      const body = parent.type === 'FunctionDeclaration' ? parent.body :
+                   parent.type === 'FunctionExpression' ? parent.body :
+                   parent.body;
+
+      if (body && body.type === 'BlockStatement') {
+        const hasJSX = body.body.some(stmt =>
+          stmt.type === 'ReturnStatement' &&
+          stmt.argument &&
+          (stmt.argument.type === 'JSXElement' || stmt.argument.type === 'JSXFragment')
+        );
+        if (hasJSX) {
+          return true;
+        }
+      }
+    }
+
+    current = parent;
+    depth++;
+  }
+
+  return false;
 }
-*/
 
 /**
  * Check if expression should be memoized
@@ -132,15 +178,20 @@ ignoreInTests = true, minSize = 5
           return;
         }
 
-        const value = node.value.type === 'JSXExpressionContainer' 
-          ? node.value.expression 
+        const value = node.value.type === 'JSXExpressionContainer'
+          ? node.value.expression
           : null;
 
         if (!value) {
           return;
         }
 
-        // Check if it's an object/array literal or function
+        // Only check if we're in a React render context
+        if (!isInReactRenderContext(value)) {
+          return;
+        }
+
+        // Check if it's an object/array literal or function that should be memoized
         if (shouldBeMemoized(value, minSize)) {
           let expressionText = '';
           try {

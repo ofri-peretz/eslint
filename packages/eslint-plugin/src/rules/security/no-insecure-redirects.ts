@@ -33,21 +33,70 @@ function isRedirectValidated(
   node: TSESTree.CallExpression,
   sourceCode: TSESLint.SourceCode
 ): boolean {
-  // Check if redirect URL is validated before use
-  // This is a simplified check - would need control flow analysis
-  
   const callText = sourceCode.getText(node);
-  
+
   // Check if URL is from user input (req.query, req.body, req.params)
   const userInputPattern = /\b(req\.(query|body|params)|window\.location|document\.location)\b/;
-  
-  if (userInputPattern.test(callText)) {
-    // Check if there's validation (whitelist check, domain validation, etc.)
-    // Simplified - would need proper analysis
+
+  if (!userInputPattern.test(callText)) {
+    // Not from user input, assume safe
+    return true;
+  }
+
+  // Look for validation patterns in the surrounding code
+  // This is a simplified static analysis - in practice, would need data flow analysis
+
+  const program = sourceCode.ast;
+  const nodeStart = node.loc?.start;
+  const nodeEnd = node.loc?.end;
+
+  if (!nodeStart || !nodeEnd || !program) {
     return false;
   }
-  
-  return true;
+
+  // Check for validation function calls before this redirect
+  const validationPatterns = [
+    /\b(validateUrl|validateRedirect|isValidUrl|isSafeUrl)\s*\(/,
+    /\b(whitelist|allowedDomains|permittedUrls)\s*\./,
+    /\b(url\.hostname|url\.host)\s*===/,
+    /\ballowedDomains\.includes\s*\(/,
+    /\bstartsWith\s*\(\s*['"]/,
+    /\bendsWith\s*\(\s*['"]/,
+    /\bindexOf\s*\(\s*['"]/,
+    /\bmatch\s*\(\s*\//,
+  ];
+
+  // Look for validation in the same function scope
+  let current: TSESTree.Node | null = node;
+  let depth = 0;
+  const maxDepth = 20;
+
+  while (current && depth < maxDepth) {
+    // Check siblings before this node
+    const parent = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+    if (!parent) break;
+
+    if (parent.type === 'BlockStatement') {
+      const body = parent.body;
+      const currentIndex = body.indexOf(current as TSESTree.Statement);
+
+      // Check previous statements in the same block
+      for (let i = currentIndex - 1; i >= 0 && i >= currentIndex - 5; i--) {
+        const stmt = body[i];
+        const stmtText = sourceCode.getText(stmt);
+
+        if (validationPatterns.some(pattern => pattern.test(stmtText))) {
+          return true; // Found validation
+        }
+      }
+    }
+
+    current = parent;
+    depth++;
+  }
+
+  // No validation found
+  return false;
 }
 
 export const noInsecureRedirects = createRule<RuleOptions, MessageIds>({

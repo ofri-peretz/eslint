@@ -48,16 +48,48 @@ function isUnsafeTypeAssertion(node: TSESTree.TSAsExpression): boolean {
 }
 
 /**
- * Check if any type is used
- * Note: Currently unused, keeping for future implementation
+ * Check if type assertion has explanatory comment
  */
-/*
-function usesAnyType(node: TSESTree.Node): boolean {
-  // This would require TypeScript type information
-  // Simplified check for now
+function hasExplanatoryComment(
+  node: TSESTree.TSAsExpression,
+  sourceCode: TSESLint.SourceCode
+): boolean {
+  const comments = sourceCode.getAllComments();
+  const nodeStart = node.loc?.start;
+
+  if (!nodeStart || !comments.length) {
+    return false;
+  }
+
+  // Look for explanatory comments near the type assertion
+  const explanatoryPatterns = [
+    /type.?guard/i,
+    /validated/i,
+    /checked/i,
+    /safe/i,
+    /known/i,
+    /intentional/i,
+    /necessary/i,
+    /framework/i,
+    /library/i,
+    /third.?party/i,
+    /legacy/i,
+    /todo/i,
+    /fixme/i,
+  ];
+
+  // Check comments before the assertion (within 1 line)
+  for (const comment of comments) {
+    if (comment.loc && nodeStart.line - comment.loc.end.line <= 1) {
+      const commentText = comment.value.toLowerCase();
+      if (explanatoryPatterns.some(pattern => pattern.test(commentText))) {
+        return true;
+      }
+    }
+  }
+
   return false;
 }
-*/
 
 export const noUnsafeTypeNarrowing = createRule<RuleOptions, MessageIds>({
   name: 'no-unsafe-type-narrowing',
@@ -108,7 +140,7 @@ export const noUnsafeTypeNarrowing = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
     const {
 ignoreInTests = true,
-      // allowWithComment = false, // Not used
+      allowWithComment = false,
 
 }: Options = options || {};
 
@@ -119,12 +151,22 @@ ignoreInTests = true,
       return {};
     }
 
+    const sourceCode = context.sourceCode || context.getSourceCode();
+
     /**
      * Check type assertions
      */
     function checkTypeAssertion(node: TSESTree.TSAsExpression) {
-      if (isUnsafeTypeAssertion(node)) {
-        context.report({
+      if (!isUnsafeTypeAssertion(node)) {
+        return;
+      }
+
+      // Check if comment explains the unsafe assertion
+      if (allowWithComment && hasExplanatoryComment(node, sourceCode)) {
+        return;
+      }
+
+      context.report({
           node,
           messageId: 'unsafeTypeNarrowing',
           suggest: [
@@ -142,7 +184,6 @@ ignoreInTests = true,
             },
           ],
         });
-      }
     }
 
     return {
