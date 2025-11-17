@@ -17,11 +17,12 @@ This plugin provides **62+ ESLint rules** with error messages optimized for both
 
 | Feature                        | This Plugin                                            | Standard ESLint Plugins          |
 | ------------------------------ | ------------------------------------------------------ | -------------------------------- |
+| **All-in-One Solution**        | ✅ 62+ rules across 10+ categories (one-stop shop)     | ⚠️ Usually single-focus plugins  |
 | **AI Assistant Compatibility** | ✅ Optimized for LLMs (Copilot, Cursor, Claude)        | ❌ Generic error messages        |
 | **Auto-Fix Rate**              | ✅ 60-80% of violations auto-fixed                     | ⚠️ 20-30% auto-fixable           |
 | **Error Message Quality**      | ✅ Structured with examples, fixes, documentation      | ⚠️ Basic "what's wrong" messages |
 | **ESLint MCP Support**         | ✅ Fully optimized for MCP integration                 | ❌ No MCP optimization           |
-| **Security Rules**             | ✅ 18 comprehensive security rules with CWE references | ⚠️ Limited security coverage     |
+| **Security Rules**             | ✅ 27 comprehensive security rules with CWE references | ⚠️ Limited security coverage     |
 | **Deterministic Fixes**        | ✅ Same violation = same fix every time                | ⚠️ Inconsistent fixes            |
 | **Documentation Links**        | ✅ Every error includes relevant docs                  | ❌ No documentation links        |
 | **TypeScript Support**         | ✅ Full TypeScript support                             | ✅ TypeScript support            |

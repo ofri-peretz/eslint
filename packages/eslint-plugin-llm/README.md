@@ -17,12 +17,13 @@ This package is a barrel export that re-exports everything from `@forge-js/eslin
 
 | Feature                        | eslint-plugin-llm                                      | Standard ESLint Plugins          |
 | ------------------------------ | ------------------------------------------------------ | -------------------------------- |
+| **All-in-One Solution**        | ✅ 62+ rules across 10+ categories (one-stop shop)     | ⚠️ Usually single-focus plugins  |
 | **Package Name**               | ✅ Short, discoverable name                            | ⚠️ Longer names                  |
 | **AI Assistant Compatibility** | ✅ Optimized for LLMs (Copilot, Cursor, Claude)        | ❌ Generic error messages        |
 | **Auto-Fix Rate**              | ✅ 60-80% of violations auto-fixed                     | ⚠️ 20-30% auto-fixable           |
 | **Error Message Quality**      | ✅ Structured with examples, fixes, documentation      | ⚠️ Basic "what's wrong" messages |
 | **ESLint MCP Support**         | ✅ Fully optimized for MCP integration                 | ❌ No MCP optimization           |
-| **Security Rules**             | ✅ 18 comprehensive security rules with CWE references | ⚠️ Limited security coverage     |
+| **Security Rules**             | ✅ 27 comprehensive security rules with CWE references | ⚠️ Limited security coverage     |
 | **Functionality**              | ✅ Identical to @forge-js/eslint-plugin-llm-optimized  | N/A                              |
 
 **Best for:** Developers who prefer shorter package names and want all the benefits of LLM-optimized ESLint rules with AI assistant integration.
@@ -195,7 +196,7 @@ Once configured, AI assistants can:
 
 ## Available Rules
 
-This package includes **30+ rules** across 10 categories. All rules are functionally identical to `@forge-js/eslint-plugin-llm-optimized`.
+This package includes **62+ rules** across 10 categories. All rules are functionally identical to `@forge-js/eslint-plugin-llm-optimized`.
 
 💼 Set in the `recommended` configuration.  
 ⚠️ Set to warn in the `recommended` configuration.  

@@ -3,8 +3,8 @@
 ## Package Overview
 
 **Name:** eslint-plugin-llm-optimized  
-**Version:** 2.2.0  
-**Description:** ESLint rules that AI assistants can actually fix - error messages optimized for both human developers and Large Language Models. Provides 20+ ESLint rules with error messages optimized for both human developers and Large Language Models. Each rule is designed to be auto-fixable and includes structured context that enables AI assistants to understand the violation and apply consistent fixes.
+**Version:** 2.5.0  
+**Description:** ESLint rules that AI assistants can actually fix - error messages optimized for both human developers and Large Language Models. Provides 62+ ESLint rules with error messages optimized for both human developers and Large Language Models. Each rule is designed to be auto-fixable and includes structured context that enables AI assistants to understand the violation and apply consistent fixes.
 
 **Keywords:** eslint, eslint-plugin, typescript, linting, llm-optimized, code-quality, ast, static-analysis, ai-assistant, auto-fix, github-copilot, cursor-ai, claude-ai, structured-error-messages, cwe-references, deterministic-fixes, mcp, model-context-protocol
 
@@ -51,8 +51,8 @@ npx eslint .
 | Preset | Rules Included | Best For |
 |--------|---------------|----------|
 | **recommended** | 10 rules (3 security, 2 architecture, 2 development, 3 others) | Most projects - balanced enforcement |
-| **strict** | All 20+ rules as errors | Maximum code quality enforcement |
-| **security** | 8 security rules only | Security-critical applications |
+| **strict** | All 62+ rules as errors | Maximum code quality enforcement |
+| **security** | 27 security rules only | Security-critical applications |
 | **react** | 3 React-specific rules | React/Next.js projects |
 | **sonarqube** | 2 SonarQube-inspired rules | Teams using SonarQube |
 

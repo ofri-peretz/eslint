@@ -17,12 +17,13 @@ This package is a barrel export that re-exports everything from `@forge-js/eslin
 
 | Feature                        | eslint-plugin-mcp                                      | Standard ESLint Plugins          |
 | ------------------------------ | ------------------------------------------------------ | -------------------------------- |
+| **All-in-One Solution**        | ✅ 62+ rules across 10+ categories (one-stop shop)     | ⚠️ Usually single-focus plugins  |
 | **ESLint MCP Optimization**    | ✅ Specifically designed for MCP                       | ❌ No MCP optimization           |
 | **Package Name**               | ✅ MCP-focused, discoverable                           | ⚠️ Generic names                 |
 | **AI Assistant Compatibility** | ✅ Optimized for LLMs via MCP                          | ❌ Generic error messages        |
 | **Auto-Fix Rate**              | ✅ 60-80% of violations auto-fixed                     | ⚠️ 20-30% auto-fixable           |
 | **Error Message Quality**      | ✅ Structured with examples, fixes, documentation      | ⚠️ Basic "what's wrong" messages |
-| **Security Rules**             | ✅ 18 comprehensive security rules with CWE references | ⚠️ Limited security coverage     |
+| **Security Rules**             | ✅ 27 comprehensive security rules with CWE references | ⚠️ Limited security coverage     |
 | **MCP Integration**            | ✅ Works seamlessly with @eslint/mcp                   | ❌ No MCP support                |
 | **Functionality**              | ✅ Identical to @forge-js/eslint-plugin-llm-optimized  | N/A                              |
 
@@ -134,7 +135,7 @@ export default [
 | Preset            | Rules Included                                                 | Best For                             |
 | ----------------- | -------------------------------------------------------------- | ------------------------------------ |
 | **`recommended`** | 10 rules (3 security, 2 architecture, 2 development, 3 others) | Most projects - balanced enforcement |
-| **`strict`**      | All 30+ rules as errors                                        | Maximum code quality enforcement     |
+| **`strict`**      | All 62+ rules as errors                                        | Maximum code quality enforcement     |
 | **`security`**    | 18 security rules only                                         | Security-critical applications       |
 | **`react`**       | 3 React-specific rules                                         | React/Next.js projects               |
 | **`sonarqube`**   | 2 SonarQube-inspired rules                                     | Teams using SonarQube                |

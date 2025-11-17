@@ -5,7 +5,7 @@
 | Field          | Value                                                               |
 | -------------- | ------------------------------------------------------------------- |
 | **Name**       | eslint-plugin-llm                                                  |
-| **Version**    | 1.2.0                                                              |
+| **Version**    | 1.5.0                                                              |
 | **Type**       | ESLint Plugin (Barrel Export)                                      |
 | **Language**   | TypeScript                                                          |
 | **Node.js**    | >=18.0.0                                                            |
