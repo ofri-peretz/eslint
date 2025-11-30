@@ -463,7 +463,7 @@ export const rules = {
 export const plugin = {
   meta: {
     name: '@forge-js/eslint-plugin-llm-optimized',
-    version: '1.9.0',
+    version: '1.8.1', // Should match package.json
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

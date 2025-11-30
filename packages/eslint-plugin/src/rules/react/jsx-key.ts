@@ -93,22 +93,179 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
     }
 
     /**
-     * Check if a CallExpression is a map/forEach call
+     * Array iterator methods that produce lists requiring keys
+     */
+    const ITERATOR_METHODS = ['map', 'forEach', 'flatMap'];
+
+    /**
+     * Check if a CallExpression is an iterator call that produces a list
+     * Handles:
+     * - array.map(), array.forEach(), array.flatMap()
+     * - Array.from(items, mapFn)
+     * - React.Children.map(), Children.map()
+     * - [...items].map() (spread then map)
      */
     function isIteratorCall(node: TSESTree.Node): node is TSESTree.CallExpression {
-      return (
-        node.type === 'CallExpression' &&
-        node.callee.type === 'MemberExpression' &&
-        node.callee.property.type === 'Identifier' &&
-        ['map', 'forEach'].includes(node.callee.property.name)
-      );
+      if (node.type !== 'CallExpression') {
+        return false;
+      }
+
+      const { callee } = node;
+
+      // Pattern 1: array.map(), array.forEach(), array.flatMap()
+      if (
+        callee.type === 'MemberExpression' &&
+        callee.property.type === 'Identifier' &&
+        ITERATOR_METHODS.includes(callee.property.name)
+      ) {
+        return true;
+      }
+
+      // Pattern 2: Array.from(items, mapFn) - only when 2nd argument is a mapping function
+      if (
+        callee.type === 'MemberExpression' &&
+        callee.object.type === 'Identifier' &&
+        callee.object.name === 'Array' &&
+        callee.property.type === 'Identifier' &&
+        callee.property.name === 'from' &&
+        node.arguments.length >= 2
+      ) {
+        const mapFn = node.arguments[1];
+        // Check if second argument is a function (arrow or regular)
+        if (
+          mapFn.type === 'ArrowFunctionExpression' ||
+          mapFn.type === 'FunctionExpression'
+        ) {
+          return true;
+        }
+      }
+
+      // Pattern 3: React.Children.map(children, fn) or Children.map(children, fn)
+      if (
+        callee.type === 'MemberExpression' &&
+        callee.property.type === 'Identifier' &&
+        callee.property.name === 'map'
+      ) {
+        const obj = callee.object;
+        // Children.map()
+        if (obj.type === 'Identifier' && obj.name === 'Children') {
+          return true;
+        }
+        // React.Children.map()
+        if (
+          obj.type === 'MemberExpression' &&
+          obj.object.type === 'Identifier' &&
+          obj.object.name === 'React' &&
+          obj.property.type === 'Identifier' &&
+          obj.property.name === 'Children'
+        ) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    /**
+     * Check if node is inside Array.from's mapping function (2nd argument)
+     */
+    function isInsideArrayFromMapFn(node: TSESTree.Node): boolean {
+      let current: TSESTree.Node | undefined = node;
+      
+      while (current?.parent) {
+        const parent = current.parent;
+        
+        // Found a function - check if it's Array.from's 2nd argument
+        if (
+          parent.type === 'ArrowFunctionExpression' ||
+          parent.type === 'FunctionExpression'
+        ) {
+          const grandParent = parent.parent;
+          if (
+            grandParent?.type === 'CallExpression' &&
+            grandParent.callee.type === 'MemberExpression' &&
+            grandParent.callee.object.type === 'Identifier' &&
+            grandParent.callee.object.name === 'Array' &&
+            grandParent.callee.property.type === 'Identifier' &&
+            grandParent.callee.property.name === 'from' &&
+            grandParent.arguments[1] === parent
+          ) {
+            return true;
+          }
+        }
+        
+        current = parent;
+      }
+      
+      return false;
+    }
+
+    /**
+     * Check if node is inside Children.map or React.Children.map
+     */
+    function isInsideChildrenMap(node: TSESTree.Node): boolean {
+      let current: TSESTree.Node | undefined = node;
+      
+      while (current?.parent) {
+        const parent = current.parent;
+        
+        if (
+          parent.type === 'ArrowFunctionExpression' ||
+          parent.type === 'FunctionExpression'
+        ) {
+          const grandParent = parent.parent;
+          if (grandParent?.type === 'CallExpression') {
+            const callee = grandParent.callee;
+            if (
+              callee.type === 'MemberExpression' &&
+              callee.property.type === 'Identifier' &&
+              callee.property.name === 'map'
+            ) {
+              const obj = callee.object;
+              // Children.map()
+              if (obj.type === 'Identifier' && obj.name === 'Children') {
+                return true;
+              }
+              // React.Children.map()
+              if (
+                obj.type === 'MemberExpression' &&
+                obj.object.type === 'Identifier' &&
+                obj.object.name === 'React' &&
+                obj.property.type === 'Identifier' &&
+                obj.property.name === 'Children'
+              ) {
+                return true;
+              }
+            }
+          }
+        }
+        
+        current = parent;
+      }
+      
+      return false;
     }
 
     /**
      * Check if a JSXElement is the DIRECT return value of an iterator callback.
      * Uses node.parent traversal for reliability.
+     * 
+     * Handles:
+     * - array.map(item => <div>)
+     * - array.map(function(item) { return <div>; })
+     * - Array.from(items, item => <div>)
+     * - React.Children.map(children, child => <div>)
+     * - [...items].map(item => <div>)
      */
     function isDirectIteratorReturn(node: TSESTree.JSXElement): boolean {
+      // Quick check for Array.from and Children.map patterns
+      if (isInsideArrayFromMapFn(node)) {
+        return isDirectReturnFromFunction(node);
+      }
+      if (isInsideChildrenMap(node)) {
+        return isDirectReturnFromFunction(node);
+      }
+
       let current: TSESTree.Node = node;
       
       while (current.parent) {
@@ -124,7 +281,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
           parent.type === 'ArrowFunctionExpression' &&
           parent.body === current
         ) {
-          // Check if the arrow function is argument to map/forEach
+          // Check if the arrow function is argument to map/forEach/flatMap
           if (parent.parent && isIteratorCall(parent.parent)) {
             return true;
           }
@@ -187,8 +344,58 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
     }
 
     /**
-     * Extract the callback parameter name from an iterator (map/forEach) call.
+     * Helper: Check if JSX is directly returned from a function (arrow body or return statement)
+     */
+    function isDirectReturnFromFunction(node: TSESTree.JSXElement): boolean {
+      let current: TSESTree.Node = node;
+      
+      while (current.parent) {
+        const parent = current.parent;
+        
+        // Nested in another JSXElement - not a direct return
+        if (parent.type === 'JSXElement' || parent.type === 'JSXFragment') {
+          return false;
+        }
+        
+        // Arrow function with expression body: item => <div>
+        if (
+          parent.type === 'ArrowFunctionExpression' &&
+          parent.body === current
+        ) {
+          return true;
+        }
+        
+        // Return statement: return <div>
+        if (
+          parent.type === 'ReturnStatement' &&
+          parent.argument === current
+        ) {
+          return true;
+        }
+        
+        // Continue for conditionals/logical expressions
+        if (
+          parent.type === 'ConditionalExpression' ||
+          parent.type === 'LogicalExpression'
+        ) {
+          current = parent;
+          continue;
+        }
+        
+        current = parent;
+      }
+      
+      return false;
+    }
+
+    /**
+     * Extract the callback parameter name from an iterator call.
      * Returns the first parameter name (e.g., 'user' from users.map(user => ...))
+     * 
+     * Handles:
+     * - array.map(item => ...) -> 'item'
+     * - Array.from(items, (item, index) => ...) -> 'item'
+     * - Children.map(children, child => ...) -> 'child'
      */
     function getIteratorCallbackParamName(node: TSESTree.JSXElement): string {
       let current: TSESTree.Node = node;
@@ -202,8 +409,21 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
           parent.params.length > 0 &&
           parent.params[0].type === 'Identifier'
         ) {
-          // Check if this arrow function is the callback for map/forEach
+          // Check if this arrow function is the callback for any iterator pattern
           if (parent.parent && isIteratorCall(parent.parent)) {
+            return parent.params[0].name;
+          }
+          // Check for Array.from's 2nd argument
+          const grandParent = parent.parent;
+          if (
+            grandParent?.type === 'CallExpression' &&
+            grandParent.callee.type === 'MemberExpression' &&
+            grandParent.callee.object.type === 'Identifier' &&
+            grandParent.callee.object.name === 'Array' &&
+            grandParent.callee.property.type === 'Identifier' &&
+            grandParent.callee.property.name === 'from' &&
+            grandParent.arguments[1] === parent
+          ) {
             return parent.params[0].name;
           }
         }
@@ -214,8 +434,21 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
           parent.params.length > 0 &&
           parent.params[0].type === 'Identifier'
         ) {
-          // Check if this function is the callback for map/forEach
+          // Check if this function is the callback for any iterator pattern
           if (parent.parent && isIteratorCall(parent.parent)) {
+            return parent.params[0].name;
+          }
+          // Check for Array.from's 2nd argument
+          const grandParent = parent.parent;
+          if (
+            grandParent?.type === 'CallExpression' &&
+            grandParent.callee.type === 'MemberExpression' &&
+            grandParent.callee.object.type === 'Identifier' &&
+            grandParent.callee.object.name === 'Array' &&
+            grandParent.callee.property.type === 'Identifier' &&
+            grandParent.callee.property.name === 'from' &&
+            grandParent.arguments[1] === parent
+          ) {
             return parent.params[0].name;
           }
         }
@@ -314,11 +547,8 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
 
       // Reset key tracker for each new array/map context
       CallExpression(node: TSESTree.CallExpression) {
-        if (
-          node.callee.type === 'MemberExpression' &&
-          node.callee.property.type === 'Identifier' &&
-          ['map', 'forEach'].includes(node.callee.property.name)
-        ) {
+        // Check if this is any iterator pattern that produces lists
+        if (isIteratorCall(node)) {
           // Entering a new iteration context
           resetKeyTracker();
         }

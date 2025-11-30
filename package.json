@@ -33,7 +33,11 @@
     "sync-tags:dry-run": "tsx scripts/sync-git-tags.ts --dry-run",
     "check-links": "tsx scripts/check-markdown-links.ts",
     "check-versions": "tsx scripts/check-version-alignment.ts",
-    "setup-branch-protection": "bash scripts/setup-branch-protection.sh"
+    "check-source-versions": "tsx scripts/check-source-version-sync.ts",
+    "sync-source-versions": "tsx scripts/sync-source-versions.ts",
+    "setup-branch-protection": "bash scripts/setup-branch-protection.sh",
+    "benchmark": "tsx scripts/benchmark-plugin.ts",
+    "benchmark:json": "tsx scripts/benchmark-plugin.ts --json"
   },
   "keywords": [
     "eslint",

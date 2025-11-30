@@ -286,6 +286,24 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * Find the parent statement (VariableDeclaration, ExpressionStatement, etc.)
+     */
+    const findParentStatement = (node: TSESTree.Node): TSESTree.Node | null => {
+      let current: TSESTree.Node | undefined = node;
+      while (current?.parent) {
+        if (
+          current.parent.type === 'VariableDeclaration' ||
+          current.parent.type === 'ExpressionStatement' ||
+          current.parent.type === 'ReturnStatement'
+        ) {
+          return current.parent;
+        }
+        current = current.parent;
+      }
+      return null;
+    };
+
+    /**
      * Check if the parent call is using an ORM or parameterized query
      */
     const isInSafeContext = (node: TSESTree.Node): boolean => {
@@ -337,6 +355,10 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
         const queryText = sourceCode.getText(node);
         const strategyMessageId = selectStrategyMessage();
 
+        // Find the parent statement to understand context
+        const parentStatement = findParentStatement(node);
+        const isInVariableDeclaration = parentStatement?.type === 'VariableDeclaration';
+
         context.report({
           node,
           messageId: 'sqlInjection',
@@ -360,9 +382,19 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
                   }
                 );
 
+                // If assigned to a variable, wrap in db.query() call
+                // This produces valid JavaScript syntax
+                if (isInVariableDeclaration && parentStatement) {
+                  return fixer.replaceText(
+                    parentStatement,
+                    `${sourceCode.getText(parentStatement).split('=')[0].trim()} = db.query(${parameterized}, [${params.join(', ')}])`
+                  );
+                }
+
+                // For standalone template literals, wrap in db.query()
                 return fixer.replaceText(
                   node,
-                  `${parameterized}, [${params.join(', ')}]`
+                  `db.query(${parameterized}, [${params.join(', ')}])`
                 );
               },
             },

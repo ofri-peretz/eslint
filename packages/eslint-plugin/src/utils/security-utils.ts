@@ -522,6 +522,90 @@ export function isInputSafe(
 /**
  * Options interface for security rules that want to use these utilities
  */
+/**
+ * Compliance framework identifiers
+ */
+export type ComplianceFramework = 
+  | 'SOC2'
+  | 'HIPAA' 
+  | 'PCI-DSS'
+  | 'GDPR'
+  | 'ISO27001'
+  | 'NIST-CSF'
+  | 'OWASP-ASVS'
+  | 'FEDRAMP'
+  | string; // Allow custom compliance identifiers
+
+/**
+ * Severity level override options
+ */
+export type SeverityLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'INFO';
+
+/**
+ * Severity override configuration
+ */
+export interface SeverityOverride {
+  /**
+   * Override the default severity level for this rule
+   * @example 'CRITICAL'
+   */
+  level?: SeverityLevel;
+
+  /**
+   * Override based on pattern matching
+   * @example { 'user-input': 'CRITICAL', 'internal-api': 'MEDIUM' }
+   */
+  patterns?: Record<string, SeverityLevel>;
+
+  /**
+   * Minimum severity to report (filters out lower severity issues)
+   * @example 'MEDIUM' - only report MEDIUM, HIGH, CRITICAL
+   */
+  minSeverity?: SeverityLevel;
+}
+
+/**
+ * Compliance context for security rules
+ */
+export interface ComplianceContext {
+  /**
+   * Additional compliance frameworks this rule applies to
+   * These are added to the auto-detected frameworks
+   * @example ['COMPANY-SEC-001', 'TEAM-POLICY-A']
+   */
+  frameworks?: ComplianceFramework[];
+
+  /**
+   * Ticket/issue tracking integration
+   * When violations are found, include link to create ticket
+   */
+  ticketTemplate?: {
+    /** Template URL with placeholders */
+    url: string;
+    /** Template for ticket summary */
+    summary?: string;
+    /** Default priority for tickets */
+    priority?: 'Critical' | 'High' | 'Medium' | 'Low';
+    /** Additional labels to apply */
+    labels?: string[];
+  };
+
+  /**
+   * Documentation link override for organization-specific docs
+   */
+  documentationUrl?: string;
+
+  /**
+   * Risk owner or team responsible for this category
+   */
+  riskOwner?: string;
+
+  /**
+   * Custom metadata for enterprise integration
+   */
+  metadata?: Record<string, string>;
+}
+
 export interface SecurityRuleOptions {
   /** Additional function names to consider as sanitizers */
   trustedSanitizers?: string[];
@@ -534,6 +618,44 @@ export interface SecurityRuleOptions {
   
   /** Disable all false positive detection (strict mode) */
   strictMode?: boolean;
+
+  /**
+   * Override the default severity for this rule
+   * 
+   * @example
+   * ```javascript
+   * // Simple override
+   * { severity: { level: 'CRITICAL' } }
+   * 
+   * // Pattern-based override
+   * { severity: { patterns: { 'user-input': 'CRITICAL', 'admin-api': 'HIGH' } } }
+   * 
+   * // Filter low severity
+   * { severity: { minSeverity: 'MEDIUM' } }
+   * ```
+   */
+  severity?: SeverityOverride;
+
+  /**
+   * Compliance context for enterprise security reporting
+   * 
+   * @example
+   * ```javascript
+   * {
+   *   compliance: {
+   *     frameworks: ['HIPAA', 'SOC2', 'COMPANY-SEC-001'],
+   *     ticketTemplate: {
+   *       url: 'https://jira.company.com/create?summary={{summary}}&priority={{priority}}',
+   *       priority: 'Critical',
+   *       labels: ['security', 'automated'],
+   *     },
+   *     documentationUrl: 'https://wiki.company.com/security/sql-injection',
+   *     riskOwner: 'security-team@company.com',
+   *   }
+   * }
+   * ```
+   */
+  compliance?: ComplianceContext;
 }
 
 /**
@@ -587,6 +709,170 @@ export function createSafetyChecker(options: SecurityRuleOptions = {}) {
       if (strictMode) return false;
       return hasSafeAnnotation(node, context, trustedAnnotations);
     },
+  };
+}
+
+// ============================================================================
+// SEVERITY AND COMPLIANCE HELPERS
+// ============================================================================
+
+const SEVERITY_ORDER: Record<SeverityLevel, number> = {
+  CRITICAL: 5,
+  HIGH: 4,
+  MEDIUM: 3,
+  LOW: 2,
+  INFO: 1,
+};
+
+/**
+ * Check if a severity level meets or exceeds a minimum threshold
+ */
+export function meetsSeverityThreshold(
+  severity: SeverityLevel,
+  minSeverity: SeverityLevel
+): boolean {
+  return SEVERITY_ORDER[severity] >= SEVERITY_ORDER[minSeverity];
+}
+
+/**
+ * Get the effective severity level based on options and context
+ *
+ * @example
+ * ```typescript
+ * const effectiveSeverity = getEffectiveSeverity('HIGH', options.severity, {
+ *   pattern: 'user-input', // optional context for pattern matching
+ * });
+ * ```
+ */
+export function getEffectiveSeverity(
+  defaultSeverity: SeverityLevel,
+  override?: SeverityOverride,
+  context?: { pattern?: string }
+): SeverityLevel {
+  if (!override) {
+    return defaultSeverity;
+  }
+
+  // Pattern-based override takes precedence
+  if (context?.pattern && override.patterns?.[context.pattern]) {
+    return override.patterns[context.pattern];
+  }
+
+  // Simple level override
+  if (override.level) {
+    return override.level;
+  }
+
+  return defaultSeverity;
+}
+
+/**
+ * Check if an issue should be reported based on severity threshold
+ */
+export function shouldReportSeverity(
+  severity: SeverityLevel,
+  override?: SeverityOverride
+): boolean {
+  if (!override?.minSeverity) {
+    return true;
+  }
+  return meetsSeverityThreshold(severity, override.minSeverity);
+}
+
+/**
+ * Build compliance tags string for error messages
+ */
+export function formatComplianceTags(
+  defaultFrameworks: ComplianceFramework[],
+  complianceContext?: ComplianceContext
+): string {
+  const allFrameworks = [
+    ...defaultFrameworks,
+    ...(complianceContext?.frameworks ?? []),
+  ];
+
+  if (allFrameworks.length === 0) {
+    return '';
+  }
+
+  // Limit to 4 frameworks for message brevity
+  const display = allFrameworks.slice(0, 4);
+  return `[${display.join(',')}]`;
+}
+
+/**
+ * Build ticket URL from template
+ */
+export function buildTicketUrl(
+  template: ComplianceContext['ticketTemplate'],
+  data: {
+    summary: string;
+    description?: string;
+    cwe?: string;
+    file?: string;
+    line?: number;
+  }
+): string | undefined {
+  if (!template?.url) {
+    return undefined;
+  }
+
+  let url = template.url;
+
+  // Replace placeholders
+  url = url.replace(/\{\{summary\}\}/g, encodeURIComponent(data.summary));
+  url = url.replace(/\{\{description\}\}/g, encodeURIComponent(data.description ?? ''));
+  url = url.replace(/\{\{priority\}\}/g, template.priority ?? 'Medium');
+  url = url.replace(/\{\{labels\}\}/g, (template.labels ?? []).join(','));
+  url = url.replace(/\{\{cwe\}\}/g, data.cwe ?? '');
+  url = url.replace(/\{\{file\}\}/g, encodeURIComponent(data.file ?? ''));
+  url = url.replace(/\{\{line\}\}/g, String(data.line ?? 0));
+
+  return url;
+}
+
+/**
+ * Get documentation URL with fallback to organization-specific docs
+ */
+export function getDocumentationUrl(
+  defaultUrl: string,
+  complianceContext?: ComplianceContext
+): string {
+  return complianceContext?.documentationUrl ?? defaultUrl;
+}
+
+/**
+ * Create enhanced message data with compliance context
+ */
+export function enhanceMessageData(
+  baseData: Record<string, unknown>,
+  options: SecurityRuleOptions,
+  context: {
+    defaultFrameworks?: ComplianceFramework[];
+    summary?: string;
+    description?: string;
+    cwe?: string;
+    file?: string;
+    line?: number;
+  }
+): Record<string, unknown> {
+  const complianceContext = options.compliance;
+
+  return {
+    ...baseData,
+    complianceTags: formatComplianceTags(
+      context.defaultFrameworks ?? [],
+      complianceContext
+    ),
+    ticketUrl: buildTicketUrl(complianceContext?.ticketTemplate, {
+      summary: context.summary ?? String(baseData['description'] ?? ''),
+      description: context.description,
+      cwe: context.cwe,
+      file: context.file,
+      line: context.line,
+    }),
+    riskOwner: complianceContext?.riskOwner ?? '',
+    ...complianceContext?.metadata,
   };
 }
 

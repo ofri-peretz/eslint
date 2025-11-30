@@ -11,6 +11,8 @@ import * as os from 'node:os';
 import {
   type FileSystemCache,
   type ImportInfo,
+  type IncrementalOptions,
+  type PersistentCacheData,
   createFileSystemCache,
   clearCache,
   getFileHash,
@@ -28,6 +30,13 @@ import {
   readFileSync,
   readJsonFileSync,
   findFileUpward,
+  createLRUCache,
+  isDefinitelyExternal,
+  // Incremental analysis functions
+  saveCacheToDisk,
+  loadCacheFromDisk,
+  getFilesNeedingReanalysis,
+  isIncrementalAvailable,
 } from '../utils/node-fs-utils';
 import {
   patternToRegex,
@@ -924,6 +933,95 @@ import { c } from './c';
       // Should find only one cycle
       expect(cycles.length).toBe(1);
     });
+
+    it('should detect deep cycles at any depth (unlike eslint-plugin-import no-cycle)', () => {
+      // Create a 10-file chain: f1 -> f2 -> f3 -> ... -> f10 -> f1
+      // eslint-plugin-import's no-cycle often misses this with default settings
+      // Our Tarjan SCC algorithm guarantees finding ALL cycles regardless of depth
+      const fileNames = Array.from({ length: 10 }, (_, i) => `file${i + 1}.ts`);
+      
+      // Create files with chain imports
+      fileNames.forEach((name, idx) => {
+        const nextIdx = (idx + 1) % 10;
+        const nextName = fileNames[nextIdx];
+        createTempFile(`deep/${name}`, `import { x } from './${nextName.replace('.ts', '')}';`);
+      });
+
+      const startFile = path.join(testDir, 'deep/file1.ts');
+      
+      // With sufficient maxDepth, should find the cycle
+      const cycles = findAllCircularDependencies(startFile, {
+        maxDepth: 20, // High enough to traverse 10 files
+        reportAllCycles: true,
+        workspaceRoot: testDir,
+        barrelExports: ['index.ts'],
+        cache: createFileSystemCache(),
+      });
+
+      // MUST find the 10-file cycle
+      expect(cycles.length).toBeGreaterThan(0);
+      
+      // Verify all 10 files are part of the detected cycle
+      const flatCycles = cycles.flat();
+      fileNames.forEach((name) => {
+        const fullPath = path.join(testDir, `deep/${name}`);
+        expect(flatCycles).toContain(fullPath);
+      });
+    });
+
+    it('should benefit from SCC caching across multiple files in same lint run', () => {
+      // Create a cycle: a -> b -> c -> a
+      const fileA = createTempFile('cached/a.ts', `import { b } from './b';`);
+      const fileB = createTempFile('cached/b.ts', `import { c } from './c';`);
+      const fileC = createTempFile('cached/c.ts', `import { a } from './a';`);
+
+      // Use same cache for multiple calls
+      const sharedCache = createFileSystemCache();
+
+      // First call - computes SCCs
+      const cyclesFromA = findAllCircularDependencies(fileA, {
+        maxDepth: 10,
+        reportAllCycles: true,
+        workspaceRoot: testDir,
+        barrelExports: ['index.ts'],
+        cache: sharedCache,
+      });
+
+      // SCC should be computed
+      expect(sharedCache.sccComputed).toBe(true);
+      expect(sharedCache.sccs.length).toBeGreaterThan(0);
+
+      // Second call from fileB - should use cached SCC (O(1) lookup)
+      const cyclesFromB = findAllCircularDependencies(fileB, {
+        maxDepth: 10,
+        reportAllCycles: true,
+        workspaceRoot: testDir,
+        barrelExports: ['index.ts'],
+        cache: sharedCache,
+      });
+
+      // Third call from fileC - should also use cached SCC
+      const cyclesFromC = findAllCircularDependencies(fileC, {
+        maxDepth: 10,
+        reportAllCycles: true,
+        workspaceRoot: testDir,
+        barrelExports: ['index.ts'],
+        cache: sharedCache,
+      });
+
+      // All should detect the cycle
+      expect(cyclesFromA.length).toBeGreaterThan(0);
+      expect(cyclesFromB.length).toBeGreaterThan(0);
+      expect(cyclesFromC.length).toBeGreaterThan(0);
+
+      // All three files should be in the detected cycle
+      [cyclesFromA, cyclesFromB, cyclesFromC].forEach((cycles) => {
+        const flatCycles = cycles.flat();
+        expect(flatCycles).toContain(fileA);
+        expect(flatCycles).toContain(fileB);
+        expect(flatCycles).toContain(fileC);
+      });
+    });
   });
 
   describe('getMinimalCycle', () => {
@@ -1185,6 +1283,850 @@ import { c } from './c';
 
       // Should find child package.json first
       expect(result).toBe(childPkg);
+    });
+  });
+
+  // =============================================================================
+  // Performance Optimization Tests (inspired by eslint-plugin-import)
+  // =============================================================================
+
+  describe('createLRUCache', () => {
+    it('should create an empty LRU cache', () => {
+      const lruCache = createLRUCache<string, number>(5);
+      expect(lruCache.size).toBe(0);
+    });
+
+    it('should set and get values', () => {
+      const lruCache = createLRUCache<string, number>(5);
+      lruCache.set('a', 1);
+      lruCache.set('b', 2);
+      
+      expect(lruCache.get('a')).toBe(1);
+      expect(lruCache.get('b')).toBe(2);
+    });
+
+    it('should return undefined for non-existent keys', () => {
+      const lruCache = createLRUCache<string, number>(5);
+      expect(lruCache.get('nonexistent')).toBeUndefined();
+    });
+
+    it('should evict oldest entry when capacity is reached', () => {
+      const lruCache = createLRUCache<string, number>(3);
+      lruCache.set('a', 1);
+      lruCache.set('b', 2);
+      lruCache.set('c', 3);
+      
+      // Cache is now full (size 3)
+      expect(lruCache.size).toBe(3);
+      
+      // Add new entry - should evict 'a' (oldest)
+      lruCache.set('d', 4);
+      
+      expect(lruCache.size).toBe(3);
+      expect(lruCache.get('a')).toBeUndefined(); // evicted
+      expect(lruCache.get('b')).toBe(2);
+      expect(lruCache.get('c')).toBe(3);
+      expect(lruCache.get('d')).toBe(4);
+    });
+
+    it('should move accessed items to end (most recently used)', () => {
+      const lruCache = createLRUCache<string, number>(3);
+      lruCache.set('a', 1);
+      lruCache.set('b', 2);
+      lruCache.set('c', 3);
+      
+      // Access 'a' to move it to the end
+      lruCache.get('a');
+      
+      // Add new entry - should evict 'b' (now oldest) not 'a'
+      lruCache.set('d', 4);
+      
+      expect(lruCache.get('a')).toBe(1); // still present
+      expect(lruCache.get('b')).toBeUndefined(); // evicted
+      expect(lruCache.get('c')).toBe(3);
+      expect(lruCache.get('d')).toBe(4);
+    });
+
+    it('should update value and position on re-set', () => {
+      const lruCache = createLRUCache<string, number>(3);
+      lruCache.set('a', 1);
+      lruCache.set('b', 2);
+      lruCache.set('c', 3);
+      
+      // Update 'a' - should move to end
+      lruCache.set('a', 100);
+      
+      // Add new entry - should evict 'b' (now oldest)
+      lruCache.set('d', 4);
+      
+      expect(lruCache.get('a')).toBe(100); // updated value
+      expect(lruCache.get('b')).toBeUndefined(); // evicted
+    });
+
+    it('should correctly report has() for existing and non-existing keys', () => {
+      const lruCache = createLRUCache<string, number>(5);
+      lruCache.set('a', 1);
+      
+      expect(lruCache.has('a')).toBe(true);
+      expect(lruCache.has('b')).toBe(false);
+    });
+
+    it('should delete entries correctly', () => {
+      const lruCache = createLRUCache<string, number>(5);
+      lruCache.set('a', 1);
+      lruCache.set('b', 2);
+      
+      expect(lruCache.delete('a')).toBe(true);
+      expect(lruCache.get('a')).toBeUndefined();
+      expect(lruCache.size).toBe(1);
+      
+      // Deleting non-existent key
+      expect(lruCache.delete('nonexistent')).toBe(false);
+    });
+
+    it('should clear all entries', () => {
+      const lruCache = createLRUCache<string, number>(5);
+      lruCache.set('a', 1);
+      lruCache.set('b', 2);
+      lruCache.set('c', 3);
+      
+      lruCache.clear();
+      
+      expect(lruCache.size).toBe(0);
+      expect(lruCache.get('a')).toBeUndefined();
+      expect(lruCache.get('b')).toBeUndefined();
+      expect(lruCache.get('c')).toBeUndefined();
+    });
+
+    it('should handle cache with size 1', () => {
+      const lruCache = createLRUCache<string, number>(1);
+      lruCache.set('a', 1);
+      expect(lruCache.get('a')).toBe(1);
+      
+      lruCache.set('b', 2);
+      expect(lruCache.get('a')).toBeUndefined();
+      expect(lruCache.get('b')).toBe(2);
+      expect(lruCache.size).toBe(1);
+    });
+  });
+
+  describe('isDefinitelyExternal', () => {
+    describe('known external packages', () => {
+      it('should return true for known framework packages', () => {
+        expect(isDefinitelyExternal('react')).toBe(true);
+        expect(isDefinitelyExternal('react-dom')).toBe(true);
+        expect(isDefinitelyExternal('vue')).toBe(true);
+        expect(isDefinitelyExternal('angular')).toBe(true);
+        expect(isDefinitelyExternal('svelte')).toBe(true);
+      });
+
+      it('should return true for known utility packages', () => {
+        expect(isDefinitelyExternal('lodash')).toBe(true);
+        expect(isDefinitelyExternal('underscore')).toBe(true);
+        expect(isDefinitelyExternal('ramda')).toBe(true);
+        expect(isDefinitelyExternal('rxjs')).toBe(true);
+      });
+
+      it('should return true for known server packages', () => {
+        expect(isDefinitelyExternal('express')).toBe(true);
+        expect(isDefinitelyExternal('koa')).toBe(true);
+        expect(isDefinitelyExternal('fastify')).toBe(true);
+        expect(isDefinitelyExternal('hapi')).toBe(true);
+      });
+
+      it('should return true for known http packages', () => {
+        expect(isDefinitelyExternal('axios')).toBe(true);
+        expect(isDefinitelyExternal('node-fetch')).toBe(true);
+        expect(isDefinitelyExternal('got')).toBe(true);
+      });
+
+      it('should return true for known build tools', () => {
+        expect(isDefinitelyExternal('typescript')).toBe(true);
+        expect(isDefinitelyExternal('eslint')).toBe(true);
+        expect(isDefinitelyExternal('prettier')).toBe(true);
+        expect(isDefinitelyExternal('jest')).toBe(true);
+        expect(isDefinitelyExternal('vitest')).toBe(true);
+        expect(isDefinitelyExternal('webpack')).toBe(true);
+        expect(isDefinitelyExternal('rollup')).toBe(true);
+        expect(isDefinitelyExternal('vite')).toBe(true);
+        expect(isDefinitelyExternal('esbuild')).toBe(true);
+      });
+    });
+
+    describe('Node.js built-in modules', () => {
+      it('should return true for node: prefixed imports', () => {
+        expect(isDefinitelyExternal('node:fs')).toBe(true);
+        expect(isDefinitelyExternal('node:path')).toBe(true);
+        expect(isDefinitelyExternal('node:url')).toBe(true);
+        expect(isDefinitelyExternal('node:http')).toBe(true);
+        expect(isDefinitelyExternal('node:crypto')).toBe(true);
+        expect(isDefinitelyExternal('node:child_process')).toBe(true);
+      });
+
+      it('should return true for bare node modules', () => {
+        expect(isDefinitelyExternal('fs')).toBe(true);
+        expect(isDefinitelyExternal('path')).toBe(true);
+        expect(isDefinitelyExternal('url')).toBe(true);
+        expect(isDefinitelyExternal('http')).toBe(true);
+        expect(isDefinitelyExternal('https')).toBe(true);
+        expect(isDefinitelyExternal('crypto')).toBe(true);
+        expect(isDefinitelyExternal('util')).toBe(true);
+        expect(isDefinitelyExternal('os')).toBe(true);
+        expect(isDefinitelyExternal('child_process')).toBe(true);
+      });
+    });
+
+    describe('bare specifiers (external packages)', () => {
+      it('should return true for bare specifiers without slash', () => {
+        // Packages without subpaths match ^[a-z@][^/]*$
+        expect(isDefinitelyExternal('some-package')).toBe(true);
+        expect(isDefinitelyExternal('my-lib')).toBe(true);
+        expect(isDefinitelyExternal('xyz')).toBe(true);
+      });
+    });
+
+    describe('node_modules paths', () => {
+      it('should return true for node_modules paths', () => {
+        expect(isDefinitelyExternal('/path/to/node_modules/lodash')).toBe(true);
+        expect(isDefinitelyExternal('node_modules/react')).toBe(true);
+        expect(isDefinitelyExternal('../node_modules/axios')).toBe(true);
+      });
+    });
+
+    describe('relative and internal paths', () => {
+      it('should return false for relative paths', () => {
+        expect(isDefinitelyExternal('./utils')).toBe(false);
+        expect(isDefinitelyExternal('../components/Button')).toBe(false);
+        expect(isDefinitelyExternal('./index')).toBe(false);
+      });
+
+      it('should return false for project alias paths', () => {
+        expect(isDefinitelyExternal('@app/utils')).toBe(false);
+        expect(isDefinitelyExternal('@src/components')).toBe(false);
+        expect(isDefinitelyExternal('@lib/helpers')).toBe(false);
+      });
+
+      it('should return true for subpath imports of known packages', () => {
+        // These are external packages with subpaths - still external
+        expect(isDefinitelyExternal('lodash/debounce')).toBe(true);
+        expect(isDefinitelyExternal('react/jsx-runtime')).toBe(true);
+        expect(isDefinitelyExternal('express/lib/router')).toBe(true);
+      });
+
+      it('should return false for subpath imports of unknown packages', () => {
+        // Packages not in known list with subpaths
+        expect(isDefinitelyExternal('my-custom-lib/utils')).toBe(false);
+        expect(isDefinitelyExternal('some-unknown-package/deep/path')).toBe(false);
+      });
+    });
+  });
+
+  describe('FileSystemCache - resolvedPaths LRU cache', () => {
+    it('should include resolvedPaths cache in new cache', () => {
+      const newCache = createFileSystemCache();
+      expect(newCache.resolvedPaths).toBeDefined();
+      expect(newCache.resolvedPaths.size).toBe(0);
+    });
+
+    it('should cache resolved import paths', () => {
+      // Create test files
+      const fileA = createTempFile('src/a.ts', 'export const a = 1;');
+      const fileB = createTempFile('src/b.ts', 'export const b = 2;');
+      
+      // First resolution should add to cache
+      const result1 = resolveImportPath('./b', {
+        fromFile: fileA,
+        workspaceRoot: testDir,
+        barrelExports: ['index.ts'],
+        cache,
+      });
+      
+      expect(result1).toBe(fileB);
+      expect(cache.resolvedPaths.size).toBe(1);
+      
+      // Second resolution should hit cache (same result)
+      const result2 = resolveImportPath('./b', {
+        fromFile: fileA,
+        workspaceRoot: testDir,
+        barrelExports: ['index.ts'],
+        cache,
+      });
+      
+      expect(result2).toBe(fileB);
+      expect(cache.resolvedPaths.size).toBe(1); // Still 1 (cache hit)
+    });
+
+    it('should cache null results for external packages', () => {
+      const fileA = createTempFile('src/a.ts', 'import lodash from "lodash";');
+      
+      const result = resolveImportPath('lodash', {
+        fromFile: fileA,
+        workspaceRoot: testDir,
+        barrelExports: ['index.ts'],
+        cache,
+      });
+      
+      expect(result).toBeNull();
+      // External packages are skipped via isDefinitelyExternal before caching
+      // They return null immediately and don't need caching
+    });
+
+    it('should clear resolvedPaths when cache is cleared', () => {
+      const fileA = createTempFile('src/a.ts', 'export const a = 1;');
+      const fileB = createTempFile('src/b.ts', 'export const b = 2;');
+      
+      resolveImportPath('./b', {
+        fromFile: fileA,
+        workspaceRoot: testDir,
+        barrelExports: ['index.ts'],
+        cache,
+      });
+      
+      expect(cache.resolvedPaths.size).toBeGreaterThan(0);
+      
+      clearCache(cache);
+      
+      expect(cache.resolvedPaths.size).toBe(0);
+    });
+  });
+
+  describe('FileSystemCache - nonCyclicFiles cache', () => {
+    it('should include nonCyclicFiles set in new cache', () => {
+      const newCache = createFileSystemCache();
+      expect(newCache.nonCyclicFiles).toBeDefined();
+      expect(newCache.nonCyclicFiles.size).toBe(0);
+    });
+
+    it('should cache files that are not in any cycle', () => {
+      // Create non-cyclic files
+      const fileA = createTempFile('src/a.ts', 'import { b } from "./b";');
+      const fileB = createTempFile('src/b.ts', 'export const b = 1;');
+      
+      const cycles = findAllCircularDependencies(fileA, {
+        maxDepth: 10,
+        reportAllCycles: true,
+        workspaceRoot: testDir,
+        barrelExports: ['index.ts'],
+        cache,
+      });
+      
+      expect(cycles).toHaveLength(0);
+      // After checking, non-cyclic files should be cached
+      expect(cache.nonCyclicFiles.has(fileA)).toBe(true);
+    });
+
+    it('should not cache files that are in a cycle', () => {
+      // Create cyclic files
+      const fileA = createTempFile('src/a.ts', 'import { b } from "./b";');
+      const fileB = createTempFile('src/b.ts', 'import { a } from "./a";');
+      
+      const cycles = findAllCircularDependencies(fileA, {
+        maxDepth: 10,
+        reportAllCycles: true,
+        workspaceRoot: testDir,
+        barrelExports: ['index.ts'],
+        cache,
+      });
+      
+      expect(cycles.length).toBeGreaterThan(0);
+      // Cyclic files should NOT be in nonCyclicFiles cache
+      expect(cache.nonCyclicFiles.has(fileA)).toBe(false);
+    });
+
+    it('should skip cycle detection for known non-cyclic files', () => {
+      // Create non-cyclic files
+      const fileA = createTempFile('src/a.ts', 'import { b } from "./b";');
+      const fileB = createTempFile('src/b.ts', 'export const b = 1;');
+      
+      // First call should compute and cache
+      findAllCircularDependencies(fileA, {
+        maxDepth: 10,
+        reportAllCycles: true,
+        workspaceRoot: testDir,
+        barrelExports: ['index.ts'],
+        cache,
+      });
+      
+      expect(cache.nonCyclicFiles.has(fileA)).toBe(true);
+      
+      // Second call should be fast (cached)
+      const startTime = Date.now();
+      const cycles = findAllCircularDependencies(fileA, {
+        maxDepth: 10,
+        reportAllCycles: true,
+        workspaceRoot: testDir,
+        barrelExports: ['index.ts'],
+        cache,
+      });
+      const duration = Date.now() - startTime;
+      
+      expect(cycles).toHaveLength(0);
+      // Should be very fast (< 5ms) due to cache hit
+      expect(duration).toBeLessThan(50);
+    });
+
+    it('should clear nonCyclicFiles when cache is cleared', () => {
+      const fileA = createTempFile('src/a.ts', 'export const a = 1;');
+      
+      findAllCircularDependencies(fileA, {
+        maxDepth: 10,
+        reportAllCycles: true,
+        workspaceRoot: testDir,
+        barrelExports: ['index.ts'],
+        cache,
+      });
+      
+      expect(cache.nonCyclicFiles.size).toBeGreaterThan(0);
+      
+      clearCache(cache);
+      
+      expect(cache.nonCyclicFiles.size).toBe(0);
+    });
+  });
+
+  describe('resolveImportPath - early external detection', () => {
+    it('should return null immediately for known external packages', () => {
+      const fileA = createTempFile('src/a.ts', '');
+      
+      // These should return null without any file system access
+      expect(resolveImportPath('react', {
+        fromFile: fileA,
+        workspaceRoot: testDir,
+        barrelExports: ['index.ts'],
+        cache,
+      })).toBeNull();
+      
+      expect(resolveImportPath('lodash', {
+        fromFile: fileA,
+        workspaceRoot: testDir,
+        barrelExports: ['index.ts'],
+        cache,
+      })).toBeNull();
+      
+      expect(resolveImportPath('node:fs', {
+        fromFile: fileA,
+        workspaceRoot: testDir,
+        barrelExports: ['index.ts'],
+        cache,
+      })).toBeNull();
+    });
+
+    it('should return null for scoped external packages', () => {
+      const fileA = createTempFile('src/a.ts', '');
+      
+      // Scoped packages that are external
+      expect(resolveImportPath('@babel/core', {
+        fromFile: fileA,
+        workspaceRoot: testDir,
+        barrelExports: ['index.ts'],
+        cache,
+      })).toBeNull();
+      
+      expect(resolveImportPath('@types/node', {
+        fromFile: fileA,
+        workspaceRoot: testDir,
+        barrelExports: ['index.ts'],
+        cache,
+      })).toBeNull();
+    });
+
+    it('should resolve @app/ and @src/ aliases as internal', () => {
+      // Create the expected resolved file
+      const utilsFile = createTempFile('src/utils/helpers.ts', 'export const helper = 1;');
+      const fileA = createTempFile('src/a.ts', '');
+      
+      const result = resolveImportPath('@app/utils/helpers', {
+        fromFile: fileA,
+        workspaceRoot: testDir,
+        barrelExports: ['index.ts'],
+        cache,
+      });
+      
+      expect(result).toBe(utilsFile);
+    });
+  });
+
+  // ============================================================
+  // INCREMENTAL ANALYSIS TESTS
+  // ============================================================
+
+  describe('Incremental Analysis', () => {
+    describe('isIncrementalAvailable', () => {
+      it('should return false when options are undefined', () => {
+        expect(isIncrementalAvailable(cache, undefined)).toBe(false);
+      });
+
+      it('should return false when incremental is disabled', () => {
+        expect(isIncrementalAvailable(cache, { enabled: false })).toBe(false);
+      });
+
+      it('should return false when SCC is not computed', () => {
+        const freshCache = createFileSystemCache();
+        expect(isIncrementalAvailable(freshCache, { enabled: true })).toBe(false);
+      });
+
+      it('should return true when incremental is enabled and SCC is computed', () => {
+        const incrementalCache = createFileSystemCache();
+        incrementalCache.sccComputed = true;
+        incrementalCache.sccs = [{ files: ['a.ts'], hasCycle: false }];
+        
+        expect(isIncrementalAvailable(incrementalCache, { enabled: true })).toBe(true);
+      });
+    });
+
+    describe('saveCacheToDisk and loadCacheFromDisk', () => {
+      it('should not save when incremental is disabled', () => {
+        const cacheFile = path.join(testDir, '.cache', 'test-cache.json');
+        
+        saveCacheToDisk(cache, { enabled: false }, testDir);
+        
+        expect(fs.existsSync(cacheFile)).toBe(false);
+      });
+
+      it('should save cache to disk when enabled', () => {
+        const cacheFile = path.join(testDir, '.cache', 'cycles.json');
+        const incrementalCache = createFileSystemCache();
+        
+        // Populate the cache
+        incrementalCache.fileHashes.set('a.ts', 'hash-a');
+        incrementalCache.fileHashes.set('b.ts', 'hash-b');
+        incrementalCache.sccs = [
+          { files: ['a.ts', 'b.ts'], hasCycle: true },
+        ];
+        incrementalCache.sccIndex.set('a.ts', 0);
+        incrementalCache.sccIndex.set('b.ts', 0);
+        incrementalCache.nonCyclicFiles.add('c.ts');
+        incrementalCache.graphHash = 'test-graph-hash';
+        incrementalCache.sccComputed = true;
+        
+        saveCacheToDisk(
+          incrementalCache,
+          { enabled: true, cacheFile: '.cache/cycles.json' },
+          testDir
+        );
+        
+        expect(fs.existsSync(cacheFile)).toBe(true);
+        
+        const savedData = JSON.parse(fs.readFileSync(cacheFile, 'utf-8')) as PersistentCacheData;
+        expect(savedData.version).toBe(1);
+        expect(savedData.fileHashes['a.ts']).toBe('hash-a');
+        expect(savedData.sccs).toHaveLength(1);
+        expect(savedData.nonCyclicFiles).toContain('c.ts');
+      });
+
+      it('should load cache from disk when valid', () => {
+        const cacheFile = path.join(testDir, '.cache', 'load-test.json');
+        
+        // Create a valid cache file
+        const cacheData: PersistentCacheData = {
+          version: 1,
+          createdAt: Date.now(),
+          fileHashes: { 'a.ts': 'hash-a', 'b.ts': 'hash-b' },
+          sccs: [{ files: ['a.ts', 'b.ts'], hasCycle: true }],
+          sccIndex: { 'a.ts': 0, 'b.ts': 0 },
+          nonCyclicFiles: ['c.ts'],
+          graphHash: 'test-hash',
+        };
+        
+        fs.mkdirSync(path.dirname(cacheFile), { recursive: true });
+        fs.writeFileSync(cacheFile, JSON.stringify(cacheData));
+        
+        const targetCache = createFileSystemCache();
+        const loaded = loadCacheFromDisk(
+          targetCache,
+          { enabled: true, cacheFile: '.cache/load-test.json' },
+          testDir
+        );
+        
+        expect(loaded).toBe(true);
+        expect(targetCache.sccComputed).toBe(true);
+        expect(targetCache.fileHashes.get('a.ts')).toBe('hash-a');
+        expect(targetCache.sccs).toHaveLength(1);
+        expect(targetCache.nonCyclicFiles.has('c.ts')).toBe(true);
+      });
+
+      it('should return false for non-existent cache file', () => {
+        const targetCache = createFileSystemCache();
+        const loaded = loadCacheFromDisk(
+          targetCache,
+          { enabled: true, cacheFile: '.cache/nonexistent.json' },
+          testDir
+        );
+        
+        expect(loaded).toBe(false);
+        expect(targetCache.sccComputed).toBe(false);
+      });
+
+      it('should return false for incompatible version', () => {
+        const cacheFile = path.join(testDir, '.cache', 'old-version.json');
+        
+        const oldData = {
+          version: 999, // Future/incompatible version
+          createdAt: Date.now(),
+          fileHashes: {},
+          sccs: [],
+          sccIndex: {},
+          nonCyclicFiles: [],
+          graphHash: '',
+        };
+        
+        fs.mkdirSync(path.dirname(cacheFile), { recursive: true });
+        fs.writeFileSync(cacheFile, JSON.stringify(oldData));
+        
+        const targetCache = createFileSystemCache();
+        const loaded = loadCacheFromDisk(
+          targetCache,
+          { enabled: true, cacheFile: '.cache/old-version.json' },
+          testDir
+        );
+        
+        expect(loaded).toBe(false);
+      });
+
+      it('should return false for expired cache', () => {
+        const cacheFile = path.join(testDir, '.cache', 'expired.json');
+        
+        const expiredData: PersistentCacheData = {
+          version: 1,
+          createdAt: Date.now() - (25 * 60 * 60 * 1000), // 25 hours ago (default is 24h)
+          fileHashes: {},
+          sccs: [],
+          sccIndex: {},
+          nonCyclicFiles: [],
+          graphHash: '',
+        };
+        
+        fs.mkdirSync(path.dirname(cacheFile), { recursive: true });
+        fs.writeFileSync(cacheFile, JSON.stringify(expiredData));
+        
+        const targetCache = createFileSystemCache();
+        const loaded = loadCacheFromDisk(
+          targetCache,
+          { enabled: true, cacheFile: '.cache/expired.json' },
+          testDir
+        );
+        
+        expect(loaded).toBe(false);
+      });
+
+      it('should respect custom maxCacheAge', () => {
+        const cacheFile = path.join(testDir, '.cache', 'custom-age.json');
+        
+        // Cache created 2 hours ago
+        const recentData: PersistentCacheData = {
+          version: 1,
+          createdAt: Date.now() - (2 * 60 * 60 * 1000),
+          fileHashes: { 'test.ts': 'hash' },
+          sccs: [],
+          sccIndex: {},
+          nonCyclicFiles: [],
+          graphHash: '',
+        };
+        
+        fs.mkdirSync(path.dirname(cacheFile), { recursive: true });
+        fs.writeFileSync(cacheFile, JSON.stringify(recentData));
+        
+        const targetCache = createFileSystemCache();
+        
+        // Should fail with 1 hour max age
+        const failedLoad = loadCacheFromDisk(
+          targetCache,
+          { enabled: true, cacheFile: '.cache/custom-age.json', maxCacheAge: 1 * 60 * 60 * 1000 },
+          testDir
+        );
+        expect(failedLoad).toBe(false);
+        
+        // Should succeed with 3 hour max age
+        const successLoad = loadCacheFromDisk(
+          createFileSystemCache(),
+          { enabled: true, cacheFile: '.cache/custom-age.json', maxCacheAge: 3 * 60 * 60 * 1000 },
+          testDir
+        );
+        expect(successLoad).toBe(true);
+      });
+    });
+
+    describe('getFilesNeedingReanalysis', () => {
+      it('should return all files when incremental is disabled', () => {
+        const files = ['a.ts', 'b.ts', 'c.ts'];
+        const result = getFilesNeedingReanalysis(files, cache, { enabled: false });
+        
+        expect(result).toEqual(files);
+      });
+
+      it('should return all files when SCC is not computed', () => {
+        const freshCache = createFileSystemCache();
+        const files = ['a.ts', 'b.ts', 'c.ts'];
+        
+        const result = getFilesNeedingReanalysis(files, freshCache, { enabled: true });
+        
+        expect(result).toEqual(files);
+      });
+
+      it('should return empty array when no files changed', () => {
+        const incrementalCache = createFileSystemCache();
+        incrementalCache.sccComputed = true;
+        incrementalCache.sccs = [];
+        
+        // Create real files and add their hashes
+        const fileA = createTempFile('incr/a.ts', 'export const a = 1;');
+        const fileB = createTempFile('incr/b.ts', 'export const b = 2;');
+        
+        const hashA = getFileHash(fileA);
+        const hashB = getFileHash(fileB);
+        
+        if (hashA) incrementalCache.fileHashes.set(fileA, hashA);
+        if (hashB) incrementalCache.fileHashes.set(fileB, hashB);
+        
+        const result = getFilesNeedingReanalysis(
+          [fileA, fileB],
+          incrementalCache,
+          { enabled: true }
+        );
+        
+        expect(result).toEqual([]);
+      });
+
+      it('should return changed files', () => {
+        const incrementalCache = createFileSystemCache();
+        incrementalCache.sccComputed = true;
+        incrementalCache.sccs = [];
+        
+        const fileA = createTempFile('changed/a.ts', 'export const a = 1;');
+        const fileB = createTempFile('changed/b.ts', 'export const b = 2;');
+        
+        // Only cache hash for fileA (fileB is "new" or "changed")
+        const hashA = getFileHash(fileA);
+        if (hashA) incrementalCache.fileHashes.set(fileA, hashA);
+        incrementalCache.fileHashes.set(fileB, 'old-hash-that-doesnt-match');
+        
+        const result = getFilesNeedingReanalysis(
+          [fileA, fileB],
+          incrementalCache,
+          { enabled: true }
+        );
+        
+        expect(result).toContain(fileB);
+        expect(result).not.toContain(fileA);
+      });
+
+      it('should include files in same SCC as changed file', () => {
+        const incrementalCache = createFileSystemCache();
+        incrementalCache.sccComputed = true;
+        
+        const fileA = createTempFile('scc/a.ts', 'export const a = 1;');
+        const fileB = createTempFile('scc/b.ts', 'export const b = 2;');
+        const fileC = createTempFile('scc/c.ts', 'export const c = 3;');
+        
+        // A and B are in the same SCC (cycle), C is separate
+        incrementalCache.sccs = [
+          { files: [fileA, fileB], hasCycle: true },
+          { files: [fileC], hasCycle: false },
+        ];
+        incrementalCache.sccIndex.set(fileA, 0);
+        incrementalCache.sccIndex.set(fileB, 0);
+        incrementalCache.sccIndex.set(fileC, 1);
+        
+        // Only fileB changed
+        const hashA = getFileHash(fileA);
+        const hashC = getFileHash(fileC);
+        if (hashA) incrementalCache.fileHashes.set(fileA, hashA);
+        if (hashC) incrementalCache.fileHashes.set(fileC, hashC);
+        incrementalCache.fileHashes.set(fileB, 'old-hash');
+        
+        const result = getFilesNeedingReanalysis(
+          [fileA, fileB, fileC],
+          incrementalCache,
+          { enabled: true }
+        );
+        
+        // Both A and B should be in result because they're in the same SCC
+        expect(result).toContain(fileA);
+        expect(result).toContain(fileB);
+        expect(result).not.toContain(fileC);
+      });
+
+      it('should include files that import changed files', () => {
+        const incrementalCache = createFileSystemCache();
+        incrementalCache.sccComputed = true;
+        incrementalCache.sccs = [];
+        
+        const fileA = createTempFile('import/a.ts', 'export const a = 1;');
+        const fileB = createTempFile('import/b.ts', 'import { a } from "./a";');
+        
+        // Cache indicates B imports A
+        incrementalCache.dependencies.set(fileB, [{ path: fileA, source: './a' }]);
+        
+        // FileA changed
+        const hashB = getFileHash(fileB);
+        if (hashB) incrementalCache.fileHashes.set(fileB, hashB);
+        incrementalCache.fileHashes.set(fileA, 'old-hash');
+        
+        incrementalCache.nonCyclicFiles.add(fileB);
+        
+        const result = getFilesNeedingReanalysis(
+          [fileA, fileB],
+          incrementalCache,
+          { enabled: true }
+        );
+        
+        // Both files should be reanalyzed
+        expect(result).toContain(fileA);
+        expect(result).toContain(fileB);
+        // B should be removed from nonCyclicFiles
+        expect(incrementalCache.nonCyclicFiles.has(fileB)).toBe(false);
+      });
+    });
+
+    describe('round-trip save and load', () => {
+      it('should preserve all cache data through save/load cycle', () => {
+        const sourceCache = createFileSystemCache();
+        
+        // Create real files
+        const fileA = createTempFile('roundtrip/a.ts', 'export const a = 1;');
+        const fileB = createTempFile('roundtrip/b.ts', 'import { a } from "./a"; export const b = a + 1;');
+        
+        // Populate source cache
+        const hashA = getFileHash(fileA);
+        const hashB = getFileHash(fileB);
+        if (hashA) sourceCache.fileHashes.set(fileA, hashA);
+        if (hashB) sourceCache.fileHashes.set(fileB, hashB);
+        
+        sourceCache.sccs = [
+          { files: [fileA, fileB], hasCycle: true },
+        ];
+        sourceCache.sccIndex.set(fileA, 0);
+        sourceCache.sccIndex.set(fileB, 0);
+        sourceCache.nonCyclicFiles.add('other.ts');
+        sourceCache.graphHash = 'test-graph-hash-123';
+        sourceCache.sccComputed = true;
+        
+        // Save
+        saveCacheToDisk(
+          sourceCache,
+          { enabled: true, cacheFile: '.cache/roundtrip.json' },
+          testDir
+        );
+        
+        // Load into new cache
+        const targetCache = createFileSystemCache();
+        const loaded = loadCacheFromDisk(
+          targetCache,
+          { enabled: true, cacheFile: '.cache/roundtrip.json' },
+          testDir
+        );
+        
+        expect(loaded).toBe(true);
+        expect(targetCache.sccComputed).toBe(true);
+        expect(targetCache.graphHash).toBe('test-graph-hash-123');
+        expect(targetCache.fileHashes.get(fileA)).toBe(hashA);
+        expect(targetCache.fileHashes.get(fileB)).toBe(hashB);
+        expect(targetCache.sccs).toHaveLength(1);
+        expect(targetCache.sccs[0].hasCycle).toBe(true);
+        expect(targetCache.sccIndex.get(fileA)).toBe(0);
+        expect(targetCache.sccIndex.get(fileB)).toBe(0);
+        expect(targetCache.nonCyclicFiles.has('other.ts')).toBe(true);
+      });
     });
   });
 });

@@ -16,6 +16,17 @@ import {
   isParameterizedQuery,
   isInputSafe,
   createSafetyChecker,
+  // New severity and compliance helpers
+  meetsSeverityThreshold,
+  getEffectiveSeverity,
+  shouldReportSeverity,
+  formatComplianceTags,
+  buildTicketUrl,
+  getDocumentationUrl,
+  enhanceMessageData,
+  type SeverityLevel,
+  type SeverityOverride,
+  type ComplianceContext,
 } from '../utils/security-utils';
 
 // Helper to create mock AST nodes
@@ -1105,6 +1116,388 @@ describe('security-utils', () => {
       const context = createMockContext();
 
       expect(checker.isSafe(node, context)).toBe(true);
+    });
+  });
+
+  // ============================================================
+  // SEVERITY AND COMPLIANCE HELPERS
+  // ============================================================
+
+  describe('meetsSeverityThreshold', () => {
+    it('should return true when severity meets threshold', () => {
+      expect(meetsSeverityThreshold('CRITICAL', 'CRITICAL')).toBe(true);
+      expect(meetsSeverityThreshold('HIGH', 'MEDIUM')).toBe(true);
+      expect(meetsSeverityThreshold('MEDIUM', 'LOW')).toBe(true);
+      expect(meetsSeverityThreshold('LOW', 'INFO')).toBe(true);
+    });
+
+    it('should return true when severity exceeds threshold', () => {
+      expect(meetsSeverityThreshold('CRITICAL', 'LOW')).toBe(true);
+      expect(meetsSeverityThreshold('HIGH', 'INFO')).toBe(true);
+      expect(meetsSeverityThreshold('MEDIUM', 'INFO')).toBe(true);
+    });
+
+    it('should return false when severity below threshold', () => {
+      expect(meetsSeverityThreshold('LOW', 'CRITICAL')).toBe(false);
+      expect(meetsSeverityThreshold('MEDIUM', 'HIGH')).toBe(false);
+      expect(meetsSeverityThreshold('INFO', 'LOW')).toBe(false);
+    });
+
+    it('should handle all severity levels correctly', () => {
+      const severities: SeverityLevel[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'];
+      
+      // Each severity should meet its own threshold
+      for (const severity of severities) {
+        expect(meetsSeverityThreshold(severity, severity)).toBe(true);
+      }
+    });
+  });
+
+  describe('getEffectiveSeverity', () => {
+    it('should return default severity when no override', () => {
+      expect(getEffectiveSeverity('HIGH')).toBe('HIGH');
+      expect(getEffectiveSeverity('CRITICAL')).toBe('CRITICAL');
+    });
+
+    it('should return default severity when override is undefined', () => {
+      expect(getEffectiveSeverity('MEDIUM', undefined)).toBe('MEDIUM');
+    });
+
+    it('should use level override when provided', () => {
+      const override: SeverityOverride = { level: 'CRITICAL' };
+      expect(getEffectiveSeverity('LOW', override)).toBe('CRITICAL');
+    });
+
+    it('should use pattern-based override when context matches', () => {
+      const override: SeverityOverride = {
+        patterns: {
+          'user-input': 'CRITICAL',
+          'internal-api': 'MEDIUM',
+        },
+      };
+
+      expect(getEffectiveSeverity('HIGH', override, { pattern: 'user-input' })).toBe('CRITICAL');
+      expect(getEffectiveSeverity('HIGH', override, { pattern: 'internal-api' })).toBe('MEDIUM');
+    });
+
+    it('should fall back to default when pattern not found', () => {
+      const override: SeverityOverride = {
+        patterns: {
+          'user-input': 'CRITICAL',
+        },
+      };
+
+      expect(getEffectiveSeverity('HIGH', override, { pattern: 'unknown-pattern' })).toBe('HIGH');
+    });
+
+    it('should prioritize pattern over level', () => {
+      const override: SeverityOverride = {
+        level: 'LOW',
+        patterns: {
+          'user-input': 'CRITICAL',
+        },
+      };
+
+      expect(getEffectiveSeverity('MEDIUM', override, { pattern: 'user-input' })).toBe('CRITICAL');
+      // When pattern doesn't match, use level
+      expect(getEffectiveSeverity('MEDIUM', override, { pattern: 'other' })).toBe('LOW');
+    });
+
+    it('should handle empty override object', () => {
+      const override: SeverityOverride = {};
+      expect(getEffectiveSeverity('HIGH', override)).toBe('HIGH');
+    });
+  });
+
+  describe('shouldReportSeverity', () => {
+    it('should return true when no override provided', () => {
+      expect(shouldReportSeverity('LOW')).toBe(true);
+      expect(shouldReportSeverity('INFO')).toBe(true);
+    });
+
+    it('should return true when no minSeverity in override', () => {
+      const override: SeverityOverride = { level: 'HIGH' };
+      expect(shouldReportSeverity('LOW', override)).toBe(true);
+    });
+
+    it('should return true when severity meets minSeverity', () => {
+      const override: SeverityOverride = { minSeverity: 'MEDIUM' };
+      expect(shouldReportSeverity('CRITICAL', override)).toBe(true);
+      expect(shouldReportSeverity('HIGH', override)).toBe(true);
+      expect(shouldReportSeverity('MEDIUM', override)).toBe(true);
+    });
+
+    it('should return false when severity below minSeverity', () => {
+      const override: SeverityOverride = { minSeverity: 'MEDIUM' };
+      expect(shouldReportSeverity('LOW', override)).toBe(false);
+      expect(shouldReportSeverity('INFO', override)).toBe(false);
+    });
+
+    it('should filter low severity issues correctly', () => {
+      const override: SeverityOverride = { minSeverity: 'HIGH' };
+      expect(shouldReportSeverity('CRITICAL', override)).toBe(true);
+      expect(shouldReportSeverity('HIGH', override)).toBe(true);
+      expect(shouldReportSeverity('MEDIUM', override)).toBe(false);
+      expect(shouldReportSeverity('LOW', override)).toBe(false);
+      expect(shouldReportSeverity('INFO', override)).toBe(false);
+    });
+  });
+
+  describe('formatComplianceTags', () => {
+    it('should return empty string when no frameworks', () => {
+      expect(formatComplianceTags([])).toBe('');
+      expect(formatComplianceTags([], {})).toBe('');
+    });
+
+    it('should format default frameworks', () => {
+      const result = formatComplianceTags(['SOC2', 'HIPAA']);
+      expect(result).toBe('[SOC2,HIPAA]');
+    });
+
+    it('should combine default and custom frameworks', () => {
+      const complianceContext: ComplianceContext = {
+        frameworks: ['CUSTOM-1', 'CUSTOM-2'],
+      };
+      const result = formatComplianceTags(['SOC2'], complianceContext);
+      expect(result).toContain('SOC2');
+      expect(result).toContain('CUSTOM-1');
+    });
+
+    it('should limit to 4 frameworks', () => {
+      const result = formatComplianceTags(['SOC2', 'HIPAA', 'PCI-DSS', 'GDPR', 'ISO27001', 'NIST-CSF']);
+      expect(result).toBe('[SOC2,HIPAA,PCI-DSS,GDPR]');
+    });
+
+    it('should handle only custom frameworks', () => {
+      const complianceContext: ComplianceContext = {
+        frameworks: ['ACME-SEC-001'],
+      };
+      const result = formatComplianceTags([], complianceContext);
+      expect(result).toBe('[ACME-SEC-001]');
+    });
+  });
+
+  describe('buildTicketUrl', () => {
+    it('should return undefined when no template', () => {
+      expect(buildTicketUrl(undefined, { summary: 'Test' })).toBeUndefined();
+      expect(buildTicketUrl({} as ComplianceContext['ticketTemplate'], { summary: 'Test' })).toBeUndefined();
+    });
+
+    it('should build URL with summary placeholder', () => {
+      const template: ComplianceContext['ticketTemplate'] = {
+        url: 'https://jira.test.com/create?summary={{summary}}',
+      };
+      const result = buildTicketUrl(template, { summary: 'SQL Injection Found' });
+      expect(result).toContain('https://jira.test.com/create');
+      expect(result).toContain('SQL%20Injection%20Found');
+    });
+
+    it('should build URL with all placeholders', () => {
+      const template: ComplianceContext['ticketTemplate'] = {
+        url: 'https://jira.test.com/create?summary={{summary}}&priority={{priority}}&labels={{labels}}&cwe={{cwe}}',
+        priority: 'Critical',
+        labels: ['security', 'urgent'],
+      };
+      const result = buildTicketUrl(template, {
+        summary: 'Test Issue',
+        cwe: 'CWE-89',
+        file: '/src/app.ts',
+        line: 42,
+      });
+
+      expect(result).toContain('priority=Critical');
+      expect(result).toContain('labels=security,urgent');
+      expect(result).toContain('cwe=CWE-89');
+    });
+
+    it('should use default priority when not specified in template', () => {
+      const template: ComplianceContext['ticketTemplate'] = {
+        url: 'https://jira.test.com/create?priority={{priority}}',
+      };
+      const result = buildTicketUrl(template, { summary: 'Test' });
+      expect(result).toContain('priority=Medium');
+    });
+
+    it('should encode file path', () => {
+      const template: ComplianceContext['ticketTemplate'] = {
+        url: 'https://jira.test.com/create?file={{file}}',
+      };
+      const result = buildTicketUrl(template, {
+        summary: 'Test',
+        file: '/path/to/file.ts',
+      });
+      expect(result).toContain('file=%2Fpath%2Fto%2Ffile.ts');
+    });
+
+    it('should include line number', () => {
+      const template: ComplianceContext['ticketTemplate'] = {
+        url: 'https://jira.test.com/create?line={{line}}',
+      };
+      const result = buildTicketUrl(template, {
+        summary: 'Test',
+        line: 42,
+      });
+      expect(result).toContain('line=42');
+    });
+
+    it('should handle missing optional data gracefully', () => {
+      const template: ComplianceContext['ticketTemplate'] = {
+        url: 'https://jira.test.com/create?cwe={{cwe}}&file={{file}}&line={{line}}',
+      };
+      const result = buildTicketUrl(template, { summary: 'Test' });
+      expect(result).toContain('cwe=');
+      expect(result).toContain('line=0');
+    });
+  });
+
+  describe('getDocumentationUrl', () => {
+    it('should return default URL when no context', () => {
+      expect(getDocumentationUrl('https://default.com')).toBe('https://default.com');
+      expect(getDocumentationUrl('https://default.com', undefined)).toBe('https://default.com');
+    });
+
+    it('should return default URL when context has no override', () => {
+      const context: ComplianceContext = { frameworks: ['SOC2'] };
+      expect(getDocumentationUrl('https://default.com', context)).toBe('https://default.com');
+    });
+
+    it('should return override URL when provided', () => {
+      const context: ComplianceContext = {
+        documentationUrl: 'https://wiki.company.com/security',
+      };
+      expect(getDocumentationUrl('https://default.com', context)).toBe('https://wiki.company.com/security');
+    });
+  });
+
+  describe('enhanceMessageData', () => {
+    it('should pass through base data', () => {
+      const baseData = { description: 'Test', severity: 'HIGH' };
+      const result = enhanceMessageData(baseData, {}, {});
+      
+      expect(result['description']).toBe('Test');
+      expect(result['severity']).toBe('HIGH');
+    });
+
+    it('should add compliance tags', () => {
+      const result = enhanceMessageData(
+        { description: 'Test' },
+        {},
+        { defaultFrameworks: ['SOC2', 'HIPAA'] }
+      );
+      
+      expect(result['complianceTags']).toBe('[SOC2,HIPAA]');
+    });
+
+    it('should add ticket URL when template provided', () => {
+      const result = enhanceMessageData(
+        { description: 'SQL Injection' },
+        {
+          compliance: {
+            ticketTemplate: {
+              url: 'https://jira.com/create?summary={{summary}}',
+            },
+          },
+        },
+        { summary: 'Security Issue' }
+      );
+      
+      expect(result['ticketUrl']).toContain('https://jira.com/create');
+    });
+
+    it('should add risk owner', () => {
+      const result = enhanceMessageData(
+        { description: 'Test' },
+        {
+          compliance: {
+            riskOwner: 'security-team@company.com',
+          },
+        },
+        {}
+      );
+      
+      expect(result['riskOwner']).toBe('security-team@company.com');
+    });
+
+    it('should add custom metadata', () => {
+      const result = enhanceMessageData(
+        { description: 'Test' },
+        {
+          compliance: {
+            metadata: {
+              customField1: 'value1',
+              customField2: 'value2',
+            },
+          },
+        },
+        {}
+      );
+      
+      expect(result['customField1']).toBe('value1');
+      expect(result['customField2']).toBe('value2');
+    });
+
+    it('should use context summary when provided', () => {
+      const result = enhanceMessageData(
+        { description: 'Base description' },
+        {
+          compliance: {
+            ticketTemplate: {
+              url: 'https://jira.com/create?summary={{summary}}',
+            },
+          },
+        },
+        { summary: 'Custom Summary' }
+      );
+      
+      expect(result['ticketUrl']).toContain('Custom%20Summary');
+    });
+
+    it('should fall back to base description for ticket summary', () => {
+      const result = enhanceMessageData(
+        { description: 'Base description' },
+        {
+          compliance: {
+            ticketTemplate: {
+              url: 'https://jira.com/create?summary={{summary}}',
+            },
+          },
+        },
+        {} // No summary provided
+      );
+      
+      expect(result['ticketUrl']).toContain('Base%20description');
+    });
+
+    it('should combine all compliance context features', () => {
+      const result = enhanceMessageData(
+        { description: 'Critical security issue', severity: 'CRITICAL' },
+        {
+          compliance: {
+            frameworks: ['COMPANY-SEC-001'],
+            ticketTemplate: {
+              url: 'https://jira.com/create?summary={{summary}}&priority={{priority}}',
+              priority: 'Critical',
+            },
+            documentationUrl: 'https://wiki.company.com',
+            riskOwner: 'ciso@company.com',
+            metadata: {
+              team: 'security',
+            },
+          },
+        },
+        {
+          defaultFrameworks: ['SOC2'],
+          cwe: 'CWE-89',
+          file: '/src/app.ts',
+          line: 100,
+        }
+      );
+      
+      expect(result['complianceTags']).toContain('SOC2');
+      expect(result['complianceTags']).toContain('COMPANY-SEC-001');
+      expect(result['ticketUrl']).toContain('jira.com');
+      expect(result['riskOwner']).toBe('ciso@company.com');
+      expect(result['team']).toBe('security');
     });
   });
 });

@@ -1,4 +1,4 @@
-/**
+ /**
  * Enterprise LLM-Optimized Error Message Formatting
  *
  * Provides utilities for creating consistent, LLM-friendly error messages
@@ -578,6 +578,254 @@ export function getSecurityBenchmarks(cwe: string): {
     name: cweData.name,
     compliance: CWE_COMPLIANCE_MAPPING[cwe] ?? [],
   };
+}
+
+// ============================================================================
+// CUSTOM MESSAGE TEMPLATES FOR ORGANIZATIONS
+// ============================================================================
+
+/**
+ * Template configuration for organization-specific message formats
+ */
+export interface MessageTemplateConfig {
+  /**
+   * Custom format template for the first line
+   * Available placeholders: {{icon}}, {{cwe}}, {{owasp}}, {{cvss}}, {{severity}}, {{description}}, {{compliance}}
+   * @default '{{icon}} {{cwe}} {{owasp}} {{cvss}} | {{description}} | {{severity}} {{compliance}}'
+   */
+  line1Format?: string;
+
+  /**
+   * Custom format template for the second line
+   * Available placeholders: {{fix}}, {{documentation}}, {{jira}}, {{confluence}}, {{custom}}
+   * @default '   Fix: {{fix}} | {{documentation}}'
+   */
+  line2Format?: string;
+
+  /**
+   * Jira integration template
+   * Available placeholders: {{summary}}, {{description}}, {{priority}}, {{labels}}, {{project}}
+   * @example 'https://jira.company.com/secure/CreateIssue.jspa?summary={{summary}}&priority={{priority}}'
+   */
+  jiraTemplate?: string;
+
+  /**
+   * Confluence documentation link template
+   * @example 'https://confluence.company.com/wiki/security/{{cwe}}'
+   */
+  confluenceTemplate?: string;
+
+  /**
+   * Custom metadata to include in messages
+   */
+  customMetadata?: Record<string, string>;
+
+  /**
+   * Organization name for branding
+   */
+  organizationName?: string;
+
+  /**
+   * Custom compliance frameworks beyond standard ones
+   * @example ['COMPANY-SEC-001', 'TEAM-POLICY-A']
+   */
+  customCompliance?: string[];
+}
+
+/**
+ * Global message template registry
+ * Organizations can register their custom templates here
+ */
+const templateRegistry = new Map<string, MessageTemplateConfig>();
+
+/**
+ * Register a custom message template for your organization
+ *
+ * @example
+ * ```typescript
+ * // In your ESLint plugin setup
+ * import { registerMessageTemplate } from '@forge-js/eslint-plugin-utils';
+ *
+ * registerMessageTemplate('my-company', {
+ *   organizationName: 'Acme Corp',
+ *   line1Format: '{{icon}} [{{severity}}] {{description}} ({{cwe}})',
+ *   line2Format: '   Fix: {{fix}} | Docs: {{confluence}} | Jira: {{jira}}',
+ *   jiraTemplate: 'https://jira.acme.com/create?summary={{summary}}&project=SEC',
+ *   confluenceTemplate: 'https://confluence.acme.com/security/{{cwe}}',
+ *   customCompliance: ['ACME-SEC-001', 'ACME-DATA-002'],
+ * });
+ * ```
+ */
+export function registerMessageTemplate(name: string, config: MessageTemplateConfig): void {
+  templateRegistry.set(name, config);
+}
+
+/**
+ * Get a registered message template
+ */
+export function getMessageTemplate(name: string): MessageTemplateConfig | undefined {
+  return templateRegistry.get(name);
+}
+
+/**
+ * List all registered message templates
+ */
+export function listMessageTemplates(): string[] {
+  return Array.from(templateRegistry.keys());
+}
+
+/**
+ * Clear all registered templates (useful for testing)
+ */
+export function clearMessageTemplates(): void {
+  templateRegistry.clear();
+}
+
+/**
+ * Extended message options with template support
+ */
+export interface TemplatedMessageOptions extends EnterpriseMessageOptions {
+  /** Name of the registered template to use */
+  templateName?: string;
+  /** Inline template configuration (overrides registered template) */
+  templateConfig?: MessageTemplateConfig;
+  /** Jira-specific data for template */
+  jiraData?: {
+    summary?: string;
+    priority?: 'Critical' | 'High' | 'Medium' | 'Low';
+    labels?: string[];
+    project?: string;
+  };
+  /** Custom placeholder values */
+  customPlaceholders?: Record<string, string>;
+}
+
+/**
+ * Replace template placeholders with actual values
+ */
+function replacePlaceholders(
+  template: string,
+  values: Record<string, string | undefined>
+): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+    return values[key] ?? match;
+  });
+}
+
+/**
+ * Format an LLM message using a custom organization template
+ *
+ * @example
+ * ```typescript
+ * import { formatWithTemplate, registerMessageTemplate } from '@forge-js/eslint-plugin-utils';
+ *
+ * // Register your template once
+ * registerMessageTemplate('my-company', {
+ *   jiraTemplate: 'https://jira.company.com/create?summary={{summary}}',
+ *   line2Format: '   Fix: {{fix}} | Create ticket: {{jira}}',
+ * });
+ *
+ * // Use in rules
+ * const message = formatWithTemplate({
+ *   templateName: 'my-company',
+ *   icon: MessageIcons.SECURITY,
+ *   cwe: 'CWE-89',
+ *   description: 'SQL Injection detected',
+ *   severity: 'CRITICAL',
+ *   fix: 'Use parameterized queries',
+ *   documentationLink: 'https://owasp.org/...',
+ *   jiraData: {
+ *     summary: 'SQL Injection in user query',
+ *     priority: 'Critical',
+ *   },
+ * });
+ * ```
+ */
+export function formatWithTemplate(options: TemplatedMessageOptions): string {
+  // Get template configuration
+  const templateConfig =
+    options.templateConfig ??
+    (options.templateName ? getMessageTemplate(options.templateName) : undefined);
+
+  // If no template, use default formatting
+  if (!templateConfig) {
+    return formatLLMMessage(options);
+  }
+
+  // Enrich with security benchmark data
+  const enriched = enrichFromCWE(options);
+  const owasp = (enriched as EnterpriseMessageOptions).owasp;
+  const cvss = (enriched as EnterpriseMessageOptions).cvss ?? severityToCVSS(enriched.severity as Severity);
+  const compliance = (enriched as EnterpriseMessageOptions).compliance ?? [];
+
+  // Build Jira URL if template provided
+  let jiraUrl = '';
+  if (templateConfig.jiraTemplate && options.jiraData) {
+    jiraUrl = replacePlaceholders(templateConfig.jiraTemplate, {
+      summary: encodeURIComponent(options.jiraData.summary ?? options.description),
+      priority: options.jiraData.priority ?? 'Medium',
+      labels: options.jiraData.labels?.join(',') ?? '',
+      project: options.jiraData.project ?? 'SEC',
+      description: encodeURIComponent(options.description),
+    });
+  }
+
+  // Build Confluence URL if template provided
+  let confluenceUrl = '';
+  if (templateConfig.confluenceTemplate) {
+    confluenceUrl = replacePlaceholders(templateConfig.confluenceTemplate, {
+      cwe: options.cwe ?? '',
+      owasp: owasp ?? '',
+    });
+  }
+
+  // Build OWASP display string
+  const owaspDisplay = owasp
+    ? `OWASP:${owasp.split(':')[0]}`
+    : '';
+
+  // Build compliance display string (including custom compliance)
+  const allCompliance = [...compliance, ...(templateConfig.customCompliance ?? [])];
+  const complianceDisplay =
+    allCompliance.length > 0 ? `[${allCompliance.slice(0, 4).join(',')}]` : '';
+
+  // Prepare all placeholder values
+  const placeholderValues: Record<string, string | undefined> = {
+    icon: enriched.icon,
+    cwe: enriched.cwe,
+    owasp: owaspDisplay,
+    cvss: `CVSS:${cvss}`,
+    severity: enriched.severity,
+    description: enriched.description,
+    compliance: complianceDisplay,
+    fix: enriched.fix,
+    documentation: enriched.documentationLink,
+    jira: jiraUrl,
+    confluence: confluenceUrl,
+    organization: templateConfig.organizationName ?? '',
+    ...templateConfig.customMetadata,
+    ...options.customPlaceholders,
+  };
+
+  // Format lines using templates
+  const line1Template =
+    templateConfig.line1Format ??
+    '{{icon}} {{cwe}} {{owasp}} {{cvss}} | {{description}} | {{severity}} {{compliance}}';
+  const line2Template = templateConfig.line2Format ?? '   Fix: {{fix}} | {{documentation}}';
+
+  const line1 = replacePlaceholders(line1Template, placeholderValues)
+    .replace(/\s+\|/g, ' |')
+    .replace(/\|\s+\|/g, '|')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  const line2 = replacePlaceholders(line2Template, placeholderValues)
+    .replace(/\s+\|/g, ' |')
+    .replace(/\|\s+\|/g, '|')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  return `${line1}\n${line2}`;
 }
 
 // ============================================================================

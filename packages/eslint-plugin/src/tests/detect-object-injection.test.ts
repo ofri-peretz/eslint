@@ -184,5 +184,167 @@ describe('detect-object-injection', () => {
       ],
     });
   });
+
+  describe('Type-Aware Detection (without parserOptions.project)', () => {
+    /**
+     * Note: These tests run WITHOUT TypeScript type information (no parserOptions.project).
+     * Without type info, the rule falls back to flagging ALL dynamic property accesses.
+     * 
+     * When parserOptions.project IS configured (in a real TypeScript project),
+     * the rule uses type information to detect:
+     * - Union types like 'name' | 'email' → SAFE (not flagged)
+     * - Single literal types like const key: 'name' → SAFE (not flagged)
+     * - String type (any string) → DANGEROUS (flagged)
+     * 
+     * See the rule's JSDoc for detailed type-aware behavior.
+     */
+    ruleTester.run('type-aware fallback behavior', detectObjectInjection, {
+      valid: [
+        // Dot notation is always safe
+        {
+          code: 'obj.name = value;',
+        },
+        // String literal bracket notation
+        {
+          code: 'obj["email"] = value;',
+        },
+      ],
+      invalid: [
+        // Without type info, const key = 'name' is still an identifier access (flagged)
+        // WITH type info and proper literal type inference, this would be SAFE
+        {
+          code: `
+            const key = 'name';
+            obj[key] = value;
+          `,
+          errors: [{ messageId: 'objectInjection' }],
+        },
+        // Without type information, any identifier access is flagged
+        // When type-aware: if key is typed as 'name' | 'email', this would be SAFE
+        {
+          code: `
+            const key: string = getUserInput();
+            obj[key] = value;
+          `,
+          errors: [{ messageId: 'objectInjection' }],
+        },
+        // Generic string type should always be flagged
+        {
+          code: `
+            function setProperty(obj: object, key: string, value: unknown) {
+              obj[key] = value;
+            }
+          `,
+          errors: [{ messageId: 'objectInjection' }],
+        },
+        // Dynamic access with function return value
+        {
+          code: `
+            const key = getPropertyName();
+            obj[key] = value;
+          `,
+          errors: [{ messageId: 'objectInjection' }],
+        },
+      ],
+    });
+  });
+
+  describe('TypeScript Union Type Patterns (documentation)', () => {
+    /**
+     * These tests document expected behavior when type information IS available.
+     * Without parserOptions.project, these tests verify the fallback behavior.
+     * 
+     * With type-aware checking enabled:
+     * - Union of safe literals ('name' | 'email') → NOT flagged
+     * - Union containing dangerous property ('__proto__' | 'name') → FLAGGED
+     * - Generic string → FLAGGED
+     */
+    ruleTester.run('union type documentation tests', detectObjectInjection, {
+      valid: [
+        // These are always safe regardless of type info
+        {
+          code: 'obj["name"] = value;',
+        },
+        {
+          code: 'obj["email"] = value;',
+        },
+        {
+          code: `
+            type SafeKey = 'name' | 'email';
+            // With type info, this would be detected as safe
+            // Without type info, we'd need the literal usage
+            obj["name"] = value;
+          `,
+        },
+      ],
+      invalid: [
+        // Dangerous property literal is ALWAYS flagged
+        {
+          code: 'obj["__proto__"] = value;',
+          errors: [{ messageId: 'objectInjection' }],
+        },
+        {
+          code: 'obj["constructor"] = value;',
+          errors: [{ messageId: 'objectInjection' }],
+        },
+        {
+          code: 'obj["prototype"] = value;',
+          errors: [{ messageId: 'objectInjection' }],
+        },
+        // Variable access without type info is flagged
+        {
+          code: `
+            type Key = 'name' | 'email';
+            const key: Key = 'name';
+            obj[key] = value;
+          `,
+          // Without type info, this is flagged because 'key' is an identifier
+          // WITH type info, this would be SAFE (key is constrained to 'name' | 'email')
+          errors: [{ messageId: 'objectInjection' }],
+        },
+      ],
+    });
+  });
+
+  describe('Complex Access Patterns', () => {
+    ruleTester.run('complex patterns', detectObjectInjection, {
+      valid: [
+        // Nested dot notation (safe)
+        {
+          code: 'obj.user.name = value;',
+        },
+        // Method call result with literal (safe)
+        {
+          code: 'const result = obj["data"];',
+        },
+      ],
+      invalid: [
+        // Nested bracket with variable (dangerous)
+        {
+          code: 'obj.users[userId] = data;',
+          errors: [{ messageId: 'objectInjection' }],
+        },
+        // Chained bracket access (dangerous) - reports on both bracket accesses
+        {
+          code: 'obj[key1][key2] = value;',
+          // Multiple bracket accesses - reports on each dangerous access
+          errors: [
+            { messageId: 'objectInjection' },
+            { messageId: 'objectInjection' },
+          ],
+        },
+        // Computed property from function (dangerous)
+        {
+          code: 'obj[getKey()] = value;',
+          errors: [{ messageId: 'objectInjection' }],
+        },
+        // Ternary in bracket (dangerous)
+        {
+          code: 'obj[condition ? key1 : key2] = value;',
+          errors: [{ messageId: 'objectInjection' }],
+        },
+      ],
+    });
+  });
 });
 

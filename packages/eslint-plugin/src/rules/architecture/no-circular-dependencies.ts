@@ -78,6 +78,41 @@ type FixStrategy =
   | 'auto';
 type ModuleNamingConvention = 'semantic' | 'numbered';
 
+/**
+ * Incremental analysis options for large codebases
+ * Enables caching and selective analysis for better performance
+ */
+export interface IncrementalOptions {
+  /**
+   * Enable incremental mode - only analyze files changed since last run
+   * Uses file content hash or mtime for change detection
+   * @default false
+   */
+  enabled?: boolean;
+
+  /**
+   * Path to cache file for storing analysis results between runs
+   * Relative to workspace root or absolute path
+   * @default '.eslint-circular-deps-cache.json'
+   */
+  cacheFile?: string;
+
+  /**
+   * Strategy for detecting file changes
+   * - 'mtime': Use file modification time (faster but less accurate)
+   * - 'content-hash': Use content hash (slower but more accurate)
+   * @default 'content-hash'
+   */
+  invalidateOn?: 'mtime' | 'content-hash';
+
+  /**
+   * Maximum age of cache entries in milliseconds before forced refresh
+   * Set to 0 for no expiration
+   * @default 86400000 (24 hours)
+   */
+  maxCacheAge?: number;
+}
+
 export interface Options {
   /** Maximum allowed import depth. Default: 5 */
   maxDepth?: number;
@@ -102,6 +137,37 @@ export interface Options {
 
   /** Custom suffix for extended module in split strategy. Default: '.extended' */
   extendedModuleSuffix?: string;
+
+  /**
+   * Incremental analysis options for improved performance on large codebases
+   * When enabled, caches analysis results and only re-analyzes changed files
+   *
+   * @example
+   * ```javascript
+   * {
+   *   incremental: {
+   *     enabled: true,
+   *     cacheFile: '.cache/circular-deps.json',
+   *     invalidateOn: 'content-hash',
+   *     maxCacheAge: 86400000, // 24 hours
+   *   }
+   * }
+   * ```
+   */
+  incremental?: IncrementalOptions;
+
+  /**
+   * Maximum number of files to analyze per lint run
+   * Useful for limiting analysis scope in very large monorepos
+   * Set to 0 for no limit
+   * @default 0
+   */
+  maxFiles?: number;
+
+  /**
+   * Working directory for resolving paths (auto-detected if not provided)
+   */
+  workspaceRoot?: string;
 }
 
 export type RuleOptions = [Options?];

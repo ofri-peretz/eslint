@@ -1,8 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   formatLLMMessage,
   formatLLMMessageTemplate,
   MessageIcons,
+  registerMessageTemplate,
+  getMessageTemplate,
+  listMessageTemplates,
+  clearMessageTemplates,
+  formatWithTemplate,
   type Severity,
 } from './llm-message-format';
 
@@ -556,6 +561,385 @@ describe('Compliance Framework Mapping', () => {
   it('should map cryptographic CWEs to PCI-DSS', () => {
     expect(CWE_COMPLIANCE_MAPPING['CWE-327']).toContain('PCI-DSS');
     expect(CWE_COMPLIANCE_MAPPING['CWE-798']).toContain('PCI-DSS');
+  });
+});
+
+// ============================================================================
+// CUSTOM MESSAGE TEMPLATES
+// ============================================================================
+
+describe('Custom Message Templates', () => {
+  beforeEach(() => {
+    // Clear templates before each test
+    clearMessageTemplates();
+  });
+
+  describe('registerMessageTemplate', () => {
+    it('should register a template with basic options', () => {
+      registerMessageTemplate('test-org', {
+        organizationName: 'Test Org',
+        line1Format: '{{icon}} [{{severity}}] {{description}}',
+      });
+
+      const template = getMessageTemplate('test-org');
+      expect(template).toBeDefined();
+      expect(template?.organizationName).toBe('Test Org');
+    });
+
+    it('should register a template with Jira integration', () => {
+      registerMessageTemplate('jira-org', {
+        organizationName: 'Jira Org',
+        jiraTemplate: 'https://jira.company.com/create?summary={{summary}}&priority={{priority}}',
+      });
+
+      const template = getMessageTemplate('jira-org');
+      expect(template?.jiraTemplate).toContain('jira.company.com');
+    });
+
+    it('should register a template with Confluence integration', () => {
+      registerMessageTemplate('confluence-org', {
+        confluenceTemplate: 'https://confluence.company.com/wiki/security/{{cwe}}',
+      });
+
+      const template = getMessageTemplate('confluence-org');
+      expect(template?.confluenceTemplate).toContain('confluence');
+    });
+
+    it('should register a template with custom compliance frameworks', () => {
+      registerMessageTemplate('compliance-org', {
+        customCompliance: ['ACME-SEC-001', 'ACME-DATA-002'],
+      });
+
+      const template = getMessageTemplate('compliance-org');
+      expect(template?.customCompliance).toContain('ACME-SEC-001');
+      expect(template?.customCompliance).toContain('ACME-DATA-002');
+    });
+
+    it('should register a template with custom metadata', () => {
+      registerMessageTemplate('metadata-org', {
+        customMetadata: {
+          team: 'security',
+          region: 'us-west',
+        },
+      });
+
+      const template = getMessageTemplate('metadata-org');
+      expect(template?.customMetadata?.team).toBe('security');
+      expect(template?.customMetadata?.region).toBe('us-west');
+    });
+
+    it('should overwrite existing template with same name', () => {
+      registerMessageTemplate('overwrite-test', {
+        organizationName: 'Original',
+      });
+
+      registerMessageTemplate('overwrite-test', {
+        organizationName: 'Updated',
+      });
+
+      const template = getMessageTemplate('overwrite-test');
+      expect(template?.organizationName).toBe('Updated');
+    });
+  });
+
+  describe('getMessageTemplate', () => {
+    it('should return undefined for non-existent template', () => {
+      const template = getMessageTemplate('non-existent');
+      expect(template).toBeUndefined();
+    });
+
+    it('should return registered template', () => {
+      registerMessageTemplate('existing', {
+        organizationName: 'Existing Org',
+      });
+
+      const template = getMessageTemplate('existing');
+      expect(template).toBeDefined();
+      expect(template?.organizationName).toBe('Existing Org');
+    });
+  });
+
+  describe('listMessageTemplates', () => {
+    it('should return empty array when no templates registered', () => {
+      const templates = listMessageTemplates();
+      expect(templates).toEqual([]);
+    });
+
+    it('should return all registered template names', () => {
+      registerMessageTemplate('template-1', { organizationName: 'Org 1' });
+      registerMessageTemplate('template-2', { organizationName: 'Org 2' });
+      registerMessageTemplate('template-3', { organizationName: 'Org 3' });
+
+      const templates = listMessageTemplates();
+      expect(templates).toHaveLength(3);
+      expect(templates).toContain('template-1');
+      expect(templates).toContain('template-2');
+      expect(templates).toContain('template-3');
+    });
+  });
+
+  describe('clearMessageTemplates', () => {
+    it('should clear all registered templates', () => {
+      registerMessageTemplate('to-clear-1', { organizationName: 'Org 1' });
+      registerMessageTemplate('to-clear-2', { organizationName: 'Org 2' });
+
+      expect(listMessageTemplates()).toHaveLength(2);
+
+      clearMessageTemplates();
+
+      expect(listMessageTemplates()).toHaveLength(0);
+      expect(getMessageTemplate('to-clear-1')).toBeUndefined();
+    });
+  });
+
+  describe('formatWithTemplate', () => {
+    it('should fall back to default formatting when no template', () => {
+      const message = formatWithTemplate({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Test Issue',
+        description: 'Test description',
+        severity: 'HIGH',
+        fix: 'Test fix',
+        documentationLink: 'https://example.com',
+      });
+
+      // Should use default format
+      expect(message).toContain('🔒');
+      expect(message).toContain('Test description');
+      expect(message).toContain('HIGH');
+    });
+
+    it('should use registered template by name', () => {
+      registerMessageTemplate('custom-format', {
+        line1Format: '{{icon}} [{{severity}}] {{description}}',
+        line2Format: '   → {{fix}}',
+      });
+
+      const message = formatWithTemplate({
+        templateName: 'custom-format',
+        icon: MessageIcons.SECURITY,
+        issueName: 'Test',
+        description: 'Security issue detected',
+        severity: 'CRITICAL',
+        fix: 'Apply security patch',
+        documentationLink: 'https://example.com',
+      });
+
+      expect(message).toContain('[CRITICAL]');
+      expect(message).toContain('Security issue detected');
+      expect(message).toContain('→ Apply security patch');
+    });
+
+    it('should use inline template config over registered template', () => {
+      registerMessageTemplate('registered', {
+        line1Format: 'REGISTERED: {{description}}',
+      });
+
+      const message = formatWithTemplate({
+        templateName: 'registered',
+        templateConfig: {
+          line1Format: 'INLINE: {{description}}',
+        },
+        icon: '🔒',
+        issueName: 'Test',
+        description: 'Test desc',
+        severity: 'HIGH',
+        fix: 'Fix it',
+        documentationLink: 'https://example.com',
+      });
+
+      expect(message).toContain('INLINE: Test desc');
+      expect(message).not.toContain('REGISTERED');
+    });
+
+    it('should include Jira URL when template has jiraTemplate', () => {
+      registerMessageTemplate('jira-test', {
+        line2Format: '   Fix: {{fix}} | Jira: {{jira}}',
+        jiraTemplate: 'https://jira.test.com/create?summary={{summary}}',
+      });
+
+      const message = formatWithTemplate({
+        templateName: 'jira-test',
+        icon: '🔒',
+        issueName: 'SQL Injection',
+        description: 'SQL Injection detected',
+        severity: 'CRITICAL',
+        fix: 'Use parameterized queries',
+        documentationLink: 'https://example.com',
+        jiraData: {
+          summary: 'Security: SQL Injection Found',
+          priority: 'Critical',
+        },
+      });
+
+      expect(message).toContain('https://jira.test.com/create');
+      expect(message).toContain('Security');
+    });
+
+    it('should include Confluence URL when template has confluenceTemplate', () => {
+      registerMessageTemplate('confluence-test', {
+        line2Format: '   Docs: {{confluence}}',
+        confluenceTemplate: 'https://wiki.test.com/security/{{cwe}}',
+      });
+
+      const message = formatWithTemplate({
+        templateName: 'confluence-test',
+        icon: '🔒',
+        issueName: 'Test',
+        cwe: 'CWE-89',
+        description: 'Test',
+        severity: 'HIGH',
+        fix: 'Fix',
+        documentationLink: 'https://example.com',
+      });
+
+      expect(message).toContain('https://wiki.test.com/security/CWE-89');
+    });
+
+    it('should include custom compliance frameworks', () => {
+      registerMessageTemplate('compliance-test', {
+        customCompliance: ['CUSTOM-SEC-1', 'CUSTOM-SEC-2'],
+      });
+
+      // Use no CWE to avoid auto-enriched compliance taking all 4 slots
+      const message = formatWithTemplate({
+        templateName: 'compliance-test',
+        icon: '🔒',
+        issueName: 'Test',
+        // No CWE - so custom compliance will be included
+        description: 'Test',
+        severity: 'CRITICAL',
+        fix: 'Fix',
+        documentationLink: 'https://example.com',
+      });
+
+      // Should include custom compliance when no auto-enriched compliance
+      expect(message).toContain('CUSTOM-SEC-1');
+      expect(message).toContain('CUSTOM-SEC-2');
+    });
+
+    it('should combine auto-enriched and custom compliance (limited to 4)', () => {
+      registerMessageTemplate('mixed-compliance', {
+        customCompliance: ['CUSTOM-SEC-1'],
+      });
+
+      const message = formatWithTemplate({
+        templateName: 'mixed-compliance',
+        icon: '🔒',
+        issueName: 'Test',
+        cwe: 'CWE-89', // Auto-enriches with SOC2, PCI-DSS, HIPAA, ISO27001
+        description: 'Test',
+        severity: 'CRITICAL',
+        fix: 'Fix',
+        documentationLink: 'https://example.com',
+      });
+
+      // Auto-enriched compliance takes priority (4 items max)
+      expect(message).toContain('SOC2');
+      expect(message).toContain('PCI-DSS');
+      expect(message).toContain('HIPAA');
+      expect(message).toContain('ISO27001');
+      // Custom compliance may not appear due to 4-item limit
+    });
+
+    it('should include custom placeholders', () => {
+      registerMessageTemplate('custom-placeholders', {
+        line1Format: '{{icon}} {{customField1}} | {{description}}',
+        line2Format: '   {{customField2}}',
+      });
+
+      const message = formatWithTemplate({
+        templateName: 'custom-placeholders',
+        icon: '🔒',
+        issueName: 'Test',
+        description: 'Test description',
+        severity: 'HIGH',
+        fix: 'Fix',
+        documentationLink: 'https://example.com',
+        customPlaceholders: {
+          customField1: 'CUSTOM VALUE 1',
+          customField2: 'CUSTOM VALUE 2',
+        },
+      });
+
+      expect(message).toContain('CUSTOM VALUE 1');
+      expect(message).toContain('CUSTOM VALUE 2');
+    });
+
+    it('should include organization name in template', () => {
+      registerMessageTemplate('org-name-test', {
+        organizationName: 'Acme Corp',
+        line1Format: '{{organization}}: {{description}}',
+      });
+
+      const message = formatWithTemplate({
+        templateName: 'org-name-test',
+        icon: '🔒',
+        issueName: 'Test',
+        description: 'Security issue',
+        severity: 'HIGH',
+        fix: 'Fix',
+        documentationLink: 'https://example.com',
+      });
+
+      expect(message).toContain('Acme Corp');
+    });
+
+    it('should handle template with all features combined', () => {
+      registerMessageTemplate('full-featured', {
+        organizationName: 'Enterprise Corp',
+        line1Format: '{{icon}} {{organization}} | {{cwe}} | {{description}} | {{severity}}',
+        line2Format: '   Fix: {{fix}} | Jira: {{jira}} | Docs: {{confluence}}',
+        jiraTemplate: 'https://jira.corp.com/create?summary={{summary}}&priority={{priority}}',
+        confluenceTemplate: 'https://wiki.corp.com/{{cwe}}',
+        customCompliance: ['CORP-SEC-001'],
+        customMetadata: {
+          team: 'security',
+        },
+      });
+
+      const message = formatWithTemplate({
+        templateName: 'full-featured',
+        icon: '🔒',
+        issueName: 'SQL Injection',
+        cwe: 'CWE-89',
+        description: 'SQL Injection detected',
+        severity: 'CRITICAL',
+        fix: 'Use parameterized queries',
+        documentationLink: 'https://owasp.org',
+        jiraData: {
+          summary: 'SQL Injection in user query',
+          priority: 'Critical',
+        },
+      });
+
+      expect(message).toContain('Enterprise Corp');
+      expect(message).toContain('CWE-89');
+      expect(message).toContain('SQL Injection detected');
+      expect(message).toContain('CRITICAL');
+      expect(message).toContain('jira.corp.com');
+      expect(message).toContain('wiki.corp.com');
+    });
+
+    it('should clean up multiple spaces and empty delimiters', () => {
+      registerMessageTemplate('cleanup-test', {
+        line1Format: '{{icon}}  {{cwe}}  | {{description}} |  {{severity}}',
+      });
+
+      const message = formatWithTemplate({
+        templateName: 'cleanup-test',
+        icon: '🔒',
+        issueName: 'Test',
+        description: 'Test',
+        severity: 'HIGH',
+        fix: 'Fix',
+        documentationLink: 'https://example.com',
+        // No CWE - should clean up the space
+      });
+
+      // Should not have multiple consecutive spaces
+      expect(message).not.toMatch(/\s{3,}/);
+    });
   });
 });
 

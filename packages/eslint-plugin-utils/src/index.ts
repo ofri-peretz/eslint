@@ -11,12 +11,14 @@
  * - LLM message formatting with enterprise security benchmarks
  * - OWASP Top 10, CVSS, CWE mappings
  * - SARIF output for security tool integration
+ * - Custom message templates for organizations
  */
 
 export * from './rule-creator';
 export * from './ast-utils';
 export * from './type-utils';
 export * from './llm-message-format';
+export * from './sarif-formatter';
 
 // Re-export specific enterprise types for convenience
 export type {
