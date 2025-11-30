@@ -174,6 +174,7 @@ import { requireRenderReturn } from './rules/react/require-render-return';
 import { sortComp } from './rules/react/sort-comp';
 import { stateInConstructor } from './rules/react/state-in-constructor';
 import { staticPropertyPlacement } from './rules/react/static-property-placement';
+import { hooksExhaustiveDeps } from './rules/react/hooks-exhaustive-deps';
 
 // Deprecation rules
 import { noDeprecatedApi } from './rules/deprecation/no-deprecated-api';
@@ -427,6 +428,7 @@ export const rules = {
   'react/sort-comp': sortComp,
   'react/state-in-constructor': stateInConstructor,
   'react/static-property-placement': staticPropertyPlacement,
+  'react/hooks-exhaustive-deps': hooksExhaustiveDeps,
   'deprecation/no-deprecated-api': noDeprecatedApi,
   'domain/enforce-naming': enforceNaming,
   'complexity/cognitive-complexity': cognitiveComplexity,
@@ -855,6 +857,9 @@ export const configs = {
       
       // JSX: Key prop required in iterations (critical for hooks reconciliation)
       '@forge-js/llm-optimized/react/jsx-key': 'error',
+      
+      // Hooks: Exhaustive dependencies check (prevent stale closures)
+      '@forge-js/llm-optimized/react/hooks-exhaustive-deps': 'warn',
       
       // JSX: No bind in JSX props (use useCallback instead)
       '@forge-js/llm-optimized/react/jsx-no-bind': 'warn',

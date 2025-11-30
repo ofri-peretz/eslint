@@ -90,60 +90,74 @@ export type OWASPCategory = OWASP2025Category | OWASP2021Category;
 
 /**
  * OWASP 2025 category details (PRIMARY)
+ * 
+ * NOTE: OWASP Top 10 2025 URLs use a projected format. If links are broken,
+ * the system falls back to equivalent 2021 categories via OWASP_2021_TO_2025 mapping.
+ * Monitor https://owasp.org/Top10/ for official 2025 release URLs.
  */
 export const OWASP_2025_DETAILS: Record<
   OWASP2025Category,
-  { name: string; description: string; link: string }
+  { name: string; description: string; link: string; fallbackLink?: string }
 > = {
   'A01:2025': {
     name: 'Broken Access Control',
     description: 'Access control enforces policy such that users cannot act outside their intended permissions',
-    link: 'https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/',
+    link: 'https://owasp.org/Top10/A01_2021-Broken_Access_Control/', // Using confirmed 2021 URL
+    fallbackLink: 'https://owasp.org/Top10/A01_2021-Broken_Access_Control/',
   },
   'A02:2025': {
     name: 'Security Misconfiguration',
     description: 'Missing security hardening, improperly configured permissions, default credentials',
-    link: 'https://owasp.org/Top10/2025/A02_2025-Security_Misconfiguration/',
+    link: 'https://owasp.org/Top10/A05_2021-Security_Misconfiguration/', // Using confirmed 2021 URL
+    fallbackLink: 'https://owasp.org/Top10/A05_2021-Security_Misconfiguration/',
   },
   'A03:2025': {
     name: 'Software Supply Chain Failures',
     description: 'Vulnerabilities in dependencies, malicious packages, compromised CI/CD pipelines',
-    link: 'https://owasp.org/Top10/2025/A03_2025-Software_Supply_Chain_Failures/',
+    link: 'https://owasp.org/Top10/A06_2021-Vulnerable_and_Outdated_Components/', // Using 2021 equivalent
+    fallbackLink: 'https://owasp.org/Top10/A06_2021-Vulnerable_and_Outdated_Components/',
   },
   'A04:2025': {
     name: 'Cryptographic Failures',
     description: 'Failures related to cryptography leading to sensitive data exposure',
-    link: 'https://owasp.org/Top10/2025/A04_2025-Cryptographic_Failures/',
+    link: 'https://owasp.org/Top10/A02_2021-Cryptographic_Failures/', // Using confirmed 2021 URL
+    fallbackLink: 'https://owasp.org/Top10/A02_2021-Cryptographic_Failures/',
   },
   'A05:2025': {
     name: 'Injection',
     description: 'User-supplied data not validated, filtered, or sanitized by the application',
-    link: 'https://owasp.org/Top10/2025/A05_2025-Injection/',
+    link: 'https://owasp.org/Top10/A03_2021-Injection/', // Using confirmed 2021 URL
+    fallbackLink: 'https://owasp.org/Top10/A03_2021-Injection/',
   },
   'A06:2025': {
     name: 'Insecure Design',
     description: 'Missing or ineffective control design, distinct from implementation flaws',
-    link: 'https://owasp.org/Top10/2025/A06_2025-Insecure_Design/',
+    link: 'https://owasp.org/Top10/A04_2021-Insecure_Design/', // Using confirmed 2021 URL
+    fallbackLink: 'https://owasp.org/Top10/A04_2021-Insecure_Design/',
   },
   'A07:2025': {
     name: 'Authentication Failures',
     description: 'User identity, authentication, and session management weaknesses',
-    link: 'https://owasp.org/Top10/2025/A07_2025-Authentication_Failures/',
+    link: 'https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/', // Using confirmed 2021 URL
+    fallbackLink: 'https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/',
   },
   'A08:2025': {
     name: 'Software or Data Integrity Failures',
     description: 'Code and infrastructure that does not protect against integrity violations',
-    link: 'https://owasp.org/Top10/2025/A08_2025-Software_or_Data_Integrity_Failures/',
+    link: 'https://owasp.org/Top10/A08_2021-Software_and_Data_Integrity_Failures/', // Using confirmed 2021 URL
+    fallbackLink: 'https://owasp.org/Top10/A08_2021-Software_and_Data_Integrity_Failures/',
   },
   'A09:2025': {
     name: 'Logging & Alerting Failures',
     description: 'Insufficient logging, detection, monitoring, and active response',
-    link: 'https://owasp.org/Top10/2025/A09_2025-Logging_and_Alerting_Failures/',
+    link: 'https://owasp.org/Top10/A09_2021-Security_Logging_and_Monitoring_Failures/', // Using confirmed 2021 URL
+    fallbackLink: 'https://owasp.org/Top10/A09_2021-Security_Logging_and_Monitoring_Failures/',
   },
   'A10:2025': {
     name: 'Mishandling of Exceptional Conditions',
     description: 'Improper error handling, uncaught exceptions, information leakage via errors',
-    link: 'https://owasp.org/Top10/2025/A10_2025-Mishandling_of_Exceptional_Conditions/',
+    link: 'https://owasp.org/Top10/A03_2021-Injection/', // No direct 2021 equivalent, using closest category
+    fallbackLink: 'https://owasp.org/Top10/A03_2021-Injection/',
   },
 };
 

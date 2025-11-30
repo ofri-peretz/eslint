@@ -46,7 +46,7 @@ describe('formatLLMMessage', () => {
     });
 
     it('should format a message with all severity levels', () => {
-      const severities: Severity[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
+      const severities: Severity[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'];
 
       severities.forEach((severity) => {
         const result = formatLLMMessage({
@@ -61,6 +61,21 @@ describe('formatLLMMessage', () => {
         expect(result).toContain(`| ${severity}`);
         expect(result).toContain('   Fix: Test fix');
       });
+    });
+
+    it('should format an INFO severity message', () => {
+      const result = formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Information',
+        description: 'This is an informational message',
+        severity: 'INFO',
+        fix: 'No action required',
+        documentationLink: 'https://example.com',
+      });
+
+      expect(result).toContain('ℹ️');
+      expect(result).toContain('| INFO');
+      expect(result).toContain('This is an informational message');
     });
   });
 
@@ -314,6 +329,7 @@ describe('formatLLMMessageTemplate', () => {
 
 describe('MessageIcons', () => {
   it('should export all expected icon constants', () => {
+    // Original icons
     expect(MessageIcons.SECURITY).toBe('🔒');
     expect(MessageIcons.WARNING).toBe('⚠️');
     expect(MessageIcons.PACKAGE).toBe('📦');
@@ -327,6 +343,13 @@ describe('MessageIcons', () => {
     expect(MessageIcons.DOMAIN).toBe('📖');
     expect(MessageIcons.COMPLEXITY).toBe('🧠');
     expect(MessageIcons.DUPLICATION).toBe('📋');
+    // New icons added in latest version
+    expect(MessageIcons.INFO).toBe('ℹ️');
+    expect(MessageIcons.SUCCESS).toBe('✅');
+    expect(MessageIcons.STRATEGY).toBe('🎯');
+    expect(MessageIcons.AUTH).toBe('🔐');
+    expect(MessageIcons.DATA).toBe('🛡️');
+    expect(MessageIcons.COMPLIANCE).toBe('📋');
   });
 
   it('should have all icons as string values', () => {
@@ -340,6 +363,11 @@ describe('MessageIcons', () => {
     // TypeScript should prevent mutations, but we can verify the structure
     expect(Object.keys(MessageIcons).length).toBeGreaterThan(0);
     expect(MessageIcons).toBeDefined();
+  });
+
+  it('should have exactly 19 icon constants', () => {
+    // Verify the total count of icons
+    expect(Object.keys(MessageIcons).length).toBe(19);
   });
 });
 
@@ -404,7 +432,6 @@ describe('real-world examples', () => {
 
 import {
   OWASP_2025_DETAILS,
-  OWASP_2021_DETAILS,
   OWASP_2021_TO_2025,
   CWE_MAPPING,
   CWE_COMPLIANCE_MAPPING,
@@ -413,7 +440,6 @@ import {
   getSecurityBenchmarks,
   toSARIF,
   type OWASP2025Category,
-  type OWASP2021Category,
 } from './llm-message-format';
 
 describe('OWASP 2025 Categories', () => {
@@ -439,6 +465,50 @@ describe('OWASP 2025 Categories', () => {
     expect(OWASP_2021_TO_2025['A03:2021']).toBe('A05:2025'); // Injection moved
     expect(OWASP_2021_TO_2025['A06:2021']).toBe('A03:2025'); // Vulnerable Components → Supply Chain
     expect(OWASP_2021_TO_2025['A05:2021']).toBe('A02:2025'); // Security Misconfiguration moved up
+  });
+
+  it('should have fallback links for all OWASP 2025 categories', () => {
+    const categories: OWASP2025Category[] = [
+      'A01:2025', 'A02:2025', 'A03:2025', 'A04:2025', 'A05:2025',
+      'A06:2025', 'A07:2025', 'A08:2025', 'A09:2025', 'A10:2025',
+    ];
+    
+    categories.forEach(cat => {
+      const details = OWASP_2025_DETAILS[cat];
+      expect(details.fallbackLink).toBeDefined();
+      expect(details.fallbackLink).toContain('owasp.org');
+      // Fallback links should be confirmed 2021 URLs
+      expect(details.fallbackLink).toContain('_2021');
+    });
+  });
+
+  it('should use confirmed 2021 URLs as primary links (since 2025 URLs are not yet live)', () => {
+    // All current links should reference 2021 pages as primary
+    // This is the expected behavior until OWASP releases the official 2025 pages
+    const categories: OWASP2025Category[] = [
+      'A01:2025', 'A02:2025', 'A03:2025', 'A04:2025', 'A05:2025',
+      'A06:2025', 'A07:2025', 'A08:2025', 'A09:2025', 'A10:2025',
+    ];
+    
+    categories.forEach(cat => {
+      const details = OWASP_2025_DETAILS[cat];
+      // Current links use 2021 URLs (confirmed working)
+      expect(details.link).toContain('owasp.org/Top10');
+      expect(details.link).toContain('_2021');
+    });
+  });
+
+  it('should have proper descriptions for all 2025 categories', () => {
+    expect(OWASP_2025_DETAILS['A01:2025'].description).toContain('Access control');
+    expect(OWASP_2025_DETAILS['A02:2025'].description).toContain('security hardening');
+    expect(OWASP_2025_DETAILS['A03:2025'].description).toContain('dependencies');
+    expect(OWASP_2025_DETAILS['A04:2025'].description).toContain('cryptography');
+    expect(OWASP_2025_DETAILS['A05:2025'].description).toContain('User-supplied data');
+    expect(OWASP_2025_DETAILS['A06:2025'].description).toContain('control design');
+    expect(OWASP_2025_DETAILS['A07:2025'].description).toContain('authentication');
+    expect(OWASP_2025_DETAILS['A08:2025'].description).toContain('integrity');
+    expect(OWASP_2025_DETAILS['A09:2025'].description).toContain('logging');
+    expect(OWASP_2025_DETAILS['A10:2025'].description).toContain('error handling');
   });
 });
 
@@ -475,6 +545,8 @@ describe('CVSS Scoring', () => {
     expect(CVSS_RANGES.MEDIUM.max).toBe(6.9);
     expect(CVSS_RANGES.LOW.min).toBe(0.1);
     expect(CVSS_RANGES.LOW.max).toBe(3.9);
+    expect(CVSS_RANGES.INFO.min).toBe(0.0);
+    expect(CVSS_RANGES.INFO.max).toBe(0.0);
   });
 
   it('should convert severity to representative CVSS score', () => {
@@ -482,6 +554,15 @@ describe('CVSS Scoring', () => {
     expect(severityToCVSS('HIGH')).toBe(8.0); // (7.0 + 8.9) / 2 = 7.95 → 8.0
     expect(severityToCVSS('MEDIUM')).toBe(5.5); // (4.0 + 6.9) / 2 = 5.45 → 5.5
     expect(severityToCVSS('LOW')).toBe(2.0); // (0.1 + 3.9) / 2 = 2.0
+    expect(severityToCVSS('INFO')).toBe(0.0); // Info severity = 0.0 CVSS
+  });
+
+  it('should have correct CVSS labels for all severities', () => {
+    expect(CVSS_RANGES.CRITICAL.label).toBe('9.0-10.0');
+    expect(CVSS_RANGES.HIGH.label).toBe('7.0-8.9');
+    expect(CVSS_RANGES.MEDIUM.label).toBe('4.0-6.9');
+    expect(CVSS_RANGES.LOW.label).toBe('0.1-3.9');
+    expect(CVSS_RANGES.INFO.label).toBe('0.0');
   });
 });
 
@@ -490,12 +571,14 @@ describe('getSecurityBenchmarks', () => {
     const benchmarks = getSecurityBenchmarks('CWE-89');
     
     expect(benchmarks).toBeDefined();
-    expect(benchmarks!.owasp).toBe('A05:2025');
-    expect(benchmarks!.owaspName).toBe('Injection');
-    expect(benchmarks!.cvss).toBe(9.8);
-    expect(benchmarks!.severity).toBe('CRITICAL');
-    expect(benchmarks!.compliance).toContain('SOC2');
-    expect(benchmarks!.compliance).toContain('PCI-DSS');
+    if (benchmarks) {
+      expect(benchmarks.owasp).toBe('A05:2025');
+      expect(benchmarks.owaspName).toBe('Injection');
+      expect(benchmarks.cvss).toBe(9.8);
+      expect(benchmarks.severity).toBe('CRITICAL');
+      expect(benchmarks.compliance).toContain('SOC2');
+      expect(benchmarks.compliance).toContain('PCI-DSS');
+    }
   });
 
   it('should return undefined for unknown CWE', () => {
@@ -531,6 +614,12 @@ describe('toSARIF', () => {
     });
     expect(criticalSarif.level).toBe('error');
 
+    const highSarif = toSARIF({
+      icon: '🔒', issueName: 'Test', description: 'Test',
+      severity: 'HIGH', fix: 'Fix', documentationLink: 'https://example.com',
+    });
+    expect(highSarif.level).toBe('error');
+
     const mediumSarif = toSARIF({
       icon: '⚠️', issueName: 'Test', description: 'Test',
       severity: 'MEDIUM', fix: 'Fix', documentationLink: 'https://example.com',
@@ -542,6 +631,37 @@ describe('toSARIF', () => {
       severity: 'LOW', fix: 'Fix', documentationLink: 'https://example.com',
     });
     expect(lowSarif.level).toBe('note');
+
+    const infoSarif = toSARIF({
+      icon: 'ℹ️', issueName: 'Test', description: 'Test',
+      severity: 'INFO', fix: 'Fix', documentationLink: 'https://example.com',
+    });
+    expect(infoSarif.level).toBe('note');
+  });
+
+  it('should use ruleId from options when provided', () => {
+    const sarif = toSARIF({
+      icon: '🔒', issueName: 'Test', description: 'Test',
+      severity: 'HIGH', fix: 'Fix', documentationLink: 'https://example.com',
+      ruleId: 'custom-rule-id',
+    });
+    expect(sarif.ruleId).toBe('custom-rule-id');
+  });
+
+  it('should include fix in SARIF properties', () => {
+    const sarif = toSARIF({
+      icon: '🔒', issueName: 'Test', description: 'Test',
+      severity: 'HIGH', fix: 'Apply the security fix', documentationLink: 'https://example.com',
+    });
+    expect(sarif.properties.fix).toBe('Apply the security fix');
+  });
+
+  it('should use issueName as ruleId fallback when no CWE or ruleId', () => {
+    const sarif = toSARIF({
+      icon: '🔒', issueName: 'My Custom Issue', description: 'Test',
+      severity: 'HIGH', fix: 'Fix', documentationLink: 'https://example.com',
+    });
+    expect(sarif.ruleId).toBe('my-custom-issue');
   });
 });
 

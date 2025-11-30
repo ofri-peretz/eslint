@@ -22,7 +22,7 @@ Traditional ESLint plugins tell developers **what's wrong** but leave them guess
 
 ## 💡 The Solution: LLM-Optimized Error Messages
 
-This plugin provides **136 ESLint rules** where every error message is structured to guide both humans and AI assistants toward the correct fix—**even for rules that can't be auto-fixed**.
+This plugin provides **137 ESLint rules** where every error message is structured to guide both humans and AI assistants toward the correct fix—**even for rules that can't be auto-fixed**.
 
 ```bash
 src/api.ts
@@ -75,7 +75,7 @@ This plugin is specifically optimized for ESLint's [Model Context Protocol (MCP)
 - Applies consistent fixes automatically
 - Provides context-aware suggestions even for complex refactors
 
-### 3. All-in-One Solution (136 Rules)
+### 3. All-in-One Solution (137 Rules)
 
 Stop juggling multiple plugins. One install covers:
 
@@ -83,7 +83,7 @@ Stop juggling multiple plugins. One install covers:
 |----------|-------|----------|
 | **Security** | 29 | SQL injection, XSS, CSRF, credentials, crypto |
 | **Architecture** | 28 | Circular deps, module boundaries, imports |
-| **React** | 40 | Keys, hooks, state management, best practices |
+| **React** | 41 | Keys, hooks, state management, best practices |
 | **Code Quality** | 9 | Complexity, null checks, ternary expressions |
 | **Development** | 7 | Console logs, module formats, dependencies |
 | **Performance** | 7 | Memory leaks, N+1 queries, render optimization |
@@ -122,7 +122,7 @@ npx eslint .
 |---------|-------------|------------------------|
 | **Non-Fixable Rule Guidance** | ✅ Structured fix instructions for AI | ❌ Generic "what's wrong" only |
 | **ESLint MCP Optimization** | ✅ Built for MCP integration | ❌ No MCP consideration |
-| **All-in-One Coverage** | ✅ 136 rules across 10+ categories | ⚠️ Multiple plugins needed |
+| **All-in-One Coverage** | ✅ 137 rules across 10+ categories | ⚠️ Multiple plugins needed |
 | **AI Auto-Fix Rate** | ✅ 60-80% (including guided non-fixable) | ⚠️ 20-30% (auto-fix only) |
 | **Security Rules** | ✅ 29 rules with CWE references | ⚠️ Limited coverage |
 | **Deterministic Fixes** | ✅ Same violation = same fix | ⚠️ Inconsistent AI suggestions |
@@ -155,7 +155,7 @@ npx eslint .
 | Preset | Rules | Best For |
 |--------|-------|----------|
 | **`recommended`** | Core rules (balanced) | Most projects - balanced enforcement |
-| **`strict`** | All 136 rules as errors | Maximum code quality |
+| **`strict`** | All 137 rules as errors | Maximum code quality |
 | **`security`** | 29 security rules | Security-critical applications |
 | **`react`** | 40+ React-specific rules | React/Next.js projects |
 | **`sonarqube`** | SonarQube-inspired rules | Teams using SonarQube |
@@ -220,7 +220,7 @@ A: Yes. The structured messages help human developers too—every error teaches 
 ## 📚 Full Documentation
 
 See the complete rule documentation at [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) for:
-- All 136 rules with detailed descriptions
+- All 137 rules with detailed descriptions
 - Advanced configuration options
 - Integration guides
 
