@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-code-mode",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "ESLint rules optimized for Code Mode - AI assistants can actually fix these",
   "type": "commonjs",
   "main": "./src/index.js",
