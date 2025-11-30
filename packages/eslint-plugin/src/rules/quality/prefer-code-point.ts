@@ -2,7 +2,7 @@
  * ESLint Rule: prefer-code-point
  * Prefer codePointAt over charCodeAt for proper Unicode handling
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -37,7 +37,7 @@ export const preferCodePoint = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     function isInAllowedContext(node: TSESTree.CallExpression): boolean {
        
@@ -86,7 +86,7 @@ export const preferCodePoint = createRule<RuleOptions, MessageIds>({
     }
 
     return {
-      CallExpression(node) {
+      CallExpression(node: TSESTree.CallExpression) {
         if (isCharCodeAtCall(node) && !isInAllowedContext(node) && !shouldIgnoreCall(node)) {
           context.report({
             node,

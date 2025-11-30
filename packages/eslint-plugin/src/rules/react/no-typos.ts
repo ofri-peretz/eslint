@@ -32,13 +32,15 @@ const COMMON_TYPOS = new Map([
   ['UNSAFE_componenWillUpdate', 'UNSAFE_componentWillUpdate'],
 ]);
 
-export const noTypos = createRule<[], MessageIds>({
+type RuleOptions = [];
+export const noTypos = createRule<RuleOptions, MessageIds>({
   name: 'no-typos',
   meta: {
     type: 'problem',
     docs: {
       description: 'Catch common typos',
     },
+    schema: [],
     messages: {
       noTypos: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -51,7 +53,7 @@ export const noTypos = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       // Check class property names (PropertyDefinition is used by TypeScript parser)
       PropertyDefinition(node: TSESTree.PropertyDefinition) {

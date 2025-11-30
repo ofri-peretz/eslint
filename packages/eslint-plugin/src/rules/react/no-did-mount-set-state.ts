@@ -15,6 +15,7 @@ export const noDidMountSetState = createRule<[], MessageIds>({
     docs: {
       description: 'Prevent setState in componentDidMount',
     },
+    schema: [],
     messages: {
       noDidMountSetState: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -27,15 +28,15 @@ export const noDidMountSetState = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
     let inComponentDidMount = false;
 
     return {
-      'MethodDefinition[key.name="componentDidMount"]'(node: TSESTree.MethodDefinition) {
+      'MethodDefinition[key.name="componentDidMount"]'() {
         inComponentDidMount = true;
       },
 
-      'MethodDefinition[key.name="componentDidMount"]:exit'(node: TSESTree.MethodDefinition) {
+      'MethodDefinition[key.name="componentDidMount"]:exit'() {
         inComponentDidMount = false;
       },
 

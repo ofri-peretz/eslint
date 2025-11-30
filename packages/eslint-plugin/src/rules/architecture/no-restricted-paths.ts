@@ -2,7 +2,7 @@
  * ESLint Rule: no-restricted-paths
  * Enforce which files can be imported in a given folder (eslint-plugin-import inspired)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -66,7 +66,7 @@ export const noRestrictedPaths = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ restricted: [] }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const { restricted = [] } = options || {};
 

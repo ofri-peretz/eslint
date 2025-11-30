@@ -2,7 +2,7 @@
  * ESLint Rule: default-props-match-prop-types
  * Validate default props match prop types
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -15,6 +15,7 @@ export const defaultPropsMatchPropTypes = createRule<[], MessageIds>({
     docs: {
       description: 'Validate default props match prop types',
     },
+    schema: [],
     messages: {
       defaultPropsMatchPropTypes: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -27,7 +28,7 @@ export const defaultPropsMatchPropTypes = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
     const propTypes = new Map<string, TSESTree.Property>();
     const defaultProps = new Map<string, TSESTree.Property>();
 
@@ -55,8 +56,7 @@ export const defaultPropsMatchPropTypes = createRule<[], MessageIds>({
       },
 
       // Check after collecting both
-      'ClassDeclaration:exit'(node: TSESTree.ClassDeclaration) {
-         
+      'ClassDeclaration:exit'() {
         for (const [propName, defaultProp] of defaultProps) {
           const propType = propTypes.get(propName);
           if (propType && !isCompatibleDefaultValue(defaultProp.value, propType.value)) {

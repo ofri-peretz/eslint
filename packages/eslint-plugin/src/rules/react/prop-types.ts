@@ -52,10 +52,9 @@ export const propTypes = createRule<[Options], MessageIds>({
     },
   },
   defaultOptions: [{}],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, [Options]>) {
     const [options] = context.options;
     const ignore = options?.ignore ?? [];
-    const customValidators = options?.customValidators ?? [];
     const skipUndeclared = options?.skipUndeclared ?? false;
 
     const components: TSESTree.ClassDeclaration[] = [];
@@ -153,7 +152,7 @@ export const propTypes = createRule<[Options], MessageIds>({
       for (const key in node) {
         if (skipKeys.has(key)) continue;
         
-        const child = (node as any)[key];
+        const child = (node as Record<string, unknown>)[key];
         if (child && typeof child === 'object') {
           if (Array.isArray(child)) {
             for (const item of child) {

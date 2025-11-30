@@ -2,7 +2,7 @@
  * ESLint Rule: no-mutable-exports
  * Forbid the use of mutable exports with `var` or `let` (eslint-plugin-import inspired)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -76,7 +76,7 @@ export const noMutableExports = createRule<RuleOptions, MessageIds>({
     ignoreExports: [],
   }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const {
       allowInFiles = [],
@@ -89,7 +89,7 @@ export const noMutableExports = createRule<RuleOptions, MessageIds>({
     }
 
     function shouldSkipFile(): boolean {
-      return allowInFiles.some(pattern => filename.includes(pattern));
+      return allowInFiles.some((pattern: string) => filename.includes(pattern));
     }
 
     function shouldIgnoreExport(exportName: string): boolean {
@@ -122,7 +122,7 @@ export const noMutableExports = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        declarations.forEach(decl => {
+        declarations.forEach((decl: TSESTree.VariableDeclarator) => {
           if (decl.id.type === 'Identifier') {
             reportMutableExport(node.declaration as TSESTree.VariableDeclaration, decl.id.name, kind);
           }
@@ -145,7 +145,7 @@ export const noMutableExports = createRule<RuleOptions, MessageIds>({
         const fileText = sourceCode.getText();
 
         if (node.kind === 'var' || node.kind === 'let') {
-          node.declarations.forEach(decl => {
+          node.declarations.forEach((decl: TSESTree.VariableDeclarator) => {
             if (decl.id.type === 'Identifier') {
               const varName = decl.id.name;
 

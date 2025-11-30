@@ -99,6 +99,7 @@ export const noUnknownProperty = createRule<[], MessageIds>({
     docs: {
       description: 'Disallow unknown DOM properties',
     },
+    schema: [],
     messages: {
       noUnknownProperty: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -111,7 +112,7 @@ export const noUnknownProperty = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (node.name.type === 'JSXIdentifier') {

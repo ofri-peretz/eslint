@@ -2,7 +2,7 @@
  * ESLint Rule: prefer-event-target
  * Prefer EventTarget over EventEmitter (unicorn-inspired)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -50,7 +50,7 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allowEventEmitter: false }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const { allowEventEmitter = false } = options || {};
 
@@ -94,7 +94,7 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         if (node.source.value === 'node:events' || node.source.value === 'events') {
           // Check if importing EventEmitter
-          const eventEmitterImport = node.specifiers.find(specifier =>
+          const eventEmitterImport = node.specifiers.find((specifier: TSESTree.ImportClause) =>
             specifier.type === 'ImportSpecifier' &&
             specifier.imported.type === 'Identifier' && specifier.imported.name === 'EventEmitter'
           );
@@ -107,9 +107,9 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
                 importedName: 'EventEmitter',
                 suggestion: 'Use EventTarget instead for cross-platform compatibility',
               },
-              fix(fixer) {
+              fix(fixer: TSESLint.RuleFixer) {
                 // Replace EventEmitter with EventTarget in the import
-                return fixer.replaceText(eventEmitterImport.imported, 'EventTarget');
+                return fixer.replaceText((eventEmitterImport as TSESTree.ImportSpecifier).imported, 'EventTarget');
               },
             });
           }
@@ -131,12 +131,12 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
             if (node.parent?.type === 'VariableDeclarator') {
               const varName = node.parent.id;
               if (varName.type === 'ObjectPattern') {
-                const eventEmitterProp = varName.properties.find(prop =>
+                const eventEmitterProp = varName.properties.find((prop: TSESTree.Property | TSESTree.RestElement) =>
                   prop.type === 'Property' &&
                   prop.key.type === 'Identifier' &&
                   prop.key.name === 'EventEmitter'
                 );
-                if (eventEmitterProp) {
+                if (eventEmitterProp && eventEmitterProp.type === 'Property') {
                   context.report({
                     node: eventEmitterProp.key,
                     messageId: 'preferEventTarget',
@@ -144,8 +144,8 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
                       usage: 'EventEmitter from require',
                       suggestion: 'Use EventTarget for cross-platform compatibility',
                     },
-                    fix(fixer) {
-                      return fixer.replaceText(eventEmitterProp.key, 'EventTarget');
+                    fix(fixer: TSESLint.RuleFixer) {
+                      return fixer.replaceText((eventEmitterProp as TSESTree.Property).key, 'EventTarget');
                     },
                   });
                 }

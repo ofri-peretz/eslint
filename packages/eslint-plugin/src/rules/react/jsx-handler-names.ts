@@ -2,7 +2,7 @@
  * ESLint Rule: jsx-handler-names
  * Enforce event handler naming conventions
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -15,6 +15,7 @@ export const jsxHandlerNames = createRule<[], MessageIds>({
     docs: {
       description: 'Enforce event handler naming conventions',
     },
+    schema: [],
     messages: {
       jsxHandlerNames: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -27,7 +28,7 @@ export const jsxHandlerNames = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (node.name.type === 'JSXIdentifier') {

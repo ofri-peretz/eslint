@@ -48,7 +48,7 @@ export const noDocumentCookie = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allowReading: true }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const { allowReading = true } = options || {};
 
@@ -88,7 +88,7 @@ export const noDocumentCookie = createRule<RuleOptions, MessageIds>({
     }
 
     return {
-      MemberExpression(node) {
+      MemberExpression(node: TSESTree.MemberExpression) {
         if (isDocumentCookieAccess(node)) {
           const isAssigning = isAssignmentToCookie(node);
 

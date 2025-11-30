@@ -3,8 +3,7 @@
  * Forbid a module from importing itself (eslint-plugin-import inspired)
  */
 import * as path from 'node:path';
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
-import type { Rule } from 'eslint';
+import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -17,7 +16,7 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
-function isImportingSelf(context: Rule.RuleContext, node: TSESTree.Node, importPath: string): boolean {
+function isImportingSelf(context: TSESLint.RuleContext<MessageIds, RuleOptions>, node: TSESTree.Node, importPath: string): boolean {
   const filename = context.getFilename();
 
   // If the input is from stdin, this test can't fail
@@ -92,7 +91,7 @@ export const noSelfImport = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allowInTests: false }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     // Visit all module imports and requires
     function visitModule(source: TSESTree.Literal, node: TSESTree.Node) {
       const importPath = source.value;

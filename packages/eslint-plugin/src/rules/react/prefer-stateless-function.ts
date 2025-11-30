@@ -42,7 +42,7 @@ export const preferStatelessFunction = createRule<[Options], MessageIds>({
     ],
   },
   defaultOptions: [{ ignorePureComponents: false }],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, [Options]>) {
     const [options] = context.options;
     const ignorePureComponents = options?.ignorePureComponents ?? false;
 

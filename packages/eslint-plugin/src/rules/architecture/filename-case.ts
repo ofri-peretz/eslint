@@ -2,6 +2,7 @@
  * ESLint Rule: filename-case
  * Enforce filename case conventions
  */
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { getBasename } from '../../utils/node-path-utils';
@@ -126,7 +127,7 @@ export const filenameCase = createRule<RuleOptions, MessageIds>({
     allowedPascalCase: [],
   }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const {
       case: caseType = 'kebabCase',
@@ -224,7 +225,7 @@ export const filenameCase = createRule<RuleOptions, MessageIds>({
     }
 
     return {
-      Program(node) {
+      Program(node: TSESTree.Program) {
         // Get filename from context
         const filename = context.getFilename();
         if (!filename) {

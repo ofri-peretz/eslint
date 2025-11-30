@@ -2,7 +2,7 @@
  * ESLint Rule: no-process-exit
  * Prevent usage of process.exit()
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -49,12 +49,8 @@ export const noProcessExit = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allow: [] }],
 
-  create(context) {
-    const [options] = context.options;
-    const { allow = [] } = options || {};
-
-    function isInAllowedContext(node: TSESTree.CallExpression): boolean {
-       
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    function isInAllowedContext(): boolean {
       // For simplicity, we'll skip the allow option for now
       return false;
     }
@@ -76,7 +72,7 @@ export const noProcessExit = createRule<RuleOptions, MessageIds>({
     }
 
     return {
-      CallExpression(node) {
+      CallExpression(node: TSESTree.CallExpression) {
         if (isProcessExitCall(node) && !isInAllowedContext(node)) {
           context.report({
             node,

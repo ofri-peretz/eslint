@@ -8,13 +8,15 @@ import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds = 'noIsMounted';
 
-export const noIsMounted = createRule<[], MessageIds>({
+type RuleOptions = [];
+export const noIsMounted = createRule<RuleOptions, MessageIds>({
   name: 'no-is-mounted',
   meta: {
     type: 'problem',
     docs: {
       description: 'Prevent isMounted anti-pattern',
     },
+    schema: [],
     messages: {
       noIsMounted: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -27,7 +29,7 @@ export const noIsMounted = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       // Check for isMounted property access (covers both property access and method calls)
       MemberExpression(node: TSESTree.MemberExpression) {

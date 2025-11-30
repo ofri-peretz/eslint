@@ -2,7 +2,7 @@
  * ESLint Rule: prefer-default-export
  * Prefer a default export if module exports a single name (eslint-plugin-import inspired)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -85,7 +85,7 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
     allowNamedExports: false
   }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const {
       target = 'single',
@@ -99,7 +99,7 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
     }
 
     function shouldIgnoreFile(): boolean {
-      return ignoreFiles.some(pattern => filename.includes(pattern));
+      return ignoreFiles.some((pattern: string) => filename.includes(pattern));
     }
 
     if (shouldIgnoreFile() || allowNamedExports) {
@@ -132,7 +132,7 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
           suggest: [
             {
               messageId: 'preferDefaultExport',
-              fix(fixer) {
+              fix(fixer: TSESLint.RuleFixer) {
                 return fixer.insertTextBefore(exportNode, '// TODO: Convert named export to default export\n');
               },
             },
@@ -146,7 +146,7 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
         // Check if this is a re-export of 'default' (export { default } from "./other")
         if (node.source && node.specifiers) {
           const hasDefaultReExport = node.specifiers.some(
-            specifier => specifier.exported.type === 'Identifier' && specifier.exported.name === 'default'
+            (specifier: TSESTree.ExportSpecifier) => specifier.exported.type === 'Identifier' && specifier.exported.name === 'default'
           );
           if (hasDefaultReExport) {
             // Treat re-export of default as a default export
@@ -175,7 +175,7 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
           }
 
           if (node.declaration.type === 'VariableDeclaration') {
-            node.declaration.declarations.forEach(decl => {
+            node.declaration.declarations.forEach((decl: TSESTree.VariableDeclarator) => {
               if (decl.id.type === 'Identifier') {
                 addNamedExport(decl.id.name, node);
               }
@@ -189,7 +189,7 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
 
         // Handle export specifiers (but not type specifiers)
         if (node.specifiers) {
-          node.specifiers.forEach(specifier => {
+          node.specifiers.forEach((specifier: TSESTree.ExportSpecifier) => {
             // Skip type-only export specifiers
             if (specifier.exportKind === 'type') {
               return;

@@ -2,19 +2,22 @@
  * ESLint Rule: display-name
  * Enforce component display names
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds = 'displayName';
 
-export const displayName = createRule<[], MessageIds>({
+type RuleOptions = [];
+
+export const displayName = createRule<RuleOptions, MessageIds>({
   name: 'display-name',
   meta: {
     type: 'problem',
     docs: {
       description: 'Enforce component display names',
     },
+    schema: [],
     messages: {
       displayName: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -27,7 +30,7 @@ export const displayName = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       // Check class components
       ClassDeclaration(node: TSESTree.ClassDeclaration) {
@@ -84,7 +87,7 @@ function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
 function hasDisplayNameProperty(node: TSESTree.ClassDeclaration): boolean {
   for (const member of node.body.body) {
     if (
-      (member.type === 'PropertyDefinition' || member.type === 'ClassProperty') &&
+      member.type === 'PropertyDefinition' &&
       member.key.type === 'Identifier' &&
       member.key.name === 'displayName' &&
       member.static
@@ -124,8 +127,7 @@ function isReactComponentFunction(node: TSESTree.FunctionExpression | TSESTree.A
 /**
  * Check if component has displayName in scope
  */
-function hasDisplayNameInScope(node: TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression | TSESTree.FunctionDeclaration): boolean {
-   
+function hasDisplayNameInScope(): boolean {
   // Check for assignment to displayName after component declaration
   // This is a simplified check - in practice, you'd want to check the scope
   return false; // For now, always require explicit displayName

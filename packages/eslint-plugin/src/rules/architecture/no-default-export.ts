@@ -2,7 +2,7 @@
  * ESLint Rule: no-default-export
  * Prevents default exports (eslint-plugin-import inspired)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -87,7 +87,7 @@ export const noDefaultExport = createRule<RuleOptions, MessageIds>({
     suggestNamed: true
   }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const {
       allowInFiles = [],
@@ -103,7 +103,7 @@ export const noDefaultExport = createRule<RuleOptions, MessageIds>({
       }
 
       // Check if file is in allowed list
-      const allowedByFile = allowInFiles.some(pattern => {
+      const allowedByFile = allowInFiles.some((pattern: string) => {
         if (pattern.includes('*')) {
           const regex = new RegExp(pattern.replace(/\*/g, '.*'));
           return regex.test(filename);
@@ -116,7 +116,7 @@ export const noDefaultExport = createRule<RuleOptions, MessageIds>({
       }
 
       // Check if filename matches allowed patterns
-      return allowPatterns.some(pattern => {
+      return allowPatterns.some((pattern: string) => {
         if (pattern.includes('*')) {
           const regex = new RegExp(pattern.replace(/\*/g, '.*'));
           return regex.test(filename);
@@ -172,7 +172,7 @@ export const noDefaultExport = createRule<RuleOptions, MessageIds>({
             suggestion: 'Use named export for better tree-shaking',
             example: suggestion,
           },
-          fix(fixer) {
+          fix(fixer: TSESLint.RuleFixer) {
             const declaration = node.declaration;
             const sourceCode = context.sourceCode;
 
@@ -204,7 +204,7 @@ export const noDefaultExport = createRule<RuleOptions, MessageIds>({
         // This is a re-export pattern that effectively creates a default export
         if (node.specifiers) {
           const hasDefaultSpecifier = node.specifiers.some(
-            spec => spec.exported.type === 'Identifier' && spec.exported.name === 'default' ||
+            (spec: TSESTree.ExportSpecifier) => spec.exported.type === 'Identifier' && spec.exported.name === 'default' ||
                     (spec.local && spec.local.type === 'Identifier' && spec.local.name === 'default')
           );
 

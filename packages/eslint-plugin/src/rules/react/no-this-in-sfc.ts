@@ -15,9 +15,10 @@ export const noThisInSfc = createRule<[], MessageIds>({
     docs: {
       description: 'Disallow this from being used in stateless functional components',
     },
+    schema: [],
     messages: {
       noThisInSfc: formatLLMMessage({
-        icon: MessageIcons.ERROR,
+        icon: MessageIcons.WARNING,
         issueName: 'Invalid this usage',
         description: 'this cannot be used in stateless functional components',
         severity: 'HIGH',
@@ -27,7 +28,7 @@ export const noThisInSfc = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
     let inClassContext = false;
 
     return {

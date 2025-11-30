@@ -320,7 +320,7 @@ export function isSanitizedInput(
     
     if (scope) {
       // Find the variable
-      const variable = scope.variables.find(v => v.name === node.name);
+      const variable = scope.variables.find((v: { name: string }) => v.name === node.name);
       if (variable) {
         // Check each definition
         for (const def of variable.defs) {

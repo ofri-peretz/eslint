@@ -2,7 +2,7 @@
  * ESLint Rule: prefer-node-protocol
  * Enforce using the node: protocol for Node.js built-in modules (unicorn-inspired)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -97,7 +97,7 @@ export const preferNodeProtocol = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{}],
 
-  create(context, [options]) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]: RuleOptions) {
     const { additionalModules = [] } = options || {};
     const allModulesToCheck = new Set([...NODE_BUILT_INS, ...additionalModules]);
 
@@ -116,7 +116,7 @@ export const preferNodeProtocol = createRule<RuleOptions, MessageIds>({
               moduleName,
               fix: `Change "${moduleName}" to "${fixedModuleName}"`,
             },
-            fix(fixer) {
+            fix(fixer: TSESLint.RuleFixer) {
               return fixer.replaceText(node.source, `"${fixedModuleName}"`);
             },
           });
@@ -145,7 +145,7 @@ export const preferNodeProtocol = createRule<RuleOptions, MessageIds>({
                   moduleName,
                   fix: `Change "${moduleName}" to "${fixedModuleName}"`,
                 },
-                fix(fixer) {
+                fix(fixer: TSESLint.RuleFixer) {
                   return fixer.replaceText(arg, `"${fixedModuleName}"`);
                 },
               });
@@ -169,7 +169,7 @@ export const preferNodeProtocol = createRule<RuleOptions, MessageIds>({
                 moduleName,
                 fix: `Change "${moduleName}" to "${fixedModuleName}"`,
               },
-              fix(fixer) {
+              fix(fixer: TSESLint.RuleFixer) {
                 return fixer.replaceText(node.source, `"${fixedModuleName}"`);
               },
             });

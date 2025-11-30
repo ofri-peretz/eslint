@@ -15,6 +15,7 @@ export const stateInConstructor = createRule<[], MessageIds>({
     docs: {
       description: 'Enforce state initialization in constructor',
     },
+    schema: [],
     messages: {
       stateInConstructor: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -27,7 +28,7 @@ export const stateInConstructor = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       ClassDeclaration(node: TSESTree.ClassDeclaration) {
         if (isReactComponent(node)) {

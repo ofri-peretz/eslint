@@ -241,24 +241,6 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     const parserServices = hasTypeInfo ? getParserServices(context) : null;
 
     /**
-     * Select message ID based on strategy
-     */
-    const selectStrategyMessage = (): MessageIds => {
-      switch (strategy) {
-        case 'validate':
-          return 'strategyValidate';
-        case 'whitelist':
-          return 'strategyWhitelist';
-        case 'freeze':
-          return 'strategyFreeze';
-        case 'auto':
-        default:
-          // Auto mode: prefer whitelisting for object injection
-          return 'whitelistKeys';
-      }
-    };
-
-    /**
      * Check if a node is a literal string (potentially safe)
      */
     const isLiteralString = (node: TSESTree.Node): boolean => {
@@ -427,59 +409,6 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
       // Check for dangerous property access
       return isDangerousPropertyAccess(propertyNode);
-    };
-
-    /**
-     * Generate refactoring steps based on the pattern
-     */
-    const generateRefactoringSteps = (pattern: ObjectInjectionPattern | null): string => {
-      if (!pattern) {
-        return [
-          '   1. Create a whitelist of allowed property names',
-          '   2. Validate user input against the whitelist',
-          '   3. Use hasOwnProperty() for safe property access',
-          '   4. Consider using Map or Set for dynamic properties',
-          '   5. Add runtime property validation'
-        ].join('\n');
-      }
-
-      switch (pattern.vulnerability) {
-        case 'prototype-pollution':
-          return [
-            '   1. Use Map instead of plain objects: new Map()',
-            '   2. Use Object.create(null) for prototype-free objects',
-            '   3. Avoid direct property assignment with user input',
-            '   4. Implement property whitelisting',
-            '   5. Consider freezing Object.prototype in secure contexts'
-          ].join('\n');
-
-        case 'property-injection':
-          return [
-            '   1. Define allowed properties in a constant array',
-            '   2. Check if property exists in whitelist before assignment',
-            '   3. Use Object.defineProperty with validation',
-            '   4. Implement property name sanitization',
-            '   5. Add logging for property injection attempts'
-          ].join('\n');
-
-        case 'method-injection':
-          return [
-            '   1. Never allow "constructor" property manipulation',
-            '   2. Use strict property validation',
-            '   3. Avoid eval-like behavior with user input',
-            '   4. Implement method whitelisting if dynamic methods needed',
-            '   5. Use class-based approach instead of plain objects'
-          ].join('\n');
-
-        default:
-          return [
-            '   1. Identify the legitimate use case for dynamic properties',
-            '   2. Implement appropriate safe alternative',
-            '   3. Add comprehensive input validation',
-            '   4. Use type-safe property access methods',
-            '   5. Test with malicious property names'
-          ].join('\n');
-      }
     };
 
     /**

@@ -15,6 +15,7 @@ export const reactInJsxScope = createRule<[], MessageIds>({
     docs: {
       description: 'Ensure React is in scope',
     },
+    schema: [],
     messages: {
       reactInJsxScope: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -27,7 +28,7 @@ export const reactInJsxScope = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
     let hasReactImport = false;
     let hasJsxUsage = false;
 

@@ -15,6 +15,7 @@ export const preferEs6Class = createRule<[], MessageIds>({
     docs: {
       description: 'Prefer ES6 classes over createClass',
     },
+    schema: [],
     messages: {
       preferEs6Class: formatLLMMessage({
         icon: MessageIcons.MIGRATION,
@@ -27,7 +28,7 @@ export const preferEs6Class = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Check for React.createClass()

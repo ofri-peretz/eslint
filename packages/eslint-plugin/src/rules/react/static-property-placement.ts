@@ -34,6 +34,28 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
     docs: {
       description: 'Enforce static property placement',
     },
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          propertyGroups: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                name: { type: 'string' },
+                properties: { type: 'array', items: { type: 'string' } },
+              },
+            },
+          },
+          childClass: {
+            type: 'string',
+            enum: ['first', 'last'],
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
     messages: {
       staticPropertyPlacement: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -46,15 +68,14 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
     },
   },
   defaultOptions: [{ propertyGroups: DEFAULT_GROUPS, childClass: 'first' }],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, [Options]>) {
     const [options] = context.options;
     const propertyGroups = options?.propertyGroups ?? DEFAULT_GROUPS;
-    const childClass = options?.childClass ?? 'first';
 
     return {
       ClassDeclaration(node: TSESTree.ClassDeclaration) {
         if (isReactComponent(node)) {
-          checkStaticPropertyPlacement(node, propertyGroups, childClass);
+          checkStaticPropertyPlacement(node, propertyGroups);
         }
       },
     };
@@ -80,11 +101,10 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
 
     function checkStaticPropertyPlacement(
       node: TSESTree.ClassDeclaration,
-      groups: NonNullable<Options['propertyGroups']>,
-      childClass: NonNullable<Options['childClass']>
+      groups: NonNullable<Options['propertyGroups']>
     ) {
       const members = node.body.body;
-      const staticProperties: Array<{ name: string; index: number; node: TSESTree.ClassBody['body'][0] }> = [];
+      const staticProperties: Array<{ name: string; index: number; node: TSESTree.PropertyDefinition | TSESTree.MethodDefinition }> = [];
 
       // Collect static properties
       for (let i = 0; i < members.length; i++) {
@@ -127,15 +147,15 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
       }
     }
 
-    function isStaticProperty(member: TSESTree.ClassBody['body'][0]): boolean {
+    function isStaticProperty(member: TSESTree.ClassBody['body'][0]): member is TSESTree.PropertyDefinition | TSESTree.MethodDefinition {
       return (
-        // Handle both ClassProperty (legacy) and PropertyDefinition (TypeScript parser)
-        (member.type === 'PropertyDefinition' || member.type === 'ClassProperty' || member.type === 'MethodDefinition') &&
+        // Handle PropertyDefinition and MethodDefinition
+        (member.type === 'PropertyDefinition' || member.type === 'MethodDefinition') &&
         member.static
       );
     }
 
-    function getPropertyName(member: TSESTree.ClassBody['body'][0]): string | null {
+    function getPropertyName(member: TSESTree.PropertyDefinition | TSESTree.MethodDefinition): string | null {
       if (member.key.type === 'Identifier') {
         return member.key.name;
       }
@@ -143,7 +163,7 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
     }
 
     /* v8 ignore start - only used in unreachable code path above */
-    function getPropertyKeyNode(member: TSESTree.ClassBody['body'][0]): TSESTree.Node {
+    function getPropertyKeyNode(member: TSESTree.PropertyDefinition | TSESTree.MethodDefinition): TSESTree.Node {
       return member.key;
     }
     /* v8 ignore stop */

@@ -51,7 +51,7 @@ export const consistentExistenceIndexCheck = createRule<RuleOptions, MessageIds>
   },
   defaultOptions: [{ preferred: 'in' }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const { preferred = 'in' } = options || {};
 

@@ -2,7 +2,7 @@
  * ESLint Rule: no-deprecated
  * Forbid imported names marked with @deprecated documentation tag (eslint-plugin-import inspired)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -93,7 +93,7 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
     checkDecorators: true
   }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const {
       allow = [],
@@ -229,7 +229,7 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
         suggest: deprecationInfo.replacement ? [
           {
             messageId: 'deprecatedUsage',
-            fix(fixer) {
+            fix(fixer: TSESLint.RuleFixer) {
               return fixer.replaceText(node, deprecationInfo.replacement || 'Check documentation for replacement');
             },
             data: {
@@ -244,7 +244,7 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
     return {
       // Check for deprecated declarations in the current file
       VariableDeclaration(node: TSESTree.VariableDeclaration) {
-        node.declarations.forEach(decl => {
+        node.declarations.forEach((decl: TSESTree.VariableDeclarator) => {
           if (decl.id.type === 'Identifier') {
             checkComments(node, decl.id.name);
             checkDecoratorsForDeprecation(node, decl.id.name);
@@ -279,7 +279,7 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
         if (node.declaration) {
           if (node.declaration.type === 'VariableDeclaration') {
-            node.declaration.declarations.forEach(decl => {
+            node.declaration.declarations.forEach((decl: TSESTree.VariableDeclarator) => {
               if (decl.id.type === 'Identifier') {
                 checkComments(node, decl.id.name);
                 checkDecoratorsForDeprecation(node.declaration, decl.id.name);
@@ -296,7 +296,7 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
 
         // Check exported specifiers
         if (node.specifiers) {
-          node.specifiers.forEach(specifier => {
+          node.specifiers.forEach((specifier: TSESTree.ExportSpecifier) => {
             if (specifier.exported.type === 'Identifier') {
               checkComments(node, specifier.exported.name);
             }

@@ -2,7 +2,7 @@
  * ESLint Rule: consistent-function-scoping
  * Disallow functions that are declared in a scope which does not capture any variables from the outer scope
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -56,7 +56,7 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ checkArrowFunctions: true }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const { checkArrowFunctions = true } = options || {};
 
@@ -131,14 +131,14 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
 
       // Collect all references in the function body
       if (node.body.type === 'BlockStatement') {
-        node.body.body.forEach(stmt => collectReferences(stmt));
+        node.body.body.forEach((stmt: TSESTree.Statement) => collectReferences(stmt));
       } else {
         // Arrow function with expression body
         collectReferences(node.body);
       }
 
       // Check function parameters
-      node.params.forEach(param => {
+      node.params.forEach((param: TSESTree.Parameter) => {
         if (param.type === 'Identifier') {
           referencedVars.add(param.name);
         }
@@ -172,7 +172,7 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
             suggest: [
               {
                 messageId: 'moveToModuleScope',
-                fix(fixer) {
+                fix(fixer: TSESLint.RuleFixer) {
                   // This is a complex fix that would require:
                   // 1. Finding the module scope location
                   // 2. Moving the function declaration
@@ -196,10 +196,10 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
         exitScope();
       },
 
-      FunctionDeclaration(node) {
+      FunctionDeclaration(node: TSESTree.FunctionDeclaration) {
         enterScope();
         // Add function parameters to the current scope
-        node.params.forEach(param => {
+        node.params.forEach((param: TSESTree.Parameter) => {
           if (param.type === 'Identifier') {
             addVariableToCurrentScope(param.name);
           }
@@ -211,10 +211,10 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
         exitScope();
       },
 
-      FunctionExpression(node) {
+      FunctionExpression(node: TSESTree.FunctionExpression) {
         enterScope();
         // Add function parameters to the current scope
-        node.params.forEach(param => {
+        node.params.forEach((param: TSESTree.Parameter) => {
           if (param.type === 'Identifier') {
             addVariableToCurrentScope(param.name);
           }
@@ -228,10 +228,10 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
         exitScope();
       },
 
-      ArrowFunctionExpression(node) {
+      ArrowFunctionExpression(node: TSESTree.ArrowFunctionExpression) {
         enterScope();
         // Add function parameters to the current scope
-        node.params.forEach(param => {
+        node.params.forEach((param: TSESTree.Parameter) => {
           if (param.type === 'Identifier') {
             addVariableToCurrentScope(param.name);
           }
@@ -245,9 +245,9 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
         exitScope();
       },
 
-      VariableDeclaration(node) {
+      VariableDeclaration(node: TSESTree.VariableDeclaration) {
         // Add variables to current scope
-        node.declarations.forEach(decl => {
+        node.declarations.forEach((decl: TSESTree.VariableDeclarator) => {
           if (decl.id.type === 'Identifier') {
             addVariableToCurrentScope(decl.id.name);
           }

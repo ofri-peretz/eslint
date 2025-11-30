@@ -2,7 +2,7 @@
  * ESLint Rule: no-extraneous-dependencies
  * Forbid the use of extraneous packages (eslint-plugin-import inspired)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import {
@@ -167,7 +167,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
     allowPatterns: []
   }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const {
       devDependencies = true,
@@ -221,27 +221,27 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
     const allowedPackages = new Set<string>();
 
     // Add dependencies
-    if (resolvedPackageJson.dependencies) {
+    if (resolvedPackageJson?.dependencies) {
       Object.keys(resolvedPackageJson.dependencies).forEach(pkg => allowedPackages.add(pkg));
     }
 
     // Add dev dependencies if allowed
-    if (devDependencies && resolvedPackageJson.devDependencies) {
+    if (devDependencies && resolvedPackageJson?.devDependencies) {
       Object.keys(resolvedPackageJson.devDependencies).forEach(pkg => allowedPackages.add(pkg));
     }
 
     // Add optional dependencies if allowed
-    if (optionalDependencies && resolvedPackageJson.optionalDependencies) {
+    if (optionalDependencies && resolvedPackageJson?.optionalDependencies) {
       Object.keys(resolvedPackageJson.optionalDependencies).forEach(pkg => allowedPackages.add(pkg));
     }
 
     // Add peer dependencies if allowed
-    if (peerDependencies && resolvedPackageJson.peerDependencies) {
+    if (peerDependencies && resolvedPackageJson?.peerDependencies) {
       Object.keys(resolvedPackageJson.peerDependencies).forEach(pkg => allowedPackages.add(pkg));
     }
 
     // Add bundled dependencies if allowed
-    if (bundledDependencies && resolvedPackageJson.bundledDependencies) {
+    if (bundledDependencies && resolvedPackageJson?.bundledDependencies) {
       resolvedPackageJson.bundledDependencies.forEach(pkg => allowedPackages.add(pkg));
     }
 
@@ -292,7 +292,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
       }
 
       // Check allow patterns first
-      const isAllowedByPattern = allowPatterns.some(pattern => {
+      const isAllowedByPattern = allowPatterns.some((pattern: string) => {
         try {
           const regex = new RegExp(pattern);
           return regex.test(packageName);
@@ -322,7 +322,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
 
       if (shouldCheckDependency()) {
         // Check if it's in devDependencies but we're in production code
-        const isInDevDeps = resolvedPackageJson.devDependencies && resolvedPackageJson.devDependencies[packageName];
+        const isInDevDeps = resolvedPackageJson?.devDependencies && resolvedPackageJson.devDependencies[packageName];
         if (isInDevDeps && !devDependencies) {
           // Dev dependency used in production code
           context.report({
@@ -336,7 +336,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
             suggest: [
               {
                 messageId: 'moveToDependencies',
-                fix(fixer) {
+                fix(fixer: TSESLint.RuleFixer) {
                   // Find the parent statement to insert before
                   let parentStatement = node;
                   while (parentStatement && parentStatement.type !== 'ImportDeclaration' && parentStatement.type !== 'VariableDeclaration' && parentStatement.type !== 'ExpressionStatement') {
@@ -364,7 +364,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
             suggest: [
               {
                 messageId: 'addToDependencies',
-                fix(fixer) {
+                fix(fixer: TSESLint.RuleFixer) {
                   // Find the parent statement to insert before
                   let parentStatement = node;
                   while (parentStatement && parentStatement.type !== 'ImportDeclaration' && parentStatement.type !== 'VariableDeclaration' && parentStatement.type !== 'ExpressionStatement') {
@@ -378,7 +378,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
               },
               {
                 messageId: 'addToDevDependencies',
-                fix(fixer) {
+                fix(fixer: TSESLint.RuleFixer) {
                   // Find the parent statement to insert before
                   let parentStatement = node;
                   while (parentStatement && parentStatement.type !== 'ImportDeclaration' && parentStatement.type !== 'VariableDeclaration' && parentStatement.type !== 'ExpressionStatement') {

@@ -27,7 +27,7 @@ export const noNamespace = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       ImportNamespaceSpecifier(node: TSESTree.ImportNamespaceSpecifier) {
         context.report({

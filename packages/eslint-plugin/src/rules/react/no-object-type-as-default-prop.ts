@@ -27,7 +27,7 @@ export const noObjectTypeAsDefaultProp = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       // Check defaultProps assignments (PropertyDefinition is used by TypeScript parser)
       'PropertyDefinition[key.name="defaultProps"]'(node: TSESTree.PropertyDefinition) {

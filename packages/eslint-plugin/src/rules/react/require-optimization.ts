@@ -114,7 +114,7 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ suggestMemo: true, suggestUseMemo: true, suggestUseCallback: true, minPropsForMemo: 3 }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const {
       suggestMemo = true,
@@ -218,14 +218,14 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
             if (currentNode.openingElement && currentNode.openingElement.attributes) {
               currentNode.openingElement.attributes.forEach((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) => {
                 if (attr.type === 'JSXAttribute') {
-                  analyzeNode(attr as any, depth + 1, visited);
+                  analyzeNode(attr as TSESTree.Node, depth + 1, visited);
                 }
               });
             }
             // Analyze JSX children
             if (currentNode.children) {
               currentNode.children.forEach((child: TSESTree.JSXChild) => {
-                analyzeNode(child as any, depth + 1, visited);
+                analyzeNode(child as TSESTree.Node, depth + 1, visited);
               });
             }
           } else if (currentNode.type === 'CallExpression' && currentNode.arguments) {
@@ -243,14 +243,10 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
       }
 
       // Get the function body to analyze
-      let body: TSESTree.BlockStatement | TSESTree.Expression;
-      if (node.type === 'ArrowFunctionExpression') {
-        body = node.body.type === 'BlockStatement' ? node.body : { type: 'BlockStatement', body: [] };
-      } else {
-        body = node.body;
+      const body = node.body;
+      if (body) {
+        analyzeNode(body);
       }
-
-      analyzeNode(body);
 
       components.set(componentName, {
         name: componentName,
@@ -265,7 +261,10 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
       });
 
       // Analyze and suggest optimizations
-      analyzeComponentOptimizations(componentName, components.get(componentName)!);
+      const componentData = components.get(componentName);
+      if (componentData) {
+        analyzeComponentOptimizations(componentName, componentData);
+      }
     }
 
     function analyzeClassComponent(node: TSESTree.ClassDeclaration) {
@@ -370,7 +369,7 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
               } else if (currentNode.type === 'JSXElement') {
                 if (currentNode.children) {
                   currentNode.children.forEach((child: TSESTree.JSXChild) => {
-                    analyzeRenderNode(child as any, depth + 1, visited);
+                    analyzeRenderNode(child as TSESTree.Node, depth + 1, visited);
                   });
                 }
               } else if (currentNode.type === 'VariableDeclaration') {
@@ -404,7 +403,7 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
         const minPropsForPureComponent = 3; // Lower threshold for class components
         if (propsCount >= minPropsForPureComponent || hasExpensiveComputations) {
           context.report({
-            node: node.superClass!,
+            node: node.superClass as TSESTree.Node,
             messageId: 'considerPureComponent',
             data: {
               componentName,
@@ -420,8 +419,18 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
       return;
     }
 
-    function analyzeComponentOptimizations(componentName: string, component: any) {
-      const { type, node, propsCount, hasExpensiveComputations, hasEventHandlers, hasInlineFunctions, linesOfCode } = component;
+    function analyzeComponentOptimizations(componentName: string, component: {
+      name: string;
+      type: 'function' | 'class' | 'arrow';
+      node: TSESTree.Node;
+      propsCount: number;
+      hasExpensiveComputations: boolean;
+      hasEventHandlers: boolean;
+      hasInlineFunctions: boolean;
+      renderStatements: number;
+      linesOfCode: number;
+    }) {
+      const { type, node, propsCount, hasExpensiveComputations, hasInlineFunctions, linesOfCode } = component;
 
 
       // Suggest React.memo for function components
@@ -450,7 +459,7 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
       }
 
       // Suggest useCallback for event handlers with inline functions
-      if (hasInlineFunctions && type !== 'class') {
+      if (suggestUseCallback && hasInlineFunctions && type !== 'class') {
         context.report({
           node,
           messageId: 'considerUseCallback',
@@ -485,7 +494,7 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
 
       ArrowFunctionExpression(node: TSESTree.ArrowFunctionExpression) {
         // Check if it's assigned to a capitalized variable (React component)
-        const parent = (node as any).parent;
+        const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
         if (parent?.type === 'VariableDeclarator' &&
             parent.id?.type === 'Identifier' &&
             /^[A-Z]/.test(parent.id.name)) {

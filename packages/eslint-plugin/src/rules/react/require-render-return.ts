@@ -15,6 +15,7 @@ export const requireRenderReturn = createRule<[], MessageIds>({
     docs: {
       description: 'Require render methods to return',
     },
+    schema: [],
     messages: {
       requireRenderReturn: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -27,7 +28,7 @@ export const requireRenderReturn = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       MethodDefinition(node: TSESTree.MethodDefinition) {
         if (
@@ -48,26 +49,43 @@ export const requireRenderReturn = createRule<[], MessageIds>({
       },
     };
 
-    function hasReturnStatement(node: TSESTree.BlockStatement): boolean {
-      for (const statement of node.body) {
-        if (statement.type === 'ReturnStatement') {
-          return true;
-        }
-
-        // Check nested blocks (if statements, etc.)
-        if (statement.type === 'IfStatement') {
-          if (hasReturnStatement(statement.consequent) ||
-              (statement.alternate && hasReturnStatement(statement.alternate))) {
+    function hasReturnStatement(node: TSESTree.Statement | TSESTree.BlockStatement): boolean {
+      // Handle BlockStatement
+      if (node.type === 'BlockStatement') {
+        for (const statement of node.body) {
+          if (checkStatement(statement)) {
             return true;
           }
         }
+        return false;
+      }
+      
+      // Handle single statement
+      return checkStatement(node);
+    }
 
-        if (statement.type === 'SwitchStatement') {
-          for (const switchCase of statement.cases) {
-            for (const caseStatement of switchCase.consequent) {
-              if (caseStatement.type === 'ReturnStatement') {
-                return true;
-              }
+    function checkStatement(statement: TSESTree.Statement): boolean {
+      if (statement.type === 'ReturnStatement') {
+        return true;
+      }
+
+      // Check nested blocks (if statements, etc.)
+      if (statement.type === 'IfStatement') {
+        if (hasReturnStatement(statement.consequent) ||
+            (statement.alternate && hasReturnStatement(statement.alternate))) {
+          return true;
+        }
+      }
+
+      if (statement.type === 'BlockStatement') {
+        return hasReturnStatement(statement);
+      }
+
+      if (statement.type === 'SwitchStatement') {
+        for (const switchCase of statement.cases) {
+          for (const caseStatement of switchCase.consequent) {
+            if (caseStatement.type === 'ReturnStatement') {
+              return true;
             }
           }
         }

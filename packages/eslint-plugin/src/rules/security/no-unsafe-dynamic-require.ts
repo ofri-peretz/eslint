@@ -55,9 +55,7 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
-    const { allowDynamicImport = false } = options;
-
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const { allowDynamicImport: _allowDynamicImport = false } = options;
 
 
     /**

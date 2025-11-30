@@ -65,7 +65,7 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allowInLifecycleMethods: false }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const { allowInLifecycleMethods = false } = options || {};
 
@@ -116,7 +116,7 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
         suggest: [
           {
             messageId: 'suggestSetState',
-            fix(fixer) {
+            fix(fixer: TSESLint.RuleFixer) {
               // Get the source code to determine indentation
               const sourceCode = context.getSourceCode();
               const start = node.range[0];
@@ -132,7 +132,7 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
           },
           {
             messageId: 'suggestFunctionalUpdate',
-            fix(fixer) {
+            fix(fixer: TSESLint.RuleFixer) {
               // Get the source code to determine indentation
               const sourceCode = context.getSourceCode();
               const start = node.range[0];

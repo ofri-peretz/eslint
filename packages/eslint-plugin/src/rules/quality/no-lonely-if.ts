@@ -49,20 +49,20 @@ export const noLonelyIf = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allow: [] }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const { allow = [] } = options || {};
 
     const allowedContexts = new Set(allow);
 
-    function isInAllowedContext(node: TSESTree.IfStatement): boolean {
+    function isInAllowedContext(): boolean {
       // Check if we're in an allowed context
       // This is a simple implementation - could be extended for more complex cases
-      for (const context of allowedContexts) {
+      for (const allowedContext of allowedContexts) {
         // For now, just check if the context string appears anywhere in the source
         const sourceCode = context.sourceCode;
         const sourceText = sourceCode.getText();
-        if (sourceText.includes(context)) {
+        if (sourceText.includes(allowedContext)) {
           return true;
         }
       }
@@ -85,7 +85,7 @@ export const noLonelyIf = createRule<RuleOptions, MessageIds>({
     }
 
     return {
-      IfStatement(node) {
+      IfStatement(node: TSESTree.IfStatement) {
         if (isLonelyIf(node) && !isInAllowedContext(node)) {
           context.report({
             node,
@@ -96,8 +96,8 @@ export const noLonelyIf = createRule<RuleOptions, MessageIds>({
             },
             suggest: [
               {
-                desc: 'Convert to else if',
-                fix(fixer) {
+                messageId: 'noLonelyIf',
+                fix(fixer: TSESLint.RuleFixer) {
                   const sourceCode = context.sourceCode;
 
                   // Find the else keyword

@@ -2,7 +2,7 @@
  * ESLint Rule: max-dependencies
  * Enforce the maximum number of dependencies a module can have (eslint-plugin-import inspired)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -97,7 +97,7 @@ export const maxDependencies = createRule<RuleOptions, MessageIds>({
     ignoreFiles: []
   }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const {
       max = 10,
@@ -112,7 +112,7 @@ export const maxDependencies = createRule<RuleOptions, MessageIds>({
     }
 
     // Check if file should be ignored
-    const shouldIgnoreFile = ignoreFiles.some(pattern => {
+    const shouldIgnoreFile = ignoreFiles.some((pattern: string) => {
       if (pattern.includes('*')) {
         const regex = new RegExp(pattern.replace(/\*/g, '.*'));
         return regex.test(filename);

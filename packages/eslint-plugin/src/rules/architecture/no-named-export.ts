@@ -2,7 +2,7 @@
  * ESLint Rule: no-named-export
  * Prevents named exports (eslint-plugin-import inspired)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -89,7 +89,7 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
     suggestDefault: true
   }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const {
       allowInFiles = [],
@@ -106,7 +106,7 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
       }
 
       // Check if file is in allowed list
-      const allowedByFile = allowInFiles.some(pattern => {
+      const allowedByFile = allowInFiles.some((pattern: string) => {
         if (pattern.includes('*')) {
           // Simple glob matching: ** matches any path, * matches any name
           const regexPattern = pattern
@@ -123,7 +123,7 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
       }
 
       // Check if filename matches allowed patterns
-      const allowedByPattern = allowPatterns.some(pattern => {
+      const allowedByPattern = allowPatterns.some((pattern: string) => {
         if (pattern.includes('*')) {
           // Simple glob matching: ** matches any path, * matches any name
           const regexPattern = pattern
@@ -163,7 +163,7 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
                   {
                     messageId: 'suggestDefault',
                     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                    fix(fixer) {
+                    fix(_fixer: TSESLint.RuleFixer) {
                       // Convert named export to default export
                       // This would require more complex logic to handle the export statement
                       return null; // Placeholder - would need AST manipulation
@@ -190,7 +190,7 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
                     {
                       messageId: 'suggestDefault',
                       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                      fix(fixer) {
+                      fix(_fixer: TSESLint.RuleFixer) {
                         // Convert named export to default export
                         return null; // Placeholder - would need AST manipulation
                       },
@@ -209,7 +209,7 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
                   {
                     messageId: 'suggestDefault',
                     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                    fix(fixer) {
+                    fix(_fixer: TSESLint.RuleFixer) {
                       // Convert named export to default export
                       return null; // Placeholder - would need AST manipulation
                     },

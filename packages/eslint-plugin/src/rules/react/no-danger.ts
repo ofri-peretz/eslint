@@ -15,6 +15,7 @@ export const noDanger = createRule<[], MessageIds>({
     docs: {
       description: 'Disallow dangerouslySetInnerHTML usage',
     },
+    schema: [],
     messages: {
       noDanger: formatLLMMessage({
         icon: MessageIcons.SECURITY,
@@ -28,7 +29,7 @@ export const noDanger = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (

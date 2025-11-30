@@ -673,7 +673,7 @@ export function computeSCCsFromFile(
   startFile: string,
   options: Omit<CycleDetectionOptions, 'reportAllCycles'>
 ): SCCResult[] {
-  const { maxDepth, workspaceRoot, barrelExports, cache } = options;
+  const { workspaceRoot, barrelExports, cache } = options;
 
   // If SCC is already computed and valid, return cached result
   if (cache.sccComputed && cache.sccs.length > 0) {
@@ -695,7 +695,8 @@ export function computeSCCsFromFile(
 
   // First pass: discover all reachable files (breadth-first for efficiency)
   while (filesToProcess.length > 0) {
-    const file = filesToProcess.pop()!;
+    const file = filesToProcess.pop();
+    if (!file) continue;
     if (visited.has(file)) continue;
     visited.add(file);
 
@@ -715,7 +716,7 @@ export function computeSCCsFromFile(
   }
 
   // Convert to SCCResult format
-  const results: SCCResult[] = state.sccs.map((files, index) => ({
+  const results: SCCResult[] = state.sccs.map((files: string[]) => ({
     files,
     hasCycle: files.length > 1,
   }));
@@ -967,7 +968,7 @@ export function getMinimalCycle(cycle: string[]): string[] {
     const file = cycle[i];
     if (seen.has(file)) {
       // Found the start of the actual cycle
-      const cycleStart = seen.get(file)!;
+      const cycleStart = seen?.get?.(file);
       return cycle.slice(cycleStart, i + 1);
     }
     seen.set(file, i);

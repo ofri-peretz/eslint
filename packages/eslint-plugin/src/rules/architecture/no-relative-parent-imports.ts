@@ -2,7 +2,7 @@
  * ESLint Rule: no-relative-parent-imports
  * Prevents ../ imports (eslint-plugin-import inspired)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -75,7 +75,7 @@ export const noRelativeParentImports = createRule<RuleOptions, MessageIds>({
     amd: false,
   }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const {
       commonjs = true,
@@ -128,7 +128,7 @@ export const noRelativeParentImports = createRule<RuleOptions, MessageIds>({
           // AMD dependencies are usually in the first argument (array of strings)
           const depsArg = node.arguments[0];
           if (depsArg.type === 'ArrayExpression') {
-            depsArg.elements.forEach(element => {
+            depsArg.elements.forEach((element: TSESTree.SpreadElement | TSESTree.Expression | null) => {
               if (element?.type === 'Literal' && typeof element.value === 'string') {
                 checkImport(element.value, element);
               }

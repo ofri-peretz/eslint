@@ -2,7 +2,7 @@
  * ESLint Rule: no-console-spaces
  * Prevent leading/trailing space between console.log parameters
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -33,7 +33,7 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     // Console methods that join parameters with spaces
     const consoleMethods = new Set([
       'log', 'debug', 'info', 'warn', 'error', 'table', 'trace', 'group', 'groupCollapsed'
@@ -80,7 +80,7 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
 
 
     return {
-      CallExpression(node) {
+      CallExpression(node: TSESTree.CallExpression) {
         if (isConsoleMethodCall(node) && !isInAllowedContext()) {
           // Check each argument for leading/trailing spaces
           for (const arg of node.arguments) {
@@ -93,7 +93,7 @@ export const noConsoleSpaces = createRule<RuleOptions, MessageIds>({
                     method: getConsoleMethodName(node),
                     arg: arg.value,
                   },
-                  fix(fixer) {
+                  fix(fixer: TSESLint.RuleFixer) {
                     const trimmed = arg.value.trim();
                     return fixer.replaceText(arg, `'${trimmed}'`);
                   },

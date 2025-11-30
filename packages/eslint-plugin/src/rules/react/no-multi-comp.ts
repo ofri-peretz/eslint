@@ -12,7 +12,9 @@ export interface Options {
   ignoreStateless?: boolean;
 }
 
-export const noMultiComp = createRule<[Options], MessageIds>({
+type RuleOptions = [Options?];
+
+export const noMultiComp = createRule<RuleOptions, MessageIds>({
   name: 'no-multi-comp',
   meta: {
     type: 'problem',
@@ -42,8 +44,7 @@ export const noMultiComp = createRule<[Options], MessageIds>({
     },
   },
   defaultOptions: [{ ignoreStateless: false }],
-  create(context) {
-    const [options] = context.options;
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const components: TSESTree.Node[] = [];
 
     return {
@@ -61,7 +62,7 @@ export const noMultiComp = createRule<[Options], MessageIds>({
         }
       },
 
-      'Program:exit'(node: TSESTree.Program) {
+      'Program:exit'() {
         const [firstOption] = context.options;
         const ignoreStateless = firstOption?.ignoreStateless ?? false;
 
@@ -123,7 +124,7 @@ export const noMultiComp = createRule<[Options], MessageIds>({
       for (const key in node) {
         if (skipKeys.has(key)) continue;
         
-        const child = (node as any)[key];
+        const child = (node as Record<string, unknown>)[key];
         if (child && typeof child === 'object') {
           if (Array.isArray(child)) {
             for (const item of child) {

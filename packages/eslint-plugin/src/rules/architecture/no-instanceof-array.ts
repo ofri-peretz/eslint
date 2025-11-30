@@ -2,7 +2,7 @@
  * ESLint Rule: no-instanceof-array
  * Prefer Array.isArray() over instanceof Array
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -49,7 +49,7 @@ export const noInstanceofArray = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allow: [] }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const { allow = [] } = options || {};
 
@@ -77,7 +77,7 @@ export const noInstanceofArray = createRule<RuleOptions, MessageIds>({
     }
 
     return {
-      BinaryExpression(node) {
+      BinaryExpression(node: TSESTree.BinaryExpression) {
         if (isInstanceofArray(node) && !isInAllowedContext()) {
           context.report({
             node,

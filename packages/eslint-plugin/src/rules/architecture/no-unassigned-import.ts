@@ -2,7 +2,7 @@
  * ESLint Rule: no-unassigned-import
  * Prevents unassigned imports (eslint-plugin-import inspired)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -69,7 +69,7 @@ export const noUnassignedImport = createRule<RuleOptions, MessageIds>({
     allowModules: []
   }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const { allowModules = [] } = options || {};
 

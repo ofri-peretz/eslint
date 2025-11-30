@@ -190,7 +190,7 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
     strategy: 'error',
   }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const {
       maxDepth = 1,
@@ -236,7 +236,7 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
           node,
           messageId: 'internalModuleImport',
           data: reportData,
-          fix(fixer) {
+          fix(fixer: TSESLint.RuleFixer) {
             // Find the string literal node to replace
             // Autofix always goes to the root package for safety
             const sourceNode = node.type === 'Literal' ? node : 
@@ -253,7 +253,7 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
             {
               messageId: 'suggestPublicApi' as const,
               data: { suggestedPath: rootImport },
-              fix(fixer) {
+              fix(fixer: TSESLint.RuleFixer) {
                 const sourceNode = node.type === 'Literal' ? node : 
                   (node as TSESTree.ImportDeclaration).source;
                 return fixer.replaceText(sourceNode, `'${rootImport}'`);

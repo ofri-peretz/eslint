@@ -241,24 +241,6 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
     ];
 
     /**
-     * Select message ID based on strategy
-     */
-    const selectStrategyMessage = (): MessageIds => {
-      switch (strategy) {
-        case 'validate':
-          return 'strategyValidate';
-        case 'sanitize':
-          return 'strategySanitize';
-        case 'restrict':
-          return 'strategyRestrict';
-        case 'auto':
-        default:
-          // Auto mode: prefer validation for command injection
-          return 'validateInput';
-      }
-    };
-
-    /**
      * Check if a node contains string interpolation or concatenation
      */
     const containsDynamicStrings = (node: TSESTree.Node): boolean => {

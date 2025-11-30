@@ -15,6 +15,7 @@ export const noChildrenProp = createRule<[], MessageIds>({
     docs: {
       description: 'Disallow passing children as props',
     },
+    schema: [],
     messages: {
       noChildrenProp: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -27,7 +28,7 @@ export const noChildrenProp = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (

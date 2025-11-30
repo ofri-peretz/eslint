@@ -2,7 +2,7 @@
  * ESLint Rule: expiring-todo-comments
  * Add expiration conditions to TODO comments to prevent forgotten tasks
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { readJsonFileSync } from '../../utils/node-fs-utils';
@@ -85,7 +85,7 @@ export const expiringTodoComments = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ terms: ['TODO', 'FIXME', 'XXX'], dateFormat: 'YYYY-MM-DD' }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const {
       terms = ['TODO', 'FIXME', 'XXX']

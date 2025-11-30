@@ -2,7 +2,7 @@
  * ESLint Rule: no-commonjs
  * Prevents CommonJS require/module.exports (eslint-plugin-import inspired)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -109,7 +109,7 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
     suggestES6: true
   }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const {
       allowRequire = false,
@@ -127,7 +127,7 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
       }
 
       // Check if file is in allowed list
-      return allowInFiles.some(pattern => {
+      return allowInFiles.some((pattern: string) => {
         if (pattern.includes('*')) {
           const regex = new RegExp(pattern.replace(/\*/g, '.*'));
           return regex.test(filename);
@@ -202,7 +202,7 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
             suggest: suggestES6 ? [
               {
                 messageId: 'commonjsRequire',
-                fix(fixer) {
+                fix(fixer: TSESLint.RuleFixer) {
                   const suggestion = generateES6Suggestion(node);
                   return fixer.insertTextBefore(node, suggestion + '\n');
                 },
@@ -239,7 +239,7 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
             suggest: suggestES6 ? [
               {
                 messageId: 'commonjsExport',
-                fix(fixer) {
+                fix(fixer: TSESLint.RuleFixer) {
                   const suggestion = generateES6Suggestion(node);
                   return fixer.insertTextBefore(node, suggestion + '\n');
                 },
@@ -269,7 +269,7 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
             suggest: suggestES6 ? [
               {
                 messageId: 'commonjsModule',
-                fix(fixer) {
+                fix(fixer: TSESLint.RuleFixer) {
                   return fixer.insertTextBefore(node, '// Convert to: export const propertyName = value;\n');
                 },
               },
@@ -295,7 +295,7 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
             suggest: suggestES6 ? [
               {
                 messageId: 'commonjsModule',
-                fix(fixer) {
+                fix(fixer: TSESLint.RuleFixer) {
                   const suggestion = generateES6Suggestion(node);
                   return fixer.insertTextBefore(node, suggestion + '\n');
                 },
@@ -324,7 +324,7 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
             suggest: suggestES6 ? [
               {
                 messageId: 'commonjsRequire',
-                fix(fixer) {
+                fix(fixer: TSESLint.RuleFixer) {
                   const modulePath = node.moduleReference.type === 'TSExternalModuleReference' &&
                     node.moduleReference.expression.type === 'Literal'
                     ? node.moduleReference.expression.value

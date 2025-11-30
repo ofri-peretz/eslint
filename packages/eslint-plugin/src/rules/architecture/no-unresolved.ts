@@ -2,7 +2,7 @@
  * ESLint Rule: no-unresolved
  * Ensures imports point to resolvable modules (eslint-plugin-import inspired)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -95,7 +95,7 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
     allowUnresolved: false
   }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const {
       ignore = [],
@@ -109,7 +109,7 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
 
 
     function shouldIgnore(importPath: string): boolean {
-      return ignore.some(pattern => {
+      return ignore.some((pattern: string) => {
         if (pattern.includes('*')) {
           const regex = new RegExp(pattern.replace(/\*/g, '.*'));
           return regex.test(importPath);
@@ -149,7 +149,7 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
           suggest: [
             {
               messageId: 'addIgnoreComment',
-              fix(fixer) {
+              fix(fixer: TSESLint.RuleFixer) {
                 // Find the statement that contains this import
                 let statement = node;
                 while (statement.parent && statement.parent.type !== 'Program') {

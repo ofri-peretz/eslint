@@ -2,7 +2,7 @@
  * ESLint Rule: no-unused-modules
  * Forbid modules without exports
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -51,7 +51,7 @@ export const noUnusedModules = createRule<RuleOptions, MessageIds>({
     allowImportOnly: false,
   }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const { allowImportOnly = false } = options || {};
 

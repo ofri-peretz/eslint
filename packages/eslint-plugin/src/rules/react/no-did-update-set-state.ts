@@ -2,7 +2,7 @@
  * ESLint Rule: no-did-update-set-state
  * Prevent setState in componentDidUpdate
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -13,7 +13,9 @@ export interface Options {
   allowInCallback?: boolean;
 }
 
-export const noDidUpdateSetState = createRule<[Options], MessageIds>({
+type RuleOptions = [Options?];
+
+export const noDidUpdateSetState = createRule<RuleOptions, MessageIds>({
   name: 'no-did-update-set-state',
   meta: {
     type: 'problem',
@@ -44,7 +46,7 @@ export const noDidUpdateSetState = createRule<[Options], MessageIds>({
     ],
   },
   defaultOptions: [{ allowInCallback: false }],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     let inComponentDidUpdate = false;
     let hasConditionalCheck = false;

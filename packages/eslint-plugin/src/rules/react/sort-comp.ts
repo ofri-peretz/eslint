@@ -58,7 +58,7 @@ export const sortComp = createRule<[Options], MessageIds>({
     },
   },
   defaultOptions: [{ order: DEFAULT_ORDER }],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, [Options]>) {
     const [options] = context.options;
     const order = options?.order ?? DEFAULT_ORDER;
 

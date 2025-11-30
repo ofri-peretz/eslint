@@ -17,7 +17,6 @@ import {
   isSanitizedInput,
   hasSafeAnnotation,
   isOrmMethodCall,
-  isParameterizedQuery,
   type SecurityRuleOptions,
 } from '../../utils/security-utils';
 
@@ -161,7 +160,7 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
     const opts = context.options[0] || {};
     const { 
       allowDynamicTableNames = false, 
-      strategy = 'auto',
+      strategy: _strategy = 'auto',
       trustedSanitizers = [],
       trustedAnnotations = [],
       trustedOrmPatterns = [],
@@ -179,23 +178,6 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
       strictMode,
     });
 
-    /**
-     * Select message ID based on strategy
-     */
-    const selectStrategyMessage = (): MessageIds => {
-      switch (strategy) {
-        case 'parameterize':
-          return 'strategyParameterize';
-        case 'orm':
-          return 'strategyORM';
-        case 'sanitize':
-          return 'strategySanitize';
-        case 'auto':
-        default:
-          // Auto mode: prefer parameterized queries
-          return 'useParameterized';
-      }
-    };
 
     /**
      * Check if a node contains SQL keywords
@@ -270,7 +252,7 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
      * Check if all interpolated expressions in a template literal are safe
      */
     const areAllExpressionsSafe = (node: TSESTree.TemplateLiteral): boolean => {
-      return node.expressions.every(expr => {
+      return node.expressions.every((expr: TSESTree.Expression) => {
         // Check if the expression is sanitized or has safe annotation
         if (safetyChecker.isSafe(expr, context)) {
           return true;
@@ -353,7 +335,6 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
         }
 
         const queryText = sourceCode.getText(node);
-        const strategyMessageId = selectStrategyMessage();
 
         // Find the parent statement to understand context
         const parentStatement = findParentStatement(node);
@@ -424,8 +405,6 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
         if (checkSide(node.left) && checkSide(node.right)) {
           return;
         }
-
-        const strategyMessageId = selectStrategyMessage();
 
         context.report({
           node,

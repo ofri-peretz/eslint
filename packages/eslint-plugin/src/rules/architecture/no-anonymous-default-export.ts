@@ -2,7 +2,7 @@
  * ESLint Rule: no-anonymous-default-export
  * Forbid anonymous values as default exports (eslint-plugin-import inspired)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -91,7 +91,7 @@ export const noAnonymousDefaultExport = createRule<RuleOptions, MessageIds>({
     allowFunctionExpression: false
   }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const {
       allowArrowFunction = false,

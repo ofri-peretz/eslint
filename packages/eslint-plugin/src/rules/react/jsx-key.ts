@@ -2,7 +2,7 @@
  * ESLint Rule: jsx-key
  * Detect missing or incorrect React keys (requires deep reconciliation understanding)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -81,7 +81,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ warnUnstableKeys: true }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const { warnUnstableKeys = true } = options || {};
 
@@ -173,14 +173,14 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
       let current: TSESTree.Node | undefined = node;
       
       while (current?.parent) {
-        const parent = current.parent;
+        const parent: TSESTree.Node = current.parent;
         
         // Found a function - check if it's Array.from's 2nd argument
         if (
           parent.type === 'ArrowFunctionExpression' ||
           parent.type === 'FunctionExpression'
         ) {
-          const grandParent = parent.parent;
+          const grandParent: TSESTree.Node = parent.parent;
           if (
             grandParent?.type === 'CallExpression' &&
             grandParent.callee.type === 'MemberExpression' &&
@@ -207,7 +207,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
       let current: TSESTree.Node | undefined = node;
       
       while (current?.parent) {
-        const parent = current.parent;
+        const parent: TSESTree.Node = current.parent;
         
         if (
           parent.type === 'ArrowFunctionExpression' ||
@@ -350,7 +350,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
       let current: TSESTree.Node = node;
       
       while (current.parent) {
-        const parent = current.parent;
+        const parent: TSESTree.Node = current.parent;
         
         // Nested in another JSXElement - not a direct return
         if (parent.type === 'JSXElement' || parent.type === 'JSXFragment') {
@@ -414,15 +414,15 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
             return parent.params[0].name;
           }
           // Check for Array.from's 2nd argument
-          const grandParent = parent.parent;
+          const grandParent1 = parent.parent;
           if (
-            grandParent?.type === 'CallExpression' &&
-            grandParent.callee.type === 'MemberExpression' &&
-            grandParent.callee.object.type === 'Identifier' &&
-            grandParent.callee.object.name === 'Array' &&
-            grandParent.callee.property.type === 'Identifier' &&
-            grandParent.callee.property.name === 'from' &&
-            grandParent.arguments[1] === parent
+            grandParent1?.type === 'CallExpression' &&
+            grandParent1.callee.type === 'MemberExpression' &&
+            grandParent1.callee.object.type === 'Identifier' &&
+            grandParent1.callee.object.name === 'Array' &&
+            grandParent1.callee.property.type === 'Identifier' &&
+            grandParent1.callee.property.name === 'from' &&
+            grandParent1.arguments[1] === parent
           ) {
             return parent.params[0].name;
           }
@@ -439,15 +439,15 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
             return parent.params[0].name;
           }
           // Check for Array.from's 2nd argument
-          const grandParent = parent.parent;
+          const grandParent2 = parent.parent;
           if (
-            grandParent?.type === 'CallExpression' &&
-            grandParent.callee.type === 'MemberExpression' &&
-            grandParent.callee.object.type === 'Identifier' &&
-            grandParent.callee.object.name === 'Array' &&
-            grandParent.callee.property.type === 'Identifier' &&
-            grandParent.callee.property.name === 'from' &&
-            grandParent.arguments[1] === parent
+            grandParent2?.type === 'CallExpression' &&
+            grandParent2.callee.type === 'MemberExpression' &&
+            grandParent2.callee.object.type === 'Identifier' &&
+            grandParent2.callee.object.name === 'Array' &&
+            grandParent2.callee.property.type === 'Identifier' &&
+            grandParent2.callee.property.name === 'from' &&
+            grandParent2.arguments[1] === parent
           ) {
             return parent.params[0].name;
           }
@@ -509,7 +509,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
           suggest: [
             {
               messageId: 'suggestKey' as const,
-              fix(fixer) {
+              fix(fixer: TSESLint.RuleFixer) {
                 return fixer.insertTextAfter(
                   node.openingElement.name,
                   ` key={${paramName}.id}`

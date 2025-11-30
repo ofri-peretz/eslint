@@ -2,7 +2,7 @@
  * ESLint Rule: prefer-dom-node-text-content
  * Prefer textContent over innerText for DOM node text access
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -38,9 +38,8 @@ export const preferDomNodeTextContent = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
 
-  create(context) {
-    function isInAllowedContext(node: TSESTree.MemberExpression): boolean {
-       
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    function isInAllowedContext(): boolean {
       // For simplicity, we'll skip the allow option for now
       return false;
     }
@@ -101,7 +100,7 @@ export const preferDomNodeTextContent = createRule<RuleOptions, MessageIds>({
     }
 
     return {
-      MemberExpression(node) {
+      MemberExpression(node: TSESTree.MemberExpression) {
         if (isInnerTextAccess(node) && isLikelyDomElement(node) && !isInAllowedContext(node)) {
           context.report({
             node,
@@ -117,7 +116,7 @@ export const preferDomNodeTextContent = createRule<RuleOptions, MessageIds>({
                   replacement: 'textContent',
                   suggestion: 'Replace with textContent',
                 },
-                fix(fixer) {
+                fix(fixer: TSESLint.RuleFixer) {
                   if (node.property.type === 'Identifier') {
                     return fixer.replaceText(node.property, 'textContent');
                   } else if (node.property.type === 'Literal' && node.property.value === 'innerText') {

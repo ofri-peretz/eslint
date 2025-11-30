@@ -2,7 +2,7 @@
  * ESLint Rule: no-nested-ternary
  * Prevent nested ternary expressions
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -49,7 +49,7 @@ export const noNestedTernary = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allow: [] }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const { allow = [] } = options || {};
 
@@ -111,7 +111,7 @@ export const noNestedTernary = createRule<RuleOptions, MessageIds>({
 
     function hasNestedTernary(node: TSESTree.ConditionalExpression): boolean {
       // Check if the consequent or alternate contains another ternary
-      function containsTernary(expr: TSESTree.Expression): boolean {
+      function containsTernary(expr: TSESTree.Node): boolean {
         if (expr.type === 'ConditionalExpression') {
           return true;
         }
@@ -119,29 +119,28 @@ export const noNestedTernary = createRule<RuleOptions, MessageIds>({
         // For other expression types, check their child expressions
         switch (expr.type) {
           case 'ArrayExpression':
-            return expr.elements.some(element => element && containsTernary(element));
+            return expr.elements.some(element => 
+              element && element.type !== 'SpreadElement' && containsTernary(element)
+            );
           case 'ObjectExpression':
             return expr.properties.some(prop =>
-              prop.type === 'Property' && containsTernary(prop.value)
+              prop.type === 'Property' && prop.value && containsTernary(prop.value)
             );
           case 'CallExpression':
-            return expr.arguments.some(arg => containsTernary(arg)) ||
-                   containsTernary(expr.callee);
+            return expr.arguments.some(arg => 
+              arg.type !== 'SpreadElement' && containsTernary(arg)
+            ) || (expr.callee.type !== 'Super' && containsTernary(expr.callee));
           case 'MemberExpression':
             return containsTernary(expr.object) ||
-                   (expr.property.type !== 'Identifier' && containsTernary(expr.property));
+                   (expr.property.type !== 'Identifier' && 
+                    expr.property.type !== 'PrivateIdentifier' && 
+                    containsTernary(expr.property));
           case 'BinaryExpression':
           case 'LogicalExpression':
             return containsTernary(expr.left) || containsTernary(expr.right);
           case 'UnaryExpression':
           case 'UpdateExpression':
             return containsTernary(expr.argument);
-          // istanbul ignore next -- ConditionalExpression is caught by the if-check on line 115 before this switch
-          /* c8 ignore next 4 -- dead code: ConditionalExpression handled by early return above */
-          case 'ConditionalExpression':
-            return containsTernary(expr.test) ||
-                   containsTernary(expr.consequent) ||
-                   containsTernary(expr.alternate);
           case 'AssignmentExpression':
             return containsTernary(expr.right);
           // For literals and identifiers, no nested expressions
@@ -179,9 +178,8 @@ export const noNestedTernary = createRule<RuleOptions, MessageIds>({
             },
             suggest: [
               {
-                desc: 'Extract to helper variable',
-                fix(fixer) {
-                   
+                messageId: 'noNestedTernary',
+                fix() {
                   // This is a complex fix that would require:
                   // 1. Extracting the nested ternary to a variable
                   // 2. Replacing the nested part

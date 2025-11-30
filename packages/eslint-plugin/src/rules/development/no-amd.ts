@@ -2,7 +2,7 @@
  * ESLint Rule: no-amd
  * Prevents AMD require/define calls (eslint-plugin-import inspired)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -61,7 +61,7 @@ export const noAmd = createRule<RuleOptions, MessageIds>({
     suggestES6: true
   }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const {
       allow = [],
@@ -72,7 +72,7 @@ export const noAmd = createRule<RuleOptions, MessageIds>({
 
     function shouldAllow(): boolean {
       // Check if the call is in an allowed pattern
-      return allow.some(pattern => {
+      return allow.some((pattern: string) => {
         /* v8 ignore next -- defensive check, filename always provided by ESLint */
         if (!filename) return false;
 

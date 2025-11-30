@@ -2,7 +2,7 @@
  * ESLint Rule: no-unreadable-iife
  * Prevent unreadable Immediately Invoked Function Expressions (unicorn-inspired)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -87,7 +87,7 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ maxStatements: 3, maxDepth: 2, allowReturningIIFE: true }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const {
       maxStatements = 3,
@@ -185,7 +185,7 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
         // Check for nested function declarations
         if (statement.type === 'FunctionDeclaration' ||
             statement.type === 'VariableDeclaration' &&
-            statement.declarations.some(decl =>
+            statement.declarations.some((decl: TSESTree.VariableDeclarator) =>
               decl.init?.type === 'FunctionExpression' ||
               decl.init?.type === 'ArrowFunctionExpression'
             )) {
@@ -217,7 +217,7 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
       const nestingDepth = calculateDepth(body);
       const hasComplex = hasComplexLogic(body);
       const returnsValue = body.type === 'BlockStatement' &&
-                          body.body.some(stmt => stmt.type === 'ReturnStatement');
+                          body.body.some((stmt: TSESTree.Statement) => stmt.type === 'ReturnStatement');
 
       // Skip IIFEs that return values if allowed
       if (allowReturningIIFE && returnsValue && !hasComplex) {
@@ -256,14 +256,14 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
           suggest: [
             {
               messageId: 'suggestNamedFunction',
-              fix(fixer) {
+              fix(fixer: TSESLint.RuleFixer) {
                 // Complex fix - would need to generate a function name and hoist it
                 return fixer.insertTextBefore(node, '// TODO: Extract complex IIFE to named function\n');
               },
             },
             {
               messageId: 'suggestBlockScope',
-              fix(fixer) {
+              fix(fixer: TSESLint.RuleFixer) {
                 return fixer.insertTextBefore(node, '// TODO: Consider using block scope { const x = ...; }\n');
               },
             },

@@ -2,7 +2,7 @@
  * ESLint Rule: error-message
  * Enforces providing a message when creating built-in Error objects
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -56,7 +56,7 @@ export const errorMessage = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allowEmptyCatch: false }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const { allowEmptyCatch = false } = options || {};
 
@@ -93,12 +93,12 @@ export const errorMessage = createRule<RuleOptions, MessageIds>({
     }
 
     function isInCatchClause(node: TSESTree.Node): boolean {
-      let current: TSESTree.Node | null = node;
+      let current: TSESTree.Node | undefined = node;
       while (current) {
         if (current.type === 'CatchClause') {
           return true;
         }
-        current = (current as { parent?: TSESTree.Node }).parent;
+        current = current.parent;
       }
       return false;
     }
@@ -139,7 +139,7 @@ export const errorMessage = createRule<RuleOptions, MessageIds>({
             {
               messageId: 'addErrorMessage',
               data: { constructor: constructorName },
-              fix(fixer) {
+              fix(fixer: TSESLint.RuleFixer) {
                 if (node.arguments.length === 0) {
                   // No arguments: replace the empty parentheses with ("Error message")
                   const parenStart = node.callee.range[1];

@@ -2,7 +2,7 @@
  * ESLint Rule: prefer-at
  * Prefer .at() method over array[index] for accessing elements from end (unicorn-inspired)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -65,9 +65,7 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{ checkLastElement: true }],
-  create(context) {
-    const sourceCode = context.sourceCode || context.sourceCode;
-
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       MemberExpression(node: TSESTree.MemberExpression) {
         if (!node.computed || node.object.type !== 'Identifier') {
@@ -96,7 +94,7 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
           context.report({
             node,
             messageId,
-            fix(fixer) {
+            fix(fixer: TSESLint.RuleFixer) {
               return fixer.replaceText(node, `${arrayName}.at(-${offset})`);
             },
           });
@@ -120,7 +118,7 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
           context.report({
             node,
             messageId: 'preferAtMethod',
-            fix(fixer) {
+            fix(fixer: TSESLint.RuleFixer) {
               return fixer.replaceText(node, `${arrayName}.at(-${varName})`);
             },
           });
@@ -140,7 +138,7 @@ export const preferAt = createRule<RuleOptions, MessageIds>({
           context.report({
             node,
             messageId: 'useAtForNegativeIndex',
-            fix(fixer) {
+            fix(fixer: TSESLint.RuleFixer) {
               return fixer.replaceText(node, `${arrayName}.at(-${offset})`);
             },
           });

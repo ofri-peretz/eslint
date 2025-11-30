@@ -5,7 +5,7 @@
  * This rule detects missing or extra dependencies in React hooks like
  * useEffect, useCallback, useMemo, and useLayoutEffect.
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -104,7 +104,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{}],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const additionalHooksPattern = options.additionalHooks
       ? new RegExp(options.additionalHooks)
@@ -253,7 +253,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
             visit(n.callee as TSESTree.Node, false);
           }
           if (n.arguments) {
-            n.arguments.forEach((arg) => visit(arg as TSESTree.Node, false));
+            n.arguments.forEach((arg: TSESTree.Node) => visit(arg, false));
           }
           return;
         }
@@ -309,16 +309,6 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
       }
       
       return deps;
-    }
-
-    /**
-     * Get variables declared in the current scope
-     */
-    function getLocalVariables(scopeManager: TSESTree.Node): Set<string> {
-      const locals = new Set<string>();
-      // This is a simplified implementation
-      // In a full implementation, we'd use scope analysis
-      return locals;
     }
 
     /**
@@ -474,7 +464,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
             suggest: missingDeps.map((dep) => ({
               messageId: 'suggestAddDep' as const,
               data: { dep },
-              fix(fixer) {
+              fix(fixer: TSESLint.RuleFixer) {
                 const lastElement = depsArg.elements[depsArg.elements.length - 1];
                 if (lastElement) {
                   return fixer.insertTextAfter(lastElement, `, ${dep}`);
@@ -503,12 +493,11 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
               {
                 messageId: 'suggestRemoveDep' as const,
                 data: { dep },
-                fix(fixer) {
+                fix(fixer: TSESLint.RuleFixer) {
                   const element = depsArg.elements.find(
                     (el) => el?.type === 'Identifier' && el.name === dep
                   );
                   if (element) {
-                    const sourceCode = context.sourceCode || context.getSourceCode();
                     const index = depsArg.elements.indexOf(element);
                     const isLast = index === depsArg.elements.length - 1;
                     const isFirst = index === 0;

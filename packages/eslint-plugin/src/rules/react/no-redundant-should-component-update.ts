@@ -27,7 +27,7 @@ export const noRedundantShouldComponentUpdate = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       MethodDefinition(node: TSESTree.MethodDefinition) {
         if (

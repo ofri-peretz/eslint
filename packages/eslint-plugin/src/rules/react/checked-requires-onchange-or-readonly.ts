@@ -2,7 +2,7 @@
  * ESLint Rule: checked-requires-onchange-or-readonly
  * Ensure controlled inputs have onChange or readOnly
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -15,6 +15,7 @@ export const checkedRequiresOnchangeOrReadonly = createRule<[], MessageIds>({
     docs: {
       description: 'Ensure controlled inputs have onChange or readOnly',
     },
+    schema: [],
     messages: {
       checkedRequiresOnChangeOrReadOnly: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -27,7 +28,7 @@ export const checkedRequiresOnchangeOrReadonly = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       JSXElement(node: TSESTree.JSXElement) {
         if (node.openingElement.name.type !== 'JSXIdentifier') {

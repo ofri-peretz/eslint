@@ -2,7 +2,7 @@
  * ESLint Rule: no-access-state-in-setstate
  * Disallow accessing this.state inside setState calls
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -15,6 +15,7 @@ export const noAccessStateInSetState = createRule<[], MessageIds>({
     docs: {
       description: 'Disallow accessing this.state inside setState calls',
     },
+    schema: [],
     messages: {
       noAccessStateInSetState: formatLLMMessage({
         icon: MessageIcons.WARNING,
@@ -27,7 +28,7 @@ export const noAccessStateInSetState = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Check if this is a setState call

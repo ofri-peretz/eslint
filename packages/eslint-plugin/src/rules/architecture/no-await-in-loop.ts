@@ -109,7 +109,7 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{ allowForOf: false, allowWhile: false, checkConcurrency: true }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const { allowForOf = false, allowWhile = false, checkConcurrency = true } = options || {};
 
@@ -255,45 +255,6 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
       } else {
         return 'operations appear independent - consider Promise.all() for concurrency';
       }
-    }
-
-    function generateSuggestions(loopContext: LoopContext): TSESLint.SuggestionReportDescriptor<MessageIds>[] {
-      const suggestions: TSESLint.SuggestionReportDescriptor<MessageIds>[] = [];
-
-      if (!loopContext.isSequential && checkConcurrency) {
-        suggestions.push({
-          messageId: 'suggestPromiseAll',
-          fix(fixer: TSESLint.RuleFixer) {
-            // Complex fix - would need to extract the loop body and wrap with Promise.all
-            return fixer.insertTextBefore(loopContext.node, '// TODO: Extract async operations to array and use Promise.all()\n');
-          },
-        });
-
-        suggestions.push({
-          messageId: 'suggestConcurrent',
-          fix(fixer: TSESLint.RuleFixer) {
-            return fixer.insertTextBefore(loopContext.node, '// TODO: Use Promise.allSettled() for concurrent execution with error handling\n');
-          },
-        });
-      }
-
-      if (loopContext.operationCount > 5) {
-        suggestions.push({
-          messageId: 'asyncLoopPattern',
-          fix(fixer: TSESLint.RuleFixer) {
-            return fixer.insertTextBefore(loopContext.node, '// TODO: Consider p-map library for controlled concurrent execution\n');
-          },
-        });
-      }
-
-      suggestions.push({
-        messageId: 'considerSequential',
-        fix(fixer: TSESLint.RuleFixer) {
-          return fixer.insertTextBefore(loopContext.node, '// TODO: Extract async loop logic to separate async function\n');
-        },
-      });
-
-      return suggestions;
     }
 
     return {

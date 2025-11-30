@@ -47,7 +47,9 @@ const INVALID_HTML_ATTRIBUTES = new Set([
   'usemap', // Should be useMap
 ]);
 
-export const noInvalidHtmlAttribute = createRule<[], MessageIds>({
+type RuleOptions = [];
+
+export const noInvalidHtmlAttribute = createRule<RuleOptions, MessageIds>({
   name: 'no-invalid-html-attribute',
   meta: {
     type: 'problem',
@@ -64,9 +66,10 @@ export const noInvalidHtmlAttribute = createRule<[], MessageIds>({
         documentationLink: 'https://react.dev/reference/react-dom/components/common#html-attributes',
       }),
     },
+    schema: [],
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (node.name.type === 'JSXIdentifier') {

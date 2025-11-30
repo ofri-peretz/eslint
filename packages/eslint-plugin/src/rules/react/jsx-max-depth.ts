@@ -2,7 +2,7 @@
  * ESLint Rule: jsx-max-depth
  * Limit JSX nesting depth
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -13,7 +13,8 @@ export interface Options {
   max?: number;
 }
 
-export const jsxMaxDepth = createRule<[Options], MessageIds>({
+type RuleOptions = [Options?];
+export const jsxMaxDepth = createRule<RuleOptions, MessageIds>({
   name: 'jsx-max-depth',
   meta: {
     type: 'problem',
@@ -45,7 +46,7 @@ export const jsxMaxDepth = createRule<[Options], MessageIds>({
     ],
   },
   defaultOptions: [{ max: 5 }],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const maxDepth = options?.max ?? 5;
 

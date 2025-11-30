@@ -2,7 +2,7 @@
  * ESLint Rule: no-dynamic-require
  * Forbid `require()` calls with expressions (eslint-plugin-import inspired)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -28,7 +28,7 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
     hasSuggestions: false,
     messages: {
       dynamicRequire: formatLLMMessage({
-        icon: MessageIcons.ERROR,
+        icon: MessageIcons.WARNING,
         issueName: 'Dynamic Require',
         description: 'Require call uses dynamic expression',
         severity: 'HIGH',
@@ -63,7 +63,7 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
     allowPatterns: []
   }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const {
       allowContexts = [],
@@ -94,7 +94,7 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
 
     /* v8 ignore start -- allowPatterns check is unreachable: static literals return early before this check */
     function isAllowedPattern(requirePath: string): boolean {
-      return allowPatterns.some(pattern => {
+      return allowPatterns.some((pattern: string) => {
         try {
           const regex = new RegExp(pattern);
           return regex.test(requirePath);

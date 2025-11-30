@@ -2,7 +2,7 @@
  * ESLint Rule: no-arrow-function-lifecycle
  * Prevent arrow functions in lifecycle methods
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -43,7 +43,7 @@ export const noArrowFunctionLifecycle = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       // PropertyDefinition is used by TypeScript parser for class properties
       // Only report on arrow function properties, NOT regular method definitions

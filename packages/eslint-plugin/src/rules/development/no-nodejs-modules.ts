@@ -2,7 +2,7 @@
  * ESLint Rule: no-nodejs-modules
  * Prevents Node.js builtin imports (eslint-plugin-import inspired)
  */
-import type { TSESTree } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
@@ -112,7 +112,7 @@ export const noNodejsModules = createRule<RuleOptions, MessageIds>({
     suggestAlternatives: true
   }],
 
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
     const {
       allow = [],
@@ -221,17 +221,15 @@ export const noNodejsModules = createRule<RuleOptions, MessageIds>({
           }
         }
 
-        // Check dynamic imports
-        if (
-          node.callee.type === 'Import' &&
-          node.arguments.length === 1
-        ) {
-          const arg = node.arguments[0];
-          if (arg.type === 'Literal' && typeof arg.value === 'string') {
-            const moduleName = arg.value;
-            if (isNodejsBuiltin(moduleName)) {
-              reportBuiltin(arg, moduleName, 'dynamic');
-            }
+      },
+
+      // Check dynamic imports via ImportExpression
+      ImportExpression(node: TSESTree.ImportExpression) {
+        const source = node.source;
+        if (source.type === 'Literal' && typeof source.value === 'string') {
+          const moduleName = source.value;
+          if (isNodejsBuiltin(moduleName)) {
+            reportBuiltin(source, moduleName, 'dynamic');
           }
         }
       },

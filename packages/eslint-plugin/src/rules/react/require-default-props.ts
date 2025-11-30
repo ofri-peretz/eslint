@@ -42,7 +42,7 @@ export const requireDefaultProps = createRule<[Options], MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, [Options]>) {
     const [options] = context.options;
     const forbidDefaultForRequired = options?.forbidDefaultForRequired ?? false;
 

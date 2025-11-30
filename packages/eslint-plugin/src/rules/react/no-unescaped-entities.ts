@@ -29,7 +29,7 @@ export const noUnescapedEntities = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       JSXText(node: TSESTree.JSXText) {
         const text = node.value;

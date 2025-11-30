@@ -27,7 +27,7 @@ export const noRenderReturnValue = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, []>) {
     return {
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
         if (
