@@ -1,3 +1,21 @@
+## [2.0.0] - 2025-11-30
+
+### 🚀 Features
+
+- **Major Update**: Updated to latest @forge-js/eslint-plugin-llm-optimized 1.9.0
+- Now includes 62+ LLM-optimized rules
+- Full compatibility with Code Mode AI assistants
+
+### 🧱 Updated Dependencies
+
+- Updated @forge-js/eslint-plugin-llm-optimized to 1.9.0
+
+### ❤️ Thank You
+
+- Ofri Peretz
+
+---
+
 ## 1.0.0 (2025-11-18)
 
 Initial release of eslint-plugin-code-mode.

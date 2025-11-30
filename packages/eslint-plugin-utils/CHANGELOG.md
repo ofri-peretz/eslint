@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2025-11-30
+
+### 🚀 Features
+
+- Enhanced LLM message formatting utilities
+- Improved TypeScript type definitions for better IDE support
+
+### 🩹 Fixes
+
+- Fixed TypeScript strict mode compatibility issues
+- Improved type guards for AST node checking
+
+### ❤️ Thank You
+
+- Ofri Peretz
+
+---
+
 ## [1.0.2] - 2025-11-15
 
 ### 🩹 Fixes

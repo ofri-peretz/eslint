@@ -60,6 +60,9 @@ export default [
             '{projectRoot}/vitest.config.{js,mjs,ts,mts}',
             '{projectRoot}/vite.config.{js,ts,mjs,mts}',
           ],
+          ignoredDependencies: [
+            'eslint', // Peer dependency - provided by consuming projects
+          ],
         },
       ],
     },

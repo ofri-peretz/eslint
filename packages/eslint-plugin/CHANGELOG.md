@@ -1,28 +1,43 @@
-## [Unreleased]
+## [1.9.0] - 2025-11-30
 
-### Added
+### 🚀 Features
 
-- **New Rule: `no-hardcoded-credentials`** - Detects hardcoded passwords, API keys, tokens, and other sensitive credentials (CWE-798). Provides autofix suggestions for using environment variables or secret managers.
+- **62+ LLM-Optimized Rules** - Complete rule coverage across security, architecture, development, React, and more
+- **All Non-Fixable Common Rules** - Added comprehensive set of non-fixable rules for complete coverage
 
-- **New Rule: `no-weak-crypto`** - Detects use of weak cryptography algorithms (MD5, SHA1, DES, 3DES, RC4) and suggests secure alternatives (SHA-256, AES-256-GCM, bcrypt, scrypt). CWE-327 compliance.
+### 🩹 Fixes
 
-- **New Rule: `no-insufficient-random`** - Detects weak random number generation (Math.random() and custom weak PRNGs) and suggests using crypto.getRandomValues() for cryptographically secure randomness. CWE-338 compliance.
+- Fixed TypeScript type issues across multiple React rules
+- Fixed implicit `any` type errors in rule implementations
+- Fixed unused variable warnings
+- Improved type narrowing in AST traversal functions
 
-- **New Rule: `no-unvalidated-user-input`** - Detects unvalidated user input usage (req.body, req.query, req.params, etc.) and suggests using validation libraries (Zod, Joi, Yup, class-validator). CWE-20 compliance.
+### 🔒 Security Rules Added
 
-- **New Rule: `no-unsanitized-html`** - Detects unsanitized HTML injection vulnerabilities (innerHTML assignments, dangerouslySetInnerHTML) and suggests using sanitization libraries (DOMPurify, sanitize-html). CWE-79 (XSS) compliance.
+- **`no-hardcoded-credentials`** - Detects hardcoded passwords, API keys, tokens (CWE-798)
+- **`no-weak-crypto`** - Detects weak cryptography (MD5, SHA1, DES) (CWE-327)
+- **`no-insufficient-random`** - Detects weak random number generation (CWE-338)
+- **`no-unvalidated-user-input`** - Detects unvalidated user input (CWE-20)
+- **`no-unsanitized-html`** - Detects XSS vulnerabilities (CWE-79)
+- **`no-unescaped-url-parameter`** - Detects unescaped URL parameters (CWE-79)
+- **`no-missing-cors-check`** - Detects missing CORS validation (CWE-346)
+- **`no-insecure-comparison`** - Detects insecure comparison operators (CWE-697)
+- **`no-missing-authentication`** - Detects missing auth checks (CWE-287)
+- **`no-privilege-escalation`** - Detects privilege escalation vulnerabilities (CWE-269)
 
-- **New Rule: `no-unescaped-url-parameter`** - Detects unescaped URL parameters in template literals and string concatenations that could lead to XSS attacks. Suggests using encodeURIComponent() or URLSearchParams. CWE-79 compliance.
+### 🏗️ Architecture Rules Added
 
-- **New Rule: `no-missing-cors-check`** - Detects missing CORS origin validation (wildcard origins) and suggests proper origin validation functions. CWE-346 compliance.
+- **`prefer-dependency-version-strategy`** - Enforce consistent version strategy for package.json
 
-- **New Rule: `no-insecure-comparison`** - Detects insecure comparison operators (==, !=) that can lead to type coercion vulnerabilities and suggests using strict equality (===, !==). Auto-fixable. CWE-697 compliance.
+### 🧱 Updated Dependencies
 
-- **New Rule: `no-missing-authentication`** - Detects missing authentication checks in route handlers (Express, Fastify) and suggests adding authentication middleware. CWE-287 compliance.
+- Updated eslint-plugin-utils to 1.6.0
 
-- **New Rule: `no-privilege-escalation`** - Detects potential privilege escalation vulnerabilities where user input is used to assign roles or permissions without proper validation. Suggests adding role checks. CWE-269 compliance.
+### ❤️ Thank You
 
-- **New Rule: `prefer-dependency-version-strategy`** - Enforce consistent version strategy (caret, tilde, exact, etc.) for package.json dependencies. Complements `@nx/dependency-checks` by ensuring version specifier format consistency. Supports workspace, file, and link protocols for monorepo compatibility. Auto-fixable with configurable strategies.
+- Ofri Peretz
+
+---
 
 ## 0.3.3 (2025-11-07)
 

@@ -1,3 +1,20 @@
+## [1.6.0] - 2025-11-30
+
+### 🚀 Features
+
+- Updated to latest @forge-js/eslint-plugin-llm-optimized 1.9.0
+- Now includes 62+ LLM-optimized rules
+
+### 🧱 Updated Dependencies
+
+- Updated @forge-js/eslint-plugin-llm-optimized to 1.9.0
+
+### ❤️ Thank You
+
+- Ofri Peretz
+
+---
+
 ## 0.1.1 (2025-11-15)
 
 Initial release of eslint-plugin-llm.
