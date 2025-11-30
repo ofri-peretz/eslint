@@ -225,21 +225,21 @@ describe('no-internal-modules', () => {
       valid: [
         {
           code: "import get from 'lodash/get';",
-          options: [{ ignorePaths: ['lodash/*'], maxDepth: 0 }],
+          options: [{ ignorePaths: ['lodash/**'], maxDepth: 0 }],
         },
         {
           code: "import { Button } from '@company/ui/components/Button';",
-          options: [{ ignorePaths: ['@company/*'], maxDepth: 0 }],
+          options: [{ ignorePaths: ['@company/**'], maxDepth: 0 }],
         },
         {
           code: "import utils from './test/utils';",
-          options: [{ ignorePaths: ['./test/*'], maxDepth: 0 }],
+          options: [{ ignorePaths: ['./test/**'], maxDepth: 0 }],
         },
       ],
       invalid: [
         {
           code: "import get from 'lodash/get';",
-          options: [{ ignorePaths: ['react/*'], maxDepth: 0 }],
+          options: [{ ignorePaths: ['react/**'], maxDepth: 0 }],
           errors: [{ messageId: 'internalModuleImport' }],
         },
       ],
@@ -351,27 +351,27 @@ import { Button } from '@company/ui';
     });
   });
 
-  describe('Edge Cases - getViolationReason fallback (line 257)', () => {
-    ruleTester.run('edge case - violation reason fallback', noInternalModules, {
+  describe('Edge Cases - depth boundary', () => {
+    ruleTester.run('edge case - depth exactly at maxDepth', noInternalModules, {
       valid: [
-        // Line 257 is the fallback return in getViolationReason when
-        // isForbiddenPath is false AND depth <= maxDepth.
-        // However, this path should never be reached because reportViolation
-        // is only called when isForbiddenPath is true OR depth > maxDepth.
-        // This test verifies that depth exactly equal to maxDepth is allowed.
+        // Verify that depth exactly equal to maxDepth is allowed
+        // ./utils/helpers has depth 2 (utils=1, helpers=2)
         {
           code: "import { util } from './utils/helpers';",
+          options: [{ maxDepth: 2, forbid: [] }],
+        },
+        // ./utils has depth 1
+        {
+          code: "import { util } from './utils';",
           options: [{ maxDepth: 1, forbid: [] }],
         },
       ],
       invalid: [
-        // To actually trigger a violation that would use the fallback reason,
-        // we need depth > maxDepth. But in that case, it uses the "Exceeds maximum depth" message.
-        // The fallback on line 257 is defensive code that shouldn't be reached.
-        // We test it indirectly by ensuring violations work correctly.
+        // depth > maxDepth triggers violation
+        // ./utils/helpers/format has depth 3
         {
           code: "import { util } from './utils/helpers/format';",
-          options: [{ maxDepth: 1, forbid: [] }],
+          options: [{ maxDepth: 2, forbid: [] }],
           errors: [{ messageId: 'internalModuleImport' }],
         },
       ],
@@ -385,6 +385,83 @@ import { Button } from '@company/ui';
         {
           code: "import get from 'lodash/get';",
           options: [{ strategy: 'warn', maxDepth: 0 }],
+          errors: [{ messageId: 'internalModuleImport' }],
+        },
+      ],
+    });
+  });
+
+  describe('ExportAllDeclaration', () => {
+    ruleTester.run('export * from handling', noInternalModules, {
+      valid: [
+        {
+          code: "export * from '@company/ui';",
+          options: [{ maxDepth: 0 }],
+        },
+      ],
+      invalid: [
+        {
+          code: "export * from '@company/ui/components/Button';",
+          options: [{ maxDepth: 0 }],
+          errors: [{ messageId: 'internalModuleImport' }],
+        },
+        {
+          code: "export * from 'lodash/get';",
+          options: [{ maxDepth: 0 }],
+          errors: [{ messageId: 'internalModuleImport' }],
+        },
+      ],
+    });
+  });
+
+  describe('require() calls', () => {
+    ruleTester.run('require call handling', noInternalModules, {
+      valid: [
+        {
+          code: "const lodash = require('lodash');",
+          options: [{ maxDepth: 0 }],
+        },
+        {
+          code: "const get = require('lodash/get');",
+          options: [{ maxDepth: 1 }],
+        },
+      ],
+      invalid: [
+        {
+          code: "const get = require('lodash/get');",
+          options: [{ maxDepth: 0 }],
+          errors: [{ messageId: 'internalModuleImport' }],
+        },
+        {
+          code: "const Button = require('@company/ui/components/Button');",
+          options: [{ maxDepth: 1 }],
+          errors: [{ messageId: 'internalModuleImport' }],
+        },
+      ],
+    });
+  });
+
+  describe('Dynamic imports', () => {
+    ruleTester.run('import() expression handling', noInternalModules, {
+      valid: [
+        {
+          code: "const lodash = import('lodash');",
+          options: [{ maxDepth: 0 }],
+        },
+        {
+          code: "const get = import('lodash/get');",
+          options: [{ maxDepth: 1 }],
+        },
+      ],
+      invalid: [
+        {
+          code: "const get = import('lodash/get');",
+          options: [{ maxDepth: 0 }],
+          errors: [{ messageId: 'internalModuleImport' }],
+        },
+        {
+          code: "const Button = import('@company/ui/components/Button');",
+          options: [{ maxDepth: 1 }],
           errors: [{ messageId: 'internalModuleImport' }],
         },
       ],

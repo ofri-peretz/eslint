@@ -20,6 +20,12 @@ import {
   isPromiseType,
   getTypeArguments,
   typeMatchesPredicateRecursive,
+  isStringLiteralType,
+  isNumberLiteralType,
+  isUnionOfLiterals,
+  isUnionOfStringLiterals,
+  getStringLiteralValues,
+  isUnionOfSafeStringLiterals,
 } from './type-utils';
 
 describe('getParserServices', () => {
@@ -845,6 +851,381 @@ describe('typeMatchesPredicateRecursive', () => {
     const predicate = (t: ts.Type) => (t.flags & ts.TypeFlags.String) !== 0;
 
     expect(typeMatchesPredicateRecursive(intersectionType, predicate)).toBe(false);
+  });
+});
+
+/**
+ * Tests for Type-Aware Security Utilities
+ * 
+ * These functions are designed to reduce false positives in security rules
+ * by detecting statically constrained types (like unions of string literals).
+ */
+
+describe('isStringLiteralType', () => {
+  it('should return true for string literal type', () => {
+    const type = {
+      flags: ts.TypeFlags.StringLiteral,
+    } as ts.Type;
+
+    expect(isStringLiteralType(type)).toBe(true);
+  });
+
+  it('should return false for general string type', () => {
+    const type = {
+      flags: ts.TypeFlags.String,
+    } as ts.Type;
+
+    expect(isStringLiteralType(type)).toBe(false);
+  });
+
+  it('should return false for number type', () => {
+    const type = {
+      flags: ts.TypeFlags.Number,
+    } as ts.Type;
+
+    expect(isStringLiteralType(type)).toBe(false);
+  });
+});
+
+describe('isNumberLiteralType', () => {
+  it('should return true for number literal type', () => {
+    const type = {
+      flags: ts.TypeFlags.NumberLiteral,
+    } as ts.Type;
+
+    expect(isNumberLiteralType(type)).toBe(true);
+  });
+
+  it('should return false for general number type', () => {
+    const type = {
+      flags: ts.TypeFlags.Number,
+    } as ts.Type;
+
+    expect(isNumberLiteralType(type)).toBe(false);
+  });
+});
+
+describe('isUnionOfLiterals', () => {
+  it('should return true for single string literal type', () => {
+    const type = {
+      flags: ts.TypeFlags.StringLiteral,
+      isUnion: () => false,
+    } as unknown as ts.Type;
+
+    expect(isUnionOfLiterals(type)).toBe(true);
+  });
+
+  it('should return true for single number literal type', () => {
+    const type = {
+      flags: ts.TypeFlags.NumberLiteral,
+      isUnion: () => false,
+    } as unknown as ts.Type;
+
+    expect(isUnionOfLiterals(type)).toBe(true);
+  });
+
+  it('should return true for boolean literal type', () => {
+    const type = {
+      flags: ts.TypeFlags.BooleanLiteral,
+      isUnion: () => false,
+    } as unknown as ts.Type;
+
+    expect(isUnionOfLiterals(type)).toBe(true);
+  });
+
+  it('should return true for union of string literals', () => {
+    const literal1 = {
+      flags: ts.TypeFlags.StringLiteral,
+    } as ts.Type;
+
+    const literal2 = {
+      flags: ts.TypeFlags.StringLiteral,
+    } as ts.Type;
+
+    const unionType = {
+      flags: 0,
+      isUnion: () => true,
+      types: [literal1, literal2],
+    } as unknown as ts.Type;
+
+    expect(isUnionOfLiterals(unionType)).toBe(true);
+  });
+
+  it('should return true for union of mixed literals (string and number)', () => {
+    const stringLiteral = {
+      flags: ts.TypeFlags.StringLiteral,
+    } as ts.Type;
+
+    const numberLiteral = {
+      flags: ts.TypeFlags.NumberLiteral,
+    } as ts.Type;
+
+    const unionType = {
+      flags: 0,
+      isUnion: () => true,
+      types: [stringLiteral, numberLiteral],
+    } as unknown as ts.Type;
+
+    expect(isUnionOfLiterals(unionType)).toBe(true);
+  });
+
+  it('should return false for general string type', () => {
+    const type = {
+      flags: ts.TypeFlags.String,
+      isUnion: () => false,
+    } as unknown as ts.Type;
+
+    expect(isUnionOfLiterals(type)).toBe(false);
+  });
+
+  it('should return false for union containing general string', () => {
+    const stringLiteral = {
+      flags: ts.TypeFlags.StringLiteral,
+    } as ts.Type;
+
+    const stringType = {
+      flags: ts.TypeFlags.String,
+    } as ts.Type;
+
+    const unionType = {
+      flags: 0,
+      isUnion: () => true,
+      types: [stringLiteral, stringType],
+    } as unknown as ts.Type;
+
+    expect(isUnionOfLiterals(unionType)).toBe(false);
+  });
+});
+
+describe('isUnionOfStringLiterals', () => {
+  it('should return true for single string literal type', () => {
+    const type = {
+      flags: ts.TypeFlags.StringLiteral,
+      isUnion: () => false,
+    } as unknown as ts.Type;
+
+    expect(isUnionOfStringLiterals(type)).toBe(true);
+  });
+
+  it('should return true for union of string literals', () => {
+    const literal1 = {
+      flags: ts.TypeFlags.StringLiteral,
+    } as ts.Type;
+
+    const literal2 = {
+      flags: ts.TypeFlags.StringLiteral,
+    } as ts.Type;
+
+    const unionType = {
+      flags: 0,
+      isUnion: () => true,
+      types: [literal1, literal2],
+    } as unknown as ts.Type;
+
+    expect(isUnionOfStringLiterals(unionType)).toBe(true);
+  });
+
+  it('should return false for number literal type', () => {
+    const type = {
+      flags: ts.TypeFlags.NumberLiteral,
+      isUnion: () => false,
+    } as unknown as ts.Type;
+
+    expect(isUnionOfStringLiterals(type)).toBe(false);
+  });
+
+  it('should return false for union containing number literal', () => {
+    const stringLiteral = {
+      flags: ts.TypeFlags.StringLiteral,
+    } as ts.Type;
+
+    const numberLiteral = {
+      flags: ts.TypeFlags.NumberLiteral,
+    } as ts.Type;
+
+    const unionType = {
+      flags: 0,
+      isUnion: () => true,
+      types: [stringLiteral, numberLiteral],
+    } as unknown as ts.Type;
+
+    expect(isUnionOfStringLiterals(unionType)).toBe(false);
+  });
+});
+
+describe('getStringLiteralValues', () => {
+  it('should return single value for string literal type', () => {
+    const type = {
+      flags: ts.TypeFlags.StringLiteral,
+      value: 'name',
+      isUnion: () => false,
+    } as unknown as ts.LiteralType;
+
+    expect(getStringLiteralValues(type)).toEqual(['name']);
+  });
+
+  it('should return all values for union of string literals', () => {
+    const literal1 = {
+      flags: ts.TypeFlags.StringLiteral,
+      value: 'name',
+    } as unknown as ts.LiteralType;
+
+    const literal2 = {
+      flags: ts.TypeFlags.StringLiteral,
+      value: 'email',
+    } as unknown as ts.LiteralType;
+
+    const unionType = {
+      flags: 0,
+      isUnion: () => true,
+      types: [literal1, literal2],
+    } as unknown as ts.Type;
+
+    expect(getStringLiteralValues(unionType)).toEqual(['name', 'email']);
+  });
+
+  it('should return null for general string type', () => {
+    const type = {
+      flags: ts.TypeFlags.String,
+      isUnion: () => false,
+    } as unknown as ts.Type;
+
+    expect(getStringLiteralValues(type)).toBeNull();
+  });
+
+  it('should return null for union containing non-string literal', () => {
+    const stringLiteral = {
+      flags: ts.TypeFlags.StringLiteral,
+      value: 'name',
+    } as unknown as ts.LiteralType;
+
+    const numberLiteral = {
+      flags: ts.TypeFlags.NumberLiteral,
+      value: 42,
+    } as unknown as ts.LiteralType;
+
+    const unionType = {
+      flags: 0,
+      isUnion: () => true,
+      types: [stringLiteral, numberLiteral],
+    } as unknown as ts.Type;
+
+    expect(getStringLiteralValues(unionType)).toBeNull();
+  });
+});
+
+describe('isUnionOfSafeStringLiterals', () => {
+  it('should return true for safe string literals', () => {
+    const literal1 = {
+      flags: ts.TypeFlags.StringLiteral,
+      value: 'name',
+    } as unknown as ts.LiteralType;
+
+    const literal2 = {
+      flags: ts.TypeFlags.StringLiteral,
+      value: 'email',
+    } as unknown as ts.LiteralType;
+
+    const unionType = {
+      flags: 0,
+      isUnion: () => true,
+      types: [literal1, literal2],
+    } as unknown as ts.Type;
+
+    expect(isUnionOfSafeStringLiterals(unionType)).toBe(true);
+  });
+
+  it('should return false for union containing __proto__', () => {
+    const safeLiteral = {
+      flags: ts.TypeFlags.StringLiteral,
+      value: 'name',
+    } as unknown as ts.LiteralType;
+
+    const dangerousLiteral = {
+      flags: ts.TypeFlags.StringLiteral,
+      value: '__proto__',
+    } as unknown as ts.LiteralType;
+
+    const unionType = {
+      flags: 0,
+      isUnion: () => true,
+      types: [safeLiteral, dangerousLiteral],
+    } as unknown as ts.Type;
+
+    expect(isUnionOfSafeStringLiterals(unionType)).toBe(false);
+  });
+
+  it('should return false for union containing prototype', () => {
+    const safeLiteral = {
+      flags: ts.TypeFlags.StringLiteral,
+      value: 'name',
+    } as unknown as ts.LiteralType;
+
+    const dangerousLiteral = {
+      flags: ts.TypeFlags.StringLiteral,
+      value: 'prototype',
+    } as unknown as ts.LiteralType;
+
+    const unionType = {
+      flags: 0,
+      isUnion: () => true,
+      types: [safeLiteral, dangerousLiteral],
+    } as unknown as ts.Type;
+
+    expect(isUnionOfSafeStringLiterals(unionType)).toBe(false);
+  });
+
+  it('should return false for union containing constructor', () => {
+    const safeLiteral = {
+      flags: ts.TypeFlags.StringLiteral,
+      value: 'name',
+    } as unknown as ts.LiteralType;
+
+    const dangerousLiteral = {
+      flags: ts.TypeFlags.StringLiteral,
+      value: 'constructor',
+    } as unknown as ts.LiteralType;
+
+    const unionType = {
+      flags: 0,
+      isUnion: () => true,
+      types: [safeLiteral, dangerousLiteral],
+    } as unknown as ts.Type;
+
+    expect(isUnionOfSafeStringLiterals(unionType)).toBe(false);
+  });
+
+  it('should return false for general string type', () => {
+    const type = {
+      flags: ts.TypeFlags.String,
+      isUnion: () => false,
+    } as unknown as ts.Type;
+
+    expect(isUnionOfSafeStringLiterals(type)).toBe(false);
+  });
+
+  it('should use custom dangerous properties list', () => {
+    const literal1 = {
+      flags: ts.TypeFlags.StringLiteral,
+      value: 'safe',
+    } as unknown as ts.LiteralType;
+
+    const literal2 = {
+      flags: ts.TypeFlags.StringLiteral,
+      value: 'custom_dangerous',
+    } as unknown as ts.LiteralType;
+
+    const unionType = {
+      flags: 0,
+      isUnion: () => true,
+      types: [literal1, literal2],
+    } as unknown as ts.Type;
+
+    // With default dangerous properties, should be safe
+    expect(isUnionOfSafeStringLiterals(unionType)).toBe(true);
+
+    // With custom dangerous properties including 'custom_dangerous'
+    expect(isUnionOfSafeStringLiterals(unionType, ['custom_dangerous'])).toBe(false);
   });
 });
 

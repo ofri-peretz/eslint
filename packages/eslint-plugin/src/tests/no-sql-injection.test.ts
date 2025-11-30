@@ -68,7 +68,8 @@ describe('no-sql-injection', () => {
               suggestions: [
                 {
                   messageId: 'useParameterized',
-                  output: 'const query = `SELECT * FROM users WHERE id = $1`, [userId];',
+                  // Now produces valid JavaScript with db.query() wrapper
+                  output: 'const query = db.query(`SELECT * FROM users WHERE id = $1`, [userId])',
                 },
               ],
             },
@@ -82,7 +83,7 @@ describe('no-sql-injection', () => {
               suggestions: [
                 {
                   messageId: 'useParameterized',
-                  output: 'const query = `SELECT * FROM users WHERE name = "$1"`, [userName];',
+                  output: 'const query = db.query(`SELECT * FROM users WHERE name = "$1"`, [userName])',
                 },
               ],
             },
@@ -99,7 +100,7 @@ describe('no-sql-injection', () => {
                 {
                   messageId: 'useParameterized',
                   output: `
-            const query = \`SELECT * FROM users WHERE id = $1 AND name = $2\`, [userId, userName];
+            const query = db.query(\`SELECT * FROM users WHERE id = $1 AND name = $2\`, [userId, userName])
           `,
                 },
               ],
@@ -114,7 +115,7 @@ describe('no-sql-injection', () => {
               suggestions: [
                 {
                   messageId: 'useParameterized',
-                  output: 'const query = `INSERT INTO users (name, email) VALUES ($1, $2)`, [name, email];',
+                  output: 'const query = db.query(`INSERT INTO users (name, email) VALUES ($1, $2)`, [name, email])',
                 },
               ],
             },
@@ -128,7 +129,7 @@ describe('no-sql-injection', () => {
               suggestions: [
                 {
                   messageId: 'useParameterized',
-                  output: 'const query = `UPDATE users SET name = $1 WHERE id = $2`, [name, id];',
+                  output: 'const query = db.query(`UPDATE users SET name = $1 WHERE id = $2`, [name, id])',
                 },
               ],
             },
@@ -142,7 +143,7 @@ describe('no-sql-injection', () => {
               suggestions: [
                 {
                   messageId: 'useParameterized',
-                  output: 'const query = `DELETE FROM users WHERE id = $1`, [userId];',
+                  output: 'const query = db.query(`DELETE FROM users WHERE id = $1`, [userId])',
                 },
               ],
             },
@@ -192,7 +193,7 @@ describe('no-sql-injection', () => {
               suggestions: [
                 {
                   messageId: 'useParameterized',
-                  output: 'const query = `SELECT * FROM users WHERE id = $1`, [userId];',
+                  output: 'const query = db.query(`SELECT * FROM users WHERE id = $1`, [userId])',
                 },
               ],
             },
@@ -223,7 +224,7 @@ describe('no-sql-injection', () => {
               suggestions: [
                 {
                   messageId: 'useParameterized',
-                  output: 'const query = `SELECT * FROM $1`, [tableName];',
+                  output: 'const query = db.query(`SELECT * FROM $1`, [tableName])',
                 },
               ],
             },
@@ -237,7 +238,7 @@ describe('no-sql-injection', () => {
               suggestions: [
                 {
                   messageId: 'useParameterized',
-                  output: 'const query = `EXEC sp_getuser $1`, [userId];',
+                  output: 'const query = db.query(`EXEC sp_getuser $1`, [userId])',
                 },
               ],
             },
@@ -268,7 +269,7 @@ describe('no-sql-injection', () => {
                 {
                   messageId: 'useParameterized',
                   // Note: Rule replaces ALL expressions, not just WHERE clause ones
-                  output: 'const query = `SELECT * FROM $1 WHERE id = $2`, [tableName, userId];',
+                  output: 'const query = db.query(`SELECT * FROM $1 WHERE id = $2`, [tableName, userId])',
                 },
               ],
             },

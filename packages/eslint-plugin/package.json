@@ -1,6 +1,6 @@
 {
   "name": "@forge-js/eslint-plugin-llm-optimized",
-  "version": "1.7.0",
+  "version": "1.8.1",
   "description": "A solid TypeScript-based ESLint plugin infrastructure inspired by typescript-eslint",
   "type": "commonjs",
   "main": "./src/index.js",
@@ -30,7 +30,17 @@
     "access": "public"
   },
   "files": [
-    "src/",
+    "src/index.ts",
+    "src/index.js",
+    "src/index.d.ts",
+    "src/configs/",
+    "src/lib/",
+    "src/rules/",
+    "src/types/",
+    "src/utils/",
+    "!src/tests/",
+    "!**/*.test.ts",
+    "!**/*.test.js",
     "dist/",
     "README.md",
     "LICENSE",
@@ -45,18 +55,29 @@
     "llm-optimized",
     "code-quality",
     "ast",
-    "static-analysis"
+    "static-analysis",
+    "react",
+    "jsx"
   ],
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@forge-js/eslint-plugin-utils": "^1.0.2",
+    "@forge-js/eslint-plugin-utils": "^1.5.2",
     "tslib": "^2.3.0"
+  },
+  "peerDependencies": {
+    "eslint": "^8.0.0 || ^9.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@typescript-eslint/parser": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
     "@typescript-eslint/rule-tester": "^8.46.2",
+    "react": "^18.0.0",
     "vitest": "^4.0.4"
   }
 }

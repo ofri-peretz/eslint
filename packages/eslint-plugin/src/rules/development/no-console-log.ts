@@ -5,7 +5,7 @@
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
-import * as path from 'path';
+import { normalizePath, getRelativePath } from '../../utils/node-path-utils';
 
 /**
  * Strategy for handling console.log
@@ -89,10 +89,38 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
         fix: 'Use logger.debug() or remove statement',
         documentationLink: 'https://owasp.org/www-project-log-review-guide/',
       }),
-      strategyRemove: '🗑️ Remove console.log statement',
-      strategyConvert: '🔄 Convert to {{logger}}.{{method}}()',
-      strategyComment: '💬 Comment out console.log',
-      strategyWarn: '⚡ Replace with console.warn()',
+      strategyRemove: formatLLMMessage({
+        icon: MessageIcons.STRATEGY,
+        issueName: 'Remove Strategy',
+        description: 'Remove console.log statement',
+        severity: 'LOW',
+        fix: 'Delete the console.log statement',
+        documentationLink: 'https://owasp.org/www-project-log-review-guide/',
+      }),
+      strategyConvert: formatLLMMessage({
+        icon: MessageIcons.STRATEGY,
+        issueName: 'Convert Strategy',
+        description: 'Convert to logger method',
+        severity: 'LOW',
+        fix: 'logger.debug() or logger.info()',
+        documentationLink: 'https://github.com/winstonjs/winston',
+      }),
+      strategyComment: formatLLMMessage({
+        icon: MessageIcons.STRATEGY,
+        issueName: 'Comment Strategy',
+        description: 'Comment out console.log',
+        severity: 'LOW',
+        fix: '// console.log(...)',
+        documentationLink: 'https://owasp.org/www-project-log-review-guide/',
+      }),
+      strategyWarn: formatLLMMessage({
+        icon: MessageIcons.STRATEGY,
+        issueName: 'Warn Strategy',
+        description: 'Replace with console.warn()',
+        severity: 'LOW',
+        fix: 'console.warn()',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/API/console/warn',
+      }),
     },
     schema: [
       {
@@ -181,7 +209,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
     const effectiveSeverityMap = { ...DEFAULT_SEVERITY_MAP, ...severityMap };
 
     const filename = context.filename || context.getFilename();
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
     const occurrences: number[] = [];
     
     /**
@@ -239,7 +267,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
     const shouldIgnoreFile = (): boolean => {
       if (ignorePaths.length === 0) return false;
 
-      const normalizedPath = path.normalize(filename).replace(/\\/g, '/');
+      const normalizedPath = normalizePath(filename);
 
       return ignorePaths.some((pattern: string) => {
         const normalizedPattern = pattern.replace(/\\/g, '/');
@@ -304,8 +332,8 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
           occurrences.length > maxOccurrences
         );
 
-        const sourceCode = context.sourceCode || context.getSourceCode();
-        const relativePath = path.relative(process.cwd(), filename);
+        const sourceCode = context.sourceCode || context.sourceCode;
+        const relativePath = getRelativePath(process.cwd(), filename);
         
         /**
          * Determine the target logger method to use based on severityMap.

@@ -1,0 +1,181 @@
+/**
+ * Comprehensive tests for prefer-event-target rule
+ * Convention: Cross-platform event handling
+ */
+import { RuleTester } from '@typescript-eslint/rule-tester';
+import { describe, it, afterAll } from 'vitest';
+import parser from '@typescript-eslint/parser';
+import { preferEventTarget } from '../rules/architecture/prefer-event-target';
+
+// Configure RuleTester for Vitest
+RuleTester.afterAll = afterAll;
+RuleTester.it = it;
+RuleTester.itOnly = it.only;
+RuleTester.describe = describe;
+
+// Use Flat Config format (ESLint 9+)
+const ruleTester = new RuleTester({
+  languageOptions: {
+    parser,
+    ecmaVersion: 2022,
+    sourceType: 'module',
+  },
+});
+
+describe('prefer-event-target', () => {
+
+  describe('Valid Code', () => {
+    ruleTester.run('valid - EventTarget usage', preferEventTarget, {
+      valid: [
+        // EventTarget is allowed
+        {
+          code: 'class MyEmitter extends EventTarget {}',
+        },
+        {
+          code: 'const target = new EventTarget();',
+        },
+        {
+          code: 'import { EventTarget } from "events";',
+        },
+        // No EventEmitter usage
+        {
+          code: 'const emitter = new CustomEmitter();',
+        },
+        {
+          code: 'import { EventEmitter } from "other-package";',
+        },
+      ],
+    });
+
+    ruleTester.run('valid - allowEventEmitter option', preferEventTarget, {
+      valid: [
+        {
+          code: 'import { EventEmitter } from "node:events";',
+          options: [{ allowEventEmitter: true }],
+        },
+        {
+          code: 'class MyClass extends EventEmitter {}',
+          options: [{ allowEventEmitter: true }],
+        },
+      ],
+    });
+  });
+
+  describe('Invalid Code', () => {
+    ruleTester.run('invalid - EventEmitter usage', preferEventTarget, {
+      invalid: [
+        // Import EventEmitter
+        {
+          code: 'import { EventEmitter } from "node:events";',
+          errors: [
+            {
+              messageId: 'preferEventTarget',
+              data: {
+                importedName: 'EventEmitter',
+                suggestion: 'Use EventTarget instead for cross-platform compatibility',
+              },
+            },
+          ],
+        },
+        {
+          code: 'import { EventEmitter } from "events";',
+          errors: [
+            {
+              messageId: 'preferEventTarget',
+              data: {
+                importedName: 'EventEmitter',
+                suggestion: 'Use EventTarget instead for cross-platform compatibility',
+              },
+            },
+          ],
+        },
+        // Class extends EventEmitter
+        {
+          code: 'class MyEmitter extends EventEmitter {}',
+          errors: [
+            {
+              messageId: 'preferEventTarget',
+              data: {
+                className: 'MyEmitter',
+                suggestion: 'Extend EventTarget instead of EventEmitter',
+              },
+            },
+          ],
+        },
+        {
+          code: 'export class EventEmitterSubclass extends EventEmitter {}',
+          errors: [
+            {
+              messageId: 'preferEventTarget',
+              data: {
+                className: 'EventEmitterSubclass',
+                suggestion: 'Extend EventTarget instead of EventEmitter',
+              },
+            },
+          ],
+        },
+        // Accessing EventEmitter from module
+        {
+          code: 'const EventEmitter = require("events").EventEmitter;',
+          errors: [
+            {
+              messageId: 'preferEventTarget',
+              data: {
+                usage: 'events.EventEmitter',
+                suggestion: 'Use EventTarget for cross-platform compatibility',
+              },
+            },
+          ],
+        },
+        {
+          code: 'const { EventEmitter } = require("node:events");',
+          errors: [
+            {
+              messageId: 'preferEventTarget',
+              data: {
+                usage: 'events.EventEmitter',
+                suggestion: 'Use EventTarget for cross-platform compatibility',
+              },
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  describe('Complex Cases', () => {
+    ruleTester.run('complex usage patterns', preferEventTarget, {
+      invalid: [
+        // Multiple imports
+        {
+          code: 'import { EventEmitter, EventTarget } from "node:events";',
+          errors: [
+            {
+              messageId: 'preferEventTarget',
+              data: {
+                importedName: 'EventEmitter',
+                suggestion: 'Use EventTarget instead for cross-platform compatibility',
+              },
+            },
+          ],
+        },
+        // In complex expressions
+        {
+          code: `
+            import { EventEmitter } from "events";
+            class MyClass extends EventEmitter {
+              constructor() {
+                super();
+              }
+            }
+          `,
+          errors: [
+            {
+              messageId: 'preferEventTarget',
+            },
+          ],
+        },
+      ],
+    });
+  });
+});

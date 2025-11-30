@@ -209,7 +209,14 @@ export const noExposedSensitiveData = createRule<RuleOptions, MessageIds>({
         fix: '{{safeAlternative}}',
         documentationLink: 'https://cwe.mitre.org/data/definitions/200.html',
       }),
-      sanitizeData: '✅ Sanitize data: Remove or mask sensitive information before logging/transmitting',
+      sanitizeData: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Sanitize Data',
+        description: 'Remove or mask sensitive information',
+        severity: 'LOW',
+        fix: 'Mask or remove sensitive data before logging/transmitting',
+        documentationLink: 'https://cwe.mitre.org/data/definitions/200.html',
+      }),
     },
     schema: [
       {
@@ -272,7 +279,7 @@ export const noExposedSensitiveData = createRule<RuleOptions, MessageIds>({
 
     const filename = context.getFilename();
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
 
     function checkLiteral(node: TSESTree.Literal) {
       if (isTestFile) {

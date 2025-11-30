@@ -16,17 +16,23 @@ type MessageIds =
   | 'useSpawn'
   | 'useSaferLibrary'
   | 'validateInput'
-  | 'useShellFalse';
+  | 'useShellFalse'
+  | 'strategyValidate'
+  | 'strategySanitize'
+  | 'strategyRestrict';
 
 export interface Options {
   /** Allow exec() with literal strings. Default: false (stricter) */
   allowLiteralStrings?: boolean;
-  
+
   /** Allow spawn() with literal arguments. Default: false (stricter) */
   allowLiteralSpawn?: boolean;
-  
+
   /** Additional child_process methods to check */
   additionalMethods?: string[];
+
+  /** Strategy for fixing command injection: 'validate', 'sanitize', 'restrict', or 'auto' */
+  strategy?: 'validate' | 'sanitize' | 'restrict' | 'auto';
 }
 
 type RuleOptions = [Options?];
@@ -106,11 +112,70 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         fix: 'Use execFile/spawn with {shell: false} and array args',
         documentationLink: 'https://owasp.org/www-community/attacks/Command_Injection',
       }),
-      useExecFile: '✅ Use execFile() with argument array instead of string interpolation',
-      useSpawn: '✅ Use spawn() with separate arguments: spawn(cmd, [arg1, arg2])',
-      useSaferLibrary: '✅ Consider safer libraries: execa, zx, or cross-spawn',
-      validateInput: '✅ Add input validation and sanitization',
-      useShellFalse: '✅ Always use shell: false to prevent shell interpretation'
+      useExecFile: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use execFile',
+        description: 'Use execFile() with argument array',
+        severity: 'LOW',
+        fix: 'execFile(cmd, [arg1, arg2], { shell: false })',
+        documentationLink: 'https://nodejs.org/api/child_process.html#child_processexecfilefile-args-options-callback',
+      }),
+      useSpawn: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use spawn',
+        description: 'Use spawn() with separate arguments',
+        severity: 'LOW',
+        fix: 'spawn(cmd, [arg1, arg2], { shell: false })',
+        documentationLink: 'https://nodejs.org/api/child_process.html#child_processspawncommand-args-options',
+      }),
+      useSaferLibrary: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Safer Library',
+        description: 'Consider safer command execution libraries',
+        severity: 'LOW',
+        fix: 'Use execa, zx, or cross-spawn instead',
+        documentationLink: 'https://github.com/sindresorhus/execa',
+      }),
+      validateInput: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Validate Input',
+        description: 'Add input validation and sanitization',
+        severity: 'LOW',
+        fix: 'Validate user input before passing to command',
+        documentationLink: 'https://owasp.org/www-community/attacks/Command_Injection',
+      }),
+      useShellFalse: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Disable Shell',
+        description: 'Use shell: false option',
+        severity: 'LOW',
+        fix: '{ shell: false } to prevent shell interpretation',
+        documentationLink: 'https://nodejs.org/api/child_process.html#spawning-bat-and-cmd-files-on-windows',
+      }),
+      strategyValidate: formatLLMMessage({
+        icon: MessageIcons.STRATEGY,
+        issueName: 'Validate Strategy',
+        description: 'Comprehensive input validation',
+        severity: 'LOW',
+        fix: 'Add allowlist validation before command execution',
+        documentationLink: 'https://owasp.org/www-community/attacks/Command_Injection',
+      }),
+      strategySanitize: formatLLMMessage({
+        icon: MessageIcons.STRATEGY,
+        issueName: 'Sanitize Strategy',
+        description: 'Sanitize and escape command arguments',
+        severity: 'LOW',
+        fix: 'Escape special characters in command arguments',
+        documentationLink: 'https://owasp.org/www-community/attacks/Command_Injection',
+      }),
+      strategyRestrict: formatLLMMessage({
+        icon: MessageIcons.STRATEGY,
+        issueName: 'Restrict Strategy',
+        description: 'Restrict to predefined safe commands',
+        severity: 'LOW',
+        fix: 'Define allowlist of permitted commands',
+        documentationLink: 'https://owasp.org/www-community/attacks/Command_Injection',
+      })
     },
     schema: [
       {
@@ -131,6 +196,12 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
             items: { type: 'string' },
             default: [],
             description: 'Additional child_process methods to check'
+          },
+          strategy: {
+            type: 'string',
+            enum: ['validate', 'sanitize', 'restrict', 'auto'],
+            default: 'auto',
+            description: 'Strategy for fixing command injection (auto = smart detection)'
           }
         },
         additionalProperties: false,
@@ -141,7 +212,8 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
     {
       allowLiteralStrings: false,
       allowLiteralSpawn: false,
-      additionalMethods: []
+      additionalMethods: [],
+      strategy: 'auto'
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
@@ -149,8 +221,9 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
     const {
       allowLiteralStrings = false,
       allowLiteralSpawn = false,
-      additionalMethods = []
-    } = options;
+      additionalMethods = [],
+      strategy = 'auto'
+    }: Options = options || {};
 
     /**
      * Child process methods that can be dangerous
@@ -166,6 +239,24 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       'forkSync',
       ...additionalMethods
     ];
+
+    /**
+     * Select message ID based on strategy
+     */
+    const selectStrategyMessage = (): MessageIds => {
+      switch (strategy) {
+        case 'validate':
+          return 'strategyValidate';
+        case 'sanitize':
+          return 'strategySanitize';
+        case 'restrict':
+          return 'strategyRestrict';
+        case 'auto':
+        default:
+          // Auto mode: prefer validation for command injection
+          return 'validateInput';
+      }
+    };
 
     /**
      * Check if a node contains string interpolation or concatenation
@@ -212,7 +303,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
                       ? node.callee.property.name
                       : 'unknown';
 
-      const sourceCode = context.sourceCode || context.getSourceCode();
+      const sourceCode = context.sourceCode || context.sourceCode;
       const args = node.arguments.map((arg: TSESTree.Node) => sourceCode.getText(arg)).join(', ');
 
       const pattern = COMMAND_PATTERNS.find(p => p.method === method) || null;
@@ -305,7 +396,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       // Report the security issue
       const riskLevel = determineRiskLevel(pattern, isDynamic);
       const steps = pattern ? generateRefactoringSteps(pattern) : 'Review and secure command execution';
-      const alternatives = pattern?.safeAlternatives.join(', ') || 'execFile, spawn with validation';
+      const alternatives = pattern?.safeAlternatives.join(', ') || 'execFile, spawn with validation'; 
 
       context.report({
         node,

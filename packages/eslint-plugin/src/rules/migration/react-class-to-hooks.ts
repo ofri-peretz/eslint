@@ -38,8 +38,22 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
         fix: 'Use functional component with useEffect/useState (Complexity: {{complexity}})',
         documentationLink: 'https://react.dev/reference/react/hooks',
       }),
-      convertToFunction: '✅ Convert to functional component with hooks',
-      viewMigrationGuide: '📖 View detailed migration guide',
+      convertToFunction: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Convert to Functional',
+        description: 'Convert to functional component with hooks',
+        severity: 'LOW',
+        fix: 'function Component() { const [state, setState] = useState() }',
+        documentationLink: 'https://react.dev/reference/react/hooks',
+      }),
+      viewMigrationGuide: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Migration Guide',
+        description: 'View detailed migration guide',
+        severity: 'LOW',
+        fix: 'Follow React hooks migration guide',
+        documentationLink: 'https://react.dev/reference/react/hooks',
+      }),
     },
     schema: [
       {
@@ -66,9 +80,11 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
-    const { allowComplexLifecycle = false } = options;
+    const {
+allowComplexLifecycle = false 
+}: Options = options || {};
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
 
     /**
      * Check if class extends React.Component

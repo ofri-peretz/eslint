@@ -41,15 +41,15 @@ describe('detect-eval-with-expression', () => {
       invalid: [
         {
           code: 'eval(userInput);',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
         {
           code: 'eval(`code: ${value}`);',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'useTemplateLiteral' }],
         },
         {
           code: 'const result = eval(expression);',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
         {
           code: `
@@ -57,7 +57,7 @@ describe('detect-eval-with-expression', () => {
               return eval(code);
             }
           `,
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
       ],
     });
@@ -69,7 +69,7 @@ describe('detect-eval-with-expression', () => {
       invalid: [
         {
           code: 'const runner = (code) => eval(code);',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
         {
           code: `
@@ -77,7 +77,7 @@ describe('detect-eval-with-expression', () => {
               eval(code);
             }
           `,
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
         {
           code: `
@@ -87,7 +87,7 @@ describe('detect-eval-with-expression', () => {
               console.error(e);
             }
           `,
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
       ],
     });
@@ -103,8 +103,8 @@ describe('detect-eval-with-expression', () => {
             eval(code2);
           `,
           errors: [
-            { messageId: 'evalWithExpression' },
-            { messageId: 'evalWithExpression' },
+            { messageId: 'strategyRefactor' },
+            { messageId: 'strategyRefactor' },
           ],
         },
       ],
@@ -117,14 +117,14 @@ describe('detect-eval-with-expression', () => {
       invalid: [
         {
           code: 'eval(a || b);',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
         {
           code: `
             const code = getCode();
             eval(code);
           `,
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
       ],
     });
@@ -138,7 +138,7 @@ describe('detect-eval-with-expression', () => {
       invalid: [
         {
           code: '(eval)(code);',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
       ],
     });
@@ -152,7 +152,7 @@ describe('detect-eval-with-expression', () => {
           code: 'eval("JSON.parse(" + jsonString + ")");',
           errors: [
             {
-              messageId: 'evalWithExpression',
+              messageId: 'useJsonParse',
               // Note: Rule provides suggestions but fix returns null (no auto-fix)
               // Test framework requires output for suggestions, so we don't test them here
             },
@@ -170,18 +170,18 @@ describe('detect-eval-with-expression', () => {
           code: 'eval("obj[" + key + "]");',
           errors: [
             {
-              messageId: 'evalWithExpression',
+              messageId: 'useObjectAccess',
               // Note: Rule provides suggestions but fix returns null (no auto-fix)
             },
           ],
         },
         {
           code: 'eval("object[" + key + "]");',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'useObjectAccess' }],
         },
         {
           code: 'eval("obj." + property);',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'useObjectAccess' }],
         },
       ],
     });
@@ -195,11 +195,11 @@ describe('detect-eval-with-expression', () => {
       invalid: [
         {
           code: 'eval("someOtherPattern" + value);',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
         {
           code: 'eval("customPattern" + data);',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
       ],
     });
@@ -211,15 +211,15 @@ describe('detect-eval-with-expression', () => {
       invalid: [
         {
           code: 'eval(\'Math.sin(\' + angle + \')\');',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
         {
           code: 'eval("parseInt(" + value + ")");',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
         {
           code: 'eval("parseFloat(" + num + ")");',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
       ],
     });
@@ -233,18 +233,18 @@ describe('detect-eval-with-expression', () => {
           code: 'eval("${" + name + "}");',
           errors: [
             {
-              messageId: 'evalWithExpression',
+              messageId: 'useTemplateLiteral',
               // Note: Rule provides suggestions but fix returns null (no auto-fix)
             },
           ],
         },
         {
           code: 'eval("template " + variable);',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'useTemplateLiteral' }],
         },
         {
           code: 'eval("interpolat" + value);',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'useTemplateLiteral' }],
         },
       ],
     });
@@ -266,7 +266,7 @@ describe('detect-eval-with-expression', () => {
         {
           code: 'eval(userInput);',
           options: [{ allowLiteralStrings: true }],
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
       ],
     });
@@ -282,7 +282,7 @@ describe('detect-eval-with-expression', () => {
       invalid: [
         {
           code: 'eval(variable);',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
       ],
     });
@@ -294,7 +294,7 @@ describe('detect-eval-with-expression', () => {
       invalid: [
         {
           code: 'eval();',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
       ],
     });
@@ -308,19 +308,19 @@ describe('detect-eval-with-expression', () => {
         // This covers the case where Function is called as a function, not as a constructor
         {
           code: 'Function(code);',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
         {
           code: 'Function("arg1", "arg2", "return arg1 + arg2");',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
         {
           code: 'new Function(code);',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
         {
           code: 'new Function("arg1", "arg2", "return arg1 + arg2");',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
       ],
     });
@@ -332,11 +332,11 @@ describe('detect-eval-with-expression', () => {
       invalid: [
         {
           code: 'const fn = new Function(userCode);',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
         {
           code: 'const fn = new Function("x", "y", "return x + y");',
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
       ],
     });
@@ -349,12 +349,12 @@ describe('detect-eval-with-expression', () => {
         {
           code: 'customEval(userCode);',
           options: [{ additionalEvalFunctions: ['customEval'] }],
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
         {
           code: 'myEval(code);',
           options: [{ additionalEvalFunctions: ['myEval', 'anotherEval'] }],
-          errors: [{ messageId: 'evalWithExpression' }],
+          errors: [{ messageId: 'strategyRefactor' }],
         },
       ],
     });

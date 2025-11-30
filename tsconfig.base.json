@@ -24,6 +24,9 @@
       "eslint-plugin-mcp": ["packages/eslint-plugin-mcp/src/index.ts"],
       "eslint-plugin-mcp-optimized": [
         "packages/eslint-plugin-mcp-optimized/src/index.ts"
+      ],
+      "eslint-plugin-code-mode": [
+        "packages/eslint-plugin-code-mode/src/index.ts"
       ]
     }
   },

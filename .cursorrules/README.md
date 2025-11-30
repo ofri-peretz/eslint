@@ -2,6 +2,28 @@
 
 This directory contains checklists and guidelines for common development tasks in the forge-js monorepo.
 
+## 🚀 Quick Start: Using Cursor Commands
+
+You can quickly include any checklist in your prompts using Cursor commands:
+
+| Command | Checklist | Use Case |
+|---------|-----------|----------|
+| `/eslint-rule` | ESLint Rule Addition | Adding new ESLint rules |
+| `/new-package` | New Package Addition | Creating new packages |
+| `/workflow-maintenance` | Workflow Maintenance | Working with GitHub Actions |
+| `/llm-discoverability` | LLM Discoverability | Optimizing for AI tooling |
+
+**Example:**
+```
+/eslint-rule
+
+I want to add a new rule that detects unsafe dynamic requires.
+```
+
+This will automatically include the complete ESLint Rule Addition Checklist in your prompt.
+
+See [`.cursor/commands/README.md`](../.cursor/commands/README.md) for full documentation.
+
 ## 📋 Available Checklists
 
 ### 1. 📦 Adding a New Package

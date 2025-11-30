@@ -162,8 +162,22 @@ export const noInsufficientRandom = createRule<RuleOptions, MessageIds>({
         fix: '{{safeAlternative}}',
         documentationLink: 'https://cwe.mitre.org/data/definitions/338.html',
       }),
-      useCryptoRandomValues: '✅ Use crypto.getRandomValues(): const random = crypto.getRandomValues(new Uint32Array(1))[0] / (0xFFFFFFFF + 1);',
-      useSecureRandom: '✅ Use crypto.getRandomValues() or crypto.randomBytes() for secure random number generation',
+      useCryptoRandomValues: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Crypto Random',
+        description: 'Use crypto.getRandomValues()',
+        severity: 'LOW',
+        fix: 'crypto.getRandomValues(new Uint32Array(1))[0] / (0xFFFFFFFF + 1)',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/API/Crypto/getRandomValues',
+      }),
+      useSecureRandom: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Secure Random',
+        description: 'Use crypto for secure random generation',
+        severity: 'LOW',
+        fix: 'crypto.randomBytes() or crypto.getRandomValues()',
+        documentationLink: 'https://nodejs.org/api/crypto.html#cryptorandombytessize-callback',
+      }),
     },
     schema: [
       {
@@ -243,7 +257,7 @@ export const noInsufficientRandom = createRule<RuleOptions, MessageIds>({
 
       // Check for standalone random() function calls (if configured)
       if (node.callee.type === 'Identifier' && additionalWeakPatterns.length > 0) {
-        const sourceCode = context.sourceCode || context.getSourceCode();
+        const sourceCode = context.sourceCode || context.sourceCode;
         const callText = sourceCode.getText(node);
         
         const pattern = containsWeakRandom(callText, additionalWeakPatterns);

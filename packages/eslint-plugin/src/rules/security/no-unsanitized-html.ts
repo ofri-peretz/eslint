@@ -107,9 +107,30 @@ export const noUnsanitizedHtml = createRule<RuleOptions, MessageIds>({
         fix: '{{safeAlternative}}',
         documentationLink: 'https://cwe.mitre.org/data/definitions/79.html',
       }),
-      useTextContent: '✅ Use textContent instead: element.textContent = userInput;',
-      useSanitizeLibrary: '✅ Use sanitization library: DOMPurify.sanitize(html) or sanitize-html',
-      useDangerouslySetInnerHTML: '✅ Sanitize before using dangerouslySetInnerHTML: <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }} />',
+      useTextContent: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use textContent',
+        description: 'Use textContent instead of innerHTML',
+        severity: 'LOW',
+        fix: 'element.textContent = userInput;',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent',
+      }),
+      useSanitizeLibrary: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Sanitization',
+        description: 'Use sanitization library',
+        severity: 'LOW',
+        fix: 'DOMPurify.sanitize(html) or sanitize-html',
+        documentationLink: 'https://github.com/cure53/DOMPurify',
+      }),
+      useDangerouslySetInnerHTML: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Sanitize First',
+        description: 'Sanitize before dangerouslySetInnerHTML',
+        severity: 'LOW',
+        fix: 'dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }}',
+        documentationLink: 'https://react.dev/reference/react-dom/components/common#dangerously-setting-the-inner-html',
+      }),
     },
     schema: [
       {
@@ -156,7 +177,7 @@ export const noUnsanitizedHtml = createRule<RuleOptions, MessageIds>({
 
     const filename = context.getFilename();
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
 
     function checkAssignmentExpression(node: TSESTree.AssignmentExpression) {
       if (isTestFile) {

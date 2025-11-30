@@ -1,4 +1,5 @@
 import nx from '@nx/eslint-plugin';
+import eslintPluginUnicorn from 'eslint-plugin-unicorn';
 
 export default [
   ...nx.configs['flat/base'],
@@ -40,8 +41,13 @@ export default [
       '**/*.cjs',
       '**/*.mjs',
     ],
-    // Override or add rules here
-    rules: {},
+    plugins: {
+      unicorn: eslintPluginUnicorn,
+    },
+    rules: {
+      // Enforce node: protocol for Node.js built-in imports (e.g., 'node:fs' instead of 'fs')
+      'unicorn/prefer-node-protocol': 'error',
+    },
   },
   {
     files: ['**/*.json'],

@@ -41,7 +41,14 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
         fix: 'Use strict equality ({{strictOperator}}) instead: {{example}}',
         documentationLink: 'https://cwe.mitre.org/data/definitions/697.html',
       }),
-      useStrictEquality: '✅ Use strict equality (===) instead of loose equality (==)',
+      useStrictEquality: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Strict Equality',
+        description: 'Use strict equality operator',
+        severity: 'LOW',
+        fix: 'Replace == with === and != with !==',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Strict_equality',
+      }),
     },
     schema: [
       {
@@ -80,7 +87,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
 
     const filename = context.getFilename();
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
 
     /**
      * Check if a string matches any ignore pattern

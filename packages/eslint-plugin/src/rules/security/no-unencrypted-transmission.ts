@@ -117,7 +117,14 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
         fix: '{{safeAlternative}}',
         documentationLink: 'https://cwe.mitre.org/data/definitions/319.html',
       }),
-      useHttps: '✅ Use secure protocol: Replace {{protocol}} with {{secureProtocol}}',
+      useHttps: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use HTTPS',
+        description: 'Use secure protocol',
+        severity: 'LOW',
+        fix: 'Replace http:// with https://',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/Security/Transport_Layer_Security',
+      }),
     },
     schema: [
       {
@@ -181,7 +188,7 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
 
     const filename = context.getFilename();
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
 
     function checkLiteral(node: TSESTree.Literal) {
       if (typeof node.value !== 'string') {

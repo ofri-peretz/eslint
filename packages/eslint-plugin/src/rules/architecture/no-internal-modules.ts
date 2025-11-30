@@ -1,389 +1,327 @@
 /**
  * ESLint Rule: no-internal-modules
- * 
- * Prevents importing from internal/deep module paths with highly configurable strategies
- * to support complex frontend architectures, legacy projects, and component structures.
- * 
- * Supports:
- * - Component folder structures with barrel exports (index files)
- * - Flexible depth control per package or pattern
- * - Allow/forbid patterns for fine-grained control
- * - Test file exclusions (test, spec, stories)
- * - Auto-fix and suggestion modes for migrations
- * 
- * @see https://basarat.gitbook.io/typescript/main-1/barrel
+ * Forbid importing the submodules of other modules (eslint-plugin-import inspired)
  */
-import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { formatLLMMessage } from '@forge-js/eslint-plugin-utils';
+import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
-/**
- * Strategy for handling internal module import violations
- */
-type Strategy = 'error' | 'suggest' | 'autofix' | 'warn';
+type MessageIds = 'internalModuleImport' | 'suggestPublicApi' | 'suggestBarrelExport';
 
-/**
- * Message IDs for different violation scenarios
- */
-type MessageIds =
-  | 'internalModuleImport'
-  | 'suggestPublicApi'
-  | 'suggestBarrelExport';
-
-/**
- * Configuration options for the no-internal-modules rule
- */
 export interface Options {
-  /** Strategy for handling violations (error, suggest, autofix, warn) */
-  strategy?: Strategy;
-  
-  /** Module path patterns to completely ignore (test files, stories, etc) */
-  ignorePaths?: string[];
-  
-  /** Explicitly allowed internal paths that override maxDepth */
-  allow?: string[];
-  
-  /** Explicitly forbidden paths (internal directories, private packages) */
-  forbid?: string[];
-  
-  /** Maximum allowed import depth (0 = package root only, 1 = one level deep, etc) */
+  /** Maximum allowed depth of module imports (0 = only root, 1 = one level deep, etc.) */
   maxDepth?: number;
+  /** Glob patterns for paths that are allowed to be deep-imported */
+  allow?: string[];
+  /** Glob patterns for paths that are explicitly forbidden */
+  forbid?: string[];
+  /** Glob patterns for paths that should be ignored by this rule */
+  ignorePaths?: string[];
+  /** Strategy for handling violations: 'error', 'warn', 'autofix', 'suggest' */
+  strategy?: 'error' | 'warn' | 'autofix' | 'suggest';
 }
 
 type RuleOptions = [Options?];
 
+/**
+ * Simple glob pattern matching
+ * Supports * (any chars) and ** (any path segments)
+ */
+function matchGlob(pattern: string, path: string): boolean {
+  // Escape special regex chars except * 
+  const regexPattern = pattern
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+    .replace(/\*\*/g, '{{DOUBLE_STAR}}')
+    .replace(/\*/g, '[^/]*')
+    .replace(/\{\{DOUBLE_STAR\}\}/g, '.*');
+  
+  return new RegExp(`^${regexPattern}$`).test(path);
+}
+
+function matchesAnyPattern(path: string, patterns: string[]): boolean {
+  return patterns.some(pattern => matchGlob(pattern, path));
+}
+
+/**
+ * Calculate import depth
+ * - 'lodash' => 0
+ * - 'lodash/get' => 1
+ * - '@company/ui' => 0 (scoped package root)
+ * - '@company/ui/components' => 1
+ * - '@company/ui/components/Button' => 2
+ * - './utils' => 1
+ * - './utils/helpers' => 2
+ */
+function getImportDepth(importPath: string): number {
+  // Handle relative imports
+  if (importPath.startsWith('./') || importPath.startsWith('../')) {
+    const parts = importPath.split('/').filter(p => p !== '.' && p !== '..');
+    return parts.length;
+  }
+  
+  // Handle scoped packages (@org/package)
+  if (importPath.startsWith('@')) {
+    const parts = importPath.split('/');
+    // @org/package = 0 depth, @org/package/sub = 1 depth
+    return Math.max(0, parts.length - 2);
+  }
+  
+  // Handle regular packages
+  const parts = importPath.split('/');
+  return parts.length - 1;
+}
+
+/**
+ * Get the root/base import path
+ */
+function getRootImport(importPath: string): string {
+  if (importPath.startsWith('./') || importPath.startsWith('../')) {
+    return '.';
+  }
+  
+  if (importPath.startsWith('@')) {
+    const parts = importPath.split('/');
+    return parts.slice(0, 2).join('/');
+  }
+  
+  return importPath.split('/')[0];
+}
+
+/**
+ * Get import path trimmed to specific depth
+ */
+function getImportAtDepth(importPath: string, maxDepth: number): string {
+  if (importPath.startsWith('./') || importPath.startsWith('../')) {
+    if (maxDepth === 0) return '.';
+    const prefix = importPath.startsWith('../') ? '../' : './';
+    const parts = importPath.replace(/^\.\.?\//, '').split('/');
+    return prefix + parts.slice(0, maxDepth).join('/');
+  }
+  
+  if (importPath.startsWith('@')) {
+    const parts = importPath.split('/');
+    // @org/package is depth 0
+    return parts.slice(0, 2 + maxDepth).join('/');
+  }
+  
+  const parts = importPath.split('/');
+  return parts.slice(0, 1 + maxDepth).join('/');
+}
+
 export const noInternalModules = createRule<RuleOptions, MessageIds>({
   name: 'no-internal-modules',
   meta: {
-    type: 'suggestion',
+    type: 'problem',
     docs: {
-      description:
-        'Prevent importing from internal/deep module paths with configurable strategies',
+      description: 'Forbid importing the submodules of other modules',
     },
     fixable: 'code',
     hasSuggestions: true,
     messages: {
-      // 🎯 Token optimization: 46% reduction (52→28 tokens) - removes file path examples
       internalModuleImport: formatLLMMessage({
-        icon: '🚫',
-        issueName: 'Internal module import',
-        cwe: 'CWE-1104',
-        description: 'Internal module import detected',
+        icon: MessageIcons.ARCHITECTURE,
+        issueName: 'Internal Module Import',
+        description: 'Import "{{importPath}}" exceeds maximum allowed depth ({{depth}} > {{maxDepth}})',
         severity: 'MEDIUM',
-        fix: 'Use barrel export: import Button from "./Button"',
-        documentationLink: 'https://basarat.gitbook.io/typescript/main-1/barrel',
+        fix: 'Import from "{{suggestedPath}}" instead of deep internal path',
+        documentationLink: 'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-internal-modules.md',
       }),
-      suggestPublicApi: '📦 Import from public API: {{suggestion}}',
-      suggestBarrelExport: '🗂️ Use barrel export: {{suggestion}}',
+      suggestPublicApi: formatLLMMessage({
+        icon: MessageIcons.ARCHITECTURE,
+        issueName: 'Use Public API',
+        description: 'Import from the public API entry point',
+        severity: 'LOW',
+        fix: 'Change import to "{{suggestedPath}}"',
+        documentationLink: 'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-internal-modules.md',
+      }),
+      suggestBarrelExport: formatLLMMessage({
+        icon: MessageIcons.ARCHITECTURE,
+        issueName: 'Use Barrel Export',
+        description: 'Import from a barrel export file',
+        severity: 'LOW',
+        fix: 'Change import to "{{suggestedPath}}"',
+        documentationLink: 'https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/no-internal-modules.md',
+      }),
     },
     schema: [
       {
         type: 'object',
         properties: {
-          strategy: {
-            type: 'string',
-            enum: ['error', 'suggest', 'autofix', 'warn'],
-            default: 'error',
-            description: 'Strategy for handling internal module imports',
-          },
-          ignorePaths: {
-            type: 'array',
-            items: { type: 'string' },
-            default: [],
-            description: 'Module path patterns to ignore',
+          maxDepth: {
+            type: 'number',
+            minimum: 0,
+            default: 1,
+            description: 'Maximum allowed depth of module imports (0 = only root, 1 = one level deep)',
           },
           allow: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Explicitly allowed internal paths (patterns)',
+            description: 'Glob patterns for paths that are allowed regardless of depth',
           },
           forbid: {
             type: 'array',
             items: { type: 'string' },
             default: [],
-            description: 'Explicitly forbidden paths (patterns)',
+            description: 'Glob patterns for paths that are explicitly forbidden',
           },
-          maxDepth: {
-            type: 'number',
-            minimum: 0,
-            default: 1,
-            description: 'Maximum allowed import depth (0 = package root only)',
+          ignorePaths: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Glob patterns for paths to ignore completely',
+          },
+          strategy: {
+            type: 'string',
+            enum: ['error', 'warn', 'autofix', 'suggest'],
+            default: 'error',
+            description: 'How to handle violations: error (report), warn (report), autofix (fix automatically), suggest (provide suggestions)',
           },
         },
         additionalProperties: false,
       },
     ],
   },
-  defaultOptions: [
-    {
-      strategy: 'error',
-      ignorePaths: [],
-      allow: [],
-      forbid: [],
-      maxDepth: 1,
-    },
-  ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const options = context.options[0] || {};
+  defaultOptions: [{
+    maxDepth: 1,
+    allow: [],
+    forbid: [],
+    ignorePaths: [],
+    strategy: 'error',
+  }],
+
+  create(context) {
+    const [options] = context.options;
     const {
-      strategy = 'error',
-      ignorePaths = [],
+      maxDepth = 1,
       allow = [],
       forbid = [],
-      maxDepth = 1,
-    } = options;
+      ignorePaths = [],
+      strategy = 'error',
+    } = options || {};
 
-    /**
-     * Check if a module path matches a glob pattern.
-     * Supports wildcards: asterisk (any sequence), question mark (single char)
-     * 
-     * @param modulePath - The module path to test
-     * @param pattern - The glob pattern to match against
-     * @returns true if the module path matches the pattern
-     */
-    const matchesPattern = (modulePath: string, pattern: string): boolean => {
-      const regexPattern = pattern
-        .replace(/\./g, '\\.')
-        .replace(/\*/g, '.*')
-        .replace(/\?/g, '.');
-      return new RegExp(`^${regexPattern}$`).test(modulePath);
-    };
-
-    /**
-     * Check if a module should be completely ignored (skip all checking).
-     * Checks both the explicit allow list and ignorePaths patterns.
-     * 
-     * @param modulePath - The module path to check
-     * @returns true if the module should be ignored
-     */
-    const shouldIgnoreModule = (modulePath: string): boolean => {
-      /** Check explicit allow list first */
-      if (allow.some((pattern: string) => matchesPattern(modulePath, pattern))) {
-        return true;
-      }
-
-      /** Check ignore patterns */
-      return ignorePaths.some((pattern: string) => matchesPattern(modulePath, pattern));
-    };
-
-    /**
-     * Check if a module is explicitly forbidden by the forbid patterns.
-     * 
-     * @param modulePath - The module path to check
-     * @returns true if the module is forbidden
-     */
-    const isForbidden = (modulePath: string): boolean => {
-      return forbid.some((pattern: string) => matchesPattern(modulePath, pattern));
-    };
-
-    /**
-     * Calculate import depth (number of path segments after package name).
-     * 
-     * For relative imports: count segments after current directory marker
-     * For scoped packages: count segments after scope/package
-     * For regular packages: count segments after package name
-     * 
-     * Examples:
-     * - 'lodash' => 0
-     * - 'lodash/get' => 1
-     * - '@company/ui' => 0
-     * - '@company/ui/components' => 1
-     * - './utils' => 0
-     * - './utils/format' => 1
-     * 
-     * @param modulePath - The module import path
-     * @returns The calculated depth
-     */
-    const getImportDepth = (modulePath: string): number => {
-      /** Relative imports */
-      if (modulePath.startsWith('.')) {
-        const segments = modulePath.split('/').filter((s) => s && s !== '.');
-        return segments.length - 1;
-      }
-
-      /** Scoped packages (@scope/package/...) */
-      if (modulePath.startsWith('@')) {
-        const parts = modulePath.split('/');
-        return Math.max(0, parts.length - 2);
-      }
-
-      /** Regular packages (package/...) */
-      const parts = modulePath.split('/');
-      return Math.max(0, parts.length - 1);
-    };
-
-    /**
-     * Get the suggested public API import path.
-     * Returns the root package or component directory.
-     * 
-     * Examples:
-     * - 'lodash/fp/get' => 'lodash'
-     * - '@company/ui/components/Button' => '@company/ui'
-     * - './components/Button/Button.tsx' => './components'
-     * 
-     * @param modulePath - The current import path
-     * @returns The suggested public API path
-     */
-    const getPublicApiSuggestion = (modulePath: string): string => {
-      if (modulePath.startsWith('.')) {
-        return modulePath.split('/')[0] || '.';
-      }
-
-      if (modulePath.startsWith('@')) {
-        const parts = modulePath.split('/');
-        return `${parts[0]}/${parts[1]}`;
-      }
-
-      return modulePath.split('/')[0] || modulePath;
-    };
-
-    /**
-     * Generate a human-readable reason for why the import violates the rule.
-     * 
-     * @param depth - The calculated import depth
-     * @param isForbiddenPath - Whether the path matches a forbidden pattern
-     * @returns A descriptive reason string
-     */
-    const getViolationReason = (depth: number, isForbiddenPath: boolean): string => {
-      if (isForbiddenPath) {
-        return 'Path matches forbidden pattern';
-      }
-
-      if (depth > maxDepth) {
-        return `Exceeds maximum depth (${depth} > ${maxDepth})`;
-      }
-
-      return 'Internal module structure exposed';
-    };
-
-    /**
-     * Check import/export declarations for violations.
-     * Determines if an import exceeds maxDepth or matches forbidden patterns.
-     * 
-     * @param node - The AST node (ImportDeclaration or ExportNamedDeclaration)
-     * @param modulePath - The module path being imported/exported
-     */
-    const checkModulePath = (
-      node: TSESTree.ImportDeclaration | TSESTree.ExportNamedDeclaration,
-      modulePath: string
-    ) => {
-      /** Skip non-string sources */
-      if (!modulePath) return;
-
-      /** Skip if ignored */
-      if (shouldIgnoreModule(modulePath)) return;
-
-      const depth = getImportDepth(modulePath);
-      const isForbiddenPath = isForbidden(modulePath);
-
-      /** Check if explicitly forbidden */
-      if (isForbiddenPath) {
-        reportViolation(node, modulePath, depth, isForbiddenPath);
+    function checkImport(importPath: string, node: TSESTree.Node) {
+      // Skip if path should be ignored
+      if (matchesAnyPattern(importPath, ignorePaths)) {
         return;
       }
 
-      /** Check depth threshold */
-      if (depth > maxDepth) {
-        reportViolation(node, modulePath, depth, isForbiddenPath);
+      // Skip if path is explicitly allowed
+      if (matchesAnyPattern(importPath, allow)) {
+        return;
       }
-    };
 
-    /**
-     * Report a violation with appropriate strategy (error, suggest, autofix, warn).
-     * Provides multiple suggestions including public API and barrel exports.
-     * 
-     * @param node - The AST node with the violation
-     * @param modulePath - The problematic import path
-     * @param depth - The calculated import depth
-     * @param isForbiddenPath - Whether the path is explicitly forbidden
-     */
-    const reportViolation = (
-      node: TSESTree.ImportDeclaration | TSESTree.ExportNamedDeclaration,
-      modulePath: string,
-      depth: number,
-      isForbiddenPath: boolean
-    ) => {
-      const publicApiPath = getPublicApiSuggestion(modulePath);
-      const reason = getViolationReason(depth, isForbiddenPath);
+      const depth = getImportDepth(importPath);
+      const isForbidden = forbid.length > 0 && matchesAnyPattern(importPath, forbid);
+      const exceedsDepth = depth > maxDepth;
 
-      const suggest: TSESLint.SuggestionReportDescriptor<MessageIds>[] = [
-        {
-          messageId: 'suggestPublicApi',
-          data: { suggestion: publicApiPath },
-          fix: (fixer: TSESLint.RuleFixer) => {
-            const sourceNode = node.source;
-            if (!sourceNode) return null;
-            return fixer.replaceText(sourceNode, `'${publicApiPath}'`);
-          },
-        },
-      ];
+      // No violation
+      if (!isForbidden && !exceedsDepth) {
+        return;
+      }
 
-      /** Add barrel export suggestion for deep imports */
-      if (depth > 1) {
-        const barrelPath = modulePath.split('/').slice(0, -1).join('/');
-        suggest.push({
-          messageId: 'suggestBarrelExport',
-          data: { suggestion: barrelPath },
-          fix: (fixer: TSESLint.RuleFixer) => {
-            const sourceNode = node.source;
-            if (!sourceNode) return null;
-            return fixer.replaceText(sourceNode, `'${barrelPath}'`);
+      const rootImport = getRootImport(importPath);
+      const suggestedPath = exceedsDepth ? getImportAtDepth(importPath, maxDepth) : rootImport;
+      const barrelPath = depth > 1 ? getImportAtDepth(importPath, Math.max(0, depth - 1)) : rootImport;
+
+      const reportData = {
+        importPath,
+        depth: String(depth),
+        maxDepth: String(maxDepth),
+        suggestedPath,
+      };
+
+      if (strategy === 'autofix') {
+        context.report({
+          node,
+          messageId: 'internalModuleImport',
+          data: reportData,
+          fix(fixer) {
+            // Find the string literal node to replace
+            // Autofix always goes to the root package for safety
+            const sourceNode = node.type === 'Literal' ? node : 
+              (node as TSESTree.ImportDeclaration).source;
+            return fixer.replaceText(sourceNode, `'${rootImport}'`);
           },
         });
+      } else if (strategy === 'suggest') {
+        context.report({
+          node,
+          messageId: 'internalModuleImport',
+          data: reportData,
+          suggest: [
+            {
+              messageId: 'suggestPublicApi' as const,
+              data: { suggestedPath: rootImport },
+              fix(fixer) {
+                const sourceNode = node.type === 'Literal' ? node : 
+                  (node as TSESTree.ImportDeclaration).source;
+                return fixer.replaceText(sourceNode, `'${rootImport}'`);
+              },
+            },
+            // Add barrel export suggestion if different from root
+            ...(barrelPath !== rootImport && barrelPath !== suggestedPath ? [{
+              messageId: 'suggestBarrelExport' as const,
+              data: { suggestedPath: barrelPath },
+              fix(fixer: TSESLint.RuleFixer) {
+                const sourceNode = node.type === 'Literal' ? node : 
+                  (node as TSESTree.ImportDeclaration).source;
+                return fixer.replaceText(sourceNode, `'${barrelPath}'`);
+              },
+            }] : []),
+          ],
+        });
+      } else {
+        // 'error' or 'warn' strategy - just report
+        context.report({
+          node,
+          messageId: 'internalModuleImport',
+          data: reportData,
+        });
       }
-
-      const fix =
-        strategy === 'autofix'
-          ? (fixer: TSESLint.RuleFixer) => {
-              const sourceNode = node.source;
-              if (!sourceNode) return null;
-              return fixer.replaceText(sourceNode, `'${publicApiPath}'`);
-            }
-          : undefined;
-
-      context.report({
-        node: node.source || node,
-        messageId: 'internalModuleImport',
-        data: {
-          modulePath,
-          depth: String(depth),
-          maxDepth: String(maxDepth),
-          reason,
-          suggestion: publicApiPath,
-          strategy,
-          severity: isForbiddenPath ? 'HIGH' : 'MEDIUM',
-        },
-        fix,
-        suggest: strategy === 'suggest' ? suggest : undefined,
-      });
-    };
+    }
 
     return {
-      /**
-       * Check import declarations for internal module violations.
-       * Example: import { Button } from './Button/Button.tsx'
-       * 
-       * @param node - ImportDeclaration AST node
-       */
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        if (node.source?.value) {
-          checkModulePath(node, String(node.source.value));
+        const importPath = node.source.value;
+        if (typeof importPath === 'string') {
+          checkImport(importPath, node);
         }
       },
-      
-      /**
-       * Check export declarations with sources for internal module violations.
-       * Example: export { Button } from './Button/Button.tsx'
-       * 
-       * @param node - ExportNamedDeclaration AST node
-       */
+
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
-        if (node.source?.value) {
-          checkModulePath(node, String(node.source.value));
+        if (node.source && typeof node.source.value === 'string') {
+          checkImport(node.source.value, node);
+        }
+      },
+
+      ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        if (typeof node.source.value === 'string') {
+          checkImport(node.source.value, node);
+        }
+      },
+
+      CallExpression(node: TSESTree.CallExpression) {
+        // Check require() calls
+        if (
+          node.callee.type === 'Identifier' &&
+          node.callee.name === 'require' &&
+          node.arguments.length === 1
+        ) {
+          const arg = node.arguments[0];
+          if (arg.type === 'Literal' && typeof arg.value === 'string') {
+            checkImport(arg.value, arg);
+          }
+        }
+
+      },
+
+      // Handle dynamic imports: import('path')
+      ImportExpression(node: TSESTree.ImportExpression) {
+        if (node.source.type === 'Literal' && typeof node.source.value === 'string') {
+          checkImport(node.source.value, node.source);
         }
       },
     };
   },
 });
-

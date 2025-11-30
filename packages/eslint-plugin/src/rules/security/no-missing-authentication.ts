@@ -156,7 +156,14 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
         fix: 'Add authentication middleware: app.{{method}}(\'{{path}}\', authenticate(), handler)',
         documentationLink: 'https://cwe.mitre.org/data/definitions/287.html',
       }),
-      addAuthentication: '✅ Add authentication middleware before route handler',
+      addAuthentication: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Add Authentication',
+        description: 'Add authentication middleware before route handler',
+        severity: 'LOW',
+        fix: 'app.get("/path", authenticate(), handler)',
+        documentationLink: 'https://cwe.mitre.org/data/definitions/287.html',
+      }),
     },
     schema: [
       {
@@ -219,7 +226,7 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
     const filename = context.getFilename();
     const testFileRegex = new RegExp(testFilePattern);
     const isTestFile = allowInTests && testFileRegex.test(filename);
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
 
     /**
      * Find variable declaration for an identifier

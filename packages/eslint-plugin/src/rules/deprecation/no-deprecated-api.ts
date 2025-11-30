@@ -47,7 +47,14 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
         fix: 'Migrate to recommended alternative with timeline guidance',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference',
       }),
-      useReplacement: '✅ Replace with {{replacement}}',
+      useReplacement: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Replacement',
+        description: 'Replace with recommended API',
+        severity: 'LOW',
+        fix: 'Replace with {{replacement}}',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference',
+      }),
     },
     schema: [
       {
@@ -85,7 +92,9 @@ export const noDeprecatedApi = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
-    const { apis = [], warnDaysBeforeRemoval = 90 } = options;
+    const {
+apis = [], warnDaysBeforeRemoval = 90 
+}: Options = options || {};
 
     // Early return if no deprecated APIs configured
     if (!apis || apis.length === 0) {

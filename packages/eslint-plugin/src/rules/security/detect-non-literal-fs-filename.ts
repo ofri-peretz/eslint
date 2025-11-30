@@ -7,7 +7,7 @@
  * @see https://cwe.mitre.org/data/definitions/22.html
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { formatLLMMessage } from '@forge-js/eslint-plugin-utils';
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 
 type MessageIds =
@@ -105,11 +105,46 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
         fix: '{{safePattern}}',
         documentationLink: 'https://owasp.org/www-community/attacks/Path_Traversal',
       }),
-      usePathResolve: '✅ Use path.resolve() to normalize paths and prevent traversal',
-      validatePath: '✅ Validate resolved path starts with allowed base directory',
-      useBasename: '✅ Use path.basename() to strip directory components',
-      createSafeDir: '✅ Define SAFE_DIR constant for allowed file operations',
-      whitelistExtensions: '✅ Whitelist allowed file extensions'
+      usePathResolve: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use path.resolve',
+        description: 'Use path.resolve() to normalize paths',
+        severity: 'LOW',
+        fix: 'path.resolve(SAFE_DIR, userInput)',
+        documentationLink: 'https://nodejs.org/api/path.html#pathresolvepaths',
+      }),
+      validatePath: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Validate Path',
+        description: 'Validate resolved path starts with allowed base',
+        severity: 'LOW',
+        fix: 'if (!resolved.startsWith(SAFE_DIR)) throw new Error()',
+        documentationLink: 'https://owasp.org/www-community/attacks/Path_Traversal',
+      }),
+      useBasename: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use path.basename',
+        description: 'Use path.basename() to strip directory components',
+        severity: 'LOW',
+        fix: 'path.basename(userInput)',
+        documentationLink: 'https://nodejs.org/api/path.html#pathbasenamepath-suffix',
+      }),
+      createSafeDir: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Define Safe Directory',
+        description: 'Define SAFE_DIR constant',
+        severity: 'LOW',
+        fix: 'const SAFE_DIR = path.resolve(__dirname, "uploads")',
+        documentationLink: 'https://owasp.org/www-community/attacks/Path_Traversal',
+      }),
+      whitelistExtensions: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Whitelist Extensions',
+        description: 'Whitelist allowed file extensions',
+        severity: 'LOW',
+        fix: 'const ALLOWED_EXT = [".txt", ".pdf"]; if (!ALLOWED_EXT.includes(ext)) throw',
+        documentationLink: 'https://owasp.org/www-community/attacks/Path_Traversal',
+      })
     },
     schema: [
       {
@@ -146,9 +181,10 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      allowLiterals = false,
+allowLiterals = false,
       additionalMethods = []
-    } = options;
+    
+}: Options = options || {};
 
     /**
      * File system methods that can be dangerous with user input
@@ -200,7 +236,7 @@ export const detectNonLiteralFsFilename = createRule<RuleOptions, MessageIds>({
 
       // First argument is usually the path
       const pathNode = node.arguments.length > 0 ? node.arguments[0] : null;
-      const sourceCode = context.sourceCode || context.getSourceCode();
+      const sourceCode = context.sourceCode || context.sourceCode;
       const path = pathNode ? sourceCode.getText(pathNode) : '';
 
       return { path, pathNode, method, operation };

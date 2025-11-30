@@ -121,7 +121,14 @@ export const noInsecureCookieSettings = createRule<RuleOptions, MessageIds>({
         fix: '{{safeAlternative}}',
         documentationLink: 'https://cwe.mitre.org/data/definitions/614.html',
       }),
-      addSecureFlags: '✅ Set secure flags: { httpOnly: true, secure: true, sameSite: "strict" }',
+      addSecureFlags: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Add Secure Flags',
+        description: 'Set secure cookie flags',
+        severity: 'LOW',
+        fix: '{ httpOnly: true, secure: true, sameSite: "strict" }',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#security',
+      }),
     },
     schema: [
       {
@@ -167,7 +174,7 @@ export const noInsecureCookieSettings = createRule<RuleOptions, MessageIds>({
 
     const filename = context.getFilename();
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
 
     function checkObjectExpression(node: TSESTree.ObjectExpression) {
       if (isTestFile) {

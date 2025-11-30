@@ -79,6 +79,45 @@ messages: {
 - Forget severity/icon
 - Skip documentation
 
+## ESLint Rule Test Structure
+
+When writing ESLint rule tests using `@typescript-eslint/rule-tester`:
+
+### ✅ CORRECT: error.suggestions structure
+
+```typescript
+errors: [
+  {
+    messageId: 'ruleMessageId',
+    suggestions: [
+      {
+        messageId: 'suggestionMessageId',
+        output: 'Expected code after fix'
+      }
+    ]
+  }
+]
+```
+
+### ❌ WRONG: DO NOT use "desc" in suggestions
+
+```typescript
+// DO NOT DO THIS - "desc" is NOT supported in error.suggestions
+errors: [
+  {
+    messageId: 'ruleMessageId',
+    suggestions: [
+      {
+        desc: 'Description', // ❌ NOT SUPPORTED
+        output: 'Expected code after fix'
+      }
+    ]
+  }
+]
+```
+
+**REASON:** The TypeScript types for `SuggestionOutput<MessageIds>` do not include a `desc` property. ESLint rule tests must use `messageId` to reference suggestion messages defined in the rule's `messages` object.
+
 ## Reference Rules
 
 See `/src/rules/` for optimized examples:

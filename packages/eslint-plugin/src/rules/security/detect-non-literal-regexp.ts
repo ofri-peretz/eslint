@@ -106,11 +106,46 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
         fix: '{{safeAlternative}}',
         documentationLink: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
       }),
-      useStaticRegex: '✅ Use pre-defined RegExp constants instead of dynamic construction',
-      validateInput: '✅ Validate and escape user input before RegExp construction',
-      useRegexLibrary: '✅ Consider safe-regex library or re2 for validation',
-      addTimeout: '✅ Add timeout to regex operations',
-      escapeUserInput: '✅ Escape special regex characters: input.replace(/[.*+?^${}()|[\\]\\\\]/g, \'\\\\$&\')'
+      useStaticRegex: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Static Regex',
+        description: 'Use pre-defined RegExp constants',
+        severity: 'LOW',
+        fix: 'const PATTERN = /^[a-z]+$/; // Define at module level',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp',
+      }),
+      validateInput: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Validate Input',
+        description: 'Validate and escape user input',
+        severity: 'LOW',
+        fix: 'Validate input length and characters before RegExp',
+        documentationLink: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
+      }),
+      useRegexLibrary: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Safe Library',
+        description: 'Use safe-regex library or re2',
+        severity: 'LOW',
+        fix: 'import { isSafe } from "safe-regex"; if (isSafe(pattern)) ...',
+        documentationLink: 'https://github.com/substack/safe-regex',
+      }),
+      addTimeout: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Add Timeout',
+        description: 'Add timeout to regex operations',
+        severity: 'LOW',
+        fix: 'Use timeout wrapper for regex operations',
+        documentationLink: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
+      }),
+      escapeUserInput: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Escape Input',
+        description: 'Escape special regex characters',
+        severity: 'LOW',
+        fix: 'input.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping',
+      })
     },
     schema: [
       {
@@ -148,9 +183,10 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      allowLiterals = false,
+allowLiterals = false,
       maxPatternLength = 100
-    } = options;
+    
+}: Options = options || {};
 
     /**
      * Check if a node is a literal string (potentially safe)
@@ -179,7 +215,7 @@ export const detectNonLiteralRegexp = createRule<RuleOptions, MessageIds>({
       isDynamic: boolean;
       length: number;
     } => {
-      const sourceCode = context.sourceCode || context.getSourceCode();
+      const sourceCode = context.sourceCode || context.sourceCode;
 
       // Determine constructor type
       let constructor = 'RegExp';

@@ -6,7 +6,7 @@ import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 
-type MessageIds = 'unsafeDynamicRequire' | 'useStaticImport' | 'useAllowlist';
+type MessageIds = 'unsafeDynamicRequire';
 
 export interface Options {
   /** Allow dynamic import() expressions. Default: false (stricter) */
@@ -23,9 +23,8 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
       description: 'Prevent unsafe dynamic require() calls that could enable code injection',
     },
     fixable: 'code',
-    hasSuggestions: true,
+    hasSuggestions: false,
     messages: {
-      // 🎯 Token optimization: 40% reduction (54→32 tokens) - compact format for LLM efficiency
       unsafeDynamicRequire: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Dynamic require()',
@@ -35,8 +34,6 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
         fix: 'Use allowlist: const ALLOWED = ["mod1", "mod2"]; if (!ALLOWED.includes(name)) throw Error("Not allowed")',
         documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
       }),
-      useStaticImport: '✅ Use static import',
-      useAllowlist: '✅ Add path validation with allowlist',
     },
     schema: [
       {
@@ -57,8 +54,11 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    const options = context.options[0] || {};
+    const { allowDynamicImport = false } = options;
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
+
 
     /**
      * Track variables that reference require
@@ -118,17 +118,9 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
         // Check if dynamic
         if (!isDynamicArgument(firstArg)) return;
 
-        const argText = sourceCode.getText(firstArg);
-
         context.report({
           node,
           messageId: 'unsafeDynamicRequire',
-          data: {
-            risk: 'CRITICAL',
-            attack: 'Arbitrary Code Execution',
-            currentExample: `${sourceCode.getText(node.callee)}(${argText})`,
-            fixExample: `const ALLOWED = ['mod1', 'mod2']; if (!ALLOWED.includes(${argText})) throw new Error('Not allowed'); const mod = ${sourceCode.getText(node.callee)}(${argText});`,
-          },
         });
       },
     };

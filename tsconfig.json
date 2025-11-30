@@ -1,0 +1,74 @@
+{
+    "extends": "./tsconfig.base.json",
+    "compilerOptions": {
+        // Inherit all base options
+        "rootDir": ".",
+        "sourceMap": true,
+        "declaration": false,
+        "moduleResolution": "node16",
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "importHelpers": true,
+        "target": "ES2022",
+        "module": "esnext",
+        "lib": [
+            "ES2022",
+            "dom"
+        ],
+        "skipLibCheck": true,
+        "skipDefaultLibCheck": true,
+        "baseUrl": ".",
+        // Add strict type checking to catch build-time errors in IDE
+        "strict": true,
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "strictFunctionTypes": true,
+        "strictBindCallApply": true,
+        "strictPropertyInitialization": false, // Allow undefined properties in classes
+        "noImplicitThis": true,
+        "alwaysStrict": true,
+        "noUnusedLocals": false, // Allow unused locals (ESLint handles this)
+        "noUnusedParameters": false, // Allow unused parameters (ESLint handles this)
+        "exactOptionalPropertyTypes": false, // Too strict for current codebase
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUncheckedIndexedAccess": false, // Too strict for current codebase
+        "noImplicitOverride": true,
+        // JSX support
+        "jsx": "react-jsx",
+        "jsxImportSource": "react",
+        // Path mapping (inherit from base)
+        "paths": {
+            "@forge-js/eslint-plugin-llm-optimized": [
+                "packages/eslint-plugin/src/index.ts"
+            ],
+            "@forge-js/eslint-plugin-utils": [
+                "packages/eslint-plugin-utils/src/index.ts"
+            ],
+            "eslint-plugin-mcp": [
+                "packages/eslint-plugin-mcp/src/index.ts"
+            ],
+            "eslint-plugin-mcp-optimized": [
+                "packages/eslint-plugin-mcp-optimized/src/index.ts"
+            ]
+        }
+    },
+    // Include all TypeScript source files for comprehensive checking
+    "include": [
+        "packages/*/src/**/*",
+        "scripts/**/*",
+        "apps/*/src/**/*"
+    ],
+    // Exclude generated and external files
+    "exclude": [
+        "node_modules",
+        "tmp",
+        "dist",
+        "coverage",
+        "**/*.test.ts",
+        "**/*.spec.ts",
+        "**/*.d.ts",
+        "**/*.config.ts",
+        "**/*.config.js"
+    ]
+}

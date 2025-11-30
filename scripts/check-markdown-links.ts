@@ -8,9 +8,9 @@
  *   pnpm tsx scripts/check-markdown-links.ts
  */
 
-import { readFileSync, existsSync, statSync } from 'fs';
-import { join, dirname, resolve, relative } from 'path';
-import { execSync } from 'child_process';
+import { readFileSync, existsSync, statSync } from 'node:fs';
+import { join, dirname, resolve, relative } from 'node:path';
+import { execSync } from 'node:child_process';
 
 interface LinkIssue {
   file: string;
