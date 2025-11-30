@@ -1,3 +1,16 @@
+## [1.6.1] - 2025-11-30
+
+### 📚 Documentation
+
+- **Complete Rules Reference**: Added full rules reference with direct links to documentation
+- **GitHub Documentation Links**: All rule links now point directly to the main eslint-plugin documentation
+
+### ❤️ Thank You
+
+- Ofri Peretz
+
+---
+
 ## [1.6.0] - 2025-11-30
 
 ### 🚀 Features

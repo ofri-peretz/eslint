@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.6.1] - 2025-11-30
+
+### 📚 Documentation
+
+- **Complete Rules Reference**: Added full 137 rules reference with direct links to documentation
+- **"How We Differ" Section**: Added concrete before/after examples showing LLM-optimized vs traditional error messages
+- **GitHub Documentation Links**: All rule links now point directly to the main eslint-plugin documentation
+
+### ❤️ Thank You
+
+- Ofri Peretz
+
+---
+
 ## [2.6.0] - 2025-11-30
 
 ### 🚀 Features

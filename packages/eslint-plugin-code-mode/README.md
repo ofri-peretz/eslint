@@ -217,13 +217,65 @@ A: Yes. The structured messages help human developers too—every error teaches 
 
 ---
 
-## 📚 Full Documentation
+## 📚 Rules Reference (137 Rules)
 
-See the complete rule documentation at [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) for:
+💼 Set in `recommended` | ⚠️ Warns in `recommended` | 🔧 Auto-fixable | 💡 Editor suggestions
 
-- All 137 rules with detailed descriptions
-- Advanced configuration options
-- Integration guides
+> 📖 **Full documentation:** [github.com/ofri-peretz/forge-js/packages/eslint-plugin/docs](https://github.com/ofri-peretz/forge-js/tree/main/packages/eslint-plugin/docs)
+
+### Security (29 rules)
+
+| Name | Description | 💼 | ⚠️ | 🔧 | 💡 |
+|------|-------------|---|---|---|---|
+| [no-sql-injection](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-sql-injection.md) | Prevent SQL injection | 💼 | | | |
+| [database-injection](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/database-injection.md) | Injection detection (SQL, NoSQL, ORM) | 💼 | | | |
+| [detect-eval-with-expression](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/detect-eval-with-expression.md) | Detect eval() (RCE prevention) | 💼 | | | |
+| [detect-child-process](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/detect-child-process.md) | Detect command injection | 💼 | | | |
+| [detect-non-literal-fs-filename](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/detect-non-literal-fs-filename.md) | Detect path traversal | 💼 | | | |
+| [detect-non-literal-regexp](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/detect-non-literal-regexp.md) | Detect ReDoS vulnerabilities | 💼 | | | |
+| [detect-object-injection](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/detect-object-injection.md) | Detect prototype pollution | 💼 | | | |
+| [no-unsafe-dynamic-require](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unsafe-dynamic-require.md) | Forbid dynamic require() | 💼 | | | |
+| [no-hardcoded-credentials](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-hardcoded-credentials.md) | Detect hardcoded credentials | 💼 | | | |
+| [no-weak-crypto](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-weak-crypto.md) | Detect weak cryptography | 💼 | | | |
+
+[View all 29 security rules →](https://github.com/ofri-peretz/forge-js/tree/main/packages/eslint-plugin/docs/rules)
+
+### Architecture (28 rules)
+
+| Name | Description | 💼 | ⚠️ | 🔧 | 💡 |
+|------|-------------|---|---|---|---|
+| [no-circular-dependencies](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-circular-dependencies.md) | Detect circular deps | | | | |
+| [no-internal-modules](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-internal-modules.md) | Forbid internal imports | | | | |
+| [no-cross-domain-imports](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-cross-domain-imports.md) | Prevent cross-domain | | | | 💡 |
+| [enforce-dependency-direction](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/enforce-dependency-direction.md) | Enforce dep direction | | | | 💡 |
+| [prefer-node-protocol](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/prefer-node-protocol.md) | Enforce node: | | ⚠️ | 🔧 | |
+
+[View all 28 architecture rules →](https://github.com/ofri-peretz/forge-js/tree/main/packages/eslint-plugin/docs/rules)
+
+### React (41 rules)
+
+| Name | Description | 💼 | ⚠️ | 🔧 | 💡 |
+|------|-------------|---|---|---|---|
+| [hooks-exhaustive-deps](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/hooks-exhaustive-deps.md) | Exhaustive hook deps | | ⚠️ | | 💡 |
+| [required-attributes](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/required-attributes.md) | Required attributes | | | 🔧 | |
+| [jsx-key](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/jsx-key.md) | Missing React keys | | | | 💡 |
+| [no-direct-mutation-state](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-direct-mutation-state.md) | No state mutation | | | | 💡 |
+| [require-optimization](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/require-optimization.md) | Require optimizations | | ⚠️ | | 💡 |
+
+[View all 41 React rules →](https://github.com/ofri-peretz/forge-js/tree/main/packages/eslint-plugin/docs/rules)
+
+### Development (7 rules)
+
+| Name | Description | 💼 | ⚠️ | 🔧 | 💡 |
+|------|-------------|---|---|---|---|
+| [no-console-log](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-console-log.md) | Disallow console.log | | ⚠️ | 🔧 | |
+| [prefer-dependency-version-strategy](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/prefer-dependency-version-strategy.md) | Version strategy | | ⚠️ | 🔧 | |
+
+[View all 7 development rules →](https://github.com/ofri-peretz/forge-js/tree/main/packages/eslint-plugin/docs/rules)
+
+### Performance, Code Quality, Error Handling, Accessibility & More
+
+[Browse all 137 rules →](https://github.com/ofri-peretz/forge-js/tree/main/packages/eslint-plugin/docs/rules)
 
 ---
 
