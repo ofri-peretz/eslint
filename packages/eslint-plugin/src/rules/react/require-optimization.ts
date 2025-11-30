@@ -228,7 +228,7 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
               });
             }
           } else if (currentNode.type === 'CallExpression' && currentNode.arguments) {
-            currentNode.arguments.forEach((arg: TSESTree.Expression) => {
+            currentNode.arguments.forEach((arg) => {
               if (arg.type !== 'SpreadElement') {
                 analyzeNode(arg, depth + 1, visited);
               }
