@@ -25,7 +25,7 @@ export const errorMessage = createRule<RuleOptions, MessageIds>({
     hasSuggestions: true,
     messages: {
       missingErrorMessage: formatLLMMessage({
-        icon: MessageIcons.ERROR,
+        icon: MessageIcons.INFO,
         issueName: 'Missing Error Message',
         description: 'Error constructor called without message parameter',
         severity: 'HIGH',
@@ -33,7 +33,7 @@ export const errorMessage = createRule<RuleOptions, MessageIds>({
         documentationLink: 'https://github.com/sindresorhus/eslint-plugin-unicorn/blob/main/docs/rules/error-message.md',
       }),
       addErrorMessage: formatLLMMessage({
-        icon: MessageIcons.ERROR,
+        icon: MessageIcons.WARNING,
         issueName: 'Add Error Message',
         description: 'Add descriptive error message to constructor',
         severity: 'HIGH',

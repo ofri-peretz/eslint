@@ -25,7 +25,7 @@ export const noProcessExit = createRule<RuleOptions, MessageIds>({
     hasSuggestions: false,
     messages: {
       noProcessExit: formatLLMMessage({
-        icon: MessageIcons.ERROR,
+        icon: MessageIcons.WARNING,
         issueName: 'Process Exit',
         description: 'Avoid using process.exit()',
         severity: 'HIGH',
@@ -73,7 +73,7 @@ export const noProcessExit = createRule<RuleOptions, MessageIds>({
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        if (isProcessExitCall(node) && !isInAllowedContext(node)) {
+        if (isProcessExitCall(node) && !isInAllowedContext()) {
           context.report({
             node,
             messageId: 'noProcessExit',

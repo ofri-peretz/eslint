@@ -200,7 +200,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         // Traverse children
         for (const key of Object.keys(n)) {
           if (skipKeys.has(key)) continue;
-          const child = (n as Record<string, unknown>)[key];
+          const child = (n as unknown as Record<string, unknown>)[key];
           if (child && typeof child === 'object') {
             if (Array.isArray(child)) {
               child.forEach((c) => {
@@ -270,7 +270,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
             continue;
           }
           
-          const child = (n as Record<string, unknown>)[key];
+          const child = (n as unknown as Record<string, unknown>)[key];
           if (child && typeof child === 'object') {
             if (Array.isArray(child)) {
               child.forEach((c) => {
@@ -495,7 +495,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
                 data: { dep },
                 fix(fixer: TSESLint.RuleFixer) {
                   const element = depsArg.elements.find(
-                    (el) => el?.type === 'Identifier' && el.name === dep
+                    (el: TSESTree.Expression | TSESTree.SpreadElement | null) => el?.type === 'Identifier' && el.name === dep
                   );
                   if (element) {
                     const index = depsArg.elements.indexOf(element);

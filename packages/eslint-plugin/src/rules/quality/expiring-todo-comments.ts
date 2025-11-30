@@ -49,7 +49,7 @@ export const expiringTodoComments = createRule<RuleOptions, MessageIds>({
         documentationLink: 'https://github.com/sindresorhus/eslint-plugin-unicorn/blob/main/docs/rules/expiring-todo-comments.md',
       }),
       invalidTodoCondition: formatLLMMessage({
-        icon: MessageIcons.ERROR,
+        icon: MessageIcons.WARNING,
         issueName: 'Invalid TODO Condition',
         description: '{{term}} TODO comment has invalid condition format',
         severity: 'MEDIUM',
@@ -57,7 +57,7 @@ export const expiringTodoComments = createRule<RuleOptions, MessageIds>({
         documentationLink: 'https://github.com/sindresorhus/eslint-plugin-unicorn/blob/main/docs/rules/expiring-todo-comments.md',
       }),
       multipleTodoConditions: formatLLMMessage({
-        icon: MessageIcons.ERROR,
+        icon: MessageIcons.WARNING,
         issueName: 'Multiple TODO Conditions',
         description: 'TODO comment has multiple conditions',
         severity: 'MEDIUM',

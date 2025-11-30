@@ -48,7 +48,7 @@ export const displayName = createRule<RuleOptions, MessageIds>({
       // Check function components
       'VariableDeclarator, FunctionDeclaration'(node: TSESTree.VariableDeclarator | TSESTree.FunctionDeclaration) {
         const component = getComponentFromDeclaration(node);
-        if (component && isReactComponentFunction(component) && !hasDisplayNameInScope(component)) {
+        if (component && isReactComponentFunction(component) && !hasDisplayNameInScope()) {
           context.report({
             node: getComponentNameNode(node),
             messageId: 'displayName',

@@ -160,7 +160,6 @@ export const noSqlInjection = createRule<RuleOptions, MessageIds>({
     const opts = context.options[0] || {};
     const { 
       allowDynamicTableNames = false, 
-      strategy: _strategy = 'auto',
       trustedSanitizers = [],
       trustedAnnotations = [],
       trustedOrmPatterns = [],

@@ -29,7 +29,7 @@ describe('ESLint Plugin Configurations', () => {
 
     it('should have plugin defined', () => {
       expect(reactModernConfig.plugins).toBeDefined();
-      expect(reactModernConfig.plugins!['@forge-js/llm-optimized']).toBeDefined();
+      expect(reactModernConfig.plugins?.['@forge-js/llm-optimized']).toBeDefined();
     });
 
     it('should have rules defined', () => {
@@ -37,7 +37,7 @@ describe('ESLint Plugin Configurations', () => {
     });
 
     describe('hooks-focused rules (enabled)', () => {
-      const rules = reactModernConfig.rules!;
+      const rules = reactModernConfig.rules ?? {};
 
       it('should enable performance rules for React hooks', () => {
         expect(rules['@forge-js/llm-optimized/performance/react-no-inline-functions']).toBe('warn');
@@ -69,7 +69,7 @@ describe('ESLint Plugin Configurations', () => {
     });
 
     describe('class component rules (disabled)', () => {
-      const rules = reactModernConfig.rules!;
+      const rules = reactModernConfig.rules ?? {};
 
       it('should disable class-specific setState rules', () => {
         expect(rules['@forge-js/llm-optimized/react/no-set-state']).toBe('off');
@@ -130,7 +130,7 @@ describe('ESLint Plugin Configurations', () => {
     });
 
     it('should include migration rule for class-to-hooks', () => {
-      expect(reactConfig.rules!['@forge-js/llm-optimized/migration/react-class-to-hooks']).toBe('warn');
+      expect(reactConfig.rules?.['@forge-js/llm-optimized/migration/react-class-to-hooks']).toBe('warn');
     });
   });
 
@@ -154,7 +154,7 @@ describe('ESLint Plugin Configurations', () => {
     });
 
     it('should include React performance rules', () => {
-      const rules = performanceConfig.rules!;
+      const rules = performanceConfig.rules ?? {};
       expect(rules['@forge-js/llm-optimized/performance/react-no-inline-functions']).toBe('warn');
       expect(rules['@forge-js/llm-optimized/performance/react-render-optimization']).toBe('warn');
       expect(rules['@forge-js/llm-optimized/performance/no-unnecessary-rerenders']).toBe('warn');

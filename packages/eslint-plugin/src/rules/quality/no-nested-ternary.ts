@@ -119,15 +119,15 @@ export const noNestedTernary = createRule<RuleOptions, MessageIds>({
         // For other expression types, check their child expressions
         switch (expr.type) {
           case 'ArrayExpression':
-            return expr.elements.some(element => 
+            return expr.elements.some((element: TSESTree.Expression | TSESTree.SpreadElement | null) => 
               element && element.type !== 'SpreadElement' && containsTernary(element)
             );
           case 'ObjectExpression':
-            return expr.properties.some(prop =>
-              prop.type === 'Property' && prop.value && containsTernary(prop.value)
+            return expr.properties.some((prop: TSESTree.Property | TSESTree.SpreadElement) =>
+              prop.type === 'Property' && prop.value && containsTernary(prop.value as TSESTree.Expression)
             );
           case 'CallExpression':
-            return expr.arguments.some(arg => 
+            return expr.arguments.some((arg: TSESTree.Expression | TSESTree.SpreadElement) => 
               arg.type !== 'SpreadElement' && containsTernary(arg)
             ) || (expr.callee.type !== 'Super' && containsTernary(expr.callee));
           case 'MemberExpression':
@@ -152,11 +152,11 @@ export const noNestedTernary = createRule<RuleOptions, MessageIds>({
             return false;
           // For template literals, check expressions
           case 'TemplateLiteral':
-            return expr.expressions.some(exp => containsTernary(exp));
+            return expr.expressions.some((exp: TSESTree.Expression) => containsTernary(exp));
           // For tagged templates, check tag and expressions
           case 'TaggedTemplateExpression':
             return containsTernary(expr.tag) ||
-                   expr.quasi.expressions.some(exp => containsTernary(exp));
+                   expr.quasi.expressions.some((exp: TSESTree.Expression) => containsTernary(exp));
           // Default: assume no nested expressions for unknown types
           default:
             return false;
@@ -167,7 +167,7 @@ export const noNestedTernary = createRule<RuleOptions, MessageIds>({
     }
 
     return {
-      ConditionalExpression(node) {
+      ConditionalExpression(node: TSESTree.ConditionalExpression) {
         if (hasNestedTernary(node) && !isInAllowedContext(node)) {
           context.report({
             node,

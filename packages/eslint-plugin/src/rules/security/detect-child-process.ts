@@ -222,7 +222,6 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       allowLiteralStrings = false,
       allowLiteralSpawn = false,
       additionalMethods = [],
-      strategy = 'auto'
     }: Options = options || {};
 
     /**

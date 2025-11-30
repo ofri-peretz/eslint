@@ -772,26 +772,26 @@ function tarjanStrongConnect(
       tarjanStrongConnect(successor, state, options, depth + 1);
       state.lowlinks.set(
         file,
-        Math.min(state.lowlinks.get(file)!, state.lowlinks.get(successor)!)
+        Math.min(state.lowlinks?.get(file) ?? 0, state.lowlinks?.get(successor) ?? 0)
       );
     } else if (state.onStack.has(successor)) {
       // Successor is in stack and hence in the current SCC
-      state.lowlinks.set(
-        file,
-        Math.min(state.lowlinks.get(file)!, state.indices.get(successor)!)
-      );
+      state.lowlinks.set(file, Math.min(state.lowlinks.get(file) ?? 0, state.indices.get(successor) ?? 0));
     }
   }
-
+  const lowlink = state.lowlinks.get(file);
+  const index = state.indices.get(file);
   // If file is a root node, pop the stack and generate an SCC
-  if (state.lowlinks.get(file) === state.indices.get(file)) {
+  if (lowlink === index) {
     const scc: string[] = [];
-    let w: string;
+    let w: string | undefined;
     do {
-      w = state.stack.pop()!;
-      state.onStack.delete(w);
-      scc.push(w);
-    } while (w !== file);
+      w = state.stack.pop();
+      if (w) {
+        state.onStack.delete(w);
+        scc.push(w);
+      }
+    } while (w && w !== file);
 
     // Only store SCCs (single nodes aren't cycles, but we track them for completeness)
     state.sccs.push(scc);

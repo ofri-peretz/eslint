@@ -402,55 +402,28 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
       
       while (current.parent) {
         const parent: TSESTree.Node = current.parent;
+        const grandParent: TSESTree.Node | undefined = parent.parent;
         
-        // Check arrow function expression
+        // Check arrow function expression - isIteratorCall already handles Array.from
         if (
           parent.type === 'ArrowFunctionExpression' &&
           parent.params.length > 0 &&
-          parent.params[0].type === 'Identifier'
+          parent.params[0].type === 'Identifier' &&
+          grandParent &&
+          isIteratorCall(grandParent)
         ) {
-          // Check if this arrow function is the callback for any iterator pattern
-          if (parent.parent && isIteratorCall(parent.parent)) {
-            return parent.params[0].name;
-          }
-          // Check for Array.from's 2nd argument
-          const grandParent1 = parent.parent;
-          if (
-            grandParent1?.type === 'CallExpression' &&
-            grandParent1.callee.type === 'MemberExpression' &&
-            grandParent1.callee.object.type === 'Identifier' &&
-            grandParent1.callee.object.name === 'Array' &&
-            grandParent1.callee.property.type === 'Identifier' &&
-            grandParent1.callee.property.name === 'from' &&
-            grandParent1.arguments[1] === parent
-          ) {
-            return parent.params[0].name;
-          }
+          return parent.params[0].name;
         }
         
-        // Check function expression
+        // Check function expression - isIteratorCall already handles Array.from
         if (
           parent.type === 'FunctionExpression' &&
           parent.params.length > 0 &&
-          parent.params[0].type === 'Identifier'
+          parent.params[0].type === 'Identifier' &&
+          grandParent &&
+          isIteratorCall(grandParent)
         ) {
-          // Check if this function is the callback for any iterator pattern
-          if (parent.parent && isIteratorCall(parent.parent)) {
-            return parent.params[0].name;
-          }
-          // Check for Array.from's 2nd argument
-          const grandParent2 = parent.parent;
-          if (
-            grandParent2?.type === 'CallExpression' &&
-            grandParent2.callee.type === 'MemberExpression' &&
-            grandParent2.callee.object.type === 'Identifier' &&
-            grandParent2.callee.object.name === 'Array' &&
-            grandParent2.callee.property.type === 'Identifier' &&
-            grandParent2.callee.property.name === 'from' &&
-            grandParent2.arguments[1] === parent
-          ) {
-            return parent.params[0].name;
-          }
+          return parent.params[0].name;
         }
         
         // Check block statement -> return -> function
@@ -493,7 +466,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
 
       // Check for key prop
       const keyProp = node.openingElement.attributes.find(
-        attr => attr.type === 'JSXAttribute' &&
+        (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) => attr.type === 'JSXAttribute' &&
                 attr.name.type === 'JSXIdentifier' &&
                 attr.name.name === 'key'
       );

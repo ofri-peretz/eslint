@@ -86,7 +86,7 @@ export const noLonelyIf = createRule<RuleOptions, MessageIds>({
 
     return {
       IfStatement(node: TSESTree.IfStatement) {
-        if (isLonelyIf(node) && !isInAllowedContext(node)) {
+        if (isLonelyIf(node) && !isInAllowedContext()) {
           context.report({
             node,
             messageId: 'noLonelyIf',

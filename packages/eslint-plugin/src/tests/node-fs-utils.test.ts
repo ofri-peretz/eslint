@@ -10,8 +10,6 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 import {
   type FileSystemCache,
-  type ImportInfo,
-  type IncrementalOptions,
   type PersistentCacheData,
   createFileSystemCache,
   clearCache,
@@ -179,7 +177,7 @@ describe('fs-utils', () => {
     it('should return true when file hash matches cached hash', () => {
       const filePath = createTempFile('test.ts', 'content');
       const hash = getFileHash(filePath);
-      cache.fileHashes.set(filePath, hash!);
+      if (hash) cache.fileHashes.set(filePath, hash);
 
       const valid = isCacheValid(filePath, cache);
 
@@ -189,7 +187,7 @@ describe('fs-utils', () => {
     it('should return false when file has been modified', () => {
       const filePath = createTempFile('test.ts', 'original content');
       const originalHash = getFileHash(filePath);
-      cache.fileHashes.set(filePath, originalHash!);
+      if (originalHash) cache.fileHashes.set(filePath, originalHash);
 
       // Modify the file (change content and size)
       fs.writeFileSync(filePath, 'modified content with more text', 'utf-8');
@@ -870,7 +868,7 @@ import type { Data } from './data';
         'src/a.ts',
         `const b = import('./b');` // Dynamic import
       );
-      const fileB = createTempFile(
+      createTempFile(
         'src/b.ts',
         `import { a } from './a';` // Static import back
       );
@@ -896,8 +894,8 @@ import { b } from './b';
 import { c } from './c';
       `
       );
-      const fileB = createTempFile('src/b.ts', `import { a } from './a';`);
-      const fileC = createTempFile('src/c.ts', `import { a } from './a';`);
+      createTempFile('src/b.ts', `import { a } from './a';`);
+      createTempFile('src/c.ts', `import { a } from './a';`);
 
       const cycles = findAllCircularDependencies(fileA, {
         maxDepth: 10,
@@ -1270,7 +1268,7 @@ import { c } from './c';
 
     it('should stop at first match (not continue to parent)', () => {
       // Create package.json in both parent and child
-      const parentPkg = createTempFile(
+      createTempFile(
         'package.json',
         '{"name": "parent"}'
       );
@@ -1573,7 +1571,7 @@ import { c } from './c';
 
     it('should clear resolvedPaths when cache is cleared', () => {
       const fileA = createTempFile('src/a.ts', 'export const a = 1;');
-      const fileB = createTempFile('src/b.ts', 'export const b = 2;');
+      createTempFile('src/b.ts', 'export const b = 2;');
       
       resolveImportPath('./b', {
         fromFile: fileA,
@@ -1600,7 +1598,7 @@ import { c } from './c';
     it('should cache files that are not in any cycle', () => {
       // Create non-cyclic files
       const fileA = createTempFile('src/a.ts', 'import { b } from "./b";');
-      const fileB = createTempFile('src/b.ts', 'export const b = 1;');
+      createTempFile('src/b.ts', 'export const b = 1;');
       
       const cycles = findAllCircularDependencies(fileA, {
         maxDepth: 10,
@@ -1618,7 +1616,7 @@ import { c } from './c';
     it('should not cache files that are in a cycle', () => {
       // Create cyclic files
       const fileA = createTempFile('src/a.ts', 'import { b } from "./b";');
-      const fileB = createTempFile('src/b.ts', 'import { a } from "./a";');
+      createTempFile('src/b.ts', 'import { a } from "./a";');
       
       const cycles = findAllCircularDependencies(fileA, {
         maxDepth: 10,
@@ -1636,7 +1634,7 @@ import { c } from './c';
     it('should skip cycle detection for known non-cyclic files', () => {
       // Create non-cyclic files
       const fileA = createTempFile('src/a.ts', 'import { b } from "./b";');
-      const fileB = createTempFile('src/b.ts', 'export const b = 1;');
+      createTempFile('src/b.ts', 'export const b = 1;');
       
       // First call should compute and cache
       findAllCircularDependencies(fileA, {

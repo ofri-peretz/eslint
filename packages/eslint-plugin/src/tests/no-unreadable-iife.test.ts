@@ -22,18 +22,6 @@ const ruleTester = new RuleTester({
   },
 });
 
-// Common suggestions structure for all invalid cases
-const commonSuggestions = [
-  {
-    messageId: 'suggestNamedFunction',
-    output: '// TODO: Extract complex IIFE to named function\n(function() { const a = 1; const b = 2; const c = 3; const d = 4; })();',
-  },
-  {
-    messageId: 'suggestBlockScope',
-    output: '// TODO: Consider using block scope { const x = ...; }\n(function() { const a = 1; const b = 2; const c = 3; const d = 4; })();',
-  },
-];
-
 describe('no-unreadable-iife', () => {
   describe('Basic IIFE detection', () => {
     ruleTester.run('detect simple IIFEs', noUnreadableIife, {

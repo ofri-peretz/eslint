@@ -111,7 +111,7 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
 
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options] = context.options;
-    const { allowForOf = false, allowWhile = false, checkConcurrency = true } = options || {};
+    const { allowForOf = false, allowWhile = false } = options || {};
 
     function analyzeLoop(node: TSESTree.Node, loopType: string) {
       // Skip allowed loop types

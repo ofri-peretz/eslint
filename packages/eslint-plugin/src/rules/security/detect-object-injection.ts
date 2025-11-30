@@ -230,7 +230,6 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     const {
       allowLiterals = false,
       dangerousProperties = ['__proto__', 'prototype', 'constructor'],
-      strategy = 'auto'
     }: Options = options || {};
 
     // Track MemberExpressions that are part of AssignmentExpressions to avoid double-reporting

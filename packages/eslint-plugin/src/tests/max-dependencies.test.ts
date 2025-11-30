@@ -22,21 +22,6 @@ const ruleTester = new RuleTester({
   },
 });
 
-// Helper to create error with suggestions (output is computed based on code)
-const createError = (code: string) => ({
-  messageId: 'maxDependencies' as const,
-  suggestions: [
-    {
-      messageId: 'suggestRefactor' as const,
-      output: `// TODO: Module has ${code.match(/import|require/g)?.length || 0} dependencies (max: ${code.includes('max:') ? code.match(/max:\s*(\d+)/)?.[1] : '10'}). Consider splitting into smaller modules.\n${code}`,
-    },
-    {
-      messageId: 'dependencyAnalysis' as const,
-      output: `// TODO: Review dependencies: ${code.match(/from ['"]([^'"]+)['"]/g)?.map(m => m.match(/['"]([^'"]+)['"]/)?.[1]).filter(Boolean).join(', ')}. Are all needed?\n${code}`,
-    },
-  ],
-});
-
 describe('max-dependencies', () => {
   describe('Basic dependency counting', () => {
     ruleTester.run('count dependencies correctly', maxDependencies, {

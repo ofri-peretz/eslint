@@ -123,7 +123,7 @@ function isExpensiveComputation(
       }
     }
     
-    current = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+    current = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent ?? null;
     depth++;
   }
   
@@ -281,8 +281,7 @@ detectInlineProps = true,
           suggest: [
             {
               messageId: 'useMemo',
-              // eslint-disable-next-line @typescript-eslint/no-empty-function
-              fix: () => {},
+              fix: () => null,
             },
           ],
         });
@@ -319,8 +318,7 @@ detectInlineProps = true,
           suggest: [
             {
               messageId: 'useCallback',
-              // eslint-disable-next-line @typescript-eslint/no-empty-function
-              fix: () => {},
+              fix: () => null,
             },
           ],
         });
@@ -339,8 +337,7 @@ detectInlineProps = true,
           suggest: [
             {
               messageId: 'useMemo',
-              // eslint-disable-next-line @typescript-eslint/no-empty-function
-              fix: () => {},
+              fix: () => null,
             },
           ],
         });

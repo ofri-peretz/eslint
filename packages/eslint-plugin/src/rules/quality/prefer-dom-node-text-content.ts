@@ -101,7 +101,7 @@ export const preferDomNodeTextContent = createRule<RuleOptions, MessageIds>({
 
     return {
       MemberExpression(node: TSESTree.MemberExpression) {
-        if (isInnerTextAccess(node) && isLikelyDomElement(node) && !isInAllowedContext(node)) {
+        if (isInnerTextAccess(node) && isLikelyDomElement(node) && !isInAllowedContext()) {
           context.report({
             node,
             messageId: 'preferDomNodeTextContent',

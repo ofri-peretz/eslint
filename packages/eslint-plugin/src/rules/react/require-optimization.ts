@@ -140,8 +140,7 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
       const componentName = node.type === 'FunctionDeclaration' ? node.id?.name : 'AnonymousComponent';
       if (!componentName) return;
 
-      const sourceCode = context.sourceCode;
-      const linesOfCode = sourceCode.getLines(node).length;
+      const linesOfCode = node.loc ? node.loc.end.line - node.loc.start.line + 1 : 0;
 
       // Count props from function parameters
       let propsCount = 0;
@@ -230,7 +229,9 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
             }
           } else if (currentNode.type === 'CallExpression' && currentNode.arguments) {
             currentNode.arguments.forEach((arg: TSESTree.Expression) => {
-              analyzeNode(arg, depth + 1, visited);
+              if (arg.type !== 'SpreadElement') {
+                analyzeNode(arg, depth + 1, visited);
+              }
             });
           } else if (currentNode.type === 'VariableDeclaration' && currentNode.declarations) {
             currentNode.declarations.forEach((decl: TSESTree.VariableDeclarator) => {
@@ -306,8 +307,8 @@ export const requireOptimization = createRule<RuleOptions, MessageIds>({
             member.key.name === 'render' &&
             member.value.body) {
 
-          const sourceCode = context.sourceCode;
-          linesOfCode = sourceCode.getLines(member.value.body).length;
+          const body = member.value.body;
+          linesOfCode = body.loc ? body.loc.end.line - body.loc.start.line + 1 : 0;
 
           function analyzeRenderNode(currentNode: TSESTree.Node, depth = 0, visited = new Set<TSESTree.Node>()) {
             // Prevent infinite recursion
