@@ -38,9 +38,30 @@ export const imgRequiresAlt = createRule<RuleOptions, MessageIds>({
         fix: 'Add alt="Descriptive text about image"',
         documentationLink: 'https://www.w3.org/WAI/tutorials/images/',
       }),
-      emptyAlt: '♿ Empty alt text detected | Consider: {{consideration}}',
-      addDescriptiveAlt: '✅ Add descriptive alt text',
-      useEmptyAlt: '✅ Use empty alt="" for decorative images',
+      emptyAlt: formatLLMMessage({
+        icon: MessageIcons.ACCESSIBILITY,
+        issueName: 'Empty Alt Text',
+        description: 'Empty alt text detected',
+        severity: 'LOW',
+        fix: 'Consider: {{consideration}}',
+        documentationLink: 'https://www.w3.org/WAI/tutorials/images/decorative/',
+      }),
+      addDescriptiveAlt: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Add Descriptive Alt',
+        description: 'Add descriptive alt text',
+        severity: 'LOW',
+        fix: 'alt="Descriptive text about image content"',
+        documentationLink: 'https://www.w3.org/WAI/tutorials/images/informative/',
+      }),
+      useEmptyAlt: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Empty Alt',
+        description: 'Use empty alt for decorative images',
+        severity: 'LOW',
+        fix: 'alt="" (for decorative images only)',
+        documentationLink: 'https://www.w3.org/WAI/tutorials/images/decorative/',
+      }),
     },
     schema: [
       {

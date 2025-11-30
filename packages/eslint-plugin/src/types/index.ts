@@ -26,6 +26,21 @@ import type { Options as NoInternalModulesOptions } from '../rules/architecture/
 import type { Options as NoExternalApiCallsInUtilsOptions } from '../rules/architecture/no-external-api-calls-in-utils';
 import type { Options as NoCrossDomainImportsOptions } from '../rules/architecture/no-cross-domain-imports';
 import type { Options as EnforceDependencyDirectionOptions } from '../rules/architecture/enforce-dependency-direction';
+import type { Options as PreferNodeProtocolOptions } from '../rules/architecture/prefer-node-protocol';
+import type { Options as ConsistentExistenceIndexCheckOptions } from '../rules/architecture/consistent-existence-index-check';
+import type { Options as PreferEventTargetOptions } from '../rules/architecture/prefer-event-target';
+import type { Options as PreferAtOptions } from '../rules/architecture/prefer-at';
+import type { Options as NoUnreadableIifeOptions } from '../rules/architecture/no-unreadable-iife';
+import type { Options as NoAwaitInLoopOptions } from '../rules/architecture/no-await-in-loop';
+import type { Options as NoSelfImportOptions } from '../rules/architecture/no-self-import';
+import type { Options as NoUnusedModulesOptions } from '../rules/architecture/no-unused-modules';
+import type { Options as NoExtraneousDependenciesOptions } from '../rules/architecture/no-extraneous-dependencies';
+import type { Options as MaxDependenciesOptions } from '../rules/architecture/max-dependencies';
+import type { Options as NoAnonymousDefaultExportOptions } from '../rules/architecture/no-anonymous-default-export';
+import type { Options as NoRestrictedPathsOptions } from '../rules/architecture/no-restricted-paths';
+import type { Options as NoDeprecatedOptions } from '../rules/architecture/no-deprecated';
+import type { Options as NoMutableExportsOptions } from '../rules/architecture/no-mutable-exports';
+import type { Options as PreferDefaultExportOptions } from '../rules/architecture/prefer-default-export';
 
 // Complexity
 import type { Options as CognitiveComplexityOptions } from '../rules/complexity/cognitive-complexity';
@@ -65,6 +80,9 @@ import type { Options as EnforceRestConventionsOptions } from '../rules/api/enfo
 
 // React
 import type { Options as RequiredAttributesOptions } from '../rules/react/required-attributes';
+import type { Options as JsxKeyOptions } from '../rules/react/jsx-key';
+import type { Options as NoDirectMutationStateOptions } from '../rules/react/no-direct-mutation-state';
+import type { Options as RequireOptimizationOptions } from '../rules/react/require-optimization';
 
 // Security
 import type { Options as DatabaseInjectionOptions } from '../rules/security/database-injection';
@@ -120,6 +138,21 @@ export type {
   NoExternalApiCallsInUtilsOptions,
   NoCrossDomainImportsOptions,
   EnforceDependencyDirectionOptions,
+  PreferNodeProtocolOptions,
+  ConsistentExistenceIndexCheckOptions,
+  PreferEventTargetOptions,
+  PreferAtOptions,
+  NoUnreadableIifeOptions,
+  NoAwaitInLoopOptions,
+  NoSelfImportOptions,
+  NoUnusedModulesOptions,
+  NoExtraneousDependenciesOptions,
+  MaxDependenciesOptions,
+  NoAnonymousDefaultExportOptions,
+  NoRestrictedPathsOptions,
+  NoDeprecatedOptions,
+  NoMutableExportsOptions,
+  PreferDefaultExportOptions,
   // Complexity
   CognitiveComplexityOptions,
   NestedComplexityHotspotsOptions,
@@ -148,6 +181,9 @@ export type {
   EnforceRestConventionsOptions,
   // React
   RequiredAttributesOptions,
+  JsxKeyOptions,
+  NoDirectMutationStateOptions,
+  RequireOptimizationOptions,
   // Security
   DatabaseInjectionOptions,
   DetectChildProcessOptions,
@@ -215,6 +251,23 @@ export type AllRulesOptions = {
   'no-circular-dependencies'?: NoCircularDependenciesOptions;
   'no-internal-modules'?: NoInternalModulesOptions;
   'no-external-api-calls-in-utils'?: NoExternalApiCallsInUtilsOptions;
+  'no-cross-domain-imports'?: NoCrossDomainImportsOptions;
+  'enforce-dependency-direction'?: EnforceDependencyDirectionOptions;
+  'prefer-node-protocol'?: PreferNodeProtocolOptions;
+  'consistent-existence-index-check'?: ConsistentExistenceIndexCheckOptions;
+  'prefer-event-target'?: PreferEventTargetOptions;
+  'prefer-at'?: PreferAtOptions;
+  'no-unreadable-iife'?: NoUnreadableIifeOptions;
+  'no-await-in-loop'?: NoAwaitInLoopOptions;
+  'no-self-import'?: NoSelfImportOptions;
+  'no-unused-modules'?: NoUnusedModulesOptions;
+  'no-extraneous-dependencies'?: NoExtraneousDependenciesOptions;
+  'max-dependencies'?: MaxDependenciesOptions;
+  'no-anonymous-default-export'?: NoAnonymousDefaultExportOptions;
+  'no-restricted-paths'?: NoRestrictedPathsOptions;
+  'no-deprecated'?: NoDeprecatedOptions;
+  'no-mutable-exports'?: NoMutableExportsOptions;
+  'prefer-default-export'?: PreferDefaultExportOptions;
   // Complexity
   'cognitive-complexity'?: CognitiveComplexityOptions;
   // Deprecation
@@ -238,6 +291,9 @@ export type AllRulesOptions = {
   'react-render-optimization'?: ReactRenderOptimizationOptions;
   // React
   'required-attributes'?: RequiredAttributesOptions;
+  'jsx-key'?: JsxKeyOptions;
+  'no-direct-mutation-state'?: NoDirectMutationStateOptions;
+  'require-optimization'?: RequireOptimizationOptions;
   // Security
   'database-injection'?: DatabaseInjectionOptions;
   'detect-child-process'?: DetectChildProcessOptions;
@@ -259,6 +315,7 @@ export type AllRulesOptions = {
   'no-privilege-escalation'?: NoPrivilegeEscalationOptions;
   'no-redos-vulnerable-regex'?: NoRedosVulnerableRegexOptions;
   'no-unsafe-regex-construction'?: NoUnsafeRegexConstructionOptions;
+  'no-sensitive-data-exposure'?: NoSensitiveDataExposureOptions;
   'no-toctou-vulnerability'?: NoToctouVulnerabilityOptions;
   'no-missing-security-headers'?: NoMissingSecurityHeadersOptions;
   'no-insecure-redirects'?: NoInsecureRedirectsOptions;

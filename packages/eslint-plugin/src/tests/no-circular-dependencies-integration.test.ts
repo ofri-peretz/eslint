@@ -9,9 +9,9 @@ import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll, beforeEach, afterEach } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { noCircularDependencies } from '../rules/architecture/no-circular-dependencies';
-import * as fs from 'fs';
-import * as path from 'path';
-import { tmpdir } from 'os';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { tmpdir } from 'node:os';
 
 // Configure RuleTester for Vitest
 RuleTester.afterAll = afterAll;

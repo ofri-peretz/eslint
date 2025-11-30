@@ -162,9 +162,30 @@ export const reactRenderOptimization = createRule<RuleOptions, MessageIds>({
         fix: 'Use useMemo to memoize result',
         documentationLink: 'https://react.dev/reference/react/useMemo',
       }),
-      useMemo: '✅ Use useMemo: const memoized = useMemo(() => value, [deps])',
-      useCallback: '✅ Use useCallback: const handler = useCallback(() => {}, [deps])',
-      useReactMemo: '✅ Use React.memo: export default React.memo(Component)',
+      useMemo: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use useMemo',
+        description: 'Memoize with useMemo',
+        severity: 'LOW',
+        fix: 'const memoized = useMemo(() => value, [deps])',
+        documentationLink: 'https://react.dev/reference/react/useMemo',
+      }),
+      useCallback: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use useCallback',
+        description: 'Memoize callback function',
+        severity: 'LOW',
+        fix: 'const handler = useCallback(() => {}, [deps])',
+        documentationLink: 'https://react.dev/reference/react/useCallback',
+      }),
+      useReactMemo: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use React.memo',
+        description: 'Wrap component with React.memo',
+        severity: 'LOW',
+        fix: 'export default React.memo(Component)',
+        documentationLink: 'https://react.dev/reference/react/memo',
+      }),
     },
     schema: [
       {

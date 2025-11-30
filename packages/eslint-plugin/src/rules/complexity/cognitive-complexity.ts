@@ -60,9 +60,30 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
         fix: 'Extract logic to helpers',
         documentationLink: 'https://en.wikipedia.org/wiki/Cognitive_complexity',
       }),
-      extractMethod: '✅ Extract nested logic to "{{methodName}}" (reduces complexity by ~{{reduction}})',
-      simplifyLogic: '✅ Simplify conditional logic using guard clauses and early returns',
-      useStrategy: '✅ Apply {{pattern}} pattern to eliminate switch/case and nested conditionals',
+      extractMethod: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Extract Method',
+        description: 'Extract nested logic to separate method',
+        severity: 'LOW',
+        fix: 'Extract to "{{methodName}}" (reduces complexity by ~{{reduction}})',
+        documentationLink: 'https://refactoring.guru/extract-method',
+      }),
+      simplifyLogic: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Simplify Logic',
+        description: 'Simplify conditional logic',
+        severity: 'LOW',
+        fix: 'Use guard clauses and early returns',
+        documentationLink: 'https://refactoring.guru/replace-nested-conditional-with-guard-clauses',
+      }),
+      useStrategy: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Strategy Pattern',
+        description: 'Apply design pattern to reduce complexity',
+        severity: 'LOW',
+        fix: 'Apply {{pattern}} pattern',
+        documentationLink: 'https://refactoring.guru/design-patterns/strategy',
+      }),
     },
     schema: [
       {

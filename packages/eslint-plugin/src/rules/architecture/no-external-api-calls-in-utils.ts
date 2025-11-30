@@ -71,9 +71,30 @@ export const noExternalApiCallsInUtils = createRule<RuleOptions, MessageIds>({
         fix: 'Use dependency injection for network calls',
         documentationLink: 'https://rules.sonarsource.com/javascript/RSPEC-1075/',
       }),
-      useDependencyInjection: '✅ Inject API client: function util(apiClient) { return apiClient.get(...) }',
-      extractToService: '✅ Extract to service layer: services/apiService.ts',
-      passApiClient: '✅ Pass API client as parameter instead of direct call',
+      useDependencyInjection: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Dependency Injection',
+        description: 'Inject API client',
+        severity: 'LOW',
+        fix: 'function util(apiClient) { return apiClient.get(...) }',
+        documentationLink: 'https://en.wikipedia.org/wiki/Dependency_injection',
+      }),
+      extractToService: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Extract to Service',
+        description: 'Extract to service layer',
+        severity: 'LOW',
+        fix: 'Create services/apiService.ts',
+        documentationLink: 'https://martinfowler.com/eaaCatalog/serviceLayer.html',
+      }),
+      passApiClient: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Pass API Client',
+        description: 'Pass API client as parameter',
+        severity: 'LOW',
+        fix: 'function util(apiClient, data) { ... }',
+        documentationLink: 'https://en.wikipedia.org/wiki/Dependency_injection',
+      }),
     },
     schema: [
       {

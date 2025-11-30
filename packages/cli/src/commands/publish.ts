@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { execSync } from 'child_process';
+import { execSync } from 'node:child_process';
 import chalk from 'chalk';
 import ora from 'ora';
 import type { Ora } from 'ora';
@@ -15,15 +15,15 @@ export function createPublishCommand(): Command {
       try {
         const distPackagesDir = 'dist/packages';
         
-        if (!require('fs').existsSync(distPackagesDir)) {
+        if (!require('node:fs').existsSync(distPackagesDir)) {
           spinner.fail(chalk.red('dist/packages directory not found. Did you run the build?'));
           process.exit(1);
         }
 
         // Get all package directories
-        const packages = require('fs').readdirSync(distPackagesDir)
-          .map((name: string) => require('path').join(distPackagesDir, name))
-          .filter((dir: string) => require('fs').statSync(dir).isDirectory());
+        const packages = require('node:fs').readdirSync(distPackagesDir)
+          .map((name: string) => require('node:path').join(distPackagesDir, name))
+          .filter((dir: string) => require('node:fs').statSync(dir).isDirectory());
 
         if (packages.length === 0) {
           spinner.fail(chalk.red('No packages found in dist/packages'));
@@ -63,14 +63,14 @@ function getDistTag(version: string): string {
 }
 
 async function publishPackage(packagePath: string, options: { dryRun?: boolean; verbose?: boolean }, spinner: Ora) {
-  const packageJsonPath = require('path').join(packagePath, 'package.json');
+  const packageJsonPath = require('node:path').join(packagePath, 'package.json');
   
-  if (!require('fs').existsSync(packageJsonPath)) {
+  if (!require('node:fs').existsSync(packageJsonPath)) {
     spinner.warn(chalk.yellow(`⏭️  Skipping ${packagePath} - no package.json found`));
     return;
   }
   
-  const packageJson = JSON.parse(require('fs').readFileSync(packageJsonPath, 'utf8'));
+  const packageJson = JSON.parse(require('node:fs').readFileSync(packageJsonPath, 'utf8'));
   const { name, version } = packageJson;
   
   if (!name || !version) {

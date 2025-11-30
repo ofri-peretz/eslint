@@ -89,7 +89,14 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
         fix: '{{safeAlternative}}',
         documentationLink: 'https://cwe.mitre.org/data/definitions/352.html',
       }),
-      addCsrfValidation: '✅ Add CSRF middleware: app.use(csrf({ cookie: true })) or router.post("/path", csrf(), handler)',
+      addCsrfValidation: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Add CSRF Validation',
+        description: 'Add CSRF middleware',
+        severity: 'LOW',
+        fix: 'app.use(csrf({ cookie: true }))',
+        documentationLink: 'https://github.com/expressjs/csurf',
+      }),
     },
     schema: [
       {
@@ -152,7 +159,7 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
 
     const filename = context.getFilename();
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
 
     function checkCallExpression(node: TSESTree.CallExpression) {
       if (isTestFile) {

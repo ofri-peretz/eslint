@@ -133,6 +133,272 @@ describe('no-silent-errors', () => {
         },
       ],
     });
+
+    ruleTester.run('options - allowWithComment', noSilentErrors, {
+      valid: [
+        // Allow with "intentional" comment
+        {
+          code: `
+            try {
+              doSomething();
+            // intentionally empty
+            } catch (error) {
+            }
+          `,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+        },
+        // Allow with "expected" comment
+        {
+          code: `
+            try {
+              doSomething();
+            // expected error, ignore
+            } catch (error) {
+            }
+          `,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+        },
+        // Allow with "ignore" comment
+        {
+          code: `
+            try {
+              doSomething();
+            // ignore this error
+            } catch (error) {
+            }
+          `,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+        },
+        // Allow with "noop" comment
+        {
+          code: `
+            try {
+              doSomething();
+            // noop
+            } catch (error) {
+            }
+          `,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+        },
+        // Allow with "no-op" comment
+        {
+          code: `
+            try {
+              doSomething();
+            // no-op
+            } catch (error) {
+            }
+          `,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+        },
+        // Allow with "by design" comment
+        {
+          code: `
+            try {
+              doSomething();
+            // by design
+            } catch (error) {
+            }
+          `,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+        },
+        // Allow with "known issue" comment
+        {
+          code: `
+            try {
+              doSomething();
+            // known issue in library
+            } catch (error) {
+            }
+          `,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+        },
+        // Allow with "legacy" comment
+        {
+          code: `
+            try {
+              doSomething();
+            // legacy code
+            } catch (error) {
+            }
+          `,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+        },
+        // Allow with "third-party" comment
+        {
+          code: `
+            try {
+              doSomething();
+            // third-party library issue
+            } catch (error) {
+            }
+          `,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+        },
+        // Allow with "framework" comment
+        {
+          code: `
+            try {
+              doSomething();
+            // framework limitation
+            } catch (error) {
+            }
+          `,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+        },
+        // Allow with "library" comment
+        {
+          code: `
+            try {
+              doSomething();
+            // library quirk
+            } catch (error) {
+            }
+          `,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+        },
+        // Allow with "not implemented" comment
+        {
+          code: `
+            try {
+              doSomething();
+            // not implemented yet
+            } catch (error) {
+            }
+          `,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+        },
+        // Allow with "TODO" comment
+        {
+          code: `
+            try {
+              doSomething();
+            // TODO: handle this later
+            } catch (error) {
+            }
+          `,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+        },
+        // Allow with "FIXME" comment
+        {
+          code: `
+            try {
+              doSomething();
+            // FIXME: add proper handling
+            } catch (error) {
+            }
+          `,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+        },
+        // Allow with "silent" comment
+        {
+          code: `
+            try {
+              doSomething();
+            // silent catch on purpose
+            } catch (error) {
+            }
+          `,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+        },
+      ],
+      invalid: [
+        // allowWithComment = true but no valid comment
+        {
+          code: `
+            try {
+              doSomething();
+            // random comment
+            } catch (error) {
+            }
+          `,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+          errors: [{ messageId: 'silentError' }],
+        },
+        // allowWithComment = false ignores comments
+        {
+          code: `
+            try {
+              doSomething();
+            // intentional
+            } catch (error) {
+            }
+          `,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: false }],
+          errors: [{ messageId: 'silentError' }],
+        },
+        // Comment too far from catch
+        {
+          code: `
+            // intentional
+            
+            
+            
+            try {
+              doSomething();
+            } catch (error) {
+            }
+          `,
+          filename: 'src/utils.ts',
+          options: [{ allowWithComment: true }],
+          errors: [{ messageId: 'silentError' }],
+        },
+      ],
+    });
+  });
+
+  describe('Edge Cases', () => {
+    ruleTester.run('edge cases', noSilentErrors, {
+      valid: [
+        // Test file variations
+        {
+          code: `try { doSomething(); } catch (error) { }`,
+          filename: 'component.test.tsx',
+          options: [{ ignoreInTests: true }],
+        },
+        {
+          code: `try { doSomething(); } catch (error) { }`,
+          filename: 'utils.spec.js',
+          options: [{ ignoreInTests: true }],
+        },
+        {
+          code: `try { doSomething(); } catch (error) { }`,
+          filename: 'api.test.jsx',
+          options: [{ ignoreInTests: true }],
+        },
+      ],
+      invalid: [
+        // Catch with only EmptyStatement (semicolon) - still empty
+        {
+          code: `
+            try {
+              doSomething();
+            } catch (error) {
+              ;
+            }
+          `,
+          filename: 'src/utils.ts',
+          errors: [{ messageId: 'silentError' }],
+        },
+      ],
+    });
   });
 });
 

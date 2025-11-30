@@ -8,9 +8,9 @@
  *   pnpm tsx scripts/check-version-alignment.ts
  */
 
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
-import { execSync } from 'child_process';
+import { readFileSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { execSync } from 'node:child_process';
 
 interface PackageInfo {
   name: string;

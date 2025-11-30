@@ -7,7 +7,7 @@ import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
  * @description
  * Configures Vitest for testing ESLint plugin rules with the following setup:
  * - Node environment for running ESLint rule tests
- * - Coverage tracking with v8 provider (industry standard)
+  * - Coverage tracking with v8 provider (industry standard)
  * - JUnit reporting for CI/CD pipeline integration
  * - Coverage upload handled by CI workflows instead of Vite plugin
  * - Nx TypeScript path resolution for monorepo imports
@@ -78,7 +78,7 @@ export default defineConfig({
       clean: true,
     },
     // ✅ JUnit reporter for test analytics in Codecov
-    reporters: ['default', 'junit'],
+    reporters: ['default', 'junit', 'json', 'tree'],
     outputFile: {
       junit: './test-report.junit.xml',
     },

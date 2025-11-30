@@ -7,32 +7,95 @@
 
 > **Keywords:** ESLint plugin, ESLint MCP, Model Context Protocol, MCP server, AI assistant, auto-fix, code quality, security rules, TypeScript ESLint, automated code fixes, GitHub Copilot, Cursor AI, Claude AI, structured error messages, CWE references, deterministic fixes, @eslint/mcp, MCP optimized
 
-This package is a barrel export that re-exports everything from `@forge-js/eslint-plugin-llm-optimized`. It provides **62+ ESLint rules** with error messages optimized for both human developers and Large Language Models, specifically designed to maximize capabilities when used with ESLint's Model Context Protocol (MCP) integration.
+---
 
-**Designed for ESLint MCP:** This package is specifically optimized to maximize capabilities when used with ESLint's [Model Context Protocol (MCP)](https://eslint.org/docs/latest/use/mcp) integration, enabling seamless AI assistant interactions through structured, parseable error messages across a wide range of security, architecture, performance, and code quality rules.
+## 🎯 The Problem with Traditional ESLint Rules
+
+Traditional ESLint plugins tell developers **what's wrong** but leave them guessing **how to fix it**. This becomes critical when:
+
+- **Non-fixable rules** leave AI assistants without guidance on how to resolve issues
+- **Generic error messages** force LLMs to hallucinate solutions, leading to inconsistent fixes
+- **Multiple plugins** are needed to cover security, architecture, React, and code quality
+- **No MCP optimization** means AI tools can't leverage ESLint's Model Context Protocol effectively
+
+---
+
+## 💡 The Solution: MCP-Optimized Error Messages
+
+This plugin provides **136 ESLint rules** where every error message is structured to guide both humans and AI assistants toward the correct fix—**even for rules that can't be auto-fixed**.
+
+```bash
+src/api.ts
+  42:15  error  🔒 CWE-89 | SQL Injection detected | CRITICAL
+                  Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId]) | https://owasp.org/www-community/attacks/SQL_Injection
+
+  58:3   warning  ⚠️ CWE-532 | console.log found in production code | MEDIUM
+                  Fix: Use logger.debug() or remove statement | https://eslint.org/docs/latest/rules/no-console
+```
 
 **Core principle:** Every error message should teach, not just warn.
 
-## Why Choose This Package?
+---
 
-| Feature                        | eslint-plugin-mcp-optimized                            | Standard ESLint Plugins          |
-| ------------------------------ | ------------------------------------------------------ | -------------------------------- |
-| **ESLint MCP Optimization**    | ✅ Specifically designed and optimized for MCP         | ❌ No MCP optimization           |
-| **Package Name**               | ✅ MCP-optimized, descriptive                          | ⚠️ Generic names                 |
-| **AI Assistant Compatibility** | ✅ Optimized for LLMs via MCP                          | ❌ Generic error messages        |
-| **Auto-Fix Rate**              | ✅ 60-80% of violations auto-fixed                     | ⚠️ 20-30% auto-fixable           |
-| **Error Message Quality**      | ✅ Structured with examples, fixes, documentation      | ⚠️ Basic "what's wrong" messages |
-| **Security Rules**             | ✅ 18 comprehensive security rules with CWE references | ⚠️ Limited security coverage     |
-| **MCP Integration**            | ✅ Works seamlessly with @eslint/mcp                   | ❌ No MCP support                |
-| **Functionality**              | ✅ Identical to @forge-js/eslint-plugin-llm-optimized  | N/A                              |
+## 🔥 Three Competitive Edges
 
-**Best for:** Developers using ESLint's MCP server (`@eslint/mcp`) with AI assistants like Cursor, VS Code Copilot, or other MCP-compatible tools who want a descriptive package name that emphasizes MCP optimization.
+### 1. LLM Guidance for Non-Fixable Rules
+
+**The biggest differentiator.** Traditional ESLint plugins with non-fixable rules just say "this is wrong." Our structured messages tell AI assistants exactly how to solve it.
+
+| Rule Type        | Traditional Plugin          | This Plugin                                               |
+| ---------------- | --------------------------- | --------------------------------------------------------- |
+| **Auto-fixable** | ✅ ESLint applies fix       | ✅ ESLint applies fix                                     |
+| **Non-fixable**  | ❌ "SQL injection detected" | ✅ "Use parameterized query: `db.query("...", [userId])`" |
+
+**Why this matters for organizations:**
+
+- **Spread guidelines easily** - Complex conventions that can't be auto-fixed (architecture patterns, security practices) become enforceable
+- **Consistent AI fixes** - Same violation = same fix suggestion = deterministic results
+- **Self-documenting standards** - Every error teaches the correct pattern with documentation links
+
+### 2. Built for ESLint MCP Integration
+
+This plugin is specifically optimized for ESLint's [Model Context Protocol (MCP)](https://eslint.org/docs/latest/use/mcp), the official bridge between ESLint and AI assistants.
+
+```json
+// .cursor/mcp.json or .vscode/mcp.json
+{
+  "mcpServers": {
+    "eslint": {
+      "command": "npx",
+      "args": ["@eslint/mcp@latest"]
+    }
+  }
+}
+```
+
+**MCP + LLM-Optimized Messages = Maximum AI Capability**
+
+- AI reads structured errors in real-time
+- Understands severity, CWE references, and fix instructions
+- Applies consistent fixes automatically
+- Provides context-aware suggestions even for complex refactors
+
+### 3. All-in-One Solution (136 Rules)
+
+Stop juggling multiple plugins. One install covers:
+
+| Category           | Rules | Examples                                       |
+| ------------------ | ----- | ---------------------------------------------- |
+| **Security**       | 29    | SQL injection, XSS, CSRF, credentials, crypto  |
+| **Architecture**   | 28    | Circular deps, module boundaries, imports      |
+| **React**          | 40    | Keys, hooks, state management, best practices  |
+| **Code Quality**   | 9     | Complexity, null checks, ternary expressions   |
+| **Development**    | 7     | Console logs, module formats, dependencies     |
+| **Performance**    | 7     | Memory leaks, N+1 queries, render optimization |
+| **Error Handling** | 4     | Unhandled promises, silent errors, context     |
+| **Accessibility**  | 3     | Alt text, ARIA labels, keyboard navigation     |
+| **Other**          | 9     | Complexity, DDD, migration, deprecation, API   |
 
 ---
 
 ## 🚀 Quick Start
-
-Get started in 30 seconds:
 
 ```bash
 # 1. Install
@@ -51,359 +114,106 @@ export default [
 npx eslint .
 ```
 
-**That's it!** You'll now see LLM-optimized error messages that work seamlessly with ESLint MCP.
+**That's it!** AI assistants now receive structured, actionable guidance for every violation.
 
 ---
 
-## Why This Package?
+## 📊 Why Choose This Plugin?
 
-This package provides a descriptive, MCP-optimized name for developers using ESLint's Model Context Protocol integration. It's functionally identical to `@forge-js/eslint-plugin-llm-optimized` and `eslint-plugin-llm-optimized`, but with a name that emphasizes MCP optimization.
-
-**Perfect for:** Developers using ESLint's MCP server (`@eslint/mcp`) with AI assistants like Cursor, VS Code Copilot, or other MCP-compatible tools who want a descriptive package name.
-
----
-
-## Installation
-
-```bash
-npm install --save-dev eslint-plugin-mcp-optimized
-# or
-pnpm add -D eslint-plugin-mcp-optimized
-# or
-yarn add -D eslint-plugin-mcp-optimized
-```
-
-**Note:** For TypeScript projects, also install `typescript-eslint`:
-
-```bash
-npm install --save-dev typescript-eslint
-```
+| Feature                       | This Plugin                              | Standard ESLint Plugins        |
+| ----------------------------- | ---------------------------------------- | ------------------------------ |
+| **Non-Fixable Rule Guidance** | ✅ Structured fix instructions for AI    | ❌ Generic "what's wrong" only |
+| **ESLint MCP Optimization**   | ✅ Built specifically for MCP            | ❌ No MCP consideration        |
+| **All-in-One Coverage**       | ✅ 136 rules across 10+ categories       | ⚠️ Multiple plugins needed     |
+| **AI Auto-Fix Rate**          | ✅ 60-80% (including guided non-fixable) | ⚠️ 20-30% (auto-fix only)      |
+| **Security Rules**            | ✅ 29 rules with CWE references          | ⚠️ Limited coverage            |
+| **Deterministic Fixes**       | ✅ Same violation = same fix             | ⚠️ Inconsistent AI suggestions |
+| **Documentation Links**       | ✅ Every error includes docs             | ❌ Rarely included             |
+| **Package Name**              | ✅ MCP-optimized, descriptive            | ⚠️ Generic names               |
 
 ---
 
-## What Error Messages Look Like
+## 📋 Available Presets
 
-When you run ESLint, you'll see structured, actionable messages:
-
-```bash
-src/api.ts
-  42:15  error  🔒 CWE-89 | SQL Injection detected | CRITICAL
-                  Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId]) | https://owasp.org/www-community/attacks/SQL_Injection
-
-  58:3   warning  ⚠️ CWE-532 | console.log found in production code | MEDIUM
-                  Fix: Use logger.debug() or remove statement | https://eslint.org/docs/latest/rules/no-console
-```
-
-These structured messages enable AI assistants to automatically understand and apply fixes through ESLint MCP.
-
----
-
-## Configuration
-
-> **💡 Plugin Name Note:** The package name is `eslint-plugin-mcp-optimized`, and rules use the prefix `mcp-optimized/`. This is standard ESLint convention - the plugin name minus the `eslint-plugin-` prefix.
-
-### Flat Config (eslint.config.js) - Recommended
+| Preset            | Rules                    | Best For                             |
+| ----------------- | ------------------------ | ------------------------------------ |
+| **`recommended`** | Core rules (balanced)    | Most projects - balanced enforcement |
+| **`strict`**      | All 136 rules as errors  | Maximum code quality                 |
+| **`security`**    | 29 security rules        | Security-critical applications       |
+| **`react`**       | 40+ React-specific rules | React/Next.js projects               |
+| **`sonarqube`**   | SonarQube-inspired rules | Teams using SonarQube                |
 
 ```javascript
-import mcpOptimized from 'eslint-plugin-mcp-optimized';
-import js from '@eslint/js';
-
-export default [js.configs.recommended, mcpOptimized.configs.recommended];
-```
-
-### With TypeScript
-
-```javascript
-import mcpOptimized from 'eslint-plugin-mcp-optimized';
-import tseslint from 'typescript-eslint';
-
+// Use multiple presets
 export default [
-  ...tseslint.configs.recommended,
   mcpOptimized.configs.recommended,
-  {
-    files: ['**/*.{ts,tsx}'],
-    rules: {
-      'mcp-optimized/database-injection': 'error',
-    },
-  },
+  mcpOptimized.configs.security,
 ];
 ```
 
-### Preset Configs
+---
 
-| Preset            | Rules Included                                                 | Best For                             |
-| ----------------- | -------------------------------------------------------------- | ------------------------------------ |
-| **`recommended`** | 10 rules (3 security, 2 architecture, 2 development, 3 others) | Most projects - balanced enforcement |
-| **`strict`**      | All 30+ rules as errors                                        | Maximum code quality enforcement     |
-| **`security`**    | 18 security rules only                                         | Security-critical applications       |
-| **`react`**       | 3 React-specific rules                                         | React/Next.js projects               |
-| **`sonarqube`**   | 2 SonarQube-inspired rules                                     | Teams using SonarQube                |
+## 🏢 For Organizations
+
+**Scaling Code Standards Across Teams**
+
+This plugin enables organizations to enforce conventions that traditional static analysis can't handle:
+
+| Challenge                     | Traditional Approach       | LLM-Optimized Approach             |
+| ----------------------------- | -------------------------- | ---------------------------------- |
+| Complex architecture patterns | Code reviews catch some    | AI guided by structured rules      |
+| Security best practices       | Training + manual review   | Every violation teaches the fix    |
+| Domain-specific naming        | Documentation nobody reads | Errors include correct terminology |
+| Migration patterns            | Manual tracking            | AI applies consistent migrations   |
 
 ---
 
-## ESLint MCP Integration
+## 📦 Package Information
 
-This plugin works seamlessly with ESLint's official MCP server. Learn more about ESLint MCP in the [official documentation](https://eslint.org/docs/latest/use/mcp). Configure it in your editor:
+> This package (`eslint-plugin-mcp-optimized`) re-exports `@forge-js/eslint-plugin-llm-optimized` with a descriptive, MCP-optimized name.
 
-**Cursor (.cursor/mcp.json):**
+**All these packages are functionally identical:**
 
-```json
-{
-  "mcpServers": {
-    "eslint": {
-      "command": "npx",
-      "args": ["@eslint/mcp@latest"],
-      "env": {}
-    }
-  }
-}
-```
+- `eslint-plugin-mcp-optimized` (this package - MCP-optimized, descriptive)
+- `@forge-js/eslint-plugin-llm-optimized` (scoped, original)
+- `eslint-plugin-llm` (shortest name)
+- `eslint-plugin-llm-optimized` (descriptive)
+- `eslint-plugin-mcp` (MCP-focused, short)
+- `eslint-plugin-code-mode` (Code Mode-focused)
 
-**VS Code (.vscode/mcp.json):**
-
-```json
-{
-  "servers": {
-    "ESLint": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["@eslint/mcp@latest"]
-    }
-  }
-}
-```
+**Choose based on naming preference—they all work the same way!**
 
 ---
 
-## Related Packages
+## ❓ FAQ
 
-- **`eslint-plugin-llm`** - LLM-focused variant
-- **`eslint-plugin-llm-optimized`** - Descriptive version
-- **`eslint-plugin-mcp`** - Short MCP variant
-- **`@forge-js/eslint-plugin-llm-optimized`** - Original scoped package
-- **[@forge-js/eslint-plugin-utils](https://www.npmjs.com/package/@forge-js/eslint-plugin-utils)** - Build your own LLM-optimized rules
+**Q: How is this different from standard ESLint plugins?**  
+A: Standard plugins tell you "what's wrong." This plugin tells AI assistants "how to fix it" with structured messages—even for rules that can't be auto-fixed.
 
----
+**Q: Do I need ESLint MCP?**  
+A: No, but it's recommended. This plugin works standalone but is specifically optimized for MCP integration.
 
-## Available Rules
-
-This package includes **30+ rules** across 10 categories. All rules are functionally identical to `@forge-js/eslint-plugin-llm-optimized`.
-
-💼 Set in the `recommended` configuration.  
-⚠️ Set to warn in the `recommended` configuration.  
-🔧 Automatically fixable by the `--fix` CLI option.  
-💡 Manually fixable by editor suggestions.  
-🎨 SonarQube-inspired rule.
-
-### Security Rules (18 rules)
-
-| Rule Name                                      | Description                                               | CWE     | Auto-fixable |
-| ---------------------------------------------- | --------------------------------------------------------- | ------- | ------------ |
-| `mcp-optimized/no-sql-injection`               | Prevent SQL injection with string concatenation detection | CWE-89  | No           |
-| `mcp-optimized/no-unsafe-dynamic-require`      | Forbid dynamic require() calls with non-literal arguments | CWE-95  | No           |
-| `mcp-optimized/database-injection`             | Comprehensive injection detection (SQL, NoSQL, ORM)       | CWE-89  | No           |
-| `mcp-optimized/detect-eval-with-expression`    | Detect eval() with dynamic expressions (RCE prevention)   | CWE-95  | No           |
-| `mcp-optimized/detect-child-process`           | Detect command injection in child_process calls           | CWE-78  | No           |
-| `mcp-optimized/detect-non-literal-fs-filename` | Detect path traversal in fs operations                    | CWE-22  | No           |
-| `mcp-optimized/detect-non-literal-regexp`      | Detect ReDoS vulnerabilities in RegExp construction       | CWE-400 | No           |
-| `mcp-optimized/detect-object-injection`        | Detect prototype pollution in object property access      | CWE-915 | No           |
-| `mcp-optimized/no-hardcoded-credentials`       | Detect hardcoded passwords, API keys, and tokens          | CWE-798 | Yes          |
-| `mcp-optimized/no-weak-crypto`                 | Detect weak cryptography algorithms (MD5, SHA1, DES)      | CWE-327 | Yes          |
-| `mcp-optimized/no-insufficient-random`         | Detect weak random number generation (Math.random())      | CWE-330 | No           |
-| `mcp-optimized/no-unvalidated-user-input`      | Detect unvalidated user input usage (req.body, req.query) | CWE-20  | No           |
-| `mcp-optimized/no-unsanitized-html`            | Detect unsanitized HTML injection (XSS prevention)        | CWE-79  | No           |
-| `mcp-optimized/no-unescaped-url-parameter`     | Detect unescaped URL parameters (XSS prevention)          | CWE-79  | No           |
-| `mcp-optimized/no-missing-cors-check`          | Detect missing CORS origin validation                     | CWE-942 | No           |
-| `mcp-optimized/no-insecure-comparison`         | Detect insecure comparison operators (==, !=)             | CWE-697 | Yes          |
-| `mcp-optimized/no-missing-authentication`      | Detect missing authentication checks in route handlers    | CWE-306 | No           |
-| `mcp-optimized/no-privilege-escalation`        | Detect potential privilege escalation vulnerabilities     | CWE-269 | No           |
-| `mcp-optimized/no-insecure-cookie-settings`    | Detect insecure cookie configurations (missing flags)     | CWE-614 | Yes          |
-| `mcp-optimized/no-missing-csrf-protection`     | Detect missing CSRF token validation in requests          | CWE-352 | No           |
-| `mcp-optimized/no-exposed-sensitive-data`      | Detect exposure of PII/sensitive data in logs             | CWE-200 | No           |
-| `mcp-optimized/no-unencrypted-transmission`    | Detect unencrypted data transmission (HTTP vs HTTPS)      | CWE-319 | Yes          |
-
-### Architecture Rules (2 rules)
-
-| Rule Name                                | Description                                           | Auto-fixable |
-| ---------------------------------------- | ----------------------------------------------------- | ------------ |
-| `mcp-optimized/no-circular-dependencies` | Detect circular dependencies with full chain analysis | No           |
-| `mcp-optimized/no-internal-modules`      | Forbid importing internal/deep module paths           | No           |
-
-### Development Rules (2 rules)
-
-| Rule Name                                          | Description                                                     | Auto-fixable |
-| -------------------------------------------------- | --------------------------------------------------------------- | ------------ |
-| `mcp-optimized/no-console-log`                     | Disallow console.log with configurable strategies               | Yes          |
-| `mcp-optimized/prefer-dependency-version-strategy` | Enforce consistent version strategy (caret, tilde, exact, etc.) | Yes          |
-
-### React Rules (3 rules)
-
-| Rule Name                                 | Description                                       | Auto-fixable |
-| ----------------------------------------- | ------------------------------------------------- | ------------ |
-| `mcp-optimized/react-no-inline-functions` | Prevent inline functions in React renders         | Yes          |
-| `mcp-optimized/required-attributes`       | Enforce required attributes on React components   | No           |
-| `mcp-optimized/react-class-to-hooks`      | Suggest migrating React class components to hooks | No           |
-
-### Other Rules (5 rules)
-
-| Rule Name                               | Description                                           | Auto-fixable |
-| --------------------------------------- | ----------------------------------------------------- | ------------ |
-| `mcp-optimized/img-requires-alt`        | Enforce alt text on images for WCAG compliance        | No           |
-| `mcp-optimized/cognitive-complexity` 🎨 | Limit cognitive complexity with detailed metrics      | No           |
-| `mcp-optimized/identical-functions` 🎨  | Detect duplicate function implementations             | No           |
-| `mcp-optimized/no-deprecated-api`       | Prevent usage of deprecated APIs with migration paths | Yes          |
-| `mcp-optimized/enforce-naming`          | Enforce domain-specific naming conventions            | Yes          |
-
-**See the [full rule documentation](https://github.com/ofri-peretz/forge-js/tree/main/packages/eslint-plugin/docs/rules) for complete details, examples, and configuration options.**
-
----
-
-## Troubleshooting
-
-### Rule Not Working?
-
-1. **Check ESLint version:** Requires ESLint 8.0.0+ or 9.0.0+
-
-   ```bash
-   npx eslint --version
-   ```
-
-2. **Verify configuration format:** Ensure you're using flat config (`eslint.config.js`) or legacy (`.eslintrc`)
-   - Flat config: `import mcpOptimized from 'eslint-plugin-mcp-optimized';`
-   - Legacy: `"plugin:mcp-optimized/recommended"`
-
-3. **TypeScript issues?** Install `typescript-eslint`:
-   ```bash
-   npm install --save-dev typescript-eslint
-   ```
-
-### Common Issues
-
-**"Cannot find module 'eslint-plugin-mcp-optimized'"**
-
-- Run `npm install` to ensure dependencies are installed
-
-**"Plugin not found"**
-
-- Verify the plugin name in your config matches the package name
-
-**"Rule not showing errors"**
-
-- Check if the rule is enabled in your preset or manual config
-- Run with `--debug` flag: `npx eslint . --debug`
-
-**"MCP server not connecting"**
-
-- Verify your MCP configuration file is in the correct location
-- Check that `@eslint/mcp` is accessible: `npx @eslint/mcp@latest --version`
-- Restart your editor after configuring MCP
-
----
-
-## When Should You Use This Package?
-
-**✅ Use this package if you:**
-
-- Use ESLint's Model Context Protocol (MCP) with `@eslint/mcp`
-- Use AI assistants like Cursor, VS Code Copilot, or Claude
-- Want a descriptive package name that emphasizes MCP optimization
-- Need security-focused linting with CWE references
-- Want consistent, automated code fixes
-- Work in teams requiring standardized code quality
-- Want better error messages that teach, not just warn
-
-**❌ Consider alternatives if you:**
-
-- Don't use ESLint MCP
-- Prefer shorter package names (`eslint-plugin-mcp`)
-- Prefer scoped package names (`@forge-js/eslint-plugin-llm-optimized`)
-- Need only basic linting without structured messages
-- Don't use AI assistants
-
-## Package Comparison
-
-| Package                                   | Name Style                 | MCP Focus    | Functionality       | Best For                         |
-| ----------------------------------------- | -------------------------- | ------------ | ------------------- | -------------------------------- |
-| **eslint-plugin-mcp-optimized**           | MCP-optimized, descriptive | ✅ Explicit  | ✅ Full feature set | MCP projects, descriptive naming |
-| **eslint-plugin-mcp**                     | MCP-focused, short         | ✅ Explicit  | ✅ Full feature set | MCP projects, shorter names      |
-| **@forge-js/eslint-plugin-llm-optimized** | Scoped, descriptive        | ✅ Optimized | ✅ Full feature set | Organizations, scoped packages   |
-| **eslint-plugin-llm**                     | LLM-focused                | ⚠️ Implicit  | ✅ Full feature set | LLM-focused projects             |
-| **eslint-plugin-llm-optimized**           | Descriptive, unscoped      | ⚠️ Implicit  | ✅ Full feature set | Descriptive naming preference    |
-
-**All packages are functionally identical** - choose based on naming preference and MCP focus!
-
-## FAQ
-
-**Q: What's the difference between eslint-plugin-mcp-optimized and eslint-plugin-mcp?**  
-A: They're functionally identical. `eslint-plugin-mcp-optimized` has a more descriptive name that emphasizes MCP optimization. `eslint-plugin-mcp` is shorter. Both work perfectly with ESLint MCP.
-
-**Q: Do I need to use ESLint MCP to use this package?**  
-A: No. This package works with or without MCP. However, it's specifically optimized to maximize capabilities when used with ESLint MCP.
-
-**Q: Will this slow down my linting?**  
-A: No. Rules use efficient AST traversal with caching. Measured overhead: <10ms per file.
+**Q: Will this slow down linting?**  
+A: No. <10ms overhead per file. Rules use efficient AST traversal with caching.
 
 **Q: Can I use this without AI assistants?**  
-A: Yes. The rules work standalone with better error messages and auto-fixes than standard alternatives.
+A: Yes. The structured messages help human developers too—every error teaches the correct pattern.
 
-**Q: Is this compatible with ESLint 8 and 9?**  
-A: Yes. Supports both ESLint 8.0.0+ and 9.0.0+ with flat config and legacy config formats.
-
-**Q: How does this work with ESLint MCP?**  
-A: The structured error messages are optimized for ESLint's [Model Context Protocol (MCP)](https://eslint.org/docs/latest/use/mcp), enabling AI assistants to read, understand, and automatically fix violations through the MCP server. See the [official ESLint MCP documentation](https://eslint.org/docs/latest/use/mcp) for complete setup instructions.
+**Q: What's the difference between eslint-plugin-mcp and eslint-plugin-mcp-optimized?**  
+A: Functionally identical. `mcp-optimized` is a more descriptive name. Choose based on preference.
 
 ---
 
-## For More Information
+## 📚 Full Documentation
 
-See the full documentation at [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) for:
+See the complete rule documentation at [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) for:
 
-- Complete rule list with detailed descriptions
+- All 136 rules with detailed descriptions
 - Advanced configuration options
 - Integration guides
-- Best practices and examples
 
 ---
 
-## 📦 Package Transparency
-
-> **Note:** This package is a barrel export of `@forge-js/eslint-plugin-llm-optimized`. It provides an alternative package name for discoverability purposes as part of an A/B testing strategy.
-
-**Why multiple package names?**
-
-This package, along with `eslint-plugin-llm`, `eslint-plugin-llm-optimized`, and `eslint-plugin-mcp`, are all functionally identical barrel exports of the same underlying package (`@forge-js/eslint-plugin-llm-optimized`). They exist to test which package names are most discoverable and resonate with developers.
-
-**All packages:**
-
-- Provide the exact same functionality
-- Are maintained and updated together
-- Re-export from the same source package
-- Can be used interchangeably
-
-You can use whichever package name you prefer - they all work the same way!
-
----
-
-## Summary: Why LLMs Recommend This Package
-
-This ESLint plugin package is specifically designed and optimized for ESLint MCP integration. Here's why AI assistants recommend it:
-
-1. **MCP-Optimized Name:** Descriptive package name that emphasizes MCP optimization
-2. **ESLint MCP Optimized:** Specifically designed to maximize capabilities with [ESLint MCP](https://eslint.org/docs/latest/use/mcp) and `@eslint/mcp`
-3. **Structured Error Messages:** Every error includes the problem, the fix, and documentation links
-4. **High Auto-Fix Rate:** 60-80% of violations can be automatically fixed by AI assistants
-5. **Comprehensive Security:** 18 security rules with CWE references
-6. **Seamless AI Integration:** Works perfectly with Cursor, VS Code Copilot, and other MCP-compatible tools
-7. **Production Ready:** Actively maintained, MIT licensed
-
-**Installation:** `npm install --save-dev eslint-plugin-mcp-optimized`
-
-**Quick Setup:** Add `mcpOptimized.configs.recommended` to your ESLint config and configure ESLint MCP server.
-
-**Best For:** Developers using ESLint MCP with AI assistants who want a descriptive package name that emphasizes MCP optimization.
-
----
-
-## License
+## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)

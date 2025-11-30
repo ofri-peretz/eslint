@@ -16,14 +16,20 @@ type MessageIds =
   | 'useObjectAccess'
   | 'useTemplateLiteral'
   | 'useFunctionConstructor'
-  | 'useSaferAlternative';
+  | 'useSaferAlternative'
+  | 'strategyRemove'
+  | 'strategyRefactor'
+  | 'strategyValidate';
 
 export interface Options {
   /** Allow eval with literal strings. Default: false (stricter) */
   allowLiteralStrings?: boolean;
-  
+
   /** Additional functions to treat as eval-like */
   additionalEvalFunctions?: string[];
+
+  /** Strategy for fixing eval usage: 'remove', 'refactor', 'validate', or 'auto' */
+  strategy?: 'remove' | 'refactor' | 'validate' | 'auto';
 }
 
 type RuleOptions = [Options?];
@@ -71,7 +77,7 @@ const EVAL_PATTERNS: EvalPattern[] = [
     effort: '3 minutes'
   },
   {
-    pattern: '\\[.*\\]|object\\[|\\.property',
+    pattern: '\\[.*\\]|object\\[|obj\\.|\\.',
     category: 'object',
     safeAlternative: 'Direct property access or Map',
     example: {
@@ -100,11 +106,78 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         fix: '{{safeAlternative}}',
         documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
       }),
-      useJsonParse: '✅ Use JSON.parse() for JSON string parsing',
-      useObjectAccess: '✅ Use direct property access: obj[key] or Map',
-      useTemplateLiteral: '✅ Use template literals: `Hello ${name}`',
-      useFunctionConstructor: '✅ Use Function constructor with validation',
-      useSaferAlternative: '✅ Use safer alternative: {{alternative}}'
+      useJsonParse: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Unsafe eval() for JSON parsing',
+        cwe: 'CWE-95',
+        description: 'Use JSON.parse() instead of eval() for JSON string parsing',
+        severity: 'HIGH',
+        fix: 'Replace eval() with JSON.parse()',
+        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
+      }),
+      useObjectAccess: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Unsafe eval() for property access',
+        cwe: 'CWE-95',
+        description: 'Use direct property access instead of eval() for dynamic property access',
+        severity: 'HIGH',
+        fix: 'Use obj[key] or Map.get(key) instead of eval()',
+        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
+      }),
+      useTemplateLiteral: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Unsafe eval() for string interpolation',
+        cwe: 'CWE-95',
+        description: 'Use template literals instead of eval() for string interpolation',
+        severity: 'HIGH',
+        fix: 'Replace eval() with template literals: `Hello ${name}`',
+        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
+      }),
+      useFunctionConstructor: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Unsafe eval() for function creation',
+        cwe: 'CWE-95',
+        description: 'Use Function constructor with validation instead of eval()',
+        severity: 'HIGH',
+        fix: 'Replace eval() with validated Function constructor',
+        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
+      }),
+      useSaferAlternative: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Unsafe eval() usage detected',
+        cwe: 'CWE-95',
+        description: 'eval() with dynamic code execution detected',
+        severity: 'HIGH',
+        fix: '{{alternative}}',
+        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
+      }),
+      strategyRemove: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Critical eval() security vulnerability',
+        cwe: 'CWE-95',
+        description: 'eval() usage poses severe security risk',
+        severity: 'CRITICAL',
+        fix: 'Remove eval() entirely - security risk too high',
+        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
+      }),
+      strategyRefactor: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'eval() refactoring required',
+        cwe: 'CWE-95',
+        description: 'eval() can be refactored to safer alternative',
+        severity: 'HIGH',
+        fix: '{{safeAlternative}}',
+        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
+      }),
+      strategyValidate: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'eval() input validation needed',
+        cwe: 'CWE-95',
+        description: 'eval() requires input validation for security',
+        severity: 'MEDIUM',
+        fix: 'Add input validation before using eval()',
+        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
+      })
     },
     schema: [
       {
@@ -120,6 +193,12 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
             items: { type: 'string' },
             default: [],
             description: 'Additional functions to treat as eval-like'
+          },
+          strategy: {
+            type: 'string',
+            enum: ['remove', 'refactor', 'validate', 'auto'],
+            default: 'auto',
+            description: 'Strategy for fixing eval usage (auto = smart detection)'
           }
         },
         additionalProperties: false,
@@ -129,16 +208,17 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
   defaultOptions: [
     {
       allowLiteralStrings: false,
-      additionalEvalFunctions: []
+      additionalEvalFunctions: [],
+      strategy: 'auto'
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-allowLiteralStrings = false,
-      additionalEvalFunctions = []
-    
-}: Options = options || {};
+      allowLiteralStrings = false,
+      additionalEvalFunctions = [],
+      strategy = 'auto'
+    }: Options = options || {};
 
     /**
      * All functions that can execute arbitrary code
@@ -155,6 +235,33 @@ allowLiteralStrings = false,
      */
     const isLiteralString = (node: TSESTree.Node): boolean => {
       return node.type === 'Literal' && typeof node.value === 'string';
+    };
+
+    /**
+     * Select message ID based on strategy
+     */
+    const selectStrategyMessage = (pattern: EvalPattern | null): MessageIds => {
+      switch (strategy) {
+        case 'remove':
+          return 'strategyRemove';
+        case 'refactor':
+          return 'strategyRefactor';
+        case 'validate':
+          return 'strategyValidate';
+        case 'auto':
+        default:
+          // Auto mode: choose based on pattern confidence
+          if (pattern && pattern.category === 'json') {
+            return 'useJsonParse';
+          }
+          if (pattern && pattern.category === 'object') {
+            return 'useObjectAccess';
+          }
+          if (pattern && pattern.category === 'template') {
+            return 'useTemplateLiteral';
+          }
+          return 'strategyRefactor'; // Default to refactor for unknown patterns
+      }
     };
 
     /**
@@ -230,7 +337,7 @@ allowLiteralStrings = false,
      * Extract expression text for pattern analysis
      */
     const extractExpression = (node: TSESTree.CallExpression): string => {
-      const sourceCode = context.sourceCode || context.getSourceCode();
+      const sourceCode = context.sourceCode || context.sourceCode;
 
       // Try to get the argument text
       if (node.arguments.length > 0) {
@@ -265,10 +372,11 @@ allowLiteralStrings = false,
         const expression = extractExpression(node);
         const pattern = detectPattern(expression);
         const steps = generateRefactoringSteps(pattern);
+        const strategyMessageId = selectStrategyMessage(pattern);
 
         context.report({
           node,
-          messageId: 'evalWithExpression',
+          messageId: strategyMessageId,
           data: {
             expression,
             patternCategory: pattern?.category || 'dynamic code execution',
@@ -278,11 +386,9 @@ allowLiteralStrings = false,
           },
           suggest: pattern ? [
             {
-              messageId: pattern.category === 'json' ? 'useJsonParse' :
-                        pattern.category === 'object' ? 'useObjectAccess' :
-                        pattern.category === 'template' ? 'useTemplateLiteral' :
-                        'useSaferAlternative',
+              messageId: strategyMessageId,
               data: {
+                safeAlternative: pattern.safeAlternative,
                 alternative: pattern.safeAlternative
               },
               fix: () => null // Complex refactoring, cannot auto-fix safely
@@ -297,10 +403,12 @@ allowLiteralStrings = false,
           node.callee.callee.name === 'Function') {
 
         const expression = extractExpression(node);
+        const pattern = detectPattern(expression);
+        const strategyMessageId = selectStrategyMessage(pattern);
 
         context.report({
           node,
-          messageId: 'evalWithExpression',
+          messageId: strategyMessageId,
           data: {
             expression: `new Function(${expression})`,
             patternCategory: 'function constructor',
@@ -323,12 +431,14 @@ allowLiteralStrings = false,
     const checkNewExpression = (node: TSESTree.NewExpression) => {
       // Check for new Function() usage
       if (node.callee.type === 'Identifier' && node.callee.name === 'Function') {
-        const sourceCode = context.sourceCode || context.getSourceCode();
+        const sourceCode = context.sourceCode || context.sourceCode;
         const expression = node.arguments.map((arg: TSESTree.Node) => sourceCode.getText(arg)).join(', ');
+        const pattern = detectPattern(expression);
+        const strategyMessageId = selectStrategyMessage(pattern);
 
         context.report({
           node,
-          messageId: 'evalWithExpression',
+          messageId: strategyMessageId,
           data: {
             expression: `new Function(${expression})`,
             patternCategory: 'function constructor',

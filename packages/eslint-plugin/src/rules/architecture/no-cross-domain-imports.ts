@@ -8,7 +8,7 @@
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
-import * as path from 'path';
+import { normalizePath } from '../../utils/node-path-utils';
 
 type MessageIds =
   | 'crossDomainImport'
@@ -43,7 +43,7 @@ function extractDomain(
   filePath: string,
   domainPatterns: string[]
 ): string | null {
-  const normalizedPath = path.normalize(filePath);
+  const normalizedPath = normalizePath(filePath);
   
   for (const pattern of domainPatterns) {
     // Match pattern like /domains/user/ or /features/user/ or domains/user/ at start
@@ -64,7 +64,7 @@ function isSharedModule(
   filePath: string,
   allowedSharedModules: string[]
 ): boolean {
-  const normalizedPath = path.normalize(filePath);
+  const normalizedPath = normalizePath(filePath);
   
   for (const shared of allowedSharedModules) {
     if (normalizedPath.includes(`/${shared}/`) || normalizedPath.includes(`\\${shared}\\`)) {
@@ -193,9 +193,30 @@ export const noCrossDomainImports = createRule<RuleOptions, MessageIds>({
         fix: 'Use shared modules, events, or application services',
         documentationLink: 'https://martinfowler.com/bliki/BoundedContext.html',
       }),
-      useSharedModule: '✅ Move shared code to a shared module',
-      useEvents: '✅ Use event-driven communication between domains',
-      useApplicationService: '✅ Use application service layer for cross-domain communication',
+      useSharedModule: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Shared Module',
+        description: 'Move shared code to shared module',
+        severity: 'LOW',
+        fix: 'Extract to shared/ or common/ directory',
+        documentationLink: 'https://martinfowler.com/bliki/BoundedContext.html',
+      }),
+      useEvents: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Events',
+        description: 'Use event-driven communication',
+        severity: 'LOW',
+        fix: 'Publish events instead of direct imports',
+        documentationLink: 'https://martinfowler.com/eaaDev/DomainEvent.html',
+      }),
+      useApplicationService: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Application Service',
+        description: 'Use application service layer',
+        severity: 'LOW',
+        fix: 'Route through application service for cross-domain calls',
+        documentationLink: 'https://martinfowler.com/bliki/BoundedContext.html',
+      }),
     },
     schema: [
       {

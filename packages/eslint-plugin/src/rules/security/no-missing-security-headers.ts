@@ -121,9 +121,30 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
         fix: 'Set security headers: Content-Security-Policy, X-Frame-Options, X-Content-Type-Options',
         documentationLink: 'https://owasp.org/www-project-secure-headers/',
       }),
-      addSecurityHeaders: '✅ Add security headers middleware',
-      useMiddleware: '✅ Use helmet.js or similar security headers middleware',
-      setHeader: '✅ Set headers: res.setHeader("X-Frame-Options", "DENY")',
+      addSecurityHeaders: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Add Security Headers',
+        description: 'Add security headers middleware',
+        severity: 'LOW',
+        fix: 'Add Content-Security-Policy, X-Frame-Options headers',
+        documentationLink: 'https://owasp.org/www-project-secure-headers/',
+      }),
+      useMiddleware: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Helmet',
+        description: 'Use helmet.js for security headers',
+        severity: 'LOW',
+        fix: 'app.use(helmet())',
+        documentationLink: 'https://helmetjs.github.io/',
+      }),
+      setHeader: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Set Headers',
+        description: 'Set security headers manually',
+        severity: 'LOW',
+        fix: 'res.setHeader("X-Frame-Options", "DENY")',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers',
+      }),
     },
     schema: [
       {

@@ -9,29 +9,40 @@ import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 
-type MessageIds = 'hardcodedCredential' | 'useEnvironmentVariable' | 'useSecretManager';
+type MessageIds = 'useEnvironmentVariable' | 'useSecretManager' | 'strategyEnv' | 'strategyConfig' | 'strategyVault' | 'strategyAuto';
 
 export interface Options {
   /** Patterns to ignore (regex strings). Default: [] */
   ignorePatterns?: string[];
-  
+
   /** Allow credentials in test files. Default: false */
   allowInTests?: boolean;
-  
+
   /** Minimum length for credential detection. Default: 8 */
   minLength?: number;
-  
+
   /** Detect API keys. Default: true */
   detectApiKeys?: boolean;
-  
+
   /** Detect passwords. Default: true */
   detectPasswords?: boolean;
-  
+
   /** Detect tokens. Default: true */
   detectTokens?: boolean;
-  
+
   /** Detect database connection strings. Default: true */
   detectDatabaseStrings?: boolean;
+
+  /** Custom credential patterns. Default: [] */
+  customPatterns?: Array<{
+    /** The type of credential (e.g., 'API key', 'token', 'password') */
+    type: string;
+    /** Regex pattern to match */
+    pattern: string;
+  }>;
+
+  /** Strategy for fixing hardcoded credentials: 'env', 'config', 'vault', 'auto' */
+  strategy?: 'env' | 'config' | 'vault' | 'auto';
 }
 
 type RuleOptions = [Options?];
@@ -71,12 +82,26 @@ const CREDENTIAL_PATTERNS = {
  */
 function looksLikeCredential(
   value: string,
-  options: Required<Pick<Options, 'minLength' | 'detectApiKeys' | 'detectPasswords' | 'detectTokens' | 'detectDatabaseStrings'>>,
+  options: Required<Pick<Options, 'minLength' | 'detectApiKeys' | 'detectPasswords' | 'detectTokens' | 'detectDatabaseStrings' | 'customPatterns'>>,
   ignorePatterns: RegExp[]
 ): { isCredential: boolean; type: string } {
   // Check ignore patterns first
   if (ignorePatterns.some(pattern => pattern.test(value))) {
     return { isCredential: false, type: '' };
+  }
+
+  // Check custom patterns first (highest priority)
+  for (const customPattern of options.customPatterns) {
+    try {
+      const regex = new RegExp(customPattern.pattern);
+      if (regex.test(value)) {
+        return { isCredential: true, type: customPattern.type };
+      }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      // Invalid regex pattern, skip it
+      continue;
+    }
   }
 
   // Check passwords (common weak passwords) - no length requirement, check first
@@ -98,17 +123,7 @@ function looksLikeCredential(
     return { isCredential: false, type: '' };
   }
 
-  // Check API keys
-  if (options.detectApiKeys) {
-    if (CREDENTIAL_PATTERNS.apiKey.test(value)) {
-      return { isCredential: true, type: 'API key' };
-    }
-    if (CREDENTIAL_PATTERNS.awsAccessKey.test(value)) {
-      return { isCredential: true, type: 'AWS access key' };
-    }
-  }
-
-  // Check tokens
+  // Check tokens first (more specific patterns)
   if (options.detectTokens) {
     if (CREDENTIAL_PATTERNS.jwtToken.test(value)) {
       return { isCredential: true, type: 'JWT token' };
@@ -118,9 +133,20 @@ function looksLikeCredential(
     }
   }
 
-  // Check secret keys (long base64-like or hex strings)
+  // Check secret keys first (before generic API key patterns)
   if (value.length >= 32 && CREDENTIAL_PATTERNS.secretKey.test(value)) {
     return { isCredential: true, type: 'Secret key' };
+  }
+
+  // Check API keys
+  if (options.detectApiKeys) {
+    if (CREDENTIAL_PATTERNS.awsAccessKey.test(value)) {
+      return { isCredential: true, type: 'AWS access key' };
+    }
+    // Generic API key pattern (long alphanumeric strings)
+    if (/^[A-Za-z0-9_-]{32,}$/.test(value)) {
+      return { isCredential: true, type: 'API key' };
+    }
   }
 
   return { isCredential: false, type: '' };
@@ -140,7 +166,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
     fixable: 'code',
     hasSuggestions: true,
     messages: {
-      hardcodedCredential: formatLLMMessage({
+      useEnvironmentVariable: formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'Hard-coded Credential',
         cwe: 'CWE-798',
@@ -149,8 +175,48 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
         fix: 'Use environment variable: process.env.{{envVarName}} or secret management service',
         documentationLink: 'https://cwe.mitre.org/data/definitions/798.html',
       }),
-      useEnvironmentVariable: '✅ Use environment variable: process.env.{{envVarName}}',
-      useSecretManager: '✅ Use secret manager: AWS Secrets Manager, HashiCorp Vault, or similar',
+      useSecretManager: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Use Secret Manager',
+        cwe: 'CWE-798',
+        description: 'Use secure secret management service',
+        severity: 'HIGH',
+        fix: 'Use AWS Secrets Manager, HashiCorp Vault, Azure Key Vault, or similar',
+        documentationLink: 'https://cwe.mitre.org/data/definitions/798.html',
+      }),
+      strategyEnv: formatLLMMessage({
+        icon: MessageIcons.DEVELOPMENT,
+        issueName: 'Environment Variable Strategy',
+        description: 'Move credentials to environment variables',
+        severity: 'MEDIUM',
+        fix: 'Store credentials in environment variables (process.env)',
+        documentationLink: 'https://12factor.net/config',
+      }),
+      strategyConfig: formatLLMMessage({
+        icon: MessageIcons.DEVELOPMENT,
+        issueName: 'Configuration File Strategy',
+        description: 'Store credentials in encrypted configuration files',
+        severity: 'MEDIUM',
+        fix: 'Use encrypted configuration files with proper access controls',
+        documentationLink: 'https://owasp.org/www-project-cheat-sheets/cheatsheets/Configuration_Management_Cheat_Sheet.html',
+      }),
+      strategyVault: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Secret Vault Strategy',
+        cwe: 'CWE-798',
+        description: 'Use dedicated secret management system',
+        severity: 'HIGH',
+        fix: 'Implement HashiCorp Vault, AWS Secrets Manager, or similar secret vault',
+        documentationLink: 'https://cwe.mitre.org/data/definitions/798.html',
+      }),
+      strategyAuto: formatLLMMessage({
+        icon: MessageIcons.DEVELOPMENT,
+        issueName: 'Context-Aware Strategy',
+        description: 'Apply context-aware credential management',
+        severity: 'MEDIUM',
+        fix: 'Choose strategy based on deployment environment and security requirements',
+        documentationLink: 'https://owasp.org/www-project-cheat-sheets/cheatsheets/Secrets_Management_Cheat_Sheet.html',
+      }),
     },
     schema: [
       {
@@ -192,6 +258,32 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
             default: true,
             description: 'Detect database connection strings',
           },
+          customPatterns: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                type: {
+                  type: 'string',
+                  description: 'The type of credential (e.g., "API key", "token")',
+                },
+                pattern: {
+                  type: 'string',
+                  description: 'Regex pattern to match',
+                },
+              },
+              required: ['type', 'pattern'],
+              additionalProperties: false,
+            },
+            default: [],
+            description: 'Custom credential patterns to detect',
+          },
+          strategy: {
+            type: 'string',
+            enum: ['env', 'config', 'vault', 'auto'],
+            default: 'auto',
+            description: 'Strategy for fixing hardcoded credentials (auto = smart detection)'
+          },
         },
         additionalProperties: false,
       },
@@ -206,20 +298,22 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       detectPasswords: true,
       detectTokens: true,
       detectDatabaseStrings: true,
+      customPatterns: [],
+      strategy: 'auto',
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-ignorePatterns = [],
+      ignorePatterns = [],
       allowInTests = false,
       minLength = 8,
       detectApiKeys = true,
       detectPasswords = true,
       detectTokens = true,
       detectDatabaseStrings = true,
-    
-}: Options = options || {};
+      customPatterns = [],
+    }: Options = options || {};
 
     const filename = context.filename || context.getFilename();
     const isTestFile = allowInTests && (
@@ -238,7 +332,9 @@ ignorePatterns = [],
       detectPasswords,
       detectTokens,
       detectDatabaseStrings,
+      customPatterns,
     };
+
 
     /**
      * Check a string literal node
@@ -284,7 +380,7 @@ ignorePatterns = [],
 
       context.report({
         node,
-        messageId: 'hardcodedCredential',
+        messageId: 'useEnvironmentVariable',
         data: {
           credentialType: type,
           envVarName,
@@ -292,13 +388,14 @@ ignorePatterns = [],
         suggest: [
           {
             messageId: 'useEnvironmentVariable',
-            data: { envVarName },
+            data: { envVarName, credentialType: type },
             fix: (fixer: TSESLint.RuleFixer) => {
               return fixer.replaceText(node, `process.env.${envVarName} || '${value}'`);
             },
           },
           {
             messageId: 'useSecretManager',
+            data: { credentialType: type },
             fix: (fixer: TSESLint.RuleFixer) => {
               return fixer.replaceText(node, `await getSecret('${envVarName.toLowerCase()}')`);
             },
@@ -326,7 +423,7 @@ ignorePatterns = [],
           if (isCredential && !isTestFile) {
             context.report({
               node,
-              messageId: 'hardcodedCredential',
+              messageId: 'useEnvironmentVariable',
               data: {
                 credentialType: type,
                 envVarName: 'API_KEY',
@@ -334,13 +431,14 @@ ignorePatterns = [],
               suggest: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'API_KEY' },
+                  data: { envVarName: 'API_KEY', credentialType: type },
                   fix: (fixer: TSESLint.RuleFixer) => {
                     return fixer.replaceText(node, `process.env.API_KEY || \`${fullText}\``);
                   },
                 },
                 {
                   messageId: 'useSecretManager',
+                  data: { credentialType: type },
                   fix: (fixer: TSESLint.RuleFixer) => {
                     return fixer.replaceText(node, `await getSecret('api_key')`);
                   },
@@ -363,7 +461,7 @@ ignorePatterns = [],
                 // So we report the error without suggestions
                 context.report({
                   node: quasi,
-                  messageId: 'hardcodedCredential',
+                  messageId: 'useEnvironmentVariable',
                   data: {
                     credentialType: type,
                     envVarName: 'API_KEY',

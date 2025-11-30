@@ -56,9 +56,30 @@ export const maxParameters = createRule<RuleOptions, MessageIds>({
         fix: 'Refactor to use object parameter or split function',
         documentationLink: 'https://rules.sonarsource.com/javascript/RSPEC-107/',
       }),
-      useObjectParameter: '✅ Use object parameter: function({ param1, param2, param3 })',
-      extractToClass: '✅ Extract to class with properties',
-      splitFunction: '✅ Split function into smaller, focused functions',
+      useObjectParameter: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Object Parameter',
+        description: 'Use object parameter pattern',
+        severity: 'LOW',
+        fix: 'function({ param1, param2, param3 })',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment',
+      }),
+      extractToClass: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Extract to Class',
+        description: 'Extract to class with properties',
+        severity: 'LOW',
+        fix: 'Create class to hold related parameters',
+        documentationLink: 'https://refactoring.guru/introduce-parameter-object',
+      }),
+      splitFunction: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Split Function',
+        description: 'Split into smaller functions',
+        severity: 'LOW',
+        fix: 'Extract logic into separate focused functions',
+        documentationLink: 'https://refactoring.guru/smells/long-parameter-list',
+      }),
     },
     schema: [
       {

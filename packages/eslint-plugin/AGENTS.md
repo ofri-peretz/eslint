@@ -77,13 +77,14 @@ export default [
 
 ## Available Presets
 
-| Preset          | Rules Included                                                 | Best For                             |
-| --------------- | -------------------------------------------------------------- | ------------------------------------ |
-| **recommended** | 10 rules (3 security, 2 architecture, 2 development, 3 others) | Most projects - balanced enforcement |
-| **strict**      | All 62+ rules as errors                                        | Maximum code quality enforcement     |
-| **security**    | 27 security rules only                                         | Security-critical applications       |
-| **react**       | 3 React-specific rules                                         | React/Next.js projects               |
-| **sonarqube**   | 2 SonarQube-inspired rules                                     | Teams using SonarQube                |
+| Preset            | Rules Included                                                 | Best For                              |
+| ----------------- | -------------------------------------------------------------- | ------------------------------------- |
+| **recommended**   | 10 rules (3 security, 2 architecture, 2 development, 3 others) | Most projects - balanced enforcement  |
+| **strict**        | All 62+ rules as errors                                        | Maximum code quality enforcement      |
+| **security**      | 27 security rules only                                         | Security-critical applications        |
+| **react**         | 3 React-specific rules                                         | React/Next.js projects                |
+| **react-modern**  | Hooks-focused rules, class component rules disabled            | Modern React (functional + hooks)     |
+| **sonarqube**     | 2 SonarQube-inspired rules                                     | Teams using SonarQube                 |
 
 ## Rule Categories
 
@@ -214,14 +215,15 @@ import llmOptimized from '@forge-js/eslint-plugin-llm-optimized';
 
 ### Available Exports
 
-| Export                             | Type   | Description                                                    |
-| ---------------------------------- | ------ | -------------------------------------------------------------- |
-| `llmOptimized.configs.recommended` | Config | 10 rules (3 security, 2 architecture, 2 development, 3 others) |
-| `llmOptimized.configs.strict`      | Config | All 62+ rules as errors                                        |
-| `llmOptimized.configs.security`    | Config | 27 security rules only                                         |
-| `llmOptimized.configs.react`       | Config | 3 React-specific rules                                         |
-| `llmOptimized.configs.sonarqube`   | Config | 2 SonarQube-inspired rules                                     |
-| `llmOptimized.rules`               | Object | All individual rules accessible by name                        |
+| Export                                  | Type   | Description                                                    |
+| --------------------------------------- | ------ | -------------------------------------------------------------- |
+| `llmOptimized.configs.recommended`      | Config | 10 rules (3 security, 2 architecture, 2 development, 3 others) |
+| `llmOptimized.configs.strict`           | Config | All 62+ rules as errors                                        |
+| `llmOptimized.configs.security`         | Config | 27 security rules only                                         |
+| `llmOptimized.configs.react`            | Config | 3 React-specific rules                                         |
+| `llmOptimized.configs['react-modern']`  | Config | Hooks-focused rules, class component rules disabled            |
+| `llmOptimized.configs.sonarqube`        | Config | 2 SonarQube-inspired rules                                     |
+| `llmOptimized.rules`                    | Object | All individual rules accessible by name                        |
 
 ### Rule Configuration Format
 

@@ -102,9 +102,30 @@ export const noMissingErrorContext = createRule<RuleOptions, MessageIds>({
         fix: 'Add error message and use Error class for stack trace',
         documentationLink: 'https://rules.sonarsource.com/javascript/RSPEC-1128/',
       }),
-      addErrorMessage: '✅ Add error message: throw new Error("descriptive message")',
-      addErrorStack: '✅ Use Error class: throw new Error(message) instead of throw message',
-      useErrorClass: '✅ Use specific error class: throw new TypeError("message")',
+      addErrorMessage: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Add Error Message',
+        description: 'Add descriptive error message',
+        severity: 'LOW',
+        fix: 'throw new Error("descriptive message")',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error',
+      }),
+      addErrorStack: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Error Class',
+        description: 'Use Error class for stack trace',
+        severity: 'LOW',
+        fix: 'throw new Error(message) instead of throw message',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error',
+      }),
+      useErrorClass: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Specific Error',
+        description: 'Use specific error class',
+        severity: 'LOW',
+        fix: 'throw new TypeError("message") or throw new RangeError("message")',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypeError',
+      }),
     },
     schema: [
       {

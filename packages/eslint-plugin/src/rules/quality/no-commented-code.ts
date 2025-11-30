@@ -109,8 +109,22 @@ export const noCommentedCode = createRule<RuleOptions, MessageIds>({
         fix: 'Remove commented code or use version control for history',
         documentationLink: 'https://rules.sonarsource.com/javascript/RSPEC-125/',
       }),
-      removeCode: '✅ Remove commented code block',
-      useVersionControl: '✅ Use version control (git) to track code history instead',
+      removeCode: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Remove Code',
+        description: 'Remove commented code block',
+        severity: 'LOW',
+        fix: 'Delete the commented code block',
+        documentationLink: 'https://rules.sonarsource.com/javascript/RSPEC-125/',
+      }),
+      useVersionControl: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Git',
+        description: 'Use version control for code history',
+        severity: 'LOW',
+        fix: 'Delete commented code and use git history instead',
+        documentationLink: 'https://git-scm.com/docs/git-log',
+      }),
     },
     schema: [
       {
@@ -159,7 +173,7 @@ ignoreSingleLine = false,
       return {};
     }
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
 
     /**
      * Check comment nodes

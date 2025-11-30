@@ -167,9 +167,30 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
         fix: 'Add .catch() handler or use try/catch with await',
         documentationLink: 'https://rules.sonarsource.com/javascript/RSPEC-4635/',
       }),
-      addCatch: '✅ Add .catch() handler: promise.catch(error => console.error(error))',
-      useTryCatch: '✅ Use try/catch with await: try { await promise; } catch (error) { ... }',
-      useAwait: '✅ Use await to handle promise: await promise',
+      addCatch: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Add catch handler',
+        description: 'Add .catch() handler to promise',
+        severity: 'LOW',
+        fix: 'promise.catch(error => console.error(error))',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch',
+      }),
+      useTryCatch: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use try/catch',
+        description: 'Use try/catch with await',
+        severity: 'LOW',
+        fix: 'try { await promise; } catch (error) { handle(error); }',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/try...catch',
+      }),
+      useAwait: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use await',
+        description: 'Use await to handle promise',
+        severity: 'LOW',
+        fix: 'await promise;',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await',
+      }),
     },
     schema: [
       {
@@ -210,7 +231,7 @@ ignoreInTests = true,
       return {};
     }
 
-    // const sourceCode = context.sourceCode || context.getSourceCode(); // Not used
+    // const sourceCode = context.sourceCode || context.sourceCode; // Not used
 
     /**
      * Check call expressions for unhandled promises

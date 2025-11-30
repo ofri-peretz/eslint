@@ -165,10 +165,38 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
         fix: '{{fix}}',
         documentationLink: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
       }),
-      escapeUserInput: '✅ Escape user input: input.replace(/[.*+?^${}()|[\\]\\\\]/g, \'\\\\$&\')',
-      validatePattern: '✅ Validate pattern against whitelist before use',
-      useSafeLibrary: '✅ Use safe-regex library: if (safeRegex(pattern)) { new RegExp(pattern) }',
-      avoidDynamicFlags: '✅ Use static flags: new RegExp(pattern, "gi") instead of dynamic flags',
+      escapeUserInput: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Escape User Input',
+        description: 'Escape user input for regex',
+        severity: 'LOW',
+        fix: 'input.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping',
+      }),
+      validatePattern: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Validate Pattern',
+        description: 'Validate pattern against whitelist',
+        severity: 'LOW',
+        fix: 'Validate pattern before creating RegExp',
+        documentationLink: 'https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS',
+      }),
+      useSafeLibrary: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use safe-regex',
+        description: 'Use safe-regex library for validation',
+        severity: 'LOW',
+        fix: 'if (safeRegex(pattern)) { new RegExp(pattern) }',
+        documentationLink: 'https://github.com/substack/safe-regex',
+      }),
+      avoidDynamicFlags: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Static Flags',
+        description: 'Use static flags instead of dynamic',
+        severity: 'LOW',
+        fix: 'new RegExp(pattern, "gi") with static flags',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp',
+      }),
     },
     schema: [
       {
@@ -210,7 +238,7 @@ allowLiterals = false,
     
 }: Options = options || {};
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
 
     /**
      * Check RegExp constructor calls

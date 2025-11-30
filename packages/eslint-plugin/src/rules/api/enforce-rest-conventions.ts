@@ -56,9 +56,30 @@ export const enforceRestConventions = createRule<RuleOptions, MessageIds>({
         fix: 'Follow RESTful conventions for HTTP methods, status codes, and resource naming',
         documentationLink: 'https://restfulapi.net/',
       }),
-      useProperHttpMethod: '✅ Use proper HTTP method (GET, POST, PUT, PATCH, DELETE)',
-      useProperStatusCode: '✅ Use appropriate status code for operation',
-      fixResourceNaming: '✅ Use plural nouns for resource names (e.g., /users, /orders)',
+      useProperHttpMethod: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use HTTP Method',
+        description: 'Use proper HTTP method',
+        severity: 'LOW',
+        fix: 'GET (read), POST (create), PUT/PATCH (update), DELETE (delete)',
+        documentationLink: 'https://restfulapi.net/http-methods/',
+      }),
+      useProperStatusCode: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Status Code',
+        description: 'Use appropriate status code',
+        severity: 'LOW',
+        fix: '200 (OK), 201 (Created), 204 (No Content), 400 (Bad Request), 404 (Not Found)',
+        documentationLink: 'https://restfulapi.net/http-status-codes/',
+      }),
+      fixResourceNaming: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Resource Naming',
+        description: 'Use plural nouns for resources',
+        severity: 'LOW',
+        fix: '/users, /orders, /products (not /user, /order)',
+        documentationLink: 'https://restfulapi.net/resource-naming/',
+      }),
     },
     schema: [
       {

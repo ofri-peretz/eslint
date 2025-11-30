@@ -118,8 +118,22 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
         fix: '{{safeAlternative}}',
         documentationLink: 'https://cwe.mitre.org/data/definitions/346.html',
       }),
-      useOriginValidation: '✅ Validate origin: app.use(cors({ origin: (origin, callback) => { if (allowedOrigins.includes(origin)) callback(null, true); else callback(new Error("Not allowed")); } }));',
-      useCorsMiddleware: '✅ Use CORS middleware with origin validation: app.use(cors({ origin: allowedOrigins }));',
+      useOriginValidation: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Validate Origin',
+        description: 'Validate CORS origin',
+        severity: 'LOW',
+        fix: 'cors({ origin: (origin, cb) => allowedOrigins.includes(origin) ? cb(null, true) : cb(new Error()) })',
+        documentationLink: 'https://github.com/expressjs/cors#configuration-options',
+      }),
+      useCorsMiddleware: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use CORS Middleware',
+        description: 'Use CORS middleware with origin validation',
+        severity: 'LOW',
+        fix: 'app.use(cors({ origin: allowedOrigins }))',
+        documentationLink: 'https://github.com/expressjs/cors',
+      }),
     },
     schema: [
       {
@@ -168,7 +182,7 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
 
     const filename = context.getFilename();
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
 
     function checkLiteral(node: TSESTree.Literal) {
       if (isTestFile) {

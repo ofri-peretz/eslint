@@ -10,8 +10,8 @@
  * Note: Each project's vitest config references this file, so it runs once per project.
  * We use __dirname to get the project-relative path and create only the local coverage dir.
  */
-import { mkdirSync, existsSync } from 'fs';
-import { resolve } from 'path';
+import { mkdirSync, existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 export async function setup() {
   // Get the directory of the vitest config file (project root via relative path in config)

@@ -226,6 +226,14 @@ describe('no-privilege-escalation', () => {
         {
           code: 'const result = checkRole(user) ? user.role = req.body.role : null;',
         },
+        // Cover line 142-151: ConditionalExpression with CallExpression test (Identifier callee)
+        {
+          code: 'const result = isAdmin() ? (user.role = req.body.role) : null;',
+        },
+        // Cover MemberExpression callee in ternary
+        {
+          code: 'const result = user.hasPermission() ? (user.role = req.body.role) : null;',
+        },
       ],
       invalid: [],
     });
@@ -246,6 +254,40 @@ describe('no-privilege-escalation', () => {
           code: 'grant(user, req.body.permission);',
           filename: 'test.spec.ts',
           options: [{ allowInTests: true }],
+        },
+      ],
+      invalid: [],
+    });
+
+    // Cover lines 157-170: CallExpression parent with role check patterns
+    ruleTester.run('coverage - CallExpression parent with role check', noPrivilegeEscalation, {
+      valid: [
+        // Role assignment inside hasRole() call - covered by parent check (line 160-165)
+        {
+          code: 'checkRole(user, user.role = req.body.role);',
+        },
+        // Role assignment inside member expression role check (line 167-172)
+        {
+          code: 'userService.verifyRole(user, user.role = req.body.role);',
+        },
+        // Nested role check calls
+        {
+          code: 'requireRole(admin, user.permission = req.body.permission);',
+        },
+      ],
+      invalid: [],
+    });
+
+    // Cover edge cases for MemberExpression callee
+    ruleTester.run('coverage - MemberExpression callee variations', noPrivilegeEscalation, {
+      valid: [
+        // MemberExpression with role check property in IfStatement
+        {
+          code: 'if (auth.isAuthorized(user)) { user.access = req.body.access; }',
+        },
+        // MemberExpression with checkPermission
+        {
+          code: 'if (service.checkPermission(user)) { user.level = req.body.level; }',
         },
       ],
       invalid: [],

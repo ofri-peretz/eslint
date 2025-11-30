@@ -74,9 +74,30 @@ export const noKeyboardInaccessibleElements = createRule<RuleOptions, MessageIds
         fix: 'Add tabIndex and ARIA role or use button element',
         documentationLink: 'https://www.w3.org/WAI/WCAG21/Understanding/keyboard.html',
       }),
-      addTabIndex: '✅ Add tabIndex={0} for keyboard navigation',
-      addAriaRole: '✅ Add role="button" for screen readers',
-      useButton: '✅ Use <button> element instead of <div>',
+      addTabIndex: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Add tabIndex',
+        description: 'Add tabIndex for keyboard navigation',
+        severity: 'LOW',
+        fix: 'tabIndex={0}',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/tabindex',
+      }),
+      addAriaRole: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Add ARIA Role',
+        description: 'Add role for screen readers',
+        severity: 'LOW',
+        fix: 'role="button"',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/button_role',
+      }),
+      useButton: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use button Element',
+        description: 'Use button element instead of div',
+        severity: 'LOW',
+        fix: '<button onClick={...}>Content</button>',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button',
+      }),
     },
     schema: [
       {

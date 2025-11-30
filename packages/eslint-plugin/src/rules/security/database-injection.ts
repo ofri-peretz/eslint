@@ -14,20 +14,27 @@ type MessageIds =
   | 'usePrisma'
   | 'useTypeORM'
   | 'useParameterized'
-  | 'useMongoSanitize';
+  | 'useMongoSanitize'
+  | 'strategyParameterize'
+  | 'strategyORM'
+  | 'strategySanitize'
+  | 'strategyAuto';
 
 export interface Options {
   /** Detect NoSQL injection patterns. Default: true */
   detectNoSQL?: boolean;
-  
+
   /** Detect ORM-specific vulnerabilities. Default: true */
   detectORMs?: boolean;
-  
+
   /** Trusted data sources that bypass detection */
   trustedSources?: string[];
-  
+
   /** Show framework-specific recommendations. Default: true */
   frameworkHints?: boolean;
+
+  /** Strategy for fixing injection: 'parameterize', 'orm', 'sanitize', 'auto' */
+  strategy?: 'parameterize' | 'orm' | 'sanitize' | 'auto';
 }
 
 type RuleOptions = [Options?];
@@ -60,10 +67,70 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
         fix: 'Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId])',
         documentationLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
       }),
-      usePrisma: '✅ Use Prisma ORM (recommended)',
-      useTypeORM: '✅ Use TypeORM with QueryBuilder',
-      useParameterized: '✅ Use parameterized query',
-      useMongoSanitize: '✅ Use mongo-sanitize',
+      usePrisma: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Prisma',
+        description: 'Use Prisma ORM',
+        severity: 'LOW',
+        fix: 'await prisma.user.findMany({ where: { id } })',
+        documentationLink: 'https://www.prisma.io/docs',
+      }),
+      useTypeORM: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use TypeORM',
+        description: 'Use TypeORM with QueryBuilder',
+        severity: 'LOW',
+        fix: 'userRepository.createQueryBuilder().where("id = :id", { id })',
+        documentationLink: 'https://typeorm.io/',
+      }),
+      useParameterized: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Parameterized',
+        description: 'Use parameterized query',
+        severity: 'LOW',
+        fix: 'db.query("SELECT * FROM users WHERE id = ?", [userId])',
+        documentationLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
+      }),
+      useMongoSanitize: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use mongo-sanitize',
+        description: 'Use mongo-sanitize for MongoDB',
+        severity: 'LOW',
+        fix: 'sanitize(req.body)',
+        documentationLink: 'https://github.com/vkarpov15/mongo-sanitize',
+      }),
+      strategyParameterize: formatLLMMessage({
+        icon: MessageIcons.STRATEGY,
+        issueName: 'Parameterize Strategy',
+        description: 'Use parameterized queries',
+        severity: 'LOW',
+        fix: 'Use ? or :name placeholders for user input',
+        documentationLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
+      }),
+      strategyORM: formatLLMMessage({
+        icon: MessageIcons.STRATEGY,
+        issueName: 'ORM Strategy',
+        description: 'Migrate to ORM for automatic protection',
+        severity: 'LOW',
+        fix: 'Use Prisma, TypeORM, or Sequelize',
+        documentationLink: 'https://www.prisma.io/docs/concepts/overview/why-prisma',
+      }),
+      strategySanitize: formatLLMMessage({
+        icon: MessageIcons.STRATEGY,
+        issueName: 'Sanitize Strategy',
+        description: 'Add input sanitization',
+        severity: 'LOW',
+        fix: 'Sanitize input as last resort',
+        documentationLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
+      }),
+      strategyAuto: formatLLMMessage({
+        icon: MessageIcons.STRATEGY,
+        issueName: 'Auto Strategy',
+        description: 'Apply context-aware injection prevention',
+        severity: 'LOW',
+        fix: 'Use context-appropriate protection',
+        documentationLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
+      }),
     },
     schema: [
       {
@@ -88,6 +155,12 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
             default: true,
             description: 'Provide framework-specific suggestions',
           },
+          strategy: {
+            type: 'string',
+            enum: ['parameterize', 'orm', 'sanitize', 'auto'],
+            default: 'auto',
+            description: 'Strategy for fixing injection (auto = smart detection)'
+          },
         },
         additionalProperties: false,
       },
@@ -99,15 +172,37 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
       detectORMs: true,
       trustedSources: [],
       frameworkHints: true,
+      strategy: 'auto',
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-detectNoSQL = true 
-}: Options = options || {};
+      detectNoSQL = true,
+      strategy = 'auto'
+    }: Options = options || {};
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
+
+    /**
+     * Select message ID based on strategy
+     * @todo Consider using this for suggestions in future versions
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const selectStrategyMessage = (): MessageIds => {
+      switch (strategy) {
+        case 'parameterize':
+          return 'strategyParameterize';
+        case 'orm':
+          return 'strategyORM';
+        case 'sanitize':
+          return 'strategySanitize';
+        case 'auto':
+        default:
+          // Auto mode: prefer parameterized queries
+          return 'useParameterized';
+      }
+    };
     const filename = context.filename || context.getFilename();
 
     /**

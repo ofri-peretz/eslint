@@ -48,8 +48,22 @@ export const enforceNaming = createRule<RuleOptions, MessageIds>({
         fix: 'Use "{{correctTerm}}" ({{context}}) for ubiquitous language alignment',
         documentationLink: 'Domain glossary',
       }),
-      useDomainTerm: '✅ Replace with "{{correctTerm}}"',
-      viewGlossary: '📖 View domain glossary',
+      useDomainTerm: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Domain Term',
+        description: 'Replace with domain terminology',
+        severity: 'LOW',
+        fix: 'Use "{{correctTerm}}" instead',
+        documentationLink: 'https://martinfowler.com/bliki/UbiquitousLanguage.html',
+      }),
+      viewGlossary: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'View Glossary',
+        description: 'View domain glossary',
+        severity: 'LOW',
+        fix: 'Reference domain glossary for correct terminology',
+        documentationLink: 'https://martinfowler.com/bliki/UbiquitousLanguage.html',
+      }),
     },
     schema: [
       {

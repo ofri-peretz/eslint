@@ -108,9 +108,30 @@ export const noUnsafeTypeNarrowing = createRule<RuleOptions, MessageIds>({
         fix: 'Use type guards or proper validation before type assertion',
         documentationLink: 'https://rules.sonarsource.com/javascript/RSPEC-4326/',
       }),
-      useTypeGuard: '✅ Use type guard: function isType(value: unknown): value is Type { ... }',
-      useProperNarrowing: '✅ Use proper narrowing: if (typeof value === "string") { ... }',
-      validateBeforeAssert: '✅ Validate before asserting: if (isValid(value)) { const typed = value as Type; }',
+      useTypeGuard: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Type Guard',
+        description: 'Use type guard function',
+        severity: 'LOW',
+        fix: 'function isType(value: unknown): value is Type { return ... }',
+        documentationLink: 'https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates',
+      }),
+      useProperNarrowing: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Type Narrowing',
+        description: 'Use proper type narrowing',
+        severity: 'LOW',
+        fix: 'if (typeof value === "string") { ... }',
+        documentationLink: 'https://www.typescriptlang.org/docs/handbook/2/narrowing.html',
+      }),
+      validateBeforeAssert: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Validate First',
+        description: 'Validate before type assertion',
+        severity: 'LOW',
+        fix: 'if (isValid(value)) { const typed = value as Type; }',
+        documentationLink: 'https://www.typescriptlang.org/docs/handbook/2/narrowing.html',
+      }),
     },
     schema: [
       {
@@ -151,7 +172,7 @@ ignoreInTests = true,
       return {};
     }
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
 
     /**
      * Check type assertions

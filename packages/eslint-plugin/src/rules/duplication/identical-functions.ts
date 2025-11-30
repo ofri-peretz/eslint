@@ -58,9 +58,30 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
         fix: 'Extract to reusable function',
         documentationLink: 'https://en.wikipedia.org/wiki/Don%27t_repeat_yourself',
       }),
-      extractGeneric: '✅ Extract to generic function: {{functionName}}',
-      useHigherOrder: '✅ Use higher-order function pattern',
-      applyInheritance: '✅ Use inheritance/composition',
+      extractGeneric: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Extract Generic',
+        description: 'Extract to generic function',
+        severity: 'LOW',
+        fix: 'Create shared function with parameters',
+        documentationLink: 'https://en.wikipedia.org/wiki/Don%27t_repeat_yourself',
+      }),
+      useHigherOrder: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Higher-Order',
+        description: 'Use higher-order function pattern',
+        severity: 'LOW',
+        fix: 'Create factory function that returns specialized functions',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Glossary/Higher-order_function',
+      }),
+      applyInheritance: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Composition',
+        description: 'Use inheritance/composition',
+        severity: 'LOW',
+        fix: 'Extract common behavior to base class or mixin',
+        documentationLink: 'https://en.wikipedia.org/wiki/Composition_over_inheritance',
+      }),
     },
     schema: [
       {
@@ -101,7 +122,7 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
 minLines = 3, similarityThreshold = 0.9, ignoreTestFiles = true 
 }: Options = options || {};
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
     const filename = context.filename || context.getFilename();
 
     // Skip test files if configured

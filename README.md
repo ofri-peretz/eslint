@@ -1,8 +1,10 @@
 # 🔧 Forge.js
 
-> **Open-Source Tools & Libraries for JavaScript & TypeScript Ecosystems**
+> **Battle-Tested Tools for Engineering Teams**
 
-A modern TypeScript monorepo providing a collection of carefully crafted tools, utilities, and libraries to ease development in the JavaScript and TypeScript ecosystems. Optimized for modern development workflows and LLM-enhanced coding assistants.
+A collection of open-source tools and libraries built from real-world experience leading and working in engineering organizations. Forge.js addresses the challenges that teams face at scale—code quality, architecture enforcement, developer onboarding, and maintaining consistency across large codebases.
+
+**This isn't another utility library for individual developers.** It's a toolkit designed for teams and organizations who need to ship quality software consistently.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
@@ -12,255 +14,106 @@ A modern TypeScript monorepo providing a collection of carefully crafted tools, 
 
 ---
 
-## 📦 Packages
+## 📦 Available Tools
 
-This monorepo contains independently versioned packages. Below is the complete list of available packages with their latest versions:
+This monorepo contains independently versioned packages. Each tool is designed to solve a specific problem that engineering teams face.
 
 > **Note**: Version badges are dynamically updated from npm. For the latest version information, visit [npmjs.com](https://www.npmjs.com/search?q=forge-js)
 
-### Core Packages (@forge-js)
+### ESLint Plugin — LLM-Optimized Rules
 
-| Package                                                             | Version                                                                                                                                           | Description                                                                               | Status       |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------ |
-| [`@forge-js/eslint-plugin-llm-optimized`](./packages/eslint-plugin) | [![npm](https://img.shields.io/npm/v/@forge-js/eslint-plugin-llm-optimized)](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) | ESLint plugin with LLM-optimized rules for better code quality in AI-assisted development | ✅ Published |
-| [`@forge-js/eslint-plugin-utils`](./packages/eslint-plugin-utils)   | [![npm](https://img.shields.io/npm/v/@forge-js/eslint-plugin-utils)](https://www.npmjs.com/package/@forge-js/eslint-plugin-utils)                 | Utilities and helpers for building TypeScript-based ESLint plugins                        | ✅ Published |
-| [`@forge-js/cli`](./packages/cli)                                   | [![npm](https://img.shields.io/npm/v/@forge-js/cli)](https://www.npmjs.com/package/@forge-js/cli)                                                 | CLI tools for the Forge ecosystem                                                         | ✅ Published |
+The core offering: an ESLint plugin with rules that enforce team conventions and provide AI-friendly error messages. Available under multiple package names for discoverability:
 
-### ESLint Plugins (Unscoped)
+| Package Name                                                            | Version                                                                                                                                           |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`@forge-js/eslint-plugin-llm-optimized`](./packages/eslint-plugin)     | [![npm](https://img.shields.io/npm/v/@forge-js/eslint-plugin-llm-optimized)](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) |
+| [`eslint-plugin-llm-optimized`](./packages/eslint-plugin-llm-optimized) | [![npm](https://img.shields.io/npm/v/eslint-plugin-llm-optimized)](https://www.npmjs.com/package/eslint-plugin-llm-optimized)                     |
+| [`eslint-plugin-llm`](./packages/eslint-plugin-llm)                     | [![npm](https://img.shields.io/npm/v/eslint-plugin-llm)](https://www.npmjs.com/package/eslint-plugin-llm)                                         |
+| [`eslint-plugin-mcp`](./packages/eslint-plugin-mcp)                     | [![npm](https://img.shields.io/npm/v/eslint-plugin-mcp)](https://www.npmjs.com/package/eslint-plugin-mcp)                                         |
+| [`eslint-plugin-mcp-optimized`](./packages/eslint-plugin-mcp-optimized) | [![npm](https://img.shields.io/npm/v/eslint-plugin-mcp-optimized)](https://www.npmjs.com/package/eslint-plugin-mcp-optimized)                     |
 
-| Package                                                                 | Version                                                                                                                       | Description                                                                             | Status       |
-| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ------------ |
-| [`eslint-plugin-llm-optimized`](./packages/eslint-plugin-llm-optimized) | [![npm](https://img.shields.io/npm/v/eslint-plugin-llm-optimized)](https://www.npmjs.com/package/eslint-plugin-llm-optimized) | ESLint rules optimized for Large Language Models - AI assistants can actually fix these | ✅ Published |
-| [`eslint-plugin-llm`](./packages/eslint-plugin-llm)                     | [![npm](https://img.shields.io/npm/v/eslint-plugin-llm)](https://www.npmjs.com/package/eslint-plugin-llm)                     | Barrel export package for ESLint rules optimized for LLMs                               | ✅ Published |
-| [`eslint-plugin-mcp`](./packages/eslint-plugin-mcp)                     | [![npm](https://img.shields.io/npm/v/eslint-plugin-mcp)](https://www.npmjs.com/package/eslint-plugin-mcp)                     | ESLint rules optimized for Model Context Protocol (MCP)                                 | ✅ Published |
-| [`eslint-plugin-mcp-optimized`](./packages/eslint-plugin-mcp-optimized) | [![npm](https://img.shields.io/npm/v/eslint-plugin-mcp-optimized)](https://www.npmjs.com/package/eslint-plugin-mcp-optimized) | ESLint rules optimized for Model Context Protocol (MCP) - optimized version             | ✅ Published |
+> **Which one should I use?** They're all the same plugin. Pick whichever name resonates with your team or is easiest to find via search.
+
+### Supporting Tools
+
+| Package                                                           | Version                                                                                                                           | What It Does                              |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| [`@forge-js/cli`](./packages/cli)                                 | [![npm](https://img.shields.io/npm/v/@forge-js/cli)](https://www.npmjs.com/package/@forge-js/cli)                                 | CLI utilities for common team workflows   |
+| [`@forge-js/eslint-plugin-utils`](./packages/eslint-plugin-utils) | [![npm](https://img.shields.io/npm/v/@forge-js/eslint-plugin-utils)](https://www.npmjs.com/package/@forge-js/eslint-plugin-utils) | Build your own team-specific ESLint rules |
 
 ---
 
-## 🎯 What is Forge.js?
+## 🎯 Why Forge.js?
 
-**Forge.js** is an ecosystem of open-source tools and libraries built with TypeScript to ease development in the JavaScript and TypeScript ecosystems. It provides:
+Every engineering team eventually faces the same problems: inconsistent code patterns, architectural drift, security vulnerabilities sneaking into production, and new hires struggling to understand "how we do things here."
 
-- **🤖 LLM-Aware Tools**: Libraries designed to work seamlessly with AI coding assistants and modern development workflows
-- **🏗️ Solid Infrastructure**: Built on proven patterns and best practices from the community
-- **🔧 Developer-Friendly**: Easy to configure, extend, customize, and integrate
-- **📊 Type-Safe**: Full TypeScript support with comprehensive type checking utilities
-- **⚡ Performance**: Optimized for speed and efficiency without sacrificing accuracy
-- **🧪 Well-Tested**: Comprehensive test coverage with industry-standard tools (Vitest, Codecov)
-- **🔄 Actively Maintained**: Regular updates and responsive to community feedback
+**Forge.js exists because I've lived these problems.** After years of working in organizations—from startups to enterprises—I've built these tools to solve the challenges that matter most to teams:
+
+### Problems We Solve
+
+| Challenge                      | How Forge.js Helps                                                                       |
+| ------------------------------ | ---------------------------------------------------------------------------------------- |
+| 🏗️ **Architectural Drift**     | Enforce module boundaries and prevent circular dependencies automatically                |
+| 🔒 **Security Blind Spots**    | Catch hardcoded secrets, injection vulnerabilities, and unsafe patterns before PR review |
+| 📚 **Inconsistent Patterns**   | Codify team conventions into automated rules that teach while they enforce               |
+| 🤖 **AI-Assisted Development** | LLM-optimized error messages that AI assistants can actually understand and fix          |
+| 🚀 **Developer Onboarding**    | New team members learn the codebase through guardrails, not just documentation           |
+
+### Design Principles
+
+- **Team-First**: Built for organizations, not just individual developers
+- **Battle-Tested**: Every tool solves a real problem I've encountered in production
+- **Actionable Feedback**: Error messages explain the "why" and show how to fix
+- **LLM-Ready**: Optimized for modern AI-assisted development workflows
+- **Zero Configuration Burden**: Sensible defaults with escape hatches when needed
 
 ### Current Focus Areas
 
-- **Code Quality Tools**: ESLint plugins and rules for maintaining high code standards
-- **Architecture & Dependency Management**: Tools for enforcing module boundaries and preventing circular dependencies
-- **Developer Experience**: CLI tools and utilities to streamline common development tasks
-- **Type Safety**: TypeScript utilities and helpers for building robust applications
-- **Performance & Security**: Tools for identifying and fixing performance bottlenecks and security issues
+- **Code Quality Automation**: ESLint plugins that enforce team standards and catch issues early
+- **Architecture Enforcement**: Prevent the technical debt that accumulates in large codebases
+- **Security Guardrails**: Automated detection of common vulnerabilities and anti-patterns
+- **Developer Experience**: CLI tools that make doing the right thing the easy thing
+- **Team Scalability**: Tools that help maintain quality as your team grows
 
 ---
 
-## 🚀 Quick Start
+## 👥 Who Is This For?
 
-### Installation
-
-```bash
-# Install the ESLint plugin
-pnpm add -D @forge-js/eslint-plugin-llm-optimized
-
-# Or with npm
-npm install --save-dev @forge-js/eslint-plugin-llm-optimized
-
-# Or with yarn
-yarn add -D @forge-js/eslint-plugin-llm-optimized
-```
-
-### Configuration
-
-Add to your `eslint.config.js`:
-
-```javascript
-import forgePlugin from '@forge-js/eslint-plugin-llm-optimized';
-
-export default [
-  {
-    plugins: {
-      '@forge-js': forgePlugin,
-    },
-    rules: {
-      '@forge-js/no-console-log': 'error',
-      '@forge-js/no-circular-dependencies': 'warn',
-      '@forge-js/no-internal-modules': 'error',
-    },
-  },
-];
-```
-
----
-
-## 📚 Documentation
-
-- **[Contributing Guide](./CONTRIBUTING.md)** - How to contribute, release process, and development workflow
-- **[ESLint Plugin Documentation](./packages/eslint-plugin/README.md)** - Available rules and configuration
-- **[Utils API Documentation](./packages/eslint-plugin-utils/README.md)** - API documentation for plugin utilities
-- **[AI Agent Guides](./packages/eslint-plugin/AGENTS.md)** - LLM-optimized documentation for AI assistants
-- **[Support](./.github/SUPPORT.md)** - Getting help and support resources
-
----
-
-## 🛠️ Development
-
-### Prerequisites
-
-- **Node.js**: 20+
-- **pnpm**: 10.18.3+
-- **Nx**: Managed via pnpm
-
-### Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/ofri-peretz/forge-js.git
-cd forge-js
-
-# Install dependencies
-pnpm install
-
-# Build all packages
-pnpm nx run-many -t build --all
-
-# Run tests
-pnpm nx run-many -t test --all
-
-# Lint code
-pnpm nx run-many -t lint --all
-```
-
-### Monorepo Structure
-
-```
-forge-js/
-├── packages/
-│   ├── eslint-plugin/        # Core ESLint plugin
-│   ├── eslint-plugin-utils/  # Shared utilities
-│   └── cli/                  # CLI tools
-├── apps/
-│   └── playground/           # Testing & demo app
-├── docs/                     # Documentation
-├── .github/                  # GitHub Actions workflows
-└── README.md                 # This file
-```
+| Role                     | How Forge.js Helps                                                          |
+| ------------------------ | --------------------------------------------------------------------------- |
+| **Tech Leads**           | Enforce architectural decisions automatically instead of during code review |
+| **Platform Teams**       | Provide guardrails that scale across multiple teams and repositories        |
+| **Security Engineers**   | Catch vulnerabilities at development time, not in production                |
+| **Engineering Managers** | Reduce onboarding time and maintain consistency as teams grow               |
+| **Senior Engineers**     | Codify institutional knowledge into automated tooling                       |
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](./docs/CONTRIBUTING.md) for details on:
+We welcome contributions! If you've faced a problem in your organization that could benefit others, we'd love to hear about it.
 
-- Code of conduct
-- Development workflow
-- Commit conventions
-- Pull request process
-- Release process
-
-### Quick Contribution Checklist
-
-1. **Fork & Clone**: Fork the repository and clone it locally
-2. **Branch**: Create a feature branch (`feat/your-feature` or `fix/your-fix`)
-3. **Develop**: Make your changes with tests
-4. **Commit**: Use conventional commits (`feat:`, `fix:`, `docs:`, etc.)
-5. **Test**: Ensure all tests pass (`pnpm nx run-many -t test --all`)
-6. **PR**: Submit a pull request with a clear description
+- **Have an idea?** [Start a discussion](https://github.com/ofri-peretz/forge-js/discussions)
+- **Found a bug?** [Open an issue](https://github.com/ofri-peretz/forge-js/issues)
+- **Want to contribute code?** See our [Contributing Guide](./docs/CONTRIBUTING.md)
 
 ---
 
-## 📋 Available Rules (ESLint Plugin)
+## 🔗 Get Started
 
-### Architecture Rules
-
-| Rule                       | Description               | Auto-fixable |
-| -------------------------- | ------------------------- | ------------ |
-| `no-circular-dependencies` | Prevent circular imports  | ❌           |
-| `no-internal-modules`      | Enforce module boundaries | ❌           |
-
-### Development Rules
-
-| Rule             | Description                     | Auto-fixable |
-| ---------------- | ------------------------------- | ------------ |
-| `no-console-log` | Disallow console.log statements | ✅           |
-
-### Security Rules
-
-| Rule                   | Description                  | Auto-fixable |
-| ---------------------- | ---------------------------- | ------------ |
-| `no-hardcoded-secrets` | Detect hardcoded credentials | ❌           |
-
-See the [ESLint Plugin README](./packages/eslint-plugin/README.md) for complete rule documentation.
-
----
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-pnpm nx run-many -t test --all
-
-# Run tests for specific package
-pnpm nx run eslint-plugin:test
-
-# Watch mode
-pnpm nx run eslint-plugin:test --watch
-
-# Coverage
-pnpm nx run eslint-plugin:test --coverage
-```
-
----
-
-## 📊 Project Stats
-
-- **Language**: TypeScript 5.9+
-- **Build System**: Nx 22.0+
-- **Test Framework**: Vitest 4.0+
-- **Package Manager**: pnpm 10.18+
-- **Linting**: ESLint 9.8+
-- **Test Coverage**: 90%+
-- **License**: MIT
-
----
-
-## 🔗 Links
-
-- **GitHub**: [github.com/ofri-peretz/forge-js](https://github.com/ofri-peretz/forge-js)
-- **npm**: [@forge-js](https://www.npmjs.com/search?q=%40forge-js)
-- **Issues**: [GitHub Issues](https://github.com/ofri-peretz/forge-js/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/ofri-peretz/forge-js/discussions)
+| Resource                                                                     | Description                          |
+| ---------------------------------------------------------------------------- | ------------------------------------ |
+| 📦 [npm packages](https://www.npmjs.com/search?q=%40forge-js)                | Install and start using the tools    |
+| 📖 [ESLint Plugin Docs](./packages/eslint-plugin/README.md)                  | Full rule documentation and examples |
+| 💬 [GitHub Discussions](https://github.com/ofri-peretz/forge-js/discussions) | Ask questions and share ideas        |
+| 🐛 [Report Issues](https://github.com/ofri-peretz/forge-js/issues)           | Found a bug? Let us know             |
 
 ---
 
 ## 📄 License
 
-MIT © [Ofri Peretz](https://github.com/ofri-peretz)
-
-See [LICENSE](LICENSE) for full details.
+MIT © [Ofri Peretz](https://github.com/ofri-peretz) — See [LICENSE](LICENSE) for details.
 
 ---
 
-## 🙏 Acknowledgments
-
-- Inspired by [typescript-eslint](https://typescript-eslint.io/) and the broader TypeScript community
-- Built with [Nx](https://nx.dev/)
-- Tested with [Vitest](https://vitest.dev/)
-- Maintained with [pnpm](https://pnpm.io/)
-
----
-
-## 💡 Support
-
-- **📖 Documentation**: Check the [docs](./docs) folder
-- **🐛 Bug Reports**: [Open an issue](https://github.com/ofri-peretz/forge-js/issues/new?template=bug_report.md)
-- **💬 Questions**: [Start a discussion](https://github.com/ofri-peretz/forge-js/discussions)
-- **✨ Feature Requests**: [Open an issue](https://github.com/ofri-peretz/forge-js/issues/new?template=feature_request.md)
-
----
-
-Made with ❤️ by [Ofri Peretz](https://github.com/ofri-peretz)
+Made with ❤️ from lessons learned in the trenches

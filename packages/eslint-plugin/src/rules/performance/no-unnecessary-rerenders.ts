@@ -125,9 +125,30 @@ export const noUnnecessaryRerenders = createRule<RuleOptions, MessageIds>({
         fix: 'Use useMemo or useCallback to memoize {{expression}}',
         documentationLink: 'https://react.dev/reference/react/useMemo',
       }),
-      useMemo: '✅ Use useMemo: const memoized = useMemo(() => value, [deps])',
-      useCallback: '✅ Use useCallback: const memoized = useCallback(() => {}, [deps])',
-      extractToVariable: '✅ Extract to variable outside render',
+      useMemo: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use useMemo',
+        description: 'Memoize with useMemo',
+        severity: 'LOW',
+        fix: 'const memoized = useMemo(() => value, [deps])',
+        documentationLink: 'https://react.dev/reference/react/useMemo',
+      }),
+      useCallback: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use useCallback',
+        description: 'Memoize callback with useCallback',
+        severity: 'LOW',
+        fix: 'const handler = useCallback(() => {}, [deps])',
+        documentationLink: 'https://react.dev/reference/react/useCallback',
+      }),
+      extractToVariable: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Extract Variable',
+        description: 'Extract to variable outside render',
+        severity: 'LOW',
+        fix: 'Define outside component or use useMemo',
+        documentationLink: 'https://react.dev/learn/render-and-commit',
+      }),
     },
     schema: [
       {
@@ -167,7 +188,7 @@ ignoreInTests = true, minSize = 5
       return {};
     }
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
 
     /**
      * Check JSX attributes for unnecessary re-renders
@@ -213,13 +234,11 @@ ignoreInTests = true, minSize = 5
             suggest: [
               {
                 messageId: firstSuggestionMessageId,
-                // eslint-disable-next-line @typescript-eslint/no-empty-function
-                fix: () => {},
+                fix: () => null,
               },
               {
                 messageId: 'extractToVariable',
-                // eslint-disable-next-line @typescript-eslint/no-empty-function
-                fix: () => {},
+                fix: () => null,
               },
             ],
           });

@@ -1,17 +1,19 @@
 /**
  * Comprehensive tests for max-parameters rule
- * Quality: Detects functions with too many parameters
+ * Detects functions with too many parameters
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { maxParameters } from '../rules/quality/max-parameters';
 
+// Configure RuleTester for Vitest
 RuleTester.afterAll = afterAll;
 RuleTester.it = it;
 RuleTester.itOnly = it.only;
 RuleTester.describe = describe;
 
+// Use Flat Config format (ESLint 9+)
 const ruleTester = new RuleTester({
   languageOptions: {
     parser,
@@ -21,90 +23,134 @@ const ruleTester = new RuleTester({
 });
 
 describe('max-parameters', () => {
-  describe('Valid Code', () => {
-    ruleTester.run('valid - functions within limit', maxParameters, {
+  describe('default configuration (max: 4)', () => {
+    ruleTester.run('default max parameters', maxParameters, {
       valid: [
-        // Functions with acceptable parameter count
+        // Functions with 4 or fewer parameters
         {
-          code: 'function simple(a, b) { return a + b; }',
-          options: [{ max: 4 }],
+          code: 'function func(a, b, c, d) {}',
         },
         {
-          code: 'function process(a, b, c, d) { return a + b + c + d; }',
-          options: [{ max: 4 }],
+          code: 'const func = (a, b, c) => {};',
         },
         {
-          code: 'const fn = (a, b) => a + b;',
-          options: [{ max: 4 }],
+          code: 'function func(a) {}',
         },
         {
-          code: 'function MyClass(a, b, c, d, e) { }',
-          options: [{ max: 4, ignoreConstructors: true }], // Constructor ignored
+          code: 'const obj = { method(a, b, c, d) {} };',
         },
       ],
-      invalid: [],
+      invalid: [
+        // Functions with more than 4 parameters
+        {
+          code: 'function func(a, b, c, d, e) {}',
+          errors: [
+            {
+              messageId: 'tooManyParameters',
+            },
+          ],
+        },
+        {
+          code: 'const func = (a, b, c, d, e, f) => {};',
+          errors: [
+            {
+              messageId: 'tooManyParameters',
+            },
+          ],
+        },
+      ],
     });
   });
 
-  describe('Invalid Code - Too Many Parameters', () => {
-    ruleTester.run('invalid - excessive parameters', maxParameters, {
+  describe('custom max configuration', () => {
+    ruleTester.run('custom max parameters', maxParameters, {
+      valid: [
+        // With max: 6, these should be valid
+        {
+          code: 'function func(a, b, c, d, e, f) {}',
+          options: [{ max: 6 }],
+        },
+      ],
+      invalid: [
+        // With max: 3, these should be invalid
+        {
+          code: 'function func(a, b, c, d) {}',
+          options: [{ max: 3 }],
+          errors: [
+            {
+              messageId: 'tooManyParameters',
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  describe('ignore constructors option', () => {
+    ruleTester.run('ignore constructors', maxParameters, {
+      valid: [
+        // Constructor-like function with many parameters (ignored)
+        {
+          code: 'function Component(a, b, c, d, e, f) {}',
+          options: [{ ignoreConstructors: true }],
+        },
+      ],
+      invalid: [
+        // Regular function still checked
+        {
+          code: 'function func(a, b, c, d, e) {}',
+          options: [{ ignoreConstructors: true }],
+          errors: [
+            {
+              messageId: 'tooManyParameters',
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  describe('different function types', () => {
+    ruleTester.run('different function types', maxParameters, {
       valid: [],
       invalid: [
+        // Function declaration
         {
-          code: 'function tooMany(a, b, c, d, e) { return a + b + c + d + e; }',
-          options: [{ max: 4 }],
-          errors: [{ messageId: 'tooManyParameters' }],
+          code: 'function func(a, b, c, d, e) {}',
+          errors: [
+            {
+              messageId: 'tooManyParameters',
+            },
+          ],
         },
+        // Arrow function
         {
-          code: 'const fn = (a, b, c, d, e, f) => a + b;',
-          options: [{ max: 4 }],
-          errors: [{ messageId: 'tooManyParameters' }],
+          code: 'const func = (a, b, c, d, e) => {};',
+          errors: [
+            {
+              messageId: 'tooManyParameters',
+            },
+          ],
         },
+        // Function expression
         {
-          code: `
-            function complex(a, b, c, d, e, f, g) {
-              return a + b + c + d + e + f + g;
-            }
-          `,
-          options: [{ max: 4 }],
-          errors: [{ messageId: 'tooManyParameters' }],
+          code: 'const func = function(a, b, c, d, e) {};',
+          errors: [
+            {
+              messageId: 'tooManyParameters',
+            },
+          ],
         },
-      ],
-    });
-  });
-
-  describe('Options', () => {
-    ruleTester.run('options - max', maxParameters, {
-      valid: [
+        // Method
         {
-          code: 'function fn(a, b, c) { }',
-          options: [{ max: 3 }],
-        },
-      ],
-      invalid: [
-        {
-          code: 'function fn(a, b, c, d) { }',
-          options: [{ max: 3 }],
-          errors: [{ messageId: 'tooManyParameters' }],
-        },
-      ],
-    });
-
-    ruleTester.run('options - ignoreConstructors', maxParameters, {
-      valid: [
-        {
-          code: 'function MyClass(a, b, c, d, e) { }',
-          options: [{ max: 4, ignoreConstructors: true }],
-        },
-      ],
-      invalid: [
-        {
-          code: 'function regularFunction(a, b, c, d, e) { }',
-          options: [{ max: 4, ignoreConstructors: true }],
-          errors: [{ messageId: 'tooManyParameters' }], // Not a constructor
+          code: 'const obj = { method(a, b, c, d, e) {} };',
+          errors: [
+            {
+              messageId: 'tooManyParameters',
+            },
+          ],
         },
       ],
     });
   });
 });
-

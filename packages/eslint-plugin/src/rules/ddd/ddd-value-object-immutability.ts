@@ -48,11 +48,13 @@ function hasReadonlyModifier(
     return node.readonly === true;
   }
   
+  /* v8 ignore start -- TSPropertySignature is for interfaces, rule only processes classes */
   if (node.type === 'TSPropertySignature') {
     return node.readonly === true;
   }
   
   return false;
+  /* v8 ignore stop */
 }
 
 /**
@@ -105,9 +107,30 @@ export const dddValueObjectImmutability = createRule<RuleOptions, MessageIds>({
         fix: 'Make properties readonly or use Object.freeze',
         documentationLink: 'https://martinfowler.com/bliki/ValueObject.html',
       }),
-      addReadonly: '✅ Add readonly modifier to properties',
-      useObjectFreeze: '✅ Use Object.freeze(this) in constructor',
-      makeImmutable: '✅ Make value object fully immutable',
+      addReadonly: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Add Readonly',
+        description: 'Add readonly modifier',
+        severity: 'LOW',
+        fix: 'readonly propertyName: Type',
+        documentationLink: 'https://www.typescriptlang.org/docs/handbook/2/classes.html#readonly',
+      }),
+      useObjectFreeze: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Object.freeze',
+        description: 'Use Object.freeze in constructor',
+        severity: 'LOW',
+        fix: 'constructor() { Object.freeze(this); }',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze',
+      }),
+      makeImmutable: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Make Immutable',
+        description: 'Make value object fully immutable',
+        severity: 'LOW',
+        fix: 'Add readonly to all properties and freeze object',
+        documentationLink: 'https://martinfowler.com/bliki/ValueObject.html',
+      }),
     },
     schema: [
       {

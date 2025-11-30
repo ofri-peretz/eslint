@@ -115,5 +115,39 @@ describe('ddd-value-object-immutability', () => {
       ],
     });
   });
+
+  describe('Edge Cases', () => {
+    ruleTester.run('edge cases - anonymous classes and interfaces', dddValueObjectImmutability, {
+      valid: [
+        // Anonymous class expression (no node.id) - should be skipped
+        {
+          code: `
+            const MyValue = class {
+              value: string;
+            };
+          `,
+        },
+        // Named class with interface-style readonly
+        {
+          code: `
+            interface MoneyValueInterface {
+              readonly amount: number;
+              readonly currency: string;
+            }
+            
+            class MoneyValue implements MoneyValueInterface {
+              readonly amount: number;
+              readonly currency: string;
+              constructor(amount: number, currency: string) {
+                this.amount = amount;
+                this.currency = currency;
+              }
+            }
+          `,
+        },
+      ],
+      invalid: [],
+    });
+  });
 });
 

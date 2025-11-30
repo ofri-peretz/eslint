@@ -156,9 +156,30 @@ export const noUnvalidatedUserInput = createRule<RuleOptions, MessageIds>({
         fix: 'Use validation library: {{validationExample}}',
         documentationLink: 'https://cwe.mitre.org/data/definitions/20.html',
       }),
-      useValidationLibrary: '✅ Use validation library (Zod, Joi, Yup, or class-validator)',
-      useZod: '✅ Use Zod: const schema = z.object({ name: z.string() }); const data = schema.parse(req.body);',
-      useJoi: '✅ Use Joi: const schema = Joi.object({ name: Joi.string() }); const { value } = schema.validate(req.body);',
+      useValidationLibrary: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Validation Library',
+        description: 'Use validation library',
+        severity: 'LOW',
+        fix: 'Use Zod, Joi, Yup, or class-validator',
+        documentationLink: 'https://zod.dev/',
+      }),
+      useZod: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Zod',
+        description: 'Use Zod for validation',
+        severity: 'LOW',
+        fix: 'const data = z.object({ name: z.string() }).parse(req.body)',
+        documentationLink: 'https://zod.dev/',
+      }),
+      useJoi: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Joi',
+        description: 'Use Joi for validation',
+        severity: 'LOW',
+        fix: 'Joi.object({ name: Joi.string() }).validate(req.body)',
+        documentationLink: 'https://joi.dev/',
+      }),
     },
     schema: [
       {
@@ -205,7 +226,7 @@ export const noUnvalidatedUserInput = createRule<RuleOptions, MessageIds>({
 
     const filename = context.getFilename();
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
 
     function checkMemberExpression(node: TSESTree.MemberExpression) {
       if (isTestFile) {

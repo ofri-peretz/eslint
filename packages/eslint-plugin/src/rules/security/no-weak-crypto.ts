@@ -16,7 +16,11 @@ type MessageIds =
   | 'useBcrypt'
   | 'useScrypt'
   | 'useArgon2'
-  | 'useAes256';
+  | 'useAes256'
+  | 'strategyUpgrade'
+  | 'strategyMigrate'
+  | 'strategyPolicy'
+  | 'strategyAuto';
 
 export interface Options {
   /** Allow weak crypto in test files. Default: false */
@@ -27,6 +31,9 @@ export interface Options {
   
   /** Trusted crypto libraries. Default: ['crypto', 'crypto-js'] */
   trustedLibraries?: string[];
+
+  /** Strategy for fixing weak crypto: 'upgrade', 'migrate', 'policy', 'auto' */
+  strategy?: 'upgrade' | 'migrate' | 'policy' | 'auto';
 }
 
 type RuleOptions = [Options?];
@@ -199,11 +206,46 @@ export const noWeakCrypto = createRule<RuleOptions, MessageIds>({
         fix: '{{safeAlternative}}',
         documentationLink: 'https://owasp.org/www-community/vulnerabilities/Weak_Cryptography',
       }),
-      useSha256: '✅ Use SHA-256: crypto.createHash("sha256").update(data)',
-      useBcrypt: '✅ Use bcrypt for password hashing: bcrypt.hash(password, 10)',
-      useScrypt: '✅ Use scrypt for password hashing: crypto.scrypt(password, salt, 64)',
-      useArgon2: '✅ Use Argon2 for password hashing: argon2.hash(password)',
-      useAes256: '✅ Use AES-256-GCM for encryption: crypto.createCipheriv("aes-256-gcm", key, iv)',
+      useSha256: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use SHA-256',
+        description: 'Use SHA-256 for hashing',
+        severity: 'LOW',
+        fix: 'crypto.createHash("sha256").update(data)',
+        documentationLink: 'https://nodejs.org/api/crypto.html#cryptocreatehashmethod-options',
+      }),
+      useBcrypt: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use bcrypt',
+        description: 'Use bcrypt for password hashing',
+        severity: 'LOW',
+        fix: 'bcrypt.hash(password, 10)',
+        documentationLink: 'https://github.com/kelektiv/node.bcrypt.js',
+      }),
+      useScrypt: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use scrypt',
+        description: 'Use scrypt for password hashing',
+        severity: 'LOW',
+        fix: 'crypto.scrypt(password, salt, 64)',
+        documentationLink: 'https://nodejs.org/api/crypto.html#cryptoscryptpassword-salt-keylen-options-callback',
+      }),
+      useArgon2: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Argon2',
+        description: 'Use Argon2 for password hashing',
+        severity: 'LOW',
+        fix: 'argon2.hash(password)',
+        documentationLink: 'https://github.com/ranisalt/node-argon2',
+      }),
+      useAes256: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use AES-256-GCM',
+        description: 'Use AES-256-GCM for encryption',
+        severity: 'LOW',
+        fix: 'crypto.createCipheriv("aes-256-gcm", key, iv)',
+        documentationLink: 'https://nodejs.org/api/crypto.html#cryptocreatecipherivalgorithm-key-iv-options',
+      }),
     },
     schema: [
       {

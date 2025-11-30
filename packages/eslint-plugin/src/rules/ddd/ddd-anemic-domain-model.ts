@@ -131,9 +131,30 @@ export const dddAnemicDomainModel = createRule<RuleOptions, MessageIds>({
         fix: 'Add business logic methods to create a rich domain model',
         documentationLink: 'https://martinfowler.com/bliki/AnemicDomainModel.html',
       }),
-      addBusinessLogic: '✅ Add business logic methods to {{className}}',
-      migrateToRichModel: '✅ Migrate to rich domain model with encapsulated behavior',
-      identifyAggregateRoot: '✅ Identify aggregate root and enforce invariants',
+      addBusinessLogic: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Add Business Logic',
+        description: 'Add business logic methods',
+        severity: 'LOW',
+        fix: 'Add domain behavior methods to {{className}}',
+        documentationLink: 'https://martinfowler.com/bliki/AnemicDomainModel.html',
+      }),
+      migrateToRichModel: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Migrate to Rich Model',
+        description: 'Migrate to rich domain model',
+        severity: 'LOW',
+        fix: 'Encapsulate behavior with data',
+        documentationLink: 'https://martinfowler.com/bliki/AnemicDomainModel.html',
+      }),
+      identifyAggregateRoot: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Identify Aggregate Root',
+        description: 'Identify aggregate root and enforce invariants',
+        severity: 'LOW',
+        fix: 'Define aggregate boundaries and enforce invariants',
+        documentationLink: 'https://martinfowler.com/bliki/DDD_Aggregate.html',
+      }),
     },
     schema: [
       {

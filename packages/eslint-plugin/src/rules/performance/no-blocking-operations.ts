@@ -70,9 +70,30 @@ export const noBlockingOperations = createRule<RuleOptions, MessageIds>({
         fix: 'Use async version: {{asyncMethod}}',
         documentationLink: 'https://rules.sonarsource.com/javascript/RSPEC-4632/',
       }),
-      useAsyncVersion: '✅ Use async version: fs.promises.readFile() instead of fs.readFileSync()',
-      usePromises: '✅ Use promises: await fs.promises.readFile()',
-      moveToSync: '✅ Move blocking operation to synchronous context',
+      useAsyncVersion: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Async Version',
+        description: 'Use async version of method',
+        severity: 'LOW',
+        fix: 'fs.promises.readFile() instead of fs.readFileSync()',
+        documentationLink: 'https://nodejs.org/api/fs.html#promises-api',
+      }),
+      usePromises: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Promises',
+        description: 'Use promises API',
+        severity: 'LOW',
+        fix: 'await fs.promises.readFile()',
+        documentationLink: 'https://nodejs.org/api/fs.html#promises-api',
+      }),
+      moveToSync: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Move to Sync Context',
+        description: 'Move blocking operation to synchronous context',
+        severity: 'LOW',
+        fix: 'Only use sync operations at startup or in sync context',
+        documentationLink: 'https://nodejs.org/api/fs.html',
+      }),
     },
     schema: [
       {

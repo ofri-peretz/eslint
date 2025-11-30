@@ -8,7 +8,7 @@
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
-import * as path from 'path';
+import { normalizePath } from '../../utils/node-path-utils';
 
 type MessageIds =
   | 'dependencyDirectionViolation'
@@ -43,7 +43,7 @@ function extractLayer(
   filePath: string,
   layerPatterns: string[]
 ): string | null {
-  const normalizedPath = path.normalize(filePath);
+  const normalizedPath = normalizePath(filePath);
   
   for (const pattern of layerPatterns) {
     // Check for layer in path segments (handles both /layer/ and layer/ at start)
@@ -89,8 +89,22 @@ export const enforceDependencyDirection = createRule<RuleOptions, MessageIds>({
         fix: 'Use dependency inversion or refactor dependency',
         documentationLink: 'https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html',
       }),
-      useDependencyInversion: '✅ Use dependency inversion principle (interfaces/abstractions)',
-      refactorDependency: '✅ Refactor to respect dependency direction',
+      useDependencyInversion: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Dependency Inversion',
+        description: 'Use dependency inversion principle',
+        severity: 'LOW',
+        fix: 'Depend on interfaces/abstractions, not implementations',
+        documentationLink: 'https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html',
+      }),
+      refactorDependency: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Refactor Dependency',
+        description: 'Refactor to respect dependency direction',
+        severity: 'LOW',
+        fix: 'Move import to correct layer',
+        documentationLink: 'https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html',
+      }),
     },
     schema: [
       {

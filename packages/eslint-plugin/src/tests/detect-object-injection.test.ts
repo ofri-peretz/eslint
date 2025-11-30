@@ -1,6 +1,16 @@
 /**
  * Comprehensive tests for detect-object-injection rule
  * Security: CWE-915 (Prototype Pollution)
+ * 
+ * Type-Aware Feature:
+ * This rule supports TypeScript type-aware checking to reduce false positives.
+ * When TypeScript parser services are available (parserOptions.project configured),
+ * the rule can detect if a property key is constrained to a union of safe string
+ * literals (e.g., 'name' | 'email') and will NOT flag these as dangerous.
+ * 
+ * Without type information, all dynamic property accesses are flagged.
+ * 
+ * @see https://portswigger.net/web-security/prototype-pollution
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
@@ -14,6 +24,8 @@ RuleTester.itOnly = it.only;
 RuleTester.describe = describe;
 
 // Use Flat Config format (ESLint 9+)
+// Note: Without parserOptions.project, type-aware checking is not available
+// Tests here verify the fallback behavior (flags all dynamic access)
 const ruleTester = new RuleTester({
   languageOptions: {
     parser,

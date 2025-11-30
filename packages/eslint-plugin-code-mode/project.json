@@ -1,0 +1,75 @@
+{
+  "name": "eslint-plugin-code-mode",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/eslint-plugin-code-mode/src",
+  "projectType": "library",
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": [
+        "{projectRoot}",
+        "dist/{projectRoot}"
+      ],
+      "currentVersionResolver": "git-tag",
+      "fallbackCurrentVersionResolver": "disk"
+    }
+  },
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "dependsOn": [
+        "^build",
+        "test"
+      ],
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "outputPath": "dist/packages/eslint-plugin-code-mode",
+        "main": "packages/eslint-plugin-code-mode/src/index.ts",
+        "tsConfig": "packages/eslint-plugin-code-mode/tsconfig.lib.json",
+        "assets": [
+          "packages/eslint-plugin-code-mode/README.md",
+          "packages/eslint-plugin-code-mode/LICENSE",
+          "packages/eslint-plugin-code-mode/CHANGELOG.md",
+          "packages/eslint-plugin-code-mode/AGENTS.md"
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": [
+        "{projectRoot}/coverage"
+      ],
+      "options": {
+        "configFile": "packages/eslint-plugin-code-mode/vitest.config.mts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "coverage": true
+        }
+      }
+    },
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "^nx-release-publish"
+      ],
+      "options": {
+        "command": "pnpm publish dist/{projectRoot} --access public --no-git-checks",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "command": "npm publish dist/packages/eslint-plugin-code-mode --access public",
+        "cwd": "{workspaceRoot}"
+      }
+    }
+  }
+}

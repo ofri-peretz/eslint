@@ -62,9 +62,30 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
         fix: 'Redact or mask sensitive data before logging/exposing',
         documentationLink: 'https://cwe.mitre.org/data/definitions/532.html',
       }),
-      redactData: '✅ Redact sensitive data before logging',
-      useMasking: '✅ Use data masking: maskSensitive(data)',
-      removeFromLogs: '✅ Remove sensitive data from logs and error messages',
+      redactData: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Redact Data',
+        description: 'Redact sensitive data before logging',
+        severity: 'LOW',
+        fix: 'Redact sensitive fields before logging',
+        documentationLink: 'https://cwe.mitre.org/data/definitions/532.html',
+      }),
+      useMasking: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Masking',
+        description: 'Use data masking function',
+        severity: 'LOW',
+        fix: 'maskSensitive(data)',
+        documentationLink: 'https://cwe.mitre.org/data/definitions/532.html',
+      }),
+      removeFromLogs: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Remove From Logs',
+        description: 'Remove sensitive data from logs and errors',
+        severity: 'LOW',
+        fix: 'Filter sensitive data before logging',
+        documentationLink: 'https://cwe.mitre.org/data/definitions/532.html',
+      }),
     },
     schema: [
       {

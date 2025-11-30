@@ -52,9 +52,30 @@ export const noMissingAriaLabels = createRule<RuleOptions, MessageIds>({
         fix: 'Add aria-label or aria-labelledby attribute',
         documentationLink: 'https://www.w3.org/WAI/ARIA/apg/',
       }),
-      addAriaLabel: '✅ Add aria-label="descriptive text"',
-      addAriaLabelledby: '✅ Add aria-labelledby="id-of-label-element"',
-      addVisibleLabel: '✅ Add visible label element with htmlFor attribute',
+      addAriaLabel: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Add aria-label',
+        description: 'Add aria-label attribute',
+        severity: 'LOW',
+        fix: 'aria-label="descriptive text"',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-label',
+      }),
+      addAriaLabelledby: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Add aria-labelledby',
+        description: 'Add aria-labelledby attribute',
+        severity: 'LOW',
+        fix: 'aria-labelledby="id-of-label-element"',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-labelledby',
+      }),
+      addVisibleLabel: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Add Visible Label',
+        description: 'Add visible label element',
+        severity: 'LOW',
+        fix: '<label htmlFor="input-id">Label text</label>',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Element/label',
+      }),
     },
     schema: [
       {

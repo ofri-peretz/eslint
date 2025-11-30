@@ -84,9 +84,30 @@ export const nestedComplexityHotspots = createRule<RuleOptions, MessageIds>({
         fix: 'Use early returns, guard clauses, or extract methods',
         documentationLink: 'https://en.wikipedia.org/wiki/Cyclomatic_complexity',
       }),
-      useEarlyReturn: '✅ Use early return to reduce nesting',
-      useGuardClauses: '✅ Use guard clauses for validation',
-      extractMethod: '✅ Extract nested logic to separate method',
+      useEarlyReturn: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Early Return',
+        description: 'Use early return to reduce nesting',
+        severity: 'LOW',
+        fix: 'if (!condition) return; // Continue with main logic',
+        documentationLink: 'https://refactoring.guru/smells/long-method',
+      }),
+      useGuardClauses: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Guard Clauses',
+        description: 'Use guard clauses for validation',
+        severity: 'LOW',
+        fix: 'if (!isValid(input)) throw new Error()',
+        documentationLink: 'https://refactoring.guru/replace-nested-conditional-with-guard-clauses',
+      }),
+      extractMethod: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Extract Method',
+        description: 'Extract nested logic to separate method',
+        severity: 'LOW',
+        fix: 'Extract to private method',
+        documentationLink: 'https://refactoring.guru/extract-method',
+      }),
     },
     schema: [
       {
@@ -128,7 +149,7 @@ maxDepth = 4,
     
 }: Options = options || {};
 
-    // const sourceCode = context.sourceCode || context.getSourceCode(); // Not used
+    // const sourceCode = context.sourceCode || context.sourceCode; // Not used
 
     /**
      * Check control structures

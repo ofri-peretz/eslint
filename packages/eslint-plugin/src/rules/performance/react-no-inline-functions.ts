@@ -6,14 +6,17 @@ import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 
-type MessageIds = 'inlineFunction' | 'useCallback' | 'extractFunction';
+type MessageIds = 'inlineFunction' | 'useCallback' | 'extractFunction' | 'strategyUseCallback' | 'strategyUseMemo' | 'strategyExtract';
 
 export interface Options {
   /** Allow inline functions in event handlers. Default: false */
   allowInEventHandlers?: boolean;
-  
+
   /** Minimum array size to trigger warning. Default: 5 */
   minArraySize?: number;
+
+  /** Strategy for fixing inline functions: 'usecallback', 'usememo', 'extract', or 'auto' */
+  strategy?: 'usecallback' | 'usememo' | 'extract' | 'auto';
 }
 
 type RuleOptions = [Options?];
@@ -37,8 +40,46 @@ export const reactNoInlineFunctions = createRule<RuleOptions, MessageIds>({
         fix: 'Use useCallback hook or extract to component method',
         documentationLink: 'https://react.dev/reference/react/useCallback',
       }),
-      useCallback: '✅ Wrap with useCallback',
-      extractFunction: '✅ Extract to component method',
+      useCallback: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use useCallback',
+        description: 'Wrap with useCallback',
+        severity: 'LOW',
+        fix: 'const handler = useCallback(() => {}, [deps])',
+        documentationLink: 'https://react.dev/reference/react/useCallback',
+      }),
+      extractFunction: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Extract Function',
+        description: 'Extract to component method',
+        severity: 'LOW',
+        fix: 'Define function outside JSX or in useCallback',
+        documentationLink: 'https://react.dev/learn/your-first-component',
+      }),
+      strategyUseCallback: formatLLMMessage({
+        icon: MessageIcons.STRATEGY,
+        issueName: 'useCallback Strategy',
+        description: 'Use useCallback to memoize',
+        severity: 'LOW',
+        fix: 'useCallback(() => {}, [dependencies])',
+        documentationLink: 'https://react.dev/reference/react/useCallback',
+      }),
+      strategyUseMemo: formatLLMMessage({
+        icon: MessageIcons.STRATEGY,
+        issueName: 'useMemo Strategy',
+        description: 'Use useMemo for computed values',
+        severity: 'LOW',
+        fix: 'useMemo(() => computedValue, [deps])',
+        documentationLink: 'https://react.dev/reference/react/useMemo',
+      }),
+      strategyExtract: formatLLMMessage({
+        icon: MessageIcons.STRATEGY,
+        issueName: 'Extract Strategy',
+        description: 'Extract function outside render',
+        severity: 'LOW',
+        fix: 'Define function before return statement',
+        documentationLink: 'https://react.dev/learn/your-first-component',
+      }),
     },
     schema: [
       {

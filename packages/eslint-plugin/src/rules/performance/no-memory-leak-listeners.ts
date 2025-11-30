@@ -98,9 +98,30 @@ export const noMemoryLeakListeners = createRule<RuleOptions, MessageIds>({
         fix: 'Add removeEventListener in cleanup function or useEffect return',
         documentationLink: 'https://rules.sonarsource.com/javascript/RSPEC-4631/',
       }),
-      addCleanup: '✅ Add cleanup: removeEventListener(type, handler)',
-      useEffectCleanup: '✅ Use useEffect cleanup: return () => { removeEventListener(...) }',
-      removeEventListener: '✅ Call removeEventListener in componentWillUnmount or cleanup',
+      addCleanup: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Add Cleanup',
+        description: 'Add cleanup for event listener',
+        severity: 'LOW',
+        fix: 'removeEventListener(type, handler)',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/removeEventListener',
+      }),
+      useEffectCleanup: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use useEffect Cleanup',
+        description: 'Use useEffect cleanup function',
+        severity: 'LOW',
+        fix: 'return () => { removeEventListener(...) }',
+        documentationLink: 'https://react.dev/reference/react/useEffect#parameters',
+      }),
+      removeEventListener: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Call removeEventListener',
+        description: 'Call removeEventListener in cleanup',
+        severity: 'LOW',
+        fix: 'removeEventListener in componentWillUnmount or cleanup',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/removeEventListener',
+      }),
     },
     schema: [
       {

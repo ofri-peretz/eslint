@@ -108,9 +108,30 @@ export const noUnboundedCache = createRule<RuleOptions, MessageIds>({
         fix: 'Add size limit or TTL to prevent memory growth',
         documentationLink: 'https://rules.sonarsource.com/javascript/RSPEC-3973/',
       }),
-      useLruCache: '✅ Use LRU cache: import { LRUCache } from "lru-cache"',
-      addSizeLimit: '✅ Add size limit: new Map() with maxSize configuration',
-      addTtl: '✅ Add TTL: cache with expiration time',
+      useLruCache: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use LRU Cache',
+        description: 'Use LRU cache with size limit',
+        severity: 'LOW',
+        fix: 'new LRUCache({ max: 100 })',
+        documentationLink: 'https://github.com/isaacs/node-lru-cache',
+      }),
+      addSizeLimit: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Add Size Limit',
+        description: 'Add maximum size to cache',
+        severity: 'LOW',
+        fix: 'Set maxSize configuration on cache',
+        documentationLink: 'https://github.com/isaacs/node-lru-cache',
+      }),
+      addTtl: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Add TTL',
+        description: 'Add TTL to cache entries',
+        severity: 'LOW',
+        fix: 'new LRUCache({ max: 100, ttl: 60000 })',
+        documentationLink: 'https://github.com/isaacs/node-lru-cache',
+      }),
     },
     schema: [
       {
@@ -150,7 +171,7 @@ ignoreInTests = true,
       return {};
     }
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
 
     /**
      * Check cache declarations

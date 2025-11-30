@@ -123,8 +123,22 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
         fix: '{{safeAlternative}}',
         documentationLink: 'https://cwe.mitre.org/data/definitions/79.html',
       }),
-      useEncodeURIComponent: '✅ Use encodeURIComponent(): const url = `https://example.com?q=${encodeURIComponent(param)}`;',
-      useURLSearchParams: '✅ Use URLSearchParams: const params = new URLSearchParams({ q: param }); const url = `https://example.com?${params}`;',
+      useEncodeURIComponent: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use encodeURIComponent',
+        description: 'Use encodeURIComponent for URL params',
+        severity: 'LOW',
+        fix: '`https://example.com?q=${encodeURIComponent(param)}`',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent',
+      }),
+      useURLSearchParams: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use URLSearchParams',
+        description: 'Use URLSearchParams for safe URL construction',
+        severity: 'LOW',
+        fix: 'new URLSearchParams({ q: param }).toString()',
+        documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams',
+      }),
     },
     schema: [
       {
@@ -171,7 +185,7 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
 
     const filename = context.getFilename();
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
 
     function checkTemplateLiteral(node: TSESTree.TemplateLiteral) {
       if (isTestFile) {

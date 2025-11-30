@@ -117,9 +117,30 @@ export const noInsecureRedirects = createRule<RuleOptions, MessageIds>({
         fix: 'Whitelist allowed domains or validate redirect target',
         documentationLink: 'https://owasp.org/www-community/vulnerabilities/Unvalidated_Redirects_and_Forwards',
       }),
-      whitelistDomains: '✅ Whitelist allowed domains: if (allowedDomains.includes(url.hostname)) { redirect(url) }',
-      validateRedirect: '✅ Validate redirect: validateRedirectUrl(userInput) before redirect',
-      useRelativeUrl: '✅ Use relative URLs for internal redirects',
+      whitelistDomains: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Whitelist Domains',
+        description: 'Whitelist allowed redirect domains',
+        severity: 'LOW',
+        fix: 'if (allowedDomains.includes(url.hostname)) redirect(url)',
+        documentationLink: 'https://owasp.org/www-community/vulnerabilities/Unvalidated_Redirects_and_Forwards',
+      }),
+      validateRedirect: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Validate Redirect',
+        description: 'Validate redirect URL before use',
+        severity: 'LOW',
+        fix: 'validateRedirectUrl(userInput) before redirect',
+        documentationLink: 'https://owasp.org/www-community/vulnerabilities/Unvalidated_Redirects_and_Forwards',
+      }),
+      useRelativeUrl: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Relative URL',
+        description: 'Use relative URLs for internal redirects',
+        severity: 'LOW',
+        fix: 'redirect("/internal/path") instead of absolute URLs',
+        documentationLink: 'https://owasp.org/www-community/vulnerabilities/Unvalidated_Redirects_and_Forwards',
+      }),
     },
     schema: [
       {
@@ -157,7 +178,7 @@ ignoreInTests = true
       return {};
     }
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode || context.sourceCode;
 
     /**
      * Check redirect calls and assignments

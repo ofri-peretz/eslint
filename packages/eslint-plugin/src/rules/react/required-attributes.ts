@@ -3,7 +3,7 @@
  * Enforce required attributes on React components/elements with customizable ignore lists
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { formatLLMMessage } from '@forge-js/eslint-plugin-utils';
+import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { createRule } from '../../utils/create-rule';
 
 type MessageIds = 'missingAttribute' | 'addAttribute';
@@ -46,7 +46,14 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
         fix: 'Add {{attribute}}="{{suggestedValue}}" ({{purpose}})',
         documentationLink: 'https://www.w3.org/WAI/fundamentals/accessibility-intro/',
       }),
-      addAttribute: '✅ Add {{attribute}}="{{suggestedValue}}"',
+      addAttribute: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Add Attribute',
+        description: 'Add required attribute',
+        severity: 'LOW',
+        fix: '{{attribute}}="{{suggestedValue}}"',
+        documentationLink: 'https://www.w3.org/WAI/fundamentals/accessibility-intro/',
+      }),
     },
     schema: [
       {

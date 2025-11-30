@@ -121,9 +121,30 @@ export const detectNPlusOneQueries = createRule<RuleOptions, MessageIds>({
         fix: 'Use eager loading, batching, or DataLoader pattern',
         documentationLink: 'https://web.dev/performance/',
       }),
-      useEagerLoading: '✅ Use eager loading: {{ormExample}}',
-      useDataLoader: '✅ Use DataLoader pattern to batch queries',
-      batchQueries: '✅ Batch queries: Load all required data before the loop',
+      useEagerLoading: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use Eager Loading',
+        description: 'Use eager loading for relations',
+        severity: 'LOW',
+        fix: 'Include relations in initial query',
+        documentationLink: 'https://www.prisma.io/docs/concepts/components/prisma-client/relation-queries#include',
+      }),
+      useDataLoader: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Use DataLoader',
+        description: 'Use DataLoader pattern to batch',
+        severity: 'LOW',
+        fix: 'new DataLoader(keys => batchLoad(keys))',
+        documentationLink: 'https://github.com/graphql/dataloader',
+      }),
+      batchQueries: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Batch Queries',
+        description: 'Load all data before the loop',
+        severity: 'LOW',
+        fix: 'const allData = await loadAll(ids); // then loop',
+        documentationLink: 'https://web.dev/performance/',
+      }),
     },
     schema: [
       {
