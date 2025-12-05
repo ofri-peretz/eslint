@@ -29,24 +29,6 @@
       "eslint-plugin-generalist": [
         "packages/eslint-plugin-generalist/src/index.ts"
       ],
-      "eslint-plugin-security-expert": [
-        "packages/eslint-plugin-security-expert/src/index.ts"
-      ],
-      "eslint-plugin-react-expert": [
-        "packages/eslint-plugin-react-expert/src/index.ts"
-      ],
-      "eslint-plugin-a11y-expert": [
-        "packages/eslint-plugin-a11y-expert/src/index.ts"
-      ],
-      "eslint-plugin-architecture-expert": [
-        "packages/eslint-plugin-architecture-expert/src/index.ts"
-      ],
-      "eslint-plugin-performance-expert": [
-        "packages/eslint-plugin-performance-expert/src/index.ts"
-      ],
-      "eslint-plugin-development-expert": [
-        "packages/eslint-plugin-development-expert/src/index.ts"
-      ],
       "eslint-plugin-secure-coding": [
         "packages/eslint-plugin-secure-coding/src/index.ts"
       ],
