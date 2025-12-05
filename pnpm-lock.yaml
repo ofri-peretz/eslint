@@ -160,11 +160,36 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/eslint-devkit:
+    dependencies:
+      '@typescript-eslint/utils':
+        specifier: ^8.46.2
+        version: 8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3)
+      enhanced-resolve:
+        specifier: ^5.18.3
+        version: 5.18.3
+      get-tsconfig:
+        specifier: ^4.13.0
+        version: 4.13.0
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+      typescript:
+        specifier: '>=4.0.0'
+        version: 5.9.3
+    devDependencies:
+      '@typescript-eslint/parser':
+        specifier: ^8.46.2
+        version: 8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3)
+      vitest:
+        specifier: ^4.0.4
+        version: 4.0.6(@types/node@24.9.2)(@vitest/ui@4.0.6)(jiti@2.6.1)(jsdom@27.1.0)(terser@5.44.0)(yaml@2.8.1)
+
   packages/eslint-plugin:
     dependencies:
-      '@forge-js/eslint-plugin-utils':
-        specifier: ^1.5.2
-        version: 1.6.0(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3)
+      '@interlace/eslint-devkit':
+        specifier: workspace:*
+        version: link:../eslint-devkit
       enhanced-resolve:
         specifier: ^5.18.3
         version: 5.18.3
@@ -211,6 +236,28 @@ importers:
         version: 8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3)
       vitest:
         specifier: ^4.0.6
+        version: 4.0.6(@types/node@24.9.2)(@vitest/ui@4.0.6)(jiti@2.6.1)(jsdom@27.1.0)(terser@5.44.0)(yaml@2.8.1)
+
+  packages/eslint-plugin-dependencies:
+    dependencies:
+      '@interlace/eslint-devkit':
+        specifier: workspace:*
+        version: link:../eslint-devkit
+      eslint:
+        specifier: ^8.0.0 || ^9.0.0
+        version: 9.39.0(jiti@2.6.1)
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+    devDependencies:
+      '@typescript-eslint/parser':
+        specifier: ^8.46.2
+        version: 8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/rule-tester':
+        specifier: ^8.46.2
+        version: 8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3)
+      vitest:
+        specifier: ^4.0.4
         version: 4.0.6(@types/node@24.9.2)(@vitest/ui@4.0.6)(jiti@2.6.1)(jsdom@27.1.0)(terser@5.44.0)(yaml@2.8.1)
 
   packages/eslint-plugin-generalist:
@@ -308,25 +355,44 @@ importers:
         specifier: ^4.0.6
         version: 4.0.6(@types/node@24.9.2)(@vitest/ui@4.0.6)(jiti@2.6.1)(jsdom@27.1.0)(terser@5.44.0)(yaml@2.8.1)
 
-  packages/eslint-plugin-utils:
+  packages/eslint-plugin-react-a11y:
     dependencies:
-      '@typescript-eslint/utils':
-        specifier: ^8.46.2
-        version: 8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3)
-      enhanced-resolve:
-        specifier: ^5.18.3
-        version: 5.18.3
-      get-tsconfig:
-        specifier: ^4.13.0
-        version: 4.13.0
+      '@interlace/eslint-devkit':
+        specifier: workspace:*
+        version: link:../eslint-devkit
+      eslint:
+        specifier: ^8.0.0 || ^9.0.0
+        version: 9.39.0(jiti@2.6.1)
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
-      typescript:
-        specifier: '>=4.0.0'
-        version: 5.9.3
     devDependencies:
       '@typescript-eslint/parser':
+        specifier: ^8.46.2
+        version: 8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/rule-tester':
+        specifier: ^8.46.2
+        version: 8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3)
+      vitest:
+        specifier: ^4.0.4
+        version: 4.0.6(@types/node@24.9.2)(@vitest/ui@4.0.6)(jiti@2.6.1)(jsdom@27.1.0)(terser@5.44.0)(yaml@2.8.1)
+
+  packages/eslint-plugin-secure-coding:
+    dependencies:
+      '@interlace/eslint-devkit':
+        specifier: workspace:*
+        version: link:../eslint-devkit
+      eslint:
+        specifier: ^8.0.0 || ^9.0.0
+        version: 9.39.0(jiti@2.6.1)
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+    devDependencies:
+      '@typescript-eslint/parser':
+        specifier: ^8.46.2
+        version: 8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/rule-tester':
         specifier: ^8.46.2
         version: 8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3)
       vitest:
@@ -1407,14 +1473,6 @@ packages:
     engines: {node: '>=18.0.0'}
     peerDependencies:
       '@typescript-eslint/utils': ^8.46.2
-      typescript: '>=4.0.0'
-
-  '@forge-js/eslint-plugin-utils@1.6.0':
-    resolution: {integrity: sha512-uVcqmScmHA0TuL4wSurNcBZYndSezJh5We+gF5nNimKAE4OzLOud+1O1DHMOFdS7r3u3Q0si4ckDstMKLCAy7g==}
-    engines: {node: '>=18.0.0'}
-    peerDependencies:
-      '@typescript-eslint/utils': ^8.46.2
-      eslint: ^8.0.0 || ^9.0.0
       typescript: '>=4.0.0'
 
   '@humanfs/core@0.19.1':
@@ -7378,13 +7436,6 @@ snapshots:
   '@forge-js/eslint-plugin-utils@1.0.0(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)':
     dependencies:
       '@typescript-eslint/utils': 8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3)
-      tslib: 2.8.1
-      typescript: 5.9.3
-
-  '@forge-js/eslint-plugin-utils@1.6.0(@typescript-eslint/utils@8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3)':
-    dependencies:
-      '@typescript-eslint/utils': 8.46.2(eslint@9.39.0(jiti@2.6.1))(typescript@5.9.3)
-      eslint: 9.39.0(jiti@2.6.1)
       tslib: 2.8.1
       typescript: 5.9.3
 

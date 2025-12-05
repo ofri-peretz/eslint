@@ -129,7 +129,7 @@ Add any other context or screenshots about the feature request here.
 2. **Follow the rule template**:
 
    ```typescript
-   import { createRule } from '@forge-js/eslint-plugin-utils';
+   import { createRule } from '@interlace/eslint-devkit';
 
    export default createRule({
      name: 'rule-name',

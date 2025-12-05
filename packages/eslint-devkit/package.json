@@ -1,0 +1,63 @@
+{
+  "name": "@interlace/eslint-devkit",
+  "version": "1.6.0",
+  "description": "TypeScript utilities for building LLM-optimized ESLint plugins - AST helpers, type utilities, security benchmarks, and SARIF output",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ofri-peretz/forge-js#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/forge-js.git",
+    "directory": "packages/eslint-devkit"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/forge-js/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "AGENTS.md"
+  ],
+  "keywords": [
+    "eslint",
+    "eslint-devkit",
+    "eslint-toolkit",
+    "typescript",
+    "utilities",
+    "ast",
+    "type-checking",
+    "plugin-development",
+    "llm-optimized",
+    "ai-assistant",
+    "auto-fix",
+    "sarif",
+    "owasp",
+    "cwe",
+    "security"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "peerDependencies": {
+    "typescript": ">=4.0.0",
+    "@typescript-eslint/utils": "^8.46.2",
+    "get-tsconfig": "^4.13.0",
+    "enhanced-resolve": "^5.18.3"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.46.2",
+    "vitest": "^4.0.4"
+  }
+}

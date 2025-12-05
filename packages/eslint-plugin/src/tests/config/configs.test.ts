@@ -13,10 +13,10 @@ describe('ESLint Plugin Configurations', () => {
       expect(configs).toBeDefined();
       expect(configs.recommended).toBeDefined();
       expect(configs.strict).toBeDefined();
-      expect(configs.security).toBeDefined();
+      // Note: security config moved to eslint-plugin-secure-coding
       expect(configs.react).toBeDefined();
       expect(configs.migration).toBeDefined();
-      expect(configs.accessibility).toBeDefined();
+      // Note: accessibility config moved to eslint-plugin-react-a11y
       expect(configs.performance).toBeDefined();
       expect(configs.domain).toBeDefined();
       expect(configs.sonarqube).toBeDefined();
@@ -58,9 +58,7 @@ describe('ESLint Plugin Configurations', () => {
         expect(rules['@forge-js/llm-optimized/react/no-danger']).toBe('warn');
       });
 
-      it('should enable accessibility rules', () => {
-        expect(rules['@forge-js/llm-optimized/accessibility/img-requires-alt']).toBe('error');
-      });
+      // Note: accessibility rules moved to eslint-plugin-react-a11y
 
       it('should enable modern pattern rules', () => {
         expect(rules['@forge-js/llm-optimized/react/no-object-type-as-default-prop']).toBe('warn');
@@ -134,17 +132,7 @@ describe('ESLint Plugin Configurations', () => {
     });
   });
 
-  describe('security configuration', () => {
-    const securityConfig = configs.security;
-
-    it('should have plugin defined', () => {
-      expect(securityConfig.plugins).toBeDefined();
-    });
-
-    it('should have rules defined', () => {
-      expect(securityConfig.rules).toBeDefined();
-    });
-  });
+  // Note: security config tests moved to eslint-plugin-secure-coding
 
   describe('performance configuration', () => {
     const performanceConfig = configs.performance;

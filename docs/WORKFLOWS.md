@@ -111,7 +111,7 @@ on:
 ### Coverage Results:
 ✅ **@forge-js/eslint-plugin**: Coverage 92%
 ✅ **@forge-js/cli**: Coverage 88%
-⚠️ **@forge-js/eslint-plugin-utils**: Coverage 45% (< 50% threshold)
+⚠️ **@interlace/eslint-devkit**: Coverage 45% (< 50% threshold)
 
 Action Required: Some packages have coverage below 50%. 
 Please add tests to improve coverage.

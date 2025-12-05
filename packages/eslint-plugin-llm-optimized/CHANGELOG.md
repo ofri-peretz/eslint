@@ -47,7 +47,7 @@
 
 ### 🧱 Updated Dependencies
 
-- Updated @forge-js/eslint-plugin-utils to 1.6.0
+- Updated @interlace/eslint-devkit to 1.6.0
 
 ### ❤️ Thank You
 

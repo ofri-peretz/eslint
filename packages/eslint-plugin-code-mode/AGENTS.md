@@ -195,7 +195,7 @@ A: No. This package works with or without Code Mode. However, it's specifically 
 - **eslint-plugin-llm:** LLM-focused variant
 - **eslint-plugin-mcp:** MCP-focused variant
 - **eslint-plugin-mcp-optimized:** MCP-optimized variant
-- **@forge-js/eslint-plugin-utils:** Build your own LLM-optimized rules
+- **@interlace/eslint-devkit:** Build your own LLM-optimized rules
 
 ## License
 

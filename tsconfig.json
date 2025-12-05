@@ -42,7 +42,7 @@
             "@forge-js/eslint-plugin-llm-optimized": [
                 "packages/eslint-plugin/src/index.ts"
             ],
-            "@forge-js/eslint-plugin-utils": [
+            "@interlace/eslint-devkit": [
                 "packages/eslint-plugin-utils/src/index.ts"
             ],
             "eslint-plugin-mcp": [

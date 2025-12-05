@@ -10,90 +10,25 @@
  * @see https://typescript-eslint.io/developers/custom-rules - TypeScript-ESLint Custom Rules
  */
 
-import type { TSESLint } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint } from '@interlace/eslint-devkit';
 
 // Development rules
 import { noConsoleLog } from './rules/development/no-console-log';
 import { preferDependencyVersionStrategy } from './rules/development/prefer-dependency-version-strategy';
-import { noAmd } from './rules/development/no-amd';
-import { noCommonjs } from './rules/development/no-commonjs';
-import { noNodejsModules } from './rules/development/no-nodejs-modules';
 import { noProcessExit } from './rules/development/no-process-exit';
 import { noConsoleSpaces } from './rules/development/no-console-spaces';
 
 // Architecture rules
-import { noCircularDependencies, clearCircularDependencyCache } from './rules/architecture/no-circular-dependencies';
-import { noInternalModules } from './rules/architecture/no-internal-modules';
-import { noCrossDomainImports } from './rules/architecture/no-cross-domain-imports';
-import { enforceDependencyDirection } from './rules/architecture/enforce-dependency-direction';
-import { preferNodeProtocol } from './rules/architecture/prefer-node-protocol';
+// Note: Import/dependency rules have been moved to eslint-plugin-dependencies package.
 import { consistentExistenceIndexCheck } from './rules/architecture/consistent-existence-index-check';
 import { preferEventTarget } from './rules/architecture/prefer-event-target';
 import { preferAt } from './rules/architecture/prefer-at';
 import { noUnreadableIife } from './rules/architecture/no-unreadable-iife';
 import { noAwaitInLoop } from './rules/architecture/no-await-in-loop';
-import { noSelfImport } from './rules/architecture/no-self-import';
-import { noUnusedModules } from './rules/architecture/no-unused-modules';
-import { noExtraneousDependencies } from './rules/architecture/no-extraneous-dependencies';
-import { maxDependencies } from './rules/architecture/max-dependencies';
-import { noAnonymousDefaultExport } from './rules/architecture/no-anonymous-default-export';
-import { noRestrictedPaths } from './rules/architecture/no-restricted-paths';
-import { noDeprecated } from './rules/architecture/no-deprecated';
-import { noMutableExports } from './rules/architecture/no-mutable-exports';
-import { preferDefaultExport } from './rules/architecture/prefer-default-export';
-import { noUnresolved } from './rules/architecture/no-unresolved';
-import { noRelativeParentImports } from './rules/architecture/no-relative-parent-imports';
-import { noDefaultExport } from './rules/architecture/no-default-export';
-import { noNamedExport } from './rules/architecture/no-named-export';
-import { noUnassignedImport } from './rules/architecture/no-unassigned-import';
-import { enforceImportOrder } from './rules/architecture/enforce-import-order';
-
-// Security rules
-import { noSqlInjection } from './rules/security/no-sql-injection';
-import { noUnsafeDynamicRequire } from './rules/security/no-unsafe-dynamic-require';
-import { databaseInjection } from './rules/security/database-injection';
-import { detectEvalWithExpression } from './rules/security/detect-eval-with-expression';
-import { detectChildProcess } from './rules/security/detect-child-process';
-import { detectNonLiteralFsFilename } from './rules/security/detect-non-literal-fs-filename';
-import { detectNonLiteralRegexp } from './rules/security/detect-non-literal-regexp';
-import { detectObjectInjection } from './rules/security/detect-object-injection';
-import { noHardcodedCredentials } from './rules/security/no-hardcoded-credentials';
-import { noWeakCrypto } from './rules/security/no-weak-crypto';
-import { noInsufficientRandom } from './rules/security/no-insufficient-random';
-import { noUnvalidatedUserInput } from './rules/security/no-unvalidated-user-input';
-import { noUnsanitizedHtml } from './rules/security/no-unsanitized-html';
-import { noUnescapedUrlParameter } from './rules/security/no-unescaped-url-parameter';
-import { noMissingCorsCheck } from './rules/security/no-missing-cors-check';
-import { noInsecureComparison } from './rules/security/no-insecure-comparison';
-import { noInsecureJwt } from './rules/security/no-insecure-jwt';
-import { noTimingAttack } from './rules/security/no-timing-attack';
-import { noGraphqlInjection } from './rules/security/no-graphql-injection';
-import { noXxeInjection } from './rules/security/no-xxe-injection';
-import { noXpathInjection } from './rules/security/no-xpath-injection';
-import { noLdapInjection } from './rules/security/no-ldap-injection';
-import { noUnsafeDeserialization } from './rules/security/no-unsafe-deserialization';
-import { noZipSlip } from './rules/security/no-zip-slip';
-import { noBufferOverread } from './rules/security/no-buffer-overread';
-import { noInsufficientPostmessageValidation } from './rules/security/no-insufficient-postmessage-validation';
-import { noImproperTypeValidation } from './rules/security/no-improper-type-validation';
-import { noUncheckedLoopCondition } from './rules/security/no-unchecked-loop-condition';
-import { noFormatStringInjection } from './rules/security/no-format-string-injection';
-import { noElectronSecurityIssues } from './rules/security/no-electron-security-issues';
-import { noClickjacking } from './rules/security/no-clickjacking';
-import { noUnlimitedResourceAllocation } from './rules/security/no-unlimited-resource-allocation';
-import { noDirectiveInjection } from './rules/security/no-directive-injection';
-import { noImproperSanitization } from './rules/security/no-improper-sanitization';
-import { noWeakPasswordRecovery } from './rules/security/no-weak-password-recovery';
-import { noMissingAuthentication } from './rules/security/no-missing-authentication';
-import { noPrivilegeEscalation } from './rules/security/no-privilege-escalation';
-import { noInsecureCookieSettings } from './rules/security/no-insecure-cookie-settings';
-import { noMissingCsrfProtection } from './rules/security/no-missing-csrf-protection';
-import { noExposedSensitiveData } from './rules/security/no-exposed-sensitive-data';
-import { noUnencryptedTransmission } from './rules/security/no-unencrypted-transmission';
-import { noRedosVulnerableRegex } from './rules/security/no-redos-vulnerable-regex';
-import { noUnsafeRegexConstruction } from './rules/security/no-unsafe-regex-construction';
-import { noSensitiveDataExposure } from './rules/security/no-sensitive-data-exposure';
-import { noDocumentCookie } from './rules/security/no-document-cookie';
+import { noExternalApiCallsInUtils } from './rules/architecture/no-external-api-calls-in-utils';
+import { consistentFunctionScoping } from './rules/architecture/consistent-function-scoping';
+import { filenameCase } from './rules/architecture/filename-case';
+import { noInstanceofArray } from './rules/architecture/no-instanceof-array';
 
 // Quality rules
 import { noCommentedCode } from './rules/quality/no-commented-code';
@@ -119,66 +54,13 @@ import { noBlockingOperations } from './rules/performance/no-blocking-operations
 import { noUnboundedCache } from './rules/performance/no-unbounded-cache';
 import { detectNPlusOneQueries } from './rules/performance/detect-n-plus-one-queries';
 import { reactRenderOptimization } from './rules/performance/react-render-optimization';
+import { reactNoInlineFunctions } from './rules/performance/react-no-inline-functions';
 
-// Accessibility rules
-import { imgRequiresAlt } from './rules/accessibility/img-requires-alt';
-import { noKeyboardInaccessibleElements } from './rules/accessibility/no-keyboard-inaccessible-elements';
-import { noMissingAriaLabels } from './rules/accessibility/no-missing-aria-labels';
-import { anchorHasContent } from './rules/accessibility/anchor-has-content';
-import { anchorIsValid } from './rules/accessibility/anchor-is-valid';
-import { ariaProps } from './rules/accessibility/aria-props';
-import { ariaRole } from './rules/accessibility/aria-role';
-import { ariaUnsupportedElements } from './rules/accessibility/aria-unsupported-elements';
-import { autocompleteValid } from './rules/accessibility/autocomplete-valid';
-import { clickEventsHaveKeyEvents } from './rules/accessibility/click-events-have-key-events';
-import { headingHasContent } from './rules/accessibility/heading-has-content';
-import { htmlHasLang } from './rules/accessibility/html-has-lang';
-import { iframeHasTitle } from './rules/accessibility/iframe-has-title';
-import { labelHasAssociatedControl } from './rules/accessibility/label-has-associated-control';
-import { lang } from './rules/accessibility/lang';
-import { mediaHasCaption } from './rules/accessibility/media-has-caption';
-import { mouseEventsHaveKeyEvents } from './rules/accessibility/mouse-events-have-key-events';
-import { noAccessKey } from './rules/accessibility/no-access-key';
-import { noAriaHiddenOnFocusable } from './rules/accessibility/no-aria-hidden-on-focusable';
-import { noAutofocus } from './rules/accessibility/no-autofocus';
-import { noDistractingElements } from './rules/accessibility/no-distracting-elements';
-import { noRedundantRoles } from './rules/accessibility/no-redundant-roles';
-import { noStaticElementInteractions } from './rules/accessibility/no-static-element-interactions';
-import { interactiveSupportsFocus } from './rules/accessibility/interactive-supports-focus';
-import { noNoninteractiveElementInteractions } from './rules/accessibility/no-noninteractive-element-interactions';
-import { roleHasRequiredAriaProps } from './rules/accessibility/role-has-required-aria-props';
-import { ariaActivedescendantHasTabindex } from './rules/accessibility/aria-activedescendant-has-tabindex';
-import { anchorAmbiguousText } from './rules/accessibility/anchor-ambiguous-text';
-import { controlHasAssociatedLabel } from './rules/accessibility/control-has-associated-label';
-import { imgRedundantAlt } from './rules/accessibility/img-redundant-alt';
-import { noInteractiveElementToNoninteractiveRole } from './rules/accessibility/no-interactive-element-to-noninteractive-role';
-import { noNoninteractiveElementToInteractiveRole } from './rules/accessibility/no-noninteractive-element-to-interactive-role';
-import { roleSupportsAriaProps } from './rules/accessibility/role-supports-aria-props';
-import { scope } from './rules/accessibility/scope';
-import { tabindexNoPositive } from './rules/accessibility/tabindex-no-positive';
-import { noNoninteractiveTabindex } from './rules/accessibility/no-noninteractive-tabindex';
-import { preferTagOverRole } from './rules/accessibility/prefer-tag-over-role';
-
-// TypeScript rules
-// Note: TypeScript-specific rules that duplicate TSC functionality have been removed.
-// Use @typescript-eslint/eslint-plugin for proper TypeScript linting with type information.
-
-// Additional security rules
-import { noToctouVulnerability } from './rules/security/no-toctou-vulnerability';
-import { noMissingSecurityHeaders } from './rules/security/no-missing-security-headers';
-import { noInsecureRedirects } from './rules/security/no-insecure-redirects';
-
-// Architecture rules
-import { noExternalApiCallsInUtils } from './rules/architecture/no-external-api-calls-in-utils';
-import { consistentFunctionScoping } from './rules/architecture/consistent-function-scoping';
-import { filenameCase } from './rules/architecture/filename-case';
-import { noInstanceofArray } from './rules/architecture/no-instanceof-array';
+// Note: Accessibility rules have been moved to eslint-plugin-react-a11y package.
+// Use that package for accessibility-focused configurations.
 
 // Migration rules
 import { reactClassToHooks } from './rules/migration/react-class-to-hooks';
-
-// Performance rules
-import { reactNoInlineFunctions } from './rules/performance/react-no-inline-functions';
 
 // API rules
 import { enforceRestConventions } from './rules/api/enforce-rest-conventions';
@@ -190,8 +72,6 @@ import { noDirectMutationState } from './rules/react/no-direct-mutation-state';
 import { requireOptimization } from './rules/react/require-optimization';
 import { noSetState } from './rules/react/no-set-state';
 import { noThisInSfc } from './rules/react/no-this-in-sfc';
-
-// New React rules from eslint-plugin-react
 import { noAccessStateInSetState } from './rules/react/no-access-state-in-setstate';
 import { noChildrenProp } from './rules/react/no-children-prop';
 import { noDanger } from './rules/react/no-danger';
@@ -245,20 +125,15 @@ import { dddValueObjectImmutability } from './rules/ddd/ddd-value-object-immutab
 // Duplication rules
 import { identicalFunctions } from './rules/duplication/identical-functions';
 
-// Import rules
-import { noDuplicates } from './rules/imports/no-duplicates';
-import { first } from './rules/imports/first';
-import { newlineAfterImport } from './rules/imports/newline-after-import';
-import { extensions } from './rules/imports/extensions';
-import { named } from './rules/imports/named';
-import { defaultRule } from './rules/imports/default';
-import { namespace } from './rules/imports/namespace';
+// Note: Import rules have been moved to eslint-plugin-dependencies package.
 
 /**
  * Collection of all ESLint rules provided by this plugin
  * 
- * Each rule must be created using the `createRule` utility from @forge-js/eslint-plugin-utils
+ * Each rule must be created using the `createRule` utility from @interlace/eslint-devkit
  * which ensures proper typing and documentation generation.
+ * 
+ * Note: Security rules have been moved to eslint-plugin-secure-coding package.
  * 
  * @see https://typescript-eslint.io/developers/custom-rules#creating-a-rule - Rule Creation Guide
  * @see https://eslint.org/docs/latest/extend/custom-rules - ESLint Custom Rules
@@ -273,59 +148,11 @@ import { namespace } from './rules/imports/namespace';
  */
 export const rules = {
   // Flat rule names (for easier usage)
+  // Note: Import/dependency rules have been moved to eslint-plugin-dependencies package.
   'no-console-log': noConsoleLog,
   'prefer-dependency-version-strategy': preferDependencyVersionStrategy,
-  'no-amd': noAmd,
-  'no-commonjs': noCommonjs,
-  'no-nodejs-modules': noNodejsModules,
   'no-process-exit': noProcessExit,
   'no-console-spaces': noConsoleSpaces,
-  'no-circular-dependencies': noCircularDependencies,
-  'enforce-import-order': enforceImportOrder,
-  'no-internal-modules': noInternalModules,
-  'no-sql-injection': noSqlInjection,
-  'no-unsafe-dynamic-require': noUnsafeDynamicRequire,
-  'database-injection': databaseInjection,
-  'detect-eval-with-expression': detectEvalWithExpression,
-  'detect-child-process': detectChildProcess,
-  'detect-non-literal-fs-filename': detectNonLiteralFsFilename,
-  'detect-non-literal-regexp': detectNonLiteralRegexp,
-  'detect-object-injection': detectObjectInjection,
-  'no-hardcoded-credentials': noHardcodedCredentials,
-  'no-weak-crypto': noWeakCrypto,
-  'no-insufficient-random': noInsufficientRandom,
-  'no-unvalidated-user-input': noUnvalidatedUserInput,
-  'no-unsanitized-html': noUnsanitizedHtml,
-  'no-unescaped-url-parameter': noUnescapedUrlParameter,
-  'no-missing-cors-check': noMissingCorsCheck,
-  'no-insecure-comparison': noInsecureComparison,
-  'no-insecure-jwt': noInsecureJwt,
-  'no-timing-attack': noTimingAttack,
-  'no-graphql-injection': noGraphqlInjection,
-  'no-xxe-injection': noXxeInjection,
-  'no-xpath-injection': noXpathInjection,
-  'no-ldap-injection': noLdapInjection,
-  'no-unsafe-deserialization': noUnsafeDeserialization,
-  'no-zip-slip': noZipSlip,
-  'no-buffer-overread': noBufferOverread,
-  'no-insufficient-postmessage-validation': noInsufficientPostmessageValidation,
-  'no-improper-type-validation': noImproperTypeValidation,
-  'no-unchecked-loop-condition': noUncheckedLoopCondition,
-  'no-format-string-injection': noFormatStringInjection,
-  'no-electron-security-issues': noElectronSecurityIssues,
-  'no-clickjacking': noClickjacking,
-  'no-unlimited-resource-allocation': noUnlimitedResourceAllocation,
-  'no-directive-injection': noDirectiveInjection,
-  'no-improper-sanitization': noImproperSanitization,
-  'no-weak-password-recovery': noWeakPasswordRecovery,
-  'no-missing-authentication': noMissingAuthentication,
-  'no-privilege-escalation': noPrivilegeEscalation,
-  'no-insecure-cookie-settings': noInsecureCookieSettings,
-  'no-missing-csrf-protection': noMissingCsrfProtection,
-  'no-exposed-sensitive-data': noExposedSensitiveData,
-  'no-unencrypted-transmission': noUnencryptedTransmission,
-  'no-redos-vulnerable-regex': noRedosVulnerableRegex,
-  'no-unsafe-regex-construction': noUnsafeRegexConstruction,
   'no-commented-code': noCommentedCode,
   'max-parameters': maxParameters,
   'expiring-todo-comments': expiringTodoComments,
@@ -345,15 +172,7 @@ export const rules = {
   'no-unbounded-cache': noUnboundedCache,
   'detect-n-plus-one-queries': detectNPlusOneQueries,
   'react-render-optimization': reactRenderOptimization,
-  'no-keyboard-inaccessible-elements': noKeyboardInaccessibleElements,
-  'no-missing-aria-labels': noMissingAriaLabels,
-  'no-toctou-vulnerability': noToctouVulnerability,
-  'no-missing-security-headers': noMissingSecurityHeaders,
-  'no-insecure-redirects': noInsecureRedirects,
   'no-external-api-calls-in-utils': noExternalApiCallsInUtils,
-  'no-cross-domain-imports': noCrossDomainImports,
-  'enforce-dependency-direction': enforceDependencyDirection,
-  'prefer-node-protocol': preferNodeProtocol,
   'consistent-existence-index-check': consistentExistenceIndexCheck,
   'prefer-event-target': preferEventTarget,
   'prefer-at': preferAt,
@@ -361,82 +180,23 @@ export const rules = {
   'filename-case': filenameCase,
   'no-instanceof-array': noInstanceofArray,
   'nested-complexity-hotspots': nestedComplexityHotspots,
-  'no-sensitive-data-exposure': noSensitiveDataExposure,
-  'no-document-cookie': noDocumentCookie,
   'ddd-anemic-domain-model': dddAnemicDomainModel,
   'ddd-value-object-immutability': dddValueObjectImmutability,
   'enforce-rest-conventions': enforceRestConventions,
   'react-class-to-hooks': reactClassToHooks,
   'react-no-inline-functions': reactNoInlineFunctions,
-  'img-requires-alt': imgRequiresAlt,
   'required-attributes': requiredAttributes,
   'no-deprecated-api': noDeprecatedApi,
   'enforce-naming': enforceNaming,
   'cognitive-complexity': cognitiveComplexity,
   'identical-functions': identicalFunctions,
-
-  // Import rules
-  'no-duplicates': noDuplicates,
-  'first': first,
-  'newline-after-import': newlineAfterImport,
-  'extensions': extensions,
-  'named': named,
-  'default': defaultRule,
-  'namespace': namespace,
   
   // Categorized rule names (for better organization)
+  // Note: Import/dependency rules have been moved to eslint-plugin-dependencies package.
   'development/no-console-log': noConsoleLog,
   'development/prefer-dependency-version-strategy': preferDependencyVersionStrategy,
-  'development/no-amd': noAmd,
-  'development/no-commonjs': noCommonjs,
-  'development/no-nodejs-modules': noNodejsModules,
   'development/no-process-exit': noProcessExit,
   'development/no-console-spaces': noConsoleSpaces,
-  'architecture/no-circular-dependencies': noCircularDependencies,
-  'architecture/no-internal-modules': noInternalModules,
-  'security/no-sql-injection': noSqlInjection,
-  'security/no-unsafe-dynamic-require': noUnsafeDynamicRequire,
-  'security/database-injection': databaseInjection,
-  'security/detect-eval-with-expression': detectEvalWithExpression,
-  'security/detect-child-process': detectChildProcess,
-  'security/detect-non-literal-fs-filename': detectNonLiteralFsFilename,
-  'security/detect-non-literal-regexp': detectNonLiteralRegexp,
-  'security/detect-object-injection': detectObjectInjection,
-  'security/no-hardcoded-credentials': noHardcodedCredentials,
-  'security/no-weak-crypto': noWeakCrypto,
-  'security/no-insufficient-random': noInsufficientRandom,
-  'security/no-unvalidated-user-input': noUnvalidatedUserInput,
-  'security/no-unsanitized-html': noUnsanitizedHtml,
-  'security/no-unescaped-url-parameter': noUnescapedUrlParameter,
-  'security/no-missing-cors-check': noMissingCorsCheck,
-  'security/no-insecure-comparison': noInsecureComparison,
-  'security/no-insecure-jwt': noInsecureJwt,
-  'security/no-timing-attack': noTimingAttack,
-  'security/no-graphql-injection': noGraphqlInjection,
-  'security/no-xxe-injection': noXxeInjection,
-  'security/no-xpath-injection': noXpathInjection,
-  'security/no-ldap-injection': noLdapInjection,
-  'security/no-unsafe-deserialization': noUnsafeDeserialization,
-  'security/no-zip-slip': noZipSlip,
-  'security/no-buffer-overread': noBufferOverread,
-  'security/no-insufficient-postmessage-validation': noInsufficientPostmessageValidation,
-  'security/no-improper-type-validation': noImproperTypeValidation,
-  'security/no-unchecked-loop-condition': noUncheckedLoopCondition,
-  'security/no-format-string-injection': noFormatStringInjection,
-  'security/no-electron-security-issues': noElectronSecurityIssues,
-  'security/no-clickjacking': noClickjacking,
-  'security/no-unlimited-resource-allocation': noUnlimitedResourceAllocation,
-  'security/no-directive-injection': noDirectiveInjection,
-  'security/no-improper-sanitization': noImproperSanitization,
-  'security/no-weak-password-recovery': noWeakPasswordRecovery,
-  'security/no-missing-authentication': noMissingAuthentication,
-  'security/no-privilege-escalation': noPrivilegeEscalation,
-  'security/no-insecure-cookie-settings': noInsecureCookieSettings,
-  'security/no-missing-csrf-protection': noMissingCsrfProtection,
-  'security/no-exposed-sensitive-data': noExposedSensitiveData,
-  'security/no-unencrypted-transmission': noUnencryptedTransmission,
-  'security/no-redos-vulnerable-regex': noRedosVulnerableRegex,
-  'security/no-unsafe-regex-construction': noUnsafeRegexConstruction,
   'quality/no-commented-code': noCommentedCode,
   'quality/max-parameters': maxParameters,
   'quality/expiring-todo-comments': expiringTodoComments,
@@ -456,13 +216,7 @@ export const rules = {
   'performance/no-unbounded-cache': noUnboundedCache,
   'performance/detect-n-plus-one-queries': detectNPlusOneQueries,
   'performance/react-render-optimization': reactRenderOptimization,
-  'security/no-toctou-vulnerability': noToctouVulnerability,
-  'security/no-missing-security-headers': noMissingSecurityHeaders,
-  'security/no-insecure-redirects': noInsecureRedirects,
   'architecture/no-external-api-calls-in-utils': noExternalApiCallsInUtils,
-  'architecture/no-cross-domain-imports': noCrossDomainImports,
-  'architecture/enforce-dependency-direction': enforceDependencyDirection,
-  'architecture/prefer-node-protocol': preferNodeProtocol,
   'architecture/consistent-existence-index-check': consistentExistenceIndexCheck,
   'architecture/prefer-event-target': preferEventTarget,
   'architecture/prefer-at': preferAt,
@@ -471,73 +225,19 @@ export const rules = {
   'architecture/no-instanceof-array': noInstanceofArray,
   'architecture/no-unreadable-iife': noUnreadableIife,
   'architecture/no-await-in-loop': noAwaitInLoop,
-  'architecture/no-self-import': noSelfImport,
-  'architecture/no-unused-modules': noUnusedModules,
-  'architecture/no-extraneous-dependencies': noExtraneousDependencies,
-  'architecture/max-dependencies': maxDependencies,
-  'architecture/no-anonymous-default-export': noAnonymousDefaultExport,
-  'architecture/no-restricted-paths': noRestrictedPaths,
-  'architecture/no-unresolved': noUnresolved,
-  'architecture/no-relative-parent-imports': noRelativeParentImports,
-  'architecture/no-default-export': noDefaultExport,
-  'architecture/no-named-export': noNamedExport,
-  'architecture/no-unassigned-import': noUnassignedImport,
-  'architecture/enforce-import-order': enforceImportOrder,
-  'architecture/no-deprecated': noDeprecated,
-  'architecture/no-mutable-exports': noMutableExports,
-  'architecture/prefer-default-export': preferDefaultExport,
   'complexity/nested-complexity-hotspots': nestedComplexityHotspots,
-  'security/no-sensitive-data-exposure': noSensitiveDataExposure,
-  'security/no-document-cookie': noDocumentCookie,
   'ddd/ddd-anemic-domain-model': dddAnemicDomainModel,
   'ddd/ddd-value-object-immutability': dddValueObjectImmutability,
   'api/enforce-rest-conventions': enforceRestConventions,
   'migration/react-class-to-hooks': reactClassToHooks,
   'performance/react-no-inline-functions': reactNoInlineFunctions,
-  'accessibility/img-requires-alt': imgRequiresAlt,
-  'accessibility/no-keyboard-inaccessible-elements': noKeyboardInaccessibleElements,
-  'accessibility/no-missing-aria-labels': noMissingAriaLabels,
-  'accessibility/anchor-has-content': anchorHasContent,
-  'accessibility/anchor-is-valid': anchorIsValid,
-  'accessibility/aria-props': ariaProps,
-  'accessibility/aria-role': ariaRole,
-  'accessibility/aria-unsupported-elements': ariaUnsupportedElements,
-  'accessibility/autocomplete-valid': autocompleteValid,
-  'accessibility/click-events-have-key-events': clickEventsHaveKeyEvents,
-  'accessibility/heading-has-content': headingHasContent,
-  'accessibility/html-has-lang': htmlHasLang,
-  'accessibility/iframe-has-title': iframeHasTitle,
-  'accessibility/label-has-associated-control': labelHasAssociatedControl,
-  'accessibility/lang': lang,
-  'accessibility/media-has-caption': mediaHasCaption,
-  'accessibility/mouse-events-have-key-events': mouseEventsHaveKeyEvents,
-  'accessibility/no-access-key': noAccessKey,
-  'accessibility/no-aria-hidden-on-focusable': noAriaHiddenOnFocusable,
-  'accessibility/no-autofocus': noAutofocus,
-  'accessibility/no-distracting-elements': noDistractingElements,
-  'accessibility/no-redundant-roles': noRedundantRoles,
-  'accessibility/no-static-element-interactions': noStaticElementInteractions,
-  'accessibility/interactive-supports-focus': interactiveSupportsFocus,
-  'accessibility/no-noninteractive-element-interactions': noNoninteractiveElementInteractions,
-  'accessibility/role-has-required-aria-props': roleHasRequiredAriaProps,
-  'accessibility/aria-activedescendant-has-tabindex': ariaActivedescendantHasTabindex,
-  'accessibility/anchor-ambiguous-text': anchorAmbiguousText,
-  'accessibility/control-has-associated-label': controlHasAssociatedLabel,
-  'accessibility/img-redundant-alt': imgRedundantAlt,
-  'accessibility/no-interactive-element-to-noninteractive-role': noInteractiveElementToNoninteractiveRole,
-  'accessibility/no-noninteractive-element-to-interactive-role': noNoninteractiveElementToInteractiveRole,
-  'accessibility/role-supports-aria-props': roleSupportsAriaProps,
-  'accessibility/scope': scope,
-  'accessibility/tabindex-no-positive': tabindexNoPositive,
-  'accessibility/no-noninteractive-tabindex': noNoninteractiveTabindex,
-  'accessibility/prefer-tag-over-role': preferTagOverRole,
+  // Note: Accessibility rules have been moved to eslint-plugin-react-a11y package.
   'react/required-attributes': requiredAttributes,
   'react/jsx-key': jsxKey,
   'react/no-direct-mutation-state': noDirectMutationState,
   'react/require-optimization': requireOptimization,
   'react/no-set-state': noSetState,
   'react/no-this-in-sfc': noThisInSfc,
-  // New React rules from eslint-plugin-react
   'react/no-access-state-in-setstate': noAccessStateInSetState,
   'react/no-children-prop': noChildrenProp,
   'react/no-danger': noDanger,
@@ -577,14 +277,7 @@ export const rules = {
   'domain/enforce-naming': enforceNaming,
   'complexity/cognitive-complexity': cognitiveComplexity,
   'duplication/identical-functions': identicalFunctions,
-
-  'imports/no-duplicates': noDuplicates,
-  'imports/first': first,
-  'imports/newline-after-import': newlineAfterImport,
-  'imports/extensions': extensions,
-  'imports/named': named,
-  'imports/default': defaultRule,
-  'imports/namespace': namespace,
+  // Note: imports/* rules have been moved to eslint-plugin-dependencies package.
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -593,6 +286,8 @@ export const rules = {
  * This object is the main export of the plugin and contains:
  * - `meta`: Plugin metadata (name, version)
  * - `rules`: All available rules
+ * 
+ * Note: Security rules have been moved to eslint-plugin-secure-coding package.
  * 
  * @see https://eslint.org/docs/latest/extend/plugin-migration-flat-config - Flat Config Plugin Guide
  * @see https://eslint.org/docs/latest/extend/plugins#metadata-in-plugins - Plugin Metadata
@@ -628,6 +323,9 @@ export const plugin = {
  * These configs provide ready-to-use rule configurations that follow best practices.
  * Users can extend these configs or use them as a starting point.
  * 
+ * Note: Security rules have been moved to eslint-plugin-secure-coding package.
+ * Use that package for security-focused configurations.
+ * 
  * **Important:** ESLint automatically strips the 'eslint-plugin-' prefix from plugin names.
  * Therefore, use '@forge-js/llm-optimized' (not '@forge-js/eslint-plugin-llm-optimized')
  * when referencing this plugin in ESLint configurations.
@@ -660,12 +358,12 @@ export const configs = {
    * 
    * Includes essential rules with sensible defaults:
    * - Warns on console.log usage
-   * - Errors on circular dependencies
-   * - Errors on deep module imports
-   * - Errors on critical security issues
-   * - Warns on accessibility violations
    * - Warns on high cognitive complexity (SonarQube-inspired)
    * - Warns on duplicate implementations (SonarQube-inspired)
+   * 
+   * Note: Security rules have been moved to eslint-plugin-secure-coding package.
+   * Note: Accessibility rules have been moved to eslint-plugin-react-a11y package.
+   * Note: Import/dependency rules have been moved to eslint-plugin-dependencies package.
    */
   recommended: {
     plugins: {
@@ -674,89 +372,20 @@ export const configs = {
     rules: {
       '@forge-js/llm-optimized/development/no-console-log': 'warn',
       '@forge-js/llm-optimized/development/no-console-spaces': 'warn',
-      '@forge-js/llm-optimized/architecture/no-circular-dependencies': 'error',
-      '@forge-js/llm-optimized/architecture/enforce-import-order': 'warn',
-      '@forge-js/llm-optimized/architecture/no-internal-modules': 'error',
-      '@forge-js/llm-optimized/security/no-sql-injection': 'error',
-      '@forge-js/llm-optimized/security/no-unsafe-dynamic-require': 'error',
-      '@forge-js/llm-optimized/security/database-injection': 'error',
-      '@forge-js/llm-optimized/security/no-hardcoded-credentials': 'warn',
-      '@forge-js/llm-optimized/security/no-weak-crypto': 'warn',
-      '@forge-js/llm-optimized/security/no-insufficient-random': 'warn',
-      '@forge-js/llm-optimized/security/no-unvalidated-user-input': 'warn',
-      '@forge-js/llm-optimized/security/no-unsanitized-html': 'error',
-      '@forge-js/llm-optimized/security/no-unescaped-url-parameter': 'warn',
-      '@forge-js/llm-optimized/security/no-missing-cors-check': 'warn',
-      '@forge-js/llm-optimized/security/no-insecure-comparison': 'warn',
-      '@forge-js/llm-optimized/security/no-insecure-jwt': 'error',
-      '@forge-js/llm-optimized/security/no-timing-attack': 'error',
-      '@forge-js/llm-optimized/security/no-graphql-injection': 'error',
-      '@forge-js/llm-optimized/security/no-xxe-injection': 'error',
-      '@forge-js/llm-optimized/security/no-xpath-injection': 'error',
-      '@forge-js/llm-optimized/security/no-ldap-injection': 'error',
-      '@forge-js/llm-optimized/security/no-unsafe-deserialization': 'error',
-      '@forge-js/llm-optimized/security/no-zip-slip': 'error',
-      '@forge-js/llm-optimized/security/no-buffer-overread': 'error',
-      '@forge-js/llm-optimized/security/no-insufficient-postmessage-validation': 'error',
-      '@forge-js/llm-optimized/security/no-improper-type-validation': 'warn',
-      '@forge-js/llm-optimized/security/no-unchecked-loop-condition': 'error',
-      '@forge-js/llm-optimized/security/no-format-string-injection': 'error',
-      '@forge-js/llm-optimized/security/no-electron-security-issues': 'error',
-      '@forge-js/llm-optimized/security/no-clickjacking': 'error',
-      '@forge-js/llm-optimized/security/no-unlimited-resource-allocation': 'error',
-      '@forge-js/llm-optimized/security/no-directive-injection': 'error',
-      '@forge-js/llm-optimized/security/no-improper-sanitization': 'error',
-      '@forge-js/llm-optimized/security/no-weak-password-recovery': 'error',
-      '@forge-js/llm-optimized/security/no-missing-authentication': 'warn',
-      '@forge-js/llm-optimized/security/no-privilege-escalation': 'warn',
-      '@forge-js/llm-optimized/security/no-insecure-cookie-settings': 'warn',
-      '@forge-js/llm-optimized/security/no-missing-csrf-protection': 'warn',
-      '@forge-js/llm-optimized/security/no-exposed-sensitive-data': 'error',
-      '@forge-js/llm-optimized/security/no-document-cookie': 'warn',
-      '@forge-js/llm-optimized/security/no-unencrypted-transmission': 'warn',
-      '@forge-js/llm-optimized/accessibility/img-requires-alt': 'warn',
       '@forge-js/llm-optimized/complexity/cognitive-complexity': 'warn',
       '@forge-js/llm-optimized/complexity/nested-complexity-hotspots': 'warn',
       '@forge-js/llm-optimized/duplication/identical-functions': 'warn',
       '@forge-js/llm-optimized/performance/detect-n-plus-one-queries': 'warn',
       '@forge-js/llm-optimized/performance/react-render-optimization': 'warn',
-      '@forge-js/llm-optimized/architecture/no-cross-domain-imports': 'warn',
-      '@forge-js/llm-optimized/architecture/enforce-dependency-direction': 'warn',
-      '@forge-js/llm-optimized/architecture/prefer-node-protocol': 'warn',
       '@forge-js/llm-optimized/architecture/consistent-existence-index-check': 'warn',
       '@forge-js/llm-optimized/architecture/prefer-event-target': 'warn',
       '@forge-js/llm-optimized/architecture/prefer-at': 'warn',
       '@forge-js/llm-optimized/architecture/no-unreadable-iife': 'warn',
       '@forge-js/llm-optimized/architecture/no-await-in-loop': 'warn',
-      '@forge-js/llm-optimized/architecture/no-self-import': 'warn',
-      '@forge-js/llm-optimized/architecture/no-unused-modules': 'warn',
-      '@forge-js/llm-optimized/architecture/no-extraneous-dependencies': 'warn',
-      '@forge-js/llm-optimized/architecture/no-unresolved': 'error',
-      '@forge-js/llm-optimized/architecture/no-relative-parent-imports': 'warn',
-      '@forge-js/llm-optimized/architecture/no-default-export': 'warn',
-      '@forge-js/llm-optimized/architecture/no-named-export': 'warn',
-      '@forge-js/llm-optimized/architecture/no-unassigned-import': 'warn',
-      '@forge-js/llm-optimized/development/no-amd': 'warn',
-      '@forge-js/llm-optimized/development/no-commonjs': 'warn',
-      '@forge-js/llm-optimized/development/no-nodejs-modules': 'error',
-      '@forge-js/llm-optimized/architecture/max-dependencies': 'warn',
-      '@forge-js/llm-optimized/architecture/no-anonymous-default-export': 'warn',
-      '@forge-js/llm-optimized/architecture/no-restricted-paths': 'warn',
-      '@forge-js/llm-optimized/architecture/no-deprecated': 'warn',
-      '@forge-js/llm-optimized/architecture/no-mutable-exports': 'warn',
-      '@forge-js/llm-optimized/architecture/prefer-default-export': 'warn',
       '@forge-js/llm-optimized/architecture/no-external-api-calls-in-utils': 'warn',
-      '@forge-js/llm-optimized/security/no-sensitive-data-exposure': 'warn',
       '@forge-js/llm-optimized/ddd/ddd-anemic-domain-model': 'warn',
       '@forge-js/llm-optimized/ddd/ddd-value-object-immutability': 'warn',
       '@forge-js/llm-optimized/api/enforce-rest-conventions': 'warn',
-      '@forge-js/llm-optimized/imports/no-duplicates': 'error',
-      '@forge-js/llm-optimized/imports/named': 'error',
-      '@forge-js/llm-optimized/imports/default': 'error',
-      '@forge-js/llm-optimized/imports/namespace': 'warn',
-      '@forge-js/llm-optimized/imports/extensions': 'warn',
-      '@forge-js/llm-optimized/imports/first': 'warn',
-      '@forge-js/llm-optimized/imports/newline-after-import': 'warn',
     },
   } satisfies TSESLint.FlatConfig.Config,
   
@@ -765,6 +394,9 @@ export const configs = {
    * 
    * All rules are set to 'error' for maximum code quality enforcement
    * Includes SonarQube-inspired complexity and duplication rules
+   * 
+   * Note: Security rules have been moved to eslint-plugin-secure-coding package.
+   * Note: Import/dependency rules have been moved to eslint-plugin-dependencies package.
    */
   strict: {
     plugins: {
@@ -773,148 +405,42 @@ export const configs = {
     rules: {
       '@forge-js/llm-optimized/development/no-console-log': 'error',
       '@forge-js/llm-optimized/development/no-console-spaces': 'error',
-      '@forge-js/llm-optimized/architecture/no-circular-dependencies': 'error',
-      '@forge-js/llm-optimized/architecture/enforce-import-order': 'error',
-      '@forge-js/llm-optimized/architecture/no-internal-modules': 'error',
-      '@forge-js/llm-optimized/security/no-sql-injection': 'error',
-      '@forge-js/llm-optimized/security/no-unsafe-dynamic-require': 'error',
-      '@forge-js/llm-optimized/security/database-injection': 'error',
-      '@forge-js/llm-optimized/security/no-hardcoded-credentials': 'error',
-      '@forge-js/llm-optimized/security/no-weak-crypto': 'error',
-      '@forge-js/llm-optimized/security/no-insufficient-random': 'error',
-      '@forge-js/llm-optimized/security/no-unvalidated-user-input': 'error',
-      '@forge-js/llm-optimized/security/no-unsanitized-html': 'error',
-      '@forge-js/llm-optimized/security/no-unescaped-url-parameter': 'error',
-      '@forge-js/llm-optimized/security/no-missing-cors-check': 'error',
-      '@forge-js/llm-optimized/security/no-insecure-comparison': 'error',
-      '@forge-js/llm-optimized/security/no-insecure-jwt': 'error',
-      '@forge-js/llm-optimized/security/no-timing-attack': 'error',
-      '@forge-js/llm-optimized/security/no-graphql-injection': 'error',
-      '@forge-js/llm-optimized/security/no-xxe-injection': 'error',
-      '@forge-js/llm-optimized/security/no-xpath-injection': 'error',
-      '@forge-js/llm-optimized/security/no-ldap-injection': 'error',
-      '@forge-js/llm-optimized/security/no-unsafe-deserialization': 'error',
-      '@forge-js/llm-optimized/security/no-zip-slip': 'error',
-      '@forge-js/llm-optimized/security/no-buffer-overread': 'error',
-      '@forge-js/llm-optimized/security/no-missing-authentication': 'error',
-      '@forge-js/llm-optimized/security/no-privilege-escalation': 'error',
-      '@forge-js/llm-optimized/security/no-insecure-cookie-settings': 'error',
-      '@forge-js/llm-optimized/security/no-missing-csrf-protection': 'error',
-      '@forge-js/llm-optimized/security/no-exposed-sensitive-data': 'error',
-      '@forge-js/llm-optimized/security/no-document-cookie': 'error',
-      '@forge-js/llm-optimized/security/no-unencrypted-transmission': 'error',
-      '@forge-js/llm-optimized/accessibility/img-requires-alt': 'error',
       '@forge-js/llm-optimized/performance/react-no-inline-functions': 'error',
       '@forge-js/llm-optimized/complexity/cognitive-complexity': 'error',
       '@forge-js/llm-optimized/complexity/nested-complexity-hotspots': 'error',
       '@forge-js/llm-optimized/duplication/identical-functions': 'error',
       '@forge-js/llm-optimized/performance/detect-n-plus-one-queries': 'error',
       '@forge-js/llm-optimized/performance/react-render-optimization': 'error',
-      '@forge-js/llm-optimized/architecture/no-cross-domain-imports': 'error',
-      '@forge-js/llm-optimized/architecture/enforce-dependency-direction': 'error',
       '@forge-js/llm-optimized/architecture/prefer-at': 'error',
       '@forge-js/llm-optimized/architecture/no-unreadable-iife': 'error',
       '@forge-js/llm-optimized/architecture/no-await-in-loop': 'error',
-      '@forge-js/llm-optimized/architecture/no-self-import': 'error',
-      '@forge-js/llm-optimized/architecture/no-unused-modules': 'error',
-      '@forge-js/llm-optimized/architecture/no-extraneous-dependencies': 'error',
-      '@forge-js/llm-optimized/architecture/max-dependencies': 'error',
-      '@forge-js/llm-optimized/architecture/no-anonymous-default-export': 'error',
-      '@forge-js/llm-optimized/architecture/no-restricted-paths': 'error',
-      '@forge-js/llm-optimized/architecture/no-deprecated': 'error',
-      '@forge-js/llm-optimized/architecture/no-mutable-exports': 'error',
-      '@forge-js/llm-optimized/architecture/prefer-default-export': 'error',
       '@forge-js/llm-optimized/architecture/no-external-api-calls-in-utils': 'error',
-      '@forge-js/llm-optimized/security/no-sensitive-data-exposure': 'error',
       '@forge-js/llm-optimized/ddd/ddd-anemic-domain-model': 'error',
       '@forge-js/llm-optimized/ddd/ddd-value-object-immutability': 'error',
       '@forge-js/llm-optimized/api/enforce-rest-conventions': 'error',
-      '@forge-js/llm-optimized/imports/no-duplicates': 'error',
-      '@forge-js/llm-optimized/imports/named': 'error',
-      '@forge-js/llm-optimized/imports/default': 'error',
-      '@forge-js/llm-optimized/imports/namespace': 'error',
-      '@forge-js/llm-optimized/imports/extensions': 'error',
-      '@forge-js/llm-optimized/imports/first': 'error',
-      '@forge-js/llm-optimized/imports/newline-after-import': 'error',
-    },
-  } satisfies TSESLint.FlatConfig.Config,
-
-  /**
-   * Security-focused configuration
-   * 
-   * Enables all security rules for maximum protection
-   * Includes comprehensive security vulnerability detection
-   */
-  security: {
-    plugins: {
-      '@forge-js/llm-optimized': plugin,
-    },
-    rules: {
-      '@forge-js/llm-optimized/security/no-sql-injection': 'error',
-      '@forge-js/llm-optimized/security/no-unsafe-dynamic-require': 'error',
-      '@forge-js/llm-optimized/security/database-injection': 'error',
-      '@forge-js/llm-optimized/security/detect-eval-with-expression': 'error',
-      '@forge-js/llm-optimized/security/detect-child-process': 'error',
-      '@forge-js/llm-optimized/security/detect-non-literal-fs-filename': 'error',
-      '@forge-js/llm-optimized/security/detect-non-literal-regexp': 'error',
-      '@forge-js/llm-optimized/security/detect-object-injection': 'error',
-      '@forge-js/llm-optimized/security/no-hardcoded-credentials': 'error',
-      '@forge-js/llm-optimized/security/no-weak-crypto': 'error',
-      '@forge-js/llm-optimized/security/no-insufficient-random': 'error',
-      '@forge-js/llm-optimized/security/no-unvalidated-user-input': 'error',
-      '@forge-js/llm-optimized/security/no-unsanitized-html': 'error',
-      '@forge-js/llm-optimized/security/no-unescaped-url-parameter': 'error',
-      '@forge-js/llm-optimized/security/no-missing-cors-check': 'error',
-      '@forge-js/llm-optimized/security/no-insecure-comparison': 'error',
-      '@forge-js/llm-optimized/security/no-insecure-jwt': 'error',
-      '@forge-js/llm-optimized/security/no-timing-attack': 'error',
-      '@forge-js/llm-optimized/security/no-graphql-injection': 'error',
-      '@forge-js/llm-optimized/security/no-xxe-injection': 'error',
-      '@forge-js/llm-optimized/security/no-xpath-injection': 'error',
-      '@forge-js/llm-optimized/security/no-ldap-injection': 'error',
-      '@forge-js/llm-optimized/security/no-unsafe-deserialization': 'error',
-      '@forge-js/llm-optimized/security/no-zip-slip': 'error',
-      '@forge-js/llm-optimized/security/no-buffer-overread': 'error',
-      '@forge-js/llm-optimized/security/no-missing-authentication': 'error',
-      '@forge-js/llm-optimized/security/no-privilege-escalation': 'error',
-      '@forge-js/llm-optimized/security/no-insecure-cookie-settings': 'error',
-      '@forge-js/llm-optimized/security/no-missing-csrf-protection': 'error',
-      '@forge-js/llm-optimized/security/no-exposed-sensitive-data': 'error',
-      '@forge-js/llm-optimized/security/no-unencrypted-transmission': 'error',
-      '@forge-js/llm-optimized/security/no-redos-vulnerable-regex': 'error',
-      '@forge-js/llm-optimized/security/no-unsafe-regex-construction': 'error',
-      '@forge-js/llm-optimized/security/no-sensitive-data-exposure': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 
   /**
    * Architecture configuration
    * 
-   * Enforces clean architecture and module boundaries
+   * Enforces clean code patterns
+   * Note: Module boundary rules have been moved to eslint-plugin-dependencies package.
    */
   architecture: {
     plugins: {
       '@forge-js/llm-optimized': plugin,
     },
     rules: {
-      '@forge-js/llm-optimized/architecture/no-circular-dependencies': 'error',
-      '@forge-js/llm-optimized/architecture/enforce-import-order': 'error',
-      '@forge-js/llm-optimized/architecture/no-internal-modules': 'error',
-      '@forge-js/llm-optimized/architecture/no-cross-domain-imports': 'error',
-      '@forge-js/llm-optimized/architecture/enforce-dependency-direction': 'error',
       '@forge-js/llm-optimized/architecture/no-external-api-calls-in-utils': 'error',
       '@forge-js/llm-optimized/architecture/prefer-at': 'error',
       '@forge-js/llm-optimized/architecture/no-unreadable-iife': 'error',
       '@forge-js/llm-optimized/architecture/no-await-in-loop': 'error',
-      '@forge-js/llm-optimized/architecture/no-self-import': 'error',
-      '@forge-js/llm-optimized/architecture/no-unused-modules': 'error',
-      '@forge-js/llm-optimized/architecture/no-extraneous-dependencies': 'error',
-      '@forge-js/llm-optimized/architecture/max-dependencies': 'error',
-      '@forge-js/llm-optimized/architecture/no-anonymous-default-export': 'error',
-      '@forge-js/llm-optimized/architecture/no-restricted-paths': 'error',
-      '@forge-js/llm-optimized/architecture/no-deprecated': 'error',
-      '@forge-js/llm-optimized/architecture/no-mutable-exports': 'error',
-      '@forge-js/llm-optimized/architecture/prefer-default-export': 'error',
+      '@forge-js/llm-optimized/architecture/consistent-existence-index-check': 'error',
+      '@forge-js/llm-optimized/architecture/prefer-event-target': 'error',
+      '@forge-js/llm-optimized/architecture/consistent-function-scoping': 'error',
+      '@forge-js/llm-optimized/architecture/filename-case': 'error',
+      '@forge-js/llm-optimized/architecture/no-instanceof-array': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 
@@ -930,7 +456,6 @@ export const configs = {
     rules: {
       '@forge-js/llm-optimized/migration/react-class-to-hooks': 'warn',
       '@forge-js/llm-optimized/performance/react-no-inline-functions': 'warn',
-      '@forge-js/llm-optimized/accessibility/img-requires-alt': 'error',
       '@forge-js/llm-optimized/react/required-attributes': 'warn',
       '@forge-js/llm-optimized/react/jsx-key': 'error',
     },
@@ -951,54 +476,8 @@ export const configs = {
     },
   } satisfies TSESLint.FlatConfig.Config,
 
-  /**
-   * Accessibility configuration
-   * 
-   * Enforces WCAG compliance
-   */
-  accessibility: {
-    plugins: {
-      '@forge-js/llm-optimized': plugin,
-    },
-    rules: {
-      '@forge-js/llm-optimized/accessibility/img-requires-alt': 'error',
-      '@forge-js/llm-optimized/accessibility/anchor-has-content': 'error',
-      '@forge-js/llm-optimized/accessibility/anchor-is-valid': 'error',
-      '@forge-js/llm-optimized/accessibility/aria-props': 'error',
-      '@forge-js/llm-optimized/accessibility/aria-role': 'error',
-      '@forge-js/llm-optimized/accessibility/aria-unsupported-elements': 'error',
-      '@forge-js/llm-optimized/accessibility/autocomplete-valid': 'error',
-      '@forge-js/llm-optimized/accessibility/click-events-have-key-events': 'error',
-      '@forge-js/llm-optimized/accessibility/heading-has-content': 'error',
-      '@forge-js/llm-optimized/accessibility/html-has-lang': 'error',
-      '@forge-js/llm-optimized/accessibility/iframe-has-title': 'error',
-      '@forge-js/llm-optimized/accessibility/label-has-associated-control': 'error',
-      '@forge-js/llm-optimized/accessibility/lang': 'error',
-      '@forge-js/llm-optimized/accessibility/media-has-caption': 'error',
-      '@forge-js/llm-optimized/accessibility/mouse-events-have-key-events': 'error',
-      '@forge-js/llm-optimized/accessibility/no-access-key': 'error',
-      '@forge-js/llm-optimized/accessibility/no-aria-hidden-on-focusable': 'error',
-      '@forge-js/llm-optimized/accessibility/no-autofocus': 'error',
-      '@forge-js/llm-optimized/accessibility/no-distracting-elements': 'error',
-      '@forge-js/llm-optimized/accessibility/no-redundant-roles': 'error',
-      '@forge-js/llm-optimized/accessibility/no-static-element-interactions': 'error',
-      '@forge-js/llm-optimized/accessibility/interactive-supports-focus': 'error',
-      '@forge-js/llm-optimized/accessibility/no-noninteractive-element-interactions': 'error',
-      '@forge-js/llm-optimized/accessibility/role-has-required-aria-props': 'error',
-      '@forge-js/llm-optimized/accessibility/aria-activedescendant-has-tabindex': 'error',
-      '@forge-js/llm-optimized/accessibility/anchor-ambiguous-text': 'error',
-      '@forge-js/llm-optimized/accessibility/control-has-associated-label': 'error',
-      '@forge-js/llm-optimized/accessibility/img-redundant-alt': 'error',
-      '@forge-js/llm-optimized/accessibility/no-interactive-element-to-noninteractive-role': 'error',
-      '@forge-js/llm-optimized/accessibility/no-noninteractive-element-to-interactive-role': 'error',
-      '@forge-js/llm-optimized/accessibility/role-supports-aria-props': 'error',
-      '@forge-js/llm-optimized/accessibility/color-contrast-css': 'error',
-      '@forge-js/llm-optimized/accessibility/scope': 'error',
-      '@forge-js/llm-optimized/accessibility/tabindex-no-positive': 'error',
-      '@forge-js/llm-optimized/accessibility/no-noninteractive-tabindex': 'error',
-      '@forge-js/llm-optimized/accessibility/prefer-tag-over-role': 'error',
-    },
-  } satisfies TSESLint.FlatConfig.Config,
+  // Note: Accessibility configuration has been moved to eslint-plugin-react-a11y package.
+  // Use that package for WCAG compliance: import reactA11y from 'eslint-plugin-react-a11y';
 
   /**
    * Performance configuration
@@ -1042,7 +521,6 @@ export const configs = {
    * Advanced code quality rules inspired by SonarQube:
    * - Cognitive complexity detection
    * - Duplicate function detection
-   * - Comprehensive injection prevention
    */
   sonarqube: {
     plugins: {
@@ -1052,7 +530,6 @@ export const configs = {
       '@forge-js/llm-optimized/complexity/cognitive-complexity': 'warn',
       '@forge-js/llm-optimized/complexity/nested-complexity-hotspots': 'warn',
       '@forge-js/llm-optimized/duplication/identical-functions': 'warn',
-      '@forge-js/llm-optimized/security/database-injection': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 
@@ -1222,13 +699,12 @@ export const configs = {
  */
 export default plugin;
 
-/**
- * Utility exports for advanced usage
- */
-export { clearCircularDependencyCache };
+// Note: clearCircularDependencyCache has been moved to eslint-plugin-dependencies package.
 
 /**
  * Re-export all rule Options types for convenience
+ * 
+ * Note: Security rule options have been moved to eslint-plugin-secure-coding package.
  * 
  * These can be imported from either the main package or the types subpath:
  * 
@@ -1242,17 +718,20 @@ export { clearCircularDependencyCache };
  * ```
  */
 export type {
-  // Accessibility
-  ImgRequiresAltOptions,
   // Architecture
-  NoCircularDependenciesOptions,
-  NoInternalModulesOptions,
+  NoExternalApiCallsInUtilsOptions,
+  ConsistentExistenceIndexCheckOptions,
+  PreferEventTargetOptions,
+  PreferAtOptions,
+  NoUnreadableIifeOptions,
+  NoAwaitInLoopOptions,
   // Complexity
   CognitiveComplexityOptions,
   // Deprecation
   NoDeprecatedApiOptions,
   // Development
   NoConsoleLogOptions,
+  PreferDependencyVersionStrategyOptions,
   // Domain
   EnforceNamingOptions,
   // Duplication
@@ -1263,21 +742,6 @@ export type {
   ReactNoInlineFunctionsOptions,
   // React
   RequiredAttributesOptions,
-  // Security
-  DatabaseInjectionOptions,
-  DetectChildProcessOptions,
-  DetectEvalWithExpressionOptions,
-  DetectNonLiteralFsFilenameOptions,
-  DetectNonLiteralRegexpOptions,
-  DetectObjectInjectionOptions,
-  NoSqlInjectionOptions,
-  NoUnsafeDynamicRequireOptions,
-  NoHardcodedCredentialsOptions,
-  NoWeakCryptoOptions,
-  NoInsufficientRandomOptions,
-  PreferDependencyVersionStrategyOptions,
-  NoRedosVulnerableRegexOptions,
-  NoUnsafeRegexConstructionOptions,
   // Combined type
   AllRulesOptions,
 } from './types/index';

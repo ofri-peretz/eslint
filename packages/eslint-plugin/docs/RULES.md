@@ -1,4 +1,7 @@
-# 📚 Rules Reference (144 Rules)
+# 📚 Rules Reference (107 Rules)
+
+> **Note:** Security rules (48) have been moved to [eslint-plugin-secure-coding](https://www.npmjs.com/package/eslint-plugin-secure-coding).
+> **Note:** Accessibility rules (37) have been moved to [eslint-plugin-react-a11y](https://www.npmjs.com/package/eslint-plugin-react-a11y).
 
 💼 Set in `recommended` | ⚠️ Warns in `recommended` | 🔧 Auto-fixable | 💡 Editor suggestions
 
@@ -174,14 +177,6 @@
 | [no-silent-errors](./rules/no-silent-errors.md)                 | No silent error swallowing |     |     |     | 💡  |
 | [no-missing-error-context](./rules/no-missing-error-context.md) | Error context required     |     |     |     | 💡  |
 | [error-message](./rules/error-message.md)                       | Require error messages     |     | ⚠️  |     | 💡  |
-
-## Accessibility (3 rules)
-
-| Name                                                                              | Description                | 💼  | ⚠️  | 🔧  | 💡  |
-| --------------------------------------------------------------------------------- | -------------------------- | --- | --- | --- | --- |
-| [img-requires-alt](./rules/img-requires-alt.md)                                   | Enforce alt text on images |     | ⚠️  |     |     |
-| [no-keyboard-inaccessible-elements](./rules/no-keyboard-inaccessible-elements.md) | Keyboard accessibility     |     | ⚠️  |     | 💡  |
-| [no-missing-aria-labels](./rules/no-missing-aria-labels.md)                       | Enforce ARIA labels        |     | ⚠️  |     | 💡  |
 
 ## Complexity (2 rules)
 

@@ -35,7 +35,7 @@ export default defineConfig({
      * 
      * @why-needed
      * Vitest runs in Node.js and doesn't automatically resolve TypeScript path aliases
-     * (like @forge-js/eslint-plugin-utils) defined in tsconfig.base.json.
+     * (like @interlace/eslint-devkit) defined in tsconfig.base.json.
      * Without this plugin, tests fail with "Cannot read properties of undefined" errors
      * when importing from monorepo packages.
      * 

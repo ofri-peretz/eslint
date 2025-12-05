@@ -2,9 +2,9 @@
  * ESLint Rule: require-optimization
  * Require performance optimizations for React components (requires deep performance analysis)
  */
-import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '@forge-js/eslint-plugin-utils';
-import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
   | 'considerMemo'

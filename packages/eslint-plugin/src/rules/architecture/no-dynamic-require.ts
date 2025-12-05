@@ -2,9 +2,9 @@
  * ESLint Rule: no-dynamic-require
  * Forbid `require()` calls with expressions (eslint-plugin-import inspired)
  */
-import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '@forge-js/eslint-plugin-utils';
-import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
+import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'dynamicRequire';
 

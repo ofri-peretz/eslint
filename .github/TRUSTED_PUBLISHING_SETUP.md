@@ -27,7 +27,7 @@ Trusted Publishing requires your packages to be properly configured on npmjs.com
 2. Login to your account
 3. Verify you own/maintain these packages:
    - `@forge-js/eslint-plugin`
-   - `@forge-js/eslint-plugin-utils`
+   - `@interlace/eslint-devkit`
    - `@forge-js/cli`
 
 ### Step 2: Configure Trusted Publishing on NPM

@@ -346,7 +346,7 @@ This checks if a release would succeed without making any changes.
 
 📦 Packages that would be released:
 @forge-js/eslint-plugin: 1.2.3 → 1.3.0
-@forge-js/eslint-plugin-utils: 1.0.1 → 1.0.2
+@interlace/eslint-devkit: 1.0.1 → 1.0.2
 
 ✅ Release validation passed!
    The release workflow should succeed when run.

@@ -2,9 +2,9 @@
  * ESLint Rule: no-console-spaces
  * Prevent leading/trailing space between console.log parameters
  */
-import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '@forge-js/eslint-plugin-utils';
-import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noConsoleSpaces';
 

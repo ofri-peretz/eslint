@@ -388,7 +388,7 @@ Nx reads `package.json` to build dependency graph:
 // packages/eslint-plugin/package.json
 {
   "dependencies": {
-    "@forge-js/eslint-plugin-utils": "workspace:*"
+    "@interlace/eslint-devkit": "workspace:*"
     // ↑ Nx detects this dependency
   }
 }

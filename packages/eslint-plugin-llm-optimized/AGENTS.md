@@ -140,7 +140,7 @@ A: <10ms overhead per file.
 - **@forge-js/eslint-plugin-llm-optimized:** Scoped version**
 - **eslint-plugin-llm:** Shorter name variant**
 - **eslint-plugin-mcp:** MCP-focused variant**
-- **@forge-js/eslint-plugin-utils:** Build your own LLM-optimized rules
+- **@interlace/eslint-devkit:** Build your own LLM-optimized rules
 
 ## License
 

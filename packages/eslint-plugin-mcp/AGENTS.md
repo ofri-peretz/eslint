@@ -193,7 +193,7 @@ A: No. This package works with or without MCP. However, it's specifically optimi
 - **eslint-plugin-llm-optimized:** Unscoped descriptive version
 - **eslint-plugin-llm:** LLM-focused variant
 - **eslint-plugin-mcp-optimized:** MCP-optimized variant
-- **@forge-js/eslint-plugin-utils:** Build your own LLM-optimized rules
+- **@interlace/eslint-devkit:** Build your own LLM-optimized rules
 
 ## License
 

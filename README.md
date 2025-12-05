@@ -39,7 +39,7 @@ The core offering: an ESLint plugin with rules that enforce team conventions and
 | Package                                                           | Version                                                                                                                           | What It Does                              |
 | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | [`@forge-js/cli`](./packages/cli)                                 | [![npm](https://img.shields.io/npm/v/@forge-js/cli)](https://www.npmjs.com/package/@forge-js/cli)                                 | CLI utilities for common team workflows   |
-| [`@forge-js/eslint-plugin-utils`](./packages/eslint-plugin-utils) | [![npm](https://img.shields.io/npm/v/@forge-js/eslint-plugin-utils)](https://www.npmjs.com/package/@forge-js/eslint-plugin-utils) | Build your own team-specific ESLint rules |
+| [`@interlace/eslint-devkit`](./packages/eslint-plugin-utils) | [![npm](https://img.shields.io/npm/v/@interlace/eslint-devkit)](https://www.npmjs.com/package/@interlace/eslint-devkit) | Build your own team-specific ESLint rules |
 
 ---
 

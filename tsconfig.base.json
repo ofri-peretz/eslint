@@ -10,10 +10,7 @@
     "importHelpers": true,
     "target": "ES2022",
     "module": "esnext",
-    "lib": [
-      "ES2022",
-      "dom"
-    ],
+    "lib": ["ES2022", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
@@ -21,12 +18,8 @@
       "@forge-js/eslint-plugin-llm-optimized": [
         "packages/eslint-plugin/src/index.ts"
       ],
-      "@forge-js/eslint-plugin-utils": [
-        "packages/eslint-plugin-utils/src/index.ts"
-      ],
-      "eslint-plugin-mcp": [
-        "packages/eslint-plugin-mcp/src/index.ts"
-      ],
+      "@interlace/eslint-devkit": ["packages/eslint-devkit/src/index.ts"],
+      "eslint-plugin-mcp": ["packages/eslint-plugin-mcp/src/index.ts"],
       "eslint-plugin-mcp-optimized": [
         "packages/eslint-plugin-mcp-optimized/src/index.ts"
       ],
@@ -53,11 +46,17 @@
       ],
       "eslint-plugin-development-expert": [
         "packages/eslint-plugin-development-expert/src/index.ts"
+      ],
+      "eslint-plugin-secure-coding": [
+        "packages/eslint-plugin-secure-coding/src/index.ts"
+      ],
+      "eslint-plugin-react-a11y": [
+        "packages/eslint-plugin-react-a11y/src/index.ts"
+      ],
+      "eslint-plugin-dependencies": [
+        "packages/eslint-plugin-dependencies/src/index.ts"
       ]
     }
   },
-  "exclude": [
-    "node_modules",
-    "tmp"
-  ]
+  "exclude": ["node_modules", "tmp"]
 }

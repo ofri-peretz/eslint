@@ -49,7 +49,7 @@ sequenceDiagram
     Nx->>Nx: Analyze conventional commits
     Note over Nx: feat: = MINOR bump
 
-    Nx->>Dev: Preview:<br/>@forge-js/eslint-plugin: 1.2.3 → 1.3.0<br/>@forge-js/eslint-plugin-utils: 1.0.1 → 1.0.2
+    Nx->>Dev: Preview:<br/>@forge-js/eslint-plugin: 1.2.3 → 1.3.0<br/>@interlace/eslint-devkit: 1.0.1 → 1.0.2
 
     Dev->>Nx: pnpm nx release --skip-publish
     Nx->>Git: Update package.json files
@@ -65,7 +65,7 @@ sequenceDiagram
 | Scenario                                | What Gets Released                                   | Example                      |
 | --------------------------------------- | ---------------------------------------------------- | ---------------------------- |
 | Changed `packages/eslint-plugin/`       | `@forge-js/eslint-plugin` only                       | You edit a rule file         |
-| Changed `packages/eslint-plugin-utils/` | `@forge-js/eslint-plugin-utils` + dependent packages | You update type utils        |
+| Changed `packages/eslint-plugin-utils/` | `@interlace/eslint-devkit` + dependent packages | You update type utils        |
 | Changed both packages                   | Both packages independently                          | You update multiple packages |
 | No changes                              | ❌ Nothing released                                  | Only docs or tests changed   |
 
@@ -163,7 +163,7 @@ pnpm nx release --dry-run
 
 # Output shows:
 # ✓ @forge-js/eslint-plugin: 1.2.3 → 1.3.0 (MINOR)
-# ✓ @forge-js/eslint-plugin-utils: 1.0.1 → 1.0.2 (PATCH)
+# ✓ @interlace/eslint-devkit: 1.0.1 → 1.0.2 (PATCH)
 
 # Step 2: Create version, changelog, commit, and tag
 pnpm nx release --skip-publish
@@ -254,7 +254,7 @@ git push && git push --tags
 
 ### **How Nx Handles Internal Dependencies**
 
-When `@forge-js/eslint-plugin` depends on `@forge-js/eslint-plugin-utils`:
+When `@forge-js/eslint-plugin` depends on `@interlace/eslint-devkit`:
 
 ```mermaid
 %%{init: {
@@ -408,7 +408,7 @@ a1b2c3d feat: add type inference utilities
 # Preview
 pnpm nx release --dry-run
 # Output:
-#   @forge-js/eslint-plugin-utils: 1.0.1 → 1.1.0 (MINOR - feat)
+#   @interlace/eslint-devkit: 1.0.1 → 1.1.0 (MINOR - feat)
 #   @forge-js/eslint-plugin: 1.2.3 → 1.2.4 (PATCH - dependency update)
 #   @forge-js/cli: 1.0.0 → 1.0.1 (PATCH - dependency update)
 

@@ -35,7 +35,7 @@ Steps to reproduce the behavior:
 
 ## Environment
 
-- **Package**: @forge-js/eslint-plugin-llm-optimized or @forge-js/eslint-plugin-utils
+- **Package**: @forge-js/eslint-plugin-llm-optimized or @interlace/eslint-devkit
 - **Version**: <!-- e.g. 0.0.3-rc.5 -->
 - **Node.js**: <!-- output of `node --version` -->
 - **pnpm/npm/yarn**: <!-- e.g. pnpm 10.18.3 -->

@@ -1,0 +1,60 @@
+{
+  "name": "eslint-devkit",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/eslint-devkit/src",
+  "projectType": "library",
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": ["{projectRoot}", "dist/{projectRoot}"],
+      "currentVersionResolver": "git-tag",
+      "fallbackCurrentVersionResolver": "disk"
+    }
+  },
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "dependsOn": ["^build", "test"],
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/eslint-devkit",
+        "main": "packages/eslint-devkit/src/index.ts",
+        "tsConfig": "packages/eslint-devkit/tsconfig.lib.json",
+        "assets": [
+          "packages/eslint-devkit/*.md",
+          "packages/eslint-devkit/LICENSE",
+          "packages/eslint-devkit/package.json",
+          "packages/eslint-devkit/AGENTS.md"
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{projectRoot}/coverage"],
+      "options": {
+        "configFile": "packages/eslint-devkit/vitest.config.mts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "coverage": true
+        }
+      }
+    },
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm publish dist/{projectRoot} --access public --no-git-checks",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "npm publish dist/packages/eslint-devkit --access public",
+        "cwd": "{workspaceRoot}"
+      }
+    }
+  }
+}

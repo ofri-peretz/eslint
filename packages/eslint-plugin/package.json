@@ -63,7 +63,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@forge-js/eslint-plugin-utils": "^1.5.2",
+    "@interlace/eslint-devkit": "workspace:*",
     "enhanced-resolve": "^5.18.3",
     "get-tsconfig": "^4.13.0",
     "tslib": "^2.3.0"

@@ -161,7 +161,7 @@ A: They're functionally identical. `eslint-plugin-llm` is a shorter, unscoped na
 - **eslint-plugin-llm-optimized:** Unscoped descriptive version
 - **eslint-plugin-mcp:** MCP-focused variant
 - **eslint-plugin-mcp-optimized:** MCP-optimized variant
-- **@forge-js/eslint-plugin-utils:** Build your own LLM-optimized rules
+- **@interlace/eslint-devkit:** Build your own LLM-optimized rules
 
 ## License
 

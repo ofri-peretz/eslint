@@ -2,10 +2,10 @@
  * ESLint Rule: filename-case
  * Enforce filename case conventions
  */
-import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '@forge-js/eslint-plugin-utils';
-import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
-import { getBasename } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { getBasename } from '@interlace/eslint-devkit';
 
 type MessageIds = 'filenameCase';
 

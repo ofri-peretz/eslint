@@ -196,7 +196,7 @@ A: They're functionally identical. `eslint-plugin-mcp-optimized` has a more desc
 - **eslint-plugin-llm-optimized:** Unscoped descriptive version
 - **eslint-plugin-llm:** LLM-focused variant
 - **eslint-plugin-mcp:** MCP-focused variant
-- **@forge-js/eslint-plugin-utils:** Build your own LLM-optimized rules
+- **@interlace/eslint-devkit:** Build your own LLM-optimized rules
 
 ## License
 

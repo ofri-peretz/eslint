@@ -239,7 +239,7 @@ A: Build the package, then run `npm link` from the dist/packages/cli directory.
 ## Related Packages
 
 - **@forge-js/eslint-plugin-llm-optimized:** Main ESLint plugin package
-- **@forge-js/eslint-plugin-utils:** Utilities for building ESLint rules
+- **@interlace/eslint-devkit:** Utilities for building ESLint rules
 
 ## License
 

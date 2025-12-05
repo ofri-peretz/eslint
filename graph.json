@@ -706,7 +706,7 @@
             "targetGroups": {},
             "description": "Utilities for building LLM-optimized ESLint rules",
             "js": {
-              "packageName": "@forge-js/eslint-plugin-utils",
+              "packageName": "@interlace/eslint-devkit",
               "packageVersion": "1.1.0",
               "packageMain": "./src/index.js",
               "isInPackageManagerWorkspaces": true

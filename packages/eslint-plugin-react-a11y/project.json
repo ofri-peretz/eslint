@@ -1,0 +1,89 @@
+{
+  "name": "eslint-plugin-react-a11y",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/eslint-plugin-react-a11y/src",
+  "projectType": "library",
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": [
+        "{projectRoot}",
+        "dist/{projectRoot}"
+      ],
+      "currentVersionResolver": "git-tag",
+      "fallbackCurrentVersionResolver": "disk"
+    }
+  },
+  "tags": [
+    "npm:public",
+    "npm:eslint",
+    "npm:eslint-plugin",
+    "npm:typescript",
+    "npm:linting",
+    "npm:accessibility",
+    "npm:a11y",
+    "npm:react",
+    "npm:wcag",
+    "npm:llm-optimized",
+    "npm:code-quality",
+    "npm:ast",
+    "npm:static-analysis"
+  ],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "dependsOn": [
+        "^build",
+        "test"
+      ],
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "outputPath": "dist/packages/eslint-plugin-react-a11y",
+        "main": "packages/eslint-plugin-react-a11y/src/index.ts",
+        "tsConfig": "packages/eslint-plugin-react-a11y/tsconfig.lib.json",
+        "assets": [
+          "packages/eslint-plugin-react-a11y/README.md",
+          "packages/eslint-plugin-react-a11y/CHANGELOG.md",
+          "packages/eslint-plugin-react-a11y/LICENSE",
+          "packages/eslint-plugin-react-a11y/AGENTS.md"
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": [
+        "{projectRoot}/coverage"
+      ],
+      "options": {
+        "configFile": "packages/eslint-plugin-react-a11y/vitest.config.mts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "coverage": true
+        }
+      }
+    },
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "^nx-release-publish"
+      ],
+      "options": {
+        "command": "pnpm publish dist/{projectRoot} --access public --no-git-checks",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "command": "npm publish dist/packages/eslint-plugin-react-a11y --access public",
+        "cwd": "{workspaceRoot}"
+      }
+    }
+  }
+}

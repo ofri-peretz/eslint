@@ -2,10 +2,10 @@
  * Enhanced ESLint rule: no-console-log
  * Disallows console.log with configurable strategies and LLM-optimized output
  */
-import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '@forge-js/eslint-plugin-utils';
-import { normalizePath, getRelativePath } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+import { normalizePath, getRelativePath } from '@interlace/eslint-devkit';
 
 /**
  * Strategy for handling console.log

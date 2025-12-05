@@ -8,9 +8,9 @@
  * match the lockfile. This rule ensures the version specifier format is consistent.
  */
 
-import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '@forge-js/eslint-plugin-utils';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
 
 type VersionStrategy = 'caret' | 'tilde' | 'exact' | 'range' | 'any';
 

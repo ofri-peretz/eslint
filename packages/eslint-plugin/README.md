@@ -87,17 +87,18 @@ This plugin is specifically optimized for ESLint's [Model Context Protocol (MCP)
 
 > 💡 **Important:** This is a standard ESLint plugin. You don't need ESLint MCP to use it, but it works seamlessly with it.
 
-### 3. All-in-One Solution (144 Rules)
+### 3. All-in-One Solution (107 Rules)
 
 Stop juggling multiple plugins. One install covers:
 
-- **Security**: 29 rules (SQL injection, XSS, CSRF, etc.)
 - **Architecture**: 28 rules (Circular deps, module boundaries)
 - **Imports**: 7 rules (Validation, duplicates, extensions)
 - **React**: 41 rules (Keys, hooks, optimization)
 - **Code Quality**: 9 rules (Complexity, null checks)
 - **Performance**: 7 rules (Memory leaks, N+1 queries)
-- **Accessibility**: 3 rules (Alt text, ARIA)
+- **DDD/Domain**: 3 rules (Anemic models, value objects)
+
+> **See also:** [eslint-plugin-secure-coding](https://www.npmjs.com/package/eslint-plugin-secure-coding) (48 security rules) | [eslint-plugin-react-a11y](https://www.npmjs.com/package/eslint-plugin-react-a11y) (37 accessibility rules)
 
 ---
 
@@ -107,9 +108,9 @@ Stop juggling multiple plugins. One install covers:
 | ----------------------------- | ---------------------------------------- | ------------------------------ |
 | **Non-Fixable Rule Guidance** | ✅ Structured fix instructions for AI    | ❌ Generic "what's wrong" only |
 | **ESLint MCP Optimization**   | ✅ Built for MCP integration             | ❌ No MCP consideration        |
-| **All-in-One Coverage**       | ✅ 144 rules across 10+ categories       | ⚠️ Multiple plugins needed     |
+| **All-in-One Coverage**       | ✅ 107 rules across 10+ categories       | ⚠️ Multiple plugins needed     |
 | **AI Auto-Fix Rate**          | ✅ 60-80% (including guided non-fixable) | ⚠️ 20-30% (auto-fix only)      |
-| **Security Rules**            | ✅ 29 rules with CWE references          | ⚠️ Limited coverage            |
+| **Modular Packages**          | ✅ Security & A11y as separate packages  | ⚠️ Limited coverage            |
 | **Performance Impact**        | ✅ <10ms overhead per file               | ✅ Low overhead                |
 
 ---

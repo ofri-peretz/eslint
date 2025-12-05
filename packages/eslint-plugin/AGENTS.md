@@ -276,7 +276,7 @@ A: See CONTRIBUTING.md at https://github.com/ofri-peretz/forge-js/blob/main/CONT
 
 ## Related Packages
 
-- **@forge-js/eslint-plugin-utils:** Build your own LLM-optimized rules
+- **@interlace/eslint-devkit:** Build your own LLM-optimized rules
 - **eslint-plugin-llm:** Unscoped version with shorter name
 - **eslint-plugin-llm-optimized:** Unscoped descriptive version
 - **eslint-plugin-mcp:** MCP-focused variant

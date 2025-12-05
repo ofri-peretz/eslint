@@ -203,7 +203,7 @@ Is package name prefixed with @forge-js/?
 ### Scoped Packages (`@forge-js/*`)
 
 - `eslint-plugin` → `@forge-js/eslint-plugin-llm-optimized`
-- `eslint-plugin-utils` → `@forge-js/eslint-plugin-utils`
+- `eslint-plugin-utils` → `@interlace/eslint-devkit`
 - `cli` → `@forge-js/cli`
 
 ### Unscoped Packages

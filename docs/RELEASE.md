@@ -8,7 +8,7 @@ All packages in this monorepo are released using **Nx Release** with **Semantic 
 
 **Active Packages:**
 - `@forge-js/eslint-plugin-llm-optimized` (packages/eslint-plugin)
-- `@forge-js/eslint-plugin-utils` (packages/eslint-plugin-utils)
+- `@interlace/eslint-devkit` (packages/eslint-plugin-utils)
 
 ## Release Process Flow
 

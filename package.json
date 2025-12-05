@@ -118,5 +118,6 @@
     "overrides": {
       "@nx/vite": "^22.0.3"
     }
-  }
+  },
+  "dependencies": {}
 }

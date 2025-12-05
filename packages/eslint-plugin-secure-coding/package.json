@@ -1,0 +1,80 @@
+{
+  "name": "eslint-plugin-secure-coding",
+  "version": "1.0.0",
+  "description": "Security-focused ESLint plugin with 48 LLM-optimized rules for detecting and preventing vulnerabilities. OWASP Top 10 coverage, CWE references, and AI-assisted fix guidance.",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./types": {
+      "types": "./src/types/index.d.ts",
+      "default": "./src/types/index.js"
+    }
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ofri-peretz/forge-js#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/forge-js.git",
+    "directory": "packages/eslint-plugin-secure-coding"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/forge-js/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "AGENTS.md"
+  ],
+  "keywords": [
+    "eslint",
+    "eslint-plugin",
+    "eslintplugin",
+    "security",
+    "secure-coding",
+    "owasp",
+    "owasp-top-10",
+    "cwe",
+    "vulnerability",
+    "sql-injection",
+    "xss",
+    "csrf",
+    "injection",
+    "llm-optimized",
+    "ai-assistant",
+    "auto-fix",
+    "typescript",
+    "linting",
+    "code-quality",
+    "ast",
+    "static-analysis",
+    "mcp",
+    "model-context-protocol",
+    "github-copilot",
+    "cursor-ai",
+    "claude-ai"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "@interlace/eslint-devkit": "workspace:*"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.46.2",
+    "@typescript-eslint/rule-tester": "^8.46.2",
+    "vitest": "^4.0.6"
+  }
+}

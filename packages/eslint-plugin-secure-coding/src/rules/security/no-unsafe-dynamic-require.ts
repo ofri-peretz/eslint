@@ -1,0 +1,125 @@
+/**
+ * ESLint Rule: no-unsafe-dynamic-require
+ * Detects dynamic require() calls that could lead to code injection
+ */
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { createRule } from '@interlace/eslint-devkit';
+
+type MessageIds = 'unsafeDynamicRequire';
+
+export interface Options {
+  /** Allow dynamic import() expressions. Default: false (stricter) */
+  allowDynamicImport?: boolean;
+}
+
+type RuleOptions = [Options?];
+
+export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
+  name: 'no-unsafe-dynamic-require',
+  meta: {
+    type: 'problem',
+    docs: {
+      description: 'Prevent unsafe dynamic require() calls that could enable code injection',
+    },
+    fixable: 'code',
+    hasSuggestions: false,
+    messages: {
+      unsafeDynamicRequire: formatLLMMessage({
+        icon: MessageIcons.SECURITY,
+        issueName: 'Dynamic require()',
+        cwe: 'CWE-95',
+        description: 'Dynamic require() detected',
+        severity: 'CRITICAL',
+        fix: 'Use allowlist: const ALLOWED = ["mod1", "mod2"]; if (!ALLOWED.includes(name)) throw Error("Not allowed")',
+        documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
+      }),
+    },
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          allowDynamicImport: {
+            type: 'boolean',
+            default: false,
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
+  },
+  defaultOptions: [
+    {
+      allowDynamicImport: false,
+    },
+  ],
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+
+
+    /**
+     * Track variables that reference require
+     * Maps variable name to the node where it was assigned
+     */
+    const requireVariables = new Set<string>();
+
+    /**
+     * Check if a node is a reference to require
+     */
+    const isRequireReference = (node: TSESTree.Node): boolean => {
+      if (node.type === 'Identifier' && node.name === 'require') {
+        return true;
+      }
+      if (node.type === 'Identifier' && requireVariables.has(node.name)) {
+        return true;
+      }
+      return false;
+    };
+
+    /**
+     * Check if argument is dynamic (not a literal)
+     */
+    const isDynamicArgument = (arg: TSESTree.Expression | TSESTree.SpreadElement): boolean => {
+      if (arg.type === 'Literal') return false;
+      if (arg.type === 'TemplateLiteral' && arg.expressions.length === 0) return false;
+      return true;
+    };
+
+    return {
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        // Track when require is assigned to a variable
+        if (node.id.type === 'Identifier' && node.init) {
+          if (node.init.type === 'Identifier' && node.init.name === 'require') {
+            requireVariables.add(node.id.name);
+          }
+        }
+      },
+
+      CallExpression(node: TSESTree.CallExpression) {
+        // Check for require() calls (direct or via variable)
+        if (node.callee.type !== 'Identifier') {
+          return;
+        }
+
+        // Check if callee is require or a variable that references require
+        if (!isRequireReference(node.callee)) {
+          return;
+        }
+
+        // Must have at least one argument
+        if (node.arguments.length === 0) return;
+
+        const firstArg = node.arguments[0];
+        if (firstArg.type === 'SpreadElement') return;
+
+        // Check if dynamic
+        if (!isDynamicArgument(firstArg)) return;
+
+        context.report({
+          node,
+          messageId: 'unsafeDynamicRequire',
+        });
+      },
+    };
+  },
+});
+

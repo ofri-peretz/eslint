@@ -15,8 +15,8 @@
   - [ ] `type MessageIds = 'messageId1' | 'messageId2'`
   - [ ] `create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}])` signature
 - [ ] **LLM-optimized error messages (2-line format):**
-  - [ ] ✅ **Use `formatLLMMessage` utility** from `@forge-js/eslint-plugin-utils` (REQUIRED)
-  - [ ] Import: `import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils'`
+  - [ ] ✅ **Use `formatLLMMessage` utility** from `@interlace/eslint-devkit` (REQUIRED)
+  - [ ] Import: `import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit'`
   - [ ] Format follows: `formatLLMMessage({ icon, issueName, cwe?, description, severity, fix, documentationLink })`
   - [ ] ❌ NOT the old 4-line format
   - [ ] Includes actionable fix instructions
@@ -176,10 +176,10 @@ pnpm nx release version --dry-run
 
 ### Error Message Format (LLM-Optimized)
 
-**✅ REQUIRED:** Use the `formatLLMMessage` utility from `@forge-js/eslint-plugin-utils` for consistency.
+**✅ REQUIRED:** Use the `formatLLMMessage` utility from `@interlace/eslint-devkit` for consistency.
 
 ```typescript
-import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
+import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 messages: {
   ruleName: formatLLMMessage({
