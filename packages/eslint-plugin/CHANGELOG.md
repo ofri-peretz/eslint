@@ -1,3 +1,26 @@
+## [1.9.1] - 2025-11-30
+
+### 🚀 Features
+
+- **7 New Import Validation Rules** - Added missing import validation rules inspired by `eslint-plugin-import`
+- **LLM-Optimized** - All new rules include structured error messages with auto-fix instructions where possible
+
+### 📦 Import Rules Added
+
+- **`no-duplicates`** - Reports and merges duplicate imports (auto-fixable)
+- **`named`** - Ensures named imports correspond to a named export (supports TypeScript)
+- **`default`** - Ensures a default export is present given a default import
+- **`namespace`** - Ensures imported namespaces contain dereferenced properties
+- **`extensions`** - Enforces consistent use of file extensions (auto-fixable)
+- **`first`** - Ensures all imports appear before other statements
+- **`newline-after-import`** - Enforces a newline after import statements (auto-fixable)
+
+### ❤️ Thank You
+
+- Ofri Peretz
+
+---
+
 ## [1.9.0] - 2025-11-30
 
 ### 🚀 Features

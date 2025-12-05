@@ -3,7 +3,7 @@
  * Disallow string refs (deprecated pattern)
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds = 'noStringRefs';
@@ -25,6 +25,7 @@ export const noStringRefs = createRule<[], MessageIds>({
         documentationLink: 'https://react.dev/reference/react/forwardRef',
       }),
     },
+    schema: [],
   },
   defaultOptions: [],
   create(context: TSESLint.RuleContext<MessageIds, []>) {

@@ -3,7 +3,7 @@
  * Prevent object types as default props
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds = 'noObjectTypeAsDefaultProp';
@@ -25,6 +25,7 @@ export const noObjectTypeAsDefaultProp = createRule<[], MessageIds>({
         documentationLink: 'https://react.dev/learn/passing-props-to-a-component#default-props',
       }),
     },
+    schema: [],
   },
   defaultOptions: [],
   create(context: TSESLint.RuleContext<MessageIds, []>) {

@@ -7,7 +7,7 @@
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds =
   | 'anemicDomainModel'
@@ -103,7 +103,8 @@ function countBusinessMethods(
       }
       
       // Count methods (any method that's not a getter/setter/constructor is business logic)
-      if (member.value.type === 'FunctionExpression' || member.value.type === 'ArrowFunctionExpression') {
+      const valueType = member.value.type as string;
+      if (valueType === 'FunctionExpression' || valueType === 'ArrowFunctionExpression') {
         count++;
       }
     } else if (member.type === 'PropertyDefinition') {

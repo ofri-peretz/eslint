@@ -3,7 +3,7 @@
  * Enforce using the node: protocol for Node.js built-in modules (unicorn-inspired)
  */
 import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds = 'preferNodeProtocol';
@@ -97,7 +97,7 @@ export const preferNodeProtocol = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{}],
 
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options]: RuleOptions) {
+  create(context, [options]) {
     const { additionalModules = [] } = options || {};
     const allModulesToCheck = new Set([...NODE_BUILT_INS, ...additionalModules]);
 

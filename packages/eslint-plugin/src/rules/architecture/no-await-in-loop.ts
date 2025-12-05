@@ -3,7 +3,7 @@
  * Disallow await inside loops without considering concurrency implications (unicorn-inspired)
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds =

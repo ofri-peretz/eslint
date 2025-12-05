@@ -7,8 +7,8 @@
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
-import { extractFunctionSignature } from '../../utils/llm-context';
+import { createRule } from '@forge-js/eslint-plugin-utils';
+import { extractFunctionSignature } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds = 'identicalFunctions' | 'extractGeneric' | 'useHigherOrder' | 'applyInheritance';
 

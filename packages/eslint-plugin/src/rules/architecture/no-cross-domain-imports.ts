@@ -7,8 +7,8 @@
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
-import { normalizePath } from '../../utils/node-path-utils';
+import { createRule } from '@forge-js/eslint-plugin-utils';
+import { normalizePath } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds =
   | 'crossDomainImport'

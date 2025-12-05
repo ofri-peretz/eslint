@@ -10,7 +10,7 @@
  * - Parameterized query patterns
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import { 
   createSafetyChecker,
@@ -18,7 +18,7 @@ import {
   hasSafeAnnotation,
   isOrmMethodCall,
   type SecurityRuleOptions,
-} from '../../utils/security-utils';
+} from '@forge-js/eslint-plugin-utils';
 
 type MessageIds = 'sqlInjection' | 'useParameterized' | 'useORM' | 'strategyParameterize' | 'strategyORM' | 'strategySanitize';
 

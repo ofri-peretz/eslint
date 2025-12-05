@@ -1,0 +1,9 @@
+{
+  "name": "eslint-plugin-a11y-expert",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/eslint-plugin-a11y-expert/src",
+  "projectType": "library",
+  "tags": ["scope:public", "type:eslint-plugin"],
+  "// targets": "to see all targets run: nx show project eslint-plugin-a11y-expert --web",
+  "targets": {}
+}

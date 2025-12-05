@@ -14,11 +14,29 @@
  * - Custom message templates for organizations
  */
 
-export * from './rule-creator';
-export * from './ast-utils';
-export * from './type-utils';
-export * from './llm-message-format';
-export * from './sarif-formatter';
+// Rule creation utilities
+export * from './rule-creation';
+
+// AST utilities
+export * from './ast/ast-utils';
+
+// Type utilities
+export * from './types/type-utils';
+
+// LLM messaging utilities
+export * from './messaging';
+
+// Security utilities
+export * from './security';
+
+// Node utilities
+export * from './node';
+
+// Resolver and dependency analysis utilities
+export * from './resolver';
+
+// Other utilities
+export * from './aria-definitions';
 
 // Re-export specific enterprise types for convenience
 export type {
@@ -30,7 +48,7 @@ export type {
   LLMMessageOptions,
   EnterpriseMessageOptions,
   SARIFResult,
-} from './llm-message-format';
+} from './messaging';
 
 export {
   CVSS_RANGES,
@@ -40,10 +58,11 @@ export {
   OWASP_2025_DETAILS,
   OWASP_2021_DETAILS,
   OWASP_2021_TO_2025,
+  MessageIcons,
   getSecurityBenchmarks,
   severityToCVSS,
   toSARIF,
-} from './llm-message-format';
+} from './messaging';
 
 /**
  * Re-export commonly used types and utilities from @typescript-eslint/utils

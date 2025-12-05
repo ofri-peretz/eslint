@@ -8,7 +8,7 @@
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds =
   | 'sensitiveDataExposure'
@@ -179,12 +179,9 @@ sensitivePatterns = ['password', 'secret', 'token', 'key', 'ssn', 'credit', 'car
                   dataType: 'password',
                 },
                 suggest: [
-                  // eslint-disable-next-line @typescript-eslint/no-empty-function
-                  { messageId: 'redactData', fix: () => {} },
-                  // eslint-disable-next-line @typescript-eslint/no-empty-function
-                  { messageId: 'useMasking', fix: () => {} },
-                  // eslint-disable-next-line @typescript-eslint/no-empty-function
-                  { messageId: 'removeFromLogs', fix: () => {} },
+                  { messageId: 'redactData', fix: () => null },
+                  { messageId: 'useMasking', fix: () => null },
+                  { messageId: 'removeFromLogs', fix: () => null },
                 ],
               });
               return; // Only report once per call
@@ -200,12 +197,9 @@ sensitivePatterns = ['password', 'secret', 'token', 'key', 'ssn', 'credit', 'car
                   dataType: 'password',
                 },
                 suggest: [
-                  // eslint-disable-next-line @typescript-eslint/no-empty-function
-                  { messageId: 'redactData', fix: () => {} },
-                  // eslint-disable-next-line @typescript-eslint/no-empty-function
-                  { messageId: 'useMasking', fix: () => {} },
-                  // eslint-disable-next-line @typescript-eslint/no-empty-function
-                  { messageId: 'removeFromLogs', fix: () => {} },
+                  { messageId: 'redactData', fix: () => null },
+                  { messageId: 'useMasking', fix: () => null },
+                  { messageId: 'removeFromLogs', fix: () => null },
                 ],
               });
               return; // Only report once per call
@@ -237,12 +231,9 @@ sensitivePatterns = ['password', 'secret', 'token', 'key', 'ssn', 'credit', 'car
                   dataType: 'password',
                 },
                 suggest: [
-                  // eslint-disable-next-line @typescript-eslint/no-empty-function
-                  { messageId: 'redactData', fix: () => {} },
-                  // eslint-disable-next-line @typescript-eslint/no-empty-function
-                  { messageId: 'useMasking', fix: () => {} },
-                  // eslint-disable-next-line @typescript-eslint/no-empty-function
-                  { messageId: 'removeFromLogs', fix: () => {} },
+                  { messageId: 'redactData', fix: () => null },
+                  { messageId: 'useMasking', fix: () => null },
+                  { messageId: 'removeFromLogs', fix: () => null },
                 ],
               });
               return; // Only report once per error
@@ -260,12 +251,9 @@ sensitivePatterns = ['password', 'secret', 'token', 'key', 'ssn', 'credit', 'car
                     dataType: 'password',
                   },
                   suggest: [
-                    // eslint-disable-next-line @typescript-eslint/no-empty-function
-                    { messageId: 'redactData', fix: () => {} },
-                    // eslint-disable-next-line @typescript-eslint/no-empty-function
-                    { messageId: 'useMasking', fix: () => {} },
-                    // eslint-disable-next-line @typescript-eslint/no-empty-function
-                    { messageId: 'removeFromLogs', fix: () => {} },
+                    { messageId: 'redactData', fix: () => null },
+                    { messageId: 'useMasking', fix: () => null },
+                    { messageId: 'removeFromLogs', fix: () => null },
                   ],
                 });
                 return; // Only report once per error
@@ -283,12 +271,9 @@ sensitivePatterns = ['password', 'secret', 'token', 'key', 'ssn', 'credit', 'car
                     dataType: 'password',
                   },
                   suggest: [
-                    // eslint-disable-next-line @typescript-eslint/no-empty-function
-                    { messageId: 'redactData', fix: () => {} },
-                    // eslint-disable-next-line @typescript-eslint/no-empty-function
-                    { messageId: 'useMasking', fix: () => {} },
-                    // eslint-disable-next-line @typescript-eslint/no-empty-function
-                    { messageId: 'removeFromLogs', fix: () => {} },
+                    { messageId: 'redactData', fix: () => null },
+                    { messageId: 'useMasking', fix: () => null },
+                    { messageId: 'removeFromLogs', fix: () => null },
                   ],
                 });
                 return; // Only report once per error

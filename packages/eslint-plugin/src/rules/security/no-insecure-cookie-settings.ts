@@ -7,8 +7,7 @@
  * @see https://owasp.org/www-community/HttpOnly
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { formatLLMMessage, MessageIcons, createRule } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds = 'insecureCookieSettings' | 'addSecureFlags';
 

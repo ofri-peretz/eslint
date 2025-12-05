@@ -3,7 +3,7 @@
  * Prevent unescaped entities
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds = 'noUnescapedEntities';
@@ -27,6 +27,7 @@ export const noUnescapedEntities = createRule<[], MessageIds>({
         documentationLink: 'https://react.dev/learn/javascript-in-jsx-with-curly-braces',
       }),
     },
+    schema: [],
   },
   defaultOptions: [],
   create(context: TSESLint.RuleContext<MessageIds, []>) {

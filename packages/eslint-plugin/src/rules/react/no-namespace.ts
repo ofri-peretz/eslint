@@ -3,7 +3,7 @@
  * Prevent namespace imports
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds = 'noNamespace';
@@ -25,6 +25,7 @@ export const noNamespace = createRule<[], MessageIds>({
         documentationLink: 'https://react.dev/learn/importing-and-exporting-components',
       }),
     },
+    schema: [],
   },
   defaultOptions: [],
   create(context: TSESLint.RuleContext<MessageIds, []>) {

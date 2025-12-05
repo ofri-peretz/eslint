@@ -3,7 +3,7 @@
  * Prevent multiple components per file
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds = 'noMultiComp';
@@ -124,7 +124,7 @@ export const noMultiComp = createRule<RuleOptions, MessageIds>({
       for (const key in node) {
         if (skipKeys.has(key)) continue;
         
-        const child = (node as Record<string, unknown>)[key];
+        const child = (node as unknown as Record<string, unknown>)[key];
         if (child && typeof child === 'object') {
           if (Array.isArray(child)) {
             for (const item of child) {

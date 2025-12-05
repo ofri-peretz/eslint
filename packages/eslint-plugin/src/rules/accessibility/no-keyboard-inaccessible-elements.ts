@@ -6,7 +6,7 @@
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds =
   | 'keyboardInaccessible'
@@ -158,7 +158,7 @@ ignoreInTests = true,
           data: {
             element: elementName,
           },
-          suggestions: [
+          suggest: [
             { messageId: 'addTabIndex', fix: () => null },
             { messageId: 'addAriaRole', fix: () => null },
             { messageId: 'useButton', fix: () => null },

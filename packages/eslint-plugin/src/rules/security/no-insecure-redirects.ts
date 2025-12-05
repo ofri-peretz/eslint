@@ -8,7 +8,7 @@
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds =
   | 'insecureRedirect'
@@ -73,7 +73,7 @@ function isRedirectValidated(
 
   while (current && depth < maxDepth) {
     // Check siblings before this node
-    const parent = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+    const parent: TSESTree.Node | undefined = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
     if (!parent) break;
 
     if (parent.type === 'BlockStatement') {

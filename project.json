@@ -1,5 +1,5 @@
 {
-  "name": "forge-js",
+  "name": "forge-js-workspace",
   "$schema": "node_modules/nx/schemas/project-schema.json",
   "targets": {
     "delete-branches": {

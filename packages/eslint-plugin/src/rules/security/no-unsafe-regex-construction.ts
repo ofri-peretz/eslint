@@ -10,7 +10,7 @@
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds =
   | 'unsafeRegexConstruction'
@@ -204,7 +204,7 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
         properties: {
           allowLiterals: {
             type: 'boolean',
-            default: false,
+            default: true,
             description: 'Allow literal string patterns',
           },
           trustedEscapingFunctions: {
@@ -226,14 +226,14 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      allowLiterals: false,
+      allowLiterals: true,
       trustedEscapingFunctions: ['escapeRegex', 'escape', 'sanitize'],
       maxPatternLength: 100,
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
     const {
-allowLiterals = false,
+      allowLiterals = true,
       maxPatternLength = 100,
     
 }: Options = options || {};

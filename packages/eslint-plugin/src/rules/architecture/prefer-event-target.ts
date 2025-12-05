@@ -3,7 +3,7 @@
  * Prefer EventTarget over EventEmitter (unicorn-inspired)
  */
 import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds = 'preferEventTarget';

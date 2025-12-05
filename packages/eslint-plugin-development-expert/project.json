@@ -1,0 +1,9 @@
+{
+  "name": "eslint-plugin-dev-workflow-expert",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/eslint-plugin-dev-workflow-expert/src",
+  "projectType": "library",
+  "tags": ["scope:public", "type:eslint-plugin"],
+  "// targets": "to see all targets run: nx show project eslint-plugin-dev-workflow-expert --web",
+  "targets": {}
+}

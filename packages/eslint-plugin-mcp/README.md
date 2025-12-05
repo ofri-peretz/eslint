@@ -225,94 +225,95 @@ A: Yes. The structured messages help human developers too—every error teaches 
 
 ### Security (29 rules)
 
-| Name | Description | 💼 | ⚠️ | 🔧 | 💡 |
-|------|-------------|---|---|---|---|
-| [no-sql-injection](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-sql-injection.md) | Prevent SQL injection | 💼 | | | |
-| [database-injection](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/database-injection.md) | Injection detection (SQL, NoSQL, ORM) | 💼 | | | |
-| [detect-eval-with-expression](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/detect-eval-with-expression.md) | Detect eval() (RCE prevention) | 💼 | | | |
-| [detect-child-process](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/detect-child-process.md) | Detect command injection | 💼 | | | |
-| [detect-non-literal-fs-filename](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/detect-non-literal-fs-filename.md) | Detect path traversal | 💼 | | | |
-| [detect-non-literal-regexp](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/detect-non-literal-regexp.md) | Detect ReDoS vulnerabilities | 💼 | | | |
-| [detect-object-injection](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/detect-object-injection.md) | Detect prototype pollution | 💼 | | | |
-| [no-unsafe-dynamic-require](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unsafe-dynamic-require.md) | Forbid dynamic require() | 💼 | | | |
-| [no-hardcoded-credentials](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-hardcoded-credentials.md) | Detect hardcoded credentials | 💼 | | | |
-| [no-weak-crypto](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-weak-crypto.md) | Detect weak cryptography | 💼 | | | |
-| [no-insufficient-random](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-insufficient-random.md) | Detect weak random | 💼 | | | |
-| [no-unvalidated-user-input](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unvalidated-user-input.md) | Detect unvalidated input | 💼 | | | |
-| [no-unsanitized-html](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unsanitized-html.md) | Detect XSS | 💼 | | | |
-| [no-unescaped-url-parameter](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unescaped-url-parameter.md) | Detect unescaped URLs | 💼 | | | |
-| [no-missing-cors-check](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-missing-cors-check.md) | Detect missing CORS | 💼 | | | |
-| [no-insecure-comparison](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-insecure-comparison.md) | Detect insecure == | 💼 | | 🔧 | |
-| [no-missing-authentication](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-missing-authentication.md) | Detect missing auth | 💼 | | | |
-| [no-privilege-escalation](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-privilege-escalation.md) | Detect privilege escalation | 💼 | | | |
-| [no-insecure-cookie-settings](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-insecure-cookie-settings.md) | Detect insecure cookies | 💼 | | | |
-| [no-missing-csrf-protection](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-missing-csrf-protection.md) | Detect missing CSRF | 💼 | | | |
-| [no-exposed-sensitive-data](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-exposed-sensitive-data.md) | Detect PII exposure | 💼 | | | |
-| [no-unencrypted-transmission](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unencrypted-transmission.md) | Detect HTTP issues | 💼 | | | |
-| [no-redos-vulnerable-regex](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-redos-vulnerable-regex.md) | Detect ReDoS patterns | 💼 | | | 💡 |
-| [no-unsafe-regex-construction](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unsafe-regex-construction.md) | Detect unsafe RegExp | 💼 | | | 💡 |
-| [no-sensitive-data-exposure](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-sensitive-data-exposure.md) | Detect data exposure | 💼 | | | 💡 |
-| [no-toctou-vulnerability](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-toctou-vulnerability.md) | Detect TOCTOU | 💼 | | | 💡 |
-| [no-missing-security-headers](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-missing-security-headers.md) | Detect missing headers | 💼 | | | 💡 |
-| [no-insecure-redirects](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-insecure-redirects.md) | Detect open redirects | 💼 | | | 💡 |
-| [no-document-cookie](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-document-cookie.md) | Detect document.cookie | 💼 | | | 💡 |
+| Name                                                                                                                                                    | Description                           | 💼  | ⚠️  | 🔧  | 💡  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | --- | --- | --- | --- |
+| [no-sql-injection](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-sql-injection.md)                             | Prevent SQL injection                 | 💼  |     |     |     |
+| [database-injection](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/database-injection.md)                         | Injection detection (SQL, NoSQL, ORM) | 💼  |     |     |     |
+| [detect-eval-with-expression](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/detect-eval-with-expression.md)       | Detect eval() (RCE prevention)        | 💼  |     |     |     |
+| [detect-child-process](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/detect-child-process.md)                     | Detect command injection              | 💼  |     |     |     |
+| [detect-non-literal-fs-filename](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/detect-non-literal-fs-filename.md) | Detect path traversal                 | 💼  |     |     |     |
+| [detect-non-literal-regexp](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/detect-non-literal-regexp.md)           | Detect ReDoS vulnerabilities          | 💼  |     |     |     |
+| [detect-object-injection](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/detect-object-injection.md)               | Detect prototype pollution            | 💼  |     |     |     |
+| [no-unsafe-dynamic-require](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unsafe-dynamic-require.md)           | Forbid dynamic require()              | 💼  |     |     |     |
+| [no-hardcoded-credentials](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-hardcoded-credentials.md)             | Detect hardcoded credentials          | 💼  |     |     |     |
+| [no-weak-crypto](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-weak-crypto.md)                                 | Detect weak cryptography              | 💼  |     |     |     |
+| [no-insufficient-random](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-insufficient-random.md)                 | Detect weak random                    | 💼  |     |     |     |
+| [no-unvalidated-user-input](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unvalidated-user-input.md)           | Detect unvalidated input              | 💼  |     |     |     |
+| [no-unsanitized-html](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unsanitized-html.md)                       | Detect XSS                            | 💼  |     |     |     |
+| [no-unescaped-url-parameter](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unescaped-url-parameter.md)         | Detect unescaped URLs                 | 💼  |     |     |     |
+| [no-missing-cors-check](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-missing-cors-check.md)                   | Detect missing CORS                   | 💼  |     |     |     |
+| [no-insecure-comparison](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-insecure-comparison.md)                 | Detect insecure ==                    | 💼  |     | 🔧  |     |
+| [no-missing-authentication](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-missing-authentication.md)           | Detect missing auth                   | 💼  |     |     |     |
+| [no-privilege-escalation](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-privilege-escalation.md)               | Detect privilege escalation           | 💼  |     |     |     |
+| [no-insecure-cookie-settings](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-insecure-cookie-settings.md)       | Detect insecure cookies               | 💼  |     |     |     |
+| [no-missing-csrf-protection](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-missing-csrf-protection.md)         | Detect missing CSRF                   | 💼  |     |     |     |
+| [no-exposed-sensitive-data](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-exposed-sensitive-data.md)           | Detect PII exposure                   | 💼  |     |     |     |
+| [no-unencrypted-transmission](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unencrypted-transmission.md)       | Detect HTTP issues                    | 💼  |     |     |     |
+| [no-redos-vulnerable-regex](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-redos-vulnerable-regex.md)           | Detect ReDoS patterns                 | 💼  |     |     | 💡  |
+| [no-unsafe-regex-construction](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unsafe-regex-construction.md)     | Detect unsafe RegExp                  | 💼  |     |     | 💡  |
+| [no-sensitive-data-exposure](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-sensitive-data-exposure.md)         | Detect data exposure                  | 💼  |     |     | 💡  |
+| [no-toctou-vulnerability](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-toctou-vulnerability.md)               | Detect TOCTOU                         | 💼  |     |     | 💡  |
+| [no-missing-security-headers](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-missing-security-headers.md)       | Detect missing headers                | 💼  |     |     | 💡  |
+| [no-insecure-redirects](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-insecure-redirects.md)                   | Detect open redirects                 | 💼  |     |     | 💡  |
+| [no-document-cookie](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-document-cookie.md)                         | Detect document.cookie                | 💼  |     |     | 💡  |
 
 ### Architecture (28 rules)
 
-| Name | Description | 💼 | ⚠️ | 🔧 | 💡 |
-|------|-------------|---|---|---|---|
-| [no-circular-dependencies](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-circular-dependencies.md) | Detect circular deps | | | | |
-| [no-internal-modules](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-internal-modules.md) | Forbid internal imports | | | | |
-| [no-cross-domain-imports](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-cross-domain-imports.md) | Prevent cross-domain | | | | 💡 |
-| [enforce-dependency-direction](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/enforce-dependency-direction.md) | Enforce dep direction | | | | 💡 |
-| [no-external-api-calls-in-utils](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-external-api-calls-in-utils.md) | No API in utils | | | | 💡 |
-| [prefer-node-protocol](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/prefer-node-protocol.md) | Enforce node: | | ⚠️ | 🔧 | |
-| [consistent-existence-index-check](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/consistent-existence-index-check.md) | Consistent checks | | ⚠️ | 🔧 | |
-| [prefer-event-target](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/prefer-event-target.md) | Prefer EventTarget | | ⚠️ | | 💡 |
-| [prefer-at](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/prefer-at.md) | Prefer .at() | | ⚠️ | 🔧 | |
-| [no-unreadable-iife](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unreadable-iife.md) | Prevent unreadable IIFEs | | ⚠️ | | 💡 |
-| [no-await-in-loop](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-await-in-loop.md) | Disallow await in loops | | ⚠️ | | 💡 |
-| [no-self-import](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-self-import.md) | Prevent self-imports | | ⚠️ | | 💡 |
-| [no-unused-modules](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unused-modules.md) | Find unused exports | | ⚠️ | | 💡 |
-| [no-extraneous-dependencies](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-extraneous-dependencies.md) | Detect extraneous deps | | ⚠️ | | 💡 |
-| [max-dependencies](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/max-dependencies.md) | Limit dependencies | | ⚠️ | | 💡 |
-| [no-anonymous-default-export](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-anonymous-default-export.md) | Forbid anonymous exports | | ⚠️ | | 💡 |
-| [no-restricted-paths](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-restricted-paths.md) | Restrict paths | | ⚠️ | | 💡 |
-| [no-deprecated](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-deprecated.md) | Detect deprecated | | ⚠️ | | 💡 |
-| [no-mutable-exports](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-mutable-exports.md) | Forbid mutable exports | | ⚠️ | | 💡 |
-| [prefer-default-export](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/prefer-default-export.md) | Prefer default export | | ⚠️ | | 💡 |
-| [no-unresolved](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unresolved.md) | Detect unresolved | | | | 💡 |
-| [no-relative-parent-imports](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-relative-parent-imports.md) | Forbid parent imports | | ⚠️ | | 💡 |
-| [no-default-export](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-default-export.md) | Forbid default exports | | ⚠️ | | 💡 |
-| [no-named-export](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-named-export.md) | Forbid named exports | | ⚠️ | | 💡 |
-| [no-unassigned-import](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unassigned-import.md) | Forbid unassigned | | ⚠️ | | 💡 |
-| [consistent-function-scoping](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/consistent-function-scoping.md) | Consistent scoping | | ⚠️ | | 💡 |
-| [filename-case](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/filename-case.md) | Filename conventions | | ⚠️ | | 💡 |
-| [no-instanceof-array](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-instanceof-array.md) | Forbid instanceof Array | | ⚠️ | 🔧 | |
+| Name                                                                                                                                                        | Description              | 💼  | ⚠️  | 🔧  | 💡  |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | --- | --- | --- | --- |
+| [no-circular-dependencies](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-circular-dependencies.md)                 | Detect circular deps     |     |     |     |     |
+| [no-internal-modules](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-internal-modules.md)                           | Forbid internal imports  |     |     |     |     |
+| [no-cross-domain-imports](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-cross-domain-imports.md)                   | Prevent cross-domain     |     |     |     | 💡  |
+| [enforce-dependency-direction](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/enforce-dependency-direction.md)         | Enforce dep direction    |     |     |     | 💡  |
+| [no-external-api-calls-in-utils](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-external-api-calls-in-utils.md)     | No API in utils          |     |     |     | 💡  |
+| [prefer-node-protocol](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/prefer-node-protocol.md)                         | Enforce node:            |     | ⚠️  | 🔧  |     |
+| [consistent-existence-index-check](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/consistent-existence-index-check.md) | Consistent checks        |     | ⚠️  | 🔧  |     |
+| [prefer-event-target](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/prefer-event-target.md)                           | Prefer EventTarget       |     | ⚠️  |     | 💡  |
+| [prefer-at](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/prefer-at.md)                                               | Prefer .at()             |     | ⚠️  | 🔧  |     |
+| [no-unreadable-iife](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unreadable-iife.md)                             | Prevent unreadable IIFEs |     | ⚠️  |     | 💡  |
+| [no-await-in-loop](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-await-in-loop.md)                                 | Disallow await in loops  |     | ⚠️  |     | 💡  |
+| [no-self-import](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-self-import.md)                                     | Prevent self-imports     |     | ⚠️  |     | 💡  |
+| [no-unused-modules](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unused-modules.md)                               | Find unused exports      |     | ⚠️  |     | 💡  |
+| [no-extraneous-dependencies](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-extraneous-dependencies.md)             | Detect extraneous deps   |     | ⚠️  |     | 💡  |
+| [max-dependencies](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/max-dependencies.md)                                 | Limit dependencies       |     | ⚠️  |     | 💡  |
+| [no-anonymous-default-export](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-anonymous-default-export.md)           | Forbid anonymous exports |     | ⚠️  |     | 💡  |
+| [no-restricted-paths](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-restricted-paths.md)                           | Restrict paths           |     | ⚠️  |     | 💡  |
+| [no-deprecated](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-deprecated.md)                                       | Detect deprecated        |     | ⚠️  |     | 💡  |
+| [no-mutable-exports](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-mutable-exports.md)                             | Forbid mutable exports   |     | ⚠️  |     | 💡  |
+| [prefer-default-export](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/prefer-default-export.md)                       | Prefer default export    |     | ⚠️  |     | 💡  |
+| [no-unresolved](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unresolved.md)                                       | Detect unresolved        |     |     |     | 💡  |
+| [no-relative-parent-imports](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-relative-parent-imports.md)             | Forbid parent imports    |     | ⚠️  |     | 💡  |
+| [no-default-export](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-default-export.md)                               | Forbid default exports   |     | ⚠️  |     | 💡  |
+| [no-named-export](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-named-export.md)                                   | Forbid named exports     |     | ⚠️  |     | 💡  |
+| [no-unassigned-import](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-unassigned-import.md)                         | Forbid unassigned        |     | ⚠️  |     | 💡  |
+| [enforce-import-order](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/enforce-import-order.md)                         | Enforce import order     |     | ⚠️  | 🔧  | 💡  |
+| [consistent-function-scoping](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/consistent-function-scoping.md)           | Consistent scoping       |     | ⚠️  |     | 💡  |
+| [filename-case](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/filename-case.md)                                       | Filename conventions     |     | ⚠️  |     | 💡  |
+| [no-instanceof-array](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-instanceof-array.md)                           | Forbid instanceof Array  |     | ⚠️  | 🔧  |     |
 
 ### React (41 rules)
 
-| Name | Description | 💼 | ⚠️ | 🔧 | 💡 |
-|------|-------------|---|---|---|---|
-| [hooks-exhaustive-deps](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/hooks-exhaustive-deps.md) | Exhaustive hook deps | | ⚠️ | | 💡 |
-| [required-attributes](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/required-attributes.md) | Required attributes | | | 🔧 | |
-| [jsx-key](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/jsx-key.md) | Missing React keys | | | | 💡 |
-| [no-direct-mutation-state](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-direct-mutation-state.md) | No state mutation | | | | 💡 |
-| [require-optimization](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/require-optimization.md) | Require optimizations | | ⚠️ | | 💡 |
+| Name                                                                                                                                        | Description           | 💼  | ⚠️  | 🔧  | 💡  |
+| ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- | --- | --- | --- | --- |
+| [hooks-exhaustive-deps](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/hooks-exhaustive-deps.md)       | Exhaustive hook deps  |     | ⚠️  |     | 💡  |
+| [required-attributes](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/required-attributes.md)           | Required attributes   |     |     | 🔧  |     |
+| [jsx-key](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/jsx-key.md)                                   | Missing React keys    |     |     |     | 💡  |
+| [no-direct-mutation-state](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-direct-mutation-state.md) | No state mutation     |     |     |     | 💡  |
+| [require-optimization](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/require-optimization.md)         | Require optimizations |     | ⚠️  |     | 💡  |
 
 [View all 41 React rules →](https://github.com/ofri-peretz/forge-js/tree/main/packages/eslint-plugin/docs/rules)
 
 ### Development (7 rules)
 
-| Name | Description | 💼 | ⚠️ | 🔧 | 💡 |
-|------|-------------|---|---|---|---|
-| [no-console-log](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-console-log.md) | Disallow console.log | | ⚠️ | 🔧 | |
-| [prefer-dependency-version-strategy](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/prefer-dependency-version-strategy.md) | Version strategy | | ⚠️ | 🔧 | |
-| [no-amd](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-amd.md) | Disallow AMD | | ⚠️ | | 💡 |
-| [no-commonjs](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-commonjs.md) | Disallow CommonJS | | ⚠️ | | 💡 |
-| [no-nodejs-modules](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-nodejs-modules.md) | Disallow Node.js modules | | | | 💡 |
-| [no-process-exit](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-process-exit.md) | Disallow process.exit() | | ⚠️ | | 💡 |
-| [no-console-spaces](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-console-spaces.md) | Console spacing issues | | ⚠️ | 🔧 | |
+| Name                                                                                                                                                            | Description              | 💼  | ⚠️  | 🔧  | 💡  |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | --- | --- | --- | --- |
+| [no-console-log](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-console-log.md)                                         | Disallow console.log     |     | ⚠️  | 🔧  |     |
+| [prefer-dependency-version-strategy](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/prefer-dependency-version-strategy.md) | Version strategy         |     | ⚠️  | 🔧  |     |
+| [no-amd](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-amd.md)                                                         | Disallow AMD             |     | ⚠️  |     | 💡  |
+| [no-commonjs](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-commonjs.md)                                               | Disallow CommonJS        |     | ⚠️  |     | 💡  |
+| [no-nodejs-modules](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-nodejs-modules.md)                                   | Disallow Node.js modules |     |     |     | 💡  |
+| [no-process-exit](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-process-exit.md)                                       | Disallow process.exit()  |     | ⚠️  |     | 💡  |
+| [no-console-spaces](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-console-spaces.md)                                   | Console spacing issues   |     | ⚠️  | 🔧  |     |
 
 ### Performance, Code Quality, Error Handling, Accessibility & More
 

@@ -3,7 +3,7 @@
  * Prevent arrow functions in lifecycle methods
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds = 'noArrowFunctionLifecycle';
@@ -41,6 +41,7 @@ export const noArrowFunctionLifecycle = createRule<[], MessageIds>({
         documentationLink: 'https://react.dev/reference/react/Component#defining-a-class-component',
       }),
     },
+    schema: [],
   },
   defaultOptions: [],
   create(context: TSESLint.RuleContext<MessageIds, []>) {

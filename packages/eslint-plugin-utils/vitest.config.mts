@@ -30,6 +30,10 @@ export default defineConfig({
     passWithNoTests: true,
     // Global setup runs once before all tests to ensure coverage directories exist
     globalSetup: ['../../vitest.global-setup.ts'],
+    env: {
+      // Add test-mocks to NODE_PATH so resolver tests can find mock modules
+      NODE_PATH: './test-mocks/node_modules',
+    },
     coverage: {
       provider: 'v8',
       // json for Codecov, text for console, html for local dev

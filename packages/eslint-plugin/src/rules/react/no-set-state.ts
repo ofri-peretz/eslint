@@ -3,7 +3,7 @@
  * Disallow usage of setState (encourage functional components with hooks)
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds = 'noSetState';
@@ -25,6 +25,7 @@ export const noSetState = createRule<[], MessageIds>({
         documentationLink: 'https://react.dev/reference/react/useState',
       }),
     },
+    schema: [],
   },
   defaultOptions: [],
   create(context: TSESLint.RuleContext<MessageIds, []>) {

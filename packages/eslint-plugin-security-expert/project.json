@@ -1,0 +1,9 @@
+{
+  "name": "eslint-plugin-security-expert",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/eslint-plugin-security-expert/src",
+  "projectType": "library",
+  "tags": ["scope:public", "type:eslint-plugin"],
+  "// targets": "to see all targets run: nx show project eslint-plugin-security-expert --web",
+  "targets": {}
+}

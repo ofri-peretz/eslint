@@ -8,7 +8,7 @@
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds =
   | 'missingSecurityHeader'
@@ -48,7 +48,7 @@ function extractHeaderName(node: TSESTree.CallExpression): string | null {
 function checkFunctionForSecurityHeaders(
   node: TSESTree.CallExpression,
   requiredHeaders: string[],
-  context: TSESLint.RuleContext
+  context: TSESLint.RuleContext<MessageIds, RuleOptions>
 ): string[] {
   const setHeaders = new Set<string>();
 
@@ -63,7 +63,7 @@ function checkFunctionForSecurityHeaders(
       scopeNode = current;
       break;
     }
-    current = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+    current = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent ?? null;
   }
 
   // If no function found, use the program scope (for test cases)
@@ -97,7 +97,9 @@ function checkFunctionForSecurityHeaders(
     }
   }
 
-  collectHeaders(scopeNode);
+  if (scopeNode) {
+    collectHeaders(scopeNode);
+  }
 
   // Return missing headers
   return requiredHeaders.filter(header => !setHeaders.has(header));
@@ -198,7 +200,7 @@ requiredHeaders = DEFAULT_REQUIRED_HEADERS,
             current.type === 'ArrowFunctionExpression') {
           return `${current.range?.[0]}-${current.range?.[1]}`;
         }
-        current = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+        current = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent ?? null;
       }
       // If no function found, use program scope
       return 'program';

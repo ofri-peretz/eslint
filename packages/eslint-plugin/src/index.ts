@@ -46,6 +46,7 @@ import { noRelativeParentImports } from './rules/architecture/no-relative-parent
 import { noDefaultExport } from './rules/architecture/no-default-export';
 import { noNamedExport } from './rules/architecture/no-named-export';
 import { noUnassignedImport } from './rules/architecture/no-unassigned-import';
+import { enforceImportOrder } from './rules/architecture/enforce-import-order';
 
 // Security rules
 import { noSqlInjection } from './rules/security/no-sql-injection';
@@ -64,6 +65,25 @@ import { noUnsanitizedHtml } from './rules/security/no-unsanitized-html';
 import { noUnescapedUrlParameter } from './rules/security/no-unescaped-url-parameter';
 import { noMissingCorsCheck } from './rules/security/no-missing-cors-check';
 import { noInsecureComparison } from './rules/security/no-insecure-comparison';
+import { noInsecureJwt } from './rules/security/no-insecure-jwt';
+import { noTimingAttack } from './rules/security/no-timing-attack';
+import { noGraphqlInjection } from './rules/security/no-graphql-injection';
+import { noXxeInjection } from './rules/security/no-xxe-injection';
+import { noXpathInjection } from './rules/security/no-xpath-injection';
+import { noLdapInjection } from './rules/security/no-ldap-injection';
+import { noUnsafeDeserialization } from './rules/security/no-unsafe-deserialization';
+import { noZipSlip } from './rules/security/no-zip-slip';
+import { noBufferOverread } from './rules/security/no-buffer-overread';
+import { noInsufficientPostmessageValidation } from './rules/security/no-insufficient-postmessage-validation';
+import { noImproperTypeValidation } from './rules/security/no-improper-type-validation';
+import { noUncheckedLoopCondition } from './rules/security/no-unchecked-loop-condition';
+import { noFormatStringInjection } from './rules/security/no-format-string-injection';
+import { noElectronSecurityIssues } from './rules/security/no-electron-security-issues';
+import { noClickjacking } from './rules/security/no-clickjacking';
+import { noUnlimitedResourceAllocation } from './rules/security/no-unlimited-resource-allocation';
+import { noDirectiveInjection } from './rules/security/no-directive-injection';
+import { noImproperSanitization } from './rules/security/no-improper-sanitization';
+import { noWeakPasswordRecovery } from './rules/security/no-weak-password-recovery';
 import { noMissingAuthentication } from './rules/security/no-missing-authentication';
 import { noPrivilegeEscalation } from './rules/security/no-privilege-escalation';
 import { noInsecureCookieSettings } from './rules/security/no-insecure-cookie-settings';
@@ -101,8 +121,43 @@ import { detectNPlusOneQueries } from './rules/performance/detect-n-plus-one-que
 import { reactRenderOptimization } from './rules/performance/react-render-optimization';
 
 // Accessibility rules
+import { imgRequiresAlt } from './rules/accessibility/img-requires-alt';
 import { noKeyboardInaccessibleElements } from './rules/accessibility/no-keyboard-inaccessible-elements';
 import { noMissingAriaLabels } from './rules/accessibility/no-missing-aria-labels';
+import { anchorHasContent } from './rules/accessibility/anchor-has-content';
+import { anchorIsValid } from './rules/accessibility/anchor-is-valid';
+import { ariaProps } from './rules/accessibility/aria-props';
+import { ariaRole } from './rules/accessibility/aria-role';
+import { ariaUnsupportedElements } from './rules/accessibility/aria-unsupported-elements';
+import { autocompleteValid } from './rules/accessibility/autocomplete-valid';
+import { clickEventsHaveKeyEvents } from './rules/accessibility/click-events-have-key-events';
+import { headingHasContent } from './rules/accessibility/heading-has-content';
+import { htmlHasLang } from './rules/accessibility/html-has-lang';
+import { iframeHasTitle } from './rules/accessibility/iframe-has-title';
+import { labelHasAssociatedControl } from './rules/accessibility/label-has-associated-control';
+import { lang } from './rules/accessibility/lang';
+import { mediaHasCaption } from './rules/accessibility/media-has-caption';
+import { mouseEventsHaveKeyEvents } from './rules/accessibility/mouse-events-have-key-events';
+import { noAccessKey } from './rules/accessibility/no-access-key';
+import { noAriaHiddenOnFocusable } from './rules/accessibility/no-aria-hidden-on-focusable';
+import { noAutofocus } from './rules/accessibility/no-autofocus';
+import { noDistractingElements } from './rules/accessibility/no-distracting-elements';
+import { noRedundantRoles } from './rules/accessibility/no-redundant-roles';
+import { noStaticElementInteractions } from './rules/accessibility/no-static-element-interactions';
+import { interactiveSupportsFocus } from './rules/accessibility/interactive-supports-focus';
+import { noNoninteractiveElementInteractions } from './rules/accessibility/no-noninteractive-element-interactions';
+import { roleHasRequiredAriaProps } from './rules/accessibility/role-has-required-aria-props';
+import { ariaActivedescendantHasTabindex } from './rules/accessibility/aria-activedescendant-has-tabindex';
+import { anchorAmbiguousText } from './rules/accessibility/anchor-ambiguous-text';
+import { controlHasAssociatedLabel } from './rules/accessibility/control-has-associated-label';
+import { imgRedundantAlt } from './rules/accessibility/img-redundant-alt';
+import { noInteractiveElementToNoninteractiveRole } from './rules/accessibility/no-interactive-element-to-noninteractive-role';
+import { noNoninteractiveElementToInteractiveRole } from './rules/accessibility/no-noninteractive-element-to-interactive-role';
+import { roleSupportsAriaProps } from './rules/accessibility/role-supports-aria-props';
+import { scope } from './rules/accessibility/scope';
+import { tabindexNoPositive } from './rules/accessibility/tabindex-no-positive';
+import { noNoninteractiveTabindex } from './rules/accessibility/no-noninteractive-tabindex';
+import { preferTagOverRole } from './rules/accessibility/prefer-tag-over-role';
 
 // TypeScript rules
 // Note: TypeScript-specific rules that duplicate TSC functionality have been removed.
@@ -124,9 +179,6 @@ import { reactClassToHooks } from './rules/migration/react-class-to-hooks';
 
 // Performance rules
 import { reactNoInlineFunctions } from './rules/performance/react-no-inline-functions';
-
-// Accessibility rules
-import { imgRequiresAlt } from './rules/accessibility/img-requires-alt';
 
 // API rules
 import { enforceRestConventions } from './rules/api/enforce-rest-conventions';
@@ -193,6 +245,15 @@ import { dddValueObjectImmutability } from './rules/ddd/ddd-value-object-immutab
 // Duplication rules
 import { identicalFunctions } from './rules/duplication/identical-functions';
 
+// Import rules
+import { noDuplicates } from './rules/imports/no-duplicates';
+import { first } from './rules/imports/first';
+import { newlineAfterImport } from './rules/imports/newline-after-import';
+import { extensions } from './rules/imports/extensions';
+import { named } from './rules/imports/named';
+import { defaultRule } from './rules/imports/default';
+import { namespace } from './rules/imports/namespace';
+
 /**
  * Collection of all ESLint rules provided by this plugin
  * 
@@ -220,6 +281,7 @@ export const rules = {
   'no-process-exit': noProcessExit,
   'no-console-spaces': noConsoleSpaces,
   'no-circular-dependencies': noCircularDependencies,
+  'enforce-import-order': enforceImportOrder,
   'no-internal-modules': noInternalModules,
   'no-sql-injection': noSqlInjection,
   'no-unsafe-dynamic-require': noUnsafeDynamicRequire,
@@ -237,6 +299,25 @@ export const rules = {
   'no-unescaped-url-parameter': noUnescapedUrlParameter,
   'no-missing-cors-check': noMissingCorsCheck,
   'no-insecure-comparison': noInsecureComparison,
+  'no-insecure-jwt': noInsecureJwt,
+  'no-timing-attack': noTimingAttack,
+  'no-graphql-injection': noGraphqlInjection,
+  'no-xxe-injection': noXxeInjection,
+  'no-xpath-injection': noXpathInjection,
+  'no-ldap-injection': noLdapInjection,
+  'no-unsafe-deserialization': noUnsafeDeserialization,
+  'no-zip-slip': noZipSlip,
+  'no-buffer-overread': noBufferOverread,
+  'no-insufficient-postmessage-validation': noInsufficientPostmessageValidation,
+  'no-improper-type-validation': noImproperTypeValidation,
+  'no-unchecked-loop-condition': noUncheckedLoopCondition,
+  'no-format-string-injection': noFormatStringInjection,
+  'no-electron-security-issues': noElectronSecurityIssues,
+  'no-clickjacking': noClickjacking,
+  'no-unlimited-resource-allocation': noUnlimitedResourceAllocation,
+  'no-directive-injection': noDirectiveInjection,
+  'no-improper-sanitization': noImproperSanitization,
+  'no-weak-password-recovery': noWeakPasswordRecovery,
   'no-missing-authentication': noMissingAuthentication,
   'no-privilege-escalation': noPrivilegeEscalation,
   'no-insecure-cookie-settings': noInsecureCookieSettings,
@@ -293,6 +374,15 @@ export const rules = {
   'enforce-naming': enforceNaming,
   'cognitive-complexity': cognitiveComplexity,
   'identical-functions': identicalFunctions,
+
+  // Import rules
+  'no-duplicates': noDuplicates,
+  'first': first,
+  'newline-after-import': newlineAfterImport,
+  'extensions': extensions,
+  'named': named,
+  'default': defaultRule,
+  'namespace': namespace,
   
   // Categorized rule names (for better organization)
   'development/no-console-log': noConsoleLog,
@@ -320,6 +410,25 @@ export const rules = {
   'security/no-unescaped-url-parameter': noUnescapedUrlParameter,
   'security/no-missing-cors-check': noMissingCorsCheck,
   'security/no-insecure-comparison': noInsecureComparison,
+  'security/no-insecure-jwt': noInsecureJwt,
+  'security/no-timing-attack': noTimingAttack,
+  'security/no-graphql-injection': noGraphqlInjection,
+  'security/no-xxe-injection': noXxeInjection,
+  'security/no-xpath-injection': noXpathInjection,
+  'security/no-ldap-injection': noLdapInjection,
+  'security/no-unsafe-deserialization': noUnsafeDeserialization,
+  'security/no-zip-slip': noZipSlip,
+  'security/no-buffer-overread': noBufferOverread,
+  'security/no-insufficient-postmessage-validation': noInsufficientPostmessageValidation,
+  'security/no-improper-type-validation': noImproperTypeValidation,
+  'security/no-unchecked-loop-condition': noUncheckedLoopCondition,
+  'security/no-format-string-injection': noFormatStringInjection,
+  'security/no-electron-security-issues': noElectronSecurityIssues,
+  'security/no-clickjacking': noClickjacking,
+  'security/no-unlimited-resource-allocation': noUnlimitedResourceAllocation,
+  'security/no-directive-injection': noDirectiveInjection,
+  'security/no-improper-sanitization': noImproperSanitization,
+  'security/no-weak-password-recovery': noWeakPasswordRecovery,
   'security/no-missing-authentication': noMissingAuthentication,
   'security/no-privilege-escalation': noPrivilegeEscalation,
   'security/no-insecure-cookie-settings': noInsecureCookieSettings,
@@ -347,8 +456,6 @@ export const rules = {
   'performance/no-unbounded-cache': noUnboundedCache,
   'performance/detect-n-plus-one-queries': detectNPlusOneQueries,
   'performance/react-render-optimization': reactRenderOptimization,
-  'accessibility/no-keyboard-inaccessible-elements': noKeyboardInaccessibleElements,
-  'accessibility/no-missing-aria-labels': noMissingAriaLabels,
   'security/no-toctou-vulnerability': noToctouVulnerability,
   'security/no-missing-security-headers': noMissingSecurityHeaders,
   'security/no-insecure-redirects': noInsecureRedirects,
@@ -375,6 +482,7 @@ export const rules = {
   'architecture/no-default-export': noDefaultExport,
   'architecture/no-named-export': noNamedExport,
   'architecture/no-unassigned-import': noUnassignedImport,
+  'architecture/enforce-import-order': enforceImportOrder,
   'architecture/no-deprecated': noDeprecated,
   'architecture/no-mutable-exports': noMutableExports,
   'architecture/prefer-default-export': preferDefaultExport,
@@ -387,6 +495,42 @@ export const rules = {
   'migration/react-class-to-hooks': reactClassToHooks,
   'performance/react-no-inline-functions': reactNoInlineFunctions,
   'accessibility/img-requires-alt': imgRequiresAlt,
+  'accessibility/no-keyboard-inaccessible-elements': noKeyboardInaccessibleElements,
+  'accessibility/no-missing-aria-labels': noMissingAriaLabels,
+  'accessibility/anchor-has-content': anchorHasContent,
+  'accessibility/anchor-is-valid': anchorIsValid,
+  'accessibility/aria-props': ariaProps,
+  'accessibility/aria-role': ariaRole,
+  'accessibility/aria-unsupported-elements': ariaUnsupportedElements,
+  'accessibility/autocomplete-valid': autocompleteValid,
+  'accessibility/click-events-have-key-events': clickEventsHaveKeyEvents,
+  'accessibility/heading-has-content': headingHasContent,
+  'accessibility/html-has-lang': htmlHasLang,
+  'accessibility/iframe-has-title': iframeHasTitle,
+  'accessibility/label-has-associated-control': labelHasAssociatedControl,
+  'accessibility/lang': lang,
+  'accessibility/media-has-caption': mediaHasCaption,
+  'accessibility/mouse-events-have-key-events': mouseEventsHaveKeyEvents,
+  'accessibility/no-access-key': noAccessKey,
+  'accessibility/no-aria-hidden-on-focusable': noAriaHiddenOnFocusable,
+  'accessibility/no-autofocus': noAutofocus,
+  'accessibility/no-distracting-elements': noDistractingElements,
+  'accessibility/no-redundant-roles': noRedundantRoles,
+  'accessibility/no-static-element-interactions': noStaticElementInteractions,
+  'accessibility/interactive-supports-focus': interactiveSupportsFocus,
+  'accessibility/no-noninteractive-element-interactions': noNoninteractiveElementInteractions,
+  'accessibility/role-has-required-aria-props': roleHasRequiredAriaProps,
+  'accessibility/aria-activedescendant-has-tabindex': ariaActivedescendantHasTabindex,
+  'accessibility/anchor-ambiguous-text': anchorAmbiguousText,
+  'accessibility/control-has-associated-label': controlHasAssociatedLabel,
+  'accessibility/img-redundant-alt': imgRedundantAlt,
+  'accessibility/no-interactive-element-to-noninteractive-role': noInteractiveElementToNoninteractiveRole,
+  'accessibility/no-noninteractive-element-to-interactive-role': noNoninteractiveElementToInteractiveRole,
+  'accessibility/role-supports-aria-props': roleSupportsAriaProps,
+  'accessibility/scope': scope,
+  'accessibility/tabindex-no-positive': tabindexNoPositive,
+  'accessibility/no-noninteractive-tabindex': noNoninteractiveTabindex,
+  'accessibility/prefer-tag-over-role': preferTagOverRole,
   'react/required-attributes': requiredAttributes,
   'react/jsx-key': jsxKey,
   'react/no-direct-mutation-state': noDirectMutationState,
@@ -433,6 +577,14 @@ export const rules = {
   'domain/enforce-naming': enforceNaming,
   'complexity/cognitive-complexity': cognitiveComplexity,
   'duplication/identical-functions': identicalFunctions,
+
+  'imports/no-duplicates': noDuplicates,
+  'imports/first': first,
+  'imports/newline-after-import': newlineAfterImport,
+  'imports/extensions': extensions,
+  'imports/named': named,
+  'imports/default': defaultRule,
+  'imports/namespace': namespace,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -465,7 +617,7 @@ export const rules = {
 export const plugin = {
   meta: {
     name: '@forge-js/eslint-plugin-llm-optimized',
-    version: '1.8.1', // Should match package.json
+    version: '1.9.1', // Should match package.json
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;
@@ -523,6 +675,7 @@ export const configs = {
       '@forge-js/llm-optimized/development/no-console-log': 'warn',
       '@forge-js/llm-optimized/development/no-console-spaces': 'warn',
       '@forge-js/llm-optimized/architecture/no-circular-dependencies': 'error',
+      '@forge-js/llm-optimized/architecture/enforce-import-order': 'warn',
       '@forge-js/llm-optimized/architecture/no-internal-modules': 'error',
       '@forge-js/llm-optimized/security/no-sql-injection': 'error',
       '@forge-js/llm-optimized/security/no-unsafe-dynamic-require': 'error',
@@ -535,6 +688,25 @@ export const configs = {
       '@forge-js/llm-optimized/security/no-unescaped-url-parameter': 'warn',
       '@forge-js/llm-optimized/security/no-missing-cors-check': 'warn',
       '@forge-js/llm-optimized/security/no-insecure-comparison': 'warn',
+      '@forge-js/llm-optimized/security/no-insecure-jwt': 'error',
+      '@forge-js/llm-optimized/security/no-timing-attack': 'error',
+      '@forge-js/llm-optimized/security/no-graphql-injection': 'error',
+      '@forge-js/llm-optimized/security/no-xxe-injection': 'error',
+      '@forge-js/llm-optimized/security/no-xpath-injection': 'error',
+      '@forge-js/llm-optimized/security/no-ldap-injection': 'error',
+      '@forge-js/llm-optimized/security/no-unsafe-deserialization': 'error',
+      '@forge-js/llm-optimized/security/no-zip-slip': 'error',
+      '@forge-js/llm-optimized/security/no-buffer-overread': 'error',
+      '@forge-js/llm-optimized/security/no-insufficient-postmessage-validation': 'error',
+      '@forge-js/llm-optimized/security/no-improper-type-validation': 'warn',
+      '@forge-js/llm-optimized/security/no-unchecked-loop-condition': 'error',
+      '@forge-js/llm-optimized/security/no-format-string-injection': 'error',
+      '@forge-js/llm-optimized/security/no-electron-security-issues': 'error',
+      '@forge-js/llm-optimized/security/no-clickjacking': 'error',
+      '@forge-js/llm-optimized/security/no-unlimited-resource-allocation': 'error',
+      '@forge-js/llm-optimized/security/no-directive-injection': 'error',
+      '@forge-js/llm-optimized/security/no-improper-sanitization': 'error',
+      '@forge-js/llm-optimized/security/no-weak-password-recovery': 'error',
       '@forge-js/llm-optimized/security/no-missing-authentication': 'warn',
       '@forge-js/llm-optimized/security/no-privilege-escalation': 'warn',
       '@forge-js/llm-optimized/security/no-insecure-cookie-settings': 'warn',
@@ -578,6 +750,13 @@ export const configs = {
       '@forge-js/llm-optimized/ddd/ddd-anemic-domain-model': 'warn',
       '@forge-js/llm-optimized/ddd/ddd-value-object-immutability': 'warn',
       '@forge-js/llm-optimized/api/enforce-rest-conventions': 'warn',
+      '@forge-js/llm-optimized/imports/no-duplicates': 'error',
+      '@forge-js/llm-optimized/imports/named': 'error',
+      '@forge-js/llm-optimized/imports/default': 'error',
+      '@forge-js/llm-optimized/imports/namespace': 'warn',
+      '@forge-js/llm-optimized/imports/extensions': 'warn',
+      '@forge-js/llm-optimized/imports/first': 'warn',
+      '@forge-js/llm-optimized/imports/newline-after-import': 'warn',
     },
   } satisfies TSESLint.FlatConfig.Config,
   
@@ -595,6 +774,7 @@ export const configs = {
       '@forge-js/llm-optimized/development/no-console-log': 'error',
       '@forge-js/llm-optimized/development/no-console-spaces': 'error',
       '@forge-js/llm-optimized/architecture/no-circular-dependencies': 'error',
+      '@forge-js/llm-optimized/architecture/enforce-import-order': 'error',
       '@forge-js/llm-optimized/architecture/no-internal-modules': 'error',
       '@forge-js/llm-optimized/security/no-sql-injection': 'error',
       '@forge-js/llm-optimized/security/no-unsafe-dynamic-require': 'error',
@@ -607,6 +787,15 @@ export const configs = {
       '@forge-js/llm-optimized/security/no-unescaped-url-parameter': 'error',
       '@forge-js/llm-optimized/security/no-missing-cors-check': 'error',
       '@forge-js/llm-optimized/security/no-insecure-comparison': 'error',
+      '@forge-js/llm-optimized/security/no-insecure-jwt': 'error',
+      '@forge-js/llm-optimized/security/no-timing-attack': 'error',
+      '@forge-js/llm-optimized/security/no-graphql-injection': 'error',
+      '@forge-js/llm-optimized/security/no-xxe-injection': 'error',
+      '@forge-js/llm-optimized/security/no-xpath-injection': 'error',
+      '@forge-js/llm-optimized/security/no-ldap-injection': 'error',
+      '@forge-js/llm-optimized/security/no-unsafe-deserialization': 'error',
+      '@forge-js/llm-optimized/security/no-zip-slip': 'error',
+      '@forge-js/llm-optimized/security/no-buffer-overread': 'error',
       '@forge-js/llm-optimized/security/no-missing-authentication': 'error',
       '@forge-js/llm-optimized/security/no-privilege-escalation': 'error',
       '@forge-js/llm-optimized/security/no-insecure-cookie-settings': 'error',
@@ -640,6 +829,13 @@ export const configs = {
       '@forge-js/llm-optimized/ddd/ddd-anemic-domain-model': 'error',
       '@forge-js/llm-optimized/ddd/ddd-value-object-immutability': 'error',
       '@forge-js/llm-optimized/api/enforce-rest-conventions': 'error',
+      '@forge-js/llm-optimized/imports/no-duplicates': 'error',
+      '@forge-js/llm-optimized/imports/named': 'error',
+      '@forge-js/llm-optimized/imports/default': 'error',
+      '@forge-js/llm-optimized/imports/namespace': 'error',
+      '@forge-js/llm-optimized/imports/extensions': 'error',
+      '@forge-js/llm-optimized/imports/first': 'error',
+      '@forge-js/llm-optimized/imports/newline-after-import': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 
@@ -670,6 +866,15 @@ export const configs = {
       '@forge-js/llm-optimized/security/no-unescaped-url-parameter': 'error',
       '@forge-js/llm-optimized/security/no-missing-cors-check': 'error',
       '@forge-js/llm-optimized/security/no-insecure-comparison': 'error',
+      '@forge-js/llm-optimized/security/no-insecure-jwt': 'error',
+      '@forge-js/llm-optimized/security/no-timing-attack': 'error',
+      '@forge-js/llm-optimized/security/no-graphql-injection': 'error',
+      '@forge-js/llm-optimized/security/no-xxe-injection': 'error',
+      '@forge-js/llm-optimized/security/no-xpath-injection': 'error',
+      '@forge-js/llm-optimized/security/no-ldap-injection': 'error',
+      '@forge-js/llm-optimized/security/no-unsafe-deserialization': 'error',
+      '@forge-js/llm-optimized/security/no-zip-slip': 'error',
+      '@forge-js/llm-optimized/security/no-buffer-overread': 'error',
       '@forge-js/llm-optimized/security/no-missing-authentication': 'error',
       '@forge-js/llm-optimized/security/no-privilege-escalation': 'error',
       '@forge-js/llm-optimized/security/no-insecure-cookie-settings': 'error',
@@ -693,6 +898,7 @@ export const configs = {
     },
     rules: {
       '@forge-js/llm-optimized/architecture/no-circular-dependencies': 'error',
+      '@forge-js/llm-optimized/architecture/enforce-import-order': 'error',
       '@forge-js/llm-optimized/architecture/no-internal-modules': 'error',
       '@forge-js/llm-optimized/architecture/no-cross-domain-imports': 'error',
       '@forge-js/llm-optimized/architecture/enforce-dependency-direction': 'error',
@@ -756,6 +962,41 @@ export const configs = {
     },
     rules: {
       '@forge-js/llm-optimized/accessibility/img-requires-alt': 'error',
+      '@forge-js/llm-optimized/accessibility/anchor-has-content': 'error',
+      '@forge-js/llm-optimized/accessibility/anchor-is-valid': 'error',
+      '@forge-js/llm-optimized/accessibility/aria-props': 'error',
+      '@forge-js/llm-optimized/accessibility/aria-role': 'error',
+      '@forge-js/llm-optimized/accessibility/aria-unsupported-elements': 'error',
+      '@forge-js/llm-optimized/accessibility/autocomplete-valid': 'error',
+      '@forge-js/llm-optimized/accessibility/click-events-have-key-events': 'error',
+      '@forge-js/llm-optimized/accessibility/heading-has-content': 'error',
+      '@forge-js/llm-optimized/accessibility/html-has-lang': 'error',
+      '@forge-js/llm-optimized/accessibility/iframe-has-title': 'error',
+      '@forge-js/llm-optimized/accessibility/label-has-associated-control': 'error',
+      '@forge-js/llm-optimized/accessibility/lang': 'error',
+      '@forge-js/llm-optimized/accessibility/media-has-caption': 'error',
+      '@forge-js/llm-optimized/accessibility/mouse-events-have-key-events': 'error',
+      '@forge-js/llm-optimized/accessibility/no-access-key': 'error',
+      '@forge-js/llm-optimized/accessibility/no-aria-hidden-on-focusable': 'error',
+      '@forge-js/llm-optimized/accessibility/no-autofocus': 'error',
+      '@forge-js/llm-optimized/accessibility/no-distracting-elements': 'error',
+      '@forge-js/llm-optimized/accessibility/no-redundant-roles': 'error',
+      '@forge-js/llm-optimized/accessibility/no-static-element-interactions': 'error',
+      '@forge-js/llm-optimized/accessibility/interactive-supports-focus': 'error',
+      '@forge-js/llm-optimized/accessibility/no-noninteractive-element-interactions': 'error',
+      '@forge-js/llm-optimized/accessibility/role-has-required-aria-props': 'error',
+      '@forge-js/llm-optimized/accessibility/aria-activedescendant-has-tabindex': 'error',
+      '@forge-js/llm-optimized/accessibility/anchor-ambiguous-text': 'error',
+      '@forge-js/llm-optimized/accessibility/control-has-associated-label': 'error',
+      '@forge-js/llm-optimized/accessibility/img-redundant-alt': 'error',
+      '@forge-js/llm-optimized/accessibility/no-interactive-element-to-noninteractive-role': 'error',
+      '@forge-js/llm-optimized/accessibility/no-noninteractive-element-to-interactive-role': 'error',
+      '@forge-js/llm-optimized/accessibility/role-supports-aria-props': 'error',
+      '@forge-js/llm-optimized/accessibility/color-contrast-css': 'error',
+      '@forge-js/llm-optimized/accessibility/scope': 'error',
+      '@forge-js/llm-optimized/accessibility/tabindex-no-positive': 'error',
+      '@forge-js/llm-optimized/accessibility/no-noninteractive-tabindex': 'error',
+      '@forge-js/llm-optimized/accessibility/prefer-tag-over-role': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 

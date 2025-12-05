@@ -3,7 +3,7 @@
  * Enforce component method ordering
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds = 'sortComp';
@@ -56,6 +56,18 @@ export const sortComp = createRule<[Options], MessageIds>({
         documentationLink: 'https://react.dev/reference/react/Component',
       }),
     },
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          order: {
+            type: 'array',
+            items: { type: 'string' },
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
   defaultOptions: [{ order: DEFAULT_ORDER }],
   create(context: TSESLint.RuleContext<MessageIds, [Options]>) {
@@ -119,8 +131,8 @@ export const sortComp = createRule<[Options], MessageIds>({
       if (member.type === 'MethodDefinition' && member.key.type === 'Identifier') {
         return member.key.name;
       }
-      // Handle both ClassProperty (legacy) and PropertyDefinition (TypeScript parser)
-      if ((member.type === 'PropertyDefinition' || member.type === 'ClassProperty') && member.key.type === 'Identifier') {
+      // Handle PropertyDefinition (TypeScript parser)
+      if (member.type === 'PropertyDefinition' && member.key.type === 'Identifier') {
         return member.key.name;
       }
       return null;
@@ -130,8 +142,8 @@ export const sortComp = createRule<[Options], MessageIds>({
       if (member.type === 'MethodDefinition' && member.key.type === 'Identifier') {
         return member.key;
       }
-      // Handle both ClassProperty (legacy) and PropertyDefinition (TypeScript parser)
-      if ((member.type === 'PropertyDefinition' || member.type === 'ClassProperty') && member.key.type === 'Identifier') {
+      // Handle PropertyDefinition (TypeScript parser)
+      if (member.type === 'PropertyDefinition' && member.key.type === 'Identifier') {
         return member.key;
       }
       return member;
@@ -144,13 +156,13 @@ export const sortComp = createRule<[Options], MessageIds>({
         return order.indexOf('static-methods');
       }
 
-      // Handle both ClassProperty (legacy) and PropertyDefinition (TypeScript parser)
-      if ((member.type === 'PropertyDefinition' || member.type === 'ClassProperty') && member.static) {
+      // Handle PropertyDefinition (TypeScript parser)
+      if (member.type === 'PropertyDefinition' && member.static) {
         return order.indexOf('static-variables');
       }
 
-      // Instance variables - Handle both ClassProperty (legacy) and PropertyDefinition (TypeScript parser)
-      if ((member.type === 'PropertyDefinition' || member.type === 'ClassProperty') && !member.static) {
+      // Instance variables - Handle PropertyDefinition (TypeScript parser)
+      if (member.type === 'PropertyDefinition' && !member.static) {
         return order.indexOf('instance-variables');
       }
 

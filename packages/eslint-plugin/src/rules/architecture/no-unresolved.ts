@@ -2,9 +2,11 @@
  * ESLint Rule: no-unresolved
  * Ensures imports point to resolvable modules (eslint-plugin-import inspired)
  */
+import { builtinModules } from 'node:module';
 import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
+import { resolveModule } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds = 'unresolvedImport' | 'moduleNotFound' | 'invalidExtension' | 'addIgnoreComment';
 
@@ -124,21 +126,17 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      // Skip allowed built-in modules
-      if (importPath === 'fs' || importPath === 'path' || importPath === 'react') {
+      // Skip built-in modules
+      if (importPath.startsWith('node:') || builtinModules.includes(importPath)) {
         return;
       }
 
-      // For test cases, report errors for imports that look like they should fail
-      // This includes any import that doesn't exist in the real filesystem
-      const shouldReportError = importPath.includes('nonexistent') ||
-          importPath.includes('missing') ||
-          importPath.includes('unknown') ||
-          importPath.includes('not-ignored') ||
-          importPath.includes('config.yaml') ||
-          (importPath.startsWith('./') && importPath.includes('nonexistent'));
+      const filePath = context.filename || context.getFilename();
+      const resolved = resolveModule(importPath, filePath, {
+        extensions: options?.extensions
+      });
 
-      if (shouldReportError) {
+      if (!resolved) {
         context.report({
           node,
           messageId: 'moduleNotFound',
@@ -153,14 +151,14 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
                 // Find the statement that contains this import
                 let statement = node;
                 while (statement.parent && statement.parent.type !== 'Program') {
-                  if (['ImportDeclaration', 'VariableDeclaration', 'ExpressionStatement'].includes(statement.parent.type)) {
+                  if (['ImportDeclaration', 'VariableDeclaration', 'ExpressionStatement', 'ExportNamedDeclaration', 'ExportAllDeclaration'].includes(statement.parent.type)) {
                     statement = statement.parent;
                     break;
                   }
                   statement = statement.parent;
                 }
 
-                return fixer.insertTextBefore(statement, '// eslint-disable-next-line @forge-js/no-unresolved\n');
+                return fixer.insertTextBefore(statement, '// eslint-disable-next-line @forge-js/llm-optimized/no-unresolved\n');
               },
             },
           ],
@@ -174,6 +172,18 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
 
         if (typeof importPath === 'string') {
           checkImport(importPath, node.source);
+        }
+      },
+
+      ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        if (node.source && typeof node.source.value === 'string') {
+          checkImport(node.source.value, node.source);
+        }
+      },
+
+      ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
+        if (node.source && typeof node.source.value === 'string') {
+           checkImport(node.source.value, node.source);
         }
       },
 

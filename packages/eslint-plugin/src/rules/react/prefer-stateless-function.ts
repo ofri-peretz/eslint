@@ -3,7 +3,7 @@
  * Prefer stateless functions
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds = 'preferStatelessFunction';
@@ -119,6 +119,7 @@ export const preferStatelessFunction = createRule<[Options], MessageIds>({
         ) {
           // Check if constructor sets this.state
           const body = member.value.body;
+          if (!body) continue;
           for (const statement of body.body) {
             if (
               statement.type === 'ExpressionStatement' &&

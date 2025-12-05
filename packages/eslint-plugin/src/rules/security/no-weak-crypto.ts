@@ -8,7 +8,7 @@
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds =
   | 'weakCrypto'
@@ -242,6 +242,38 @@ export const noWeakCrypto = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.INFO,
         issueName: 'Use AES-256-GCM',
         description: 'Use AES-256-GCM for encryption',
+        severity: 'LOW',
+        fix: 'Use crypto.createCipheriv("aes-256-gcm", key, iv)',
+        documentationLink: 'https://nodejs.org/api/crypto.html#cryptocreatecipherivalgorithm-key-iv-options',
+      }),
+      strategyAuto: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Auto-fix Strategy',
+        description: 'Automatically suggest the best replacement',
+        severity: 'LOW',
+        fix: 'Apply automatic fix suggestion',
+        documentationLink: 'https://owasp.org/www-community/vulnerabilities/Weak_Cryptography',
+      }),
+      strategyUpgrade: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Upgrade Strategy',
+        description: 'Upgrade to a stronger algorithm',
+        severity: 'LOW',
+        fix: 'Replace weak algorithm with stronger alternative',
+        documentationLink: 'https://owasp.org/www-community/vulnerabilities/Weak_Cryptography',
+      }),
+      strategyMigrate: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Migration Strategy',
+        description: 'Plan migration to stronger cryptography',
+        severity: 'LOW',
+        fix: 'Create migration plan for cryptographic upgrade',
+        documentationLink: 'https://owasp.org/www-community/vulnerabilities/Weak_Cryptography',
+      }),
+      strategyPolicy: formatLLMMessage({
+        icon: MessageIcons.INFO,
+        issueName: 'Policy Strategy',
+        description: 'Apply organizational security policy',
         severity: 'LOW',
         fix: 'crypto.createCipheriv("aes-256-gcm", key, iv)',
         documentationLink: 'https://nodejs.org/api/crypto.html#cryptocreatecipherivalgorithm-key-iv-options',

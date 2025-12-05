@@ -3,7 +3,7 @@
  * Validate default props match prop types
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds = 'defaultPropsMatchPropTypes';
@@ -59,7 +59,15 @@ export const defaultPropsMatchPropTypes = createRule<[], MessageIds>({
       'ClassDeclaration:exit'() {
         for (const [propName, defaultProp] of defaultProps) {
           const propType = propTypes.get(propName);
-          if (propType && !isCompatibleDefaultValue(defaultProp.value, propType.value)) {
+          // Only check if both values are expressions (not patterns or TSEmptyBodyFunctionExpression)
+          if (propType && 
+              defaultProp.value && 
+              propType.value &&
+              defaultProp.value.type !== 'TSEmptyBodyFunctionExpression' &&
+              propType.value.type !== 'TSEmptyBodyFunctionExpression' &&
+              !isPattern(defaultProp.value) && 
+              !isPattern(propType.value) &&
+              !isCompatibleDefaultValue(defaultProp.value as TSESTree.Expression, propType.value as TSESTree.Expression)) {
             context.report({
               node: defaultProp.key,
               messageId: 'defaultPropsMatchPropTypes',
@@ -112,4 +120,11 @@ function getPropTypeName(node: TSESTree.MemberExpression): string {
     return node.property.name;
   }
   return '';
+}
+
+/**
+ * Check if a node is a pattern (not an expression)
+ */
+function isPattern(node: TSESTree.Node): node is TSESTree.AssignmentPattern | TSESTree.ArrayPattern | TSESTree.ObjectPattern {
+  return node.type === 'AssignmentPattern' || node.type === 'ArrayPattern' || node.type === 'ObjectPattern';
 }

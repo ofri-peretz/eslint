@@ -255,6 +255,7 @@ A: Functionally identical. `mcp-optimized` is a more descriptive name. Choose ba
 | [no-cross-domain-imports](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/no-cross-domain-imports.md) | Prevent cross-domain | | | | 💡 |
 | [enforce-dependency-direction](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/enforce-dependency-direction.md) | Enforce dep direction | | | | 💡 |
 | [prefer-node-protocol](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/prefer-node-protocol.md) | Enforce node: | | ⚠️ | 🔧 | |
+| [enforce-import-order](https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/enforce-import-order.md) | Enforce import order | | ⚠️ | 🔧 | 💡 |
 
 [View all 28 architecture rules →](https://github.com/ofri-peretz/forge-js/tree/main/packages/eslint-plugin/docs/rules)
 

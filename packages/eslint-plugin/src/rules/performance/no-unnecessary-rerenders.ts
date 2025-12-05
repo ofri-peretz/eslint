@@ -8,7 +8,7 @@
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds =
   | 'unnecessaryRerender'
@@ -35,7 +35,7 @@ function isInReactRenderContext(node: TSESTree.Node): boolean {
   const maxDepth = 15;
 
   while (current && depth < maxDepth) {
-    const parent = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+    const parent: TSESTree.Node | undefined = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
     if (!parent) break;
 
     // Check if we're in JSX

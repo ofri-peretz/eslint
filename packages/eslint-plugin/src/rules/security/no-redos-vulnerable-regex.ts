@@ -10,7 +10,7 @@
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds =
   | 'redosVulnerable'
@@ -294,8 +294,78 @@ allowCommonPatterns = false, maxPatternLength = 500
       });
     }
 
+    /**
+     * Check new RegExp() calls for ReDoS vulnerabilities
+     */
+    function checkNewRegExp(node: TSESTree.CallExpression | TSESTree.NewExpression) {
+      // Check for new RegExp(pattern) or RegExp(pattern)
+      let callee: TSESTree.Expression;
+
+      if (node.type === 'NewExpression') {
+        callee = node.callee;
+      } else if (node.type === 'CallExpression') {
+        callee = node.callee;
+      } else {
+        return;
+      }
+
+      const isRegExp = callee.type === 'Identifier' && callee.name === 'RegExp';
+
+      if (!isRegExp) {
+        return;
+      }
+
+      // Check if first argument is a string literal
+      if (node.arguments.length === 0) {
+        return;
+      }
+
+      const firstArg = node.arguments[0];
+      if (firstArg.type !== 'Literal' || typeof firstArg.value !== 'string') {
+        return;
+      }
+
+      const pattern = firstArg.value;
+
+      // Skip if pattern is too long (performance)
+      if (pattern.length > maxPatternLength) {
+        return;
+      }
+
+      const vulnerability = hasReDoSVulnerability(pattern);
+
+      if (!vulnerability) {
+        return;
+      }
+
+      // Allow common patterns if configured
+      if (allowCommonPatterns && (vulnerability.severity === 'medium' || vulnerability.name === 'Alternation with Quantifier')) {
+        return;
+      }
+
+      const suggestions = generateFixSuggestions(vulnerability);
+      const severity = vulnerability.severity.toUpperCase() as 'CRITICAL' | 'HIGH' | 'MEDIUM';
+
+      context.report({
+        node,
+        messageId: 'redosVulnerable',
+        data: {
+          vulnerabilityName: vulnerability.name,
+          description: vulnerability.description,
+          severity,
+          fix: vulnerability.fix,
+        },
+        suggest: suggestions.map(suggestion => ({
+          messageId: suggestion.messageId,
+          fix: () => null, // Complex refactoring, cannot auto-fix
+        })),
+      });
+    }
+
     return {
       Literal: checkLiteralRegExp,
+      CallExpression: checkNewRegExp,
+      NewExpression: checkNewRegExp,
     };
   },
 });

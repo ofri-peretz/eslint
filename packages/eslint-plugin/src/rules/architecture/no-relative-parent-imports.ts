@@ -3,7 +3,7 @@
  * Prevents ../ imports (eslint-plugin-import inspired)
  */
 import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds = 'relativeParentImport' | 'preferAbsoluteImport' | 'suggestAlias';
@@ -136,16 +136,7 @@ export const noRelativeParentImports = createRule<RuleOptions, MessageIds>({
           }
         }
 
-        // Check dynamic imports
-        if (
-          node.callee.type === 'Import' &&
-          node.arguments.length === 1
-        ) {
-          const arg = node.arguments[0];
-          if (arg.type === 'Literal' && typeof arg.value === 'string') {
-            checkImport(arg.value, arg);
-          }
-        }
+        // Note: Dynamic imports (import()) are handled by ImportExpression visitor
       },
 
       TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {

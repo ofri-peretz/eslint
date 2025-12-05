@@ -5,7 +5,7 @@
 | Field          | Value                                                               |
 | -------------- | ------------------------------------------------------------------- |
 | **Name**       | @forge-js/eslint-plugin-llm-optimized                               |
-| **Version**    | 1.8.0                                                               |
+| **Version**    | 1.9.1                                                               |
 | **Type**       | ESLint Plugin                                                       |
 | **Language**   | TypeScript                                                          |
 | **Node.js**    | >=18.0.0                                                            |

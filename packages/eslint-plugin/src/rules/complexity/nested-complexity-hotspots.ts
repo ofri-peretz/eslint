@@ -7,7 +7,7 @@
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds =
   | 'nestedComplexity'
@@ -141,7 +141,7 @@ export const nestedComplexityHotspots = createRule<RuleOptions, MessageIds>({
       countLoops: true,
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(context, [options = {}]) {
     const {
 maxDepth = 4,
       countConditionals = true,
@@ -155,7 +155,7 @@ maxDepth = 4,
      * Check control structures
      */
     function checkControlStructure(
-      node: TSESTree.IfStatement | TSESTree.ForStatement | TSESTree.WhileStatement | TSESTree.SwitchStatement
+      node: TSESTree.IfStatement | TSESTree.ForStatement | TSESTree.ForInStatement | TSESTree.ForOfStatement | TSESTree.WhileStatement | TSESTree.SwitchStatement
     ) {
       // Count how many control structures are nested above this node
       let depth = 0;

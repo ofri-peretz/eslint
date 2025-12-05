@@ -3,7 +3,7 @@
  * Enforce prop types usage
  */
 import type { TSESLint, TSESTree } from '@forge-js/eslint-plugin-utils';
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds = 'propTypes';
@@ -58,7 +58,7 @@ export const propTypes = createRule<[Options], MessageIds>({
     const skipUndeclared = options?.skipUndeclared ?? false;
 
     const components: TSESTree.ClassDeclaration[] = [];
-    const propTypesMap = new Map<string, TSESTree.ClassProperty>();
+    const propTypesMap = new Map<string, TSESTree.PropertyDefinition>();
 
     return {
       // Collect class components
@@ -68,8 +68,8 @@ export const propTypes = createRule<[Options], MessageIds>({
         }
       },
 
-      // Collect propTypes (handles both ClassProperty and PropertyDefinition)
-      'PropertyDefinition[key.name="propTypes"], ClassProperty[key.name="propTypes"]'(node: TSESTree.PropertyDefinition | TSESTree.ClassProperty) {
+      // Collect propTypes (PropertyDefinition in TypeScript ESLint)
+      'PropertyDefinition[key.name="propTypes"]'(node: TSESTree.PropertyDefinition) {
         if (node.parent.type === 'ClassBody') {
           const classNode = node.parent.parent as TSESTree.ClassDeclaration;
           if (classNode.id?.name) {
@@ -152,7 +152,7 @@ export const propTypes = createRule<[Options], MessageIds>({
       for (const key in node) {
         if (skipKeys.has(key)) continue;
         
-        const child = (node as Record<string, unknown>)[key];
+        const child = (node as unknown as Record<string, unknown>)[key];
         if (child && typeof child === 'object') {
           if (Array.isArray(child)) {
             for (const item of child) {

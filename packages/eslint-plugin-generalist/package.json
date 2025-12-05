@@ -1,0 +1,72 @@
+{
+  "name": "eslint-plugin-generalist",
+  "version": "1.0.0",
+  "description": "AI-Era Generalist ESLint Plugin - Orchestrates expert domain plugins for velocity through AI knowledge synthesis",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./types": {
+      "types": "@forge-js/eslint-plugin-llm-optimized/src/index.d.ts",
+      "default": "@forge-js/eslint-plugin-llm-optimized/src/index.js"
+    }
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ofri-peretz/forge-js#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/forge-js.git",
+    "directory": "packages/eslint-plugin-generalist"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/forge-js/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "AGENTS.md"
+  ],
+  "keywords": [
+    "eslint",
+    "eslint-plugin",
+    "generalist",
+    "ai-era",
+    "expert-orchestrator",
+    "velocity",
+    "knowledge-synthesis",
+    "linting",
+    "security",
+    "react",
+    "accessibility",
+    "architecture",
+    "performance",
+    "dev-workflow",
+    "ai-enhanced",
+    "expert-domains"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "vitest": "^4.0.6"
+  },
+  "peerDependencies": {},
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.46.2",
+    "@typescript-eslint/rule-tester": "^8.46.2",
+    "@forge-js/eslint-plugin-llm-optimized": "^1.0.0",
+    "vitest": "^4.0.6"
+  }
+}

@@ -76,7 +76,7 @@ cat src/types/index.ts
 cat src/index.ts
 ```
 
-**Note:** This documentation avoids hardcoded rule counts to remain maintainable as new rules are added (see [ROADMAP.md](../../ROADMAP.md) for planned future rules).
+**Note:** This documentation avoids hardcoded rule counts to remain maintainable as new rules are added (see [ROADMAP.md](../../../docs/ROADMAP.md) for planned future rules).
 
 ## Usage Examples
 

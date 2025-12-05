@@ -11,11 +11,11 @@
  * that include the full cycle chain and specific fix suggestions.
  *
  * @coverage
- * File system operations are extracted to node-fs-utils.ts and tested directly
- * with temporary files. Path operations are in node-path-utils.ts.
+ * File system operations are extracted to node/fs.ts and tested directly
+ * with temporary files. Path operations are in node/path.ts.
  * This rule focuses on ESLint integration and message generation.
  */
-import { createRule } from '../../utils/create-rule';
+import { createRule } from '@forge-js/eslint-plugin-utils';
 import type { TSESTree, TSESLint } from '@forge-js/eslint-plugin-utils';
 import { formatLLMMessage, MessageIcons } from '@forge-js/eslint-plugin-utils';
 import {
@@ -25,7 +25,7 @@ import {
   getBasename,
   isBarrelExport,
   shouldIgnoreFile,
-} from '../../utils/node-path-utils';
+} from '@forge-js/eslint-plugin-utils';
 import {
   type ImportInfo,
   type FileSystemCache,
@@ -36,7 +36,8 @@ import {
   findAllCircularDependencies,
   getMinimalCycle,
   getCycleHash,
-} from '../../utils/node-fs-utils';
+} from '@forge-js/eslint-plugin-utils';
+import type { ResolverSetting } from '@forge-js/eslint-plugin-utils';
 
 type MessageIds =
   | 'moduleSplit'
@@ -345,6 +346,13 @@ export const noCircularDependencies = createRule<RuleOptions, MessageIds>({
     const filename = context.getFilename();
     const workspaceRoot = context.getCwd();
 
+    // Get resolver settings from ESLint settings (compatible with eslint-plugin-import)
+    // eslint-plugin-import uses settings['import/resolver']
+    const settings = context.settings as Record<string, unknown>;
+    const resolverSettings: ResolverSetting | undefined = 
+      (settings?.['import/resolver'] as ResolverSetting) || 
+      (settings?.['@forge-js/llm-optimized/resolver'] as ResolverSetting);
+
     // Skip ignored files early
     if (shouldIgnoreFile(filename, ignorePatterns, sharedCache.compiledPatterns)) {
       return {};
@@ -530,6 +538,7 @@ export const noCircularDependencies = createRule<RuleOptions, MessageIds>({
           workspaceRoot,
           barrelExports,
           cache: sharedCache,
+          resolverSettings,
         });
 
         if (cycles.length > 0) {
@@ -582,6 +591,7 @@ export const noCircularDependencies = createRule<RuleOptions, MessageIds>({
           workspaceRoot,
           barrelExports,
           cache: sharedCache,
+          resolverSettings,
         });
 
         if (!resolved) return;
