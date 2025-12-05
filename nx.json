@@ -94,7 +94,6 @@
     "projects": [
       "packages/eslint-plugin",
       "packages/eslint-plugin-llm-optimized",
-      "packages/eslint-plugin-utils",
       "packages/cli",
       "packages/eslint-plugin-llm",
       "packages/eslint-plugin-mcp",
@@ -120,7 +119,7 @@
         "skipLockFileUpdate": true
       },
       "manifestRootsToUpdate": ["{projectRoot}"],
-      "preReleaseCommand": "pnpm nx run-many -t build --projects=eslint-plugin,eslint-plugin-llm-optimized,eslint-plugin-utils,cli,eslint-plugin-llm,eslint-plugin-mcp,eslint-plugin-mcp-optimized,eslint-plugin-secure-coding",
+      "preReleaseCommand": "pnpm nx run-many -t build --projects=eslint-plugin,eslint-plugin-llm-optimized,cli,eslint-plugin-llm,eslint-plugin-mcp,eslint-plugin-mcp-optimized,eslint-plugin-secure-coding",
       "git": {
         "commit": true,
         "commitArgs": "--no-verify",
