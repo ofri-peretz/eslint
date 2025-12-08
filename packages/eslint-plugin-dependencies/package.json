@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-dependencies",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "ESLint plugin for dependency management with 30 LLM-optimized rules. Covers import validation, module resolution, circular dependencies, and export style enforcement.",
   "type": "commonjs",
   "main": "./src/index.js",
