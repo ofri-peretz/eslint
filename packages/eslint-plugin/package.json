@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin",
-  "version": "1.9.1",
+  "version": "1.10.0",
   "description": "A solid TypeScript-based ESLint plugin infrastructure inspired by typescript-eslint",
   "type": "commonjs",
   "main": "./src/index.js",
