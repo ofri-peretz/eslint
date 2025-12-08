@@ -1,10 +1,16 @@
-import type { TSESTree } from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'noDuplicates';
 
-export const noDuplicates = createRule<[], MessageIds>({
+export interface Options {
+  additionalModules?: string[];
+}
+
+export type RuleOptions = [Options?];
+
+export const noDuplicates = createRule<RuleOptions, MessageIds>({
   name: 'no-duplicates',
   meta: {
     type: 'problem',
@@ -25,11 +31,11 @@ export const noDuplicates = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const imports = new Map<string, TSESTree.ImportDeclaration[]>();
 
     return {
-      ImportDeclaration(node) {
+      ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const source = node.source.value;
         if (!imports.has(source)) {
           imports.set(source, []);
@@ -48,13 +54,13 @@ export const noDuplicates = createRule<[], MessageIds>({
               context.report({
                 node: duplicate,
                 messageId: 'noDuplicates',
-                fix(fixer) {
+                fix(fixer: TSESLint.RuleFixer) {
                   // Simple fix: if both are named imports, merge them
-                  const firstHasDefault = first.specifiers.some(s => s.type === 'ImportDefaultSpecifier');
-                  const duplicateHasDefault = duplicate.specifiers.some(s => s.type === 'ImportDefaultSpecifier');
+                  const firstHasDefault = first.specifiers.some((s: TSESTree.ImportClause) => s.type === 'ImportDefaultSpecifier');
+                  const duplicateHasDefault = duplicate.specifiers.some((s: TSESTree.ImportClause) => s.type === 'ImportDefaultSpecifier');
                   
-                  const firstHasNamespace = first.specifiers.some(s => s.type === 'ImportNamespaceSpecifier');
-                  const duplicateHasNamespace = duplicate.specifiers.some(s => s.type === 'ImportNamespaceSpecifier');
+                  const firstHasNamespace = first.specifiers.some((s: TSESTree.ImportClause) => s.type === 'ImportNamespaceSpecifier');
+                  const duplicateHasNamespace = duplicate.specifiers.some((s: TSESTree.ImportClause) => s.type === 'ImportNamespaceSpecifier');
 
                   if (firstHasNamespace || duplicateHasNamespace) {
                     return null; // Too complex to merge namespace imports automatically
@@ -74,9 +80,9 @@ export const noDuplicates = createRule<[], MessageIds>({
                     return null;
                   }
 
-                  const sourceCode = context.getSourceCode();
-                  const specifiersToAdd = duplicate.specifiers.map(s => sourceCode.getText(s));
-                  const lastSpecifier = first.specifiers[first.specifiers.length - 1];
+                  const sourceCode = context.sourceCode;
+                  const specifiersToAdd = duplicate.specifiers.map((s: TSESTree.ImportClause) => sourceCode.getText(s));
+                  const lastSpecifier = first.specifiers[first.specifiers.length - 1] as TSESTree.ImportClause;
                   
                   const replacement = `, ${specifiersToAdd.join(', ')}`;
                   

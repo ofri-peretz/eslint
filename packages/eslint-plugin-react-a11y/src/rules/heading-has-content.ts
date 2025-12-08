@@ -60,8 +60,8 @@ export const headingHasContent = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const { components = [] } = options || {};
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
+    const { components = [] } = options ?? {} as Options;
     const headings = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', ...components];
 
     return {

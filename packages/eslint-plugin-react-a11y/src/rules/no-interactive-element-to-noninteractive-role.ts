@@ -10,9 +10,7 @@ import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'interactiveToNoninteractive';
 
-type Options = {
-  [key: string]: string[];
-};
+type Options = Record<string, string[]>;
 
 type RuleOptions = [Options?];
 
@@ -57,8 +55,8 @@ export const noInteractiveElementToNoninteractiveRole = createRule<RuleOptions, 
     ],
   },
   defaultOptions: [DEFAULT_EXCEPTIONS],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const exceptions = { ...DEFAULT_EXCEPTIONS, ...options };
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
+    const exceptions: Record<string, string[]> = { ...DEFAULT_EXCEPTIONS, ...options };
 
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
@@ -70,10 +68,11 @@ export const noInteractiveElementToNoninteractiveRole = createRule<RuleOptions, 
         if (!INTERACTIVE_ELEMENTS.has(element)) return;
 
         // Find role attribute
-        const roleAttr = node.attributes.find(attr =>
-          attr.type === 'JSXAttribute' &&
-          attr.name.type === 'JSXIdentifier' &&
-          attr.name.name === 'role'
+        const roleAttr = node.attributes.find(
+          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'role',
         );
 
         if (!roleAttr || roleAttr.type !== 'JSXAttribute' || !roleAttr.value || roleAttr.value.type !== 'Literal') return;

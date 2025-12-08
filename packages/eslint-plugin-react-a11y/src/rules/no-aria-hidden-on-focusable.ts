@@ -14,6 +14,10 @@ type RuleOptions = [];
 
 const FOCUSABLE_ELEMENTS = ['a', 'button', 'input', 'select', 'textarea', 'area'];
 
+const isJSXAttribute = (
+  attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+): attr is TSESTree.JSXAttribute => attr.type === 'JSXAttribute';
+
 export const noAriaHiddenOnFocusable = createRule<RuleOptions, MessageIds>({
   name: 'no-aria-hidden-on-focusable',
   meta: {
@@ -41,10 +45,11 @@ export const noAriaHiddenOnFocusable = createRule<RuleOptions, MessageIds>({
         if (node.name.type !== 'JSXIdentifier') return;
         
         // Check for aria-hidden="true"
-        const ariaHidden = node.attributes.find(attr => 
-            attr.type === 'JSXAttribute' && 
-            attr.name.type === 'JSXIdentifier' && 
-            attr.name.name === 'aria-hidden'
+        const ariaHidden = node.attributes.find(
+          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+            isJSXAttribute(attr) &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'aria-hidden',
         );
 
         if (!ariaHidden || ariaHidden.type !== 'JSXAttribute' || !ariaHidden.value || ariaHidden.value.type !== 'Literal' || ariaHidden.value.value !== 'true') {
@@ -55,10 +60,11 @@ export const noAriaHiddenOnFocusable = createRule<RuleOptions, MessageIds>({
         let isFocusable = FOCUSABLE_ELEMENTS.includes(element);
         
         // Check tabIndex
-        const tabIndex = node.attributes.find(attr => 
-            attr.type === 'JSXAttribute' && 
-            attr.name.type === 'JSXIdentifier' && 
-            attr.name.name === 'tabIndex'
+        const tabIndex = node.attributes.find(
+          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+            isJSXAttribute(attr) &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'tabIndex',
         );
         
         if (tabIndex && tabIndex.type === 'JSXAttribute' && tabIndex.value && tabIndex.value.type === 'Literal') {

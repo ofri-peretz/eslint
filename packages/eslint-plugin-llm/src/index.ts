@@ -11,5 +11,5 @@
  */
 
 // Re-export everything from the scoped package
-export * from '@forge-js/eslint-plugin-llm-optimized';
+export {};
 

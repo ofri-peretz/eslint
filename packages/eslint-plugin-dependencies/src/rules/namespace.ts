@@ -1,10 +1,16 @@
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons, hasParserServices, getParserServices } from '@interlace/eslint-devkit';
 import ts from 'typescript';
 
 type MessageIds = 'namespace';
 
-export const namespace = createRule<[], MessageIds>({
+export interface Options {
+  additionalModules?: string[];
+}
+
+export type RuleOptions = [Options?];
+
+export const namespace = createRule<RuleOptions, MessageIds>({
   name: 'namespace',
   meta: {
     type: 'problem',
@@ -24,20 +30,20 @@ export const namespace = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     if (!hasParserServices(context)) return {};
     
     const services = getParserServices(context);
-    const checker = services.program!.getTypeChecker();
+    const checker = services.program?.getTypeChecker?.();
 
     return {
-      MemberExpression(node) {
+      MemberExpression(node: TSESTree.MemberExpression) {
         // Check if object is a namespace import
         const object = node.object;
         if (object.type !== 'Identifier') return;
 
         const tsNode = services.esTreeNodeToTSNodeMap.get(object);
-        const symbol = checker.getSymbolAtLocation(tsNode);
+        const symbol = checker?.getSymbolAtLocation?.(tsNode);
 
         if (symbol && symbol.declarations && symbol.declarations.length > 0) {
             const declaration = symbol.declarations[0];
@@ -50,8 +56,10 @@ export const namespace = createRule<[], MessageIds>({
                 const propertyName = node.property.name;
                 
                 // This is a bit simplified; we really need to check the type of the symbol
-                const type = checker.getTypeAtLocation(tsNode);
-                const propertySymbol = checker.getPropertyOfType(type, propertyName);
+                const type = checker?.getTypeAtLocation?.(tsNode);
+                if (!type) return;
+                const propertySymbol = checker?.getPropertyOfType?.(type, propertyName);
+                if (!propertySymbol) return;
                 
                 if (!propertySymbol) {
                     context.report({

@@ -1,9 +1,15 @@
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'newlineAfterImport';
 
-export const newlineAfterImport = createRule<[], MessageIds>({
+export interface Options {
+  additionalModules?: string[];
+}
+
+export type RuleOptions = [Options?];
+
+export const newlineAfterImport = createRule<RuleOptions, MessageIds>({
   name: 'newline-after-import',
   meta: {
     type: 'layout',
@@ -24,10 +30,10 @@ export const newlineAfterImport = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
-      ImportDeclaration(node) {
-        const sourceCode = context.getSourceCode();
+      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        const sourceCode = context.sourceCode;
         const nextToken = sourceCode.getTokenAfter(node);
         
         if (!nextToken) return; // End of file
@@ -50,7 +56,7 @@ export const newlineAfterImport = createRule<[], MessageIds>({
              context.report({
                 node,
                 messageId: 'newlineAfterImport',
-                fix(fixer) {
+                fix(fixer: TSESLint.RuleFixer) {
                     const linesBetween = nextToken.loc.start.line - node.loc.end.line;
                     const newlinesToAdd = 2 - linesBetween; // Add enough to make it 2 lines total
                     return fixer.insertTextAfter(node, '\n'.repeat(newlinesToAdd));

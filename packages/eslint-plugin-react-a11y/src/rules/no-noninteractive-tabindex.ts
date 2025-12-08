@@ -127,8 +127,11 @@ export const noNoninteractiveTabindex = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [DEFAULT_OPTIONS],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const { tags = [], roles = ['tabpanel'], allowExpressionValues = true } = { ...DEFAULT_OPTIONS, ...options };
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
+    const { tags = DEFAULT_OPTIONS.tags, roles = DEFAULT_OPTIONS.roles, allowExpressionValues = DEFAULT_OPTIONS.allowExpressionValues } = {
+      ...DEFAULT_OPTIONS,
+      ...options,
+    };
 
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
@@ -137,10 +140,11 @@ export const noNoninteractiveTabindex = createRule<RuleOptions, MessageIds>({
         const elementName = node.name.name;
 
         // Find tabindex attribute
-        const tabindexAttr = node.attributes.find(attr =>
-          attr.type === 'JSXAttribute' &&
-          attr.name.type === 'JSXIdentifier' &&
-          attr.name.name === 'tabIndex'
+        const tabindexAttr = node.attributes.find(
+          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'tabIndex',
         );
 
         if (!tabindexAttr || tabindexAttr.type !== 'JSXAttribute' || !tabindexAttr.value) return;
@@ -161,7 +165,8 @@ export const noNoninteractiveTabindex = createRule<RuleOptions, MessageIds>({
         if (isInteractiveElement(elementName)) return;
 
         // Find role attribute
-        const roleAttr = node.attributes.find(attr =>
+        const roleAttr = node.attributes.find(
+          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
           attr.type === 'JSXAttribute' &&
           attr.name.type === 'JSXIdentifier' &&
           attr.name.name === 'role'

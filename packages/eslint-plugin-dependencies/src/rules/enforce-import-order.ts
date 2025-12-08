@@ -195,7 +195,9 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
       
       // Include trailing comment on the same line
       const commentsAfter = sourceCode.getCommentsAfter(node);
-      const sameLineComment = commentsAfter.find(c => c.loc.start.line === node.loc.end.line);
+      const sameLineComment = commentsAfter.find(
+        (c: TSESTree.Comment): c is TSESTree.Comment => c.loc.start.line === node.loc.end.line,
+      );
       if (sameLineComment) {
         end = sameLineComment.range[1];
       }
@@ -316,7 +318,7 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
               end: lastImport.loc.end,
             },
             messageId: 'importOrder',
-            fix(fixer) {
+            fix(fixer: TSESLint.RuleFixer) {
               const rangeStart = firstExtended[0];
               const rangeEnd = lastExtended[1];
               

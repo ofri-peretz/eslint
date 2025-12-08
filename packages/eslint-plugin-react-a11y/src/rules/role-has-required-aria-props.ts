@@ -37,10 +37,10 @@ export const roleHasRequiredAriaProps = createRule<RuleOptions, MessageIds>({
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         const roleAttr = node.attributes.find(
-            (attr): attr is TSESTree.JSXAttribute => 
-            attr.type === 'JSXAttribute' && 
-            attr.name.type === 'JSXIdentifier' && 
-            attr.name.name === 'role'
+          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'role',
         );
 
         if (!roleAttr || !roleAttr.value || roleAttr.value.type !== 'Literal' || typeof roleAttr.value.value !== 'string') {
@@ -54,7 +54,7 @@ export const roleHasRequiredAriaProps = createRule<RuleOptions, MessageIds>({
             if (requiredProps) {
                 for (const prop of requiredProps) {
                     const hasProp = node.attributes.some(
-                        (attr) => 
+                        (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
                         attr.type === 'JSXAttribute' && 
                         attr.name.type === 'JSXIdentifier' && 
                         attr.name.name === prop

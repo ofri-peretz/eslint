@@ -53,8 +53,8 @@ export const noDistractingElements = createRule<RuleOptions, MessageIds>({
       elements: ['marquee', 'blink'],
     },
   ],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const { elements = ['marquee', 'blink'] } = options || {};
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
+    const { elements = ['marquee', 'blink'] } = options ?? {} as Options;
 
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {

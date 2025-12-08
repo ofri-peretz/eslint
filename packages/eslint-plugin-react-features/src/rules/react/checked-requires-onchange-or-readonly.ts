@@ -8,7 +8,12 @@ import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'checkedRequiresOnChangeOrReadOnly';
 
-export const checkedRequiresOnchangeOrReadonly = createRule<[], MessageIds>({
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface
+export interface Options {}
+
+export type RuleOptions = [Options?];
+
+export const checkedRequiresOnchangeOrReadonly = createRule<RuleOptions, MessageIds>({
   name: 'checked-requires-onchange-or-readonly',
   meta: {
     type: 'problem',
@@ -28,7 +33,7 @@ export const checkedRequiresOnchangeOrReadonly = createRule<[], MessageIds>({
     },
   },
   defaultOptions: [],
-  create(context: TSESLint.RuleContext<MessageIds, []>) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXElement(node: TSESTree.JSXElement) {
         if (node.openingElement.name.type !== 'JSXIdentifier') {

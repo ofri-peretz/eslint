@@ -52,8 +52,8 @@ export const ariaRole = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const { allowedInvalidRoles = [] } = options || {};
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
+    const { allowedInvalidRoles = [] } = options ?? {} as Options;
 
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {

@@ -18,15 +18,20 @@ type RuleOptions = [Options?];
 
 const DEFAULT_AMBIGUOUS_WORDS = ['click here', 'here', 'link', 'a link', 'learn more'];
 
+const isJSXAttribute = (
+  attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
+): attr is TSESTree.JSXAttribute => attr.type === 'JSXAttribute';
+
 /**
  * Extract accessible text from a JSX element
  */
 function getAccessibleText(element: TSESTree.JSXElement): string {
   // Check for aria-label first
-  const ariaLabel = element.openingElement.attributes.find(attr =>
-    attr.type === 'JSXAttribute' &&
-    attr.name.type === 'JSXIdentifier' &&
-    attr.name.name === 'aria-label'
+  const ariaLabel = element.openingElement.attributes.find(
+    (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+      isJSXAttribute(attr) &&
+      attr.name.type === 'JSXIdentifier' &&
+      attr.name.name === 'aria-label',
   );
 
   if (ariaLabel && ariaLabel.type === 'JSXAttribute' && ariaLabel.value && ariaLabel.value.type === 'Literal' && typeof ariaLabel.value.value === 'string') {
@@ -35,10 +40,11 @@ function getAccessibleText(element: TSESTree.JSXElement): string {
 
   // For img elements, use alt text
   if (element.openingElement.name.type === 'JSXIdentifier' && element.openingElement.name.name === 'img') {
-    const altAttr = element.openingElement.attributes.find(attr =>
-      attr.type === 'JSXAttribute' &&
-      attr.name.type === 'JSXIdentifier' &&
-      attr.name.name === 'alt'
+    const altAttr = element.openingElement.attributes.find(
+      (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+        isJSXAttribute(attr) &&
+        attr.name.type === 'JSXIdentifier' &&
+        attr.name.name === 'alt',
     );
 
     if (altAttr && altAttr.type === 'JSXAttribute' && altAttr.value && altAttr.value.type === 'Literal' && typeof altAttr.value.value === 'string') {
@@ -61,22 +67,24 @@ function extractTextFromChildren(children: TSESTree.JSXChild[]): string {
       text += child.value;
     } else if (child.type === 'JSXElement') {
       // Check if element has aria-hidden
-      const hasAriaHidden = child.openingElement.attributes.some(attr =>
-        attr.type === 'JSXAttribute' &&
-        attr.name.type === 'JSXIdentifier' &&
-        attr.name.name === 'aria-hidden' &&
-        attr.value &&
-        attr.value.type === 'Literal' &&
-        (attr.value.value === true || attr.value.value === 'true')
+      const hasAriaHidden = child.openingElement.attributes.some(
+        (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+          isJSXAttribute(attr) &&
+          attr.name.type === 'JSXIdentifier' &&
+          attr.name.name === 'aria-hidden' &&
+          attr.value !== null &&
+          attr.value.type === 'Literal' &&
+          (attr.value.value === true || attr.value.value === 'true'),
       );
 
       if (!hasAriaHidden) {
         // For img elements in anchor text, use alt
         if (child.openingElement.name.type === 'JSXIdentifier' && child.openingElement.name.name === 'img') {
-          const altAttr = child.openingElement.attributes.find(attr =>
-            attr.type === 'JSXAttribute' &&
-            attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'alt'
+          const altAttr = child.openingElement.attributes.find(
+            (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+              isJSXAttribute(attr) &&
+              attr.name.type === 'JSXIdentifier' &&
+              attr.name.name === 'alt',
           );
 
           if (altAttr && altAttr.type === 'JSXAttribute' && altAttr.value && altAttr.value.type === 'Literal' && typeof altAttr.value.value === 'string') {
@@ -163,9 +171,9 @@ export const anchorAmbiguousText = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const { words = DEFAULT_AMBIGUOUS_WORDS } = options || {};
-    const ambiguousWords = words.map(word => normalizeText(word));
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
+    const { words = DEFAULT_AMBIGUOUS_WORDS } = options ?? {};
+    const ambiguousWords = words.map((word: string) => normalizeText(word));
 
     return {
       JSXElement(node: TSESTree.JSXElement) {

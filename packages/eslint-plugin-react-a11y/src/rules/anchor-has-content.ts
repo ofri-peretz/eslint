@@ -74,8 +74,8 @@ export const anchorHasContent = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const { components = [] } = options || {};
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
+    const { components = [] } = options ?? {};
     const anchors = ['a', ...components];
 
     return {

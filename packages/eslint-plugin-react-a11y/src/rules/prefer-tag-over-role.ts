@@ -62,7 +62,8 @@ export const preferTagOverRole = createRule<RuleOptions, MessageIds>({
         const elementName = node.name.name;
 
         // Find role attribute
-        const roleAttr = node.attributes.find(attr =>
+        const roleAttr = node.attributes.find(
+          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
           attr.type === 'JSXAttribute' &&
           attr.name.type === 'JSXIdentifier' &&
           attr.name.name === 'role'
@@ -85,7 +86,8 @@ export const preferTagOverRole = createRule<RuleOptions, MessageIds>({
           const inputType = preferredTag.match(/input\[type="([^"]+)"\]/)?.[1];
           if (inputType) {
             // Check if there's a type attribute that matches
-            const typeAttr = node.attributes.find(attr =>
+            const typeAttr = node.attributes.find(
+              (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
               attr.type === 'JSXAttribute' &&
               attr.name.type === 'JSXIdentifier' &&
               attr.name.name === 'type' &&

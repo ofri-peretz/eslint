@@ -49,9 +49,12 @@ export const imgRedundantAlt = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const { components = DEFAULT_COMPONENTS, words = DEFAULT_REDUNDANT_WORDS } = options || {};
-    const redundantWords = words.map(word => word.toLowerCase());
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
+    const {
+      components = DEFAULT_COMPONENTS,
+      words = DEFAULT_REDUNDANT_WORDS,
+    } = options ?? ({} as Options);
+    const redundantWords: string[] = (words ?? DEFAULT_REDUNDANT_WORDS).map((word: string) => word.toLowerCase());
 
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
@@ -61,7 +64,7 @@ export const imgRedundantAlt = createRule<RuleOptions, MessageIds>({
         if (!components.includes(elementName)) return;
 
         // Check if element is aria-hidden
-        const ariaHidden = node.attributes.find(attr =>
+        const ariaHidden = node.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
           attr.type === 'JSXAttribute' &&
           attr.name.type === 'JSXIdentifier' &&
           attr.name.name === 'aria-hidden'
@@ -72,7 +75,7 @@ export const imgRedundantAlt = createRule<RuleOptions, MessageIds>({
         }
 
         // Find alt attribute
-        const altAttr = node.attributes.find(attr =>
+        const altAttr = node.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
           attr.type === 'JSXAttribute' &&
           attr.name.type === 'JSXIdentifier' &&
           attr.name.name === 'alt'

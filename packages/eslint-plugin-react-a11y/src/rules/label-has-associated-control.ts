@@ -56,14 +56,14 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
       assert: 'either',
       depth: 2,
   }],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
     const { 
         labelComponents = [], 
         labelAttributes = [], 
         controlComponents = [], 
         assert = 'either',
         depth = 2
-    } = options || {};
+    } = options ?? {} as Options;
     
     const labelTags = ['label', ...labelComponents];
     const controlTags = ['input', 'select', 'textarea', 'meter', 'output', 'progress', ...controlComponents];
@@ -71,7 +71,7 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
     function hasNestedControl(node: TSESTree.JSXElement, currentDepth: number): boolean {
         if (currentDepth > depth) return false;
         
-        return node.children.some(child => {
+        return node.children.some((child: TSESTree.JSXChild): child is TSESTree.JSXElement => {
             if (child.type !== 'JSXElement') return false;
             if (child.openingElement.name.type === 'JSXIdentifier' && controlTags.includes(child.openingElement.name.name)) {
                 return true;
@@ -86,11 +86,11 @@ export const labelHasAssociatedControl = createRule<RuleOptions, MessageIds>({
         if (openingElement.name.type !== 'JSXIdentifier' || !labelTags.includes(openingElement.name.name)) return;
 
         // Check htmlFor
-        const hasHtmlFor = openingElement.attributes.some(attr => 
+        const hasHtmlFor = openingElement.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
             attr.type === 'JSXAttribute' && 
             attr.name.type === 'JSXIdentifier' && 
             (attr.name.name === 'htmlFor' || labelAttributes.includes(attr.name.name)) &&
-            attr.value
+            attr.value?.type === 'Literal'
         );
 
         // Check nesting

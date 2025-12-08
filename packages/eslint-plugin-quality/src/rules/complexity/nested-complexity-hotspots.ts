@@ -141,7 +141,7 @@ export const nestedComplexityHotspots = createRule<RuleOptions, MessageIds>({
       countLoops: true,
     },
   ],
-  create(context, [options = {}]) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
     const {
 maxDepth = 4,
       countConditionals = true,

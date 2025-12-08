@@ -1,10 +1,13 @@
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons, hasParserServices, getParserServices } from '@interlace/eslint-devkit';
 import ts from 'typescript';
 
 type MessageIds = 'noDefaultExport';
 
-export const defaultRule = createRule<[], MessageIds>({
+type RuleOptions = [];
+
+export const defaultRule = createRule<RuleOptions, MessageIds>({
   name: 'default',
   meta: {
     type: 'problem',
@@ -24,21 +27,21 @@ export const defaultRule = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     if (!hasParserServices(context)) return {};
     
     const services = getParserServices(context);
-    const checker = services.program!.getTypeChecker();
+    const checker = services.program?.getTypeChecker?.();
 
     return {
-      ImportDefaultSpecifier(node) {
+      ImportDefaultSpecifier(node: TSESTree.ImportDefaultSpecifier) {
         if (node.parent.type === 'ImportDeclaration' && node.parent.importKind === 'type') return;
 
         const tsNode = services.esTreeNodeToTSNodeMap.get(node);
-        const symbol = checker.getSymbolAtLocation(tsNode);
+        const symbol = checker?.getSymbolAtLocation?.(tsNode);
         
         const moduleNode = services.esTreeNodeToTSNodeMap.get(node.parent.source);
-        const moduleSymbol = checker.getSymbolAtLocation(moduleNode);
+        const moduleSymbol = checker?.getSymbolAtLocation?.(moduleNode);
 
         if (moduleSymbol && !symbol) {
              // If module symbol exists but we can't resolve the default import symbol, 
