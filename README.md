@@ -1,10 +1,8 @@
-# 🔧 Forge.js
+# 🧭 ESLint Monorepo
 
-> **Battle-Tested Tools for Engineering Teams**
+> **Plugins, configs, resolvers, and tooling for ESLint-driven code quality**
 
-A collection of open-source tools and libraries built from real-world experience leading and working in engineering organizations. Forge.js addresses the challenges that teams face at scale—code quality, architecture enforcement, developer onboarding, and maintaining consistency across large codebases.
-
-**This isn't another utility library for individual developers.** It's a toolkit designed for teams and organizations who need to ship quality software consistently.
+This monorepo is purpose-built for ESLint. It houses battle-tested plugins, sharable configs, resolvers, and supporting utilities that help teams enforce architecture, security, and consistency with actionable, LLM-friendly feedback.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
@@ -14,15 +12,15 @@ A collection of open-source tools and libraries built from real-world experience
 
 ---
 
-## 📦 Available Tools
+## 📦 Available Packages
 
-This monorepo contains independently versioned packages. Each tool is designed to solve a specific problem that engineering teams face.
+Independently versioned ESLint-focused packages: plugins, configs, resolvers, and supporting utilities.
 
-> **Note**: Version badges are dynamically updated from npm. For the latest version information, visit [npmjs.com](https://www.npmjs.com/search?q=interlace)
+> **Note**: Version badges are dynamically updated from npm. For the latest version information, visit [npmjs.com](https://www.npmjs.com/search?q=eslint-plugin-llm)
 
-### ESLint Plugin — LLM-Optimized Rules
+### ESLint Plugins — LLM-Optimized Rules
 
-The core offering: an ESLint plugin with rules that enforce team conventions and provide AI-friendly error messages. Available under multiple package names for discoverability:
+The core offering: ESLint plugins with rules that enforce team conventions and provide AI-friendly error messages. Available under multiple package names for discoverability:
 
 | Package Name                                                            | Version                                                                                                                                           |
 | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -43,15 +41,13 @@ The core offering: an ESLint plugin with rules that enforce team conventions and
 
 ---
 
-## 🎯 Why Forge.js?
+## 🎯 Why This ESLint Repo?
 
-Every engineering team eventually faces the same problems: inconsistent code patterns, architectural drift, security vulnerabilities sneaking into production, and new hires struggling to understand "how we do things here."
-
-**Forge.js exists because I've lived these problems.** After years of working in organizations—from startups to enterprises—I've built these tools to solve the challenges that matter most to teams:
+ESLint is the backbone for keeping large codebases healthy. These packages target the real problems teams face at scale: inconsistent patterns, architectural drift, security gaps, and slow onboarding. The plugins deliver guardrails plus explanations tuned for humans and LLMs alike.
 
 ### Problems We Solve
 
-| Challenge                      | How Forge.js Helps                                                                       |
+| Challenge                      | How the ESLint stack helps                                                               |
 | ------------------------------ | ---------------------------------------------------------------------------------------- |
 | 🏗️ **Architectural Drift**     | Enforce module boundaries and prevent circular dependencies automatically                |
 | 🔒 **Security Blind Spots**    | Catch hardcoded secrets, injection vulnerabilities, and unsafe patterns before PR review |
@@ -62,7 +58,7 @@ Every engineering team eventually faces the same problems: inconsistent code pat
 ### Design Principles
 
 - **Team-First**: Built for organizations, not just individual developers
-- **Battle-Tested**: Every tool solves a real problem I've encountered in production
+- **Battle-Tested**: Every tool solves a real problem encountered in production
 - **Actionable Feedback**: Error messages explain the "why" and show how to fix
 - **LLM-Ready**: Optimized for modern AI-assisted development workflows
 - **Zero Configuration Burden**: Sensible defaults with escape hatches when needed
@@ -79,7 +75,7 @@ Every engineering team eventually faces the same problems: inconsistent code pat
 
 ## 👥 Who Is This For?
 
-| Role                     | How Forge.js Helps                                                          |
+| Role                     | How these packages help                                                     |
 | ------------------------ | --------------------------------------------------------------------------- |
 | **Tech Leads**           | Enforce architectural decisions automatically instead of during code review |
 | **Platform Teams**       | Provide guardrails that scale across multiple teams and repositories        |
@@ -93,20 +89,20 @@ Every engineering team eventually faces the same problems: inconsistent code pat
 
 We welcome contributions! If you've faced a problem in your organization that could benefit others, we'd love to hear about it.
 
-- **Have an idea?** [Start a discussion](https://github.com/ofri-peretz/forge-js/discussions)
-- **Found a bug?** [Open an issue](https://github.com/ofri-peretz/forge-js/issues)
+- **Have an idea?** [Start a discussion](https://github.com/ofri-peretz/eslint/discussions)
+- **Found a bug?** [Open an issue](https://github.com/ofri-peretz/eslint/issues)
 - **Want to contribute code?** See our [Contributing Guide](./docs/CONTRIBUTING.md)
 
 ---
 
 ## 🔗 Get Started
 
-| Resource                                                                     | Description                          |
-| ---------------------------------------------------------------------------- | ------------------------------------ |
-| 📦 [npm packages](https://www.npmjs.com/search?q=%40forge-js)                | Install and start using the tools    |
-| 📖 [ESLint Plugin Docs](./packages/eslint-plugin/README.md)                  | Full rule documentation and examples |
-| 💬 [GitHub Discussions](https://github.com/ofri-peretz/forge-js/discussions) | Ask questions and share ideas        |
-| 🐛 [Report Issues](https://github.com/ofri-peretz/forge-js/issues)           | Found a bug? Let us know             |
+| Resource                                                                   | Description                          |
+| -------------------------------------------------------------------------- | ------------------------------------ |
+| 📦 [npm packages](https://www.npmjs.com/search?q=eslint-plugin-llm)        | Install and start using the tools    |
+| 📖 [ESLint Plugin Docs](./packages/eslint-plugin/README.md)                | Full rule documentation and examples |
+| 💬 [GitHub Discussions](https://github.com/ofri-peretz/eslint/discussions) | Ask questions and share ideas        |
+| 🐛 [Report Issues](https://github.com/ofri-peretz/eslint/issues)           | Found a bug? Let us know             |
 
 ---
 

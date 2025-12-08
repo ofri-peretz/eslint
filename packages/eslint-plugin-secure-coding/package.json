@@ -17,7 +17,7 @@
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/ofri-peretz/eslint#readme",
+  "homepage": "https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/README.md",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ofri-peretz/eslint.git",
