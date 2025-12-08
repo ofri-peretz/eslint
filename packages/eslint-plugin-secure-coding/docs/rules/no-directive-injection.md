@@ -113,3 +113,4 @@ if (allowedDirectives.includes(directive)) {
 - [`no-unsanitized-html`](./no-unsanitized-html.md) - XSS via innerHTML
 - [`detect-eval-with-expression`](./detect-eval-with-expression.md) - Code injection via eval
 
+

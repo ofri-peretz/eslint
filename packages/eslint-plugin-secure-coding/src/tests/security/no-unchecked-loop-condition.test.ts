@@ -111,6 +111,30 @@ describe('no-unchecked-loop-condition', () => {
     });
   });
 
+  describe('Invalid Code - Complex User Input Expressions', () => {
+    ruleTester.run('invalid - complex expressions with user input', noUncheckedLoopCondition, {
+      valid: [],
+      invalid: [
+        {
+          code: 'while (-userInput > 0) { /* UnaryExpression */ process(); }',
+          errors: [{ messageId: 'userControlledLoopBound' }],
+        },
+        {
+          code: 'while (userInput++ < 100) { /* UpdateExpression */ process(); }',
+          errors: [{ messageId: 'userControlledLoopBound' }],
+        },
+        {
+          code: 'while (!userInput) { /* UnaryExpression ! */ process(); }',
+          errors: [{ messageId: 'userControlledLoopBound' }],
+        },
+        {
+          code: 'while (check(userInput)) { /* CallExpression with user input */ process(); }',
+          errors: [{ messageId: 'userControlledLoopBound' }],
+        },
+      ],
+    });
+  });
+
   describe('Invalid Code - Large Loop Bounds', () => {
     ruleTester.run('invalid - potentially large iteration counts', noUncheckedLoopCondition, {
       valid: [],

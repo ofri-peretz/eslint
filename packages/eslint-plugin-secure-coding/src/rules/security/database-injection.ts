@@ -55,10 +55,8 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
     docs: {
       description: 'Detects SQL and NoSQL injection vulnerabilities with framework-specific fixes',
     },
-    messages: {
-      // 🎯 Token optimization: 42% reduction (52→30 tokens) by removing ❌/✅ labels
-      // This compact format: same clarity, faster LLM processing, lower API costs
-      databaseInjection: formatLLMMessage({
+    messages: (() => {
+      const databaseInjection = formatLLMMessage({
         icon: MessageIcons.SECURITY,
         issueName: 'SQL Injection',
         cwe: 'CWE-89',
@@ -66,72 +64,84 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
         severity: 'CRITICAL',
         fix: 'Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId])',
         documentationLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
-      }),
-      usePrisma: formatLLMMessage({
+      });
+      const usePrisma = formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Use Prisma',
         description: 'Use Prisma ORM',
         severity: 'LOW',
         fix: 'await prisma.user.findMany({ where: { id } })',
         documentationLink: 'https://www.prisma.io/docs',
-      }),
-      useTypeORM: formatLLMMessage({
+      });
+      const useTypeORM = formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Use TypeORM',
         description: 'Use TypeORM with QueryBuilder',
         severity: 'LOW',
         fix: 'userRepository.createQueryBuilder().where("id = :id", { id })',
         documentationLink: 'https://typeorm.io/',
-      }),
-      useParameterized: formatLLMMessage({
+      });
+      const useParameterized = formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Use Parameterized',
         description: 'Use parameterized query',
         severity: 'LOW',
         fix: 'db.query("SELECT * FROM users WHERE id = ?", [userId])',
         documentationLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
-      }),
-      useMongoSanitize: formatLLMMessage({
+      });
+      const useMongoSanitize = formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Use mongo-sanitize',
         description: 'Use mongo-sanitize for MongoDB',
         severity: 'LOW',
         fix: 'sanitize(req.body)',
         documentationLink: 'https://github.com/vkarpov15/mongo-sanitize',
-      }),
-      strategyParameterize: formatLLMMessage({
+      });
+      const strategyParameterize = formatLLMMessage({
         icon: MessageIcons.STRATEGY,
         issueName: 'Parameterize Strategy',
         description: 'Use parameterized queries',
         severity: 'LOW',
         fix: 'Use ? or :name placeholders for user input',
         documentationLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
-      }),
-      strategyORM: formatLLMMessage({
+      });
+      const strategyORM = formatLLMMessage({
         icon: MessageIcons.STRATEGY,
         issueName: 'ORM Strategy',
         description: 'Migrate to ORM for automatic protection',
         severity: 'LOW',
         fix: 'Use Prisma, TypeORM, or Sequelize',
         documentationLink: 'https://www.prisma.io/docs/concepts/overview/why-prisma',
-      }),
-      strategySanitize: formatLLMMessage({
+      });
+      const strategySanitize = formatLLMMessage({
         icon: MessageIcons.STRATEGY,
         issueName: 'Sanitize Strategy',
         description: 'Add input sanitization',
         severity: 'LOW',
         fix: 'Sanitize input as last resort',
         documentationLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
-      }),
-      strategyAuto: formatLLMMessage({
+      });
+      const strategyAuto = formatLLMMessage({
         icon: MessageIcons.STRATEGY,
         issueName: 'Auto Strategy',
         description: 'Apply context-aware injection prevention',
         severity: 'LOW',
         fix: 'Use context-appropriate protection',
         documentationLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
-      }),
-    },
+      });
+
+      return {
+        databaseInjection,
+        usePrisma,
+        useTypeORM,
+        useParameterized,
+        useMongoSanitize,
+        strategyParameterize,
+        strategyORM,
+        strategySanitize,
+        strategyAuto,
+      };
+    })(),
     schema: [
       {
         type: 'object',
@@ -255,6 +265,7 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
       confidence: 'high' | 'medium' | 'low';
     } {
       const text = sourceCode.getText(node);
+      const { trustedSources = [] } = options;
 
       // High confidence taint sources
       const highConfidenceSources = [
@@ -276,6 +287,13 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
       for (const source of mediumConfidenceSources) {
         if (text.includes(source)) {
           return { tainted: true, source, confidence: 'medium' };
+        }
+      }
+
+      // Check if this source is explicitly trusted (only for low-confidence sources)
+      for (const trusted of trustedSources) {
+        if (text.includes(trusted)) {
+          return { tainted: false, confidence: 'low' };
         }
       }
 
@@ -311,6 +329,19 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
     }
 
     /**
+     * Report additional strategy-specific suggestions
+     */
+    function reportStrategySuggestions(node: TSESTree.Node) {
+      const strategyMessageId = selectStrategyMessage();
+      if (strategyMessageId !== 'useParameterized') { // Don't duplicate the main message
+        context.report({
+          node,
+          messageId: strategyMessageId,
+        });
+      }
+    }
+
+    /**
      * Check template literal for SQL or NoSQL injection
      */
     function checkTemplateLiteral(node: TSESTree.TemplateLiteral) {
@@ -322,21 +353,23 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
       const taintedExprs = node.expressions.filter((expr: TSESTree.Expression | TSESTree.SpreadElement) => isTainted(expr).tainted);
         if (taintedExprs.length > 0) {
       const vulnDetails = analyzeVulnerability(node, 'SQL');
+      const data = {
+        type: vulnDetails.type,
+        severity: vulnDetails.severity.toUpperCase(),
+        filePath: filename,
+        line: String(node.loc?.start.line ?? 0),
+        cwe: vulnDetails.cwe,
+        cweCode: vulnDetails.cwe.replace('CWE-', ''),
+        currentExample: `db.query(\`SELECT * FROM users WHERE id = ${'${userId}'}\`)`,
+        fixExample: `Use parameterized: db.query("SELECT * FROM users WHERE id = ?", [userId])`,
+        docLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
+      };
       context.report({
         node,
         messageId: 'databaseInjection',
-        data: {
-          type: vulnDetails.type,
-          severity: vulnDetails.severity.toUpperCase(),
-          filePath: filename,
-          line: String(node.loc?.start.line ?? 0),
-          cwe: vulnDetails.cwe,
-          cweCode: vulnDetails.cwe.replace('CWE-', ''),
-          currentExample: `db.query(\`SELECT * FROM users WHERE id = ${'${userId}'}\`)`,
-          fixExample: `Use parameterized: db.query("SELECT * FROM users WHERE id = ?", [userId])`,
-          docLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
-        },
+        data,
       });
+      reportStrategySuggestions(node);
           return;
         }
       }
@@ -349,21 +382,23 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
           const taintedExprs = node.expressions.filter((expr: TSESTree.Expression | TSESTree.SpreadElement) => isTainted(expr).tainted);
           if (taintedExprs.length > 0) {
             const vulnDetails = analyzeVulnerability(node, 'NoSQL');
+            const data = {
+              type: vulnDetails.type,
+              severity: vulnDetails.severity.toUpperCase(),
+              filePath: filename,
+              line: String(node.loc?.start.line ?? 0),
+              cwe: vulnDetails.cwe,
+              cweCode: vulnDetails.cwe.replace('CWE-', ''),
+              currentExample: `const query = \`this.name === "${'${userName}'}"\``,
+              fixExample: `Sanitize input: const query = \`this.name === "\${mongoSanitize(userName)}"\``,
+              docLink: 'https://owasp.org/www-community/attacks/NoSQL_Injection',
+            };
             context.report({
               node,
               messageId: 'databaseInjection',
-              data: {
-                type: vulnDetails.type,
-                severity: vulnDetails.severity.toUpperCase(),
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
-                cwe: vulnDetails.cwe,
-                cweCode: vulnDetails.cwe.replace('CWE-', ''),
-                currentExample: `const query = \`this.name === "${'${userName}'}"\``,
-                fixExample: `Sanitize input: const query = \`this.name === "\${mongoSanitize(userName)}"\``,
-                docLink: 'https://owasp.org/www-community/attacks/NoSQL_Injection',
-              },
+              data,
             });
+            reportStrategySuggestions(node);
             return;
           }
         }
@@ -382,22 +417,23 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
       if (taintedArgs.length === 0) return;
 
       const vulnDetails = analyzeVulnerability(node, 'NoSQL');
-
+      const data = {
+        type: vulnDetails.type,
+        severity: vulnDetails.severity.toUpperCase(),
+        filePath: filename,
+        line: String(node.loc?.start.line ?? 0),
+        cwe: vulnDetails.cwe,
+        cweCode: vulnDetails.cwe.replace('CWE-', ''),
+        currentExample: `User.findOne({ email: req.body.email })`,
+        fixExample: `Sanitize input: User.findOne({ email: mongoSanitize(req.body.email) })`,
+        docLink: 'https://owasp.org/www-community/attacks/NoSQL_Injection',
+      };
       context.report({
         node,
         messageId: 'databaseInjection',
-        data: {
-          type: vulnDetails.type,
-          severity: vulnDetails.severity.toUpperCase(),
-          filePath: filename,
-          line: String(node.loc?.start.line ?? 0),
-          cwe: vulnDetails.cwe,
-          cweCode: vulnDetails.cwe.replace('CWE-', ''),
-          currentExample: `User.findOne({ email: req.body.email })`,
-          fixExample: `Sanitize input: User.findOne({ email: mongoSanitize(req.body.email) })`,
-          docLink: 'https://owasp.org/www-community/attacks/NoSQL_Injection',
-        },
+        data,
       });
+      reportStrategySuggestions(node);
     }
 
     /**
@@ -423,21 +459,23 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
       }
 
       const vulnDetails = analyzeVulnerability(node, 'SQL');
+      const data = {
+        type: vulnDetails.type,
+        severity: vulnDetails.severity.toUpperCase(),
+        filePath: filename,
+        line: String(node.loc?.start.line ?? 0),
+        cwe: vulnDetails.cwe,
+        cweCode: vulnDetails.cwe.replace('CWE-', ''),
+        currentExample: `const query = "SELECT * FROM users WHERE name = '" + userName + "'"`,
+        fixExample: `Use parameterized: db.query("SELECT * FROM users WHERE name = ?", [userName])`,
+        docLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
+      };
       context.report({
         node,
         messageId: 'databaseInjection',
-        data: {
-          type: vulnDetails.type,
-          severity: vulnDetails.severity.toUpperCase(),
-          filePath: filename,
-          line: String(node.loc?.start.line ?? 0),
-          cwe: vulnDetails.cwe,
-          cweCode: vulnDetails.cwe.replace('CWE-', ''),
-          currentExample: `const query = "SELECT * FROM users WHERE name = '" + userName + "'"`,
-          fixExample: `Use parameterized: db.query("SELECT * FROM users WHERE name = ?", [userName])`,
-          docLink: 'https://owasp.org/www-community/attacks/SQL_Injection',
-        },
+        data,
       });
+      reportStrategySuggestions(node);
     }
 
     return {

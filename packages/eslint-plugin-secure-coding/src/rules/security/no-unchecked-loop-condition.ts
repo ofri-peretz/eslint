@@ -28,12 +28,8 @@ type MessageIds =
   | 'missingLoopTermination'
   | 'largeLoopBound'
   | 'unsafeRecursion'
-  | 'useLoopTimeout'
-  | 'limitLoopIterations'
-  | 'validateLoopBounds'
-  | 'strategyLoopProtection'
-  | 'strategyResourceLimits'
-  | 'strategyCircuitBreaker';
+
+  | 'limitLoopIterations';
 
 export interface Options extends SecurityRuleOptions {
   /** Maximum allowed loop iterations for static analysis */
@@ -115,14 +111,6 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
         fix: 'Add recursion depth limit or use iterative approach',
         documentationLink: 'https://cwe.mitre.org/data/definitions/674.html',
       }),
-      useLoopTimeout: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Use Loop Timeout',
-        description: 'Add timeout protection to loops',
-        severity: 'LOW',
-        fix: 'Use setTimeout or maximum iteration limits',
-        documentationLink: 'https://nodejs.org/api/timers.html#settimeoutcallback-delay-args',
-      }),
       limitLoopIterations: formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Limit Loop Iterations',
@@ -130,38 +118,6 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
         severity: 'LOW',
         fix: 'Add iteration counter with maximum limit',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for',
-      }),
-      validateLoopBounds: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Validate Loop Bounds',
-        description: 'Validate loop bounds before execution',
-        severity: 'LOW',
-        fix: 'Check bounds are reasonable before looping',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/606.html',
-      }),
-      strategyLoopProtection: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Loop Protection Strategy',
-        description: 'Implement loop protection mechanisms',
-        severity: 'LOW',
-        fix: 'Use circuit breakers, timeouts, and iteration limits',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/400.html',
-      }),
-      strategyResourceLimits: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Resource Limits Strategy',
-        description: 'Set resource limits at application level',
-        severity: 'LOW',
-        fix: 'Configure timeouts, memory limits, and CPU limits',
-        documentationLink: 'https://nodejs.org/api/timers.html',
-      }),
-      strategyCircuitBreaker: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Circuit Breaker Strategy',
-        description: 'Implement circuit breaker pattern',
-        severity: 'LOW',
-        fix: 'Fail fast when resource limits are exceeded',
-        documentationLink: 'https://martinfowler.com/bliki/CircuitBreaker.html',
       })
     },
     schema: [
@@ -383,7 +339,15 @@ export const noUncheckedLoopCondition = createRule<RuleOptions, MessageIds>({
         }
         if (node.type === 'CallExpression') {
           // Check for Math.min, parseInt, etc. with user input
-          return checkExpression(node.callee) || node.arguments.filter(arg => arg.type !== 'SpreadElement').some(arg => checkExpression(arg));
+          return (
+            checkExpression(node.callee) ||
+            node.arguments
+              .filter(
+                (arg: TSESTree.CallExpressionArgument): arg is TSESTree.Expression =>
+                  arg.type !== 'SpreadElement',
+              )
+              .some((arg: TSESTree.Expression) => checkExpression(arg))
+          );
         }
         if (node.type === 'BinaryExpression') {
           // Check both sides of binary expressions

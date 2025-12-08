@@ -115,7 +115,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.WARNING,
         issueName: 'Object injection',
         cwe: 'CWE-915',
-        description: 'Object injection/Prototype pollution',
+        description: 'Object injection/Prototype pollution (incl. model/tool outputs)',
         severity: '{{riskLevel}}',
         fix: '{{safeAlternative}}',
         documentationLink: 'https://portswigger.net/web-security/prototype-pollution',
@@ -141,7 +141,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         issueName: 'Whitelist Keys',
         description: 'Whitelist allowed property names',
         severity: 'LOW',
-        fix: 'const ALLOWED = ["name", "email"]; if (ALLOWED.includes(key)) obj[key] = value;',
+        fix: 'const ALLOWED = ["name", "email"]; if (ALLOWED.includes(key)) obj[key] = value; // reject model/tool-supplied unknown keys',
         documentationLink: 'https://portswigger.net/web-security/prototype-pollution',
       }),
       useObjectCreate: formatLLMMessage({

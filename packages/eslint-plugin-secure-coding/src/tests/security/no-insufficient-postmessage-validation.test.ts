@@ -187,6 +187,79 @@ describe('no-insufficient-postmessage-validation', () => {
     });
   });
 
+  describe('Deep Validation Mode', () => {
+    ruleTester.run('deepValidation - origin checks in AST', noInsufficientPostmessageValidation, {
+      valid: [
+        // Deep validation detects event.origin comparison on left side
+        {
+          code: `
+            window.addEventListener('message', (event) => {
+              if (event.origin === 'https://trusted.com') {
+                processData(event.data);
+              }
+            });
+          `,
+          options: [{ deepValidation: true }],
+        },
+        // Deep validation detects includes() on allowedOrigins array
+        {
+          code: `
+            const allowedOrigins = ['https://app1.com'];
+            window.addEventListener('message', (event) => {
+              if (allowedOrigins.includes(event.origin)) {
+                handleMessage(event.data);
+              }
+            });
+          `,
+          options: [{ deepValidation: true }],
+        },
+        // Deep validation detects origin check on right side of comparison
+        {
+          code: `
+            window.addEventListener('message', (event) => {
+              if ('https://trusted.com' === event.origin) {
+                processData(event.data);
+              }
+            });
+          `,
+          options: [{ deepValidation: true }],
+        },
+      ],
+      invalid: [
+        // Deep validation still catches missing origin checks
+        {
+          code: `
+            window.addEventListener('message', (event) => {
+              processData(event.data);
+            });
+          `,
+          options: [{ deepValidation: true }],
+          errors: [{ messageId: 'missingOriginCheck' }],
+        },
+      ],
+    });
+  });
+
+  describe('Allowed Origins Configuration', () => {
+    ruleTester.run('allowedOrigins - specific origin validation', noInsufficientPostmessageValidation, {
+      valid: [
+        // Origin in allowedOrigins list
+        {
+          code: 'window.postMessage(data, "https://allowed.com");',
+          options: [{ allowedOrigins: ['https://allowed.com'] }],
+        },
+      ],
+      invalid: [
+        // Origin NOT in allowedOrigins list triggers useSpecificOrigins
+        {
+          code: 'window.postMessage(data, "https://not-allowed.com");',
+          options: [{ allowedOrigins: ['https://only-this.com'] }],
+          errors: [{ messageId: 'useSpecificOrigins' }],
+        },
+      ],
+    });
+  });
+
   describe('Complex PostMessage Scenarios', () => {
     ruleTester.run('complex - real-world postMessage patterns', noInsufficientPostmessageValidation, {
       valid: [],
@@ -221,6 +294,67 @@ describe('no-insufficient-postmessage-validation', () => {
           ],
         },
       ],
+    });
+  });
+
+  describe('onmessage Assignment Patterns', () => {
+    ruleTester.run('onmessage - assignment edge cases', noInsufficientPostmessageValidation, {
+      valid: [
+        // onmessage with origin validation
+        {
+          code: `
+            window.onmessage = (event) => {
+              if (event.origin === 'https://trusted.com') {
+                handleMessage(event.data);
+              }
+            };
+          `,
+        },
+        // onmessage with safe annotation
+        {
+          code: `
+            /** @safe-message */
+            window.onmessage = (event) => {
+              handleMessage(event.data);
+            };
+          `,
+        },
+      ],
+      invalid: [
+        // FunctionExpression without origin validation
+        {
+          code: `
+            window.onmessage = function(event) {
+              handleMessage(event.data);
+            };
+          `,
+          errors: [{ messageId: 'missingOriginCheck' }],
+        },
+      ],
+    });
+  });
+
+  describe('Edge Cases and Boundary Conditions', () => {
+    ruleTester.run('edge cases - various patterns', noInsufficientPostmessageValidation, {
+      valid: [
+        // Non-message event type (should not be flagged)
+        {
+          code: `
+            window.addEventListener('click', (event) => {
+              handleClick(event);
+            });
+          `,
+        },
+        // postMessage with only one argument (no origin)
+        {
+          code: 'window.postMessage(data);',
+        },
+        // postMessage with non-literal origin
+        {
+          code: 'window.postMessage(data, targetOrigin);',
+        },
+      ],
+      invalid: [],
     });
   });
 });

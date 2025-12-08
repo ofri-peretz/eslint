@@ -182,6 +182,11 @@ describe('detect-child-process', () => {
           code: 'child_process.fork(userScript);',
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
+        // Test with forkSync to trigger forkSync case in generateRefactoringSteps (lines 429-438)
+        {
+          code: 'child_process.forkSync(userScript);',
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
       ],
     });
 

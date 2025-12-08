@@ -1,6 +1,6 @@
-# Contributing to Forge.js
+# Contributing to eslint Repository
 
-Thank you for your interest in contributing to Forge.js! This guide provides structured, predictable contribution guidelines.
+Thank you for your interest in contributing to eslint repository! This guide provides structured, predictable contribution guidelines.
 
 ## 📋 Table of Contents
 
@@ -18,8 +18,8 @@ Thank you for your interest in contributing to Forge.js! This guide provides str
 
 ### How to Report a Bug
 
-1. **Check existing issues** - Search [GitHub Issues](https://github.com/ofri-peretz/forge-js/issues) to see if the bug is already reported
-2. **Create a new issue** - Use the [bug report template](https://github.com/ofri-peretz/forge-js/issues/new?template=bug_report.md)
+1. **Check existing issues** - Search [GitHub Issues](https://github.com/ofri-peretz/eslint/issues) to see if the bug is already reported
+2. **Create a new issue** - Use the [bug report template](https://github.com/ofri-peretz/eslint/issues/new?template=bug_report.md)
 3. **Provide details**:
    - Clear description of the bug
    - Steps to reproduce
@@ -62,8 +62,8 @@ Add any other context about the problem here.
 
 ### How to Request a Feature
 
-1. **Check existing requests** - Search [GitHub Issues](https://github.com/ofri-peretz/forge-js/issues) and [Discussions](https://github.com/ofri-peretz/forge-js/discussions)
-2. **Create a feature request** - Use the [feature request template](https://github.com/ofri-peretz/forge-js/issues/new?template=feature_request.md)
+1. **Check existing requests** - Search [GitHub Issues](https://github.com/ofri-peretz/eslint/issues) and [Discussions](https://github.com/ofri-peretz/eslint/discussions)
+2. **Create a feature request** - Use the [feature request template](https://github.com/ofri-peretz/eslint/issues/new?template=feature_request.md)
 3. **Provide context**:
    - Use case and problem it solves
    - Proposed solution or API design
@@ -95,8 +95,8 @@ Add any other context or screenshots about the feature request here.
 1. **Fork and clone** the repository:
 
    ```bash
-   git clone https://github.com/your-username/forge-js.git
-   cd forge-js
+   git clone https://github.com/your-username/eslint.git
+   cd eslint
    ```
 
 2. **Install dependencies**:
@@ -292,8 +292,8 @@ How was this tested?
 
 ## 📞 Getting Help
 
-- **Questions**: [GitHub Discussions](https://github.com/ofri-peretz/forge-js/discussions)
-- **Issues**: [GitHub Issues](https://github.com/ofri-peretz/forge-js/issues)
+- **Questions**: [GitHub Discussions](https://github.com/ofri-peretz/eslint/discussions)
+- **Issues**: [GitHub Issues](https://github.com/ofri-peretz/eslint/issues)
 - **Documentation**: See [docs/](./docs/) folder
 
 ---

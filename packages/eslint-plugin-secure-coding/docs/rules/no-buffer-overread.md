@@ -123,3 +123,4 @@ function safeRead(buf: Buffer, offset: number): number | undefined {
 - [`no-unlimited-resource-allocation`](./no-unlimited-resource-allocation.md) - Unbounded allocations
 - [`detect-non-literal-fs-filename`](./detect-non-literal-fs-filename.md) - Path traversal
 
+

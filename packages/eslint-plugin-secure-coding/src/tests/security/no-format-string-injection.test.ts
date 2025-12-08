@@ -408,6 +408,29 @@ describe('no-format-string-injection', () => {
             },
           ],
         },
+        // Concatenation in format string (BinaryExpression visitor)
+        {
+          code: 'util.format("User: " + userInput, data);',
+          errors: [{ messageId: 'userControlledFormatString' }],
+        },
+        // Complex concatenation
+        {
+          code: 'util.format("Prefix " + (safe + userInput), data);',
+          errors: [{ messageId: 'userControlledFormatString' }],
+        },
+        // Variable assigned from concatenation used as format string
+        {
+          code: `
+            const fmt = "Template: " + userInput;
+            util.format(fmt, data);
+          `,
+          errors: [{ messageId: 'userControlledFormatString' }], // Caught by VariableDeclarator visitor
+        },
+        // Printf specific test
+        {
+          code: 'printf(userInput, arg1);',
+          errors: [{ messageId: 'userControlledFormatString' }],
+        },
       ],
     });
   });

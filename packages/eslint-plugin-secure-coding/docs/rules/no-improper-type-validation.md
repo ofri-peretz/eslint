@@ -129,3 +129,4 @@ if (result.success) {
 - [`no-unvalidated-user-input`](./no-unvalidated-user-input.md) - Unvalidated user input
 - [`detect-object-injection`](./detect-object-injection.md) - Prototype pollution
 
+

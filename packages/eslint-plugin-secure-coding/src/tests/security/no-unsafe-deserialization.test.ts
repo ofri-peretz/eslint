@@ -59,10 +59,18 @@ describe('no-unsafe-deserialization', () => {
     });
   });
 
-  describe('Invalid Code - Function Constructor', () => {
+  describe('Invalid Code - Dangerous Function Constructor', () => {
     ruleTester.run('invalid - dangerous Function constructor', noUnsafeDeserialization, {
       valid: [],
       invalid: [
+        {
+          code: 'const func = new Function(req.body.input);',
+          errors: [{ messageId: 'dangerousFunctionConstructor' }],
+        },
+        {
+          code: 'const func = Function("a", "b", req.query.code);',
+          errors: [{ messageId: 'dangerousFunctionConstructor' }],
+        },
       ],
     });
   });
@@ -71,6 +79,10 @@ describe('no-unsafe-deserialization', () => {
     ruleTester.run('invalid - unsafe YAML parsing', noUnsafeDeserialization, {
       valid: [],
       invalid: [
+        {
+          code: 'const yaml = require("yaml"); const obj = yaml.parse(userInput);',
+          errors: [{ messageId: 'unsafeDeserialization' }],
+        },
       ],
     });
   });
@@ -79,6 +91,78 @@ describe('no-unsafe-deserialization', () => {
     ruleTester.run('invalid - dangerous deserialization libraries', noUnsafeDeserialization, {
       valid: [],
       invalid: [
+        {
+          code: 'const serialize = require("node-serialize"); serialize.unserialize(userInput);',
+          errors: [
+            { messageId: 'unsafeDeserialization' },
+          ],
+        },
+        // Test custom alias to verify VariableDeclaration tracking works where CallExpression might fail
+        // (If unserialize is strictly standard name)
+        {
+          code: 'const myLib = require("node-serialize"); myLib.unserialize(userInput);',
+          errors: [
+            { messageId: 'unsafeDeserialization' },
+          ],
+        },
+      ],
+    });
+  });
+
+  describe('Advanced Data Flow Coverage', () => {
+    ruleTester.run('coverage - tracking untrusted sources', noUnsafeDeserialization, {
+      valid: [
+        // Validated variable
+        {
+          code: `
+            const input = req.body;
+            const safe = validateInput(input);
+            const obj = JSON.parse(safe);
+          `,
+          options: [{ validationFunctions: ['validateInput'] }],
+        },
+      ],
+      invalid: [
+        // fs.readFileSync source
+        {
+          code: `
+            const fs = require('fs');
+            const data = fs.readFileSync('data.json'); 
+            // data is marked untrusted by VariableDeclaration visitor
+            eval(data);
+          `,
+          errors: [{
+            messageId: 'dangerousEvalUsage',
+            suggestions: [{
+              messageId: 'useSafeDeserializer',
+              output: `
+            const fs = require('fs');
+            const data = fs.readFileSync('data.json'); 
+            // data is marked untrusted by VariableDeclaration visitor
+            JSON.parse(data);
+          `
+            }]
+          }],
+        },
+        // Function parameter untrusted
+        {
+          code: `
+            function process(input) {
+              eval(input);
+            }
+          `,
+          errors: [{
+            messageId: 'dangerousEvalUsage',
+            suggestions: [{
+              messageId: 'useSafeDeserializer',
+              output: `
+            function process(input) {
+              JSON.parse(input);
+            }
+          `
+            }]
+          }],
+        },
       ],
     });
   });
@@ -196,6 +280,9 @@ describe('no-unsafe-deserialization', () => {
             {
               messageId: 'unsafeDeserialization',
             },
+            {
+              messageId: 'unsafeDeserialization',
+            },
           ],
         },
         {
@@ -209,6 +296,9 @@ describe('no-unsafe-deserialization', () => {
             }
           `,
           errors: [
+            {
+              messageId: 'unsafeDeserialization',
+            },
             {
               messageId: 'unsafeYamlParsing',
             },

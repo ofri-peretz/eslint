@@ -266,7 +266,7 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
       recoveryKeywords = ['reset', 'password', 'recovery', 'forgot', 'token', 'resetToken'],
       secureTokenFunctions = ['crypto.randomBytes', 'crypto.randomUUID', 'randomBytes', 'generateSecureToken'],
       trustedSanitizers = [],
-      trustedAnnotations = [],
+      trustedAnnotations = ['secure-recovery', 'rate-limited'],
       strictMode = false,
     }: Options = options;
 
@@ -325,7 +325,7 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
           if (node.init.type === 'CallExpression') {
             if (!isSecureTokenGeneration(node.init)) {
               // FALSE POSITIVE REDUCTION
-              if (safetyChecker.isSafe(node, context)) {
+              if (safetyChecker.isSafe(node, context) || (node.parent && safetyChecker.isSafe(node.parent, context))) {
                 return;
               }
 
@@ -343,7 +343,7 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
             const weakPatterns = ['Date.now()', 'Math.random()', 'timestamp', 'new Date()'];
             if (weakPatterns.some(pattern => initText.includes(pattern))) {
               // FALSE POSITIVE REDUCTION
-              if (safetyChecker.isSafe(node, context)) {
+              if (safetyChecker.isSafe(node, context) || (node.parent && safetyChecker.isSafe(node.parent, context))) {
                 return;
               }
 
@@ -414,19 +414,23 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
         // Check for console.log, logger calls
         if ((callee.type === 'MemberExpression' &&
              callee.object.type === 'Identifier' &&
-             callee.object.name === 'console' &&
+             (callee.object.name === 'console' || callee.object.name === 'logger') &&
              callee.property.type === 'Identifier' &&
              ['log', 'info', 'warn', 'error'].includes(callee.property.name)) ||
             (callee.type === 'Identifier' && callee.name === 'logger')) {
 
           const args = node.arguments;
           for (const arg of args) {
+             // Ignore literal strings (labels, messages) - focusing on sensitive variables
+             if (arg.type === 'Literal') {
+               continue;
+             }
             const argText = sourceCode.getText(arg).toLowerCase();
 
             // Check if logging recovery-related sensitive data
             if (isRecoveryRelated(argText) &&
                 (argText.includes('token') || argText.includes('password') ||
-                 argText.includes('reset') || argText.includes('recovery'))) {
+                 argText.includes('reset') || argText.includes('code'))) {
               // FALSE POSITIVE REDUCTION
               if (safetyChecker.isSafe(node, context)) {
                 continue;

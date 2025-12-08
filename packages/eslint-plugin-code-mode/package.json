@@ -9,22 +9,18 @@
     ".": {
       "types": "./src/index.d.ts",
       "default": "./src/index.js"
-    },
-    "./types": {
-      "types": "@forge-js/eslint-plugin-llm-optimized/src/index.d.ts",
-      "default": "@forge-js/eslint-plugin-llm-optimized/src/index.js"
     }
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/ofri-peretz/forge-js#readme",
+  "homepage": "https://github.com/ofri-peretz/eslint#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ofri-peretz/forge-js.git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-code-mode"
   },
   "bugs": {
-    "url": "https://github.com/ofri-peretz/forge-js/issues"
+    "url": "https://github.com/ofri-peretz/eslint/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -55,13 +51,9 @@
   "dependencies": {
     "tslib": "^2.3.0"
   },
-  "peerDependencies": {
-    "@forge-js/eslint-plugin-llm-optimized": "^1.0.0"
-  },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
     "@typescript-eslint/rule-tester": "^8.46.2",
-    "@forge-js/eslint-plugin-llm-optimized": "^1.0.0",
     "vitest": "^4.0.6"
   }
 }

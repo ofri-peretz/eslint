@@ -300,11 +300,24 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
           const methodName = property.name.toLowerCase();
           
           if (routeHandlerPatterns.includes(methodName)) {
+            // Extract route path if available
+            let routePath = 'unknown';
+            if (node.arguments.length > 0 && node.arguments[0].type === 'Literal') {
+              routePath = String(node.arguments[0].value);
+            } else if (node.arguments.length > 0) {
+              const pathText = sourceCode.getText(node.arguments[0]);
+              routePath = pathText;
+            }
+
             const text = sourceCode.getText(node);
-            
-            // Check if it matches any ignore pattern
+            const pathIgnored = matchesIgnorePattern(routePath, ignorePatterns);
+            if (pathIgnored) {
+               console.log('DEBUG MSG: Ignored path:', routePath);
+               return;
+            }
             if (matchesIgnorePattern(text, ignorePatterns)) {
-              return;
+               console.log('DEBUG MSG: Ignored text:', text);
+               return;
             }
 
             // Check if authentication middleware is present in arguments
@@ -349,15 +362,6 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
             }
 
             if (!hasAuth) {
-              // Extract route path if available
-              let routePath = 'unknown';
-              if (node.arguments.length > 0 && node.arguments[0].type === 'Literal') {
-                routePath = String(node.arguments[0].value);
-              } else if (node.arguments.length > 0) {
-                const pathText = sourceCode.getText(node.arguments[0]);
-                routePath = pathText;
-              }
-
               context.report({
                 node: node.callee,
                 messageId: 'missingAuthentication',

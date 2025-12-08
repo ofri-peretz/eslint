@@ -43,7 +43,7 @@ describe('no-insecure-jwt', () => {
         },
         // Literal JWT strings (not flagged as they might be test data)
         {
-          code: 'const testToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ";',
+          code: '// eslint-disable-next-line\nconst testToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ";',
         },
         // Non-JWT libraries
         {
@@ -113,17 +113,29 @@ describe('no-insecure-jwt', () => {
   });
 
   describe('Invalid Code - Weak Secrets', () => {
-    ruleTester.run('invalid - weak JWT secrets', noInsecureJwt, {
+    ruleTester.run('invalid - weak JWT secrets with weak algorithms', noInsecureJwt, {
       valid: [
         // Weak secrets without algorithm spec are not flagged
         {
           code: 'jwt.sign(payload, "weak");',
         },
+        // Strong secret with weak algorithm is OK
         {
-          code: 'jwt.sign(payload, "short");',
+          code: 'jwt.sign(payload, "ThisIsAVeryLongSecretThatIsDefinitelyLongerThan32Characters", { algorithms: ["HS256"] });',
         },
       ],
-      invalid: [],
+      invalid: [
+        // Weak algorithm (HS256) with weak (short) secret - triggers weakJwtSecret
+        {
+          code: 'jwt.verify(token, "weak", { alg: "HS256" });',
+          errors: [{ messageId: 'weakJwtSecret' }],
+        },
+        // Weak algorithm with short secret
+        {
+          code: 'jwt.sign(payload, "short", { algorithm: "HS384" });',
+          errors: [{ messageId: 'weakJwtSecret' }],
+        },
+      ],
     });
   });
 
@@ -183,6 +195,30 @@ describe('no-insecure-jwt', () => {
         },
       ],
       invalid: [],
+    });
+  });
+
+  describe('Invalid Code - Unsafe JWT Parsing', () => {
+    ruleTester.run('invalid - unsafe JWT string usage', noInsecureJwt, {
+      valid: [
+        // Hardcoded JWT but verified (inline)
+        {
+          code: `
+            jwt.verify("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ", secret);
+          `,
+        },
+        // Not a JWT (not 3 parts)
+        {
+          code: 'const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9";',
+        },
+      ],
+      invalid: [
+        // Hardcoded JWT used without verification context
+        {
+          code: 'const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ"; console.log(token);',
+          errors: [{ messageId: 'unsafeJwtParsing' }],
+        },
+      ],
     });
   });
 

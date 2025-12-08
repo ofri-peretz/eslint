@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial release with 48 security-focused ESLint rules
-- LLM-optimized error messages with CWE references and OWASP mapping
+- LLM-optimized error messages with [CWE](https://cwe.mitre.org/) references and [OWASP](https://owasp.org/Top10/) mapping
 - Three preset configurations: `recommended`, `strict`, `owasp-top-10`
 - Full ESLint 9 flat config support
 - TypeScript support

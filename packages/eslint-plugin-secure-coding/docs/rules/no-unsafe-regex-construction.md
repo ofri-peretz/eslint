@@ -1,21 +1,26 @@
 # no-unsafe-regex-construction
 
-> **Keywords:** no unsafe regex construction, security, ESLint rule, JavaScript, TypeScript, CWE-400
+> **Keywords:** no unsafe regex construction, security, ESLint rule, JavaScript, TypeScript, CWE-400, CWE-185, ReDoS, injection
 
 ESLint Rule: no-unsafe-regex-construction with LLM-optimized suggestions and auto-fix capabilities.
 
 ## Quick Summary
 
-| Aspect         | Details                                      |
-| -------------- | -------------------------------------------- |
-| **Severity**   | Error (code quality)                        |
-| **Auto-Fix**   | ❌ No                                        |
-| **Category**   | Security |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration      |
-| **Best For**   | Production applications                      |
-| **Suggestions** | ✅ 5 available           |
+| Aspect          | Details                                     |
+| --------------- | ------------------------------------------- |
+| **Severity**    | Error (Security)                            |
+| **Auto-Fix**    | ❌ No                                       |
+| **Category**    | Security                                    |
+| **ESLint MCP**  | ✅ Optimized for ESLint MCP integration     |
+| **Best For**    | Production applications handling user input |
+| **Suggestions** | ✅ Advice on escaping input                 |
 
 ## Rule Details
+
+This rule detects the creation of `RegExp` objects using user-controlled input. Constructing a regular expression from untrusted input is dangerous because it leads to:
+
+1.  **ReDoS (Regular Expression Denial of Service)**: An attacker can provide a pattern that causes catastrophic backtracking (e.g., `(a+)+`).
+2.  **Logic Errors**: An attacker can inject special characters (like `*`, `+`, `|`) to alter the matching behavior in unintended ways.
 
 ```mermaid
 %%{init: {
@@ -32,69 +37,85 @@ ESLint Rule: no-unsafe-regex-construction with LLM-optimized suggestions and aut
   }
 }}%%
 flowchart TD
-    A[🔍 Detect no unsafe regex construction] --> B{Valid pattern?}
-    B -->|❌ No| C[🚨 Report violation]
-    B -->|✅ Yes| D[✅ Pass]
+    Start[User Input] --> Construct{new RegExp(input)}
+    Construct -->|Unescaped| Risk[🚨 ReDoS / Injection Risk]
+    Construct -->|Escaped| Safe[✅ Safe Pattern]
+
+    Risk -->|Attacker Input| Crash[💥 App Crash/Dos]
 
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
+    classDef warnNode fill:#fffbeb,stroke:#d97706,stroke-width:2px,color:#1f2937
 
-    class A startNode
-    class C errorNode
+    class Start startNode
+    class Crash errorNode
+    class Risk warnNode
 ```
 
 ### Why This Matters
 
-| Issue                | Impact                                | Solution                    |
-| -------------------- | ------------------------------------- | --------------------------- |
-| 🔒 **Security/Code Quality** | [Specific issue] | [Solution approach] |
-| 🐛 **Maintainability** | [Impact] | [Fix] |
-| ⚡ **Performance**   | [Impact] | [Optimization] |
+| Issue           | Impact                              | Solution                                 |
+| --------------- | ----------------------------------- | ---------------------------------------- |
+| 🔒 **Security** | Denial of Service (DoS)             | Escape user input before creating RegExp |
+| 🐛 **Logic**    | Regex Injection (bypassing filters) | Use `escape-string-regexp`               |
 
 ## Configuration
 
-**No configuration options available.**
+This rule accepts an options object:
+
+```typescript
+{
+  "rules": {
+    "security/no-unsafe-regex-construction": ["error", {
+      "allowLiterals": false,           // Default: false. Allow new RegExp("fixed-string").
+      "trustedEscapingFunctions": ["escapeRegex", "escape", "sanitize"], // Default list of safe functions.
+      "maxPatternLength": 100           // Default: 100. Limit the length of dynamic patterns.
+    }]
+  }
+}
+```
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```typescript
-// Example of incorrect usage
+// Direct user input usage
+const pattern = new RegExp(req.query.search);
+
+// Template literal with user input
+const pattern2 = new RegExp(`^${userPrefix}`);
+
+// Passing variables without sanitization
+function search(term) {
+  return new RegExp(term, 'i');
+}
 ```
 
 ### ✅ Correct
 
 ```typescript
-// Example of correct usage
+import escapeStringRegexp from 'escape-string-regexp';
+
+// Escaping input first
+const safePattern = new RegExp(escapeStringRegexp(req.query.search));
+
+// Fixed strings (if allowLiterals: true)
+const fixed = new RegExp('^[a-z]+$');
+
+// RegExp literal (always preferred if pattern is static)
+const literal = /^[a-z]+$/;
 ```
 
-## Configuration Examples
+## LLM-Based Suggestions
 
-### Basic Usage
+The rule provides guidance on how to fix detected patterns:
 
-```javascript
-// eslint.config.mjs
-export default [
-  {
-    rules: {
-      '@forge-js/no-unsafe-regex-construction': 'error',
-    },
-  },
-];
-```
-
-## LLM-Optimized Output
-
-```
-🚨 no unsafe regex construction | Description | MEDIUM
-   Fix: Suggestion | Reference
-```
-
-## Related Rules
-
-- [`rule-name`](./rule-name.md) - Description
+- **"Escape User Input"**: Suggests using a library like `escape-string-regexp` to neutralize special characters.
+- **"Use Literal"**: Suggests converting `new RegExp("constant")` to `/constant/` if possible.
 
 ## Further Reading
 
-- **[Reference](https://example.com)** - Description
+- [OWASP: Regular Expression Denial of Service](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)
+- [MDN: RegExp](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp)
+- [NPM: escape-string-regexp](https://www.npmjs.com/package/escape-string-regexp)

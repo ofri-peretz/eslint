@@ -91,6 +91,76 @@ const COMMAND_PATTERNS: CommandPattern[] = [
       ]
     },
     effort: '20-30 minutes'
+  },
+  {
+    method: 'execFile',
+    dangerous: true,
+    vulnerability: 'command-injection',
+    safeAlternatives: ['spawn'],
+    example: {
+      bad: 'execFile(userCommand, userArgs, callback)',
+      good: [
+        'spawn(validatedCommand, validatedArgs, {shell: false})',
+        '// Validate command and args first'
+      ]
+    },
+    effort: '10-15 minutes'
+  },
+  {
+    method: 'execFileSync',
+    dangerous: true,
+    vulnerability: 'command-injection',
+    safeAlternatives: ['spawnSync'],
+    example: {
+      bad: 'execFileSync(userCommand, userArgs)',
+      good: [
+        'spawnSync(validatedCommand, validatedArgs, {shell: false})',
+        '// Validate command and args first'
+      ]
+    },
+    effort: '10-15 minutes'
+  },
+  {
+    method: 'spawnSync',
+    dangerous: false,
+    vulnerability: 'argument-injection',
+    safeAlternatives: ['spawnSync with validation'],
+    example: {
+      bad: 'spawnSync(\'bash\', [\'-c\', userCommand])',
+      good: [
+        'spawnSync(validatedCommand, validatedArgs, {shell: false})',
+        '// Validate command and args first'
+      ]
+    },
+    effort: '15-20 minutes'
+  },
+  {
+    method: 'fork',
+    dangerous: true,
+    vulnerability: 'command-injection',
+    safeAlternatives: ['spawn'],
+    example: {
+      bad: 'fork(userScript)',
+      good: [
+        'spawn(\'node\', [validatedScript], {shell: false})',
+        '// Validate script path first'
+      ]
+    },
+    effort: '15-20 minutes'
+  },
+  {
+    method: 'forkSync',
+    dangerous: true,
+    vulnerability: 'command-injection',
+    safeAlternatives: ['spawnSync'],
+    example: {
+      bad: 'forkSync(userScript)',
+      good: [
+        'spawnSync(\'node\', [validatedScript], {shell: false, stdio: \'inherit\'})',
+        '// Validate script path first'
+      ]
+    },
+    effort: '15-20 minutes'
   }
 ];
 
@@ -317,6 +387,51 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
             '   3. Use {shell: false} to prevent shell injection',
             '   4. Validate command exists and is executable',
             '   5. Consider using cross-spawn for cross-platform safety'
+          ].join('\n');
+
+        case 'execFile':
+          return [
+            '   1. Replace execFile() with spawn() for better security',
+            '   2. Validate command path before execution',
+            '   3. Ensure arguments are properly sanitized',
+            '   4. Use {shell: false} option',
+            '   5. Consider using execa library'
+          ].join('\n');
+
+        case 'execFileSync':
+          return [
+            '   1. Replace execFileSync() with spawnSync() for better security',
+            '   2. Validate command path before execution',
+            '   3. Ensure arguments are properly sanitized',
+            '   4. Use {shell: false} option',
+            '   5. Consider using execa library'
+          ].join('\n');
+
+        case 'spawnSync':
+          return [
+            '   1. Ensure first argument is a safe, validated command path',
+            '   2. Pass arguments as separate array elements',
+            '   3. Use {shell: false} to prevent shell injection',
+            '   4. Validate command exists and is executable',
+            '   5. Handle synchronous execution properly'
+          ].join('\n');
+
+        case 'fork':
+          return [
+            '   1. Replace fork() with spawn() for Node.js scripts',
+            '   2. Validate script path exists and is readable',
+            '   3. Use spawn(\'node\', [scriptPath], options) instead',
+            '   4. Add proper error handling',
+            '   5. Consider using child_process.execFile() for simple scripts'
+          ].join('\n');
+
+        case 'forkSync':
+          return [
+            '   1. Replace forkSync() with spawnSync() for Node.js scripts',
+            '   2. Validate script path exists and is readable',
+            '   3. Use spawnSync(\'node\', [scriptPath], options) instead',
+            '   4. Add proper error handling and synchronous waiting',
+            '   5. Consider using child_process.execFileSync() for simple scripts'
           ].join('\n');
 
         default:

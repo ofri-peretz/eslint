@@ -7,8 +7,9 @@
 All packages in this monorepo are released using **Nx Release** with **Semantic Versioning** (SemVer). Releases are automated via GitHub Actions and follow conventional commits.
 
 **Active Packages:**
+
 - `@forge-js/eslint-plugin-llm-optimized` (packages/eslint-plugin)
-- `@interlace/eslint-devkit` (packages/eslint-plugin-utils)
+- `@interlace/eslint-devkit` (packages/eslint-devkit)
 
 ## Release Process Flow
 
@@ -29,7 +30,7 @@ flowchart LR
     D -->|Create| E["🏷️ Git Tag<br/>& Commit"]
     E -->|Push| F["📦 NPM<br/>Publish"]
     F --> G["✅ Release<br/>Complete"]
-    
+
     style A fill:#f0fdf4,stroke:#16a34a,stroke-width:2px
     style B fill:#dbeafe,stroke:#2563eb,stroke-width:2px
     style C fill:#fef3c7,stroke:#ca8a04,stroke-width:2px
@@ -39,12 +40,12 @@ flowchart LR
 
 ## Semantic Versioning Guide
 
-| Commit Type | Version Bump | Example |
-|------------|--------------|---------|
-| `fix:` | Patch (0.2.1 → **0.2.2**) | Bug fixes, patches |
-| `feat:` | Minor (0.2.1 → **0.3.0**) | New features |
-| `BREAKING CHANGE:` | Major (0.2.1 → **1.0.0**) | Incompatible changes |
-| `refactor:`, `docs:`, `chore:` | ❌ No bump | Code improvements only |
+| Commit Type                    | Version Bump              | Example                |
+| ------------------------------ | ------------------------- | ---------------------- |
+| `fix:`                         | Patch (0.2.1 → **0.2.2**) | Bug fixes, patches     |
+| `feat:`                        | Minor (0.2.1 → **0.3.0**) | New features           |
+| `BREAKING CHANGE:`             | Major (0.2.1 → **1.0.0**) | Incompatible changes   |
+| `refactor:`, `docs:`, `chore:` | ❌ No bump                | Code improvements only |
 
 ### Commit Format
 
@@ -85,6 +86,7 @@ pnpm nx release --version=major
 ### Setup Requirements
 
 The workflow requires:
+
 - NPM authentication token in `NPM_TOKEN` secret
 - GitHub token with write access (auto-generated `GITHUB_TOKEN`)
 - Branch protection rules configured
@@ -92,6 +94,7 @@ The workflow requires:
 ### Workflow Trigger
 
 Releases are triggered automatically when:
+
 1. Conventional commits are pushed to main branch
 2. GitHub Actions workflow detects commit types
 3. Version bump is calculated
@@ -114,10 +117,7 @@ All release settings are in `nx.json`:
 ```json
 {
   "release": {
-    "projects": [
-      "packages/eslint-plugin",
-      "packages/eslint-plugin-utils"
-    ],
+    "projects": ["packages/eslint-plugin", "packages/eslint-plugin-utils"],
     "projectsRelationship": "independent",
     "git": {
       "commit": true,
@@ -203,8 +203,9 @@ Each package has a `publishConfig` in `package.json`:
 
 **Cause:** No conventional commits since last tag  
 **Solution:** Make a commit with proper format:
+
 ```bash
-git commit -m "fix: description" 
+git commit -m "fix: description"
 ```
 
 ### Version Mismatch Errors
@@ -215,7 +216,8 @@ git commit -m "fix: description"
 ### Failed Publication
 
 **Cause:** Missing NPM token or permission issue  
-**Solution:** 
+**Solution:**
+
 - Check `NPM_TOKEN` secret in GitHub
 - Verify package access is public
 - Check npm account permissions

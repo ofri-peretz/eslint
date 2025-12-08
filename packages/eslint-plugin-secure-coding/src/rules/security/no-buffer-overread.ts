@@ -45,6 +45,12 @@ export interface Options extends SecurityRuleOptions {
 
   /** Buffer types to monitor */
   bufferTypes?: string[];
+
+  /** Additional function names to consider as buffer index validators */
+  trustedSanitizers?: string[];
+
+  /** Additional JSDoc annotations to consider as safe markers */
+  strictMode?: boolean;
 }
 
 type RuleOptions = [Options?];

@@ -18,7 +18,7 @@ A collection of open-source tools and libraries built from real-world experience
 
 This monorepo contains independently versioned packages. Each tool is designed to solve a specific problem that engineering teams face.
 
-> **Note**: Version badges are dynamically updated from npm. For the latest version information, visit [npmjs.com](https://www.npmjs.com/search?q=forge-js)
+> **Note**: Version badges are dynamically updated from npm. For the latest version information, visit [npmjs.com](https://www.npmjs.com/search?q=interlace)
 
 ### ESLint Plugin — LLM-Optimized Rules
 
@@ -36,9 +36,9 @@ The core offering: an ESLint plugin with rules that enforce team conventions and
 
 ### Supporting Tools
 
-| Package                                                           | Version                                                                                                                           | What It Does                              |
-| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| [`@forge-js/cli`](./packages/cli)                                 | [![npm](https://img.shields.io/npm/v/@forge-js/cli)](https://www.npmjs.com/package/@forge-js/cli)                                 | CLI utilities for common team workflows   |
+| Package                                                      | Version                                                                                                                 | What It Does                              |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| [`@forge-js/cli`](./packages/cli)                            | [![npm](https://img.shields.io/npm/v/@forge-js/cli)](https://www.npmjs.com/package/@forge-js/cli)                       | CLI utilities for common team workflows   |
 | [`@interlace/eslint-devkit`](./packages/eslint-plugin-utils) | [![npm](https://img.shields.io/npm/v/@interlace/eslint-devkit)](https://www.npmjs.com/package/@interlace/eslint-devkit) | Build your own team-specific ESLint rules |
 
 ---

@@ -125,7 +125,8 @@ function hasDynamicFlags(node: TSESTree.CallExpression | TSESTree.NewExpression)
  */
 function extractPattern(
   node: TSESTree.CallExpression | TSESTree.NewExpression,
-  sourceCode: TSESLint.SourceCode
+  sourceCode: TSESLint.SourceCode,
+  trustedFunctions: string[]
 ): { patternNode: TSESTree.Node | null; isUserInput: boolean; isEscaped: boolean } {
   const patternNode = node.arguments.length > 0 ? node.arguments[0] : null;
   
@@ -134,9 +135,15 @@ function extractPattern(
   }
   
   const isUserInputValue = isUserInput(patternNode);
+  // Default trusted functions + user configured ones
+  const allTrustedFunctions = [...new Set([
+    'escapeRegex', 'escape', 'sanitize', 'RegExp.escape',
+    ...trustedFunctions
+  ])];
+
   const isEscapedValue = isEscaped(
     patternNode,
-    ['escapeRegex', 'escape', 'sanitize', 'RegExp.escape'],
+    allTrustedFunctions,
     sourceCode
   );
   
@@ -235,8 +242,8 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
     const {
       allowLiterals = true,
       maxPatternLength = 100,
-    
-}: Options = options || {};
+      trustedEscapingFunctions = ['escapeRegex', 'escape', 'sanitize'],
+    }: Options = options || {};
 
     const sourceCode = context.sourceCode || context.sourceCode;
 
@@ -255,7 +262,8 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
 
       const { patternNode, isUserInput: isUserInputValue, isEscaped: isEscapedValue } = extractPattern(
         node,
-        sourceCode
+        sourceCode,
+        trustedEscapingFunctions
       );
 
       if (!patternNode) {
@@ -285,27 +293,25 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        if (allowLiterals) {
+        if (!allowLiterals) {
+          // If we reach here, allowLiterals is false, so treat as unsafe
+          context.report({
+            node: patternNode,
+            messageId: 'unsafeRegexConstruction',
+            data: {
+              issue: 'Literal regex pattern',
+              details: 'Literal regex patterns should be avoided for security. Use variables instead.',
+              fix: 'Use a variable or RegExp constructor with a string variable',
+            },
+            suggest: [
+              {
+                messageId: 'validatePattern',
+                fix: () => null,
+              },
+            ],
+          });
           return;
         }
-
-        // If we reach here, allowLiterals is false, so treat as unsafe
-        context.report({
-          node: patternNode,
-          messageId: 'unsafeRegexConstruction',
-          data: {
-            issue: 'Literal regex pattern',
-            details: 'Literal regex patterns should be avoided for security. Use variables instead.',
-            fix: 'Use a variable or RegExp constructor with a string variable',
-          },
-          suggest: [
-            {
-              messageId: 'validatePattern',
-              fix: () => null,
-            },
-          ],
-        });
-        return;
       }
 
       // Check for user input without escaping

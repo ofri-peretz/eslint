@@ -65,9 +65,9 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Unsafe Deserialization',
         cwe: 'CWE-502',
-        description: 'Unsafe deserialization of untrusted data detected',
+        description: 'Unsafe deserialization of untrusted data (incl. model/tool output)',
         severity: '{{severity}}',
-        fix: '{{safeAlternative}}',
+        fix: '{{safeAlternative}} | validate model/tool output via schema and size limits',
         documentationLink: 'https://cwe.mitre.org/data/definitions/502.html',
       }),
       dangerousEvalUsage: formatLLMMessage({
@@ -101,9 +101,9 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Untrusted Deserialization Input',
         cwe: 'CWE-502',
-        description: 'Deserializing untrusted input without validation',
+        description: 'Deserializing untrusted input (incl. LLM/MCP responses) without validation',
         severity: 'HIGH',
-        fix: 'Validate and sanitize input before deserialization',
+        fix: 'Schema-validate and size-cap before deserialization; reject unknown fields',
         documentationLink: 'https://cwe.mitre.org/data/definitions/502.html',
       }),
       useSafeDeserializer: formatLLMMessage({
@@ -235,7 +235,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
     /**
      * Check if this is a dangerous deserialization function
      */
-    const isDangerousDeserialization = (node: TSESTree.CallExpression): boolean => {
+    const isDangerousDeserialization = (node: TSESTree.CallExpression | TSESTree.NewExpression): boolean => {
       const callee = node.callee;
 
       // Check for dangerous function calls
@@ -307,7 +307,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
               current.type === 'FunctionExpression' ||
               current.type === 'ArrowFunctionExpression') {
             const func = current as TSESTree.FunctionDeclaration | TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression;
-            if (func.params.some(param => {
+            if (func.params.some((param: TSESTree.Parameter) => {
               if (param.type === 'Identifier') {
                 return param.name === inputNode.name;
               }
@@ -344,7 +344,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
     /**
      * Check if this is a safe deserialization library
      */
-    const isSafeLibrary = (node: TSESTree.CallExpression): boolean => {
+    const isSafeLibrary = (node: TSESTree.CallExpression | TSESTree.NewExpression): boolean => {
       const callee = node.callee;
 
       if (callee.type === 'MemberExpression') {
@@ -364,6 +364,124 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
       }
 
       return false;
+    };
+    const checkCallExpression = (node: TSESTree.CallExpression | TSESTree.NewExpression) => {
+      // 1. Check Function Constructor (NewExpression or CallExpression)
+      if ((node.type === 'NewExpression' || node.type === 'CallExpression') &&
+          node.callee.type === 'Identifier' &&
+          node.callee.name === 'Function') {
+
+          const args: TSESTree.CallExpressionArgument[] = node.arguments;
+          const hasUntrustedInput = args.some((arg): boolean => isUntrustedInput(arg));
+
+          if (hasUntrustedInput) {
+             if (safetyChecker.isSafe(node, context)) return;
+             
+             context.report({
+               node,
+               messageId: 'dangerousFunctionConstructor',
+               data: {
+                  filePath: context.getFilename(),
+                  line: String(node.loc?.start.line ?? 0),
+                  severity: 'HIGH',
+                  safeAlternative: 'Avoid dynamic function creation',
+               }
+             });
+             return;
+          }
+      }
+
+      // 2. Check CallExpressions (eval, unserialize, yaml, etc.)
+      if (isDangerousDeserialization(node)) {
+         const args: TSESTree.CallExpressionArgument[] = node.arguments;
+         const hasUntrustedInput = args.some((arg): boolean => isUntrustedInput(arg));
+
+         // Check if explicit validation is present
+         const isSafe = isSafeLibrary(node);
+         const filename = context.getFilename();
+         
+         if (!isSafe && hasUntrustedInput) {
+            // Basic safety check
+            const safe = safetyChecker.isSafe(node, context);
+            
+            if (!safe) {
+               // Determine message ID
+               let messageId = 'unsafeDeserialization';
+               // Check specifically for YAML
+               const calleeText = sourceCode.getText(node.callee);
+               if (calleeText.includes('yaml') || calleeText.includes('YAML')) {
+                  messageId = 'unsafeYamlParsing';
+               }
+
+               // Check for generic dangerous functions
+               if ((node.callee as any).name && ['eval', 'setTimeout', 'setInterval'].includes((node.callee as any).name)) {
+                  messageId = 'dangerousEvalUsage';
+               }
+
+               const reportObj: any = {
+                 node,
+                 messageId,
+                 data: {
+                    library: calleeText,
+                    filePath: filename,
+                    line: String(node.loc?.start.line ?? 0),
+                    severity: 'HIGH',
+                    safeAlternative: 'Use JSON.parse() or validated safe deserialization libraries',
+                 }
+               };
+
+               if (messageId === 'dangerousEvalUsage') {
+                  reportObj.suggest = [{
+                     messageId: 'useSafeDeserializer',
+                     fix: (fixer: any) => {
+                        // Suggest JSON.parse
+                        return fixer.replaceText(node, `JSON.parse(${sourceCode.getText(node.arguments[0])})`);
+                     },
+                     // Suggestion output for tests
+                     output: `JSON.parse(${sourceCode.getText(node.arguments[0])})` 
+                  }];
+               }
+
+               context.report(reportObj);
+            }
+         }
+      }   
+
+
+        // Check for untrusted input in potentially safe functions
+        if (isSafeLibrary(node)) {
+          const args: TSESTree.CallExpressionArgument[] = node.arguments;
+          const hasUntrustedInput = args.some((arg): boolean => {
+            // Check if it's validated
+            if (arg.type === 'Identifier' && validatedVariables.has(arg.name)) {
+              return false;
+            }
+            return isUntrustedInput(arg) && !isInputValidated(arg);
+          });
+
+          if (hasUntrustedInput) {
+            // Even JSON.parse can be unsafe if used on complex objects that get eval'd later
+            // FALSE POSITIVE REDUCTION
+            if (safetyChecker.isSafe(node, context)) {
+              return;
+            }
+
+            context.report({
+              node,
+              messageId: 'untrustedDeserializationInput',
+              data: {
+                filePath: context.getFilename(),
+                line: String(node.loc?.start.line ?? 0),
+              },
+              suggest: [
+                {
+                  messageId: 'validateBeforeDeserialization',
+                  fix: () => null
+                },
+              ],
+            });
+          }
+        }
     };
 
     return {
@@ -400,121 +518,10 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
 
       // Check dangerous function calls
       CallExpression(node: TSESTree.CallExpression) {
-        if (isDangerousDeserialization(node)) {
-          const args = node.arguments;
-          const hasUntrustedInput = args.some(arg => isUntrustedInput(arg));
-
-          if (hasUntrustedInput) {
-            // Check for specific dangerous patterns
-            const callee = node.callee;
-            const calleeText = sourceCode.getText(callee);
-
-            if (calleeText === 'eval') {
-              // FALSE POSITIVE REDUCTION
-              if (safetyChecker.isSafe(node, context)) {
-                return;
-              }
-
-              context.report({
-                node,
-                messageId: 'dangerousEvalUsage',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
-                },
-                suggest: [
-                  {
-                    messageId: 'useSafeDeserializer',
-                    fix: (fixer) => {
-                      // Suggest replacing eval with JSON.parse
-                      return fixer.replaceText(node, `JSON.parse(${sourceCode.getText(node.arguments[0])})`);
-                    }
-                  },
-                ],
-              });
-            } else if (calleeText === 'Function') {
-              // FALSE POSITIVE REDUCTION
-              if (safetyChecker.isSafe(node, context)) {
-                return;
-              }
-
-              context.report({
-                node,
-                messageId: 'dangerousFunctionConstructor',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
-                },
-              });
-            } else if (calleeText.includes('yaml') || calleeText.includes('YAML')) {
-              // FALSE POSITIVE REDUCTION
-              if (safetyChecker.isSafe(node, context)) {
-                return;
-              }
-
-              context.report({
-                node,
-                messageId: 'unsafeYamlParsing',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
-                },
-              });
-            } else {
-              // Generic unsafe deserialization
-              // FALSE POSITIVE REDUCTION
-              if (safetyChecker.isSafe(node, context)) {
-                return;
-              }
-
-              context.report({
-                node,
-                messageId: 'unsafeDeserialization',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
-                  severity: 'HIGH',
-                  safeAlternative: 'Use JSON.parse() or validated safe deserialization libraries',
-                },
-              });
-            }
-          }
-        }
-
-        // Check for untrusted input in potentially safe functions
-        if (isSafeLibrary(node)) {
-          const args = node.arguments;
-          const hasUntrustedInput = args.some(arg => {
-            // Check if it's validated
-            if (arg.type === 'Identifier' && validatedVariables.has(arg.name)) {
-              return false;
-            }
-            return isUntrustedInput(arg) && !isInputValidated(arg);
-          });
-
-          if (hasUntrustedInput) {
-            // Even JSON.parse can be unsafe if used on complex objects that get eval'd later
-            // FALSE POSITIVE REDUCTION
-            if (safetyChecker.isSafe(node, context)) {
-              return;
-            }
-
-            context.report({
-              node,
-              messageId: 'untrustedDeserializationInput',
-              data: {
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
-              },
-              suggest: [
-                {
-                  messageId: 'validateBeforeDeserialization',
-                  fix: () => null
-                },
-              ],
-            });
-          }
-        }
+        checkCallExpression(node);
+      },
+      NewExpression(node: TSESTree.NewExpression) {
+        checkCallExpression(node);
       },
 
       // Check for dangerous require/import patterns
@@ -547,35 +554,44 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
 
                 // Look ahead to see if this library is used dangerously
                 // This is a simplified check - in practice, we'd need more sophisticated analysis
-                let current: TSESTree.Node | undefined = node.parent;
-                while (current) {
-                  if (current.type === 'CallExpression') {
-                    const callee = current.callee;
-                    if (callee.type === 'MemberExpression' &&
-                        callee.object.type === 'Identifier' &&
-                        callee.object.name === varName &&
-                        ['unserialize', 'deserialize', 'load', 'parse'].includes(
-                          callee.property.type === 'Identifier' ? callee.property.name : ''
-                        )) {
-                      // FALSE POSITIVE REDUCTION
-                      if (safetyChecker.isSafe(current, context)) {
-                        break;
-                      }
+                // Check if this variable is used unsafely later
+                if (node.id.type === 'Identifier') {
+                  const variables = sourceCode.getDeclaredVariables(node);
+                  for (const variable of variables) {
+                    for (const reference of variable.references) {
+                      const refNode = reference.identifier;
+                      
+                      // Check if reference is part of a call to dangerous method
+                      // e.g. serialize.unserialize()
+                      if (refNode.parent && refNode.parent.type === 'MemberExpression' &&
+                          refNode.parent.object === refNode) {
+                        const memberExpr = refNode.parent;
+                        const propertyName = memberExpr.property.type === 'Identifier' ? memberExpr.property.name : '';
+                        
+                        if (['unserialize', 'deserialize', 'load', 'parse'].includes(propertyName)) {
+                          const callExpr = memberExpr.parent;
+                          if (callExpr && callExpr.type === 'CallExpression' && callExpr.callee === memberExpr) {
+                            
+                            // FALSE POSITIVE REDUCTION
+                            if (safetyChecker.isSafe(callExpr, context)) {
+                              continue;
+                            }
 
-                      context.report({
-                        node: current,
-                        messageId: 'unsafeDeserialization',
-                        data: {
-                          filePath: filename,
-                          line: String(node.loc?.start.line ?? 0),
-                          severity: 'CRITICAL',
-                          safeAlternative: 'Avoid using this library or use safe alternatives',
-                        },
-                      });
-                      break;
+                            context.report({
+                              node: callExpr,
+                              messageId: 'unsafeDeserialization',
+                              data: {
+                                filePath: filename,
+                                line: String(callExpr.loc?.start.line ?? 0),
+                                severity: 'CRITICAL',
+                                safeAlternative: 'Avoid using this library or use safe alternatives',
+                              },
+                            });
+                          }
+                        }
+                      }
                     }
                   }
-                  current = current.parent as TSESTree.Node;
                 }
               }
             }

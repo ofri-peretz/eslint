@@ -121,3 +121,4 @@ const isValid = await bcrypt.compare(userPassword, storedHash);
 - [`no-insecure-comparison`](./no-insecure-comparison.md) - Insecure string comparison
 - [`no-weak-crypto`](./no-weak-crypto.md) - Weak cryptographic algorithms
 
+

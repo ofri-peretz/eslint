@@ -143,3 +143,4 @@ window.addEventListener('message', (event) => {
 - [`no-electron-security-issues`](./no-electron-security-issues.md) - Electron security
 - [`no-missing-cors-check`](./no-missing-cors-check.md) - CORS validation
 
+

@@ -83,7 +83,7 @@ describe('database-injection', () => {
           code: 'const query = "SELECT * FROM users WHERE name = \'" + req.body.name + "\'";',
           errors: [
             { messageId: 'databaseInjection' },
-            { messageId: 'databaseInjection' },
+            { messageId: 'databaseInjection' }
           ],
         },
         {
@@ -149,11 +149,26 @@ describe('database-injection', () => {
           code: 'db.collection("users").find({ name: userName });',
           options: [{ detectNoSQL: false }],
         },
+        // Trusted sources bypass detection
+        {
+          code: 'db.query(`SELECT * FROM users WHERE id = ${trustedId}`);',
+          options: [{ trustedSources: ['trustedId'] }],
+        },
+        // Constants (all uppercase) are not flagged as tainted
+        {
+          code: 'db.query(`SELECT * FROM users WHERE status = ${ACTIVE_STATUS}`);',
+        },
       ],
       invalid: [
         {
           code: 'db.query(`SELECT * FROM users WHERE id = ${userId}`);',
           options: [{ detectNoSQL: false }],
+          errors: [{ messageId: 'databaseInjection' }],
+        },
+        // Trusted sources don't bypass high-confidence taint
+        {
+          code: 'db.query(`SELECT * FROM users WHERE id = ${req.body.id}`);',
+          options: [{ trustedSources: ['req.body.id'] }],
           errors: [{ messageId: 'databaseInjection' }],
         },
       ],
@@ -166,6 +181,26 @@ describe('database-injection', () => {
         // Template literal with no expressions
         {
           code: 'db.query(`SELECT * FROM users`);',
+        },
+        // Binary expression without SQL keywords
+        {
+          code: 'const result = "hello" + userInput;',
+        },
+        // NoSQL operation with safe arguments
+        {
+          code: 'db.collection("users").find({ status: "active" });',
+        },
+        // Template literal with NoSQL patterns but safe expressions
+        {
+          code: 'const query = `this.name === "safeValue"`;',
+        },
+        // Template literal with expressions but no NoSQL patterns
+        {
+          code: 'const message = `Hello ${userName}!`;',
+        },
+        // Template literal with NoSQL pattern but safe expression
+        {
+          code: 'const query = `this.name === "${ACTIVE_STATUS}"`;',
         },
       ],
       invalid: [
@@ -264,6 +299,61 @@ describe('database-injection', () => {
         // But the rule may need the tainted value to be directly in the object
         {
           code: 'db.collection("users").updateOne({ name: req.query.name }, { $set: { status: "active" } });',
+          errors: [{ messageId: 'databaseInjection' }],
+        },
+      ],
+    });
+  });
+
+  describe('Strategy Options', () => {
+    ruleTester.run('strategy parameterize', databaseInjection, {
+      valid: [],
+      invalid: [
+        {
+          code: 'db.query(`SELECT * FROM users WHERE id = ${userId}`);',
+          options: [{ strategy: 'parameterize' }],
+          errors: [
+            { messageId: 'databaseInjection' },
+            { messageId: 'strategyParameterize' }
+          ],
+        },
+      ],
+    });
+
+    ruleTester.run('strategy orm', databaseInjection, {
+      valid: [],
+      invalid: [
+        {
+          code: 'db.query(`SELECT * FROM users WHERE id = ${userId}`);',
+          options: [{ strategy: 'orm' }],
+          errors: [
+            { messageId: 'databaseInjection' },
+            { messageId: 'strategyORM' }
+          ],
+        },
+      ],
+    });
+
+    ruleTester.run('strategy sanitize', databaseInjection, {
+      valid: [],
+      invalid: [
+        {
+          code: 'db.query(`SELECT * FROM users WHERE id = ${userId}`);',
+          options: [{ strategy: 'sanitize' }],
+          errors: [
+            { messageId: 'databaseInjection' },
+            { messageId: 'strategySanitize' }
+          ],
+        },
+      ],
+    });
+
+    ruleTester.run('strategy auto (default)', databaseInjection, {
+      valid: [],
+      invalid: [
+        {
+          code: 'db.query(`SELECT * FROM users WHERE id = ${userId}`);',
+          options: [{ strategy: 'auto' }],
           errors: [{ messageId: 'databaseInjection' }],
         },
       ],

@@ -1,10 +1,10 @@
 import { defineConfig } from 'vitest/config';
 
 /**
- * Vitest configuration for eslint-plugin-utils package
+ * Vitest configuration for eslint-devkit package
  *
  * @description
- * Configures Vitest for testing ESLint plugin utilities with the following setup:
+ * Configures Vitest for testing ESLint devkit with the following setup:
  * - Node environment for running utility function tests
  * - Coverage tracking with v8 provider (industry standard)
  * - JUnit reporting for CI/CD pipeline integration

@@ -305,7 +305,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
             current.type === 'FunctionExpression' || 
             current.type === 'ArrowFunctionExpression') {
           const func = current as TSESTree.FunctionDeclaration | TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression;
-          return func.params.some(param => {
+          return func.params.some((param: TSESTree.Parameter): boolean => {
             if (param.type === 'Identifier') {
               return param.name === inputNode.name;
             }
@@ -342,10 +342,11 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
     const hasSafeAnnotationOnStatement = (node: TSESTree.Node): boolean => {
       let current: TSESTree.Node | undefined = node;
 
-      // Walk up to find VariableDeclaration, ExpressionStatement, or containing statement
+      // Walk up to find VariableDeclaration, ExpressionStatement, FunctionDeclaration, or containing statement
       while (current) {
         if (current.type === 'VariableDeclaration' ||
-            current.type === 'ExpressionStatement') {
+            current.type === 'ExpressionStatement' ||
+            current.type === 'FunctionDeclaration') {
           // Check for JSDoc comments before this statement
           const comments = sourceCode.getCommentsBefore(current);
           for (const comment of comments) {
@@ -399,7 +400,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
           // Check for dangerous XPath patterns
           if (containsDangerousXpath(xpathText)) {
             // FALSE POSITIVE REDUCTION: Skip if annotated as safe
-            if (hasSafeAnnotation(xpathArg, context, trustedAnnotations)) {
+            if (hasSafeAnnotation(xpathArg, context, trustedAnnotations) || hasSafeAnnotationOnStatement(node)) {
               return;
             }
 
@@ -417,7 +418,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
           if (isUntrustedXpathInput(xpathArg) && !isXpathInputValidated(xpathArg) && 
               !(xpathArg.type === 'Identifier' && validatedVariables.has(xpathArg.name))) {
             // FALSE POSITIVE REDUCTION
-            if (hasSafeAnnotation(xpathArg, context, trustedAnnotations) || safetyChecker.isSafe(xpathArg, context)) {
+            if (hasSafeAnnotation(xpathArg, context, trustedAnnotations) || safetyChecker.isSafe(xpathArg, context) || hasSafeAnnotationOnStatement(node)) {
               return;
             }
 
@@ -446,7 +447,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         if (containsXpathInterpolation(fullText)) {
           // Check if any interpolated values are untrusted
           const hasUntrustedInterpolation = node.expressions.some((expr: TSESTree.Expression) =>
-            isUntrustedXpathInput(expr) && !isXpathInputValidated(expr)
+            isUntrustedXpathInput(expr) && !isXpathInputValidated(expr) && !(expr.type === 'Identifier' && validatedVariables.has(expr.name))
           );
 
           if (hasUntrustedInterpolation) {
@@ -511,12 +512,12 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
             (rightText.includes('/') || rightText.includes('['))) {
 
           // Check if untrusted input is involved
-          const leftUntrusted = isUntrustedXpathInput(node.left) && !isXpathInputValidated(node.left);
-          const rightUntrusted = isUntrustedXpathInput(node.right) && !isXpathInputValidated(node.right);
+          const leftUntrusted = isUntrustedXpathInput(node.left) && !isXpathInputValidated(node.left) && !(node.left.type === 'Identifier' && validatedVariables.has(node.left.name));
+          const rightUntrusted = isUntrustedXpathInput(node.right) && !isXpathInputValidated(node.right) && !(node.right.type === 'Identifier' && validatedVariables.has(node.right.name));
 
           if (leftUntrusted || rightUntrusted) {
             // FALSE POSITIVE REDUCTION
-            if (safetyChecker.isSafe(node, context)) {
+            if (safetyChecker.isSafe(node, context) || hasSafeAnnotationOnStatement(node)) {
               return;
             }
 
@@ -558,7 +559,7 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
         if (node.init.type === 'Literal' && typeof node.init.value === 'string') {
           if (containsDangerousXpath(node.init.value)) {
             // FALSE POSITIVE REDUCTION
-            if (safetyChecker.isSafe(node.init, context)) {
+            if (safetyChecker.isSafe(node.init, context) || hasSafeAnnotationOnStatement(node)) {
               return;
             }
 

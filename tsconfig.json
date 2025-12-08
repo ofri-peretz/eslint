@@ -37,21 +37,6 @@
         // JSX support
         "jsx": "react-jsx",
         "jsxImportSource": "react",
-        // Path mapping (inherit from base)
-        "paths": {
-            "@forge-js/eslint-plugin-llm-optimized": [
-                "packages/eslint-plugin/src/index.ts"
-            ],
-            "@interlace/eslint-devkit": [
-                "packages/eslint-plugin-utils/src/index.ts"
-            ],
-            "eslint-plugin-mcp": [
-                "packages/eslint-plugin-mcp/src/index.ts"
-            ],
-            "eslint-plugin-mcp-optimized": [
-                "packages/eslint-plugin-mcp-optimized/src/index.ts"
-            ]
-        }
     },
     // Include all TypeScript source files for comprehensive checking
     "include": [

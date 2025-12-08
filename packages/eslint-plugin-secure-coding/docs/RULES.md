@@ -216,3 +216,4 @@ export default [
 - **[CWE Top 25](https://cwe.mitre.org/top25/)** - Most dangerous software weaknesses
 - **[ESLint MCP Integration](https://eslint.org/docs/latest/use/mcp)** - AI assistant configuration
 
+

@@ -29,13 +29,8 @@ type MessageIds =
   | 'unsafeFormatSpecifier'
   | 'userControlledFormatString'
   | 'missingFormatValidation'
-  | 'dangerousPrintfStyle'
   | 'escapeFormatString'
-  | 'useSafeFormatting'
-  | 'validateFormatInput'
-  | 'strategyFormatValidation'
-  | 'strategySafeLibraries'
-  | 'strategyInputSanitization';
+  | 'useSafeFormatting';
 
 export interface Options {
   /** Functions that use format strings */
@@ -108,15 +103,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         fix: 'Validate format strings against allowed patterns',
         documentationLink: 'https://cwe.mitre.org/data/definitions/134.html',
       }),
-      dangerousPrintfStyle: formatLLMMessage({
-        icon: MessageIcons.SECURITY,
-        issueName: 'Dangerous Printf Style',
-        cwe: 'CWE-134',
-        description: 'Printf-style function with user input',
-        severity: 'HIGH',
-        fix: 'Use safe alternatives or validate format strings',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/134.html',
-      }),
+
       escapeFormatString: formatLLMMessage({
         icon: MessageIcons.INFO,
         issueName: 'Escape Format String',
@@ -132,38 +119,6 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         severity: 'LOW',
         fix: 'Use template literals or safe format libraries',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals',
-      }),
-      validateFormatInput: formatLLMMessage({
-        icon: MessageIcons.INFO,
-        issueName: 'Validate Format Input',
-        description: 'Validate format strings before use',
-        severity: 'LOW',
-        fix: 'Whitelist allowed format specifiers',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/134.html',
-      }),
-      strategyFormatValidation: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Format Validation Strategy',
-        description: 'Validate format strings against allowed patterns',
-        severity: 'LOW',
-        fix: 'Use regex to validate format strings',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/134.html',
-      }),
-      strategySafeLibraries: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Safe Libraries Strategy',
-        description: 'Use formatting libraries with built-in safety',
-        severity: 'LOW',
-        fix: 'Use libraries that separate format from data',
-        documentationLink: 'https://www.npmjs.com/package/safe-format',
-      }),
-      strategyInputSanitization: formatLLMMessage({
-        icon: MessageIcons.STRATEGY,
-        issueName: 'Input Sanitization Strategy',
-        description: 'Sanitize user input before formatting',
-        severity: 'LOW',
-        fix: 'Escape dangerous characters in user input',
-        documentationLink: 'https://cwe.mitre.org/data/definitions/134.html',
       })
     },
     schema: [
@@ -595,7 +550,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
               suggest: [
                 {
                   messageId: 'escapeFormatString',
-                  fix: (fixer) => {
+                  fix: (fixer: TSESLint.RuleFixer) => {
                     // Find the argument that needs escaping
                     // This is a bit heuristic, we try to find the first user input argument
                     for (let i = 1; i < node.arguments.length; i++) {
@@ -642,6 +597,9 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
           if (current.type === 'VariableDeclarator' &&
               current.init === node.parent &&
               current.id.type === 'Identifier') {
+            
+            // console.log('DEBUG: Checking variable declarator', current.id.name);
+            
             // Check if variable name suggests user input
             if (isUserInput(current.id.name)) {
               isFromUserInput = true;
@@ -767,19 +725,21 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         }
 
         // Track variables that are assigned user input (dangerous)
-        if (isUserInputNode(node.init)) {
+        if (isUserInputNode(node.init) || (node.init.type === 'BinaryExpression' && hasUserInputInExpression(node.init))) {
           dangerousVariables.add(varName);
         }
 
         const varNameLower = varName.toLowerCase();
 
-        if (!varNameLower.includes('format') && !varNameLower.includes('template')) {
+        if (!varNameLower.includes('format') && !varNameLower.includes('template') && !varNameLower.includes('fmt') && !varNameLower.includes('str')) {
           return;
         }
 
         // Check if assigned value contains format specifiers and user input
         if (node.init.type === 'TemplateLiteral') {
-          const hasSpecifiers = node.init.quasis.some(quasis => containsFormatSpecifiers(quasis.value.raw));
+          const hasSpecifiers = node.init.quasis.some((quasi: TSESTree.TemplateElement) =>
+            containsFormatSpecifiers(quasi.value.raw)
+          );
           const hasUserInput = node.init.expressions.some((expr: TSESTree.Expression) =>
             isUserInputNode(expr)
           );

@@ -4,20 +4,30 @@
 
 Detects exposure of sensitive data (SSN, credit card numbers, passwords, API keys) in logs or output. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages that AI assistants can understand.
 
-💼 This rule is set to **error** by default in the `recommended` config.
+> **Keywords:** no exposed sensitive data, security, ESLint rule, JavaScript, TypeScript, CWE-532, CWE-200, PII, secrets, logging
+
+ESLint Rule: no-exposed-sensitive-data with LLM-optimized suggestions and auto-fix capabilities.
 
 ## Quick Summary
 
-| Aspect            | Details                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
-| **CWE Reference** | CWE-200 (Exposure of Sensitive Information to an Unauthorized Actor)          |
-| **Severity**      | CRITICAL (security vulnerability)                                               |
-| **Auto-Fix**      | ❌ No (requires manual review and masking)                                      |
-| **Category**      | Security                                                                         |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                          |
-| **Best For**      | All applications logging user data, APIs, payment systems, authentication      |
+| Aspect          | Details                                    |
+| --------------- | ------------------------------------------ |
+| **Severity**    | Error (Security)                           |
+| **Auto-Fix**    | ❌ No                                      |
+| **Category**    | Security                                   |
+| **ESLint MCP**  | ✅ Optimized for ESLint MCP integration    |
+| **Best For**    | Production applications handling user data |
+| **Suggestions** | ✅ Advice on redacting/masking data        |
 
-## Detection Flow
+## Rule Details
+
+This rule scans for sensitive data (PII, secrets, tokens, passwords) being passed to logging mechanisms or output streams. Logging sensitive information is a critical security vulnerability because log files are often stored insecurely, accessible to too many people, or retained for long periods.
+
+The rule detects:
+
+1.  **Variable Names**: e.g., `password`, `ssn`, `creditCard`, `token`.
+2.  **Object Properties**: e.g., `user.password`, `payment.cvv`.
+3.  **Logging Functions**: e.g., `console.log`, `logger.info`, `res.send`.
 
 ```mermaid
 %%{init: {
@@ -26,39 +36,98 @@ Detects exposure of sensitive data (SSN, credit card numbers, passwords, API key
     'primaryColor': '#f8fafc',
     'primaryTextColor': '#1e293b',
     'primaryBorderColor': '#334155',
-    'lineColor': '#475569'
+    'lineColor': '#475569',
+    'c0': '#f0fdf4',
+    'c1': '#f1f5f9',
+    'c2': '#e2e8f0',
+    'c3': '#cbd5e1'
   }
 }}%%
 flowchart TD
-    A[🔍 Analyze Code] --> B{Is in Logging Context?}
-    B -->|No| C[✅ Valid: Not logged]
-    B -->|Yes| D{Contains Sensitive Pattern?}
-    D -->|No| C
-    D -->|Yes| E{Pattern Type}
-    E --> F[SSN Pattern]
-    E --> G[Credit Card]
-    E --> H[Password]
-    E --> I[API Key]
-    F --> J[❌ Report: SSN in logs]
-    G --> K[❌ Report: Credit card in logs]
-    H --> L[❌ Report: Password in logs]
-    I --> M[❌ Report: API key in logs]
-    
-    style C fill:#d1fae5,stroke:#059669,stroke-width:2px
-    style J fill:#fee2e2,stroke:#dc2626,stroke-width:2px
-    style K fill:#fee2e2,stroke:#dc2626,stroke-width:2px
-    style L fill:#fee2e2,stroke:#dc2626,stroke-width:2px
-    style M fill:#fee2e2,stroke:#dc2626,stroke-width:2px
+    App[Application] -->|Log(password)| LogFile[📝 Log File / ELK / Splunk]
+    LogFile -->|Unrestricted Access| Attacker[🕵️ Attacker/Insider]
+    Attacker -->|Read Logs| Leak[🔓 Data Leak (CWE-532)]
+
+    classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
+    classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
+
+    class App startNode
+    class Leak errorNode
 ```
 
-## Why This Matters
+### Why This Matters
 
-| Issue                 | Impact                              | Solution                   |
-| --------------------- | ----------------------------------- | -------------------------- |
-| 🔒 **Data Breach**    | Sensitive data in logs              | Mask or remove from logs   |
-| 🔐 **Compliance**     | Violates GDPR, HIPAA, PCI-DSS       | Never log sensitive data   |
-| 🍪 **Identity Theft**| SSN, credit card exposure           | Use data masking           |
-| 📊 **Best Practice**  | Never log PII or credentials      | Sanitize logs              |
+| Issue             | Impact                           | Solution                            |
+| ----------------- | -------------------------------- | ----------------------------------- |
+| 🔒 **Security**   | Data breaches via logs (CWE-532) | Redact sensitive fields/objects     |
+| 🛡️ **Compliance** | GDPR, PCI-DSS, HIPAA violations  | Use structured logging with masking |
+
+## Configuration
+
+This rule accepts an options object:
+
+```typescript
+{
+  "rules": {
+    "security/no-exposed-sensitive-data": ["error", {
+      // Allow in test files? (default: false)
+      "allowInTests": false,
+
+      // Variable/Property names to flag (default list includes: ssn, password, credit, token, secret...)
+      "sensitivePatterns": ["ssn", "password", "secret", "token", "apiKey", "credit"],
+
+      // Logging functions/methods to watch (default includes: log, info, warn, error, console)
+      "loggingPatterns": ["log", "console", "print", "debug", "error", "info", "trace"]
+    }]
+  }
+}
+```
+
+## Examples
+
+### ❌ Incorrect
+
+```typescript
+// Logging raw variables
+const password = req.body.password;
+console.log('User password:', password);
+
+// Logging objects with sensitive props
+const user = { id: 1, ssn: '123-456-789' };
+logger.info(user);
+
+// Returning sensitive data in error response
+function handleError(err, res) {
+  res.status(500).send({ error: err.stack, secret: process.env.API_KEY });
+}
+```
+
+### ✅ Correct
+
+```typescript
+// Logging only safe identifiers
+console.log('User created:', user.id);
+
+// Redacting data before logging
+const safeUser = { ...user, ssn: '***' };
+logger.info(safeUser);
+
+// Using a custom logger that automatically masks sensitive fields
+logger.info('User action', { userId: user.id });
+```
+
+## LLM-Based Suggestions
+
+The rule provides guidance:
+
+- **"Remove Sensitive Data"**: Advises removing the variable from the log.
+- **"Mask Data"**: Suggests replacing the value with `***` or a hash.
+
+## Further Reading
+
+- [OWASP: Insertion of Sensitive Information into Log File](https://owasp.org/www-community/vulnerabilities/Insertion_of_Sensitive_Information_into_Log_File)
+- [CWE-532: Insertion of Sensitive Information into Log File](https://cwe.mitre.org/data/definitions/532.html)
+- [CWE-200: Exposure of Sensitive Information to an Unauthorized Actor](https://cwe.mitre.org/data/definitions/200.html)
 
 ## Detection Patterns
 
@@ -76,29 +145,29 @@ The rule detects:
 
 ```typescript
 // Exposing sensitive data in logs
-const ssn = "123-45-6789";
-console.log("User SSN:", ssn); // ❌ SSN in logs
+const ssn = '123-45-6789';
+console.log('User SSN:', ssn); // ❌ SSN in logs
 
-const creditCard = "1234-5678-9012-3456";
-logger.info("Payment card:", creditCard); // ❌ Credit card in logs
+const creditCard = '1234-5678-9012-3456';
+logger.info('Payment card:', creditCard); // ❌ Credit card in logs
 
 const password = req.body.password;
-console.log("Password:", password); // ❌ Password in logs
+console.log('Password:', password); // ❌ Password in logs
 
 const apiKey = process.env.API_KEY;
-winston.log("API Key:", apiKey); // ❌ API key in logs
+winston.log('API Key:', apiKey); // ❌ API key in logs
 ```
 
 ### ✅ Correct
 
 ```typescript
 // Masking sensitive data
-const ssn = "123-45-6789";
-console.log("User ID:", userId); // ✅ Log non-sensitive data
+const ssn = '123-45-6789';
+console.log('User ID:', userId); // ✅ Log non-sensitive data
 
-const creditCard = "1234-5678-9012-3456";
+const creditCard = '1234-5678-9012-3456';
 const masked = creditCard.replace(/\d(?=\d{4})/g, '*');
-logger.info("Payment card:", masked); // ✅ Masked card number
+logger.info('Payment card:', masked); // ✅ Masked card number
 
 const password = req.body.password;
 // Don't log passwords at all
@@ -121,12 +190,12 @@ useApiKey(apiKey); // ✅ Use without logging
 
 ### Options
 
-| Option             | Type       | Default                          | Description                        |
-| ------------------ | ---------- | -------------------------------- | ----------------------------------- |
-| `allowInTests`     | `boolean`  | `false`                          | Allow sensitive data in tests       |
-| `sensitivePatterns`| `string[]` | `['ssn', 'creditCard', ...]`    | Sensitive data patterns             |
-| `loggingPatterns`  | `string[]` | `['console', 'logger', ...]`    | Logging function patterns           |
-| `ignorePatterns`   | `string[]` | `[]`                             | Additional patterns to ignore       |
+| Option              | Type       | Default                      | Description                   |
+| ------------------- | ---------- | ---------------------------- | ----------------------------- |
+| `allowInTests`      | `boolean`  | `false`                      | Allow sensitive data in tests |
+| `sensitivePatterns` | `string[]` | `['ssn', 'creditCard', ...]` | Sensitive data patterns       |
+| `loggingPatterns`   | `string[]` | `['console', 'logger', ...]` | Logging function patterns     |
+| `ignorePatterns`    | `string[]` | `[]`                         | Additional patterns to ignore |
 
 ### Example Configuration
 
@@ -162,4 +231,3 @@ useApiKey(apiKey); // ✅ Use without logging
 - [CWE-200: Exposure of Sensitive Information](https://cwe.mitre.org/data/definitions/200.html)
 - [OWASP: Sensitive Data Exposure](https://owasp.org/www-project-top-ten/)
 - [PCI-DSS: Data Protection Requirements](https://www.pcisecuritystandards.org/)
-

@@ -54,7 +54,15 @@ function isInsideCookieConfig(
       
       // Check for other cookie-related calls using text matching
       const callText = sourceCode.getText(current);
-      if (/\b(cookie|setCookie|res\.cookie|document\.cookie)\b/i.test(callText)) {
+      if (/\b(cookie|cookies|setCookie|res\.cookie|document\.cookie)\b/i.test(callText)) {
+        const callee = callExpr.callee;
+        // Specific check for cookies.set / cookie.set
+         if (callee.type === 'MemberExpression' && 
+            callee.property.type === 'Identifier' && 
+            callee.property.name === 'set') {
+             return true;
+         }
+
         // Check if node is part of this call
         const nodeText = sourceCode.getText(node);
         if (callText.includes(nodeText)) {
@@ -203,9 +211,11 @@ export const noInsecureCookieSettings = createRule<RuleOptions, MessageIds>({
           );
           
           if (isThirdArg) {
-            // This is the direct third argument of res.cookie() - skip here
-            // checkCallExpression will handle this case to avoid double reporting
-            return;
+            // Check if the parent call is ignored
+            const callText = sourceCode.getText(parentCall);
+            if (matchesIgnorePattern(callText, ignorePatterns)) {
+              return;
+            }
           }
         }
       }
@@ -261,38 +271,20 @@ export const noInsecureCookieSettings = createRule<RuleOptions, MessageIds>({
                 const lastProperty = properties[properties.length - 1];
                 const lastPropertyText = sourceCode.getText(lastProperty);
                 const needsComma = !lastPropertyText.trim().endsWith(',');
-                
-                const fixes: TSESLint.RuleFix[] = [];
                 const insertPosition = lastProperty.range[1];
                 
-                if (!hasHttpOnly) {
-                  fixes.push(
-                    fixer.insertTextAfterRange(
-                      [insertPosition, insertPosition],
-                      `${needsComma ? ',' : ''}\n  httpOnly: true`
-                    )
-                  );
-                }
-                if (!hasSecure) {
-                  const httpOnlyFix = !hasHttpOnly ? ',\n  ' : (needsComma ? ',' : '');
-                  fixes.push(
-                    fixer.insertTextAfterRange(
-                      [insertPosition, insertPosition],
-                      `${httpOnlyFix}secure: true`
-                    )
-                  );
-                }
-                if (!hasSameSite) {
-                  const previousFix = (!hasHttpOnly || !hasSecure) ? ',\n  ' : (needsComma ? ',' : '');
-                  fixes.push(
-                    fixer.insertTextAfterRange(
-                      [insertPosition, insertPosition],
-                      `${previousFix}sameSite: "strict"`
-                    )
-                  );
-                }
+                const missingFlags: string[] = [];
+                if (!hasHttpOnly) missingFlags.push('httpOnly: true');
+                if (!hasSecure) missingFlags.push('secure: true');
+                if (!hasSameSite) missingFlags.push('sameSite: "strict"');
                 
-                return fixes;
+                const prefix = needsComma ? ',' : '';
+                const insertion = prefix + '\n  ' + missingFlags.join(',\n  ');
+                
+                return fixer.insertTextAfterRange(
+                  [insertPosition, insertPosition],
+                  insertion
+                );
               },
             },
           ],
@@ -313,12 +305,20 @@ export const noInsecureCookieSettings = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      // Check for res.cookie() calls
-      if (
+      // Check for res.cookie() calls or cookies.set() calls
+      const isResCookie = 
         callee.type === 'MemberExpression' &&
         callee.property.type === 'Identifier' &&
-        callee.property.name === 'cookie'
-      ) {
+        callee.property.name === 'cookie';
+
+      const isUniversalCookie = 
+        callee.type === 'MemberExpression' &&
+        callee.property.type === 'Identifier' &&
+        callee.property.name === 'set' &&
+        callee.object.type === 'Identifier' &&
+        (callee.object.name === 'cookies' || callee.object.name === 'cookie');
+
+      if (isResCookie || isUniversalCookie) {
         // Check if third argument (options) is provided
         if (node.arguments.length < 3) {
           context.report({
@@ -343,93 +343,7 @@ export const noInsecureCookieSettings = createRule<RuleOptions, MessageIds>({
               },
             ],
           });
-          return; // Don't check ObjectExpression for this case
-        }
-        
-        // If third argument exists and is an ObjectExpression, check it here
-        // This handles the case where ObjectExpression visitor might not catch it
-        if (node.arguments.length >= 3 && node.arguments[2].type === 'ObjectExpression') {
-          const optionsArg = node.arguments[2] as TSESTree.ObjectExpression;
-          const text = sourceCode.getText(optionsArg);
-          
-          // Check if it matches any ignore pattern
-          if (!matchesIgnorePattern(text, ignorePatterns)) {
-            const { hasHttpOnly, hasSecure, hasSameSite } = hasSecureCookieSettings(optionsArg, sourceCode);
-            
-            const issues: string[] = [];
-            if (!hasHttpOnly) {
-              issues.push('missing httpOnly flag');
-            }
-            if (!hasSecure) {
-              issues.push('missing secure flag');
-            }
-            if (!hasSameSite) {
-              issues.push('missing sameSite flag');
-            }
-
-            if (issues.length > 0) {
-              const issueDescription = issues.join(', ');
-              const safeAlternative = 'Set httpOnly: true, secure: true, sameSite: "strict"';
-
-              context.report({
-                node: optionsArg,
-                messageId: 'insecureCookieSettings',
-                data: {
-                  issue: issueDescription,
-                  safeAlternative,
-                },
-                suggest: [
-                  {
-                    messageId: 'addSecureFlags',
-                    fix(fixer: TSESLint.RuleFixer) {
-                      // Find the last property in the object
-                      const properties = optionsArg.properties;
-                      if (properties.length === 0) {
-                        // Empty object - add all flags
-                        return fixer.replaceText(optionsArg, '{ httpOnly: true, secure: true, sameSite: "strict" }');
-                      }
-
-                      const lastProperty = properties[properties.length - 1];
-                      const lastPropertyText = sourceCode.getText(lastProperty);
-                      const needsComma = !lastPropertyText.trim().endsWith(',');
-                      
-                      const fixes: TSESLint.RuleFix[] = [];
-                      const insertPosition = lastProperty.range[1];
-                      
-                      if (!hasHttpOnly) {
-                        fixes.push(
-                          fixer.insertTextAfterRange(
-                            [insertPosition, insertPosition],
-                            `${needsComma ? ',' : ''}\n  httpOnly: true`
-                          )
-                        );
-                      }
-                      if (!hasSecure) {
-                        const httpOnlyFix = !hasHttpOnly ? ',\n  ' : (needsComma ? ',' : '');
-                        fixes.push(
-                          fixer.insertTextAfterRange(
-                            [insertPosition, insertPosition],
-                            `${httpOnlyFix}secure: true`
-                          )
-                        );
-                      }
-                      if (!hasSameSite) {
-                        const previousFix = (!hasHttpOnly || !hasSecure) ? ',\n  ' : (needsComma ? ',' : '');
-                        fixes.push(
-                          fixer.insertTextAfterRange(
-                            [insertPosition, insertPosition],
-                            `${previousFix}sameSite: "strict"`
-                          )
-                        );
-                      }
-                      
-                      return fixes;
-                    },
-                  },
-                ],
-              });
-            }
-          }
+          return;
         }
       }
     }

@@ -120,7 +120,7 @@ describe('no-insecure-cookie-settings', () => {
               suggestions: [
                 {
                   messageId: 'addSecureFlags',
-                  output: 'res.cookie("session", token, { httpOnly: true, sameSite: "strict",secure: true });',
+                  output: 'res.cookie("session", token, { httpOnly: true, sameSite: "strict",\n  secure: true });',
                 },
               ],
             },
@@ -144,7 +144,7 @@ describe('no-insecure-cookie-settings', () => {
               suggestions: [
                 {
                   messageId: 'addSecureFlags',
-                  output: 'res.cookie("session", token, { httpOnly: true, secure: true,sameSite: "strict" });',
+                  output: 'res.cookie("session", token, { httpOnly: true, secure: true,\n  sameSite: "strict" });',
                 },
               ],
             },
@@ -208,6 +208,198 @@ describe('no-insecure-cookie-settings', () => {
                 safeAlternative: 'Use server-side cookie setting with httpOnly: true, secure: true, sameSite: "strict"',
               },
             },
+          ],
+        },
+      ],
+    });
+  });
+  describe('Configuration Options', () => {
+    ruleTester.run('config - ignore patterns', noInsecureCookieSettings, {
+      valid: [
+        // Ignored cookie names
+        {
+          code: 'res.cookie("ignored-session", token, { path: "/" });',
+          options: [{ ignorePatterns: ['ignored-session'] }],
+        },
+        // Ignored via regex
+        {
+          code: 'res.cookie("analytics_id", id, { path: "/" });',
+          options: [{ ignorePatterns: ['analytics_.*'] }],
+        },
+        // Invalid regex in ignore patterns handles gracefully
+        {
+          code: 'res.cookie("session", token, { httpOnly: true, secure: true, sameSite: "strict" });',
+          options: [{ ignorePatterns: ['['] }],
+        },
+      ],
+      invalid: [
+        // Not ignored
+        {
+          code: 'res.cookie("session", token, { path: "/" });',
+          options: [{ ignorePatterns: ['other'] }],
+          errors: [
+            {
+               messageId: 'insecureCookieSettings',
+               suggestions: [{
+                 messageId: 'addSecureFlags',
+                 output: 'res.cookie("session", token, { path: "/",\n  httpOnly: true,\n  secure: true,\n  sameSite: "strict" });'
+               }]
+            }
+          ],
+        },
+      ],
+    });
+
+    ruleTester.run('config - test files', noInsecureCookieSettings, {
+      valid: [
+        {
+          code: 'res.cookie("test", "value", {});',
+          filename: 'test.spec.ts',
+          options: [{ allowInTests: true }],
+        },
+      ],
+      invalid: [
+        {
+          code: 'res.cookie("test", "value", {});',
+          filename: 'test.spec.ts',
+          options: [{ allowInTests: false }],
+          errors: [
+            {
+               messageId: 'insecureCookieSettings',
+               suggestions: [{
+                 messageId: 'addSecureFlags',
+                 output: 'res.cookie("test", "value", { httpOnly: true, secure: true, sameSite: "strict" });'
+               }]
+            }
+          ],
+        },
+      ],
+    });
+  });
+
+  describe('Complex Fixer Scenarios', () => {
+    ruleTester.run('fixer - comma handling', noInsecureCookieSettings, {
+      valid: [],
+      invalid: [
+        // Property without trailing comma
+        {
+          code: 'res.cookie("session", token, { path: "/" });',
+          errors: [
+            {
+               messageId: 'insecureCookieSettings',
+               suggestions: [{
+                 messageId: 'addSecureFlags',
+                 output: 'res.cookie("session", token, { path: "/",\n  httpOnly: true,\n  secure: true,\n  sameSite: "strict" });'
+               }]
+            }
+          ],
+        },
+        // Property with trailing comma
+        {
+          code: 'res.cookie("session", token, { path: "/", });',
+          errors: [
+            {
+               messageId: 'insecureCookieSettings',
+               suggestions: [{
+                 messageId: 'addSecureFlags',
+                 output: 'res.cookie("session", token, { path: "/",\n  httpOnly: true,\n  secure: true,\n  sameSite: "strict", });'
+               }]
+            }
+          ],
+        },
+        // Mixed flags present (missing some)
+        {
+          code: 'res.cookie("session", token, { httpOnly: true });',
+          errors: [
+            {
+               messageId: 'insecureCookieSettings',
+               suggestions: [{
+                 messageId: 'addSecureFlags',
+                 output: 'res.cookie("session", token, { httpOnly: true,\n  secure: true,\n  sameSite: "strict" });'
+               }]
+            }
+          ],
+        },
+        {
+          code: 'res.cookie("session", token, { secure: true });',
+          errors: [
+            {
+               messageId: 'insecureCookieSettings',
+               suggestions: [{
+                 messageId: 'addSecureFlags',
+                 output: 'res.cookie("session", token, { secure: true,\n  httpOnly: true,\n  sameSite: "strict" });'
+               }]
+            }
+          ],
+        },
+      ],
+    });
+  });
+
+  describe('Nested and Indirect Configurations', () => {
+    ruleTester.run('indirect - cookie options referencing', noInsecureCookieSettings, {
+      valid: [],
+      invalid: [
+        // Object defined elsewhere but passed as argument
+        // Note: The rule currently only checks inline objects or certain patterns
+        // This test ensures we're checking call arguments that are ObjectExpressions
+        {
+          code: 'res.cookie("session", token, { maxAge: 1000 });',
+          errors: [
+            {
+               messageId: 'insecureCookieSettings',
+               suggestions: [{
+                 messageId: 'addSecureFlags',
+                 output: 'res.cookie("session", token, { maxAge: 1000,\n  httpOnly: true,\n  secure: true,\n  sameSite: "strict" });'
+               }]
+            }
+          ],
+        },
+        // Object nested in another call
+        {
+          code: 'res.cookie("session", generateToken(), { maxAge: 1000 });',
+          errors: [
+            {
+               messageId: 'insecureCookieSettings',
+               suggestions: [{
+                 messageId: 'addSecureFlags',
+                 output: 'res.cookie("session", generateToken(), { maxAge: 1000,\n  httpOnly: true,\n  secure: true,\n  sameSite: "strict" });'
+               }]
+            }
+          ],
+        },
+      ],
+    });
+  });
+
+  describe('Other Library Patterns', () => {
+    ruleTester.run('libraries - other cookie setters', noInsecureCookieSettings, {
+      valid: [],
+      invalid: [
+        // cookie-session style
+        {
+          code: 'cookie.set("session", value, { path: "/" });',
+          errors: [
+            {
+               messageId: 'insecureCookieSettings',
+               suggestions: [{
+                 messageId: 'addSecureFlags',
+                 output: 'cookie.set("session", value, { path: "/",\n  httpOnly: true,\n  secure: true,\n  sameSite: "strict" });'
+               }]
+            }
+          ],
+        },
+        // Universal cookie
+        {
+          code: 'cookies.set("session", value, { path: "/" });',
+          errors: [
+            {
+               messageId: 'insecureCookieSettings',
+               suggestions: [{
+                 messageId: 'addSecureFlags',
+                 output: 'cookies.set("session", value, { path: "/",\n  httpOnly: true,\n  secure: true,\n  sameSite: "strict" });'
+               }]
+            }
           ],
         },
       ],

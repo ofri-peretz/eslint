@@ -127,3 +127,4 @@ const decoded = jwt.verify(token, publicKey, {
 - [`no-weak-crypto`](./no-weak-crypto.md) - Weak cryptographic algorithms
 - [`no-hardcoded-credentials`](./no-hardcoded-credentials.md) - Hardcoded secrets
 
+

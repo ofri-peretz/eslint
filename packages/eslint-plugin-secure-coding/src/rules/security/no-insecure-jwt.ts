@@ -374,39 +374,37 @@ export const noInsecureJwt = createRule<RuleOptions, MessageIds>({
       },
 
       // Check for JWT token usage without verification
-      Identifier(node: TSESTree.Identifier) {
-        // Look for JWT-related patterns in comments and strings
-        const parent = node.parent;
+      Literal(node: TSESTree.Literal) {
+        if (typeof node.value !== 'string') {
+          return;
+        }
 
-        // Check string literals containing JWT patterns
-        if (parent?.type === 'Literal' && typeof parent.value === 'string') {
-          const value = parent.value;
+        const value = node.value;
 
-          // Look for JWT patterns in strings
-          if (value.includes('eyJ') && value.split('.').length === 3) { // JWT structure
-            // Check if this JWT is used unsafely
-            let current: TSESTree.Node | undefined = parent;
-            let isVerified = false;
+        // Look for JWT patterns in strings
+        if (value.includes('eyJ') && value.split('.').length === 3) { // JWT structure
+          // Check if this JWT is used unsafely
+          let current: TSESTree.Node | undefined = node;
+          let isVerified = false;
 
-            // Walk up to find if this is within a verified JWT operation
-            while (current && !isVerified) {
-              if (current.type === 'CallExpression' && hasSignatureVerification(current)) {
-                isVerified = true;
-                break;
-              }
-              current = current.parent as TSESTree.Node;
+          // Walk up to find if this is within a verified JWT operation
+          while (current && !isVerified) {
+            if (current.type === 'CallExpression' && hasSignatureVerification(current)) {
+              isVerified = true;
+              break;
             }
+            current = current.parent as TSESTree.Node;
+          }
 
-            if (!isVerified && !safetyChecker.isSafe(parent, context)) {
-              context.report({
-                node: parent,
-                messageId: 'unsafeJwtParsing',
-                data: {
-                  filePath: filename,
-                  line: String(node.loc?.start.line ?? 0),
-                },
-              });
-            }
+          if (!isVerified && !safetyChecker.isSafe(node, context)) {
+            context.report({
+              node,
+              messageId: 'unsafeJwtParsing',
+              data: {
+                filePath: filename,
+                line: String(node.loc?.start.line ?? 0),
+              },
+            });
           }
         }
       }

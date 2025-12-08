@@ -12,8 +12,8 @@
 | **Node.js**     | >=18.0.0                                                                                 |
 | **ESLint**      | ^8.0.0 \|\| ^9.0.0                                                                       |
 | **License**     | MIT                                                                                      |
-| **Homepage**    | https://github.com/ofri-peretz/forge-js#readme                                           |
-| **Repository**  | https://github.com/ofri-peretz/forge-js.git                                              |
+| **Homepage**    | https://github.com/ofri-peretz/eslint#readme                                             |
+| **Repository**  | https://github.com/ofri-peretz/eslint.git                                                |
 | **Directory**   | packages/eslint-plugin-secure-coding                                                     |
 
 ## Installation
@@ -190,11 +190,6 @@ A: Yes, native TypeScript support.
 
 **Q: Does it work with ESLint 9 flat config?**
 A: Yes, fully compatible.
-
-## Related Packages
-
-- **@forge-js/eslint-plugin-llm-optimized** - Full plugin with 144+ rules
-- **@interlace/eslint-devkit** - Build custom LLM-optimized rules
 
 ## License
 

@@ -48,4 +48,36 @@ describe('no-redos-vulnerable-regex', () => {
       ],
     });
   });
+
+  describe('Options Coverage', () => {
+    ruleTester.run('options - allowCommonPatterns bypasses alternation', noRedosVulnerableRegex, {
+      valid: [
+        {
+          code: 'const regex = /(a|b)+c/;',
+          options: [{ allowCommonPatterns: true }],
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('options - maxPatternLength skips overly long patterns', noRedosVulnerableRegex, {
+      valid: [
+        {
+          code: `const regex = /${'a'.repeat(600)}+/;`,
+          options: [{ maxPatternLength: 100 }],
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('invalid - RegExp call expression', noRedosVulnerableRegex, {
+      valid: [],
+      invalid: [
+        {
+          code: 'RegExp("(a+)+b");',
+          errors: [{ messageId: 'redosVulnerable' }],
+        },
+      ],
+    });
+  });
 });

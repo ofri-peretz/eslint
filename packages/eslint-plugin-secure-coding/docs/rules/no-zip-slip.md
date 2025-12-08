@@ -115,3 +115,4 @@ zip.extractAllTo(targetDir, true, true); // With overwrite protection
 - [`detect-non-literal-fs-filename`](./detect-non-literal-fs-filename.md) - Path traversal in fs operations
 - [`no-toctou-vulnerability`](./no-toctou-vulnerability.md) - Race condition vulnerabilities
 
+

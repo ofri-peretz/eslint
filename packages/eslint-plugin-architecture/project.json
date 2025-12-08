@@ -1,0 +1,84 @@
+{
+    "name": "eslint-plugin-architecture",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "packages/eslint-plugin-architecture/src",
+    "projectType": "library",
+    "release": {
+        "version": {
+            "manifestRootsToUpdate": [
+                "{projectRoot}",
+                "dist/{projectRoot}"
+            ],
+            "currentVersionResolver": "git-tag",
+            "fallbackCurrentVersionResolver": "disk",
+            "generatorOptions": {
+                "packageRoot": "{projectRoot}",
+                "currentVersionResolver": "git-tag"
+            }
+        }
+    },
+    "tags": [],
+    "targets": {
+        "build": {
+            "executor": "@nx/js:tsc",
+            "dependsOn": [
+                "^build",
+                "test"
+            ],
+            "outputs": [
+                "{options.outputPath}"
+            ],
+            "options": {
+                "outputPath": "dist/packages/eslint-plugin-architecture",
+                "main": "packages/eslint-plugin-architecture/src/index.ts",
+                "tsConfig": "packages/eslint-plugin-architecture/tsconfig.lib.json",
+                "assets": [
+                    "packages/eslint-plugin-architecture/README.md",
+                    "packages/eslint-plugin-architecture/CHANGELOG.md",
+                    "packages/eslint-plugin-architecture/LICENSE",
+                    {
+                        "glob": "packages/eslint-plugin-architecture/README.md",
+                        "input": "packages/eslint-plugin-architecture",
+                        "output": "./"
+                    }
+                ]
+            }
+        },
+        "test": {
+            "executor": "@nx/vite:test",
+            "outputs": [
+                "{projectRoot}/coverage"
+            ],
+            "options": {
+                "configFile": "packages/eslint-plugin-architecture/vitest.config.mts",
+                "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "coverage": true
+                }
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "outputs": [
+                "{options.outputFile}"
+            ],
+            "options": {
+                "lintFilePatterns": [
+                    "packages/eslint-plugin-architecture/**/*.{ts,tsx,js,jsx}"
+                ]
+            }
+        },
+        "publish": {
+            "executor": "nx:run-commands",
+            "dependsOn": [
+                "build"
+            ],
+            "options": {
+                "command": "npm publish dist/packages/eslint-plugin-architecture --access public",
+                "cwd": "{workspaceRoot}"
+            }
+        }
+    }
+}

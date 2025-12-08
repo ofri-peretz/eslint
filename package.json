@@ -1,16 +1,16 @@
 {
-  "name": "forge-js",
+  "name": "eslint",
   "version": "1.0.0",
   "description": "Open-source tools and libraries for JavaScript & TypeScript ecosystems - ESLint plugins with LLM-optimized rules, utilities, and CLI tools in an Nx monorepo",
   "private": true,
   "main": "index.js",
-  "homepage": "https://github.com/ofri-peretz/forge-js#readme",
+  "homepage": "https://github.com/ofri-peretz/eslint#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ofri-peretz/forge-js.git"
+    "url": "git+https://github.com/ofri-peretz/eslint.git"
   },
   "bugs": {
-    "url": "https://github.com/ofri-peretz/forge-js/issues"
+    "url": "https://github.com/ofri-peretz/eslint/issues"
   },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
@@ -22,7 +22,8 @@
     "release:publish": "nx release publish",
     "release:version": "nx release --skip-publish",
     "publish:plugin": "nx run eslint-plugin:publish",
-    "publish:utils": "nx run eslint-plugin-utils:publish",
+    "publish:devkit": "nx run eslint-devkit:publish",
+    "publish:secure-coding": "nx run eslint-plugin-secure-coding:publish",
     "publish:cli": "nx run cli:publish",
     "publish:all": "pnpm nx run-many -t build --all && nx release publish",
     "ci:trigger": "gh workflow run ci.yml --ref local-playground-app && echo '✅ Workflow triggered!'",
@@ -85,16 +86,23 @@
     "@swc/helpers": "^0.5.17",
     "@testing-library/dom": "10.4.1",
     "@testing-library/react": "16.3.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "24.9.2",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.1.0",
     "@vitest/coverage-v8": "^4.0.6",
     "@vitest/ui": "^4.0.6",
+    "add": "^2.0.6",
+    "enhanced-resolve": "^5.18.3",
     "eslint": "^9.39.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-unicorn": "^62.0.0",
+    "get-tsconfig": "^4.13.0",
     "husky": "^9.1.7",
+    "jest": "^30.0.2",
+    "jest-environment-node": "^30.0.2",
+    "jest-util": "^30.0.2",
     "jiti": "2.6.1",
     "jsdom": "~27.1.0",
     "jsonc-eslint-parser": "^2.4.1",
@@ -102,22 +110,19 @@
     "prettier": "^3.6.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "ts-jest": "^29.4.0",
     "ts-node": "10.9.1",
     "tslib": "^2.8.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.2",
     "verdaccio": "^6.2.1",
     "vite": "^7.1.12",
-    "vitest": "^4.0.6",
-    "add": "^2.0.6",
-    "enhanced-resolve": "^5.18.3",
-    "get-tsconfig": "^4.13.0"
+    "vitest": "^4.0.6"
   },
   "nx": {},
   "pnpm": {
     "overrides": {
       "@nx/vite": "^22.0.3"
     }
-  },
-  "dependencies": {}
+  }
 }

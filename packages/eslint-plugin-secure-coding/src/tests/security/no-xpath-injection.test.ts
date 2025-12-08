@@ -318,4 +318,88 @@ describe('no-xpath-injection', () => {
       ],
     });
   });
+
+  describe('Advanced XPath Coverage', () => {
+    ruleTester.run('coverage - function parameters and direct calls', noXpathInjection, {
+      valid: [
+        // Helper function with safe annotation
+        {
+          code: `
+            /** @xpath-safe */
+            function safeQuery() {
+              const xpath = "//user"; 
+              // Rule checks statement level too for some visitors, but usually annotation is on the statement using it
+            }
+          `,
+        },
+      ],
+      invalid: [
+        // Direct function call (not method) - Invalid because // is dangerous pattern
+        {
+          code: 'select("//user")',
+          options: [{ xpathFunctions: ['select'] }],
+          errors: [{ messageId: 'dangerousXpathExpression' }],
+        },
+        // Function parameter as input
+        {
+          code: `
+            function find(userInput) {
+              document.evaluate("//user[@name='" + userInput + "']", document);
+            }
+          `,
+          errors: [{ messageId: 'xpathInjection' }],
+        },
+        // req object usage directly
+        {
+          code: 'document.evaluate("//user[@id=" + req.id + "]", document);',
+          errors: [{ messageId: 'xpathInjection' }],
+        },
+        // Direct function call with dangerous input
+        {
+          code: 'selectNodes("//user[@name=" + userInput + "]")',
+          options: [{ xpathFunctions: ['selectNodes'] }],
+          errors: [{ messageId: 'xpathInjection' }],
+        },
+      ],
+    });
+
+    ruleTester.run('coverage - validation and construction', noXpathInjection, {
+      valid: [
+        // Variable assigned verified safe construction
+        {
+          code: `
+            const safePath = buildXPath('user', {});
+            document.evaluate(safePath, document);
+          `,
+          options: [{ safeXpathConstructors: ['buildXPath'] }],
+        },
+        // Validation function wrapper
+        {
+          code: `
+            const query = escapeXPath(userInput);
+            document.evaluate("//user[@id='" + query + "']", document);
+          `,
+          options: [{ xpathValidationFunctions: ['escapeXPath'] }],
+        },
+        // Annotated statement
+        {
+          code: `
+            /** @xpath-safe */
+            const xpath = "//user[@name='" + userInput + "']";
+            document.evaluate(xpath, document);
+          `,
+        },
+      ],
+      invalid: [
+        // Validation function not in options
+        {
+          code: `
+            const query = myEscape(userInput);
+            document.evaluate("//user[@id='" + query + "']", document);
+          `,
+          errors: [{ messageId: 'xpathInjection' }],
+        },
+      ],
+    });
+  });
 });

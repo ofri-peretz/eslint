@@ -80,6 +80,19 @@ describe('no-timing-attack', () => {
             },
           ],
         },
+        {
+          code: `
+            if (providedSecret === actualSecret) {
+              return true;
+            }
+          `,
+          options: [{ allowEarlyReturns: true }],
+          errors: [
+            {
+              messageId: 'insecureStringComparison',
+            },
+          ],
+        },
       ],
     });
   });

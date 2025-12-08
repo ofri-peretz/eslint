@@ -114,3 +114,4 @@ db.query('SELECT * FROM users WHERE name = ?', [userInput]);
 - [`no-unsanitized-html`](./no-unsanitized-html.md) - XSS via innerHTML
 - [`no-unescaped-url-parameter`](./no-unescaped-url-parameter.md) - URL parameter injection
 
+

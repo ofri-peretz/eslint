@@ -56,8 +56,7 @@
         "{projectRoot}/coverage"
       ],
       "options": {
-        "configFile": "packages/eslint-plugin-secure-coding/vitest.config.mts",
-        "passWithNoTests": true
+        "configFile": "packages/eslint-plugin-secure-coding/vitest.config.mts"
       },
       "configurations": {
         "ci": {

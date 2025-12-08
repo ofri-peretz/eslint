@@ -17,14 +17,14 @@
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/ofri-peretz/forge-js#readme",
+  "homepage": "https://github.com/ofri-peretz/eslint#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ofri-peretz/forge-js.git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-plugin-dependencies"
   },
   "bugs": {
-    "url": "https://github.com/ofri-peretz/forge-js/issues"
+    "url": "https://github.com/ofri-peretz/eslint/issues"
   },
   "publishConfig": {
     "access": "public"
