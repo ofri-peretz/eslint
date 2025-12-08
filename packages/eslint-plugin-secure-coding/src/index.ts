@@ -323,68 +323,6 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       'secure-coding/no-unsafe-dynamic-require': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
-
-  /**
-   * LLM-friendly recommended config
-   * - Mirrors `recommended` severities
-   * - Adds guardrails helpful for agent/tool code
-   */
-  'recommended-llm': {
-    plugins: {
-      'secure-coding': plugin,
-    },
-    rules: {
-      // Start from recommended
-      ...recommendedRules,
-
-      // Emphasize data handling and deserialization for model/tool I/O
-      'secure-coding/no-unsafe-deserialization': 'error',
-      'secure-coding/detect-object-injection': 'error',
-
-      // Ensure outbound calls are constrained (common in agent tools)
-      'secure-coding/no-unencrypted-transmission': 'error',
-      'secure-coding/no-insecure-redirects': 'error',
-    },
-  } satisfies TSESLint.FlatConfig.Config,
-
-  /**
-   * MCP-focused baseline
-   * - Stricter on outbound/network/file/process surfaces typical for tools
-   */
-  'recommended-mcp': {
-    plugins: {
-      'secure-coding': plugin,
-    },
-    rules: {
-      ...recommendedRules,
-
-      // Raise critical tool vectors
-      'secure-coding/detect-child-process': 'error',
-      'secure-coding/no-unsafe-dynamic-require': 'error',
-      'secure-coding/detect-non-literal-fs-filename': 'error',
-      'secure-coding/no-unsafe-deserialization': 'error',
-      'secure-coding/detect-object-injection': 'error',
-      'secure-coding/no-unlimited-resource-allocation': 'error',
-      'secure-coding/no-unchecked-loop-condition': 'error',
-      'secure-coding/no-unencrypted-transmission': 'error',
-      'secure-coding/no-insecure-redirects': 'error',
-      'secure-coding/no-missing-security-headers': 'error',
-      'secure-coding/no-missing-cors-check': 'error',
-    },
-  } satisfies TSESLint.FlatConfig.Config,
-
-  /**
-   * Strict MCP mode
-   * - All rules as errors (mirrors strict) with the same plugin wiring
-   */
-  'strict-mcp': {
-    plugins: {
-      'secure-coding': plugin,
-    },
-    rules: Object.fromEntries(
-      Object.keys(rules).map(ruleName => [`secure-coding/${ruleName}`, 'error'])
-    ),
-  } satisfies TSESLint.FlatConfig.Config,
 };
 
 /**
