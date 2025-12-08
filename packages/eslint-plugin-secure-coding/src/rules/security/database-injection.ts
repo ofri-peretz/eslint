@@ -198,7 +198,7 @@ export const databaseInjection = createRule<RuleOptions, MessageIds>({
      * Select message ID based on strategy
      * @todo Consider using this for suggestions in future versions
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const selectStrategyMessage = (): MessageIds => {
       switch (strategy) {
         case 'parameterize':
