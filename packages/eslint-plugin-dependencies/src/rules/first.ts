@@ -1,10 +1,16 @@
-import type { TSESTree } from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'first';
 
-export const first = createRule<[], MessageIds>({
+export interface Options {
+  additionalModules?: string[];
+}
+
+export type RuleOptions = [Options?];
+
+export const first = createRule<RuleOptions, MessageIds>({
   name: 'first',
   meta: {
     type: 'suggestion',
@@ -25,10 +31,10 @@ export const first = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
-      ImportDeclaration(node) {
-        const sourceCode = context.getSourceCode();
+      ImportDeclaration(node: TSESTree.ImportDeclaration) {
+        const sourceCode = context.sourceCode;
         const body = sourceCode.ast.body;
         const index = body.indexOf(node);
         

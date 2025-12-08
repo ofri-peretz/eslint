@@ -97,8 +97,8 @@ export const preferNodeProtocol = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [{}],
 
-  create(context, [options]) {
-    const { additionalModules = [] } = options || {};
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
+    const { additionalModules = [] } = options || {} as Options;
     const allModulesToCheck = new Set([...NODE_BUILT_INS, ...additionalModules]);
 
     return {

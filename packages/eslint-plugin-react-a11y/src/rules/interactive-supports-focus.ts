@@ -53,8 +53,8 @@ export const interactiveSupportsFocus = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const { tabbable = [] } = options || {};
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
+    const { tabbable = [] } = options ?? {} as Options;
 
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
@@ -64,10 +64,10 @@ export const interactiveSupportsFocus = createRule<RuleOptions, MessageIds>({
         // Skip native interactive elements and configured tabbable elements
         if (NATIVE_INTERACTIVE_ELEMENTS.has(element) || tabbable.includes(element)) return;
 
-        const hasInteractiveHandler = node.attributes.some(attr => 
+        const hasInteractiveHandler = node.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
             attr.type === 'JSXAttribute' && 
             attr.name.type === 'JSXIdentifier' && 
-            INTERACTIVE_HANDLERS.includes(attr.name.name)
+            INTERACTIVE_HANDLERS.includes(attr.name?.name ?? '')
         );
 
         if (!hasInteractiveHandler) return;
@@ -83,7 +83,7 @@ export const interactiveSupportsFocus = createRule<RuleOptions, MessageIds>({
         // But for now, we stick to the handler check as primary trigger.
 
         // Check tabIndex
-        const tabIndex = node.attributes.find(attr => 
+        const tabIndex = node.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
             attr.type === 'JSXAttribute' && 
             attr.name.type === 'JSXIdentifier' && 
             attr.name.name === 'tabIndex'

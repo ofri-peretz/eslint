@@ -43,14 +43,14 @@ export const mouseEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
-        const attributes = node.attributes.filter((attr): attr is TSESTree.JSXAttribute => 
+        const attributes = node.attributes.filter((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
           attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier'
         );
 
-        const hasMouseOver = attributes.some(attr => attr.name.name === 'onMouseOver');
-        const hasMouseOut = attributes.some(attr => attr.name.name === 'onMouseOut');
-        const hasFocus = attributes.some(attr => attr.name.name === 'onFocus');
-        const hasBlur = attributes.some(attr => attr.name.name === 'onBlur');
+        const hasMouseOver = attributes.some((attr: TSESTree.JSXAttribute): attr is TSESTree.JSXAttribute => attr.name?.name === 'onMouseOver' && attr.name?.type === 'JSXIdentifier');
+        const hasMouseOut = attributes.some((attr: TSESTree.JSXAttribute): attr is TSESTree.JSXAttribute => attr.name?.name === 'onMouseOut' && attr.name?.type === 'JSXIdentifier');
+        const hasFocus = attributes.some((attr: TSESTree.JSXAttribute): attr is TSESTree.JSXAttribute => attr.name?.name === 'onFocus' && attr.name?.type === 'JSXIdentifier');
+        const hasBlur = attributes.some((attr: TSESTree.JSXAttribute): attr is TSESTree.JSXAttribute => attr.name?.name === 'onBlur' && attr.name?.type === 'JSXIdentifier');
 
         if (hasMouseOver && !hasFocus) {
           context.report({

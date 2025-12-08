@@ -1,3 +1,4 @@
+
 /**
  * ESLint Rule: aria-unsupported-elements
  * Enforce that elements that don't support ARIA roles, states, and properties do not contain them
@@ -41,7 +42,7 @@ export const ariaUnsupportedElements = createRule<RuleOptions, MessageIds>({
         if (!ARIA_UNSUPPORTED_ELEMENTS.has(element)) return;
 
         const hasAria = node.attributes.some(
-            (attr) => 
+            (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
             attr.type === 'JSXAttribute' && 
             attr.name.type === 'JSXIdentifier' && 
             (attr.name.name.startsWith('aria-') || attr.name.name === 'role')

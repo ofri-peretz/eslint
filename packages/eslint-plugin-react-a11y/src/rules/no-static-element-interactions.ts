@@ -52,15 +52,16 @@ export const noStaticElementInteractions = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const handlers = (options && options.handlers) || INTERACTIVE_HANDLERS;
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
+    const { handlers = INTERACTIVE_HANDLERS } = options ?? {};
 
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type !== 'JSXIdentifier') return;
         if (!STATIC_ELEMENTS.has(node.name.name)) return;
 
-        const hasInteractiveHandler = node.attributes.some(attr => 
+        const hasInteractiveHandler = node.attributes.some(
+          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' && 
             attr.name.type === 'JSXIdentifier' && 
             handlers.includes(attr.name.name)
@@ -69,7 +70,8 @@ export const noStaticElementInteractions = createRule<RuleOptions, MessageIds>({
         if (!hasInteractiveHandler) return;
 
         // Check if it has a role that makes it interactive
-        const hasRole = node.attributes.some(attr => 
+        const hasRole = node.attributes.some(
+          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
              attr.type === 'JSXAttribute' && 
              attr.name.type === 'JSXIdentifier' && 
              attr.name.name === 'role'

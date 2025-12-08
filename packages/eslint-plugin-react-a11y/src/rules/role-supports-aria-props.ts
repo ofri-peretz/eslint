@@ -84,10 +84,11 @@ export const roleSupportsAriaProps = createRule<RuleOptions, MessageIds>({
         let role = '';
 
         // Check explicit role
-        const roleAttr = node.attributes.find(attr =>
-          attr.type === 'JSXAttribute' &&
-          attr.name.type === 'JSXIdentifier' &&
-          attr.name.name === 'role'
+        const roleAttr = node.attributes.find(
+          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'role',
         );
 
         if (roleAttr && roleAttr.type === 'JSXAttribute' && roleAttr.value && roleAttr.value.type === 'Literal' && typeof roleAttr.value.value === 'string') {

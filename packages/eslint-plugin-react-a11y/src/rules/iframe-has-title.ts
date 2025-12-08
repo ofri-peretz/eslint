@@ -41,11 +41,11 @@ export const iframeHasTitle = createRule<RuleOptions, MessageIds>({
         }
 
         const hasTitle = node.attributes.some(
-          (attr) =>
+          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
             attr.name.name === 'title' &&
-            attr.value
+            attr.value?.type === 'Literal'
         );
 
         if (!hasTitle) {

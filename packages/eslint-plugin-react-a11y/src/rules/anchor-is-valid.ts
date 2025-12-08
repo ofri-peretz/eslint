@@ -64,7 +64,7 @@ export const anchorIsValid = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
     const { components = [], specialLink = [] } = options || {};
     const anchors = ['a', ...components];
 
@@ -75,28 +75,28 @@ export const anchorIsValid = createRule<RuleOptions, MessageIds>({
         }
 
         const href = node.attributes.find(
-          (attr): attr is TSESTree.JSXAttribute =>
+          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'href'
+            attr.name.name === 'href',
         );
 
         const onClick = node.attributes.find(
-          (attr): attr is TSESTree.JSXAttribute =>
+          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
-            attr.name.name === 'onClick'
+            attr.name.name === 'onClick',
         );
 
         if (!href) {
           // Check for special link props (like 'to' in React Router)
-          const hasSpecialLink = specialLink.some(prop =>
+          const hasSpecialLink = specialLink.some((prop: string) =>
             node.attributes.some(
-              attr =>
+              (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
                 attr.type === 'JSXAttribute' &&
                 attr.name.type === 'JSXIdentifier' &&
-                attr.name.name === prop
-            )
+                attr.name.name === prop,
+            ),
           );
 
           if (!hasSpecialLink) {

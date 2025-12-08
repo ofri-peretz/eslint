@@ -1,3 +1,4 @@
+
 /**
  * ESLint Rule: autocomplete-valid
  * Enforce that autocomplete attribute has valid value
@@ -56,15 +57,15 @@ export const autocompleteValid = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const { inputComponents = [] } = options || {};
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
+    const { inputComponents = [] } = options ?? {} as Options;
     const inputs = ['input', ...inputComponents];
 
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type !== 'JSXIdentifier' || !inputs.includes(node.name.name)) return;
 
-        const autocomplete = node.attributes.find(attr => 
+        const autocomplete = node.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
             attr.type === 'JSXAttribute' && 
             attr.name.type === 'JSXIdentifier' && 
             attr.name.name === 'autocomplete'

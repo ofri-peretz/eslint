@@ -55,8 +55,8 @@ export const noNoninteractiveElementInteractions = createRule<RuleOptions, Messa
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const handlers = (options && options.handlers) || INTERACTIVE_HANDLERS;
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
+    const { handlers = INTERACTIVE_HANDLERS } = options ?? {};
 
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
@@ -65,19 +65,20 @@ export const noNoninteractiveElementInteractions = createRule<RuleOptions, Messa
 
         if (!NON_INTERACTIVE_ELEMENTS.has(element)) return;
 
-        const hasInteractiveHandler = node.attributes.some(attr => 
-            attr.type === 'JSXAttribute' && 
-            attr.name.type === 'JSXIdentifier' && 
-            handlers.includes(attr.name.name)
+        const hasInteractiveHandler = node.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            handlers.includes(attr.name.name),
         );
 
         if (!hasInteractiveHandler) return;
 
         // If it has a role, it might be valid (e.g., img role="button")
-        const hasRole = node.attributes.some(attr => 
-             attr.type === 'JSXAttribute' && 
-             attr.name.type === 'JSXIdentifier' && 
-             attr.name.name === 'role'
+        const hasRole = node.attributes.some(
+          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
+            attr.type === 'JSXAttribute' &&
+            attr.name.type === 'JSXIdentifier' &&
+            attr.name.name === 'role',
         );
 
         if (!hasRole) {

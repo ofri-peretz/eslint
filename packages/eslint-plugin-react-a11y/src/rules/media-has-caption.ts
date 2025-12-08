@@ -49,8 +49,8 @@ export const mediaHasCaption = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
-    const { audio = [], video = [], track = [] } = options || {};
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
+    const { audio = [], video = [], track = [] } = options ?? {} as Options;
     const audioElements = ['audio', ...audio];
     const videoElements = ['video', ...video];
     const trackElements = ['track', ...track];
@@ -67,17 +67,17 @@ export const mediaHasCaption = createRule<RuleOptions, MessageIds>({
         // W3C says captions needed for audio content.
 
         // Check children for track
-        const hasCaption = node.children.some(child => {
+        const hasCaption = node.children.some((child: TSESTree.JSXChild): child is TSESTree.JSXElement => {
             if (child.type !== 'JSXElement') return false;
             const childName = child.openingElement.name;
             if (childName.type !== 'JSXIdentifier' || !trackElements.includes(childName.name)) return false;
             
             // Check kind attribute
-            return child.openingElement.attributes.some(attr => 
+            return child.openingElement.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
                 attr.type === 'JSXAttribute' && 
                 attr.name.type === 'JSXIdentifier' && 
                 attr.name.name === 'kind' && 
-                attr.value && 
+                attr.value?.type === 'Literal' && 
                 attr.value.type === 'Literal' && 
                 (attr.value.value === 'captions' || attr.value.value === 'descriptions')
             );

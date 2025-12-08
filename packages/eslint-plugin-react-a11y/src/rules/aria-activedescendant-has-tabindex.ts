@@ -45,7 +45,7 @@ export const ariaActivedescendantHasTabindex = createRule<RuleOptions, MessageId
         const element = node.name.name;
 
         // Check if element has aria-activedescendant
-        const ariaActivedescendant = node.attributes.find(attr =>
+        const ariaActivedescendant = node.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
           attr.type === 'JSXAttribute' &&
           attr.name.type === 'JSXIdentifier' &&
           attr.name.name === 'aria-activedescendant'
@@ -57,7 +57,7 @@ export const ariaActivedescendantHasTabindex = createRule<RuleOptions, MessageId
         if (INHERENTLY_FOCUSABLE.has(element)) return;
 
         // Check if element has explicit tabIndex
-        const tabIndex = node.attributes.find(attr =>
+        const tabIndex = node.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
           attr.type === 'JSXAttribute' &&
           attr.name.type === 'JSXIdentifier' &&
           attr.name.name === 'tabIndex'

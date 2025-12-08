@@ -36,7 +36,7 @@ export const clickEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         const hasOnClick = node.attributes.some(
-          (attr) =>
+          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
             attr.name.name === 'onClick'
@@ -45,7 +45,7 @@ export const clickEventsHaveKeyEvents = createRule<RuleOptions, MessageIds>({
         if (!hasOnClick) return;
 
         const hasKeyboardEvent = node.attributes.some(
-          (attr) =>
+          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
             ['onKeyUp', 'onKeyDown', 'onKeyPress'].includes(attr.name.name)

@@ -1,3 +1,4 @@
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import path from 'node:path';
@@ -7,6 +8,8 @@ type Options = [{
     pattern?: Record<string, 'always' | 'never'>;
     default?: 'always' | 'never';
 }];
+
+type RuleOptions = Options;
 
 export const extensions = createRule<Options, MessageIds>({
   name: 'extensions',
@@ -63,10 +66,10 @@ export const extensions = createRule<Options, MessageIds>({
       jpg: 'always',
     }
   }],
-  create(context) {
-    const options = context.options[0] || {};
-    const defaultBehavior = options.default || 'never';
-    const pattern = options.pattern || {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    const [options = {} as Options[0]] = context.options;
+    const defaultBehavior = options.default ?? 'never';
+    const pattern: Record<string, 'always' | 'never'> = options.pattern ?? {
       js: 'never',
       ts: 'never',
       tsx: 'never',
@@ -76,8 +79,8 @@ export const extensions = createRule<Options, MessageIds>({
       scss: 'always',
     };
 
-    return {
-      ImportDeclaration(node) {
+    return {  
+      ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const source = node.source.value;
         if (!source.startsWith('.')) return; // Only check relative imports
 
@@ -88,7 +91,7 @@ export const extensions = createRule<Options, MessageIds>({
            context.report({
              node: node.source,
              messageId: 'unexpectedExtension',
-             fix(fixer) {
+             fix(fixer: TSESLint.RuleFixer) {
                return fixer.replaceText(node.source, `'${source.slice(0, -ext.length - 1)}'`);
              }
            });

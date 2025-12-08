@@ -38,11 +38,11 @@ export const htmlHasLang = createRule<RuleOptions, MessageIds>({
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type === 'JSXIdentifier' && node.name.name === 'html') {
           const hasLang = node.attributes.some(
-            (attr) =>
+            (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
               attr.type === 'JSXAttribute' &&
               attr.name.type === 'JSXIdentifier' &&
               attr.name.name === 'lang' &&
-              attr.value
+              attr.value?.type === 'Literal'
           );
 
           if (!hasLang) {

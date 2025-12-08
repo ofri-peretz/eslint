@@ -10,16 +10,18 @@ import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'redundantRole';
 
-type RuleOptions = [{
+export interface Options {
     nav?: string[];
     ol?: string[];
     ul?: string[];
     button?: string[];
     img?: string[];
     [key: string]: string[] | undefined;
-}];
+};
 
-const DEFAULT_ROLE_EXCEPTIONS = {
+export type RuleOptions = [Options?];
+
+const DEFAULT_ROLE_EXCEPTIONS: Options = {
     nav: ['navigation'],
     button: ['button'],
     body: ['document'],
@@ -91,7 +93,7 @@ export const noRedundantRoles = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [DEFAULT_ROLE_EXCEPTIONS],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
         if (node.name.type !== 'JSXIdentifier') return;
@@ -102,7 +104,7 @@ export const noRedundantRoles = createRule<RuleOptions, MessageIds>({
         if (!implicitRole) return;
 
         const roleAttr = node.attributes.find(
-          (attr): attr is TSESTree.JSXAttribute =>
+          (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
             attr.type === 'JSXAttribute' &&
             attr.name.type === 'JSXIdentifier' &&
             attr.name.name === 'role'
@@ -112,8 +114,8 @@ export const noRedundantRoles = createRule<RuleOptions, MessageIds>({
           const roleValue = roleAttr.value.value;
           
           // Check if role is allowed exception
-          const opts = options || {};
-          const allowedRoles = opts[element] || [];
+          const opts: Options = options || {} as Options;
+          const allowedRoles: string[] = opts[element as keyof Options] || [];
           if (allowedRoles.includes(roleValue)) return;
 
           if (roleValue === implicitRole) {

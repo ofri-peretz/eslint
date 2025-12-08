@@ -33,7 +33,7 @@ const DEFAULT_IGNORE_ROLES = [
  */
 function hasAccessibleText(node: TSESTree.JSXElement, depth: number, labelAttributes: string[]): boolean {
   // Check aria-label
-  const ariaLabel = node.openingElement.attributes.find(attr =>
+  const ariaLabel = node.openingElement.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
     attr.type === 'JSXAttribute' &&
     attr.name.type === 'JSXIdentifier' &&
     attr.name.name === 'aria-label'
@@ -42,7 +42,7 @@ function hasAccessibleText(node: TSESTree.JSXElement, depth: number, labelAttrib
   if (ariaLabel && ariaLabel.type === 'JSXAttribute' && ariaLabel.value) return true;
 
   // Check aria-labelledby
-  const ariaLabelledby = node.openingElement.attributes.find(attr =>
+  const ariaLabelledby = node.openingElement.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
     attr.type === 'JSXAttribute' &&
     attr.name.type === 'JSXIdentifier' &&
     attr.name.name === 'aria-labelledby'
@@ -52,7 +52,7 @@ function hasAccessibleText(node: TSESTree.JSXElement, depth: number, labelAttrib
 
   // Check custom label attributes
   for (const attr of labelAttributes) {
-    const labelAttr = node.openingElement.attributes.find(a =>
+    const labelAttr = node.openingElement.attributes.find((a: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): a is TSESTree.JSXAttribute =>
       a.type === 'JSXAttribute' &&
       a.name.type === 'JSXIdentifier' &&
       a.name.name === attr
@@ -64,7 +64,7 @@ function hasAccessibleText(node: TSESTree.JSXElement, depth: number, labelAttrib
   // For img elements and input type="image", check alt
   if (node.openingElement.name.type === 'JSXIdentifier') {
     if (node.openingElement.name.name === 'img') {
-      const altAttr = node.openingElement.attributes.find(attr =>
+      const altAttr = node.openingElement.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
         attr.type === 'JSXAttribute' &&
         attr.name.type === 'JSXIdentifier' &&
         attr.name.name === 'alt'
@@ -73,14 +73,14 @@ function hasAccessibleText(node: TSESTree.JSXElement, depth: number, labelAttrib
       if (altAttr && altAttr.type === 'JSXAttribute' && altAttr.value) return true;
     } else if (node.openingElement.name.name === 'input') {
       // Check if it's an image input with alt
-      const typeAttr = node.openingElement.attributes.find(attr =>
+      const typeAttr = node.openingElement.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
         attr.type === 'JSXAttribute' &&
         attr.name.type === 'JSXIdentifier' &&
         attr.name.name === 'type'
       );
 
       if (typeAttr && typeAttr.type === 'JSXAttribute' && typeAttr.value && typeAttr.value.type === 'Literal' && typeAttr.value.value === 'image') {
-        const altAttr = node.openingElement.attributes.find(attr =>
+        const altAttr = node.openingElement.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
           attr.type === 'JSXAttribute' &&
           attr.name.type === 'JSXIdentifier' &&
           attr.name.name === 'alt'
@@ -127,7 +127,7 @@ function isControlComponent(elementName: string, controlComponents: string[]): b
  * Check if element has an interactive role
  */
 function hasInteractiveRole(node: TSESTree.JSXOpeningElement, ignoreRoles: string[]): boolean {
-  const roleAttr = node.attributes.find(attr =>
+  const roleAttr = node.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute =>
     attr.type === 'JSXAttribute' &&
     attr.name.type === 'JSXIdentifier' &&
     attr.name.name === 'role'
@@ -181,14 +181,14 @@ export const controlHasAssociatedLabel = createRule<RuleOptions, MessageIds>({
     ],
   },
   defaultOptions: [{}],
-  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
     const {
       labelAttributes = [],
       controlComponents = [],
       ignoreElements = DEFAULT_IGNORE_ELEMENTS,
       ignoreRoles = DEFAULT_IGNORE_ROLES,
       depth = 2,
-    } = options || {};
+    } = options ?? {} as Options;
 
     return {
       JSXElement(node: TSESTree.JSXElement) {

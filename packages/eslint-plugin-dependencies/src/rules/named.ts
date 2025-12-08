@@ -1,9 +1,15 @@
-import { createRule } from '@interlace/eslint-devkit';
+import { createRule, TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons, hasParserServices, getParserServices } from '@interlace/eslint-devkit';
 
 type MessageIds = 'named';
 
-export const named = createRule<[], MessageIds>({
+export interface Options {
+  additionalModules?: string[];
+}
+
+export type RuleOptions = [Options?];
+
+export const named = createRule<RuleOptions, MessageIds>({
   name: 'named',
   meta: {
     type: 'problem',
@@ -14,7 +20,7 @@ export const named = createRule<[], MessageIds>({
     messages: {
       named: formatLLMMessage({
         icon: MessageIcons.SECURITY, // Using SECURITY as incorrect imports can be dangerous or break build
-        issueName: 'Missing Named Export',
+        issueName: 'Missing Named Export',  
         description: 'Named export not found in module',
         severity: 'HIGH',
         fix: 'Verify the export name or use default import',
@@ -24,18 +30,18 @@ export const named = createRule<[], MessageIds>({
     schema: [],
   },
   defaultOptions: [],
-  create(context) {
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     if (!hasParserServices(context)) return {};
     
     const services = getParserServices(context);
-    const checker = services.program!.getTypeChecker();
+    const checker = services.program?.getTypeChecker?.();
 
     return {
-      ImportSpecifier(node) {
+      ImportSpecifier(node: TSESTree.ImportSpecifier) {
         if (node.parent.type === 'ImportDeclaration' && node.parent.importKind === 'type') return;
 
         const tsNode = services.esTreeNodeToTSNodeMap.get(node.imported);
-        const symbol = checker.getSymbolAtLocation(tsNode);
+        const symbol = checker?.getSymbolAtLocation?.(tsNode);
         
         // If symbol is undefined, it means TS couldn't resolve it.
         // However, we need to be careful about "any" types or unchecked JS.
@@ -46,7 +52,8 @@ export const named = createRule<[], MessageIds>({
              const source = node.parent.source;
              if (!source) return;
              const moduleNode = services.esTreeNodeToTSNodeMap.get(source);
-             const moduleSymbol = checker.getSymbolAtLocation(moduleNode);
+             const moduleSymbol = checker?.getSymbolAtLocation?.(moduleNode);
+             if (!moduleSymbol) return;
              
              if (moduleSymbol) {
                  // Module found, but export not found
