@@ -6,13 +6,13 @@
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://www.npmjs.com/package/eslint-plugin-secure-coding)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> A comprehensive, feature-based security ESLint plugin with **48 rules** mapped to OWASP Top 10, CWE, and CVSS, featuring LLM-optimized (MCP-ready) messages that guide developers toward secure code in enterprise environments.
+> A comprehensive, feature-based security ESLint plugin with **45+ rules** mapped to OWASP Top 10, CWE, and CVSS, featuring LLM-optimized (MCP-ready) messages that guide developers toward secure code in enterprise environments.
 
 ---
 
 ## 💡 What you get
 
-- **Feature-based coverage:** 48 rules grouped by attack surface (injection, crypto, auth, cookies, headers, resource limits, platform specifics).
+- **Feature-based coverage:** 45+ rules grouped by attack surface (injection, crypto, auth, cookies, headers, resource limits, platform specifics).
 - **LLM-optimized & MCP-ready:** Structured 2-line messages with CWE + OWASP + CVSS + concrete fixes so humans _and_ AI auto-fixers stay aligned.
 - **Standards aligned:** OWASP Top 10, CWE tagging, CVSS scoring in every finding for compliance mapping.
 - **Tiered presets:** `recommended`, `strict`, `owasp-top-10` for fast policy rollout.
@@ -37,7 +37,7 @@ src/api.ts
 
 ---
 
-## 🔐 48 Security Rules
+## 🔐 45+ Security Rules
 
 💼 = Set in `recommended` | ⚠️ = Warns in `recommended` | 🔧 = Auto-fixable | 💡 = Suggestions
 
@@ -174,17 +174,17 @@ npx eslint .
 
 ## 📋 Available Presets (policy tiers)
 
-| Preset             | Description                                           |
-| ------------------ | ----------------------------------------------------- |
-| **`recommended`**  | Balanced security for most projects (48 rules, mixed) |
-| **`strict`**       | Maximum security enforcement (all rules as errors)    |
-| **`owasp-top-10`** | OWASP Top 10 2021 compliance focused                  |
+| Preset             | Description                                            |
+| ------------------ | ------------------------------------------------------ |
+| **`recommended`**  | Balanced security for most projects (45+ rules, mixed) |
+| **`strict`**       | Maximum security enforcement (all rules as errors)     |
+| **`owasp-top-10`** | OWASP Top 10 2021 compliance focused                   |
 
 ---
 
 ## 📚 Documentation
 
-- **[Rules Reference](./docs/RULES.md)** - Complete list of all 48 rules with configuration options
+- **[Rules Reference](./docs/RULES.md)** - Complete list of all 45+ rules with configuration options
 
 ---
 
