@@ -1,21 +1,31 @@
 # no-redos-vulnerable-regex
 
-> **Keywords:** no redos vulnerable regex, security, ESLint rule, JavaScript, TypeScript, CWE-400
+> **Keywords:** no redos vulnerable regex, security, ESLint rule, JavaScript, TypeScript, CWE-400, CWE-1333, DoS, catastrophic backtracking
 
 ESLint Rule: no-redos-vulnerable-regex with LLM-optimized suggestions and auto-fix capabilities.
 
 ## Quick Summary
 
-| Aspect         | Details                                      |
-| -------------- | -------------------------------------------- |
-| **Severity**   | Error (code quality)                        |
-| **Auto-Fix**   | ❌ No                                        |
-| **Category**   | Security |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration      |
-| **Best For**   | Production applications                      |
-| **Suggestions** | ✅ 5 available           |
+| Aspect          | Details                                         |
+| --------------- | ----------------------------------------------- |
+| **Severity**    | Error (Security)                                |
+| **Auto-Fix**    | ❌ No (requires manual review)                  |
+| **Category**    | Security                                        |
+| **ESLint MCP**  | ✅ Optimized for ESLint MCP integration         |
+| **Best For**    | Production applications handling user input     |
+| **Suggestions** | ✅ Advice on using atomic groups/safe libraries |
 
 ## Rule Details
+
+This rule detects regular expressions that are vulnerable to **Regular Expression Denial of Service (ReDoS)**. ReDoS occurs when a regex engine takes an exponential amount of time to find a match (or fail to match) for certain inputs, usually due to "catastrophic backtracking".
+
+Catastrophic backtracking happens when a regex contains:
+
+1.  **Nested Quantifiers**: e.g., `(a+)+`
+2.  **Overlapping Disjunctions**: e.g., `(a|a)+`
+3.  **Ambiguous Repetitions**: e.g., `(.*?)*`
+
+When these patterns are applied to a long string that _almost_ matches but fails at the end, the regex engine tries every possible combination of repetitions, leading to $O(2^n)$ runtime.
 
 ```mermaid
 %%{init: {
@@ -32,69 +42,89 @@ ESLint Rule: no-redos-vulnerable-regex with LLM-optimized suggestions and auto-f
   }
 }}%%
 flowchart TD
-    A[🔍 Detect no redos vulnerable regex] --> B{Valid pattern?}
-    B -->|❌ No| C[🚨 Report violation]
-    B -->|✅ Yes| D[✅ Pass]
+    Start[User Input String] --> Regex{Regex Engine}
+    Regex -->|Safe Pattern| Match[Match/No Match (Fast)]
+    Regex -->|Vulnerable Pattern| Backtrack{Catastrophic Backtracking?}
+    Backtrack -->|Yes| Freeze[💥 CPU Spike / Denial of Service]
+    Backtrack -->|No| Match
 
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
+    classDef warnNode fill:#fffbeb,stroke:#d97706,stroke-width:2px,color:#1f2937
 
-    class A startNode
-    class C errorNode
+    class Start startNode
+    class Freeze errorNode
+    class Backtrack warnNode
 ```
 
 ### Why This Matters
 
-| Issue                | Impact                                | Solution                    |
-| -------------------- | ------------------------------------- | --------------------------- |
-| 🔒 **Security/Code Quality** | [Specific issue] | [Solution approach] |
-| 🐛 **Maintainability** | [Impact] | [Fix] |
-| ⚡ **Performance**   | [Impact] | [Optimization] |
+| Issue              | Impact                          | Solution                                                              |
+| ------------------ | ------------------------------- | --------------------------------------------------------------------- |
+| 🔒 **Security**    | Denial of Service (DoS) attacks | Use [atomic groups](https://github.com/google/re2) or simple patterns |
+| ⚡ **Performance** | Server freezing, high CPU usage | Validate input length, use timeouts (if available)                    |
+| 🐛 **Reliability** | Unexpected application crashes  | avoid nested quantifiers `(a+)+`                                      |
 
 ## Configuration
 
-**No configuration options available.**
+This rule accepts an options object:
+
+```typescript
+{
+  "rules": {
+    "security/no-redos-vulnerable-regex": ["error", {
+      "allowCommonPatterns": false, // Default: false. Allow some common but potentially risky patterns if safe in context.
+      "maxPatternLength": 500       // Default: 500. Maximum length of regex string to analyze.
+    }]
+  }
+}
+```
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```typescript
-// Example of incorrect usage
+// Nested quantifiers - O(2^n)
+const badRegex1 = /(a+)+/;
+const badRegex2 = /([a-zA-Z]+)*$/;
+
+// Overlapping disjunctions
+const badRegex3 = /(a|a)+/;
+
+// Ambiguous optional repetitions
+const badRegex4 = /(.*)*$/;
+
+// Usage in RegExp constructor
+const userPattern = new RegExp('(a+)+');
 ```
 
 ### ✅ Correct
 
 ```typescript
-// Example of correct usage
+// Non-nested quantifiers
+const goodRegex1 = /a+/;
+const goodRegex2 = /[a-zA-Z]+$/;
+
+// Atomic groups (simulated in JS using lookahead)
+// (?=(a+))\1 matches 'a+' atomically (no backtracking into it)
+const atomicRegex = /(?=(a+))\1/;
+
+// Using a safe library like validator.js for email/URL instead of custom regex
+import isEmail from 'validator/lib/isEmail';
+const valid = isEmail(input);
 ```
 
-## Configuration Examples
+## LLM-Based Suggestions
 
-### Basic Usage
+The rule provides guidance on how to fix detected patterns:
 
-```javascript
-// eslint.config.mjs
-export default [
-  {
-    rules: {
-      '@forge-js/no-redos-vulnerable-regex': 'error',
-    },
-  },
-];
-```
-
-## LLM-Optimized Output
-
-```
-🚨 no redos vulnerable regex | Description | MEDIUM
-   Fix: Suggestion | Reference
-```
-
-## Related Rules
-
-- [`rule-name`](./rule-name.md) - Description
+- **"Use Atomic Groups"**: Suggests simulating atomic groups or using `re2`.
+- **"Restructure Regex"**: Recommends removing nesting or overlaps.
+- **"Use Safe Library"**: Suggests using `validator` or `zod` for common patterns like emails.
 
 ## Further Reading
 
-- **[Reference](https://example.com)** - Description
+- [OWASP: Regular Expression Denial of Service](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)
+- [CWE-1333: Inefficient Regular Expression Complexity](https://cwe.mitre.org/data/definitions/1333.html)
+- [Runaway Regular Expressions: Catastrophic Backtracking](https://www.regular-expressions.info/catastrophic.html)

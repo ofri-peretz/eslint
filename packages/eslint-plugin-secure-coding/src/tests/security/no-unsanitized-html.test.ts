@@ -165,6 +165,27 @@ describe('no-unsanitized-html', () => {
       ],
     });
 
+    ruleTester.run('options - test file without allowInTests', noUnsanitizedHtml, {
+      valid: [],
+      invalid: [
+        {
+          code: 'element.innerHTML = userInput;',
+          filename: 'component.spec.tsx',
+          errors: [
+            {
+              messageId: 'unsanitizedHtml',
+              suggestions: [
+                {
+                  messageId: 'useTextContent',
+                  output: 'element.textContent = userInput;',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
     ruleTester.run('options - trustedLibraries', noUnsanitizedHtml, {
       valid: [
         {

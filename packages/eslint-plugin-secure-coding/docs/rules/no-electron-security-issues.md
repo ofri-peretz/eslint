@@ -140,3 +140,4 @@ ipcMain.handle('safe-channel', async (event, arg) => {
 - [`no-insufficient-postmessage-validation`](./no-insufficient-postmessage-validation.md) - postMessage validation
 - [`detect-eval-with-expression`](./detect-eval-with-expression.md) - Code injection
 
+

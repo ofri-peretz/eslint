@@ -159,6 +159,15 @@ describe('detect-non-literal-fs-filename', () => {
         },
       ],
       invalid: [
+        // Path traversal patterns in literals should still be flagged as CRITICAL
+        {
+          code: 'fs.readFile("../../../etc/passwd", callback);',
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+        {
+          code: 'fs.readFile("../config.json", callback);',
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
         // Note: Rule only checks fs.method() directly, not imported/aliased calls
         // These would need rule enhancement to detect
       ],
@@ -186,6 +195,56 @@ describe('detect-non-literal-fs-filename', () => {
         },
         // Note: Rule only checks fs.method() directly, not imported calls
       ],
+    });
+  });
+
+  describe('Uncovered Lines', () => {
+    // Line 297: Default case in generateRefactoringSteps - triggered when method is not readFile, writeFile, stat, or readdir
+    ruleTester.run('line 297 - default case in generateRefactoringSteps', detectNonLiteralFsFilename, {
+      valid: [],
+      invalid: [
+        {
+          code: 'fs.unlink(userPath);',
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+        {
+          code: 'fs.mkdir(userDir, callback);',
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+        {
+          code: 'fs.rmdir(userDir);',
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+      ],
+    });
+
+    // Line 319: Default case in determineRiskLevel - triggered when operation is not defined or riskLevel is not 'high'
+    ruleTester.run('line 319 - default case in determineRiskLevel', detectNonLiteralFsFilename, {
+      valid: [],
+      invalid: [
+        {
+          code: 'fs.access(userPath, callback);',
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+        {
+          code: 'fs.appendFile(userPath, data);',
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+      ],
+    });
+
+    // Line 338: Early return in checkFsCall when method is not in dangerousMethods
+    ruleTester.run('line 338 - early return when method not dangerous', detectNonLiteralFsFilename, {
+      valid: [
+        // These methods might not be considered dangerous by the rule
+        {
+          code: 'fs.constants.F_OK;',
+        },
+        {
+          code: 'fs.createReadStream("/safe/path");',
+        },
+      ],
+      invalid: [],
     });
   });
 });

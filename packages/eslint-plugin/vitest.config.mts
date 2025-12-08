@@ -70,8 +70,8 @@ export default defineConfig({
         'node_modules/',
         'dist/',
         '**/*.test.ts',
-        '../eslint-plugin-utils/**',
-        '**/eslint-plugin-utils/**',
+        '../eslint-devkit/**',
+        '**/eslint-devkit/**',
         '**/node_modules/**',
       ],
       // Clean coverage directory on each run (safe now that globalSetup ensures dirs exist)

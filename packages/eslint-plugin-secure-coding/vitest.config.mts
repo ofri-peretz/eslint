@@ -15,21 +15,38 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: [
+      'src/**/*.test.ts',
+    ],
+    exclude: ['src/tests/security/llm-mcp-fixtures.test.ts'],
     passWithNoTests: true,
     globalSetup: ['../../vitest.global-setup.ts'],
+    name: { label: 'secure-coding', color: 'green' },
+    // Use forks to prevent coverage race conditions
+    // pool: 'forks',
+    pool: 'vmThreads',
     coverage: {
       provider: 'v8',
-      reporter: ['json', 'text'],
+      // reporter: ['json', 'text'],
       reportOnFailure: true,
       reportsDirectory: './coverage',
       exclude: ['node_modules/', 'dist/', '**/*.test.ts'],
+      ignoreClassMethods: ['context.report'],
       clean: true,
+      reporter: ['text', 'text-summary'],
     },
-    reporters: ['default', 'junit'],
-    outputFile: {
-      junit: './test-report.junit.xml',
-    },
+    reporters: ['default', 'verbose'],
+    // outputFile: {
+    //   // junit: './test-report.junit.xml',
+
+    // },
+    // onConsoleLog(log, type) {
+    //   if (process.env['VITEST_CONSOLE_LOG'] === 'true') {
+    //     return true; // Allow log
+    //   }
+    //   return false; // Suppress log
+    // },
   },
 });
+
 

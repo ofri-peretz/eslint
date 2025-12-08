@@ -122,6 +122,15 @@ describe('no-privilege-escalation', () => {
             },
           ],
         },
+        // MemberExpression callee with updateRole keyword
+        {
+          code: 'authService.updateRole(user, req.body.role);',
+          errors: [
+            {
+              messageId: 'privilegeEscalation',
+            },
+          ],
+        },
       ],
     });
   });

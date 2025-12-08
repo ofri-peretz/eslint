@@ -121,3 +121,4 @@ app.use(helmet.frameguard({ action: 'deny' }));
 - [`no-missing-security-headers`](./no-missing-security-headers.md) - Missing security headers
 - [`no-missing-cors-check`](./no-missing-cors-check.md) - CORS validation
 
+

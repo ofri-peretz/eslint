@@ -94,6 +94,9 @@ describe('no-directive-injection', () => {
             {
               messageId: 'dangerousInnerHTML',
             },
+            {
+              messageId: 'templateInjection',
+            },
           ],
         },
       ],
@@ -255,32 +258,46 @@ describe('no-directive-injection', () => {
       invalid: [
         // innerHTML assignment with template literal containing user input
         {
-          code: `
-            element.innerHTML = \`<div>\${userInput}</div>\`;
-          `,
+          code: 'element.innerHTML = `<div>${userInput}</div>`;',
           errors: [
-            {
-              messageId: 'dangerousInnerHTML',
-            },
-            {
-              messageId: 'templateInjection',
-            },
+            { messageId: 'dangerousInnerHTML' },
+            { messageId: 'templateInjection' },
           ],
         },
-        // Multiple dangerous patterns in same code
+        // Dangerous template literal inside dangerouslySetInnerHTML (Now properly detected by fix)
+        {
+          code: '<div dangerouslySetInnerHTML={{ __html: `Hello ${userInput}!` }} />',
+          errors: [
+            { messageId: 'dangerousInnerHTML' },
+            { messageId: 'templateInjection' },
+          ],
+        },
+        // Multiple dangerous patterns
         {
           code: `
             element.innerHTML = req.body.html;
             const tpl = Handlebars.compile(userInput);
           `,
           errors: [
-            {
-              messageId: 'dangerousInnerHTML',
-            },
-            {
-              messageId: 'userControlledTemplate',
-            },
+            { messageId: 'dangerousInnerHTML' },
+            { messageId: 'userControlledTemplate' },
           ],
+        },
+      ],
+    });
+
+    ruleTester.run('invalid - namespaced attributes', noDirectiveInjection, {
+      valid: [],
+      invalid: [
+        // v:bind with user input
+        {
+          code: '<div v:bind={userInput}></div>',
+          errors: [{ messageId: 'directiveInjection' }],
+        },
+        // ng:model with user input
+        {
+          code: '<input ng:model={userInput} />',
+          errors: [{ messageId: 'directiveInjection' }],
         },
       ],
     });

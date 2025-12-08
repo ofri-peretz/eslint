@@ -16,7 +16,7 @@
  * - JSDoc annotations (@safe, @xxe-safe)
  * - Input validation and sanitization
  */
-import type { TSESTree } from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
@@ -105,7 +105,10 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
       xmlValidationFunctions: ['validateXml', 'sanitizeXml', 'cleanXml', 'parseXmlSafe'],
     },
   ],
-  create(context, [options]) {
+  create(
+    context: TSESLint.RuleContext<MessageIds, RuleOptions>,
+    [options]: RuleOptions,
+  ) {
     const {
       safeParserOptions = ['noent', 'resolveExternals', 'expandEntityReferences', 'entityResolver'],
       xmlValidationFunctions = ['validateXml', 'sanitizeXml', 'cleanXml', 'parseXmlSafe'],

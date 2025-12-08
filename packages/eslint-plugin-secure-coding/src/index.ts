@@ -10,7 +10,7 @@
  * - Auto-fix capabilities where safe
  * - Structured context for AI assistants
  * 
- * @see https://github.com/ofri-peretz/forge-js#readme
+ * @see https://github.com/ofri-peretz/eslint#readme
  */
 
 import type { TSESLint } from '@interlace/eslint-devkit';
@@ -158,7 +158,86 @@ export const plugin: TSESLint.FlatConfig.Plugin = {
 /**
  * Preset configurations for security rules
  */
-export const configs = {
+const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
+  // Critical - Injection vulnerabilities (OWASP A03)
+  'secure-coding/no-sql-injection': 'error',
+  'secure-coding/database-injection': 'error',
+  'secure-coding/detect-eval-with-expression': 'error',
+  'secure-coding/detect-child-process': 'error',
+  'secure-coding/no-unsafe-dynamic-require': 'error',
+  'secure-coding/no-graphql-injection': 'error',
+  'secure-coding/no-xxe-injection': 'error',
+  'secure-coding/no-xpath-injection': 'error',
+  'secure-coding/no-ldap-injection': 'error',
+  'secure-coding/no-directive-injection': 'error',
+  'secure-coding/no-format-string-injection': 'error',
+
+  // Critical - Path traversal & file operations
+  'secure-coding/detect-non-literal-fs-filename': 'error',
+  'secure-coding/no-zip-slip': 'error',
+  'secure-coding/no-toctou-vulnerability': 'error',
+
+  // Critical - Deserialization
+  'secure-coding/no-unsafe-deserialization': 'error',
+
+  // High - Regex vulnerabilities
+  'secure-coding/detect-non-literal-regexp': 'warn',
+  'secure-coding/no-redos-vulnerable-regex': 'error',
+  'secure-coding/no-unsafe-regex-construction': 'warn',
+
+  // High - Prototype pollution
+  'secure-coding/detect-object-injection': 'warn',
+
+  // Critical - Cryptography (OWASP A02)
+  'secure-coding/no-hardcoded-credentials': 'error',
+  'secure-coding/no-weak-crypto': 'error',
+  'secure-coding/no-insufficient-random': 'warn',
+  'secure-coding/no-timing-attack': 'error',
+  'secure-coding/no-insecure-comparison': 'warn',
+  'secure-coding/no-insecure-jwt': 'error',
+
+  // Critical - XSS vulnerabilities (OWASP A03)
+  'secure-coding/no-unvalidated-user-input': 'warn',
+  'secure-coding/no-unsanitized-html': 'error',
+  'secure-coding/no-unescaped-url-parameter': 'warn',
+  'secure-coding/no-improper-sanitization': 'error',
+  'secure-coding/no-improper-type-validation': 'warn',
+
+  // High - Authentication & Authorization (OWASP A01, A07)
+  'secure-coding/no-missing-authentication': 'warn',
+  'secure-coding/no-privilege-escalation': 'warn',
+  'secure-coding/no-weak-password-recovery': 'error',
+
+  // High - Session & Cookies
+  'secure-coding/no-insecure-cookie-settings': 'warn',
+  'secure-coding/no-missing-csrf-protection': 'warn',
+  'secure-coding/no-document-cookie': 'warn',
+
+  // High - Network & Headers (OWASP A05)
+  'secure-coding/no-missing-cors-check': 'warn',
+  'secure-coding/no-missing-security-headers': 'warn',
+  'secure-coding/no-insecure-redirects': 'warn',
+  'secure-coding/no-unencrypted-transmission': 'warn',
+  'secure-coding/no-clickjacking': 'error',
+
+  // High - Data Exposure (OWASP A01)
+  'secure-coding/no-exposed-sensitive-data': 'error',
+  'secure-coding/no-sensitive-data-exposure': 'warn',
+
+  // Medium - Buffer & Memory
+  'secure-coding/no-buffer-overread': 'error',
+
+  // Medium - Resource & DoS
+  'secure-coding/no-unlimited-resource-allocation': 'error',
+  'secure-coding/no-unchecked-loop-condition': 'error',
+
+  // Medium - Platform specific
+  'secure-coding/no-electron-security-issues': 'error',
+  'secure-coding/no-insufficient-postmessage-validation': 'error',
+};
+
+export const configs: Record<string, TSESLint.FlatConfig.Config> = {
+
   /**
    * Recommended security configuration
    * 
@@ -170,83 +249,7 @@ export const configs = {
     plugins: {
       'secure-coding': plugin,
     },
-    rules: {
-      // Critical - Injection vulnerabilities (OWASP A03)
-      'secure-coding/no-sql-injection': 'error',
-      'secure-coding/database-injection': 'error',
-      'secure-coding/detect-eval-with-expression': 'error',
-      'secure-coding/detect-child-process': 'error',
-      'secure-coding/no-unsafe-dynamic-require': 'error',
-      'secure-coding/no-graphql-injection': 'error',
-      'secure-coding/no-xxe-injection': 'error',
-      'secure-coding/no-xpath-injection': 'error',
-      'secure-coding/no-ldap-injection': 'error',
-      'secure-coding/no-directive-injection': 'error',
-      'secure-coding/no-format-string-injection': 'error',
-      
-      // Critical - Path traversal & file operations
-      'secure-coding/detect-non-literal-fs-filename': 'error',
-      'secure-coding/no-zip-slip': 'error',
-      'secure-coding/no-toctou-vulnerability': 'error',
-      
-      // Critical - Deserialization
-      'secure-coding/no-unsafe-deserialization': 'error',
-      
-      // High - Regex vulnerabilities
-      'secure-coding/detect-non-literal-regexp': 'warn',
-      'secure-coding/no-redos-vulnerable-regex': 'error',
-      'secure-coding/no-unsafe-regex-construction': 'warn',
-      
-      // High - Prototype pollution
-      'secure-coding/detect-object-injection': 'warn',
-      
-      // Critical - Cryptography (OWASP A02)
-      'secure-coding/no-hardcoded-credentials': 'error',
-      'secure-coding/no-weak-crypto': 'error',
-      'secure-coding/no-insufficient-random': 'warn',
-      'secure-coding/no-timing-attack': 'error',
-      'secure-coding/no-insecure-comparison': 'warn',
-      'secure-coding/no-insecure-jwt': 'error',
-      
-      // Critical - XSS vulnerabilities (OWASP A03)
-      'secure-coding/no-unvalidated-user-input': 'warn',
-      'secure-coding/no-unsanitized-html': 'error',
-      'secure-coding/no-unescaped-url-parameter': 'warn',
-      'secure-coding/no-improper-sanitization': 'error',
-      'secure-coding/no-improper-type-validation': 'warn',
-      
-      // High - Authentication & Authorization (OWASP A01, A07)
-      'secure-coding/no-missing-authentication': 'warn',
-      'secure-coding/no-privilege-escalation': 'warn',
-      'secure-coding/no-weak-password-recovery': 'error',
-      
-      // High - Session & Cookies
-      'secure-coding/no-insecure-cookie-settings': 'warn',
-      'secure-coding/no-missing-csrf-protection': 'warn',
-      'secure-coding/no-document-cookie': 'warn',
-      
-      // High - Network & Headers (OWASP A05)
-      'secure-coding/no-missing-cors-check': 'warn',
-      'secure-coding/no-missing-security-headers': 'warn',
-      'secure-coding/no-insecure-redirects': 'warn',
-      'secure-coding/no-unencrypted-transmission': 'warn',
-      'secure-coding/no-clickjacking': 'error',
-      
-      // High - Data Exposure (OWASP A01)
-      'secure-coding/no-exposed-sensitive-data': 'error',
-      'secure-coding/no-sensitive-data-exposure': 'warn',
-      
-      // Medium - Buffer & Memory
-      'secure-coding/no-buffer-overread': 'error',
-      
-      // Medium - Resource & DoS
-      'secure-coding/no-unlimited-resource-allocation': 'error',
-      'secure-coding/no-unchecked-loop-condition': 'error',
-      
-      // Medium - Platform specific
-      'secure-coding/no-electron-security-issues': 'error',
-      'secure-coding/no-insufficient-postmessage-validation': 'error',
-    },
+    rules: recommendedRules,
   } satisfies TSESLint.FlatConfig.Config,
 
   /**
@@ -319,6 +322,68 @@ export const configs = {
       'secure-coding/no-unsafe-deserialization': 'error',
       'secure-coding/no-unsafe-dynamic-require': 'error',
     },
+  } satisfies TSESLint.FlatConfig.Config,
+
+  /**
+   * LLM-friendly recommended config
+   * - Mirrors `recommended` severities
+   * - Adds guardrails helpful for agent/tool code
+   */
+  'recommended-llm': {
+    plugins: {
+      'secure-coding': plugin,
+    },
+    rules: {
+      // Start from recommended
+      ...recommendedRules,
+
+      // Emphasize data handling and deserialization for model/tool I/O
+      'secure-coding/no-unsafe-deserialization': 'error',
+      'secure-coding/detect-object-injection': 'error',
+
+      // Ensure outbound calls are constrained (common in agent tools)
+      'secure-coding/no-unencrypted-transmission': 'error',
+      'secure-coding/no-insecure-redirects': 'error',
+    },
+  } satisfies TSESLint.FlatConfig.Config,
+
+  /**
+   * MCP-focused baseline
+   * - Stricter on outbound/network/file/process surfaces typical for tools
+   */
+  'recommended-mcp': {
+    plugins: {
+      'secure-coding': plugin,
+    },
+    rules: {
+      ...recommendedRules,
+
+      // Raise critical tool vectors
+      'secure-coding/detect-child-process': 'error',
+      'secure-coding/no-unsafe-dynamic-require': 'error',
+      'secure-coding/detect-non-literal-fs-filename': 'error',
+      'secure-coding/no-unsafe-deserialization': 'error',
+      'secure-coding/detect-object-injection': 'error',
+      'secure-coding/no-unlimited-resource-allocation': 'error',
+      'secure-coding/no-unchecked-loop-condition': 'error',
+      'secure-coding/no-unencrypted-transmission': 'error',
+      'secure-coding/no-insecure-redirects': 'error',
+      'secure-coding/no-missing-security-headers': 'error',
+      'secure-coding/no-missing-cors-check': 'error',
+    },
+  } satisfies TSESLint.FlatConfig.Config,
+
+  /**
+   * Strict MCP mode
+   * - All rules as errors (mirrors strict) with the same plugin wiring
+   */
+  'strict-mcp': {
+    plugins: {
+      'secure-coding': plugin,
+    },
+    rules: Object.fromEntries(
+      Object.keys(rules).map(ruleName => [`secure-coding/${ruleName}`, 'error'])
+    ),
   } satisfies TSESLint.FlatConfig.Config,
 };
 

@@ -212,5 +212,76 @@ describe('no-unencrypted-transmission', () => {
       ],
     });
   });
+
+  describe('Options Coverage', () => {
+    ruleTester.run('options - allowInTests still blocks non-localhost', noUnencryptedTransmission, {
+      valid: [],
+      invalid: [
+        {
+          code: 'const url = "http://staging.example.com";',
+          filename: 'example.spec.ts',
+          options: [{ allowInTests: true }],
+          errors: [
+            {
+              messageId: 'unencryptedTransmission',
+              suggestions: [
+                {
+                  messageId: 'useHttps',
+                  output: 'const url = "https://staging.example.com";',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    ruleTester.run('options - ignorePatterns skip insecure literal', noUnencryptedTransmission, {
+      valid: [
+        {
+          code: 'const url = "http://internal.example.com";',
+          options: [{ ignorePatterns: ['internal'] }],
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('options - custom insecure protocols', noUnencryptedTransmission, {
+      valid: [],
+      invalid: [
+        {
+          code: 'const smtp = "smtp://mail.example.com";',
+          options: [
+            {
+              insecureProtocols: ['smtp://'],
+              secureAlternatives: { 'smtp://': 'smtps://' },
+            },
+          ],
+          errors: [
+            {
+              messageId: 'unencryptedTransmission',
+              suggestions: [
+                {
+                  messageId: 'useHttps',
+                  output: 'const smtp = "smtps://mail.example.com";',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    ruleTester.run('options - template literal in test file skipped', noUnencryptedTransmission, {
+      valid: [
+        {
+          code: 'const url = `http://${host}/api`;',
+          filename: 'transport.test.ts',
+          options: [{ allowInTests: true }],
+        },
+      ],
+      invalid: [],
+    });
+  });
 });
 

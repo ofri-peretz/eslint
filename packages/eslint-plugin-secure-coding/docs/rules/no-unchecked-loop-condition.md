@@ -140,3 +140,4 @@ function recurse(data, depth = 0, maxDepth = 100) {
 - [`no-unlimited-resource-allocation`](./no-unlimited-resource-allocation.md) - Unbounded allocations
 - [`no-redos-vulnerable-regex`](./no-redos-vulnerable-regex.md) - ReDoS patterns
 
+

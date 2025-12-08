@@ -203,6 +203,9 @@ describe('detect-eval-with-expression', () => {
         },
       ],
     });
+
+    // Note: Line 327 default case is not reachable with current pattern definitions
+    // All patterns have known categories ('json', 'math', 'template', 'object')
   });
 
   describe('Pattern Detection - Math (lines 194-200)', () => {
@@ -272,6 +275,41 @@ describe('detect-eval-with-expression', () => {
     });
   });
 
+  describe('Options - strategy (lines 246-250)', () => {
+    ruleTester.run('strategy remove option', detectEvalWithExpression, {
+      valid: [],
+      invalid: [
+        {
+          code: 'eval(userInput);',
+          options: [{ strategy: 'remove' }],
+          errors: [{ messageId: 'strategyRemove' }],
+        },
+      ],
+    });
+
+    ruleTester.run('strategy refactor option', detectEvalWithExpression, {
+      valid: [],
+      invalid: [
+        {
+          code: 'eval(userInput);',
+          options: [{ strategy: 'refactor' }],
+          errors: [{ messageId: 'strategyRefactor' }],
+        },
+      ],
+    });
+
+    ruleTester.run('strategy validate option', detectEvalWithExpression, {
+      valid: [],
+      invalid: [
+        {
+          code: 'eval(userInput);',
+          options: [{ strategy: 'validate' }],
+          errors: [{ messageId: 'strategyValidate' }],
+        },
+      ],
+    });
+  });
+
   describe('Edge Cases - Literal String (line 261)', () => {
     ruleTester.run('edge cases - literal string eval', detectEvalWithExpression, {
       valid: [
@@ -313,6 +351,22 @@ describe('detect-eval-with-expression', () => {
         {
           code: 'Function("arg1", "arg2", "return arg1 + arg2");',
           errors: [{ messageId: 'strategyRefactor' }],
+        },
+        // Lines 401-403: Edge case where new Function is called as a function
+        // This triggers both CallExpression and NewExpression checks
+        {
+          code: '(new Function)(code);',
+          errors: [
+            { messageId: 'strategyRefactor' }, // CallExpression check
+            { messageId: 'strategyRefactor' }  // NewExpression check
+          ],
+        },
+        {
+          code: '(new Function)("arg1", "return arg1 * 2");',
+          errors: [
+            { messageId: 'strategyRefactor' }, // CallExpression check
+            { messageId: 'strategyRefactor' }  // NewExpression check
+          ],
         },
         {
           code: 'new Function(code);',

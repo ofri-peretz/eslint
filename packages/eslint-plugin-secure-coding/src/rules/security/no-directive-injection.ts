@@ -299,11 +299,13 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
         }
 
         // Check for dynamic directive names (Angular/Vue style)
-        if (attrName.type === 'JSXNamespacedName') {
-          // Handle namespaced attributes like v-bind: or ng-
-          const namespace = attrName.namespace.name;
+        // Check for dynamic directive names (Angular/Vue style)
+        const isNamespaceDirective = (
+          (attrName.type === 'JSXNamespacedName' && (attrName.namespace.name === 'v' || attrName.namespace.name === 'ng')) ||
+          (attrName.type === 'JSXIdentifier' && (attrName.name.startsWith('ng:') || attrName.name.startsWith('v:')))
+        );
 
-          if ((namespace === 'v' || namespace === 'ng') && attrValue) {
+        if (isNamespaceDirective && attrValue) {
             if (attrValue.type === 'JSXExpressionContainer') {
               const expression = attrValue.expression;
 
@@ -326,7 +328,6 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
                 });
               }
             }
-          }
         }
 
         // Check for dynamic component binding (React/Angular)
@@ -485,18 +486,12 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
 
         while (current && !isInDangerousContext) {
           if (current.type === 'JSXExpressionContainer') {
-            // Check parent JSX element
-            const jsxElement = current.parent?.parent;
-            if (jsxElement?.type === 'JSXElement') {
-              const openingElement = jsxElement.openingElement;
-              for (const attr of openingElement.attributes) {
-                if (attr.type === 'JSXAttribute' &&
-                    attr.name.type === 'JSXIdentifier' &&
-                    attr.name.name === 'dangerouslySetInnerHTML') {
-                  isInDangerousContext = true;
-                  break;
-                }
-              }
+            // Check if we are inside dangerouslySetInnerHTML attribute
+            if (current.parent?.type === 'JSXAttribute' &&
+                current.parent.name.type === 'JSXIdentifier' &&
+                current.parent.name.name === 'dangerouslySetInnerHTML') {
+              isInDangerousContext = true;
+              break;
             }
           } else if (current.type === 'AssignmentExpression') {
             // Check for innerHTML assignment

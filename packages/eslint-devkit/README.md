@@ -167,6 +167,20 @@ npm install --save-dev @typescript-eslint/parser typescript
 npm install --save-dev @typescript-eslint/utils
 ```
 
+### Optional: Resolver helpers
+
+If you need module resolution utilities, use the dedicated entry point and opt into the resolver peer deps:
+
+```bash
+npm install --save-dev get-tsconfig enhanced-resolve
+```
+
+```ts
+import { createResolver } from '@interlace/eslint-devkit/resolver';
+```
+
+If you don’t import `@interlace/eslint-devkit/resolver`, the resolver code and peer deps stay out of your bundle/install surface.
+
 ---
 
 ## API Reference

@@ -62,6 +62,16 @@ describe('detect-object-injection', () => {
         {
           code: 'obj["static"] = value;',
         },
+        // Line 383: Early return in isHighRiskAssignment for non-member assignments
+        {
+          code: 'const x = value;',
+        },
+        {
+          code: 'let y = 5;',
+        },
+        {
+          code: 'z += 10;',
+        },
       ],
       invalid: [],
     });
@@ -168,6 +178,15 @@ describe('detect-object-injection', () => {
         {
           code: 'obj["name"] = value;',
           options: [{ allowLiterals: true }],
+        },
+        // Line 329: Early return when allowLiterals is false but literal is safe
+        {
+          code: 'obj["safeProperty"] = value;',
+          options: [{ allowLiterals: false }],
+        },
+        {
+          code: 'user["email"] = value;',
+          options: [{ allowLiterals: false }],
         },
       ],
       invalid: [

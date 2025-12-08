@@ -1,7 +1,7 @@
 {
-  "name": "@forge-js/cli",
+  "name": "@eslint/cli",
   "version": "2.5.2",
-  "description": "CLI tool for managing releases in the forge-js monorepo",
+  "description": "CLI tool for managing releases in the eslint monorepo",
   "type": "commonjs",
   "bin": {
     "forge": "./bin/forge.js"
@@ -13,14 +13,14 @@
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/ofri-peretz/forge-js#readme",
+  "homepage": "https://github.com/ofri-peretz/eslint#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ofri-peretz/forge-js.git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/cli"
   },
   "bugs": {
-    "url": "https://github.com/ofri-peretz/forge-js/issues"
+    "url": "https://github.com/ofri-peretz/eslint/issues"
   },
   "publishConfig": {
     "access": "public"

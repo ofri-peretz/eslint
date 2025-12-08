@@ -1,58 +1,107 @@
 # no-weak-password-recovery
 
-> **Keywords:** password recovery, CWE-640, password reset, account takeover, security, rate limiting
+> **Keywords:** no weak password recovery, security, ESLint rule, JavaScript, TypeScript, CWE-640, CWE-620, authentication, ATO, tokens
 
-Detects weak password recovery mechanisms. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
-
-💼 This rule is set to **error** in the `recommended` config.
+ESLint Rule: no-weak-password-recovery with LLM-optimized suggestions and auto-fix capabilities.
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-640 (Weak Password Recovery) |
-| **Severity** | Critical (CVSS 9.8) |
-| **Auto-Fix** | 💡 Suggestions available |
-| **Category** | Authentication & Authorization |
+| Aspect          | Details                                 |
+| --------------- | --------------------------------------- |
+| **Severity**    | Error (Security)                        |
+| **Auto-Fix**    | ❌ No                                   |
+| **Category**    | Security                                |
+| **ESLint MCP**  | ✅ Optimized for ESLint MCP integration |
+| **Best For**    | Authentication systems, User management |
+| **Suggestions** | ✅ Advice on secure token generation    |
 
 ## Rule Details
 
-Weak password recovery mechanisms can allow attackers to:
-- Reset passwords for other users
-- Gain unauthorized account access
-- Perform account takeover attacks
-- Enumerate valid user accounts
+This rule scans for weak password recovery mechanisms, such as:
+
+1.  **Low Entropy Tokens**: Tokens that are easy to guess or predict (e.g., using `Math.random()` or timestamps).
+2.  **No Expiration**: Recovery links that valid indefinitely.
+3.  **Knowledge-Based Authentication (KBA)**: Using security questions like "What is your mother's maiden name?" which are easily researchable.
+
+Account Takeover (ATO) often happens via weak recovery flows rather than cracking the main password.
+
+```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#f8fafc',
+    'primaryTextColor': '#1e293b',
+    'primaryBorderColor': '#334155',
+    'lineColor': '#475569',
+    'c0': '#f6ffed',
+    'c1': '#f1f5f9',
+    'c2': '#e2e8f0',
+    'c3': '#cbd5e1'
+  }
+}}%%
+flowchart TD
+    User[User] -->|Forgot Password| App{Application}
+    App -->|Generate Weak Token| WeakToken[Random/Number]
+    App -->|Generate Strong Token| StrongToken[Crypto Random 32 bytes]
+
+    WeakToken -->|Brute Force / Prediction| Attacker[🕵️ Attacker]
+    StrongToken -->|High Entropy| Secure[🔒 Secure Reset]
+
+    Attacker -->|Takeover Account| ATO[💥 Account Takeover]
+
+    classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
+    classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
+
+    class App startNode
+    class ATO errorNode
+```
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| 🔓 **Account Takeover** | Full account compromise | Use cryptographic tokens |
-| 📧 **Token Theft** | Password reset hijacking | Implement expiration |
-| 🔄 **Brute Force** | Token guessing | Add rate limiting |
+| Issue           | Impact                         | Solution                 |
+| --------------- | ------------------------------ | ------------------------ |
+| 🔒 **Security** | Account Takeover (CWE-640)     | Use CSPRNG for tokens    |
+| 🛡️ **Privacy**  | Personal data exposure via KBA | Avoid security questions |
+
+## Configuration
+
+This rule accepts an options object:
+
+```typescript
+{
+  "rules": {
+    "security/no-weak-password-recovery": ["error", {
+      // Minimum bits of entropy for tokens (default: 128)
+      "minTokenEntropy": 128,
+
+      // Maximum lifetime of recovery tokens in hours (default: 1)
+      "maxTokenLifetimeHours": 1,
+
+      // Functions considered secure for token generation (default: randomBytes, uuidv4, etc.)
+      "secureTokenFunctions": ["randomBytes", "uuidv4", "uid"],
+
+      // Keywords to identify recovery flows
+      "recoveryKeywords": ["forgot", "recover", "reset", "password"]
+    }]
+  }
+}
+```
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```typescript
-// Predictable recovery token
-const token = Date.now().toString();
-await sendResetEmail(email, token);
+// Weak token generation
+const resetToken = Math.random().toString(36);
 
-// No token expiration
-const resetToken = generateToken();
-db.save({ email, token: resetToken });
-// Token valid forever!
+// Relying on timestamps
+const token = Date.now() + userId;
 
-// Missing rate limiting
-app.post('/reset-password', async (req, res) => {
-  await sendResetEmail(req.body.email);
-  res.send('Email sent');
-});
-
-// Weak token entropy
-const token = Math.random().toString(36).substring(7);
+// KBA (Knowledge Based Authentication)
+if (answer === user.securityAnswer) {
+  allowReset();
+}
 ```
 
 ### ✅ Correct
@@ -104,12 +153,12 @@ if (!reset || reset.expiresAt < Date.now()) {
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `minTokenEntropy` | `number` | `128` | Minimum token entropy bits |
-| `maxTokenLifetimeHours` | `number` | `24` | Maximum token lifetime |
-| `recoveryKeywords` | `string[]` | `['reset', 'recover', 'forgot']` | Recovery-related keywords |
-| `secureTokenFunctions` | `string[]` | `['randomBytes']` | Secure token generation functions |
+| Option                  | Type       | Default                          | Description                       |
+| ----------------------- | ---------- | -------------------------------- | --------------------------------- |
+| `minTokenEntropy`       | `number`   | `128`                            | Minimum token entropy bits        |
+| `maxTokenLifetimeHours` | `number`   | `24`                             | Maximum token lifetime            |
+| `recoveryKeywords`      | `string[]` | `['reset', 'recover', 'forgot']` | Recovery-related keywords         |
+| `secureTokenFunctions`  | `string[]` | `['randomBytes']`                | Secure token generation functions |
 
 ## Error Message Format
 
@@ -128,4 +177,3 @@ if (!reset || reset.expiresAt < Date.now()) {
 
 - [`no-hardcoded-credentials`](./no-hardcoded-credentials.md) - Hardcoded credentials
 - [`no-insufficient-random`](./no-insufficient-random.md) - Weak random generation
-

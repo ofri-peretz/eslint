@@ -1,20 +1,33 @@
 {
   "name": "@interlace/eslint-devkit",
-  "version": "1.6.0",
+  "version": "1.0.0",
   "description": "TypeScript utilities for building LLM-optimized ESLint plugins - AST helpers, type utilities, security benchmarks, and SARIF output",
   "type": "commonjs",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "require": "./src/index.js",
+      "import": "./src/index.js"
+    },
+    "./resolver": {
+      "types": "./src/resolver.d.ts",
+      "require": "./src/resolver.js",
+      "import": "./src/resolver.js"
+    },
+    "./package.json": "./package.json"
+  },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/ofri-peretz/forge-js#readme",
+  "homepage": "https://github.com/ofri-peretz/eslint#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ofri-peretz/forge-js.git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/eslint-devkit"
   },
   "bugs": {
-    "url": "https://github.com/ofri-peretz/forge-js/issues"
+    "url": "https://github.com/ofri-peretz/eslint/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -50,6 +63,18 @@
   "peerDependencies": {
     "typescript": ">=4.0.0",
     "@typescript-eslint/utils": "^8.46.2",
+    "get-tsconfig": "^4.13.0",
+    "enhanced-resolve": "^5.18.3"
+  },
+  "peerDependenciesMeta": {
+    "get-tsconfig": {
+      "optional": true
+    },
+    "enhanced-resolve": {
+      "optional": true
+    }
+  },
+  "optionalDependencies": {
     "get-tsconfig": "^4.13.0",
     "enhanced-resolve": "^5.18.3"
   },

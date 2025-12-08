@@ -76,6 +76,14 @@ describe('no-unlimited-resource-allocation', () => {
           ],
         },
         {
+          code: 'const fast = Buffer.allocUnsafe(req.body.length);',
+          errors: [
+            {
+              messageId: 'userControlledResourceSize',
+            },
+          ],
+        },
+        {
           code: 'const largeBuf = Buffer.alloc(1024 * 1024 * 100);', // 100MB
           errors: [
             {
@@ -420,6 +428,111 @@ describe('no-unlimited-resource-allocation', () => {
               messageId: 'userControlledResourceSize',
             },
           ],
+        },
+      ],
+    });
+  });
+  describe('Other Resource Patterns', () => {
+    ruleTester.run('invalid - deprecated buffer and array constructors', noUnlimitedResourceAllocation, {
+      valid: [],
+      invalid: [
+        // new Buffer() - deprecated but dangerous
+        {
+          code: 'const buf = new Buffer(req.body.size);',
+          errors: [{ messageId: 'userControlledResourceSize' }],
+        },
+        {
+          code: 'const buf = new Buffer(1024 * 1024 * 100);', // 100MB
+          errors: [{ messageId: 'unlimitedBufferAllocation' }],
+        },
+        // Array() called as function
+        {
+          code: 'const arr = Array(req.query.length);',
+          errors: [{ messageId: 'unlimitedMemoryAllocation' }],
+        },
+        // new Array() variations
+        {
+          code: 'const arr = new Array(input);',
+          errors: [{ messageId: 'unlimitedMemoryAllocation' }],
+        },
+      ],
+    });
+
+    ruleTester.run('invalid - multer configurations', noUnlimitedResourceAllocation, {
+      valid: [
+        // Multer with limits
+        {
+          code: 'const upload = multer({ limits: { fileSize: 1000 } });',
+        },
+        // Multer without options (currently ignored by rule)
+        {
+          code: 'const upload = multer();',
+        },
+      ],
+      invalid: [
+        // Multer with options but no limits
+        {
+          code: 'const upload = multer({ dest: "./uploads" });',
+          errors: [{ messageId: 'unlimitedFileOperations' }],
+        },
+        // Multer with limits property but empty/wrong (edge case)
+        {
+          code: 'const upload = multer({ limits: {} });',
+          errors: [{ messageId: 'unlimitedFileOperations' }],
+        },
+      ],
+    });
+  });
+
+  describe('Loop Allocation Exceptions', () => {
+    ruleTester.run('valid - loop allocation exceptions', noUnlimitedResourceAllocation, {
+      valid: [
+        // Assignment to array element in loop (pre-allocated pattern)
+        {
+          code: `
+            const buffers = new Array(10);
+            for (let i = 0; i < 10; i++) {
+              buffers[i] = Buffer.alloc(100);
+            }
+          `,
+        },
+      ],
+      invalid: [
+        // Just allocation in loop without assignment check
+        {
+          code: `
+            for (let i = 0; i < 10; i++) {
+              const b = Buffer.alloc(100);
+            }
+          `,
+          errors: [{ messageId: 'resourceAllocationInLoop' }],
+        },
+      ],
+    });
+  });
+
+  describe('Arithmetic Estimates', () => {
+    ruleTester.run('arithmetic-size-estimation', noUnlimitedResourceAllocation, {
+      valid: [
+        // Division result small enough
+        {
+          code: 'const buf = Buffer.alloc(2048 / 2);',
+        },
+        // Subtraction
+        {
+          code: 'const buf = Buffer.alloc(2000 - 1000);',
+        },
+      ],
+      invalid: [
+        // Multiplication overload
+        {
+          code: 'const buf = Buffer.alloc(1024 * 1024 * 2);', // 2MB
+          errors: [{ messageId: 'unlimitedBufferAllocation' }],
+        },
+        // Addition overload
+        {
+          code: 'const buf = Buffer.alloc(1000000 + 100000);', // 1.1MB
+          errors: [{ messageId: 'unlimitedBufferAllocation' }],
         },
       ],
     });

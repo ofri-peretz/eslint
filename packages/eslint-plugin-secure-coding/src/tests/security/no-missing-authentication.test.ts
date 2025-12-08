@@ -270,6 +270,81 @@ describe('no-missing-authentication', () => {
       ],
       invalid: [],
     });
+
+    ruleTester.run('coverage - nested authentication contexts', noMissingAuthentication, {
+      valid: [
+        // Route inside app.use(auth)
+        {
+          code: `
+            app.use(authenticate(), () => {
+              app.get("/nested/protected", (req, res) => {});
+            });
+          `,
+        },
+        // Route inside authentication wrapper function
+        {
+          code: `
+            withAuth(() => {
+              app.get("/wrapped/protected", (req, res) => {});
+            });
+          `,
+          options: [{ authMiddlewarePatterns: ['withAuth'] }],
+        },
+        // Route inside app.all(auth)
+        {
+          code: `
+            app.all("/api/*", requireAuth(), () => {
+              app.post("/api/data", (req, res) => {});
+            });
+          `,
+        },
+      ],
+      invalid: [
+        // Nested but not in auth
+        {
+          code: `
+            app.use(someMiddleware(), () => {
+              app.get("/nested/unprotected", (req, res) => {});
+            });
+          `,
+          errors: [
+            { messageId: 'missingAuthentication' },
+            { messageId: 'missingAuthentication' }
+          ],
+        },
+      ],
+    });
+
+    ruleTester.run('coverage - regex ignore patterns', noMissingAuthentication, {
+      valid: [
+        {
+          code: 'app.get("/api/public/health", (req, res) => {});',
+          options: [{ ignorePatterns: ['^/api/public/.*'] }],
+        },
+      ],
+      invalid: [
+        {
+          code: 'app.get("/api/private/data", (req, res) => {});',
+          options: [{ ignorePatterns: ['^/api/public/.*'] }],
+          errors: [{ messageId: 'missingAuthentication' }],
+        },
+      ],
+    });
+
+    ruleTester.run('coverage - scope traversal', noMissingAuthentication, {
+      valid: [
+        // Auth variable in parent scope
+        {
+          code: `
+            const auth = authenticate();
+            function setupRoutes() {
+              app.get("/api/users", auth, (req, res) => {});
+            }
+          `,
+        },
+      ],
+      invalid: [],
+    });
   });
 });
 

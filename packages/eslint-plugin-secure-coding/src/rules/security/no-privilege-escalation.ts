@@ -105,7 +105,7 @@ function isInsideRoleCheck(
         return true;
       }
       
-      /* v8 ignore start -- redundant check: conditionText pattern match above catches these cases first */
+      /* c8 ignore start -- redundant check: conditionText pattern match above catches these cases first */
       // Check if condition is a CallExpression with role check
       if (ifStmt.test.type === 'CallExpression') {
         const callExpr = ifStmt.test;
@@ -125,7 +125,7 @@ function isInsideRoleCheck(
           }
         }
       }
-      /* v8 ignore stop */
+      /* c8 ignore stop */
     }
     
     // Check if current is inside a ConditionalExpression (ternary) with role check
@@ -140,7 +140,7 @@ function isInsideRoleCheck(
         return true;
       }
       
-      /* v8 ignore start -- redundant check: testText pattern match above catches these cases first */
+      /* c8 ignore start -- redundant check: testText pattern match above catches these cases first */
       // Check if test is a CallExpression with role check
       if (condExpr.test.type === 'CallExpression') {
         const callExpr = condExpr.test;
@@ -153,7 +153,7 @@ function isInsideRoleCheck(
           }
         }
       }
-      /* v8 ignore stop */
+      /* c8 ignore stop */
     }
     
     // Check if current is inside a CallExpression with role check
@@ -355,7 +355,7 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
 
       if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
         const propertyName = callee.property.name.toLowerCase();
-        if (['setrole', 'grant', 'revoke', 'elevate', 'promote', 'updateRole'].some(op => 
+        if (['setrole', 'grant', 'revoke', 'elevate', 'promote', 'updaterole'].some(op => 
           propertyName.includes(op)
         )) {
           isPrivilegeOperation = true;
