@@ -125,17 +125,10 @@
   ],
   "release": {
     "projects": [
-      "packages/eslint-plugin",
-      "packages/eslint-plugin-llm-optimized",
-      "packages/cli",
-      "packages/eslint-plugin-llm",
-      "packages/eslint-plugin-mcp",
-      "packages/eslint-plugin-mcp-optimized",
-      "eslint-plugin-code-mode",
-      "eslint-plugin-generalist",
-      "eslint-plugin-secure-coding",
-      "eslint-plugin-react-a11y",
-      "eslint-plugin-dependencies"
+      "packages/eslint-devkit",
+      "packages/eslint-plugin-secure-coding",
+      "@interlace/eslint-devkit",
+      "eslint-plugin-secure-coding"
     ],
     "projectsRelationship": "independent",
     "preid": "rc",

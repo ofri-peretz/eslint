@@ -6,16 +6,16 @@
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://www.npmjs.com/package/eslint-plugin-secure-coding)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> A comprehensive, feature-based security ESLint plugin with **45+ rules** mapped to OWASP Top 10, CWE, and CVSS, featuring LLM-optimized (MCP-ready) messages that guide developers toward secure code in enterprise environments.
+> A comprehensive, feature-based security ESLint plugin with **48 rules** mapped to OWASP Top 10, CWE, and CVSS, featuring LLM-optimized (MCP-ready) messages that guide developers toward secure code in enterprise environments.
 
 ---
 
 ## 💡 What you get
 
-- **Feature-based coverage:** 45+ rules grouped by attack surface (injection, crypto, auth, cookies, headers, resource limits, platform specifics).
+- **Feature-based coverage:** 48 rules grouped by attack surface (injection, crypto, auth, cookies, headers, resource limits, platform specifics).
 - **LLM-optimized & MCP-ready:** Structured 2-line messages with CWE + OWASP + CVSS + concrete fixes so humans _and_ AI auto-fixers stay aligned.
 - **Standards aligned:** OWASP Top 10, CWE tagging, CVSS scoring in every finding for compliance mapping.
-- **Tiered presets:** `recommended`, `strict`, `owasp-top-10`, plus LLM/MCP presets for agent/tool code.
+- **Tiered presets:** `recommended`, `strict`, `owasp-top-10` for fast policy rollout.
 - **False-positive reduction:** Sanitizer awareness, annotations, ORM patterns, and safe-library detection keep noise low for org rollouts.
 
 Every security rule produces a **structured 2-line error message**:
@@ -34,163 +34,6 @@ src/api.ts
 - 🏢 **Compliance tags** - affected frameworks (SOC2, PCI-DSS, HIPAA)
 - ✅ **Fix instruction** - exact code to write
 - 📚 **Documentation link** - learn more
-
----
-
-## 🚀 Quick Start (Org-friendly)
-
-```bash
-# Install
-npm install --save-dev eslint-plugin-secure-coding
-
-# Add to eslint.config.js
-import secureCoding from 'eslint-plugin-secure-coding';
-
-export default [
-  secureCoding.configs.recommended, // baseline for most repos
-  { files: ['apps/**'], ...secureCoding.configs['owasp-top-10'] }, // public-facing
-  { files: ['services/auth/**', 'services/payments/**'], ...secureCoding.configs.strict }, // crown jewels
-];
-
-# Run
-npx eslint .
-```
-
----
-
-## 📋 Available Presets (policy tiers)
-
-| Preset                | Description                                                                 |
-| --------------------- | --------------------------------------------------------------------------- |
-| **`recommended`**     | Balanced security for most projects (45+ rules, mixed severity)             |
-| **`strict`**          | Maximum security enforcement (all rules as errors)                          |
-| **`owasp-top-10`**    | OWASP Top 10 2021 compliance focused                                        |
-| **`recommended-llm`** | LLM-friendly baseline; adds harder stances on deserialization/network paths |
-| **`recommended-mcp`** | MCP/agent-focused; tightens process/fs/net/deserialize/resource controls    |
-| **`strict-mcp`**      | All rules as errors for MCP/agent surfaces                                  |
-
----
-
-## 📚 Documentation
-
-- **[Rules Reference](./docs/RULES.md)** - Complete list of all 48 rules with configuration options
-
----
-
-## 🤖 LLM/MCP Hardening & Quickstart
-
-| Use case                | Config snippet                            |
-| ----------------------- | ----------------------------------------- |
-| LLM-aware defaults      | `secureCoding.configs['recommended-llm']` |
-| MCP/tool-aware defaults | `secureCoding.configs['recommended-mcp']` |
-| Strict for agents/tools | `secureCoding.configs['strict-mcp']`      |
-
-Example `eslint.config.js`:
-
-```js
-import secureCoding from 'eslint-plugin-secure-coding';
-
-export default [
-  secureCoding.configs.recommended,
-  secureCoding.configs['recommended-llm'],
-  secureCoding.configs['recommended-mcp'],
-];
-```
-
-**eslint.config.js (CommonJS with types):**
-
-```js
-// @ts-check
-const secureCoding = require('eslint-plugin-secure-coding');
-
-/** @type {import('eslint').Linter.FlatConfig[]} */
-module.exports = [
-  secureCoding.configs.recommended,
-  secureCoding.configs['recommended-llm'],
-  secureCoding.configs['recommended-mcp'],
-];
-```
-
-**eslint.config.ts (TypeScript):**
-
-```ts
-import type { Linter } from 'eslint';
-import secureCoding from 'eslint-plugin-secure-coding';
-
-export default [
-  secureCoding.configs.recommended,
-  secureCoding.configs['recommended-llm'],
-  secureCoding.configs['recommended-mcp'],
-] satisfies Linter.FlatConfig[];
-```
-
-Hardening highlights (LLM/MCP):
-
-- Treat model/tool outputs as untrusted: schema-validate, size-cap, and allowlist fields before using.
-- Block risky surfaces from agent code: require allowlists for fs/net/exec/tool params; set timeouts and retries.
-- Redact secrets/PII before sending to models or logs.
-- Prefer `execFile`/`shell:false` and HTTPS-only URLs; disallow internal IP ranges.
-
-Troubleshooting:
-
-- False positives on known-safe keys: add allowlists/ignore patterns sparingly; keep validation in place.
-- Slow runs: disable unused presets per `files` globs or narrow include paths.
-- Still noisy: tighten options on specific rules (deserialization/object-injection/child-process/fs filename).
-
-### What an error looks like (LLM-optimized)
-
-```bash
-src/api.ts
-  42:15  error  🔒 CWE-89 OWASP:A03-Injection CVSS:9.8 | SQL Injection detected | CRITICAL [SOC2,PCI-DSS,HIPAA]
-                    Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId]) | https://owasp.org/...
-```
-
-Each finding includes:
-
-- CWE + OWASP + CVSS for compliance mapping
-- Severity and compliance tags
-- A ready-to-apply fix suggestion and a doc link (LLM-friendly)
-
----
-
-## 🏢 Enterprise Integration Example
-
-```bash
-# Install once at the repo root
-pnpm add -D eslint-plugin-secure-coding
-
-# eslint.config.js (org-standard)
-import secureCoding from 'eslint-plugin-secure-coding';
-
-export default [
-  // Baseline for all services (balanced)
-  secureCoding.configs.recommended,
-
-  // LLM-aware defaults (prompts/templates/logging safeguards)
-  secureCoding.configs['recommended-llm'],
-
-  // MCP/tool-aware defaults (process/fs/net/deserialize/resource tightened)
-  secureCoding.configs['recommended-mcp'],
-
-  // Add OWASP Top 10 enforcement for internet-facing apps
-  {
-    files: ['apps/**'],
-    ...secureCoding.configs['owasp-top-10'],
-  },
-
-  // Force strict mode for critical backend services
-  {
-    files: ['services/payments/**', 'services/auth/**'],
-    ...secureCoding.configs.strict,
-  },
-];
-```
-
-What this gives organizations:
-
-- OWASP/CWE/CVSS metadata in every finding for compliance mapping
-- Consistent, LLM-ready fixes that teammates and AI can apply safely
-- Tiered policies (baseline, OWASP-focused, strict) per surface area
 
 ---
 
@@ -308,6 +151,94 @@ What this gives organizations:
 
 ---
 
+## 🚀 Quick Start (Org-friendly)
+
+```bash
+# Install
+npm install --save-dev eslint-plugin-secure-coding
+
+# Add to eslint.config.js
+import secureCoding from 'eslint-plugin-secure-coding';
+
+export default [
+  secureCoding.configs.recommended, // baseline for most repos
+  { files: ['apps/**'], ...secureCoding.configs['owasp-top-10'] }, // public-facing
+  { files: ['services/auth/**', 'services/payments/**'], ...secureCoding.configs.strict }, // crown jewels
+];
+
+# Run
+npx eslint .
+```
+
+---
+
+## 📋 Available Presets (policy tiers)
+
+| Preset             | Description                                           |
+| ------------------ | ----------------------------------------------------- |
+| **`recommended`**  | Balanced security for most projects (48 rules, mixed) |
+| **`strict`**       | Maximum security enforcement (all rules as errors)    |
+| **`owasp-top-10`** | OWASP Top 10 2021 compliance focused                  |
+
+---
+
+## 📚 Documentation
+
+- **[Rules Reference](./docs/RULES.md)** - Complete list of all 48 rules with configuration options
+
+---
+
+### What an error looks like (LLM-optimized)
+
+```bash
+src/api.ts
+  42:15  error  🔒 CWE-89 OWASP:A03-Injection CVSS:9.8 | SQL Injection detected | CRITICAL [SOC2,PCI-DSS,HIPAA]
+                    Fix: Use parameterized query: db.query("SELECT * FROM users WHERE id = ?", [userId]) | https://owasp.org/...
+```
+
+Each finding includes:
+
+- CWE + OWASP + CVSS for compliance mapping
+- Severity and compliance tags
+- A ready-to-apply fix suggestion and a doc link (LLM-friendly)
+
+---
+
+## 🏢 Enterprise Integration Example
+
+```bash
+# Install once at the repo root
+pnpm add -D eslint-plugin-secure-coding
+
+# eslint.config.js (org-standard)
+import secureCoding from 'eslint-plugin-secure-coding';
+
+export default [
+  // Baseline for all services (balanced)
+  secureCoding.configs.recommended,
+
+  // Add OWASP Top 10 enforcement for internet-facing apps
+  {
+    files: ['apps/**'],
+    ...secureCoding.configs['owasp-top-10'],
+  },
+
+  // Force strict mode for critical backend services
+  {
+    files: ['services/payments/**', 'services/auth/**'],
+    ...secureCoding.configs.strict,
+  },
+];
+```
+
+What this gives organizations:
+
+- OWASP/CWE/CVSS metadata in every finding for compliance mapping
+- Consistent, LLM-ready fixes that teammates and AI can apply safely
+- Tiered policies (baseline, OWASP-focused, strict) per surface area
+
+---
+
 ## 🧭 Type-safe rule configuration (eslint.config.ts)
 
 This package ships rule option types to keep flat configs type-safe.
@@ -337,8 +268,8 @@ export default [
       ],
     },
   },
-  secureCoding.configs['recommended-llm'],
-  secureCoding.configs['recommended-mcp'],
+  secureCoding.configs['owasp-top-10'],
+  secureCoding.configs.strict,
 ] satisfies Linter.FlatConfig[];
 ```
 

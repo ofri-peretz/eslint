@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-secure-coding",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Security-focused ESLint plugin with 48 LLM-optimized rules for detecting and preventing vulnerabilities. OWASP Top 10 coverage, CWE references, and AI-assisted fix guidance.",
   "type": "commonjs",
   "main": "./src/index.js",
@@ -70,7 +70,7 @@
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "workspace:*"
+    "@interlace/eslint-devkit": "^1.0.0"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
