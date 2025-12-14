@@ -5,8 +5,8 @@
 | Field           | Value                                                                                    |
 | --------------- | ---------------------------------------------------------------------------------------- |
 | **Name**        | eslint-plugin-secure-coding                                                              |
-| **Version**     | 1.0.0                                                                                    |
-| **Description** | Security-focused ESLint plugin with 48 LLM-optimized rules for detecting vulnerabilities |
+| **Version**     | 3.0.0                                                                                    |
+| **Description** | Security-focused ESLint plugin with 89 LLM-optimized rules for detecting vulnerabilities |
 | **Type**        | ESLint Plugin                                                                            |
 | **Language**    | TypeScript                                                                               |
 | **Node.js**     | >=18.0.0                                                                                 |
@@ -37,11 +37,12 @@ export default [secureCoding.configs.recommended];
 
 ## Available Presets
 
-| Preset           | Rules                       | Description                         |
-| ---------------- | --------------------------- | ----------------------------------- |
-| **recommended**  | 48 rules (mixed error/warn) | Balanced security for most projects |
-| **strict**       | 48 rules (all errors)       | Maximum security enforcement        |
-| **owasp-top-10** | 32 rules                    | OWASP Top 10 2021 compliance        |
+| Preset           | Rules                 | Description                         |
+| ---------------- | --------------------- | ----------------------------------- |
+| **recommended**  | 89 rules (mixed)      | Balanced security (Web + Mobile)    |
+| **strict**       | 89 rules (all errors) | Maximum security enforcement        |
+| **owasp-top-10** | 32 rules              | OWASP Top 10 2021 compliance        |
+| **owasp-mobile** | 40 rules              | OWASP Mobile Top 10 2024 compliance |
 
 ## Rule Categories
 
@@ -127,6 +128,39 @@ export default [secureCoding.configs.recommended];
 - `no-unlimited-resource-allocation` - CWE-770 - Unbounded allocations
 - `no-unchecked-loop-condition` - CWE-835 - Infinite loop conditions
 
+### Mobile Security (30 rules)
+
+- `no-http-urls` - CWE-319 - Prevent insecure HTTP URLs
+- `no-hardcoded-credentials` - CWE-798 - Detect hardcoded secrets
+- `no-credentials-in-storage-api` - CWE-522 - Prevent credentials in localStorage
+- `no-credentials-in-query-params` - CWE-598 - Detect credentials in URLs
+- `no-allow-arbitrary-loads` - CWE-295 - Prevent insecure ATS configuration
+- `no-disabled-certificate-validation` - CWE-295 - Detect disabled cert validation
+- `require-https-only` - CWE-319 - Enforce HTTPS-only connections
+- `require-network-timeout` - CWE-400 - Require network timeouts
+- `detect-weak-password-validation` - CWE-521 - Detect weak password requirements
+- `no-client-side-auth-logic` - CWE-602 - Prevent client-side auth logic
+- `no-hardcoded-session-tokens` - CWE-798 - Detect hardcoded session tokens
+- `no-unvalidated-deeplinks` - CWE-939 - Unvalidated deep link usage
+- `require-url-validation` - CWE-601 - Require URL validation
+- `require-mime-type-validation` - CWE-434 - Require MIME type validation
+- `no-arbitrary-file-access` - CWE-22 - Prevent path traversal
+- `no-pii-in-logs` - CWE-532 - Prevent PII in logs
+- `no-tracking-without-consent` - CWE-359 - Require tracking consent
+- `no-sensitive-data-in-analytics` - CWE-359 - Prevent PII in analytics
+- `require-data-minimization` - CWE-213 - Enforce data minimization
+- `no-debug-code-in-production` - CWE-489 - Detect debug code
+- `require-code-minification` - CWE-656 - Require code minification
+- `no-verbose-error-messages` - CWE-209 - Prevent verbose error messages
+- `require-secure-defaults` - CWE-276 - Require secure defaults
+- `no-sensitive-data-in-cache` - CWE-524 - Prevent sensitive data in cache
+- `no-data-in-temp-storage` - CWE-312 - Prevent sensitive data in temp storage
+- `require-secure-deletion` - CWE-459 - Require secure deletion
+- `require-storage-encryption` - CWE-311 - Require storage encryption
+- `no-unencrypted-local-storage` - CWE-312 - Prevent unencrypted local storage
+- `require-credential-storage` - CWE-522 - Require secure credential storage
+- `no-exposed-debug-endpoints` - CWE-489 - Prevent exposed debug endpoints
+
 ### Platform-Specific (2 rules)
 
 - `no-electron-security-issues` - CWE-693 - Electron security misconfig
@@ -167,9 +201,9 @@ Configure in `.cursor/mcp.json`:
 
 | Feature              | Value                            |
 | -------------------- | -------------------------------- |
-| **Total Rules**      | 48                               |
+| **Total Rules**      | 89                               |
 | **CWE Coverage**     | 100% (all rules include CWE IDs) |
-| **OWASP Top 10**     | Full 2021 coverage               |
+| **OWASP Top 10**     | Full Web (2021) + Mobile (2024)  |
 | **AI Auto-Fix Rate** | 60-80%                           |
 | **Performance**      | <10ms overhead per file          |
 | **Privacy**          | 100% local, no cloud calls       |

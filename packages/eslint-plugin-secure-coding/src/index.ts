@@ -354,6 +354,20 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // Medium - Platform specific
   'secure-coding/no-electron-security-issues': 'error',
   'secure-coding/no-insufficient-postmessage-validation': 'error',
+
+  // Mobile & General Security (OWASP Mobile)
+  'secure-coding/no-credentials-in-storage-api': 'error',
+  'secure-coding/no-credentials-in-query-params': 'error',
+  'secure-coding/no-http-urls': 'error',
+  'secure-coding/require-https-only': 'error',
+  'secure-coding/no-pii-in-logs': 'warn',
+  'secure-coding/no-verbose-error-messages': 'warn',
+  'secure-coding/no-hardcoded-session-tokens': 'error',
+  'secure-coding/detect-mixed-content': 'error',
+  'secure-coding/no-unvalidated-deeplinks': 'error',
+  'secure-coding/no-postmessage-origin-wildcard': 'error',
+  'secure-coding/no-insecure-websocket': 'error',
+  'secure-coding/detect-suspicious-dependencies': 'warn',
 };
 
 export const configs: Record<string, TSESLint.FlatConfig.Config> = {
@@ -441,6 +455,77 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       // A08:2021 – Software and Data Integrity Failures
       'secure-coding/no-unsafe-deserialization': 'error',
       'secure-coding/no-unsafe-dynamic-require': 'error',
+    },
+  } satisfies TSESLint.FlatConfig.Config,
+
+  /**
+   * OWASP Mobile Top 10 focused configuration
+   * 
+   * Rules mapped to OWASP Mobile Top 10 2024 categories
+   */
+  'owasp-mobile-top-10': {
+    plugins: {
+      'secure-coding': plugin,
+    },
+    rules: {
+      // M1: Improper Credential Usage
+      'secure-coding/no-credentials-in-storage-api': 'error',
+      'secure-coding/no-credentials-in-query-params': 'error',
+      'secure-coding/require-secure-credential-storage': 'error',
+      'secure-coding/no-hardcoded-credentials': 'error',
+
+      // M2: Inadequate Supply Chain Security
+      'secure-coding/require-dependency-integrity': 'error',
+      'secure-coding/detect-suspicious-dependencies': 'error',
+      'secure-coding/no-dynamic-dependency-loading': 'error',
+      'secure-coding/require-package-lock': 'error',
+
+      // M3: Insecure Authentication/Authorization
+      'secure-coding/no-client-side-auth-logic': 'error',
+      'secure-coding/require-backend-authorization': 'error',
+      'secure-coding/no-hardcoded-session-tokens': 'error',
+      'secure-coding/detect-weak-password-validation': 'error',
+      'secure-coding/no-password-in-url': 'error',
+
+      // M4: Insufficient Input/Output Validation
+      'secure-coding/no-unvalidated-deeplinks': 'error',
+      'secure-coding/require-url-validation': 'error',
+      'secure-coding/no-arbitrary-file-access': 'error',
+      'secure-coding/require-mime-type-validation': 'error',
+      'secure-coding/no-postmessage-origin-wildcard': 'error',
+      'secure-coding/require-csp-headers': 'error',
+
+      // M5: Insecure Communication
+      'secure-coding/no-http-urls': 'error',
+      'secure-coding/no-disabled-certificate-validation': 'error',
+      'secure-coding/require-https-only': 'error',
+      'secure-coding/no-insecure-websocket': 'error',
+      'secure-coding/detect-mixed-content': 'error',
+      'secure-coding/no-allow-arbitrary-loads': 'error',
+      'secure-coding/require-network-timeout': 'error',
+      
+      // M6: Inadequate Privacy Controls
+      'secure-coding/no-pii-in-logs': 'error',
+      'secure-coding/no-tracking-without-consent': 'error',
+      'secure-coding/require-data-minimization': 'error',
+      'secure-coding/no-sensitive-data-in-analytics': 'error',
+
+      // M7: Insufficient Binary Protections
+      'secure-coding/no-debug-code-in-production': 'error',
+      'secure-coding/require-code-minification': 'error',
+
+      // M8: Security Misconfiguration
+      'secure-coding/no-verbose-error-messages': 'error',
+      'secure-coding/no-exposed-debug-endpoints': 'error',
+      'secure-coding/require-secure-defaults': 'error',
+      'secure-coding/no-permissive-cors': 'error',
+
+      // M9: Insecure Data Storage
+      'secure-coding/no-unencrypted-local-storage': 'error',
+      'secure-coding/no-sensitive-data-in-cache': 'error',
+      'secure-coding/require-storage-encryption': 'error',
+      'secure-coding/no-data-in-temp-storage': 'error',
+      'secure-coding/require-secure-deletion': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 };

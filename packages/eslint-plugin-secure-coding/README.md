@@ -6,7 +6,8 @@
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://www.npmjs.com/package/eslint-plugin-secure-coding)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> A comprehensive, feature-based security ESLint plugin with **89 rules** mapped to OWASP Top 10 2021, **OWASP Mobile Top 10 2024**, CWE, and CVSS, featuring LLM-optimized (MCP-ready) messages that guide developers toward secure code in enterprise environments.
+> **A complete security standard:** This plugin provides **full mitigation** for both **OWASP Top 10 Web (2021)** AND **OWASP Mobile Top 10 (2024)**.  
+> With **89 rules** mapped to CWE and CVSS, it transforms your linter into an enterprise-grade security auditor that AI assistants can understand and fix.
 
 ---
 
@@ -93,38 +94,40 @@ src/api.ts
 
 ### Mobile Security (30 rules)
 
-| Rule                                 | CWE     | OWASP Mobile | Description                         |
-| ------------------------------------ | ------- | ------------ | ----------------------------------- |
-| `no-http-urls`                       | CWE-319 | M5           | Prevent insecure HTTP URLs          |
-| `no-hardcoded-credentials`           | CWE-798 | M1           | Detect hardcoded secrets            |
-| `no-credentials-in-storage-api`      | CWE-522 | M1           | Prevent credentials in localStorage |
-| `no-credentials-in-query-params`     | CWE-598 | M1           | Detect credentials in URLs          |
-| `no-allow-arbitrary-loads`           | CWE-295 | M5           | Prevent insecure ATS configuration  |
-| `no-disabled-certificate-validation` | CWE-295 | M5           | Detect disabled cert validation     |
-| `require-https-only`                 | CWE-319 | M5           | Enforce HTTPS-only connections      |
-| `require-network-timeout`            | CWE-400 | M5           | Require network timeouts            |
-| `detect-weak-password-validation`    | CWE-521 | M3           | Detect weak password requirements   |
-| `no-client-side-auth-logic`          | CWE-602 | M3           | Prevent client-side auth            |
-| `no-hardcoded-session-tokens`        | CWE-798 | M3           | Detect hardcoded session tokens     |
-| `no-unvalidated-deeplinks`           | CWE-939 | M4           | Require deeplink validation         |
-| `require-url-validation`             | CWE-601 | M4           | Require URL validation              |
-| `require-mime-type-validation`       | CWE-434 | M4           | Require MIME type validation        |
-| `no-arbitrary-file-access`           | CWE-22  | M4           | Prevent path traversal              |
-| `no-pii-in-logs`                     | CWE-532 | M6           | Prevent PII in logs                 |
-| `no-tracking-without-consent`        | CWE-359 | M6           | Require tracking consent            |
-| `no-sensitive-data-in-analytics`     | CWE-359 | M6           | Prevent PII in analytics            |
-| `require-data-minimization`          | CWE-213 | M6           | Identify excessive data collection  |
-| `no-debug-code-in-production`        | CWE-489 | M7           | Detect debug code                   |
-| `require-code-minification`          | CWE-656 | M7           | Require minification config         |
-| `no-verbose-error-messages`          | CWE-209 | M8           | Prevent stack trace exposure        |
-| `require-secure-defaults`            | CWE-276 | M8           | Require secure default configs      |
-| `no-sensitive-data-in-cache`         | CWE-524 | M9           | Prevent sensitive cache data        |
-| `no-data-in-temp-storage`            | CWE-312 | M9           | Prevent sensitive temp data         |
-| `require-secure-deletion`            | CWE-459 | M9           | Require secure data deletion        |
-| `require-storage-encryption`         | CWE-311 | M9           | Require encrypted storage           |
-| `no-unencrypted-local-storage`       | CWE-312 | M9           | Prevent unencrypted local storage   |
-| `require-credential-storage`         | CWE-522 | M10          | Require secure credential storage   |
-| `no-exposed-debug-endpoints`         | CWE-489 | M8           | Prevent exposed debug endpoints     |
+> **Note:** These rules map to OWASP Mobile Top 10 but are **framework-agnostic** and highly effective for general web application security (e.g., preventing PII leaks, insecure communication, and credential misuse).
+
+| Rule                                                                                     | CWE     | OWASP Mobile | CVSS | Description                         | 💼  | ⚠️  | 🔧  | 💡  |
+| ---------------------------------------------------------------------------------------- | ------- | ------------ | ---- | ----------------------------------- | --- | --- | --- | --- |
+| [no-http-urls](./docs/rules/no-http-urls.md)                                             | CWE-319 | M5           | 7.5  | Prevent insecure HTTP URLs          | 💼  |     |     |     |
+| [no-hardcoded-credentials](./docs/rules/no-hardcoded-credentials.md)                     | CWE-798 | M1           | 7.5  | Detect hardcoded secrets            | 💼  |     | 🔧  | 💡  |
+| [no-credentials-in-storage-api](./docs/rules/no-credentials-in-storage-api.md)           | CWE-522 | M1           | 7.5  | Prevent credentials in localStorage | 💼  |     |     |     |
+| [no-credentials-in-query-params](./docs/rules/no-credentials-in-query-params.md)         | CWE-598 | M1           | 7.5  | Detect credentials in URLs          | 💼  |     |     |     |
+| [no-allow-arbitrary-loads](./docs/rules/no-allow-arbitrary-loads.md)                     | CWE-295 | M5           | 7.5  | Prevent insecure ATS configuration  |     |     |     |     |
+| [no-disabled-certificate-validation](./docs/rules/no-disabled-certificate-validation.md) | CWE-295 | M5           | 7.5  | Detect disabled cert validation     |     |     |     |     |
+| [require-https-only](./docs/rules/require-https-only.md)                                 | CWE-319 | M5           | 7.5  | Enforce HTTPS-only connections      | 💼  |     |     |     |
+| [require-network-timeout](./docs/rules/require-network-timeout.md)                       | CWE-400 | M5           | 7.5  | Require network timeouts            |     |     |     |     |
+| [detect-weak-password-validation](./docs/rules/detect-weak-password-validation.md)       | CWE-521 | M3           | 7.5  | Detect weak password requirements   |     |     |     |     |
+| [no-client-side-auth-logic](./docs/rules/no-client-side-auth-logic.md)                   | CWE-602 | M3           | 7.5  | Prevent client-side auth            |     |     |     |     |
+| [no-hardcoded-session-tokens](./docs/rules/no-hardcoded-session-tokens.md)               | CWE-798 | M3           | 9.8  | Detect hardcoded session tokens     | 💼  |     |     |     |
+| [no-unvalidated-deeplinks](./docs/rules/no-unvalidated-deeplinks.md)                     | CWE-939 | M4           | 7.5  | Require deeplink validation         | 💼  |     |     |     |
+| [require-url-validation](./docs/rules/require-url-validation.md)                         | CWE-601 | M4           | 7.5  | Require URL validation              |     |     |     |     |
+| [require-mime-type-validation](./docs/rules/require-mime-type-validation.md)             | CWE-434 | M4           | 7.5  | Require MIME type validation        |     |     |     |     |
+| [no-arbitrary-file-access](./docs/rules/no-arbitrary-file-access.md)                     | CWE-22  | M4           | 7.5  | Prevent path traversal              |     |     |     |     |
+| [no-pii-in-logs](./docs/rules/no-pii-in-logs.md)                                         | CWE-532 | M6           | 7.5  | Prevent PII in logs                 |     | ⚠️  |     |     |
+| [no-tracking-without-consent](./docs/rules/no-tracking-without-consent.md)               | CWE-359 | M6           | 7.5  | Require tracking consent            |     |     |     |     |
+| [no-sensitive-data-in-analytics](./docs/rules/no-sensitive-data-in-analytics.md)         | CWE-359 | M6           | 7.5  | Prevent PII in analytics            |     |     |     |     |
+| [require-data-minimization](./docs/rules/require-data-minimization.md)                   | CWE-213 | M6           | 7.5  | Identify excessive data collection  |     |     |     |     |
+| [no-debug-code-in-production](./docs/rules/no-debug-code-in-production.md)               | CWE-489 | M7           | 7.5  | Detect debug code                   |     |     |     |     |
+| [require-code-minification](./docs/rules/require-code-minification.md)                   | CWE-656 | M7           | 7.5  | Require minification config         |     |     |     |     |
+| [no-verbose-error-messages](./docs/rules/no-verbose-error-messages.md)                   | CWE-209 | M8           | 7.5  | Prevent stack trace exposure        |     | ⚠️  |     |     |
+| [require-secure-defaults](./docs/rules/require-secure-defaults.md)                       | CWE-276 | M8           | 7.5  | Require secure default configs      |     |     |     |     |
+| [no-sensitive-data-in-cache](./docs/rules/no-sensitive-data-in-cache.md)                 | CWE-524 | M9           | 7.5  | Prevent sensitive cache data        |     |     |     |     |
+| [no-data-in-temp-storage](./docs/rules/no-data-in-temp-storage.md)                       | CWE-312 | M9           | 7.5  | Prevent sensitive temp data         |     |     |     |     |
+| [require-secure-deletion](./docs/rules/require-secure-deletion.md)                       | CWE-459 | M9           | 7.5  | Require secure data deletion        |     |     |     |     |
+| [require-storage-encryption](./docs/rules/require-storage-encryption.md)                 | CWE-311 | M9           | 7.5  | Require encrypted storage           |     |     |     |     |
+| [no-unencrypted-local-storage](./docs/rules/no-unencrypted-local-storage.md)             | CWE-312 | M9           | 7.5  | Prevent unencrypted local storage   |     |     |     |     |
+| [require-credential-storage](./docs/rules/require-credential-storage.md)                 | CWE-522 | M10          | 7.5  | Require secure credential storage   |     |     |     |     |
+| [no-exposed-debug-endpoints](./docs/rules/no-exposed-debug-endpoints.md)                 | CWE-489 | M8           | 7.5  | Prevent exposed debug endpoints     |     |     |     |     |
 
 ### Path & File Security (3 rules)
 
@@ -243,11 +246,12 @@ npx eslint .
 
 ## 📋 Available Presets (policy tiers)
 
-| Preset             | Description                                           |
-| ------------------ | ----------------------------------------------------- |
-| **`recommended`**  | Balanced security for most projects (89 rules, mixed) |
-| **`strict`**       | Maximum security enforcement (all rules as errors)    |
-| **`owasp-top-10`** | OWASP Top 10 2021 compliance focused                  |
+| Preset                    | Description                                                     |
+| ------------------------- | --------------------------------------------------------------- |
+| **`recommended`**         | Balanced security for most projects (Web + key Mobile security) |
+| **`strict`**              | Maximum security enforcement (all rules as errors)              |
+| **`owasp-top-10`**        | OWASP Top 10 Web 2021 compliance focused                        |
+| **`owasp-mobile-top-10`** | OWASP Mobile Top 10 2024 compliance focused                     |
 
 ---
 
@@ -288,8 +292,14 @@ export default [
 
   // Add OWASP Top 10 enforcement for internet-facing apps
   {
-    files: ['apps/**'],
+    files: ['apps/web/**'],
     ...secureCoding.configs['owasp-top-10'],
+  },
+
+  // Add OWASP Mobile Top 10 for mobile/native apps
+  {
+    files: ['apps/mobile/**'],
+    ...secureCoding.configs['owasp-mobile-top-10'],
   },
 
   // Force strict mode for critical backend services
@@ -372,6 +382,17 @@ This plugin runs **100% locally**. No data ever leaves your machine.
 
 ---
 
+**Q: Does it work with ESLint 9 flat config?**
+A: Yes, fully compatible.
+
+## 🔗 Related ESLint Plugins
+
+- [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) - specialized security rules for Vercel AI SDK applications.
+
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
+
+```
+
+```
