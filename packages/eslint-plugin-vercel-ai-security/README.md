@@ -58,49 +58,51 @@ import vercelAISecurity from 'eslint-plugin-vercel-ai-security';
 export default [vercelAISecurity.configs.recommended];
 ```
 
-### Config Options
+### Available Presets
 
-| Config        | Rules                 | Use Case         |
-| ------------- | --------------------- | ---------------- |
-| `minimal`     | 2                     | Gradual adoption |
-| `recommended` | 14 (7 error, 7 warn)  | Most projects    |
-| `strict`      | 19 (17 error, 2 warn) | Production       |
+| Preset            | Description                                                             |
+| ----------------- | ----------------------------------------------------------------------- |
+| **`recommended`** | Balanced security: Critical rules as errors, high-priority as warnings. |
+| **`strict`**      | Maximum security: All rules enabled as errors for production.           |
+| **`minimal`**     | Gradual adoption: Only the 2 most critical rules.                       |
 
 ---
 
 ## 📋 Complete Rules Reference (19 Rules)
 
+💼 = Set in `recommended` | ⚠️ = Warns in `recommended` | 💡 = Suggestions
+
 ### 🛡️ OWASP LLM Top 10 2025 (10/10 ✅)
 
-| OWASP                              | Rule                                                                                                                                                                                 | Severity    | Docs                                               |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- | -------------------------------------------------- |
-| **LLM01: Prompt Injection**        | [`require-validated-prompt`](./docs/rules/require-validated-prompt.md)                                                                                                               | 🔴 CRITICAL | [📖](./docs/rules/require-validated-prompt.md)     |
-| **LLM02: Sensitive Info**          | [`no-sensitive-in-prompt`](./docs/rules/no-sensitive-in-prompt.md)                                                                                                                   | 🔴 CRITICAL | [📖](./docs/rules/no-sensitive-in-prompt.md)       |
-| **LLM03: Training Data Poisoning** | [`no-training-data-exposure`](./docs/rules/no-training-data-exposure.md)                                                                                                             | 🟡 HIGH     | [📖](./docs/rules/no-training-data-exposure.md)    |
-| **LLM04: Model DoS**               | [`require-request-timeout`](./docs/rules/require-request-timeout.md)                                                                                                                 | 🟡 MEDIUM   | [📖](./docs/rules/require-request-timeout.md)      |
-| **LLM05: Output Handling**         | [`no-unsafe-output-handling`](./docs/rules/no-unsafe-output-handling.md)                                                                                                             | 🔴 CRITICAL | [📖](./docs/rules/no-unsafe-output-handling.md)    |
-| **LLM06: Excessive Agency**        | [`require-tool-confirmation`](./docs/rules/require-tool-confirmation.md)                                                                                                             | 🔴 CRITICAL | [📖](./docs/rules/require-tool-confirmation.md)    |
-| **LLM07: System Prompt Leak**      | [`no-system-prompt-leak`](./docs/rules/no-system-prompt-leak.md)                                                                                                                     | 🔴 CRITICAL | [📖](./docs/rules/no-system-prompt-leak.md)        |
-| **LLM08: Vector Weaknesses**       | [`require-embedding-validation`](./docs/rules/require-embedding-validation.md)                                                                                                       | 🟡 MEDIUM   | [📖](./docs/rules/require-embedding-validation.md) |
-| **LLM09: Misinformation**          | [`require-output-validation`](./docs/rules/require-output-validation.md)                                                                                                             | 🟡 MEDIUM   | [📖](./docs/rules/require-output-validation.md)    |
-| **LLM10: Unbounded Consumption**   | [`require-max-tokens`](./docs/rules/require-max-tokens.md), [`require-max-steps`](./docs/rules/require-max-steps.md), [`require-abort-signal`](./docs/rules/require-abort-signal.md) | 🟡 HIGH     | [📖](./docs/rules/require-max-tokens.md)           |
+| Rule                                                                         | CWE     | OWASP | CVSS | Description                                                 | 💼  | ⚠️  | 💡  |
+| :--------------------------------------------------------------------------- | :------ | :---- | :--- | :---------------------------------------------------------- | :-: | :-: | :-: |
+| [require-validated-prompt](./docs/rules/require-validated-prompt.md)         | CWE-74  | LLM01 | 9.0  | Prevent prompt injection via input validation               | 💼  |     |     |
+| [no-sensitive-in-prompt](./docs/rules/no-sensitive-in-prompt.md)             | CWE-200 | LLM02 | 8.0  | Prevent sensitive data (secrets, PII) in prompts            | 💼  |     |     |
+| [no-training-data-exposure](./docs/rules/no-training-data-exposure.md)       | CWE-359 | LLM03 | 7.0  | Prevent user data exposure to training endpoints            |     | ⚠️  |     |
+| [require-request-timeout](./docs/rules/require-request-timeout.md)           | CWE-400 | LLM04 | 5.0  | Require timeouts for AI calls to prevent DoS                |     | ⚠️  |     |
+| [no-unsafe-output-handling](./docs/rules/no-unsafe-output-handling.md)       | CWE-94  | LLM05 | 9.8  | Prevent unsafe use of AI output (eval, SQL, HTML)           | 💼  |     |     |
+| [require-tool-confirmation](./docs/rules/require-tool-confirmation.md)       | CWE-862 | LLM06 | 7.0  | Require confirmation for destructive tool usage             | 💼  |     |     |
+| [no-system-prompt-leak](./docs/rules/no-system-prompt-leak.md)               | CWE-200 | LLM07 | 7.5  | Prevent system prompt leakage in responses                  | 💼  |     |     |
+| [require-embedding-validation](./docs/rules/require-embedding-validation.md) | CWE-20  | LLM08 | 5.5  | Validate embeddings before storage/search                   |     |     | 💡  |
+| [require-output-validation](./docs/rules/require-output-validation.md)       | CWE-707 | LLM09 | 5.0  | Validate AI output before display to prevent misinformation |     |     | 💡  |
+| [require-max-tokens](./docs/rules/require-max-tokens.md)                     | CWE-770 | LLM10 | 6.5  | Require `maxTokens` limit to prevent exhaustion             |     | ⚠️  |     |
+| [require-max-steps](./docs/rules/require-max-steps.md)                       | CWE-834 | LLM10 | 6.5  | Require `maxSteps` for multi-step tools                     |     | ⚠️  |     |
+| [require-abort-signal](./docs/rules/require-abort-signal.md)                 | CWE-404 | LLM10 | 4.0  | Require `abortSignal` for cancellable streams               |     |     | 💡  |
 
 ### 🤖 OWASP Agentic Top 10 2026 (9/10 ✅)
 
-| OWASP                         | Rule                                                                               | Severity    | Docs                                                 |
-| ----------------------------- | ---------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------- |
-| **ASI01: Agent Confusion**    | [`no-dynamic-system-prompt`](./docs/rules/no-dynamic-system-prompt.md)             | 🔴 CRITICAL | [📖](./docs/rules/no-dynamic-system-prompt.md)       |
-| **ASI02: Tool Misuse**        | [`require-tool-schema`](./docs/rules/require-tool-schema.md)                       | 🟡 HIGH     | [📖](./docs/rules/require-tool-schema.md)            |
-| **ASI03: Identity Abuse**     | [`no-hardcoded-api-keys`](./docs/rules/no-hardcoded-api-keys.md)                   | 🔴 CRITICAL | [📖](./docs/rules/no-hardcoded-api-keys.md)          |
-| **ASI04: Data Exfiltration**  | [`require-output-filtering`](./docs/rules/require-output-filtering.md)             | 🟡 HIGH     | [📖](./docs/rules/require-output-filtering.md)       |
-| **ASI05: Code Execution**     | [`no-unsafe-output-handling`](./docs/rules/no-unsafe-output-handling.md)           | 🔴 CRITICAL | [📖](./docs/rules/no-unsafe-output-handling.md)      |
-| **ASI06: Memory Corruption**  | ⚪ N/A                                                                             | -           | TypeScript is memory-safe                            |
-| **ASI07: Poisoned RAG**       | [`require-rag-content-validation`](./docs/rules/require-rag-content-validation.md) | 🟡 HIGH     | [📖](./docs/rules/require-rag-content-validation.md) |
-| **ASI08: Cascading Failures** | [`require-error-handling`](./docs/rules/require-error-handling.md)                 | 🟠 MEDIUM   | [📖](./docs/rules/require-error-handling.md)         |
-| **ASI09: Human-Agent Trust**  | [`require-tool-confirmation`](./docs/rules/require-tool-confirmation.md)           | 🔴 CRITICAL | [📖](./docs/rules/require-tool-confirmation.md)      |
-| **ASI10: Logging**            | [`require-audit-logging`](./docs/rules/require-audit-logging.md)                   | ⚪ LOW      | [📖](./docs/rules/require-audit-logging.md)          |
-
-> **Note**: ASI06 (Memory Corruption) is not applicable to TypeScript/JavaScript as these languages are memory-safe by design.
+| Rule                                                                             | CWE     | OWASP | CVSS | Description                                          | 💼  | ⚠️  | 💡  |
+| :------------------------------------------------------------------------------- | :------ | :---- | :--- | :--------------------------------------------------- | :-: | :-: | :-: |
+| [no-dynamic-system-prompt](./docs/rules/no-dynamic-system-prompt.md)             | CWE-74  | ASI01 | 8.0  | Prevent dynamic system prompts (Agent Confusion)     | 💼  |     |     |
+| [require-tool-schema](./docs/rules/require-tool-schema.md)                       | CWE-20  | ASI02 | 7.5  | Require Zod schemas for all tool parameters          |     | ⚠️  |     |
+| [no-hardcoded-api-keys](./docs/rules/no-hardcoded-api-keys.md)                   | CWE-798 | ASI03 | 8.5  | Prevent hardcoded API keys in configuration          | 💼  |     |     |
+| [require-output-filtering](./docs/rules/require-output-filtering.md)             | CWE-200 | ASI04 | 6.5  | Filter sensitive data returned by tools              |     | ⚠️  |     |
+| [no-unsafe-output-handling](./docs/rules/no-unsafe-output-handling.md)           | CWE-94  | ASI05 | 9.8  | Prevent unexpected code execution from AI output     | 💼  |     |     |
+| **ASI06: Memory Corruption**                                                     | -       | ASI06 | -    | _N/A (TypeScript/JS is memory-safe)_                 |  -  |  -  |  -  |
+| [require-rag-content-validation](./docs/rules/require-rag-content-validation.md) | CWE-74  | ASI07 | 6.0  | Validate RAG content before use in prompts           |     | ⚠️  |     |
+| [require-error-handling](./docs/rules/require-error-handling.md)                 | CWE-755 | ASI08 | 5.0  | Require error handling to prevent cascading failures |     |     | 💡  |
+| [require-tool-confirmation](./docs/rules/require-tool-confirmation.md)           | CWE-862 | ASI09 | 7.0  | Require human-in-the-loop for sensitive actions      | 💼  |     |     |
+| [require-audit-logging](./docs/rules/require-audit-logging.md)                   | CWE-778 | ASI10 | 4.0  | Suggest audit logging for AI operations              |     |     | 💡  |
 
 ---
 
@@ -148,6 +150,10 @@ All rule messages follow a structured format optimized for AI coding assistants:
 | Node.js              | ^18.0.0                        |
 
 ---
+
+## 🔗 Related ESLint Plugins
+
+- [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) - 89+ miscellaneous security rules for general web & mobile apps (OWASP Top 10).
 
 ## 📄 License
 

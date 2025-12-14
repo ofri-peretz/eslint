@@ -76,7 +76,6 @@ describe('detect-non-literal-regexp', () => {
       valid: [
         // Simple regex literals are now safe - no nested quantifiers
         { code: 'const pattern = /^[a-z]+$/;' },
-        // eslint-disable-next-line no-useless-escape
         { code: 'const emailRegex = /^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$/;' },
         // Static string patterns with new RegExp are now also safe by default
         { code: 'const pattern = new RegExp("^[a-z]+$");' },
