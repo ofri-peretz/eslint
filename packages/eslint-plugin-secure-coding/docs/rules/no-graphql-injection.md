@@ -8,27 +8,34 @@ Detects GraphQL injection vulnerabilities and DoS attacks. This rule is part of 
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-943 (GraphQL Injection), CWE-400 (DoS) |
-| **Severity** | Critical |
-| **Auto-Fix** | 💡 Suggestions available |
-| **Category** | Injection Prevention |
+| Aspect            | Details                                                                                                                                          |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-943](https://cwe.mitre.org/data/definitions/943.html) (GraphQL Injection), [CWE-400](https://cwe.mitre.org/data/definitions/400.html) (DoS) |
+| **Severity**      | Critical                                                                                                                                         |
+| **Auto-Fix**      | 💡 Suggestions available                                                                                                                         |
+| **Category**      | Injection Prevention                                                                                                                             |
+
+## Vulnerability and Risk
+
+**Vulnerability:** GraphQL injection arises when backend queries are constructed dynamically using user inputs via string concatenation or interpolation, instead of using standard GraphQL variables.
+
+**Risk:** Attackers can manipulate the query structure to bypass permissions, access unauthorized data fields, perform Denial of Service (DoS) via nested queries, or execute batching attacks to overload the server.
 
 ## Rule Details
 
 GraphQL injection occurs when user input is improperly inserted into GraphQL queries, allowing attackers to:
+
 - Read or modify unauthorized data
 - Perform DoS attacks with complex/nested queries
 - Extract schema information via introspection
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| 🔒 **Injection** | Unauthorized data access | Use GraphQL variables |
-| 🔥 **DoS** | Service unavailability | Limit query depth/complexity |
-| 🔍 **Info Leak** | Schema exposure | Disable introspection in production |
+| Issue            | Impact                   | Solution                            |
+| ---------------- | ------------------------ | ----------------------------------- |
+| 🔒 **Injection** | Unauthorized data access | Use GraphQL variables               |
+| 🔥 **DoS**       | Service unavailability   | Limit query depth/complexity        |
+| 🔍 **Info Leak** | Schema exposure          | Disable introspection in production |
 
 ## Examples
 
@@ -88,12 +95,12 @@ const safeQuery = buildQuery({ user: { id: userId } });
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `allowIntrospection` | `boolean` | `false` | Allow introspection queries |
-| `maxQueryDepth` | `number` | `10` | Maximum allowed query depth |
-| `trustedGraphqlLibraries` | `string[]` | `['graphql', 'apollo-server']` | Safe GraphQL libraries |
-| `validationFunctions` | `string[]` | `['validate', 'sanitize']` | Input validation functions |
+| Option                    | Type       | Default                        | Description                 |
+| ------------------------- | ---------- | ------------------------------ | --------------------------- |
+| `allowIntrospection`      | `boolean`  | `false`                        | Allow introspection queries |
+| `maxQueryDepth`           | `number`   | `10`                           | Maximum allowed query depth |
+| `trustedGraphqlLibraries` | `string[]` | `['graphql', 'apollo-server']` | Safe GraphQL libraries      |
+| `validationFunctions`     | `string[]` | `['validate', 'sanitize']`     | Input validation functions  |
 
 ## Error Message Format
 
@@ -112,5 +119,3 @@ const safeQuery = buildQuery({ user: { id: userId } });
 
 - [`no-sql-injection`](./no-sql-injection.md) - SQL injection prevention
 - [`detect-eval-with-expression`](./detect-eval-with-expression.md) - Code injection prevention
-
-

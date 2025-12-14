@@ -8,16 +8,23 @@ Detects timing attack vulnerabilities in authentication code. This rule is part 
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
+| Aspect            | Details                                 |
+| ----------------- | --------------------------------------- |
 | **CWE Reference** | CWE-208 (Observable Timing Discrepancy) |
-| **Severity** | Medium (CVSS 5.9) |
-| **Auto-Fix** | 🔧 Auto-fixable |
-| **Category** | Cryptography |
+| **Severity**      | Medium (CVSS 5.9)                       |
+| **Auto-Fix**      | 🔧 Auto-fixable                         |
+| **Category**      | Cryptography                            |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Timing attacks allow attackers to deduce private information (like the length or content of a secret) by measuring the time it takes for a system to process different inputs.
+
+**Risk:** An attacker can guess passwords, tokens, or other secrets byte-by-byte by observing subtle differences in response times, bypassing authentication or encryption protections.
 
 ## Rule Details
 
 Timing attacks exploit the time it takes for operations to complete to leak sensitive information. In authentication code, attackers can use timing differences to:
+
 - Guess passwords character by character
 - Discover valid usernames or tokens
 - Bypass authentication mechanisms
@@ -25,11 +32,11 @@ Timing attacks exploit the time it takes for operations to complete to leak sens
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| 🔓 **Password Guessing** | Account compromise | Use constant-time comparison |
-| 🔍 **Username Enumeration** | Information disclosure | Consistent response times |
-| 🔑 **Token Discovery** | Session hijacking | Use crypto.timingSafeEqual |
+| Issue                       | Impact                 | Solution                     |
+| --------------------------- | ---------------------- | ---------------------------- |
+| 🔓 **Password Guessing**    | Account compromise     | Use constant-time comparison |
+| 🔍 **Username Enumeration** | Information disclosure | Consistent response times    |
+| 🔑 **Token Discovery**      | Session hijacking      | Use crypto.timingSafeEqual   |
 
 ## Examples
 
@@ -66,13 +73,13 @@ import { timingSafeEqual } from 'crypto';
 function verifyPassword(provided: string, expected: string): boolean {
   const providedBuf = Buffer.from(provided);
   const expectedBuf = Buffer.from(expected);
-  
+
   // Ensure same length before comparison
   if (providedBuf.length !== expectedBuf.length) {
     // Still do comparison to maintain constant time
     return timingSafeEqual(providedBuf, providedBuf) && false;
   }
-  
+
   return timingSafeEqual(providedBuf, expectedBuf);
 }
 
@@ -97,11 +104,11 @@ const isValid = await bcrypt.compare(userPassword, storedHash);
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `authFunctions` | `string[]` | `['verify', 'authenticate']` | Authentication function names |
-| `sensitiveVariables` | `string[]` | `['password', 'token', 'secret']` | Sensitive variable patterns |
-| `allowEarlyReturns` | `boolean` | `false` | Allow early returns in non-sensitive contexts |
+| Option               | Type       | Default                           | Description                                   |
+| -------------------- | ---------- | --------------------------------- | --------------------------------------------- |
+| `authFunctions`      | `string[]` | `['verify', 'authenticate']`      | Authentication function names                 |
+| `sensitiveVariables` | `string[]` | `['password', 'token', 'secret']` | Sensitive variable patterns                   |
+| `allowEarlyReturns`  | `boolean`  | `false`                           | Allow early returns in non-sensitive contexts |
 
 ## Error Message Format
 
@@ -120,5 +127,3 @@ const isValid = await bcrypt.compare(userPassword, storedHash);
 
 - [`no-insecure-comparison`](./no-insecure-comparison.md) - Insecure string comparison
 - [`no-weak-crypto`](./no-weak-crypto.md) - Weak cryptographic algorithms
-
-

@@ -18,7 +18,7 @@ export default defineConfig({
     include: [
       'src/**/*.test.ts',
     ],
-    exclude: ['src/tests/security/llm-mcp-fixtures.test.ts'],
+    exclude: [],
     passWithNoTests: true,
     globalSetup: ['../../vitest.global-setup.ts'],
     name: { label: 'secure-coding', color: 'green' },
@@ -27,13 +27,19 @@ export default defineConfig({
     pool: 'vmThreads',
     coverage: {
       provider: 'v8',
-      // reporter: ['json', 'text'],
       reportOnFailure: true,
       reportsDirectory: './coverage',
+      include: ['src/rules/**/index.ts'],
       exclude: ['node_modules/', 'dist/', '**/*.test.ts'],
       ignoreClassMethods: ['context.report'],
       clean: true,
-      reporter: ['text', 'text-summary'],
+      reporter: ['text', 'text-summary', 'html'],
+      thresholds: {
+        lines: 80,
+        branches: 70,
+        functions: 80,
+        statements: 80
+      }
     },
     reporters: ['default', 'verbose'],
     // outputFile: {

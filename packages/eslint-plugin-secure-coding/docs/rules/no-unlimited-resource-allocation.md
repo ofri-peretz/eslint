@@ -8,16 +8,23 @@ Detects unlimited resource allocation that could cause DoS. This rule is part of
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-770 (Allocation Without Limits) |
-| **Severity** | High (CVSS 7.5) |
-| **Auto-Fix** | 💡 Suggestions available |
-| **Category** | Buffer, Memory & DoS |
+| Aspect            | Details                                                                                |
+| ----------------- | -------------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-770](https://cwe.mitre.org/data/definitions/770.html) (Allocation Without Limits) |
+| **Severity**      | High (CVSS 7.5)                                                                        |
+| **Auto-Fix**      | 💡 Suggestions available                                                               |
+| **Category**      | Buffer, Memory & DoS                                                                   |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Unlimited resource allocation occurs when an application allocates resources (like memory, file descriptors, or database connections) based on untrusted user input without any upper bounds.
+
+**Risk:** An attacker can trigger the allocation of massive amounts of resources (e.g., sending a request with a very large `size` parameter), causing the application to crash due to Out-Of-Memory (OOM) errors or exhaustion of system limits (Denial of Service).
 
 ## Rule Details
 
 Unlimited resource allocation can cause denial of service by exhausting system resources like memory, file handles, or network connections. Attackers can:
+
 - Crash the application with memory exhaustion
 - Exhaust file descriptors
 - Overwhelm network resources
@@ -25,11 +32,11 @@ Unlimited resource allocation can cause denial of service by exhausting system r
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| 💾 **Memory Exhaustion** | Application crash | Limit allocation sizes |
-| 📂 **FD Exhaustion** | Service unavailable | Close resources properly |
-| 🌐 **Connection Flood** | Network DoS | Implement rate limiting |
+| Issue                    | Impact              | Solution                 |
+| ------------------------ | ------------------- | ------------------------ |
+| 💾 **Memory Exhaustion** | Application crash   | Limit allocation sizes   |
+| 📂 **FD Exhaustion**     | Service unavailable | Close resources properly |
+| 🌐 **Connection Flood**  | Network DoS         | Implement rate limiting  |
 
 ## Examples
 
@@ -77,9 +84,7 @@ const array = new Array(length).fill(0);
 // Limit concurrent connections
 import pLimit from 'p-limit';
 const limit = pLimit(10); // Max 10 concurrent
-const results = await Promise.all(
-  urls.map(url => limit(() => fetch(url)))
-);
+const results = await Promise.all(urls.map((url) => limit(() => fetch(url))));
 ```
 
 ## Configuration
@@ -99,12 +104,12 @@ const results = await Promise.all(
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `maxResourceSize` | `number` | `10485760` | Maximum allowed resource size (bytes) |
-| `userInputVariables` | `string[]` | `['req', 'request']` | User input variable patterns |
-| `safeResourceFunctions` | `string[]` | `[]` | Safe allocation functions |
-| `requireResourceValidation` | `boolean` | `true` | Require validation before allocation |
+| Option                      | Type       | Default              | Description                           |
+| --------------------------- | ---------- | -------------------- | ------------------------------------- |
+| `maxResourceSize`           | `number`   | `10485760`           | Maximum allowed resource size (bytes) |
+| `userInputVariables`        | `string[]` | `['req', 'request']` | User input variable patterns          |
+| `safeResourceFunctions`     | `string[]` | `[]`                 | Safe allocation functions             |
+| `requireResourceValidation` | `boolean`  | `true`               | Require validation before allocation  |
 
 ## Error Message Format
 
@@ -123,5 +128,3 @@ const results = await Promise.all(
 
 - [`no-unchecked-loop-condition`](./no-unchecked-loop-condition.md) - Infinite loop conditions
 - [`no-buffer-overread`](./no-buffer-overread.md) - Buffer over-read
-
-

@@ -2,20 +2,26 @@
 
 > **Keywords:** privilege escalation, CWE-269, security, ESLint rule, role assignment, permission bypass, access control, user input, role checks, LLM-optimized, code security
 
-Detects potential privilege escalation vulnerabilities where user input is used to assign roles or permissions without proper validation. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages that AI assistants can automatically fix.
+Detects potential privilege escalation vulnerabilities where user input is used to assign roles or permissions without proper validation. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
 ⚠️ This rule **_warns_** by default in the `recommended` config.
 
 ## Quick Summary
 
-| Aspect            | Details                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
-| **CWE Reference** | CWE-269 (Improper Privilege Management)                                         |
-| **Severity**      | High (security vulnerability)                                                   |
-| **Auto-Fix**      | ❌ No (requires manual role check implementation)                               |
-| **Category**      | Security                                                                         |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                          |
-| **Best For**      | All applications with role-based access control, user management systems       |
+| Aspect            | Details                                                                  |
+| ----------------- | ------------------------------------------------------------------------ |
+| **CWE Reference** | CWE-269 (Improper Privilege Management)                                  |
+| **Severity**      | High (security vulnerability)                                            |
+| **Auto-Fix**      | ❌ No (requires manual role check implementation)                        |
+| **Category**      | Security                                                                 |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                  |
+| **Best For**      | All applications with role-based access control, user management systems |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Privilege escalation (specifically vertical privilege escalation) occurs when an attacker can access resources or functions reserved for higher-privileged users (like admins) by manipulating inputs used in role assignment or authorization checks.
+
+**Risk:** Attackers can grant themselves administrative privileges, accessing unauthorized data, deleting critical resources, or taking full control of the application.
 
 ## Rule Details
 
@@ -23,12 +29,12 @@ Privilege escalation occurs when user input is used to assign roles or permissio
 
 ### Why This Matters
 
-| Issue                 | Impact                              | Solution                   |
-| --------------------- | ----------------------------------- | -------------------------- |
-| 🔒 **Security**       | Users can escalate their privileges | Add role validation checks |
+| Issue                      | Impact                              | Solution                             |
+| -------------------------- | ----------------------------------- | ------------------------------------ |
+| 🔒 **Security**            | Users can escalate their privileges | Add role validation checks           |
 | 🐛 **Unauthorized Access** | Bypass access controls              | Verify permissions before assignment |
-| 🔐 **Data Breach**    | Access to sensitive data            | Enforce role-based access  |
-| 📊 **Compliance**     | Violates security standards         | Validate all privilege changes |
+| 🔐 **Data Breach**         | Access to sensitive data            | Enforce role-based access            |
+| 📊 **Compliance**          | Violates security standards         | Validate all privilege changes       |
 
 ## Detection Patterns
 
@@ -69,7 +75,8 @@ app.post('/api/grant', (req, res) => {
 ```typescript
 // Role assignment with validation
 app.put('/api/users/:id', (req, res) => {
-  if (!hasRole(currentUser, 'admin')) { // ✅ Role check
+  if (!hasRole(currentUser, 'admin')) {
+    // ✅ Role check
     throw new Error('Unauthorized');
   }
   user.role = req.body.role; // ✅ Safe after validation
@@ -77,7 +84,8 @@ app.put('/api/users/:id', (req, res) => {
 
 // Permission assignment with authorization
 app.post('/api/permissions', (req, res) => {
-  if (!isAuthorized(currentUser, 'grant_permissions')) { // ✅ Authorization check
+  if (!isAuthorized(currentUser, 'grant_permissions')) {
+    // ✅ Authorization check
     throw new Error('Unauthorized');
   }
   user.permission = req.query.permission; // ✅ Safe after check
@@ -85,7 +93,8 @@ app.post('/api/permissions', (req, res) => {
 
 // Privilege operation with role validation
 app.post('/api/grant', (req, res) => {
-  if (!checkRole(currentUser, requiredRole)) { // ✅ Role validation
+  if (!checkRole(currentUser, requiredRole)) {
+    // ✅ Role validation
     throw new Error('Unauthorized');
   }
   grant(user, req.body.permission); // ✅ Safe after validation
@@ -98,25 +107,25 @@ app.post('/api/grant', (req, res) => {
 
 ```json
 {
-  "@forge-js/llm-optimized/security/no-privilege-escalation": "warn"
+  "secure-coding/no-privilege-escalation": "warn"
 }
 ```
 
 ### Options
 
-| Option              | Type      | Default                          | Description                        |
-| ------------------- | --------- | -------------------------------- | ----------------------------------- |
-| `allowInTests`      | `boolean` | `false`                          | Allow privilege escalation in tests |
-| `testFilePattern`   | `string`  | `'\\.(test\|spec)\\.(ts\|tsx\|js\|jsx)$'` | Test file pattern regex |
-| `roleCheckPatterns` | `string[]`| `['hasRole', 'checkRole', ...]` | Role check patterns to recognize   |
-| `userInputPatterns` | `string[]`| `[]`                             | Additional user input patterns     |
-| `ignorePatterns`    | `string[]`| `[]`                             | Additional patterns to ignore      |
+| Option              | Type       | Default                                   | Description                         |
+| ------------------- | ---------- | ----------------------------------------- | ----------------------------------- |
+| `allowInTests`      | `boolean`  | `false`                                   | Allow privilege escalation in tests |
+| `testFilePattern`   | `string`   | `'\\.(test\|spec)\\.(ts\|tsx\|js\|jsx)$'` | Test file pattern regex             |
+| `roleCheckPatterns` | `string[]` | `['hasRole', 'checkRole', ...]`           | Role check patterns to recognize    |
+| `userInputPatterns` | `string[]` | `[]`                                      | Additional user input patterns      |
+| `ignorePatterns`    | `string[]` | `[]`                                      | Additional patterns to ignore       |
 
 ### Example Configuration
 
 ```json
 {
-  "@forge-js/llm-optimized/security/no-privilege-escalation": [
+  "secure-coding/no-privilege-escalation": [
     "error",
     {
       "allowInTests": true,
@@ -146,4 +155,3 @@ app.post('/api/grant', (req, res) => {
 - [CWE-269: Improper Privilege Management](https://cwe.mitre.org/data/definitions/269.html)
 - [OWASP: Improper Access Control](https://owasp.org/www-community/vulnerabilities/Improper_Access_Control)
 - [OWASP: Privilege Escalation](https://owasp.org/www-community/attacks/Privilege_escalation)
-

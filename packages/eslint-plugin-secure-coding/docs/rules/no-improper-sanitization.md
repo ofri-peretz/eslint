@@ -8,16 +8,23 @@ Detects improper sanitization of user input. This rule is part of [`eslint-plugi
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-116 (Improper Encoding), CWE-79 (XSS) |
-| **Severity** | High (CVSS 7.5) |
-| **Auto-Fix** | 💡 Suggestions available |
-| **Category** | Input Validation & XSS |
+| Aspect            | Details                                                                                                                                        |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-116](https://cwe.mitre.org/data/definitions/116.html) (Improper Encoding), [CWE-79](https://cwe.mitre.org/data/definitions/79.html) (XSS) |
+| **Severity**      | High (CVSS 7.5)                                                                                                                                |
+| **Auto-Fix**      | 💡 Suggestions available                                                                                                                       |
+| **Category**      | Input Validation & XSS                                                                                                                         |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Improper sanitization occurs when user input is treated as safe without removing or encoding potentially dangerous characters (like HTML tags or script injection vectors) before using it in a sensitive context (like rendering in a browser or executing as code).
+
+**Risk:** This leads to Cross-Site Scripting (XSS), where attackers can inject malicious scripts to steal sessions, redirect users, or deface websites. It can also lead to other injection attacks depending on the context (e.g., SQL injection, Command injection).
 
 ## Rule Details
 
 Improper sanitization occurs when user input is not properly cleaned before use in sensitive contexts. This can lead to:
+
 - Cross-site scripting (XSS) attacks
 - SQL/NoSQL injection
 - Command injection
@@ -25,11 +32,11 @@ Improper sanitization occurs when user input is not properly cleaned before use 
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| 🎭 **XSS** | Session hijacking | Use context-aware encoding |
-| 💉 **Injection** | Data breach | Use proper escaping functions |
-| 🔓 **Bypass** | Security control evasion | Defense in depth |
+| Issue            | Impact                   | Solution                      |
+| ---------------- | ------------------------ | ----------------------------- |
+| 🎭 **XSS**       | Session hijacking        | Use context-aware encoding    |
+| 💉 **Injection** | Data breach              | Use proper escaping functions |
+| 🔓 **Bypass**    | Security control evasion | Defense in depth              |
 
 ## Examples
 
@@ -89,12 +96,12 @@ db.query('SELECT * FROM users WHERE name = ?', [userInput]);
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `safeSanitizers` | `string[]` | `['DOMPurify.sanitize']` | Safe sanitization functions |
-| `dangerousChars` | `string[]` | `['<', '>', '"', "'"]` | Characters that should be escaped |
-| `contexts` | `string[]` | `['html', 'js', 'url', 'css']` | Encoding contexts to check |
-| `trustedLibraries` | `string[]` | `['dompurify']` | Trusted sanitization libraries |
+| Option             | Type       | Default                        | Description                       |
+| ------------------ | ---------- | ------------------------------ | --------------------------------- |
+| `safeSanitizers`   | `string[]` | `['DOMPurify.sanitize']`       | Safe sanitization functions       |
+| `dangerousChars`   | `string[]` | `['<', '>', '"', "'"]`         | Characters that should be escaped |
+| `contexts`         | `string[]` | `['html', 'js', 'url', 'css']` | Encoding contexts to check        |
+| `trustedLibraries` | `string[]` | `['dompurify']`                | Trusted sanitization libraries    |
 
 ## Error Message Format
 
@@ -113,5 +120,3 @@ db.query('SELECT * FROM users WHERE name = ?', [userInput]);
 
 - [`no-unsanitized-html`](./no-unsanitized-html.md) - XSS via innerHTML
 - [`no-unescaped-url-parameter`](./no-unescaped-url-parameter.md) - URL parameter injection
-
-

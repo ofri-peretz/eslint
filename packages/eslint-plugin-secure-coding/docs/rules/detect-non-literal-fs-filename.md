@@ -2,20 +2,26 @@
 
 > **Keywords:** path traversal, CWE-22, security, ESLint rule, file system, fs module, directory traversal, file access, auto-fix, LLM-optimized, code security
 
-Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
+Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages with fix suggestions.
 
 **🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-22 (Path Traversal) |
-| **Severity** | High (security vulnerability) |
-| **Auto-Fix** | ⚠️ Suggests fixes (manual application) |
-| **Category** | Security |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
-| **Best For** | Node.js applications, file processing systems, file upload handlers |
+| Aspect            | Details                                                                   |
+| ----------------- | ------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) (Path Traversal) |
+| **Severity**      | High (security vulnerability)                                             |
+| **Auto-Fix**      | ⚠️ Suggests fixes (manual application)                                    |
+| **Category**      | Security                                                                  |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                   |
+| **Best For**      | Node.js applications, file processing systems, file upload handlers       |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Using non-literal (dynamic) values for filesystem operations (like opening, reading, or writing files) without strict validation allows users to control file paths.
+
+**Risk:** Attackers can manipulate file paths to access files outside the intended directory (Path Traversal), overwriting critical system files, or disclosing sensitive information (like configuration files or source code).
 
 ## Rule Details
 
@@ -69,10 +75,10 @@ flowchart TD
 
 ## Configuration
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `allowLiterals` | `boolean` | `false` | Allow literal string paths |
-| `additionalMethods` | `string[]` | `[]` | Additional fs methods to check |
+| Option              | Type       | Default | Description                    |
+| ------------------- | ---------- | ------- | ------------------------------ |
+| `allowLiterals`     | `boolean`  | `false` | Allow literal string paths     |
+| `additionalMethods` | `string[]` | `[]`    | Additional fs methods to check |
 
 ## Examples
 
@@ -113,6 +119,7 @@ fs.writeFile(safeWritePath, data, callback);
 ## Path Traversal Prevention
 
 ### Basic Protection
+
 ```typescript
 const path = require('path');
 
@@ -128,6 +135,7 @@ fs.readFile(safePath, callback);
 ```
 
 ### Advanced Protection
+
 ```typescript
 function securePath(baseDir: string, userPath: string): string {
   const resolved = path.resolve(baseDir, userPath);
@@ -149,31 +157,35 @@ function securePath(baseDir: string, userPath: string): string {
 
 ## Common Attack Vectors
 
-| Attack | Example Input | Result |
-|--------|---------------|---------|
-| Basic traversal | `../../../etc/passwd` | Access system files |
+| Attack            | Example Input                   | Result               |
+| ----------------- | ------------------------------- | -------------------- |
+| Basic traversal   | `../../../etc/passwd`           | Access system files  |
 | Windows traversal | `....\\....\\windows\\system32` | Access Windows files |
-| Encoded traversal | `%2e%2e%2f%2e%2e%2fetc/passwd` | URL-encoded attack |
-| Unicode traversal | `..\\u002f..\\u002fetc/passwd` | Unicode bypass |
+| Encoded traversal | `%2e%2e%2f%2e%2e%2fetc/passwd`  | URL-encoded attack   |
+| Unicode traversal | `..\\u002f..\\u002fetc/passwd`  | Unicode bypass       |
 
 ## Method-Specific Guidance
 
 ### File Reading (`readFile`, `readFileSync`)
+
 - Use `path.basename()` to strip directory components
 - Combine with safe base directory
 - Validate file extensions if needed
 
 ### File Writing (`writeFile`, `writeFileSync`)
+
 - Same as reading, but consider separate write directories
 - Check disk space and file size limits
 - Validate file types on upload
 
 ### Directory Operations (`readdir`, `stat`)
+
 - Always resolve and validate directory paths
 - Check directory existence and permissions
 - Consider rate limiting for directory listings
 
 ### Stream Operations (`createReadStream`, `createWriteStream`)
+
 - Apply same path validation as regular file operations
 - Be careful with relative paths in streams
 - Validate stream destinations
@@ -181,6 +193,7 @@ function securePath(baseDir: string, userPath: string): string {
 ## Security Best Practices
 
 ### Directory Structure
+
 ```
 project/
 ├── uploads/        # User uploads (read-only from here)
@@ -190,6 +203,7 @@ project/
 ```
 
 ### Path Validation
+
 ```typescript
 class SecurePath {
   constructor(private baseDir: string) {}
@@ -216,15 +230,17 @@ class SecurePath {
 ## Migration Guide
 
 ### Phase 1: Discovery
+
 ```javascript
 {
   rules: {
-    '@forge-js/detect-non-literal-fs-filename': 'warn'
+    'secure-coding/detect-non-literal-fs-filename': 'warn'
   }
 }
 ```
 
 ### Phase 2: Implementation
+
 ```typescript
 // Add security utilities
 const SECURE_PATHS = {
@@ -238,12 +254,13 @@ fs.readFile(userPath) → fs.readFile(securePath.resolve(userPath))
 ```
 
 ### Phase 3: Testing
+
 ```typescript
 // Test path traversal attempts
 const attacks = [
   '../../../etc/passwd',
   '..\\..\\windows\\system32',
-  '....//....//etc/passwd'
+  '....//....//etc/passwd',
 ];
 
 for (const attack of attacks) {
@@ -253,13 +270,13 @@ for (const attack of attacks) {
 
 ## Comparison with Alternatives
 
-| Feature | detect-non-literal-fs-filename | eslint-plugin-security | eslint-plugin-node |
-|---------|-------------------------------|------------------------|-------------------|
-| **Path Traversal Detection** | ✅ Yes | ⚠️ Limited | ⚠️ Limited |
-| **CWE Reference** | ✅ CWE-22 included | ⚠️ Limited | ⚠️ Limited |
-| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
-| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
-| **Fix Suggestions** | ✅ Detailed | ⚠️ Basic | ⚠️ Basic |
+| Feature                      | detect-non-literal-fs-filename | eslint-plugin-security | eslint-plugin-node |
+| ---------------------------- | ------------------------------ | ---------------------- | ------------------ |
+| **Path Traversal Detection** | ✅ Yes                         | ⚠️ Limited             | ⚠️ Limited         |
+| **CWE Reference**            | ✅ CWE-22 included             | ⚠️ Limited             | ⚠️ Limited         |
+| **LLM-Optimized**            | ✅ Yes                         | ❌ No                  | ❌ No              |
+| **ESLint MCP**               | ✅ Optimized                   | ❌ No                  | ❌ No              |
+| **Fix Suggestions**          | ✅ Detailed                    | ⚠️ Basic               | ⚠️ Basic           |
 
 ## Related Rules
 

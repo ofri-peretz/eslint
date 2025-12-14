@@ -2,20 +2,30 @@
 
 > **Keywords:** insecure cookie, CWE-614, security, ESLint rule, httpOnly, secure, sameSite, cookie security, session management, LLM-optimized, code security
 
-Detects insecure cookie configurations (missing httpOnly, secure, sameSite flags). This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages that AI assistants can automatically fix.
+Detects insecure cookie configurations (missing httpOnly, secure, sameSite flags). This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
 💼 This rule is set to **error** by default in the `recommended` config.
 
 ## Quick Summary
 
-| Aspect            | Details                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
-| **CWE Reference** | CWE-614 (Sensitive Cookie in HTTPS Session Without 'Secure' Attribute)         |
-| **Severity**      | HIGH (security vulnerability)                                                   |
-| **Auto-Fix**      | ✅ Yes (adds missing flags automatically)                                      |
-| **Category**      | Security                                                                         |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                          |
-| **Best For**      | All web applications using cookies, Express, Next.js, session management      |
+| Aspect            | Details                                                                  |
+| ----------------- | ------------------------------------------------------------------------ |
+| **CWE Reference** | CWE-614 (Sensitive Cookie in HTTPS Session Without 'Secure' Attribute)   |
+| **Severity**      | HIGH (security vulnerability)                                            |
+| **Auto-Fix**      | ✅ Yes (adds missing flags automatically)                                |
+| **Category**      | Security                                                                 |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                  |
+| **Best For**      | All web applications using cookies, Express, Next.js, session management |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Insecure cookie settings involve missing critical flags like `HttpOnly`, `Secure`, and `SameSite` when setting cookies.
+
+**Risk:**
+
+- Missing `HttpOnly`: Allows XSS attacks to steal session cookies.
+- Missing `Secure`: Cookies can be intercepted over unencrypted HTTP connections (Man-in-the-Middle).
+- Missing `SameSite`: Increases the risk of Cross-Site Request Forgery (CSRF) attacks.
 
 ## Detection Flow
 
@@ -44,7 +54,7 @@ flowchart TD
     G -->|Yes| M[✅ Valid]
     H -->|Yes| M
     I -->|Yes| M
-    
+
     style D fill:#fee2e2,stroke:#dc2626,stroke-width:2px
     style E fill:#fee2e2,stroke:#dc2626,stroke-width:2px
     style J fill:#fee2e2,stroke:#dc2626,stroke-width:2px
@@ -55,12 +65,12 @@ flowchart TD
 
 ## Why This Matters
 
-| Issue                 | Impact                              | Solution                   |
-| --------------------- | ----------------------------------- | -------------------------- |
-| 🔒 **XSS Attacks**   | Cookies accessible via JavaScript   | Set httpOnly: true         |
-| 🔐 **Man-in-Middle**  | Cookies transmitted over HTTP       | Set secure: true           |
-| 🍪 **CSRF Attacks**  | Cookies sent cross-site             | Set sameSite: "strict"     |
-| 📊 **Best Practice**  | All cookies need security flags     | Use all three flags        |
+| Issue                | Impact                            | Solution               |
+| -------------------- | --------------------------------- | ---------------------- |
+| 🔒 **XSS Attacks**   | Cookies accessible via JavaScript | Set httpOnly: true     |
+| 🔐 **Man-in-Middle** | Cookies transmitted over HTTP     | Set secure: true       |
+| 🍪 **CSRF Attacks**  | Cookies sent cross-site           | Set sameSite: "strict" |
+| 📊 **Best Practice** | All cookies need security flags   | Use all three flags    |
 
 ## Detection Patterns
 
@@ -77,40 +87,40 @@ The rule detects:
 
 ```typescript
 // Missing all security flags
-res.cookie("session", token); // ❌ No options object
+res.cookie('session', token); // ❌ No options object
 
-res.cookie("session", token, {}); // ❌ Empty options
+res.cookie('session', token, {}); // ❌ Empty options
 
-res.cookie("session", token, { secure: true }); // ❌ Missing httpOnly, sameSite
+res.cookie('session', token, { secure: true }); // ❌ Missing httpOnly, sameSite
 
-res.cookie("session", token, { 
-  httpOnly: true 
+res.cookie('session', token, {
+  httpOnly: true,
 }); // ❌ Missing secure, sameSite
 
 // Cannot set httpOnly via document.cookie
-document.cookie = "session=token"; // ❌ Cannot set httpOnly flag
+document.cookie = 'session=token'; // ❌ Cannot set httpOnly flag
 ```
 
 ### ✅ Correct
 
 ```typescript
 // All security flags present
-res.cookie("session", token, {
+res.cookie('session', token, {
   httpOnly: true,
   secure: true,
-  sameSite: "strict"
+  sameSite: 'strict',
 }); // ✅ All flags set
 
-res.cookie("session", token, {
+res.cookie('session', token, {
   httpOnly: true,
   secure: true,
-  sameSite: "lax" // ✅ Also valid
+  sameSite: 'lax', // ✅ Also valid
 }); // ✅ All flags set
 
-res.cookie("session", token, {
+res.cookie('session', token, {
   httpOnly: true,
   secure: true,
-  sameSite: "none" // ✅ Valid with secure: true
+  sameSite: 'none', // ✅ Valid with secure: true
 }); // ✅ All flags set
 ```
 
@@ -120,23 +130,23 @@ res.cookie("session", token, {
 
 ```json
 {
-  "@forge-js/llm-optimized/security/no-insecure-cookie-settings": "error"
+  "secure-coding/no-insecure-cookie-settings": "error"
 }
 ```
 
 ### Options
 
-| Option            | Type       | Default | Description                        |
-| ----------------- | ---------- | ------- | ----------------------------------- |
-| `allowInTests`    | `boolean`  | `false` | Allow insecure cookies in tests     |
+| Option            | Type       | Default | Description                          |
+| ----------------- | ---------- | ------- | ------------------------------------ |
+| `allowInTests`    | `boolean`  | `false` | Allow insecure cookies in tests      |
 | `cookieLibraries` | `string[]` | `[]`    | Cookie library patterns to recognize |
-| `ignorePatterns`  | `string[]` | `[]`    | Additional patterns to ignore       |
+| `ignorePatterns`  | `string[]` | `[]`    | Additional patterns to ignore        |
 
 ### Example Configuration
 
 ```json
 {
-  "@forge-js/llm-optimized/security/no-insecure-cookie-settings": [
+  "secure-coding/no-insecure-cookie-settings": [
     "error",
     {
       "allowInTests": true,
@@ -161,10 +171,14 @@ The rule provides automatic fixes that:
 
 ```typescript
 // Before (triggers rule)
-res.cookie("session", token, { secure: true });
+res.cookie('session', token, { secure: true });
 
 // After (auto-fixed)
-res.cookie("session", token, { secure: true, httpOnly: true, sameSite: "strict" });
+res.cookie('session', token, {
+  secure: true,
+  httpOnly: true,
+  sameSite: 'strict',
+});
 ```
 
 ## Best Practices
@@ -185,4 +199,3 @@ res.cookie("session", token, { secure: true, httpOnly: true, sameSite: "strict" 
 - [CWE-614: Sensitive Cookie in HTTPS Session Without 'Secure' Attribute](https://cwe.mitre.org/data/definitions/614.html)
 - [OWASP: HttpOnly](https://owasp.org/www-community/HttpOnly)
 - [MDN: Set-Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie)
-

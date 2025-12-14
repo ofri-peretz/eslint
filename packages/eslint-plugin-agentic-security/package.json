@@ -1,0 +1,80 @@
+{
+  "name": "eslint-plugin-agentic-security",
+  "version": "0.0.1",
+  "description": "Agentic AI security-focused ESLint plugin with LLM-optimized rules for detecting and preventing vulnerabilities in AI agent applications. OWASP Agentic Top 10 2026 coverage, CWE references, and AI-assisted fix guidance.",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./types": {
+      "types": "./src/types/index.d.ts",
+      "default": "./src/types/index.js"
+    }
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-agentic-security/README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/eslint-plugin-agentic-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "AGENTS.md"
+  ],
+  "keywords": [
+    "eslint",
+    "eslint-plugin",
+    "eslintplugin",
+    "security",
+    "agentic",
+    "agentic-security",
+    "ai-agent",
+    "llm-security",
+    "owasp",
+    "owasp-agentic-2026",
+    "cwe",
+    "vulnerability",
+    "prompt-injection",
+    "llm-optimized",
+    "ai-assistant",
+    "auto-fix",
+    "typescript",
+    "linting",
+    "code-quality",
+    "ast",
+    "static-analysis",
+    "mcp",
+    "model-context-protocol",
+    "github-copilot",
+    "cursor-ai",
+    "claude-ai"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "@interlace/eslint-devkit": "^1.0.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.46.2",
+    "@typescript-eslint/rule-tester": "^8.46.2",
+    "vitest": "^4.0.6"
+  }
+}

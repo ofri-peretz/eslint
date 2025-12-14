@@ -2,20 +2,25 @@
 
 > **Keywords:** input validation, CWE-20, security, ESLint rule, user input, req.body, req.query, validation library, Zod, Joi, Yup, class-validator, OWASP, input security, auto-fix, LLM-optimized, code security
 
-Detects unvalidated user input usage (req.body, req.query, etc.) in Express, Fastify, and Next.js applications. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages that AI assistants can automatically fix.
+Detects unvalidated user input usage (req.body, req.query, etc.) in Express, Fastify, and Next.js applications. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
 ⚠️ This rule **_warns_** by default in the `recommended` config.
 
 ## Quick Summary
 
-| Aspect            | Details                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
-| **CWE Reference** | CWE-20 (Improper Input Validation)                                               |
-| **Severity**      | High (security vulnerability)                                                    |
-| **Auto-Fix**      | ✅ Yes (suggests validation libraries)                                            |
-| **Category**      | Security                                                                         |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                          |
-| **Best For**      | All web applications handling user input, API endpoints, form submissions        |
+| Aspect            | Details                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-20](https://cwe.mitre.org/data/definitions/20.html) (Improper Input Validation) |
+| **Severity**      | High (security vulnerability)                                                        |
+| **Auto-Fix**      | ✅ Yes (suggests validation libraries)                                               |
+| **Category**      | Security                                                                             |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                              |
+| **Best For**      | All web applications handling user input, API endpoints, form submissions            |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Failing to validate user input allows attackers to send malformed or malicious data to the application.
+**Risk:** This is the root cause of many vulnerabilities, including SQL Injection, XSS, and Remote Code Execution. It can also lead to application crashes or logic errors if data doesn't match expected formats.
 
 ## Rule Details
 
@@ -23,12 +28,12 @@ Unvalidated user input is a critical security vulnerability that can lead to inj
 
 ### Why This Matters
 
-| Issue                 | Impact                              | Solution                   |
-| --------------------- | ----------------------------------- | -------------------------- |
-| 🔒 **Security**       | Injection attacks (SQL, XSS, etc.)  | Use validation libraries   |
-| 🐛 **Data Integrity** | Invalid data can corrupt systems | Zod, Joi, Yup validation  |
-| 🔐 **Type Safety**    | Runtime errors from wrong types     | Type-safe validation       |
-| 📊 **Compliance**     | Violates security best practices    | Input validation required  |
+| Issue                 | Impact                             | Solution                  |
+| --------------------- | ---------------------------------- | ------------------------- |
+| 🔒 **Security**       | Injection attacks (SQL, XSS, etc.) | Use validation libraries  |
+| 🐛 **Data Integrity** | Invalid data can corrupt systems   | Zod, Joi, Yup validation  |
+| 🔐 **Type Safety**    | Runtime errors from wrong types    | Type-safe validation      |
+| 📊 **Compliance**     | Violates security best practices   | Input validation required |
 
 ## Detection Patterns
 
@@ -111,7 +116,7 @@ app.get('/api/users/:id', (req, res) => {
 ```javascript
 {
   rules: {
-    '@forge-js/llm-optimized/no-unvalidated-user-input': ['error', {
+    'secure-coding/no-unvalidated-user-input': ['error', {
       allowInTests: false,                    // Allow in test files
       trustedLibraries: ['zod', 'joi', 'yup', 'class-validator'], // Trusted validation libraries
       ignorePatterns: []                     // Additional safe patterns to ignore
@@ -122,11 +127,11 @@ app.get('/api/users/:id', (req, res) => {
 
 ## Options
 
-| Option              | Type       | Default                                    | Description                                    |
-| ------------------- | ---------- | ------------------------------------------ | ---------------------------------------------- |
-| `allowInTests`      | `boolean`  | `false`                                    | Allow unvalidated input in test files         |
-| `trustedLibraries`  | `string[]` | `['zod', 'joi', 'yup', 'class-validator']` | Trusted validation libraries to recognize     |
-| `ignorePatterns`    | `string[]` | `[]`                                       | Additional safe patterns to ignore            |
+| Option             | Type       | Default                                    | Description                               |
+| ------------------ | ---------- | ------------------------------------------ | ----------------------------------------- |
+| `allowInTests`     | `boolean`  | `false`                                    | Allow unvalidated input in test files     |
+| `trustedLibraries` | `string[]` | `['zod', 'joi', 'yup', 'class-validator']` | Trusted validation libraries to recognize |
+| `ignorePatterns`   | `string[]` | `[]`                                       | Additional safe patterns to ignore        |
 
 ## Rule Logic Flow
 
@@ -160,12 +165,12 @@ flowchart TD
     I --> J[💡 Suggest Fixes]
     J --> K[Use Zod]
     J --> L[Use Joi]
-    
+
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
     classDef processNode fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1f2937
     classDef skipNode fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#1f2937
-    
+
     class A startNode
     class I errorNode
     class E,F,G,H processNode
@@ -253,4 +258,3 @@ app.post('/api/users', async (req, res) => {
 - [Zod Documentation](https://zod.dev/)
 - [Joi Documentation](https://joi.dev/)
 - [class-validator Documentation](https://github.com/typestack/class-validator)
-

@@ -2,20 +2,26 @@
 
 > **Keywords:** prototype pollution, CWE-915, security, ESLint rule, object injection, bracket notation, property injection, auto-fix, LLM-optimized, code security
 
-Detects `variable[key]` as a left- or right-hand assignment operand (prototype pollution). This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
+Detects `variable[key]` as a left- or right-hand assignment operand (prototype pollution). This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages with fix suggestions.
 
 **🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-915 (Prototype Pollution) |
-| **Severity** | Critical (security vulnerability) |
-| **Auto-Fix** | ⚠️ Suggests fixes (manual application) |
-| **Category** | Security |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
-| **Best For** | All applications, especially those handling user input for object properties |
+| Aspect            | Details                                                                          |
+| ----------------- | -------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-915](https://cwe.mitre.org/data/definitions/915.html) (Prototype Pollution) |
+| **Severity**      | Critical (security vulnerability)                                                |
+| **Auto-Fix**      | ⚠️ Suggests fixes (manual application)                                           |
+| **Category**      | Security                                                                         |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                          |
+| **Best For**      | All applications, especially those handling user input for object properties     |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Object injection (specifically Prototype Pollution) occurs when user input is used to access or modify properties of an object, particularly using bracket notation (e.g., `obj[userInput]`) without validation.
+
+**Risk:** Attackers can modify critical properties like `__proto__`, `constructor`, or `prototype`, affecting the behavior of all objects in the application. This can lead to Denial of Service (DoS), bypass of security checks, or even Remote Code Execution (RCE) depending on how the polluted properties are used.
 
 ## Rule Details
 
@@ -72,11 +78,11 @@ flowchart TD
 
 ## Configuration
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `allowLiterals` | `boolean` | `false` | Allow bracket notation with literal strings |
-| `additionalMethods` | `string[]` | `[]` | Additional object methods to check |
-| `dangerousProperties` | `string[]` | `['__proto__', 'prototype', 'constructor']` | Properties to consider dangerous |
+| Option                | Type       | Default                                     | Description                                 |
+| --------------------- | ---------- | ------------------------------------------- | ------------------------------------------- |
+| `allowLiterals`       | `boolean`  | `false`                                     | Allow bracket notation with literal strings |
+| `additionalMethods`   | `string[]` | `[]`                                        | Additional object methods to check          |
+| `dangerousProperties` | `string[]` | `['__proto__', 'prototype', 'constructor']` | Properties to consider dangerous            |
 
 ## Examples
 
@@ -133,6 +139,7 @@ console.log(innocent.malicious); // Function exists!
 ### Safe Alternatives
 
 1. **Map for Key-Value Storage**
+
    ```typescript
    const config = new Map<string, any>();
    config.set(userKey, value);
@@ -140,6 +147,7 @@ console.log(innocent.malicious); // Function exists!
    ```
 
 2. **Object.create(null)**
+
    ```typescript
    const safeObject = Object.create(null); // No prototype
    safeObject[userKey] = value;
@@ -182,15 +190,17 @@ Object.prototype[userInput] = maliciousValue;
 ## Migration Guide
 
 ### Phase 1: Discovery
+
 ```javascript
 {
   rules: {
-    '@forge-js/detect-object-injection': 'warn'
+    'secure-coding/detect-object-injection': 'warn'
   }
 }
 ```
 
 ### Phase 2: Replace Dynamic Access
+
 ```typescript
 // Replace object access
 obj[key] → use Map or whitelisting
@@ -200,6 +210,7 @@ obj[key] = value → map.set(key, value)
 ```
 
 ### Phase 3: Add Validation
+
 ```typescript
 // Implement property validation
 function isValidProperty(prop: string): boolean {
@@ -209,6 +220,7 @@ function isValidProperty(prop: string): boolean {
 ```
 
 ### Phase 4: Secure Implementation
+
 ```typescript
 // Use secure patterns
 const config = new Map();
@@ -218,6 +230,7 @@ const safeObj = Object.create(null);
 ## Advanced Protection
 
 ### Deep Prototype Protection
+
 ```typescript
 // Freeze prototypes (careful - affects entire application)
 Object.freeze(Object.prototype);
@@ -229,6 +242,7 @@ const safeObj = secureObject.create();
 ```
 
 ### Type-Safe Access
+
 ```typescript
 // TypeScript: strict property access
 interface SafeConfig {
@@ -250,7 +264,7 @@ const pollutionAttempts = [
   'prototype',
   'constructor',
   '__defineGetter__',
-  '__defineSetter__'
+  '__defineSetter__',
 ];
 
 for (const prop of pollutionAttempts) {
@@ -264,13 +278,13 @@ for (const prop of pollutionAttempts) {
 
 ## Comparison with Alternatives
 
-| Feature | detect-object-injection | eslint-plugin-security | eslint-plugin-sonarjs |
-|---------|------------------------|------------------------|----------------------|
-| **Prototype Pollution Detection** | ✅ Yes | ⚠️ Limited | ⚠️ Limited |
-| **CWE Reference** | ✅ CWE-915 included | ⚠️ Limited | ⚠️ Limited |
-| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
-| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
-| **Fix Suggestions** | ✅ Detailed | ⚠️ Basic | ⚠️ Basic |
+| Feature                           | detect-object-injection | eslint-plugin-security | eslint-plugin-sonarjs |
+| --------------------------------- | ----------------------- | ---------------------- | --------------------- |
+| **Prototype Pollution Detection** | ✅ Yes                  | ⚠️ Limited             | ⚠️ Limited            |
+| **CWE Reference**                 | ✅ CWE-915 included     | ⚠️ Limited             | ⚠️ Limited            |
+| **LLM-Optimized**                 | ✅ Yes                  | ❌ No                  | ❌ No                 |
+| **ESLint MCP**                    | ✅ Optimized            | ❌ No                  | ❌ No                 |
+| **Fix Suggestions**               | ✅ Detailed             | ⚠️ Basic               | ⚠️ Basic              |
 
 ## Related Rules
 

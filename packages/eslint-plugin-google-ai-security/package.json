@@ -1,0 +1,72 @@
+{
+  "name": "eslint-plugin-google-ai-security",
+  "version": "0.0.1",
+  "description": "Google AI SDK security-focused ESLint plugin with rules for detecting vulnerabilities in Gemini API usage. Verifiable security patterns for Gemini models.",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./types": {
+      "types": "./src/types/index.d.ts",
+      "default": "./src/types/index.js"
+    }
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-google-ai-security/README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/eslint-plugin-google-ai-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "AGENTS.md"
+  ],
+  "keywords": [
+    "eslint",
+    "eslint-plugin",
+    "eslintplugin",
+    "security",
+    "llm-security",
+    "google",
+    "gemini",
+    "google-ai",
+    "palm",
+    "bard",
+    "llm-optimized",
+    "ai-assistant",
+    "auto-fix",
+    "typescript",
+    "linting",
+    "code-quality",
+    "ast",
+    "static-analysis"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "@interlace/eslint-devkit": "^1.0.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.46.2",
+    "@typescript-eslint/rule-tester": "^8.46.2",
+    "vitest": "^4.0.6"
+  }
+}

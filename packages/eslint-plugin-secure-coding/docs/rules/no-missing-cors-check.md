@@ -2,20 +2,26 @@
 
 > **Keywords:** CORS, cross-origin resource sharing, CWE-346, security, ESLint rule, origin validation, wildcard CORS, Access-Control-Allow-Origin, auto-fix, LLM-optimized, code security
 
-Detects missing CORS validation (wildcard CORS, missing origin check) that can allow unauthorized cross-origin requests. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages that AI assistants can automatically fix.
+Detects missing CORS validation (wildcard CORS, missing origin check) that can allow unauthorized cross-origin requests. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
 ⚠️ This rule **_warns_** by default in the `recommended` config.
 
 ## Quick Summary
 
-| Aspect            | Details                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
-| **CWE Reference** | CWE-346 (Origin Validation Error)                                               |
-| **Severity**      | High (security vulnerability)                                                    |
-| **Auto-Fix**      | ✅ Yes (suggests origin validation)                                              |
-| **Category**      | Security                                                                         |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                          |
-| **Best For**      | All web APIs, REST services, microservices with cross-origin requests            |
+| Aspect            | Details                                                               |
+| ----------------- | --------------------------------------------------------------------- |
+| **CWE Reference** | CWE-346 (Origin Validation Error)                                     |
+| **Severity**      | High (security vulnerability)                                         |
+| **Auto-Fix**      | ✅ Yes (suggests origin validation)                                   |
+| **Category**      | Security                                                              |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                               |
+| **Best For**      | All web APIs, REST services, microservices with cross-origin requests |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Misconfigured Cross-Origin Resource Sharing (CORS) policies, such as using the wildcard `*` origin or reflecting the `Origin` header without validation, allow any website to access the application's resources.
+
+**Risk:** Attackers can host a malicious website that forces a user's browser to send requests to the vulnerable application. Since the browser includes the user's session cookies (if credentials are allowed), attackers can steal sensitive data or perform unauthorized actions (CSRF/Data Exfiltration).
 
 ## Rule Details
 
@@ -23,12 +29,12 @@ Missing CORS validation can allow unauthorized websites to make requests to your
 
 ### Why This Matters
 
-| Issue                 | Impact                              | Solution                   |
-| --------------------- | ----------------------------------- | -------------------------- |
-| 🔒 **Security**       | Unauthorized cross-origin requests  | Validate origin whitelist  |
-| 🐛 **Data Theft**     | Malicious sites can access your API | Origin validation          |
-| 🔐 **CSRF Attacks**   | Cross-site request forgery enabled  | Proper CORS configuration  |
-| 📊 **Compliance**     | Violates security best practices     | Always validate origins    |
+| Issue               | Impact                              | Solution                  |
+| ------------------- | ----------------------------------- | ------------------------- |
+| 🔒 **Security**     | Unauthorized cross-origin requests  | Validate origin whitelist |
+| 🐛 **Data Theft**   | Malicious sites can access your API | Origin validation         |
+| 🔐 **CSRF Attacks** | Cross-site request forgery enabled  | Proper CORS configuration |
+| 📊 **Compliance**   | Violates security best practices    | Always validate origins   |
 
 ## Detection Patterns
 
@@ -44,21 +50,25 @@ The rule detects:
 
 ```typescript
 // Wildcard CORS origin
-app.use(cors({
-  origin: "*", // ❌ Allows all origins
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: '*', // ❌ Allows all origins
+    credentials: true,
+  }),
+);
 
 // Wildcard CORS header
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*"); // ❌ Allows all origins
+  res.setHeader('Access-Control-Allow-Origin', '*'); // ❌ Allows all origins
   next();
 });
 
 // Missing origin validation
-app.use(cors({
-  credentials: true // ❌ No origin specified
-}));
+app.use(
+  cors({
+    credentials: true, // ❌ No origin specified
+  }),
+);
 ```
 
 ### ✅ Correct
@@ -67,22 +77,26 @@ app.use(cors({
 // Origin validation with whitelist
 const allowedOrigins = ['https://example.com', 'https://app.example.com'];
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  }),
+);
 
 // Origin validation with array
-app.use(cors({
-  origin: allowedOrigins, // ✅ Only allows specified origins
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: allowedOrigins, // ✅ Only allows specified origins
+    credentials: true,
+  }),
+);
 
 // Origin validation in custom middleware
 app.use((req, res, next) => {
@@ -97,10 +111,12 @@ app.use((req, res, next) => {
 // Using trusted CORS library
 import cors from 'cors';
 
-app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || [],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || [],
+    credentials: true,
+  }),
+);
 ```
 
 ## Configuration
@@ -108,7 +124,7 @@ app.use(cors({
 ```javascript
 {
   rules: {
-    '@forge-js/llm-optimized/no-missing-cors-check': ['error', {
+    "secure-coding/no-missing-cors-check": ["error", {
       allowInTests: false,                    // Allow in test files
       trustedLibraries: ['cors', '@koa/cors', 'express-cors'], // Trusted CORS libraries
       ignorePatterns: []                     // Additional safe patterns to ignore
@@ -119,11 +135,11 @@ app.use(cors({
 
 ## Options
 
-| Option              | Type       | Default                              | Description                                    |
-| ------------------- | ---------- | ------------------------------------ | ---------------------------------------------- |
-| `allowInTests`      | `boolean`  | `false`                              | Allow missing CORS checks in test files       |
-| `trustedLibraries`  | `string[]` | `['cors', '@koa/cors', 'express-cors']` | Trusted CORS libraries to recognize             |
-| `ignorePatterns`    | `string[]` | `[]`                                 | Additional safe patterns to ignore              |
+| Option             | Type       | Default                                 | Description                             |
+| ------------------ | ---------- | --------------------------------------- | --------------------------------------- |
+| `allowInTests`     | `boolean`  | `false`                                 | Allow missing CORS checks in test files |
+| `trustedLibraries` | `string[]` | `['cors', '@koa/cors', 'express-cors']` | Trusted CORS libraries to recognize     |
+| `ignorePatterns`   | `string[]` | `[]`                                    | Additional safe patterns to ignore      |
 
 ## Rule Logic Flow
 
@@ -159,12 +175,12 @@ flowchart TD
     J --> K[💡 Suggest Fixes]
     K --> L[Use Origin Validation]
     K --> M[Use CORS Middleware]
-    
+
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
     classDef processNode fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1f2937
     classDef skipNode fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#1f2937
-    
+
     class A startNode
     class J errorNode
     class E,F,G,H,I processNode
@@ -180,19 +196,21 @@ flowchart TD
 const allowedOrigins = [
   'https://example.com',
   'https://app.example.com',
-  process.env.FRONTEND_URL
+  process.env.FRONTEND_URL,
 ].filter(Boolean);
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  }),
+);
 ```
 
 ### 2. Use Environment Variables for Origins
@@ -201,10 +219,12 @@ app.use(cors({
 // ✅ Good - Configure via environment
 const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
 
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  }),
+);
 ```
 
 ### 3. Validate Origin Before Setting Header
@@ -214,14 +234,17 @@ app.use(cors({
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   const allowedOrigins = ['https://example.com'];
-  
+
   if (origin && allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Content-Type, Authorization',
+    );
   }
-  
+
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
   } else {
@@ -236,33 +259,38 @@ app.use((req, res, next) => {
 import cors from 'cors';
 
 // ✅ Good - Use trusted library with validation
-app.use(cors({
-  origin: (origin, callback) => {
-    const allowedOrigins = ['https://example.com'];
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      const allowedOrigins = ['https://example.com'];
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }),
+);
 ```
 
 ### 5. Different Origins for Development and Production
 
 ```typescript
 // ✅ Good - Environment-specific origins
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? ['https://example.com']
-  : ['http://localhost:3000', 'http://localhost:3001'];
+const allowedOrigins =
+  process.env.NODE_ENV === 'production'
+    ? ['https://example.com']
+    : ['http://localhost:3000', 'http://localhost:3001'];
 
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  }),
+);
 ```
 
 ## Related Rules
@@ -279,4 +307,3 @@ app.use(cors({
 - [MDN: CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
 - [Express CORS Middleware](https://github.com/expressjs/cors)
 - [CORS Best Practices](https://portswigger.net/web-security/cors)
-

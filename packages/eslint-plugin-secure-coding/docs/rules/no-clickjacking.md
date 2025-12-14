@@ -8,16 +8,23 @@ Detects clickjacking vulnerabilities and missing frame protections. This rule is
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-1021 (Improper Restriction of Rendered UI Layers) |
-| **Severity** | Medium (CVSS 6.1) |
-| **Auto-Fix** | 💡 Suggestions available |
-| **Category** | Network & Headers |
+| Aspect            | Details                                                                                                   |
+| ----------------- | --------------------------------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-1021](https://cwe.mitre.org/data/definitions/1021.html) (Improper Restriction of Rendered UI Layers) |
+| **Severity**      | Medium (CVSS 6.1)                                                                                         |
+| **Auto-Fix**      | 💡 Suggestions available                                                                                  |
+| **Category**      | Network & Headers                                                                                         |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Clickjacking (UI Redressing) occurs when an attacker uses transparent or opaque layers (like `<iframe>`) to trick a user into clicking on a button or link on another page when they intended to click on the top level page.
+
+**Risk:** Attackers can hijack clicks to perform sensitive actions on behalf of the user, such as transferring funds, changing settings, deleting accounts, or liking a social media post, without the user's knowledge.
 
 ## Rule Details
 
 Clickjacking tricks users into clicking on invisible or disguised elements by overlaying them with transparent frames. Attackers can:
+
 - Trick users into performing unintended actions
 - Steal clicks and credentials
 - Perform unauthorized transactions
@@ -25,11 +32,11 @@ Clickjacking tricks users into clicking on invisible or disguised elements by ov
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| 🖱️ **Click Theft** | Unauthorized actions | Use X-Frame-Options header |
-| 💳 **Fraud** | Financial loss | Implement CSP frame-ancestors |
-| 🔓 **Account Compromise** | Data theft | Add frame-busting code |
+| Issue                     | Impact               | Solution                      |
+| ------------------------- | -------------------- | ----------------------------- |
+| 🖱️ **Click Theft**        | Unauthorized actions | Use X-Frame-Options header    |
+| 💳 **Fraud**              | Financial loss       | Implement CSP frame-ancestors |
+| 🔓 **Account Compromise** | Data theft           | Add frame-busting code        |
 
 ## Examples
 
@@ -45,8 +52,8 @@ app.get('/sensitive', (req, res) => {
 res.setHeader('X-Frame-Options', 'ALLOWALL'); // Insecure!
 
 // Transparent iframe overlay
-<iframe 
-  src="https://target.com/transfer" 
+<iframe
+  src="https://target.com/transfer"
   style="opacity: 0; position: absolute; top: 0; left: 0;"
 />
 
@@ -68,7 +75,7 @@ app.use((req, res, next) => {
 // Use CSP frame-ancestors (more flexible)
 res.setHeader(
   'Content-Security-Policy',
-  "frame-ancestors 'self' https://trusted.com"
+  "frame-ancestors 'self' https://trusted.com",
 );
 
 // Frame-busting JavaScript (legacy fallback)
@@ -97,11 +104,11 @@ app.use(helmet.frameguard({ action: 'deny' }));
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `trustedSources` | `string[]` | `['self']` | Trusted iframe sources |
-| `requireFrameBusting` | `boolean` | `true` | Require frame-busting code |
-| `detectTransparentOverlays` | `boolean` | `true` | Detect transparent overlays |
+| Option                      | Type       | Default    | Description                 |
+| --------------------------- | ---------- | ---------- | --------------------------- |
+| `trustedSources`            | `string[]` | `['self']` | Trusted iframe sources      |
+| `requireFrameBusting`       | `boolean`  | `true`     | Require frame-busting code  |
+| `detectTransparentOverlays` | `boolean`  | `true`     | Detect transparent overlays |
 
 ## Error Message Format
 
@@ -120,5 +127,3 @@ app.use(helmet.frameguard({ action: 'deny' }));
 
 - [`no-missing-security-headers`](./no-missing-security-headers.md) - Missing security headers
 - [`no-missing-cors-check`](./no-missing-cors-check.md) - CORS validation
-
-

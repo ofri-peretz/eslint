@@ -8,16 +8,23 @@ Detects insecure JWT operations and missing signature verification. This rule is
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
+| Aspect            | Details                                                    |
+| ----------------- | ---------------------------------------------------------- |
 | **CWE Reference** | CWE-347 (Improper Verification of Cryptographic Signature) |
-| **Severity** | High (CVSS 7.5) |
-| **Auto-Fix** | 💡 Suggestions available |
-| **Category** | Cryptography |
+| **Severity**      | High (CVSS 7.5)                                            |
+| **Auto-Fix**      | 💡 Suggestions available                                   |
+| **Category**      | Cryptography                                               |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Insecure JWT implementation involves accepting the `none` algorithm, using weak secrets, or failing to verify the token signature.
+
+**Risk:** Attackers can bypass authentication by creating forged tokens with the `none` algorithm (Algorithm Confusion) or by cracking weak secrets. This grants them full access to the application as any user they choose to impersonate.
 
 ## Rule Details
 
 Insecure JWT handling can allow attackers to:
+
 - Bypass authentication using algorithm confusion (`alg: "none"`)
 - Forge tokens with weak secrets
 - Use unverified token data
@@ -25,11 +32,11 @@ Insecure JWT handling can allow attackers to:
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| 🔓 **Auth Bypass** | Unauthorized access | Validate algorithm |
-| 🔑 **Weak Secret** | Token forgery | Use 256-bit+ secrets |
-| ⚠️ **Unverified Data** | Security bypass | Always verify signatures |
+| Issue                  | Impact              | Solution                 |
+| ---------------------- | ------------------- | ------------------------ |
+| 🔓 **Auth Bypass**     | Unauthorized access | Validate algorithm       |
+| 🔑 **Weak Secret**     | Token forgery       | Use 256-bit+ secrets     |
+| ⚠️ **Unverified Data** | Security bypass     | Always verify signatures |
 
 ## Examples
 
@@ -102,11 +109,11 @@ const decoded = jwt.verify(token, publicKey, {
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `allowedInsecureAlgorithms` | `string[]` | `[]` | Allow specific algorithms for legacy |
-| `minSecretLength` | `number` | `32` | Minimum secret length (chars) |
-| `trustedJwtLibraries` | `string[]` | `['jsonwebtoken', 'jose']` | JWT libraries to check |
+| Option                      | Type       | Default                    | Description                          |
+| --------------------------- | ---------- | -------------------------- | ------------------------------------ |
+| `allowedInsecureAlgorithms` | `string[]` | `[]`                       | Allow specific algorithms for legacy |
+| `minSecretLength`           | `number`   | `32`                       | Minimum secret length (chars)        |
+| `trustedJwtLibraries`       | `string[]` | `['jsonwebtoken', 'jose']` | JWT libraries to check               |
 
 ## Error Message Format
 
@@ -126,5 +133,3 @@ const decoded = jwt.verify(token, publicKey, {
 
 - [`no-weak-crypto`](./no-weak-crypto.md) - Weak cryptographic algorithms
 - [`no-hardcoded-credentials`](./no-hardcoded-credentials.md) - Hardcoded secrets
-
-

@@ -8,16 +8,23 @@ Detects Electron security vulnerabilities and insecure configurations. This rule
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-16 (Configuration) |
-| **Severity** | High (CVSS 8.8) |
-| **Auto-Fix** | 💡 Suggestions available |
-| **Category** | Platform-Specific |
+| Aspect            | Details                                                                  |
+| ----------------- | ------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-16](https://cwe.mitre.org/data/definitions/16.html) (Configuration) |
+| **Severity**      | High (CVSS 8.8)                                                          |
+| **Auto-Fix**      | 💡 Suggestions available                                                 |
+| **Category**      | Platform-Specific                                                        |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Insecure Electron configurations (like enabling `nodeIntegration` or disabling `contextIsolation`) expose the renderer process to Node.js APIs.
+
+**Risk:** This is a critical vulnerability that typically leads to Remote Code Execution (RCE) via Cross-Site Scripting (XSS). If an attacker can execute JavaScript on a page with `nodeIntegration: true`, they can execute system commands, access the file system, and compromise the user's machine.
 
 ## Rule Details
 
 Electron applications can be vulnerable when not properly configured. Insecure settings allow attackers to:
+
 - Execute arbitrary Node.js code from renderer
 - Bypass context isolation protections
 - Perform privilege escalation
@@ -25,11 +32,11 @@ Electron applications can be vulnerable when not properly configured. Insecure s
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| 💻 **RCE** | Full system compromise | Disable nodeIntegration |
-| 🔓 **Privilege Escalation** | Admin access | Enable contextIsolation |
-| 🌐 **XSS to RCE** | Remote code execution | Enable sandbox |
+| Issue                       | Impact                 | Solution                |
+| --------------------------- | ---------------------- | ----------------------- |
+| 💻 **RCE**                  | Full system compromise | Disable nodeIntegration |
+| 🔓 **Privilege Escalation** | Admin access           | Enable contextIsolation |
+| 🌐 **XSS to RCE**           | Remote code execution  | Enable sandbox          |
 
 ## Examples
 
@@ -40,28 +47,28 @@ Electron applications can be vulnerable when not properly configured. Insecure s
 new BrowserWindow({
   webPreferences: {
     nodeIntegration: true, // DANGEROUS!
-  }
+  },
 });
 
 // Context isolation disabled
 new BrowserWindow({
   webPreferences: {
     contextIsolation: false, // Allows prototype pollution
-  }
+  },
 });
 
 // Web security disabled
 new BrowserWindow({
   webPreferences: {
     webSecurity: false, // Allows loading insecure content
-  }
+  },
 });
 
 // Sandbox disabled
 new BrowserWindow({
   webPreferences: {
     sandbox: false,
-  }
+  },
 });
 ```
 
@@ -77,7 +84,7 @@ new BrowserWindow({
     webSecurity: true,
     allowRunningInsecureContent: false,
     preload: path.join(__dirname, 'preload.js'),
-  }
+  },
 });
 
 // Secure preload script
@@ -90,7 +97,7 @@ contextBridge.exposeInMainWorld('api', {
     if (validChannels.includes(channel)) {
       ipcRenderer.send(channel, data);
     }
-  }
+  },
 });
 
 // Validate IPC channels
@@ -116,11 +123,11 @@ ipcMain.handle('safe-channel', async (event, arg) => {
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `allowInDev` | `boolean` | `false` | Allow insecure settings in development |
-| `safePreloadPatterns` | `string[]` | `['preload.js']` | Safe preload script patterns |
-| `allowedIpcChannels` | `string[]` | `[]` | Allowed IPC channels |
+| Option                | Type       | Default          | Description                            |
+| --------------------- | ---------- | ---------------- | -------------------------------------- |
+| `allowInDev`          | `boolean`  | `false`          | Allow insecure settings in development |
+| `safePreloadPatterns` | `string[]` | `['preload.js']` | Safe preload script patterns           |
+| `allowedIpcChannels`  | `string[]` | `[]`             | Allowed IPC channels                   |
 
 ## Error Message Format
 
@@ -133,11 +140,10 @@ ipcMain.handle('safe-channel', async (event, arg) => {
 
 - **[Electron Security](https://electronjs.org/docs/tutorial/security)** - Official security guide
 - **[CWE-16](https://cwe.mitre.org/data/definitions/16.html)** - Configuration issues
+- **[OWASP Security Misconfiguration](https://owasp.org/Top10/A05_2021-Security_Misconfiguration/)** - General misconfiguration info
 - **[Electron Security Checklist](https://www.electronjs.org/docs/latest/tutorial/security#checklist-security-recommendations)** - Security recommendations
 
 ## Related Rules
 
 - [`no-insufficient-postmessage-validation`](./no-insufficient-postmessage-validation.md) - postMessage validation
 - [`detect-eval-with-expression`](./detect-eval-with-expression.md) - Code injection
-
-

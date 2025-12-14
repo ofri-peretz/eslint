@@ -8,16 +8,23 @@ Detects directive injection vulnerabilities in template systems. This rule is pa
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-94 (Code Injection), CWE-96 (SSTI) |
-| **Severity** | High (CVSS 8.8) |
-| **Auto-Fix** | 💡 Suggestions available |
-| **Category** | Injection Prevention |
+| Aspect            | Details                                                                                                                                    |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-94](https://cwe.mitre.org/data/definitions/94.html) (Code Injection), [CWE-96](https://cwe.mitre.org/data/definitions/96.html) (SSTI) |
+| **Severity**      | High (CVSS 8.8)                                                                                                                            |
+| **Auto-Fix**      | 💡 Suggestions available                                                                                                                   |
+| **Category**      | Injection Prevention                                                                                                                       |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Directive injection (specifically in frameworks like Angular or Vue) occurs when user-controlled attributes can modify the structure or behavior of the DOM in unexpected ways, potentially leading to Client-Side Template Injection (CSTI) or XSS.
+
+**Risk:** Attackers can inject malicious directives to execute arbitrary JavaScript code within the victim's session, bypass framework security controls, or manipulate the application's view and logic.
 
 ## Rule Details
 
 Directive injection occurs when user input is used to inject malicious directives into template systems (Angular, Vue, React, etc.). Attackers can:
+
 - Execute arbitrary JavaScript code
 - Manipulate the DOM and steal user data
 - Perform cross-site scripting (XSS) attacks
@@ -25,11 +32,11 @@ Directive injection occurs when user input is used to inject malicious directive
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| 💻 **Code Execution** | Full application compromise | Use static directives |
-| 🎭 **XSS** | User session hijacking | Sanitize template input |
-| 🔓 **CSP Bypass** | Security control evasion | Validate directive names |
+| Issue                 | Impact                      | Solution                 |
+| --------------------- | --------------------------- | ------------------------ |
+| 💻 **Code Execution** | Full application compromise | Use static directives    |
+| 🎭 **XSS**            | User session hijacking      | Sanitize template input  |
+| 🔓 **CSP Bypass**     | Security control evasion    | Validate directive names |
 
 ## Examples
 
@@ -88,12 +95,12 @@ if (allowedDirectives.includes(directive)) {
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `trustedDirectives` | `string[]` | `[]` | Allowed directive names |
-| `userInputVariables` | `string[]` | `['req', 'request', 'input']` | User input variable patterns |
-| `frameworks` | `string[]` | `['react', 'angular', 'vue']` | Frameworks to check |
-| `allowDynamicInComponents` | `boolean` | `false` | Allow dynamic directives in safe contexts |
+| Option                     | Type       | Default                       | Description                               |
+| -------------------------- | ---------- | ----------------------------- | ----------------------------------------- |
+| `trustedDirectives`        | `string[]` | `[]`                          | Allowed directive names                   |
+| `userInputVariables`       | `string[]` | `['req', 'request', 'input']` | User input variable patterns              |
+| `frameworks`               | `string[]` | `['react', 'angular', 'vue']` | Frameworks to check                       |
+| `allowDynamicInComponents` | `boolean`  | `false`                       | Allow dynamic directives in safe contexts |
 
 ## Error Message Format
 
@@ -107,10 +114,9 @@ if (allowedDirectives.includes(directive)) {
 - **[Angular Security](https://angular.io/guide/security)** - Angular security best practices
 - **[React XSS Prevention](https://reactjs.org/docs/introducing-jsx.html#jsx-prevents-injection-attacks)** - React security
 - **[CWE-94](https://cwe.mitre.org/data/definitions/94.html)** - Code injection documentation
+- **[OWASP Injection](https://owasp.org/www-project-top-ten/2017/A1_2017-Injection)** - OWASP Top 10 Injection
 
 ## Related Rules
 
 - [`no-unsanitized-html`](./no-unsanitized-html.md) - XSS via innerHTML
 - [`detect-eval-with-expression`](./detect-eval-with-expression.md) - Code injection via eval
-
-

@@ -1,0 +1,413 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Release eslint-plugin-secure-coding
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# WORKFLOW PURPOSE: Publish eslint-plugin-secure-coding package
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# This workflow handles versioning and publishing for eslint-plugin-secure-coding.
+# It includes smart tag handling to prevent deadlocks from failed releases.
+#
+# Authentication: NPM_TOKEN (Granular Access Token with publish permissions)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+on:
+    workflow_dispatch:
+        inputs:
+            version-specifier:
+                description: "Version bump strategy (auto = conventional commits)"
+                required: false
+                type: choice
+                options:
+                    - auto
+                    - major
+                    - minor
+                    - patch
+                    - premajor
+                    - preminor
+                    - prepatch
+                    - prerelease
+                default: "auto"
+
+            dist-tag:
+                description: "NPM distribution tag"
+                required: false
+                type: choice
+                options:
+                    - latest
+                    - next
+                    - beta
+                    - rc
+                    - alpha
+                default: "latest"
+
+            run-ci:
+                description: "Run CI validation before publishing"
+                required: false
+                type: boolean
+                default: true
+
+            dry-run:
+                description: "Dry run: preview changes without modifying git or NPM"
+                required: false
+                type: boolean
+                default: false
+
+            force-version:
+                description: "Force specific version (e.g., 3.1.0) - overrides version-specifier"
+                required: false
+                type: string
+                default: ""
+
+            generate-changelog:
+                description: "Generate changelog (creates GitHub release)"
+                required: false
+                type: boolean
+                default: true
+
+# Prevent concurrent releases
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: false
+
+env:
+    NODE_VERSION: "20"
+    PNPM_VERSION: "10.18.3"
+    TARGET_PROJECT: "eslint-plugin-secure-coding"
+    PACKAGE_NAME: "eslint-plugin-secure-coding"
+
+jobs:
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # STEP 1: CI VALIDATION (Optional but recommended)
+    # ═══════════════════════════════════════════════════════════════════════════════
+    validate-ci:
+        name: ✅ CI Validation
+        runs-on: ubuntu-latest
+        if: inputs.run-ci == true
+        timeout-minutes: 15
+        permissions:
+            contents: read
+
+        steps:
+            - name: 📥 Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  fetch-tags: true
+
+            - name: ⚙️ Setup pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: ${{ env.PNPM_VERSION }}
+
+            - name: ⚙️ Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: "pnpm"
+
+            - name: 📦 Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: 🗄️ Restore NX cache
+              uses: actions/cache@v4
+              with:
+                  path: .nx/cache
+                  key: nx-cache-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+                  restore-keys: |
+                      nx-cache-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+                      nx-cache-${{ runner.os }}-
+
+            - name: 🧪 Test package
+              run: pnpm nx test ${{ env.TARGET_PROJECT }} -c ci --verbose
+              env:
+                  NX_SKIP_NX_CLOUD: "true"
+
+            - name: 🔨 Build package
+              run: pnpm nx build ${{ env.TARGET_PROJECT }} --verbose
+              env:
+                  NX_SKIP_NX_CLOUD: "true"
+
+            - name: 🔍 Typecheck package
+              run: pnpm nx typecheck ${{ env.TARGET_PROJECT }} --verbose
+              env:
+                  NX_SKIP_NX_CLOUD: "true"
+
+            - name: ✅ CI validation passed
+              run: |
+                  echo "## ✅ CI Validation Passed" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "All tests, build, and typecheck completed successfully." >> $GITHUB_STEP_SUMMARY
+
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # STEP 2: RELEASE
+    # ═══════════════════════════════════════════════════════════════════════════════
+    release:
+        name: 🚀 Release & Publish
+        runs-on: ubuntu-latest
+        environment: production
+        needs: [validate-ci]
+        if: always() && (inputs.run-ci == false || needs.validate-ci.result == 'success')
+        timeout-minutes: 15
+        permissions:
+            contents: write
+            id-token: write
+
+        outputs:
+            new_version: ${{ steps.version.outputs.new_version }}
+            released: ${{ steps.version.outputs.version_status == 'success' }}
+
+        steps:
+            - name: 📥 Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  fetch-tags: true
+                  ref: main
+                  token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: ⚙️ Setup pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: ${{ env.PNPM_VERSION }}
+
+            - name: ⚙️ Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  registry-url: https://registry.npmjs.org/
+                  cache: "pnpm"
+
+            - name: 📦 Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: 🗄️ Restore NX cache
+              uses: actions/cache@v4
+              with:
+                  path: .nx/cache
+                  key: nx-cache-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+                  restore-keys: |
+                      nx-cache-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+                      nx-cache-${{ runner.os }}-
+
+            # ──────────────────────────────────────────────────────────────────────
+            # VERIFY NPM AUTHENTICATION
+            # ──────────────────────────────────────────────────────────────────────
+            - name: 🔍 Verify NPM Authentication
+              if: inputs.dry-run == false
+              run: |
+                  echo "🔍 Verifying NPM authentication..."
+
+                  if [ -z "$NPM_TOKEN" ]; then
+                    echo "❌ NPM_TOKEN not found"
+                    echo "   Please add NPM_TOKEN secret to your repository"
+                    exit 1
+                  fi
+
+                  npm whoami --registry=https://registry.npmjs.org/ || {
+                    echo "❌ Failed to authenticate with npm"
+                    exit 1
+                  }
+
+                  echo "✅ NPM authentication verified"
+              env:
+                  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            # ──────────────────────────────────────────────────────────────────────
+            # SMART TAG HANDLING - Prevent Deadlocks
+            # ──────────────────────────────────────────────────────────────────────
+            - name: 🔍 Check for Tag Conflicts
+              id: tag-check
+              run: |
+                  echo "🔍 Checking current package version and git tags..."
+
+                  CURRENT_VERSION=$(node -p "require('./packages/${{ env.TARGET_PROJECT }}/package.json').version")
+                  echo "📦 Current package.json version: $CURRENT_VERSION"
+
+                  EXPECTED_TAG="${{ env.TARGET_PROJECT }}@${CURRENT_VERSION}"
+                  echo "🏷️ Expected tag: $EXPECTED_TAG"
+
+                  if git rev-parse "$EXPECTED_TAG" >/dev/null 2>&1; then
+                    echo "⚠️ Tag $EXPECTED_TAG already exists"
+                    
+                    if npm view "${{ env.PACKAGE_NAME }}@$CURRENT_VERSION" version >/dev/null 2>&1; then
+                      echo "✅ Version $CURRENT_VERSION is already published on npm"
+                      echo "tag_status=already_published" >> $GITHUB_OUTPUT
+                    else
+                      echo "⚠️ Orphaned tag detected - cleaning up..."
+                      git tag -d "$EXPECTED_TAG" 2>/dev/null || true
+                      git push origin ":refs/tags/$EXPECTED_TAG" 2>/dev/null || true
+                      echo "✅ Orphaned tag cleaned up"
+                      echo "tag_status=cleaned" >> $GITHUB_OUTPUT
+                    fi
+                  else
+                    echo "✅ No conflicting tag found"
+                    echo "tag_status=clean" >> $GITHUB_OUTPUT
+                  fi
+
+                  echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+            # ──────────────────────────────────────────────────────────────────────
+            # VERSION BUMP
+            # ──────────────────────────────────────────────────────────────────────
+            - name: 📝 Bump Version
+              id: version
+              if: inputs.dry-run == false && steps.tag-check.outputs.tag_status != 'already_published'
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+
+                  # Determine version strategy
+                  if [ -n "${{ inputs.force-version }}" ]; then
+                    VERSION_ARG="${{ inputs.force-version }}"
+                  elif [ "${{ inputs.version-specifier }}" != "auto" ]; then
+                    VERSION_ARG="${{ inputs.version-specifier }}"
+                  else
+                    VERSION_ARG=""
+                  fi
+
+                  echo "🔄 Running nx release version..."
+                  if [ -n "$VERSION_ARG" ]; then
+                    OUTPUT=$(pnpm nx release version $VERSION_ARG --projects=${{ env.TARGET_PROJECT }} 2>&1) || {
+                      if echo "$OUTPUT" | grep -q "No changes detected"; then
+                        echo "ℹ️ No changes detected"
+                        echo "version_status=no_changes" >> $GITHUB_OUTPUT
+                        exit 0
+                      fi
+                      if echo "$OUTPUT" | grep -q "tag.*already exists"; then
+                        echo "⚠️ Tag conflict, bumping patch..."
+                        pnpm nx release version patch --projects=${{ env.TARGET_PROJECT }} || exit 1
+                      else
+                        echo "$OUTPUT"
+                        exit 1
+                      fi
+                    }
+                  else
+                    OUTPUT=$(pnpm nx release version --projects=${{ env.TARGET_PROJECT }} 2>&1) || {
+                      if echo "$OUTPUT" | grep -q "No changes detected"; then
+                        echo "ℹ️ No changes detected"
+                        echo "version_status=no_changes" >> $GITHUB_OUTPUT
+                        exit 0
+                      fi
+                      echo "$OUTPUT"
+                      exit 1
+                    }
+                  fi
+
+                  echo "$OUTPUT"
+
+                  NEW_VERSION=$(node -p "require('./packages/${{ env.TARGET_PROJECT }}/package.json').version")
+                  echo "📦 New version: $NEW_VERSION"
+                  echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+                  echo "version_status=success" >> $GITHUB_OUTPUT
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            # ──────────────────────────────────────────────────────────────────────
+            # BUILD
+            # ──────────────────────────────────────────────────────────────────────
+            - name: 🔨 Build Package
+              if: inputs.dry-run == false && steps.version.outputs.version_status == 'success'
+              run: pnpm nx build ${{ env.TARGET_PROJECT }} --verbose
+              env:
+                  NX_SKIP_NX_CLOUD: "true"
+
+            # ──────────────────────────────────────────────────────────────────────
+            # CHANGELOG (Optional but creates GitHub Release)
+            # ──────────────────────────────────────────────────────────────────────
+            - name: 📝 Generate Changelog
+              if: inputs.dry-run == false && steps.version.outputs.version_status == 'success' && inputs.generate-changelog == true
+              run: |
+                  echo "📝 Generating changelog..."
+                  pnpm nx release changelog --projects=${{ env.TARGET_PROJECT }} || {
+                    echo "⚠️ Changelog generation failed (non-blocking)"
+                  }
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            # ──────────────────────────────────────────────────────────────────────
+            # PUSH CHANGES
+            # ──────────────────────────────────────────────────────────────────────
+            - name: 📤 Push Version Changes
+              if: inputs.dry-run == false && steps.version.outputs.version_status == 'success'
+              run: |
+                  echo "📤 Pushing version changes and tags..."
+                  git push origin main || exit 1
+                  git push origin --tags || echo "⚠️ Some tags may already exist"
+                  echo "✅ Changes pushed successfully"
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            # ──────────────────────────────────────────────────────────────────────
+            # PUBLISH
+            # ──────────────────────────────────────────────────────────────────────
+            - name: 🚀 Publish to NPM
+              id: publish
+              if: inputs.dry-run == false && steps.version.outputs.version_status == 'success'
+              run: |
+                  NEW_VERSION="${{ steps.version.outputs.new_version }}"
+
+                  if npm view "${{ env.PACKAGE_NAME }}@$NEW_VERSION" version >/dev/null 2>&1; then
+                    echo "⚠️ Version $NEW_VERSION already on npm - skipping"
+                    echo "publish_status=already_exists" >> $GITHUB_OUTPUT
+                    exit 0
+                  fi
+
+                  echo "📤 Publishing $NEW_VERSION with tag ${{ inputs.dist-tag }}..."
+                  pnpm nx release publish --projects=${{ env.TARGET_PROJECT }} --tag ${{ inputs.dist-tag }}
+
+                  echo "✅ Published ${{ env.PACKAGE_NAME }}@$NEW_VERSION"
+                  echo "publish_status=success" >> $GITHUB_OUTPUT
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+                  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+                  NPM_CONFIG_PROVENANCE: true
+
+            # ──────────────────────────────────────────────────────────────────────
+            # DRY RUN
+            # ──────────────────────────────────────────────────────────────────────
+            - name: 🔍 Dry Run Preview
+              if: inputs.dry-run == true
+              run: |
+                  echo "🔍 DRY RUN MODE"
+                  echo ""
+                  CURRENT_VERSION=$(node -p "require('./packages/${{ env.TARGET_PROJECT }}/package.json').version")
+                  echo "📦 Current version: $CURRENT_VERSION"
+                  echo "📝 Strategy: ${{ inputs.version-specifier }}"
+                  echo "🏷️ Dist tag: ${{ inputs.dist-tag }}"
+                  echo ""
+
+                  if [ "${{ inputs.version-specifier }}" != "auto" ]; then
+                    pnpm nx release version ${{ inputs.version-specifier }} --projects=${{ env.TARGET_PROJECT }} --dry-run
+                  else
+                    pnpm nx release version --projects=${{ env.TARGET_PROJECT }} --dry-run
+                  fi
+
+            # ──────────────────────────────────────────────────────────────────────
+            # SUMMARY
+            # ──────────────────────────────────────────────────────────────────────
+            - name: 📊 Generate Summary
+              if: always()
+              run: |
+                  echo "## 📦 Release Summary" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+
+                  if [ "${{ inputs.dry-run }}" = "true" ]; then
+                    echo "### 🔍 Dry Run Mode" >> $GITHUB_STEP_SUMMARY
+                    echo "No changes were made." >> $GITHUB_STEP_SUMMARY
+                  elif [ "${{ steps.version.outputs.version_status }}" = "success" ]; then
+                    echo "### ✅ Published" >> $GITHUB_STEP_SUMMARY
+                    echo "- **Version:** \`${{ steps.version.outputs.new_version }}\`" >> $GITHUB_STEP_SUMMARY
+                    echo "- **Tag:** \`${{ inputs.dist-tag }}\`" >> $GITHUB_STEP_SUMMARY
+                    echo "" >> $GITHUB_STEP_SUMMARY
+                    echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+                    echo "npm install ${{ env.PACKAGE_NAME }}@${{ steps.version.outputs.new_version }}" >> $GITHUB_STEP_SUMMARY
+                    echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+                  elif [ "${{ steps.version.outputs.version_status }}" = "no_changes" ]; then
+                    echo "### ℹ️ No Changes" >> $GITHUB_STEP_SUMMARY
+                    echo "No conventional commits found since last release." >> $GITHUB_STEP_SUMMARY
+                  elif [ "${{ steps.tag-check.outputs.tag_status }}" = "already_published" ]; then
+                    echo "### ℹ️ Already Published" >> $GITHUB_STEP_SUMMARY
+                    echo "Version \`${{ steps.tag-check.outputs.current_version }}\` is already on npm." >> $GITHUB_STEP_SUMMARY
+                  fi

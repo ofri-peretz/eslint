@@ -1,0 +1,28 @@
+# Ignore test files
+**/*.test.ts
+**/*.spec.ts
+
+# Ignore config files
+vitest.config.mts
+tsconfig.json
+tsconfig.lib.json
+tsconfig.spec.json
+eslint.config.mjs
+.eslintrc.json
+
+# Ignore development files
+coverage/
+.analysis/
+.removed-rules/
+*.md.bak
+
+# Ignore source maps
+*.map
+
+# Include compiled and essential files
+!src/
+!dist/
+!README.md
+!LICENSE
+!CHANGELOG.md
+!AGENTS.md

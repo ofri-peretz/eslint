@@ -8,16 +8,23 @@ Detects LDAP injection vulnerabilities. This rule is part of [`eslint-plugin-sec
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-90 (LDAP Injection) |
-| **Severity** | Critical (CVSS 9.8) |
-| **Auto-Fix** | 💡 Suggestions available |
-| **Category** | Injection Prevention |
+| Aspect            | Details                                                                   |
+| ----------------- | ------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-90](https://cwe.mitre.org/data/definitions/90.html) (LDAP Injection) |
+| **Severity**      | Critical (CVSS 9.8)                                                       |
+| **Auto-Fix**      | 💡 Suggestions available                                                  |
+| **Category**      | Injection Prevention                                                      |
+
+## Vulnerability and Risk
+
+**Vulnerability:** LDAP Injection allows attackers to modify LDAP statements by supplying malicious input that is not properly sanitized or escaped.
+
+**Risk:** Attackers can alter LDAP queries to bypass authentication (e.g., logging in as any user), leak sensitive directory information (like emails, phone numbers, or passwords), or in some cases, modify user attributes.
 
 ## Rule Details
 
 LDAP injection occurs when user input is improperly inserted into LDAP queries, allowing attackers to:
+
 - Bypass authentication and authorization
 - Extract sensitive directory information (users, groups, passwords)
 - Perform unauthorized LDAP operations
@@ -25,11 +32,11 @@ LDAP injection occurs when user input is improperly inserted into LDAP queries, 
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| 🔓 **Auth Bypass** | Unauthorized access | Escape LDAP filter values |
-| 📤 **Data Theft** | Directory data exposure | Validate and sanitize input |
-| 👥 **Enumeration** | User discovery | Use parameterized queries |
+| Issue              | Impact                  | Solution                    |
+| ------------------ | ----------------------- | --------------------------- |
+| 🔓 **Auth Bypass** | Unauthorized access     | Escape LDAP filter values   |
+| 📤 **Data Theft**  | Directory data exposure | Validate and sanitize input |
+| 👥 **Enumeration** | User discovery          | Use parameterized queries   |
 
 ## Examples
 
@@ -57,7 +64,7 @@ const filter = `(uid=${escape.filterValue(username)})`;
 // Use ldapjs with proper escaping
 const filter = new ldap.filters.EqualityFilter({
   attribute: 'uid',
-  value: username // ldapjs handles escaping
+  value: username, // ldapjs handles escaping
 });
 
 // Validate input before LDAP query
@@ -83,11 +90,11 @@ if (isValidUsername(username)) {
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `ldapFunctions` | `string[]` | `['search', 'bind', 'modify']` | LDAP functions to check |
-| `ldapEscapeFunctions` | `string[]` | `['escape.filterValue']` | LDAP escape functions |
-| `ldapValidationFunctions` | `string[]` | `['validateLdapInput']` | Validation functions |
+| Option                    | Type       | Default                        | Description             |
+| ------------------------- | ---------- | ------------------------------ | ----------------------- |
+| `ldapFunctions`           | `string[]` | `['search', 'bind', 'modify']` | LDAP functions to check |
+| `ldapEscapeFunctions`     | `string[]` | `['escape.filterValue']`       | LDAP escape functions   |
+| `ldapValidationFunctions` | `string[]` | `['validateLdapInput']`        | Validation functions    |
 
 ## Error Message Format
 
@@ -106,5 +113,3 @@ if (isValidUsername(username)) {
 
 - [`no-sql-injection`](./no-sql-injection.md) - SQL injection prevention
 - [`no-xpath-injection`](./no-xpath-injection.md) - XPath injection prevention
-
-

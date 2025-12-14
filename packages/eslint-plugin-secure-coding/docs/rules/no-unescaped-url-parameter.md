@@ -2,20 +2,30 @@
 
 > **Keywords:** URL encoding, CWE-79, security, ESLint rule, URL parameters, encodeURIComponent, URLSearchParams, XSS, open redirect, auto-fix, LLM-optimized, code security
 
-Detects unescaped URL parameters that can lead to Cross-Site Scripting (XSS) or open redirect vulnerabilities. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages that AI assistants can automatically fix.
+Detects unescaped URL parameters that can lead to Cross-Site Scripting (XSS) or open redirect vulnerabilities. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
 ⚠️ This rule **_warns_** by default in the `recommended` config.
 
 ## Quick Summary
 
-| Aspect            | Details                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
-| **CWE Reference** | CWE-79 (Cross-site Scripting)                                                   |
+| Aspect            | Details                                                                         |
+| ----------------- | ------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-79](https://cwe.mitre.org/data/definitions/79.html) (Cross-site Scripting) |
 | **Severity**      | High (security vulnerability)                                                   |
-| **Auto-Fix**      | ✅ Yes (suggests encodeURIComponent or URLSearchParams)                           |
-| **Category**      | Security                                                                         |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                          |
-| **Best For**      | All web applications constructing URLs, API clients, redirect handlers            |
+| **Auto-Fix**      | ✅ Yes (suggests encodeURIComponent or URLSearchParams)                         |
+| **Category**      | Security                                                                        |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                         |
+| **Best For**      | All web applications constructing URLs, API clients, redirect handlers          |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Constructing URLs by concatenating unescaped user input can allow attackers to inject special characters that alter the meaning of the URL.
+
+**Risk:** This leads to multiple vulnerabilities:
+
+- **Cross-Site Scripting (XSS):** If the URL is reflected in the page (e.g., `href`), attackers can inject `javascript:` URIs.
+- **Open Redirect:** Attackers can redirect users to malicious sites if the input controls the domain or path.
+- **Parameter Injection:** Attackers can inject additional query parameters to override settings.
 
 ## Rule Details
 
@@ -23,12 +33,12 @@ Unescaped URL parameters can allow attackers to inject malicious code or manipul
 
 ### Why This Matters
 
-| Issue                 | Impact                              | Solution                   |
-| --------------------- | ----------------------------------- | -------------------------- |
-| 🔒 **Security**       | XSS attacks via URL parameters      | Use encodeURIComponent      |
-| 🐛 **Open Redirect**  | Phishing attacks via redirect URLs  | Validate and encode URLs    |
-| 🔐 **Data Integrity** | Malformed URLs can break functionality | URLSearchParams            |
-| 📊 **Compliance**     | Violates security best practices     | Always encode URL parameters |
+| Issue                 | Impact                                 | Solution                     |
+| --------------------- | -------------------------------------- | ---------------------------- |
+| 🔒 **Security**       | XSS attacks via URL parameters         | Use encodeURIComponent       |
+| 🐛 **Open Redirect**  | Phishing attacks via redirect URLs     | Validate and encode URLs     |
+| 🔐 **Data Integrity** | Malformed URLs can break functionality | URLSearchParams              |
+| 📊 **Compliance**     | Violates security best practices       | Always encode URL parameters |
 
 ## Detection Patterns
 
@@ -85,7 +95,7 @@ const url = `https://example.com?${params}`; // ✅ Safe
 ```javascript
 {
   rules: {
-    '@forge-js/llm-optimized/no-unescaped-url-parameter': ['error', {
+    'secure-coding/no-unescaped-url-parameter': ['error', {
       allowInTests: false,                    // Allow in test files
       trustedLibraries: ['url', 'querystring'], // Trusted URL construction libraries
       ignorePatterns: []                     // Additional safe patterns to ignore
@@ -96,11 +106,11 @@ const url = `https://example.com?${params}`; // ✅ Safe
 
 ## Options
 
-| Option              | Type       | Default                | Description                                    |
-| ------------------- | ---------- | ---------------------- | ---------------------------------------------- |
-| `allowInTests`      | `boolean`  | `false`                | Allow unescaped URL parameters in test files  |
-| `trustedLibraries`  | `string[]` | `['url', 'querystring']` | Trusted URL construction libraries to recognize |
-| `ignorePatterns`    | `string[]` | `[]`                   | Additional safe patterns to ignore              |
+| Option             | Type       | Default                  | Description                                     |
+| ------------------ | ---------- | ------------------------ | ----------------------------------------------- |
+| `allowInTests`     | `boolean`  | `false`                  | Allow unescaped URL parameters in test files    |
+| `trustedLibraries` | `string[]` | `['url', 'querystring']` | Trusted URL construction libraries to recognize |
+| `ignorePatterns`   | `string[]` | `[]`                     | Additional safe patterns to ignore              |
 
 ## Rule Logic Flow
 
@@ -134,12 +144,12 @@ flowchart TD
     I --> J[💡 Suggest Fixes]
     J --> K[Use encodeURIComponent]
     J --> L[Use URLSearchParams]
-    
+
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
     classDef processNode fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1f2937
     classDef skipNode fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#1f2937
-    
+
     class A startNode
     class I errorNode
     class E,F,G,H processNode
@@ -220,4 +230,3 @@ const finalUrl = url.toString(); // Automatically encoded
 - [MDN: encodeURIComponent](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent)
 - [MDN: URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams)
 - [OWASP Open Redirect Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html)
-

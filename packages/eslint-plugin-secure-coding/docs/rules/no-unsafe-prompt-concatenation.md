@@ -1,0 +1,118 @@
+# no-unsafe-prompt-concatenation
+
+Prevent prompt injection via direct string concatenation of user input into LLM prompts.
+
+**OWASP LLM Top 10 2025**: LLM01 - Prompt Injection  
+**CWE**: [CWE-74](https://cwe.mitre.org/data/definitions/74.html), [CWE-78](https://cwe.mitre.org/data/definitions/78.html)  
+**Severity**: 🔴 Critical
+
+## Rule Details
+
+This rule detects direct concatenation of user input into LLM prompts without proper sanitization, which can lead to prompt injection attacks. Attackers can manipulate LLM behavior by injecting malicious instructions through user-controlled input.
+
+### ❌ Incorrect
+
+```typescript
+// Direct template literal concatenation
+const prompt = `Summarize this: ${userInput}`;
+await llm.complete(prompt);
+
+// String concatenation with +
+const prompt = 'Analyze: ' + userContent;
+await llm.complete(prompt);
+
+// Multiple interpolations
+const prompt = `User ${userId} asked: ${userQuestion}`;
+await llm.chat(prompt);
+```
+
+### ✅ Correct
+
+```typescript
+// Parameterized prompts with structured messages
+const messages = [
+  { role: 'system', content: 'You are a helpful assistant' },
+  { role: 'user', content: userInput },
+];
+await llm.complete({ messages });
+
+// Sanitized input
+const prompt = `Summarize: ${sanitizePromptInput(userInput)}`;
+await llm.complete(prompt);
+
+// Using prompt guard library
+const safePrompt = promptGuard.sanitize(`Process: ${userInput}`);
+await llm.complete(safePrompt);
+
+// Safe annotation for validated functions
+/**
+ * @safe - Input is validated against allowlist
+ */
+function generatePrompt(input) {
+  return `Summarize: ${input}`;
+}
+```
+
+## Options
+
+```json
+{
+  "secure-coding/no-unsafe-prompt-concatenation": [
+    "error",
+    {
+      "llmApiPatterns": ["customLLM.*", "myApp.ai.*"],
+      "trustedPromptSanitizers": ["myCustomSanitizer", "validatePrompt"],
+      "allowSanitized": true,
+      "strictMode": false
+    }
+  ]
+}
+```
+
+### `llmApiPatterns`
+
+Array of additional LLM API patterns to detect. Default patterns include:
+
+- `llm.complete`, `llm.chat`, `llm.generate`
+- `openai.chat`, `openai.complete`
+- `anthropic.complete`, `claude.complete`
+- `cohere.generate`
+- `chatCompletion`, `textCompletion`
+
+### `trustedPromptSanitizers`
+
+Array of function names considered safe for sanitizing prompts. Default:
+
+- `sanitizePrompt`
+- `validatePrompt`
+- `promptGuard`
+- `escapePrompt`
+
+### `allowSanitized`
+
+If `true`, allows concatenation if input is sanitized. Default: `true`
+
+### `strictMode`
+
+If `true`, disables all false positive detection. Default: `false`
+
+## When Not To Use It
+
+If you're not using LLM/AI APIs in your codebase, you can disable this rule.
+
+## Further Reading
+
+- [OWASP LLM Top 10 2025 - LLM01: Prompt Injection](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
+- [Prompt Injection Guide](https://simonwillison.net/2023/Apr/14/worst-that-can-happen/)
+- [Rebuff - Prompt Injection Detector](https://github.com/protectai/rebuff)
+
+## Compatibility
+
+- ✅ ESLint 8.x
+- ✅ ESLint 9.x
+- ✅ TypeScript
+- ✅ JavaScript (ES6+)
+
+## Version
+
+This rule was introduced in `eslint-plugin-secure-coding` v2.3.0 (OWASP LLM 2025 support).

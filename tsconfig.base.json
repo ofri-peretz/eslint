@@ -10,20 +10,13 @@
     "experimentalDecorators": true,
     "importHelpers": true,
     "target": "ES2022",
-    "lib": [
-      "ES2022",
-      "dom"
-    ],
+    "lib": ["ES2022", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@interlace/eslint-devkit": [
-        "packages/eslint-devkit/src/index.ts"
-      ],
-      "eslint-plugin-mcp": [
-        "packages/eslint-plugin-mcp/src/index.ts"
-      ],
+      "@interlace/eslint-devkit": ["packages/eslint-devkit/src/index.ts"],
+      "eslint-plugin-mcp": ["packages/eslint-plugin-mcp/src/index.ts"],
       "eslint-plugin-mcp-optimized": [
         "packages/eslint-plugin-mcp-optimized/src/index.ts"
       ],
@@ -41,11 +34,20 @@
       ],
       "eslint-plugin-dependencies": [
         "packages/eslint-plugin-dependencies/src/index.ts"
+      ],
+      "eslint-plugin-agentic-security": [
+        "packages/eslint-plugin-agentic-security/src/index.ts"
+      ],
+      "eslint-plugin-openai-security": [
+        "packages/eslint-plugin-openai-security/src/index.ts"
+      ],
+      "eslint-plugin-anthropic-security": [
+        "packages/eslint-plugin-anthropic-security/src/index.ts"
+      ],
+      "eslint-plugin-google-ai-security": [
+        "packages/eslint-plugin-google-ai-security/src/index.ts"
       ]
     }
   },
-  "exclude": [
-    "node_modules",
-    "tmp"
-  ]
+  "exclude": ["node_modules", "tmp"]
 }

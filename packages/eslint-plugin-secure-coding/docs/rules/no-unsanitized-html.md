@@ -2,20 +2,26 @@
 
 > **Keywords:** XSS, cross-site scripting, CWE-79, security, ESLint rule, HTML injection, dangerouslySetInnerHTML, innerHTML, DOMPurify, sanitize-html, XSS prevention, auto-fix, LLM-optimized, code security
 
-Detects unsanitized HTML injection (dangerouslySetInnerHTML, innerHTML) that can lead to Cross-Site Scripting (XSS) attacks. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages that AI assistants can automatically fix.
+Detects unsanitized HTML injection (dangerouslySetInnerHTML, innerHTML) that can lead to Cross-Site Scripting (XSS) attacks. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
 ⚠️ This rule **_errors_** by default in the `recommended` config (CRITICAL severity).
 
 ## Quick Summary
 
-| Aspect            | Details                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
-| **CWE Reference** | CWE-79 (Cross-site Scripting)                                                   |
-| **Severity**      | Critical (security vulnerability)                                                |
-| **Auto-Fix**      | ✅ Yes (suggests textContent or sanitization)                                     |
-| **Category**      | Security                                                                         |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                          |
+| Aspect            | Details                                                                             |
+| ----------------- | ----------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-79](https://cwe.mitre.org/data/definitions/79.html) (Cross-site Scripting)     |
+| **Severity**      | Critical (security vulnerability)                                                   |
+| **Auto-Fix**      | ✅ Yes (suggests textContent or sanitization)                                       |
+| **Category**      | Security                                                                            |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                             |
 | **Best For**      | All web applications rendering user-generated content, React apps, DOM manipulation |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Inserting untrusted data directly into the DOM (e.g., via `innerHTML`) allows the browser to interpret that data as HTML code.
+
+**Risk:** Attackers can inject malicious scripts (Cross-Site Scripting - XSS) that execute in the victim's browser. This allows them to steal cookies/session tokens, perform actions on behalf of the user, or redirect users to malicious sites.
 
 ## Rule Details
 
@@ -23,12 +29,12 @@ Unsanitized HTML injection is one of the most common web security vulnerabilitie
 
 ### Why This Matters
 
-| Issue                 | Impact                              | Solution                   |
-| --------------------- | ----------------------------------- | -------------------------- |
-| 🔒 **Security**       | XSS attacks can steal user data     | Use textContent or sanitize |
-| 🐛 **Data Theft**     | Cookies, tokens can be stolen       | DOMPurify, sanitize-html    |
-| 🔐 **Session Hijack** | Attackers can hijack user sessions  | Proper HTML sanitization   |
-| 📊 **Compliance**     | Violates security best practices     | Always sanitize user input  |
+| Issue                 | Impact                             | Solution                    |
+| --------------------- | ---------------------------------- | --------------------------- |
+| 🔒 **Security**       | XSS attacks can steal user data    | Use textContent or sanitize |
+| 🐛 **Data Theft**     | Cookies, tokens can be stolen      | DOMPurify, sanitize-html    |
+| 🔐 **Session Hijack** | Attackers can hijack user sessions | Proper HTML sanitization    |
+| 📊 **Compliance**     | Violates security best practices   | Always sanitize user input  |
 
 ## Detection Patterns
 
@@ -86,7 +92,7 @@ function Component({ content }) {
 ```javascript
 {
   rules: {
-    '@forge-js/llm-optimized/no-unsanitized-html': ['error', {
+    'secure-coding/no-unsanitized-html': ['error', {
       allowInTests: false,                    // Allow in test files
       trustedLibraries: ['dompurify', 'sanitize-html', 'xss'], // Trusted sanitization libraries
       ignorePatterns: []                     // Additional safe patterns to ignore
@@ -97,11 +103,11 @@ function Component({ content }) {
 
 ## Options
 
-| Option              | Type       | Default                          | Description                                    |
-| ------------------- | ---------- | -------------------------------- | ---------------------------------------------- |
-| `allowInTests`      | `boolean`  | `false`                          | Allow unsanitized HTML in test files         |
-| `trustedLibraries`  | `string[]` | `['dompurify', 'sanitize-html', 'xss']` | Trusted sanitization libraries to recognize     |
-| `ignorePatterns`    | `string[]` | `[]`                             | Additional safe patterns to ignore              |
+| Option             | Type       | Default                                 | Description                                 |
+| ------------------ | ---------- | --------------------------------------- | ------------------------------------------- |
+| `allowInTests`     | `boolean`  | `false`                                 | Allow unsanitized HTML in test files        |
+| `trustedLibraries` | `string[]` | `['dompurify', 'sanitize-html', 'xss']` | Trusted sanitization libraries to recognize |
+| `ignorePatterns`   | `string[]` | `[]`                                    | Additional safe patterns to ignore          |
 
 ## Rule Logic Flow
 
@@ -137,12 +143,12 @@ flowchart TD
     J --> K[💡 Suggest Fixes]
     K --> L[Use textContent]
     K --> M[Use DOMPurify]
-    
+
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
     classDef processNode fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1f2937
     classDef skipNode fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#1f2937
-    
+
     class A startNode
     class J errorNode
     class E,F,G,H,I processNode
@@ -165,7 +171,8 @@ element.textContent = userInput; // HTML is automatically escaped
 import DOMPurify from 'dompurify';
 
 // ✅ Good - Sanitizes HTML while preserving safe tags
-const userInput = '<p>Hello <strong>World</strong></p><script>alert("XSS")</script>';
+const userInput =
+  '<p>Hello <strong>World</strong></p><script>alert("XSS")</script>';
 element.innerHTML = DOMPurify.sanitize(userInput); // Removes <script> tag
 ```
 
@@ -223,4 +230,3 @@ const sanitized = DOMPurify.sanitize(userInput, config);
 - [DOMPurify Documentation](https://github.com/cure53/DOMPurify)
 - [sanitize-html Documentation](https://github.com/apostrophecms/sanitize-html)
 - [React Security Best Practices](https://react.dev/learn/escape-hatches)
-

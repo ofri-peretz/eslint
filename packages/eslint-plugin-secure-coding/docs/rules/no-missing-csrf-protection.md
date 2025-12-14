@@ -2,20 +2,26 @@
 
 > **Keywords:** CSRF, CWE-352, security, ESLint rule, CSRF protection, token validation, middleware, Express, Fastify, LLM-optimized, code security
 
-Detects missing CSRF token validation in POST/PUT/DELETE requests. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages that AI assistants can automatically fix.
+Detects missing CSRF token validation in POST/PUT/DELETE requests. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
 💼 This rule is set to **error** by default in the `recommended` config.
 
 ## Quick Summary
 
-| Aspect            | Details                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
-| **CWE Reference** | CWE-352 (Cross-Site Request Forgery)                                           |
-| **Severity**      | HIGH (security vulnerability)                                                   |
-| **Auto-Fix**      | ❌ No (requires manual CSRF middleware setup)                                   |
-| **Category**      | Security                                                                         |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                          |
-| **Best For**      | All web applications with state-changing operations, Express, Fastify          |
+| Aspect            | Details                                                               |
+| ----------------- | --------------------------------------------------------------------- |
+| **CWE Reference** | CWE-352 (Cross-Site Request Forgery)                                  |
+| **Severity**      | HIGH (security vulnerability)                                         |
+| **Auto-Fix**      | ❌ No (requires manual CSRF middleware setup)                         |
+| **Category**      | Security                                                              |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                               |
+| **Best For**      | All web applications with state-changing operations, Express, Fastify |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Cross-Site Request Forgery (CSRF) occurs when an application processes state-changing requests (like creating users or transferring funds) without verifying that the request originated from a trusted source (usually via a CSRF token).
+
+**Risk:** An attacker can trick an authenticated user into visiting a malicious site, which then sends a request to the vulnerable application. The browser automatically includes the user's cookies, causing the application to execute the unauthorized action as the victim.
 
 ## Detection Flow
 
@@ -40,7 +46,7 @@ flowchart TD
     G -->|No| H{Global CSRF?}
     H -->|Yes| E
     H -->|No| I[❌ Report: Missing CSRF]
-    
+
     style C fill:#d1fae5,stroke:#059669,stroke-width:2px
     style E fill:#d1fae5,stroke:#059669,stroke-width:2px
     style I fill:#fee2e2,stroke:#dc2626,stroke-width:2px
@@ -48,12 +54,12 @@ flowchart TD
 
 ## Why This Matters
 
-| Issue                 | Impact                              | Solution                   |
-| --------------------- | ----------------------------------- | -------------------------- |
-| 🔒 **CSRF Attacks**  | Unauthorized state changes          | Add CSRF middleware        |
-| 🔐 **Data Integrity**| Malicious requests from other sites | Validate CSRF tokens       |
-| 🍪 **Session Hijack** | Exploit user sessions                | Use CSRF protection        |
-| 📊 **Best Practice**  | All state-changing ops need CSRF     | Protect POST/PUT/DELETE    |
+| Issue                 | Impact                              | Solution                |
+| --------------------- | ----------------------------------- | ----------------------- |
+| 🔒 **CSRF Attacks**   | Unauthorized state changes          | Add CSRF middleware     |
+| 🔐 **Data Integrity** | Malicious requests from other sites | Validate CSRF tokens    |
+| 🍪 **Session Hijack** | Exploit user sessions               | Use CSRF protection     |
+| 📊 **Best Practice**  | All state-changing ops need CSRF    | Protect POST/PUT/DELETE |
 
 ## Detection Patterns
 
@@ -70,11 +76,13 @@ The rule detects:
 
 ```typescript
 // Missing CSRF protection on state-changing routes
-app.post('/api/users', (req, res) => { // ❌ No CSRF middleware
+app.post('/api/users', (req, res) => {
+  // ❌ No CSRF middleware
   // Create user
 });
 
-router.put('/api/users/:id', (req, res) => { // ❌ No CSRF middleware
+router.put('/api/users/:id', (req, res) => {
+  // ❌ No CSRF middleware
   // Update user
 });
 
@@ -85,22 +93,26 @@ app.delete('/api/users/:id', handler); // ❌ No CSRF middleware
 
 ```typescript
 // CSRF middleware added
-app.post('/api/users', csrf(), (req, res) => { // ✅ CSRF middleware
+app.post('/api/users', csrf(), (req, res) => {
+  // ✅ CSRF middleware
   // Create user
 });
 
-router.put('/api/users/:id', csrfProtection, (req, res) => { // ✅ CSRF middleware
+router.put('/api/users/:id', csrfProtection, (req, res) => {
+  // ✅ CSRF middleware
   // Update user
 });
 
 // Global CSRF middleware
 app.use(csrf({ cookie: true })); // ✅ Global protection
-app.post('/api/users', (req, res) => { // ✅ Protected by global middleware
+app.post('/api/users', (req, res) => {
+  // ✅ Protected by global middleware
   // Create user
 });
 
 // GET requests don't need CSRF
-app.get('/api/users', (req, res) => { // ✅ GET doesn't need CSRF
+app.get('/api/users', (req, res) => {
+  // ✅ GET doesn't need CSRF
   // Return users
 });
 ```
@@ -111,24 +123,24 @@ app.get('/api/users', (req, res) => { // ✅ GET doesn't need CSRF
 
 ```json
 {
-  "@forge-js/llm-optimized/security/no-missing-csrf-protection": "error"
+  "secure-coding/no-missing-csrf-protection": "error"
 }
 ```
 
 ### Options
 
-| Option                  | Type       | Default                          | Description                        |
-| ----------------------- | ---------- | -------------------------------- | ----------------------------------- |
-| `allowInTests`          | `boolean`  | `false`                          | Allow missing CSRF in tests         |
-| `csrfMiddlewarePatterns`| `string[]` | `['csrf', 'csurf', ...]`        | CSRF middleware patterns           |
-| `protectedMethods`      | `string[]` | `['post', 'put', 'delete', 'patch']` | HTTP methods requiring CSRF |
-| `ignorePatterns`       | `string[]` | `[]`                             | Additional patterns to ignore       |
+| Option                   | Type       | Default                              | Description                   |
+| ------------------------ | ---------- | ------------------------------------ | ----------------------------- |
+| `allowInTests`           | `boolean`  | `false`                              | Allow missing CSRF in tests   |
+| `csrfMiddlewarePatterns` | `string[]` | `['csrf', 'csurf', ...]`             | CSRF middleware patterns      |
+| `protectedMethods`       | `string[]` | `['post', 'put', 'delete', 'patch']` | HTTP methods requiring CSRF   |
+| `ignorePatterns`         | `string[]` | `[]`                                 | Additional patterns to ignore |
 
 ### Example Configuration
 
 ```json
 {
-  "@forge-js/llm-optimized/security/no-missing-csrf-protection": [
+  "secure-coding/no-missing-csrf-protection": [
     "error",
     {
       "allowInTests": true,
@@ -158,4 +170,3 @@ app.get('/api/users', (req, res) => { // ✅ GET doesn't need CSRF
 - [CWE-352: Cross-Site Request Forgery](https://cwe.mitre.org/data/definitions/352.html)
 - [OWASP: CSRF Prevention](https://owasp.org/www-community/attacks/csrf)
 - [Express CSRF Protection](https://expressjs.com/en/advanced/best-practice-security.html#use-csrf-protection)
-

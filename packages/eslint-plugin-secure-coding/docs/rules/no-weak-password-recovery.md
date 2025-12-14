@@ -2,18 +2,25 @@
 
 > **Keywords:** no weak password recovery, security, ESLint rule, JavaScript, TypeScript, CWE-640, CWE-620, authentication, ATO, tokens
 
-ESLint Rule: no-weak-password-recovery with LLM-optimized suggestions and auto-fix capabilities.
+ESLint Rule: no-weak-password-recovery with LLM-optimized suggestions and auto-fix capabilities. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
 ## Quick Summary
 
-| Aspect          | Details                                 |
-| --------------- | --------------------------------------- |
-| **Severity**    | Error (Security)                        |
-| **Auto-Fix**    | ❌ No                                   |
-| **Category**    | Security                                |
-| **ESLint MCP**  | ✅ Optimized for ESLint MCP integration |
-| **Best For**    | Authentication systems, User management |
-| **Suggestions** | ✅ Advice on secure token generation    |
+| Aspect            | Details                                                                             |
+| ----------------- | ----------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-640](https://cwe.mitre.org/data/definitions/640.html) (Weak Password Recovery) |
+| **Severity**      | Error (Security)                                                                    |
+| **Auto-Fix**      | ❌ No                                                                               |
+| **Category**      | Security                                                                            |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                             |
+| **Best For**      | Authentication systems, User management                                             |
+| **Suggestions**   | ✅ Advice on secure token generation                                                |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Weak password recovery mechanisms allow attackers to reset user passwords without proper authorization. This typically involves predictable reset tokens (e.g., sequential IDs, timestamps, weak random) or insecure channels (e.g., sending the new password effectively in cleartext over email).
+
+**Risk:** Account Takeover (ATO). If an attacker can guess or brute-force the reset token, they can change the victim's password and lock them out of their account, gaining full access to their data and capabilities.
 
 ## Rule Details
 
@@ -70,7 +77,7 @@ This rule accepts an options object:
 ```typescript
 {
   "rules": {
-    "security/no-weak-password-recovery": ["error", {
+    "secure-coding/no-weak-password-recovery": ["error", {
       // Minimum bits of entropy for tokens (default: 128)
       "minTokenEntropy": 128,
 

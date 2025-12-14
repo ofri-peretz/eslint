@@ -2,7 +2,7 @@
 
 > **Keywords:** no redos vulnerable regex, security, ESLint rule, JavaScript, TypeScript, CWE-400, CWE-1333, DoS, catastrophic backtracking
 
-ESLint Rule: no-redos-vulnerable-regex with LLM-optimized suggestions and auto-fix capabilities.
+ESLint Rule: no-redos-vulnerable-regex. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
 ## Quick Summary
 
@@ -14,6 +14,12 @@ ESLint Rule: no-redos-vulnerable-regex with LLM-optimized suggestions and auto-f
 | **ESLint MCP**  | ✅ Optimized for ESLint MCP integration         |
 | **Best For**    | Production applications handling user input     |
 | **Suggestions** | ✅ Advice on using atomic groups/safe libraries |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Regular Expression Denial of Service (ReDoS) occurs when a regular expression is crafted in a way that causes catastrophic backtracking when processing certain input strings.
+
+**Risk:** An attacker can provide a specially crafted input that triggers this catastrophic backtracking, causing the application to consume excessive CPU resources and become unresponsive (Denial of Service).
 
 ## Rule Details
 
@@ -72,7 +78,7 @@ This rule accepts an options object:
 ```typescript
 {
   "rules": {
-    "security/no-redos-vulnerable-regex": ["error", {
+    "secure-coding/no-redos-vulnerable-regex": ["error", {
       "allowCommonPatterns": false, // Default: false. Allow some common but potentially risky patterns if safe in context.
       "maxPatternLength": 500       // Default: 500. Maximum length of regex string to analyze.
     }]

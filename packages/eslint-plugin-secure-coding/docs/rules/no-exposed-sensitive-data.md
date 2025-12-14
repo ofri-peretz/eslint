@@ -2,7 +2,7 @@
 
 > **Keywords:** sensitive data, CWE-200, security, ESLint rule, PII, SSN, credit card, password, API key, data exposure, logging, LLM-optimized, code security
 
-Detects exposure of sensitive data (SSN, credit card numbers, passwords, API keys) in logs or output. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages that AI assistants can understand.
+Detects exposure of sensitive data (SSN, credit card numbers, passwords, API keys) in logs or output. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can understand.
 
 > **Keywords:** no exposed sensitive data, security, ESLint rule, JavaScript, TypeScript, CWE-532, CWE-200, PII, secrets, logging
 
@@ -18,6 +18,12 @@ ESLint Rule: no-exposed-sensitive-data with LLM-optimized suggestions and auto-f
 | **ESLint MCP**  | ✅ Optimized for ESLint MCP integration    |
 | **Best For**    | Production applications handling user data |
 | **Suggestions** | ✅ Advice on redacting/masking data        |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Sensitive data exposure (information leakage) occurs when an application accidentally reveals sensitive information like passwords, credit card numbers, or API keys in logs, error messages, or other output channels.
+
+**Risk:** This allows attackers who gain access to logs or catch error messages to harvest sensitive credentials or PII, leading to account takeover, identity theft, or further system compromise.
 
 ## Rule Details
 
@@ -69,7 +75,7 @@ This rule accepts an options object:
 ```typescript
 {
   "rules": {
-    "security/no-exposed-sensitive-data": ["error", {
+    "secure-coding/no-exposed-sensitive-data": ["error", {
       // Allow in test files? (default: false)
       "allowInTests": false,
 
@@ -184,7 +190,7 @@ useApiKey(apiKey); // ✅ Use without logging
 
 ```json
 {
-  "@forge-js/llm-optimized/security/no-exposed-sensitive-data": "error"
+  "secure-coding/no-exposed-sensitive-data": "error"
 }
 ```
 
@@ -201,7 +207,7 @@ useApiKey(apiKey); // ✅ Use without logging
 
 ```json
 {
-  "@forge-js/llm-optimized/security/no-exposed-sensitive-data": [
+  "secure-coding/no-exposed-sensitive-data": [
     "error",
     {
       "allowInTests": true,

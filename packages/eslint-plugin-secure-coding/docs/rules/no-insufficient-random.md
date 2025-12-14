@@ -8,14 +8,20 @@
 
 ## Quick Summary
 
-| Aspect            | Details                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
-| **CWE Reference** | CWE-338 (Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG)) |
-| **Severity**      | HIGH (security vulnerability)                                                   |
-| **Auto-Fix**      | ✅ Yes (suggests crypto.getRandomValues() or crypto.randomBytes())              |
-| **Category**      | Security                                                                         |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                         |
+| Aspect            | Details                                                                               |
+| ----------------- | ------------------------------------------------------------------------------------- |
+| **CWE Reference** | CWE-338 (Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG))         |
+| **Severity**      | HIGH (security vulnerability)                                                         |
+| **Auto-Fix**      | ✅ Yes (suggests crypto.getRandomValues() or crypto.randomBytes())                    |
+| **Category**      | Security                                                                              |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                               |
 | **Best For**      | All applications requiring secure random number generation, cryptography, tokens, IDs |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Using weak Pseudo-Random Number Generators (PRNGs) like `Math.random()` for security-sensitive contexts (encryption keys, session IDs, tokens).
+
+**Risk:** Weak PRNGs generate predictable sequences. Attackers can guess future or past values, allowing them to predict session IDs, hijack accounts, or decrypt sensitive data protected by weak keys.
 
 ## Rule Details
 
@@ -23,12 +29,12 @@ This rule detects the use of weak pseudo-random number generators (PRNGs) like `
 
 ### Why This Matters
 
-| Issue                 | Impact                                    | Solution                           |
-| --------------------- | ----------------------------------------- | ---------------------------------- |
-| 🔒 **Security**       | Predictable random values can be exploited | Use crypto.getRandomValues()       |
-| 🎲 **Predictability** | Math.random() is deterministic and guessable | Use cryptographically secure PRNG |
-| 🔐 **Token Generation** | Weak randomness compromises token security | Use crypto.randomBytes()           |
-| 📊 **Compliance**     | Violates security best practices          | Follow OWASP guidelines            |
+| Issue                   | Impact                                       | Solution                          |
+| ----------------------- | -------------------------------------------- | --------------------------------- |
+| 🔒 **Security**         | Predictable random values can be exploited   | Use crypto.getRandomValues()      |
+| 🎲 **Predictability**   | Math.random() is deterministic and guessable | Use cryptographically secure PRNG |
+| 🔐 **Token Generation** | Weak randomness compromises token security   | Use crypto.randomBytes()          |
+| 📊 **Compliance**       | Violates security best practices             | Follow OWASP guidelines           |
 
 ## Detection Patterns
 
@@ -51,7 +57,7 @@ const value = Math.random() * 100;
 
 ```typescript
 // ✅ Cryptographically secure random
-const random = crypto.getRandomValues(new Uint32Array(1))[0] / (0xFFFFFFFF + 1);
+const random = crypto.getRandomValues(new Uint32Array(1))[0] / (0xffffffff + 1);
 const bytes = crypto.randomBytes(16);
 const secureId = crypto.randomBytes(8).toString('hex');
 ```
@@ -86,19 +92,22 @@ const shuffled = array.sort(() => Math.random() - 0.5);
 const id = crypto.randomBytes(8).toString('hex');
 
 // Secure random for selection
-const randomIndex = crypto.getRandomValues(new Uint32Array(1))[0] % array.length;
+const randomIndex =
+  crypto.getRandomValues(new Uint32Array(1))[0] % array.length;
 
 // Secure random for token
 const token = crypto.randomBytes(12).toString('base64url');
 
 // Secure random in condition
-const randomValue = crypto.getRandomValues(new Uint32Array(1))[0] / (0xFFFFFFFF + 1);
+const randomValue =
+  crypto.getRandomValues(new Uint32Array(1))[0] / (0xffffffff + 1);
 if (randomValue > 0.5) {
   console.log('heads');
 }
 
 // Secure random for sorting (Fisher-Yates shuffle)
-const random = () => crypto.getRandomValues(new Uint32Array(1))[0] / (0xFFFFFFFF + 1);
+const random = () =>
+  crypto.getRandomValues(new Uint32Array(1))[0] / (0xffffffff + 1);
 const shuffled = array.sort(() => random() - 0.5);
 ```
 
@@ -109,7 +118,7 @@ const shuffled = array.sort(() => random() - 0.5);
 ```json
 {
   "rules": {
-    "@forge-js/llm-optimized/no-insufficient-random": "error"
+    "secure-coding/no-insufficient-random": "error"
   }
 }
 ```
@@ -119,7 +128,7 @@ const shuffled = array.sort(() => random() - 0.5);
 ```json
 {
   "rules": {
-    "@forge-js/llm-optimized/no-insufficient-random": [
+    "secure-coding/no-insufficient-random": [
       "error",
       {
         "allowInTests": false,
@@ -133,18 +142,18 @@ const shuffled = array.sort(() => random() - 0.5);
 
 ## Options
 
-| Option                  | Type       | Default | Description                                                       |
-| ----------------------- | ---------- | ------- | ----------------------------------------------------------------- |
-| `allowInTests`          | `boolean`  | `false` | Allow Math.random() in test files (`.test.ts`, `.spec.ts`)        |
-| `additionalWeakPatterns` | `string[]` | `[]`    | Additional weak PRNG patterns to detect (e.g., `['weakRandom']`)  |
-| `trustedLibraries`     | `string[]` | `['crypto']` | Trusted random libraries (currently unused, reserved for future) |
+| Option                   | Type       | Default      | Description                                                      |
+| ------------------------ | ---------- | ------------ | ---------------------------------------------------------------- |
+| `allowInTests`           | `boolean`  | `false`      | Allow Math.random() in test files (`.test.ts`, `.spec.ts`)       |
+| `additionalWeakPatterns` | `string[]` | `[]`         | Additional weak PRNG patterns to detect (e.g., `['weakRandom']`) |
+| `trustedLibraries`       | `string[]` | `['crypto']` | Trusted random libraries (currently unused, reserved for future) |
 
 ### Ignoring Test Files
 
 ```json
 {
   "rules": {
-    "@forge-js/llm-optimized/no-insufficient-random": [
+    "secure-coding/no-insufficient-random": [
       "error",
       {
         "allowInTests": true
@@ -210,7 +219,7 @@ flowchart TD
 
 ```typescript
 // ✅ Good - Secure random in [0, 1) range
-const random = crypto.getRandomValues(new Uint32Array(1))[0] / (0xFFFFFFFF + 1);
+const random = crypto.getRandomValues(new Uint32Array(1))[0] / (0xffffffff + 1);
 ```
 
 ### 2. Use crypto.randomBytes() for Binary Data
@@ -259,7 +268,8 @@ const id = crypto.randomBytes(8).toString('hex');
 const randomItem = array[Math.floor(Math.random() * array.length)];
 
 // ✅ Secure
-const randomIndex = crypto.getRandomValues(new Uint32Array(1))[0] % array.length;
+const randomIndex =
+  crypto.getRandomValues(new Uint32Array(1))[0] % array.length;
 const randomItem = array[randomIndex];
 ```
 
@@ -280,8 +290,8 @@ const token = crypto.randomBytes(12).toString('base64url');
 const shuffled = array.sort(() => Math.random() - 0.5);
 
 // ✅ Secure (Fisher-Yates with crypto)
-const secureRandom = () => 
-  crypto.getRandomValues(new Uint32Array(1))[0] / (0xFFFFFFFF + 1);
+const secureRandom = () =>
+  crypto.getRandomValues(new Uint32Array(1))[0] / (0xffffffff + 1);
 const shuffled = array.sort(() => secureRandom() - 0.5);
 ```
 
@@ -301,4 +311,3 @@ const shuffled = array.sort(() => secureRandom() - 0.5);
 ## Version History
 
 - **1.0.0** - Initial release with Math.random() detection and crypto.getRandomValues() suggestions
-

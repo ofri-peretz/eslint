@@ -8,16 +8,23 @@ Detects unsafe deserialization of untrusted data. This rule is part of [`eslint-
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-502 (Unsafe Deserialization) |
-| **Severity** | Critical (CVSS 9.8) |
-| **Auto-Fix** | 💡 Suggestions available |
-| **Category** | Object & Prototype |
+| Aspect            | Details                                                                             |
+| ----------------- | ----------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-502](https://cwe.mitre.org/data/definitions/502.html) (Unsafe Deserialization) |
+| **Severity**      | Critical (CVSS 9.8)                                                                 |
+| **Auto-Fix**      | 💡 Suggestions available                                                            |
+| **Category**      | Object & Prototype                                                                  |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Unsafe deserialization happens when an application accepts serialized objects from untrusted sources and deserializes them without validation.
+
+**Risk:** Serialized data can contain malicious payloads that, upon deserialization, execute arbitrary code (Remote Code Execution - RCE), modify application logic, or cause Denial of Service (DoS). This is often considered one of the most critical security risks.
 
 ## Rule Details
 
 Unsafe deserialization occurs when untrusted data is deserialized in a way that allows attackers to execute arbitrary code or manipulate application logic. This includes:
+
 - Using `eval()` or `Function()` on untrusted data
 - YAML parsers that execute code
 - JSON with prototype pollution
@@ -25,11 +32,11 @@ Unsafe deserialization occurs when untrusted data is deserialized in a way that 
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| 💻 **RCE** | Full system compromise | Use safe deserializers |
-| 🎭 **Object Manipulation** | Logic bypass | Validate before deserializing |
-| 🔓 **Auth Bypass** | Unauthorized access | Use JSON.parse() for JSON data |
+| Issue                      | Impact                 | Solution                       |
+| -------------------------- | ---------------------- | ------------------------------ |
+| 💻 **RCE**                 | Full system compromise | Use safe deserializers         |
+| 🎭 **Object Manipulation** | Logic bypass           | Validate before deserializing  |
+| 🔓 **Auth Bypass**         | Unauthorized access    | Use JSON.parse() for JSON data |
 
 ## Examples
 
@@ -89,11 +96,11 @@ const obj = safeDeserialize(userInput);
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `dangerousFunctions` | `string[]` | `['eval', 'Function', 'unserialize']` | Dangerous deserialization functions |
-| `safeLibraries` | `string[]` | `['safe-serialize']` | Safe deserialization libraries |
-| `validationFunctions` | `string[]` | `['isValidJson', 'validateInput']` | Input validation functions |
+| Option                | Type       | Default                               | Description                         |
+| --------------------- | ---------- | ------------------------------------- | ----------------------------------- |
+| `dangerousFunctions`  | `string[]` | `['eval', 'Function', 'unserialize']` | Dangerous deserialization functions |
+| `safeLibraries`       | `string[]` | `['safe-serialize']`                  | Safe deserialization libraries      |
+| `validationFunctions` | `string[]` | `['isValidJson', 'validateInput']`    | Input validation functions          |
 
 ## Error Message Format
 
@@ -112,5 +119,3 @@ const obj = safeDeserialize(userInput);
 
 - [`detect-eval-with-expression`](./detect-eval-with-expression.md) - eval() injection
 - [`detect-object-injection`](./detect-object-injection.md) - Prototype pollution
-
-

@@ -2,20 +2,26 @@
 
 > **Keywords:** missing authentication, CWE-287, security, ESLint rule, authentication middleware, route handlers, Express, Fastify, API security, access control, LLM-optimized, code security
 
-Detects missing authentication checks in route handlers. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages that AI assistants can automatically fix.
+Detects missing authentication checks in route handlers. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
 ⚠️ This rule **_warns_** by default in the `recommended` config.
 
 ## Quick Summary
 
-| Aspect            | Details                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
-| **CWE Reference** | CWE-287 (Improper Authentication)                                               |
-| **Severity**      | Critical (security vulnerability)                                               |
-| **Auto-Fix**      | ❌ No (requires manual authentication setup)                                    |
-| **Category**      | Security                                                                         |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                          |
-| **Best For**      | All web applications with API endpoints, Express, Fastify, Next.js             |
+| Aspect            | Details                                                            |
+| ----------------- | ------------------------------------------------------------------ |
+| **CWE Reference** | CWE-287 (Improper Authentication)                                  |
+| **Severity**      | Critical (security vulnerability)                                  |
+| **Auto-Fix**      | ❌ No (requires manual authentication setup)                       |
+| **Category**      | Security                                                           |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                            |
+| **Best For**      | All web applications with API endpoints, Express, Fastify, Next.js |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Missing authentication checks in API route handlers or controller methods allow anonymous or unauthenticated users to access endpoints that should be protected.
+
+**Risk:** Unauthorized access to sensitive data or functionality. This can lead to data breaches, modification of data by unauthorized users, or access to privileged administrative functions.
 
 ## Rule Details
 
@@ -23,12 +29,12 @@ Missing authentication checks allow unauthorized access to protected resources. 
 
 ### Why This Matters
 
-| Issue                 | Impact                              | Solution                   |
-| --------------------- | ----------------------------------- | -------------------------- |
-| 🔒 **Security**       | Unauthorized access to APIs         | Add authentication middleware |
-| 🐛 **Data Breach**    | Sensitive data exposure              | Protect all endpoints      |
-| 🔐 **Compliance**     | Violates security standards         | Enforce authentication     |
-| 📊 **Best Practice**  | All protected routes need auth      | Use auth middleware        |
+| Issue                | Impact                         | Solution                      |
+| -------------------- | ------------------------------ | ----------------------------- |
+| 🔒 **Security**      | Unauthorized access to APIs    | Add authentication middleware |
+| 🐛 **Data Breach**   | Sensitive data exposure        | Protect all endpoints         |
+| 🔐 **Compliance**    | Violates security standards    | Enforce authentication        |
+| 📊 **Best Practice** | All protected routes need auth | Use auth middleware           |
 
 ## Detection Patterns
 
@@ -44,15 +50,18 @@ The rule detects:
 
 ```typescript
 // Missing authentication on protected route
-app.get('/api/users', (req, res) => { // ❌ No auth middleware
+app.get('/api/users', (req, res) => {
+  // ❌ No auth middleware
   // Return user data
 });
 
-app.post('/api/users', (req, res) => { // ❌ No auth middleware
+app.post('/api/users', (req, res) => {
+  // ❌ No auth middleware
   // Create user
 });
 
-router.put('/api/users/:id', (req, res) => { // ❌ No auth middleware
+router.put('/api/users/:id', (req, res) => {
+  // ❌ No auth middleware
   // Update user
 });
 ```
@@ -61,20 +70,24 @@ router.put('/api/users/:id', (req, res) => { // ❌ No auth middleware
 
 ```typescript
 // Authentication middleware added
-app.get('/api/users', authenticate(), (req, res) => { // ✅ Auth middleware
+app.get('/api/users', authenticate(), (req, res) => {
+  // ✅ Auth middleware
   // Return user data
 });
 
-app.post('/api/users', auth, requireAuth, (req, res) => { // ✅ Multiple auth checks
+app.post('/api/users', auth, requireAuth, (req, res) => {
+  // ✅ Multiple auth checks
   // Create user
 });
 
-router.put('/api/users/:id', verifyToken(), (req, res) => { // ✅ Token verification
+router.put('/api/users/:id', verifyToken(), (req, res) => {
+  // ✅ Token verification
   // Update user
 });
 
 // Public route (can be ignored via options)
-app.get('/api/public', (req, res) => { // ✅ Public endpoint
+app.get('/api/public', (req, res) => {
+  // ✅ Public endpoint
   // Return public data
 });
 ```
@@ -85,25 +98,25 @@ app.get('/api/public', (req, res) => { // ✅ Public endpoint
 
 ```json
 {
-  "@forge-js/llm-optimized/security/no-missing-authentication": "warn"
+  "secure-coding/no-missing-authentication": "warn"
 }
 ```
 
 ### Options
 
-| Option                  | Type      | Default                          | Description                        |
-| ----------------------- | --------- | -------------------------------- | ----------------------------------- |
-| `allowInTests`         | `boolean` | `false`                          | Allow missing auth in tests         |
-| `testFilePattern`       | `string`  | `'\\.(test\|spec)\\.(ts\|tsx\|js\|jsx)$'` | Test file pattern regex |
-| `authMiddlewarePatterns`| `string[]`| `['authenticate', 'auth', ...]`  | Auth middleware patterns to recognize |
-| `routeHandlerPatterns` | `string[]`| `['get', 'post', ...]`       | Route handler patterns to check       |
-| `ignorePatterns`       | `string[]`| `[]`                             | Additional patterns to ignore       |
+| Option                   | Type       | Default                                   | Description                           |
+| ------------------------ | ---------- | ----------------------------------------- | ------------------------------------- |
+| `allowInTests`           | `boolean`  | `false`                                   | Allow missing auth in tests           |
+| `testFilePattern`        | `string`   | `'\\.(test\|spec)\\.(ts\|tsx\|js\|jsx)$'` | Test file pattern regex               |
+| `authMiddlewarePatterns` | `string[]` | `['authenticate', 'auth', ...]`           | Auth middleware patterns to recognize |
+| `routeHandlerPatterns`   | `string[]` | `['get', 'post', ...]`                    | Route handler patterns to check       |
+| `ignorePatterns`         | `string[]` | `[]`                                      | Additional patterns to ignore         |
 
 ### Example Configuration
 
 ```json
 {
-  "@forge-js/llm-optimized/security/no-missing-authentication": [
+  "secure-coding/no-missing-authentication": [
     "error",
     {
       "allowInTests": true,
@@ -133,4 +146,3 @@ app.get('/api/public', (req, res) => { // ✅ Public endpoint
 - [CWE-287: Improper Authentication](https://cwe.mitre.org/data/definitions/287.html)
 - [OWASP: Improper Authentication](https://owasp.org/www-community/vulnerabilities/Improper_Authentication)
 - [Express Authentication Guide](https://expressjs.com/en/guide/using-middleware.html)
-

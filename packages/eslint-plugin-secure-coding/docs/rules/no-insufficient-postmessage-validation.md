@@ -8,16 +8,23 @@ Detects insufficient postMessage origin validation. This rule is part of [`eslin
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-346 (Origin Validation Error) |
-| **Severity** | High (CVSS 8.8) |
-| **Auto-Fix** | 💡 Suggestions available |
-| **Category** | Platform-Specific |
+| Aspect            | Details                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-346](https://cwe.mitre.org/data/definitions/346.html) (Origin Validation Error) |
+| **Severity**      | High (CVSS 8.8)                                                                      |
+| **Auto-Fix**      | 💡 Suggestions available                                                             |
+| **Category**      | Platform-Specific                                                                    |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Insufficient validation of the origin of a `postMessage` event allows malicious sites to send data to the application.
+
+**Risk:** If the application processes this data unsafely (e.g., executing it as code or using it to update sensitive state), it can lead to Cross-Site Scripting (XSS), data theft, or unauthorized actions on behalf of the user.
 
 ## Rule Details
 
 postMessage is a browser API for cross-origin communication that can be exploited if messages are accepted from untrusted origins. Attackers can:
+
 - Send malicious messages from hostile iframes
 - Perform cross-site scripting attacks
 - Steal sensitive data from embedded content
@@ -25,11 +32,11 @@ postMessage is a browser API for cross-origin communication that can be exploite
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| 🎭 **XSS** | Code execution | Validate event.origin |
-| 📤 **Data Theft** | Information disclosure | Whitelist trusted origins |
-| 🔓 **Bypass** | Security control evasion | Validate message content |
+| Issue             | Impact                   | Solution                  |
+| ----------------- | ------------------------ | ------------------------- |
+| 🎭 **XSS**        | Code execution           | Validate event.origin     |
+| 📤 **Data Theft** | Information disclosure   | Whitelist trusted origins |
+| 🔓 **Bypass**     | Security control evasion | Validate message content  |
 
 ## Examples
 
@@ -53,7 +60,7 @@ window.addEventListener('message', (event) => {
 });
 
 // Missing validation entirely
-window.onmessage = function(e) {
+window.onmessage = function (e) {
   document.getElementById('output').innerHTML = e.data;
 };
 ```
@@ -62,22 +69,19 @@ window.onmessage = function(e) {
 
 ```typescript
 // Strict origin validation
-const TRUSTED_ORIGINS = [
-  'https://trusted.com',
-  'https://app.trusted.com'
-];
+const TRUSTED_ORIGINS = ['https://trusted.com', 'https://app.trusted.com'];
 
 window.addEventListener('message', (event) => {
   if (!TRUSTED_ORIGINS.includes(event.origin)) {
     console.warn('Rejected message from:', event.origin);
     return;
   }
-  
+
   // Validate message structure
   if (typeof event.data !== 'object' || !event.data.type) {
     return;
   }
-  
+
   // Process validated message
   processMessage(event.data);
 });
@@ -93,7 +97,7 @@ interface Message {
 
 window.addEventListener('message', (event) => {
   if (event.origin !== 'https://trusted.com') return;
-  
+
   const message = event.data as Message;
   if (message.type === 'action') {
     safeAction(message.payload);
@@ -118,12 +122,12 @@ window.addEventListener('message', (event) => {
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `allowedOrigins` | `string[]` | `[]` | Allowed postMessage origins |
-| `allowWildcardInDev` | `boolean` | `false` | Allow `*` in development |
-| `messageHandlerPatterns` | `string[]` | `['message', 'onmessage']` | Message handler patterns |
-| `safeOrigins` | `string[]` | `['localhost']` | Origins considered safe |
+| Option                   | Type       | Default                    | Description                 |
+| ------------------------ | ---------- | -------------------------- | --------------------------- |
+| `allowedOrigins`         | `string[]` | `[]`                       | Allowed postMessage origins |
+| `allowWildcardInDev`     | `boolean`  | `false`                    | Allow `*` in development    |
+| `messageHandlerPatterns` | `string[]` | `['message', 'onmessage']` | Message handler patterns    |
+| `safeOrigins`            | `string[]` | `['localhost']`            | Origins considered safe     |
 
 ## Error Message Format
 
@@ -142,5 +146,3 @@ window.addEventListener('message', (event) => {
 
 - [`no-electron-security-issues`](./no-electron-security-issues.md) - Electron security
 - [`no-missing-cors-check`](./no-missing-cors-check.md) - CORS validation
-
-

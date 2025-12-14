@@ -8,16 +8,23 @@ Detects format string injection vulnerabilities. This rule is part of [`eslint-p
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-134 (Format String Vulnerability) |
-| **Severity** | Critical (CVSS 9.8) |
-| **Auto-Fix** | 💡 Suggestions available |
-| **Category** | Injection Prevention |
+| Aspect            | Details                                                                                  |
+| ----------------- | ---------------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-134](https://cwe.mitre.org/data/definitions/134.html) (Format String Vulnerability) |
+| **Severity**      | Critical (CVSS 9.8)                                                                      |
+| **Auto-Fix**      | 💡 Suggestions available                                                                 |
+| **Category**      | Injection Prevention                                                                     |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Format string injection occurs when user input is passed as the format string argument to functions like `printf` or `util.format` in Node.js.
+
+**Risk:** Attackers can use format specifiers (like `%s`, `%d`, or `%n`) to read data from the stack, crash the application (DoS), or potentially execute arbitrary code if the underlying library or language supports writing to memory via format strings.
 
 ## Rule Details
 
 Format string injection occurs when user input is used as a format string in functions like `util.format()`, `printf`-style functions, or logging functions. Attackers can use format specifiers (%s, %d, %x) to:
+
 - Leak sensitive memory contents
 - Crash the application (DoS)
 - Read stack data and bypass ASLR
@@ -25,11 +32,11 @@ Format string injection occurs when user input is used as a format string in fun
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| 💾 **Memory Leak** | Information disclosure | Use static format strings |
-| 💥 **Crash** | Denial of service | Validate format specifiers |
-| 🔓 **Code Execution** | Full system compromise | Escape user input |
+| Issue                 | Impact                 | Solution                   |
+| --------------------- | ---------------------- | -------------------------- |
+| 💾 **Memory Leak**    | Information disclosure | Use static format strings  |
+| 💥 **Crash**          | Denial of service      | Validate format specifiers |
+| 🔓 **Code Execution** | Full system compromise | Escape user input          |
 
 ## Examples
 
@@ -79,12 +86,12 @@ const message = util.format('%s', safeFormat);
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `formatFunctions` | `string[]` | `['util.format', 'sprintf']` | Format functions to check |
-| `formatSpecifiers` | `string[]` | `['%s', '%d', '%x', '%n']` | Format specifiers to detect |
-| `userInputVariables` | `string[]` | `['req', 'request', 'input']` | User input patterns |
-| `safeFormatLibraries` | `string[]` | `[]` | Libraries with safe formatting |
+| Option                | Type       | Default                       | Description                    |
+| --------------------- | ---------- | ----------------------------- | ------------------------------ |
+| `formatFunctions`     | `string[]` | `['util.format', 'sprintf']`  | Format functions to check      |
+| `formatSpecifiers`    | `string[]` | `['%s', '%d', '%x', '%n']`    | Format specifiers to detect    |
+| `userInputVariables`  | `string[]` | `['req', 'request', 'input']` | User input patterns            |
+| `safeFormatLibraries` | `string[]` | `[]`                          | Libraries with safe formatting |
 
 ## Error Message Format
 
@@ -102,5 +109,3 @@ const message = util.format('%s', safeFormat);
 
 - [`no-sql-injection`](./no-sql-injection.md) - SQL injection prevention
 - [`detect-eval-with-expression`](./detect-eval-with-expression.md) - Code injection prevention
-
-

@@ -2,20 +2,29 @@
 
 > **Keywords:** weak cryptography, CWE-327, security, ESLint rule, MD5, SHA1, DES, RC4, encryption, hashing, cryptography security, OWASP, crypto algorithms, auto-fix, LLM-optimized, code security, SHA-256, AES-256, bcrypt, scrypt
 
-Detects use of weak cryptography algorithms (MD5, SHA1, DES, 3DES, RC4) and suggests secure alternatives. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages that AI assistants can automatically fix.
+Detects use of weak cryptography algorithms (MD5, SHA1, DES, 3DES, RC4) and suggests secure alternatives. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
 ⚠️ This rule **_warns_** by default in the `recommended` config.
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-327 (Use of a Broken or Risky Cryptographic Algorithm) |
-| **Severity** | Critical (security vulnerability) |
-| **Auto-Fix** | ✅ Yes (suggests secure algorithm replacements) |
-| **Category** | Security |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
-| **Best For** | Applications using cryptography, password hashing, data encryption, security-critical code |
+| Aspect            | Details                                                                                                       |
+| ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-327](https://cwe.mitre.org/data/definitions/327.html) (Use of a Broken or Risky Cryptographic Algorithm) |
+| **Severity**      | Critical (security vulnerability)                                                                             |
+| **Auto-Fix**      | ✅ Yes (suggests secure algorithm replacements)                                                               |
+| **Category**      | Security                                                                                                      |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                                                       |
+| **Best For**      | Applications using cryptography, password hashing, data encryption, security-critical code                    |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Weak cryptographic algorithms (like MD5, SHA1, RC4, DES) have known weaknesses that make them susceptible to attacks.
+
+- **Hash Collisions:** Attackers can generate different inputs that produce the same hash (MD5, SHA1).
+- **Broken Encryption:** Attackers can decrypt data without the key (RC4, DES).
+
+**Risk:** Using these algorithms can lead to data breaches, password cracking, and loss of data integrity. For example, relying on MD5 for digital signatures allows attackers to forge documents.
 
 ## Rule Details
 
@@ -23,12 +32,12 @@ Weak cryptography algorithms are vulnerable to attacks and should be replaced wi
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| 🔒 **Security** | Weak algorithms can be broken by attackers | Use SHA-256, SHA-512, or SHA-3 |
-| 🐛 **Data Breach** | MD5/SHA1 collisions allow forgery | Use AES-256-GCM for encryption |
-| 🔐 **Password Security** | Weak hashing exposes passwords | Use bcrypt, scrypt, or Argon2 |
-| 📊 **Compliance** | Violates security standards (FIPS, PCI-DSS) | Migrate to approved algorithms |
+| Issue                    | Impact                                      | Solution                       |
+| ------------------------ | ------------------------------------------- | ------------------------------ |
+| 🔒 **Security**          | Weak algorithms can be broken by attackers  | Use SHA-256, SHA-512, or SHA-3 |
+| 🐛 **Data Breach**       | MD5/SHA1 collisions allow forgery           | Use AES-256-GCM for encryption |
+| 🔐 **Password Security** | Weak hashing exposes passwords              | Use bcrypt, scrypt, or Argon2  |
+| 📊 **Compliance**        | Violates security standards (FIPS, PCI-DSS) | Migrate to approved algorithms |
 
 ## Detection Patterns
 
@@ -46,30 +55,30 @@ The rule detects:
 
 ```typescript
 // Weak hash algorithms
-const hash = crypto.createHash("md5").update(data);
-const hash2 = crypto.createHash("sha1").update(data);
+const hash = crypto.createHash('md5').update(data);
+const hash2 = crypto.createHash('sha1').update(data);
 
 // Weak encryption algorithms
-const cipher = crypto.createCipher("des", key);
-const cipher2 = crypto.createCipher("des-ede3", key); // 3DES
-const cipher3 = crypto.createCipher("rc4", key);
+const cipher = crypto.createCipher('des', key);
+const cipher2 = crypto.createCipher('des-ede3', key); // 3DES
+const cipher3 = crypto.createCipher('rc4', key);
 
 // Case insensitive detection
-const hash3 = crypto.createHash("MD5").update(data);
-const hash4 = crypto.createHash("Sha1").update(data);
+const hash3 = crypto.createHash('MD5').update(data);
+const hash4 = crypto.createHash('Sha1').update(data);
 ```
 
 ### ✅ Correct
 
 ```typescript
 // Strong hash algorithms
-const hash = crypto.createHash("sha256").update(data);
-const hash2 = crypto.createHash("sha512").update(data);
-const hash3 = crypto.createHash("sha3-256").update(data);
+const hash = crypto.createHash('sha256').update(data);
+const hash2 = crypto.createHash('sha512').update(data);
+const hash3 = crypto.createHash('sha3-256').update(data);
 
 // Strong encryption algorithms
-const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
-const cipher2 = crypto.createCipheriv("chacha20-poly1305", key, iv);
+const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+const cipher2 = crypto.createCipheriv('chacha20-poly1305', key, iv);
 
 // Password hashing
 const passwordHash = await bcrypt.hash(password, 10);
@@ -82,7 +91,7 @@ const passwordHash3 = await argon2.hash(password);
 ```javascript
 {
   rules: {
-    '@forge-js/llm-optimized/no-weak-crypto': ['error', {
+    'secure-coding/no-weak-crypto': ['error', {
       allowInTests: false,                    // Allow weak crypto in test files
       additionalWeakAlgorithms: [],           // Additional algorithms to detect
       trustedLibraries: ['crypto', 'crypto-js'] // Trusted crypto libraries
@@ -93,18 +102,18 @@ const passwordHash3 = await argon2.hash(password);
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `allowInTests` | `boolean` | `false` | Allow weak crypto in test files (`.test.ts`, `.spec.ts`) |
-| `additionalWeakAlgorithms` | `string[]` | `[]` | Additional weak algorithms to detect (e.g., `['md4', 'blowfish']`) |
-| `trustedLibraries` | `string[]` | `['crypto', 'crypto-js']` | Trusted crypto libraries to check |
+| Option                     | Type       | Default                   | Description                                                        |
+| -------------------------- | ---------- | ------------------------- | ------------------------------------------------------------------ |
+| `allowInTests`             | `boolean`  | `false`                   | Allow weak crypto in test files (`.test.ts`, `.spec.ts`)           |
+| `additionalWeakAlgorithms` | `string[]` | `[]`                      | Additional weak algorithms to detect (e.g., `['md4', 'blowfish']`) |
+| `trustedLibraries`         | `string[]` | `['crypto', 'crypto-js']` | Trusted crypto libraries to check                                  |
 
 ### Allowing Weak Crypto in Tests
 
 ```javascript
 {
   rules: {
-    '@forge-js/llm-optimized/no-weak-crypto': ['error', {
+    'secure-coding/no-weak-crypto': ['error', {
       allowInTests: true  // Allows weak crypto in .test.ts and .spec.ts files
     }]
   }
@@ -116,7 +125,7 @@ const passwordHash3 = await argon2.hash(password);
 ```javascript
 {
   rules: {
-    '@forge-js/llm-optimized/no-weak-crypto': ['error', {
+    'secure-coding/no-weak-crypto': ['error', {
       additionalWeakAlgorithms: ['md4', 'blowfish', 'rc2']
     }]
   }
@@ -153,12 +162,12 @@ flowchart TD
     H --> J[💡 Suggest Fix]
     I --> J
     J --> K[Replace Algorithm]
-    
+
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
     classDef processNode fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1f2937
     classDef skipNode fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#1f2937
-    
+
     class A startNode
     class H,I errorNode
     class D,E,F,G processNode
@@ -171,10 +180,10 @@ flowchart TD
 
 ```typescript
 // ✅ Good - Strong hash algorithm
-const hash = crypto.createHash("sha256").update(data).digest("hex");
+const hash = crypto.createHash('sha256').update(data).digest('hex');
 
 // ✅ Good - Even stronger
-const hash = crypto.createHash("sha512").update(data).digest("hex");
+const hash = crypto.createHash('sha512').update(data).digest('hex');
 ```
 
 ### 2. Use AES-256-GCM for Encryption
@@ -182,7 +191,7 @@ const hash = crypto.createHash("sha512").update(data).digest("hex");
 ```typescript
 // ✅ Good - Authenticated encryption
 const iv = crypto.randomBytes(16);
-const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
 ```
 
 ### 3. Use bcrypt for Password Hashing
@@ -213,32 +222,32 @@ const isValid = await argon2.verify(hash, password);
 ## Algorithm Migration Guide
 
 | Weak Algorithm | Secure Alternative | Migration Effort |
-|----------------|-------------------|------------------|
-| MD5 | SHA-256 | 5 minutes |
-| SHA-1 | SHA-256 or SHA-512 | 5 minutes |
-| DES | AES-256-GCM | 15 minutes |
-| 3DES | AES-256-GCM | 15 minutes |
-| RC4 | ChaCha20-Poly1305 | 15 minutes |
+| -------------- | ------------------ | ---------------- |
+| MD5            | SHA-256            | 5 minutes        |
+| SHA-1          | SHA-256 or SHA-512 | 5 minutes        |
+| DES            | AES-256-GCM        | 15 minutes       |
+| 3DES           | AES-256-GCM        | 15 minutes       |
+| RC4            | ChaCha20-Poly1305  | 15 minutes       |
 
 ### Migration Example: MD5 → SHA-256
 
 ```typescript
 // ❌ Before
-const hash = crypto.createHash("md5").update(data).digest("hex");
+const hash = crypto.createHash('md5').update(data).digest('hex');
 
 // ✅ After
-const hash = crypto.createHash("sha256").update(data).digest("hex");
+const hash = crypto.createHash('sha256').update(data).digest('hex');
 ```
 
 ### Migration Example: DES → AES-256-GCM
 
 ```typescript
 // ❌ Before
-const cipher = crypto.createCipher("des", key);
+const cipher = crypto.createCipher('des', key);
 
 // ✅ After
 const iv = crypto.randomBytes(16);
-const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
 ```
 
 ## Related Rules
@@ -260,4 +269,3 @@ const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
 ## Version History
 
 - **1.3.0** - Initial release with comprehensive weak crypto detection patterns
-
