@@ -760,6 +760,190 @@ export function createSafetyChecker(options: SecurityRuleOptions = {}) {
   };
 }
 
+/**
+ * Type for the safety checker object returned by createSafetyChecker
+ */
+export type SafetyChecker = ReturnType<typeof createSafetyChecker>;
+
+/**
+ * Wrapper function to check if a node should be skipped due to safety checks.
+ * This consolidates the common pattern used across 75+ locations in security rules:
+ * 
+ * ```typescript
+ * // Instead of this (3-5 lines each, 75+ occurrences):
+ * /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester *\/
+ * if (safetyChecker.isSafe(node, context)) {
+ *   return;
+ * }
+ * /* c8 ignore stop *\/
+ * 
+ * // Use this (1 line):
+ * if (shouldSkipForSafety(safetyChecker, node, context)) return;
+ * ```
+ * 
+ * @example
+ * ```typescript
+ * const safetyChecker = createSafetyChecker(options);
+ * 
+ * CallExpression(node) {
+ *   // Early return if the node is safe
+ *   if (shouldSkipForSafety(safetyChecker, node, context)) return;
+ *   
+ *   // Continue with detection logic...
+ * }
+ * ```
+ */
+/* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
+export function shouldSkipForSafety(
+  safetyChecker: SafetyChecker,
+  node: TSESTree.Node,
+  context: TSESLint.RuleContext<string, unknown[]>,
+): boolean {
+  return safetyChecker.isSafe(node, context);
+}
+/* c8 ignore stop */
+
+// ============================================================================
+// AST TRAVERSAL UTILITIES
+// ============================================================================
+
+/**
+ * Loop node types for checking if inside a loop
+ */
+const LOOP_NODE_TYPES = new Set([
+  'ForStatement',
+  'WhileStatement', 
+  'DoWhileStatement',
+  'ForInStatement',
+  'ForOfStatement',
+]);
+
+/**
+ * Function node types for finding function boundaries
+ */
+const FUNCTION_NODE_TYPES = new Set([
+  'FunctionDeclaration',
+  'FunctionExpression',
+  'ArrowFunctionExpression',
+  'MethodDefinition',
+]);
+
+/**
+ * Find an ancestor node matching a predicate, with bounded traversal depth.
+ * This prevents infinite loops and ensures O(1) bounded performance.
+ * 
+ * @example
+ * ```typescript
+ * // Find the containing function
+ * const containingFn = findAncestor(node, n => FUNCTION_NODE_TYPES.has(n.type));
+ * 
+ * // Find if inside a loop
+ * const loopAncestor = findAncestor(node, n => LOOP_NODE_TYPES.has(n.type));
+ * if (loopAncestor) {
+ *   // Node is inside a loop
+ * }
+ * ```
+ */
+export function findAncestor(
+  node: TSESTree.Node,
+  predicate: (n: TSESTree.Node) => boolean,
+  maxDepth = 20,
+): TSESTree.Node | null {
+  let current: TSESTree.Node | undefined = node.parent as TSESTree.Node | undefined;
+  let depth = 0;
+  
+  while (current && depth < maxDepth) {
+    if (predicate(current)) {
+      return current;
+    }
+    current = current.parent as TSESTree.Node | undefined;
+    depth++;
+  }
+  
+  return null;
+}
+
+/**
+ * Check if a node is inside a loop (for, while, do-while, for-in, for-of).
+ * 
+ * @example
+ * ```typescript
+ * if (isInsideLoop(node)) {
+ *   context.report({
+ *     node,
+ *     messageId: 'resourceAllocationInLoop',
+ *   });
+ * }
+ * ```
+ */
+export function isInsideLoop(node: TSESTree.Node): boolean {
+  return findAncestor(node, n => LOOP_NODE_TYPES.has(n.type)) !== null;
+}
+
+/**
+ * Check if a node is inside a function (for scope analysis).
+ */
+export function isInsideFunction(node: TSESTree.Node): boolean {
+  return findAncestor(node, n => FUNCTION_NODE_TYPES.has(n.type)) !== null;
+}
+
+/**
+ * Get the containing function node, or null if not inside a function.
+ */
+export function getContainingFunction(node: TSESTree.Node): TSESTree.Node | null {
+  return findAncestor(node, n => FUNCTION_NODE_TYPES.has(n.type));
+}
+
+// ============================================================================
+// USER INPUT DETECTION UTILITIES
+// ============================================================================
+
+/**
+ * Default user input variable patterns
+ */
+export const DEFAULT_USER_INPUT_PATTERNS = [
+  'req', 'request', 'body', 'query', 'params', 
+  'input', 'data', 'userInput', 'userData',
+  'args', 'argv', 'env', 'process.env',
+];
+
+/**
+ * Check if a variable name suggests user input
+ * 
+ * @example
+ * ```typescript
+ * if (isUserInputIdentifier('reqBody', DEFAULT_USER_INPUT_PATTERNS)) {
+ *   // This variable name suggests user input
+ * }
+ * ```
+ */
+export function isUserInputIdentifier(
+  name: string,
+  patterns: string[] = DEFAULT_USER_INPUT_PATTERNS,
+): boolean {
+  const lowerName = name.toLowerCase();
+  return patterns.some(pattern => lowerName.includes(pattern.toLowerCase()));
+}
+
+/**
+ * Check if an expression contains user input references
+ * 
+ * @example
+ * ```typescript
+ * if (isUserInputExpression(node, sourceCode, ['req', 'userInput'])) {
+ *   context.report({ node, messageId: 'userControlledInput' });
+ * }
+ * ```
+ */
+export function isUserInputExpression(
+  expression: TSESTree.Expression,
+  sourceCode: TSESLint.SourceCode,
+  patterns: string[] = DEFAULT_USER_INPUT_PATTERNS,
+): boolean {
+  const exprText = sourceCode.getText(expression);
+  return patterns.some(pattern => exprText.includes(pattern));
+}
+
 // ============================================================================
 // SEVERITY AND COMPLIANCE HELPERS
 // ============================================================================

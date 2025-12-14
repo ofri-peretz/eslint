@@ -2,20 +2,26 @@
 
 > **Keywords:** ReDoS, CWE-400, security, ESLint rule, regular expression denial of service, RegExp, regex injection, performance, auto-fix, LLM-optimized, code security
 
-Detects `RegExp(variable)`, which might allow an attacker to DOS your server with a long-running regular expression. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
+Detects `RegExp(variable)`, which might allow an attacker to DOS your server with a long-running regular expression. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages with fix suggestions.
 
 **🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-400 (ReDoS - Regular Expression Denial of Service) |
-| **Severity** | High (performance/security issue) |
-| **Auto-Fix** | ⚠️ Suggests fixes (manual application) |
-| **Category** | Security |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
-| **Best For** | Applications processing user input with regex, validation libraries |
+| Aspect            | Details                                                                                                   |
+| ----------------- | --------------------------------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-400](https://cwe.mitre.org/data/definitions/400.html) (ReDoS - Regular Expression Denial of Service) |
+| **Severity**      | High (performance/security issue)                                                                         |
+| **Auto-Fix**      | ⚠️ Suggests fixes (manual application)                                                                    |
+| **Category**      | Security                                                                                                  |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                                                   |
+| **Best For**      | Applications processing user input with regex, validation libraries                                       |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Creating regular expressions from dynamic, untrusted input (e.g., using `new RegExp()`) can lead to the creation of complex or malicious patterns.
+
+**Risk:** Attackers can craft regular expressions that cause catastrophic backtracking (ReDoS - Regular Expression Denial of Service), leading to high CPU usage and making the application unresponsive. In some cases, it might also allow for bypassing validation logic.
 
 ## Rule Details
 
@@ -72,11 +78,11 @@ flowchart TD
 
 ## Configuration
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `allowLiterals` | `boolean` | `false` | Allow literal string regex patterns |
-| `additionalPatterns` | `string[]` | `[]` | Additional RegExp creation patterns |
-| `maxPatternLength` | `number` | `100` | Maximum allowed pattern length |
+| Option               | Type       | Default | Description                         |
+| -------------------- | ---------- | ------- | ----------------------------------- |
+| `allowLiterals`      | `boolean`  | `false` | Allow literal string regex patterns |
+| `additionalPatterns` | `string[]` | `[]`    | Additional RegExp creation patterns |
+| `maxPatternLength`   | `number`   | `100`   | Maximum allowed pattern length      |
 
 ## Examples
 
@@ -100,7 +106,7 @@ RegExp(`^${userPattern}$`); // Unvalidated pattern construction
 const PATTERNS = {
   email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
   phone: /^\+?[\d\s\-\(\)]+$/,
-  url: /^https?:\/\/[^\s/$.?#].[^\s]*$/i
+  url: /^https?:\/\/[^\s/$.?#].[^\s]*$/i,
 };
 
 // Safe usage
@@ -136,14 +142,16 @@ if (userPattern.length > 100) {
 ### Safe Alternatives
 
 1. **Pre-defined Patterns**
+
    ```typescript
    const SAFE_PATTERNS = {
      email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-     uuid: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+     uuid: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
    };
    ```
 
 2. **Input Escaping**
+
    ```typescript
    function escapeRegex(string: string): string {
      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -160,25 +168,27 @@ if (userPattern.length > 100) {
 
 ## Common ReDoS Patterns
 
-| Pattern | Risk | Example | Safe Alternative |
-|---------|------|---------|------------------|
-| `(a+)+` | Critical | `/(a+)+b/` | `/a+b/` |
-| `(a*)*` | Critical | `/(a*)*b/` | `/a*b/` |
-| `(a\|b)*` | High | Complex alternations | Simplify |
-| `.*` | Medium | Greedy matching | Be specific |
+| Pattern   | Risk     | Example              | Safe Alternative |
+| --------- | -------- | -------------------- | ---------------- |
+| `(a+)+`   | Critical | `/(a+)+b/`           | `/a+b/`          |
+| `(a*)*`   | Critical | `/(a*)*b/`           | `/a*b/`          |
+| `(a\|b)*` | High     | Complex alternations | Simplify         |
+| `.*`      | Medium   | Greedy matching      | Be specific      |
 
 ## Migration Guide
 
 ### Phase 1: Discovery
+
 ```javascript
 {
   rules: {
-    '@forge-js/detect-non-literal-regexp': 'warn'
+    'secure-coding/detect-non-literal-regexp': 'warn'
   }
 }
 ```
 
 ### Phase 2: Replace Dynamic Construction
+
 ```typescript
 // Replace dynamic RegExp
 new RegExp(userInput) → PATTERNS[userChoice]
@@ -188,24 +198,25 @@ new RegExp(escapeRegex(userInput))
 ```
 
 ### Phase 3: Test Performance
+
 ```typescript
 // Test with potentially malicious inputs
 const maliciousInputs = [
-  'a'.repeat(10000) + 'b',  // Triggers backtracking
-  '(a+)+b'.repeat(1000),    // Complex patterns
-  '[a-z]*'.repeat(100)      // Nested quantifiers
+  'a'.repeat(10000) + 'b', // Triggers backtracking
+  '(a+)+b'.repeat(1000), // Complex patterns
+  '[a-z]*'.repeat(100), // Nested quantifiers
 ];
 ```
 
 ## Comparison with Alternatives
 
-| Feature | detect-non-literal-regexp | eslint-plugin-security | eslint-plugin-sonarjs |
-|---------|---------------------------|------------------------|----------------------|
-| **ReDoS Detection** | ✅ Yes | ⚠️ Limited | ⚠️ Limited |
-| **CWE Reference** | ✅ CWE-400 included | ⚠️ Limited | ⚠️ Limited |
-| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
-| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
-| **Fix Suggestions** | ✅ Detailed | ⚠️ Basic | ⚠️ Basic |
+| Feature             | detect-non-literal-regexp | eslint-plugin-security | eslint-plugin-sonarjs |
+| ------------------- | ------------------------- | ---------------------- | --------------------- |
+| **ReDoS Detection** | ✅ Yes                    | ⚠️ Limited             | ⚠️ Limited            |
+| **CWE Reference**   | ✅ CWE-400 included       | ⚠️ Limited             | ⚠️ Limited            |
+| **LLM-Optimized**   | ✅ Yes                    | ❌ No                  | ❌ No                 |
+| **ESLint MCP**      | ✅ Optimized              | ❌ No                  | ❌ No                 |
+| **Fix Suggestions** | ✅ Detailed               | ⚠️ Basic               | ⚠️ Basic              |
 
 ## Related Rules
 

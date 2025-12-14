@@ -1,0 +1,48 @@
+# no-credentials-in-query-params
+
+> Disallow credentials in URL query parameters
+
+## Rule Details
+
+This rule disallow credentials in url query parameters.
+
+**OWASP Mobile Top 10:** M1  
+**CWE:** [CWE-598](https://cwe.mitre.org/data/definitions/598.html)  
+**Severity:** error
+
+## Examples
+
+### ❌ Incorrect
+
+```javascript
+const url = '/api/login?username=user&password=pass123'
+
+fetch('/api?token=abc123&action=delete')
+```
+
+### ✅ Correct
+
+```javascript
+const url = '/api/users?page=1&limit=10'
+
+fetch('/search?q=hello&sort=date')
+```
+
+## When Not To Use It
+
+This rule should be enabled for all mobile and web applications to ensure security best practices.
+
+## Further Reading
+
+- [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
+- [CWE-598 Details](https://cwe.mitre.org/data/definitions/598.html)
+
+## Related Rules
+
+- See other mobile security rules in this plugin
+
+---
+
+**Category:** Mobile Security  
+**Type:** Problem  
+**Recommended:** Yes

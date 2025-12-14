@@ -8,16 +8,23 @@ Detects zip slip/archive extraction vulnerabilities. This rule is part of [`esli
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-22 (Path Traversal) |
-| **Severity** | High (CVSS 8.1) |
-| **Auto-Fix** | 💡 Suggestions available |
-| **Category** | Path & File Security |
+| Aspect            | Details                                                                   |
+| ----------------- | ------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) (Path Traversal) |
+| **Severity**      | High (CVSS 8.1)                                                           |
+| **Auto-Fix**      | 💡 Suggestions available                                                  |
+| **Category**      | Path & File Security                                                      |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Zip Slip is a form of directory traversal vulnerability that occurs during archive extraction. It allows an attacker to create files outside of the intended extraction directory by including directory traversal characters (e.g., `../`) in the filenames within the archive.
+
+**Risk:** An attacker can overwrite critical system files, configuration files, or application source code. This can lead to Remote Code Execution (RCE) if they overwrite an executable or a file that the application loads.
 
 ## Rule Details
 
 Zip slip vulnerabilities occur when extracting archives without properly validating file paths. Attackers can include files with path traversal sequences like `../` to write files outside the intended extraction directory, potentially:
+
 - Overwrite critical system files
 - Plant backdoors or web shells
 - Replace application binaries
@@ -25,11 +32,11 @@ Zip slip vulnerabilities occur when extracting archives without properly validat
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| 📂 **File Overwrite** | System compromise | Validate extraction paths |
-| 🚪 **Backdoor** | Persistent access | Use safe extraction libraries |
-| ⚙️ **Config Tampering** | Application hijacking | Sandbox extraction directory |
+| Issue                   | Impact                | Solution                      |
+| ----------------------- | --------------------- | ----------------------------- |
+| 📂 **File Overwrite**   | System compromise     | Validate extraction paths     |
+| 🚪 **Backdoor**         | Persistent access     | Use safe extraction libraries |
+| ⚙️ **Config Tampering** | Application hijacking | Sandbox extraction directory  |
 
 ## Examples
 
@@ -57,12 +64,12 @@ tar.extract({ file: uploadedTar, cwd: targetDir });
 for (const entry of archive.entries()) {
   const targetPath = path.join(targetDir, entry.name);
   const realTarget = path.normalize(targetPath);
-  
+
   // Ensure path stays within target directory
   if (!realTarget.startsWith(path.resolve(targetDir) + path.sep)) {
     throw new Error('Path traversal detected');
   }
-  
+
   fs.writeFileSync(realTarget, entry.getData());
 }
 
@@ -91,11 +98,11 @@ zip.extractAllTo(targetDir, true, true); // With overwrite protection
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `archiveFunctions` | `string[]` | `['extract', 'extractAll']` | Archive extraction functions to check |
-| `pathValidationFunctions` | `string[]` | `['validatePath']` | Path validation functions |
-| `safeLibraries` | `string[]` | `[]` | Libraries with safe extraction |
+| Option                    | Type       | Default                     | Description                           |
+| ------------------------- | ---------- | --------------------------- | ------------------------------------- |
+| `archiveFunctions`        | `string[]` | `['extract', 'extractAll']` | Archive extraction functions to check |
+| `pathValidationFunctions` | `string[]` | `['validatePath']`          | Path validation functions             |
+| `safeLibraries`           | `string[]` | `[]`                        | Libraries with safe extraction        |
 
 ## Error Message Format
 
@@ -114,5 +121,3 @@ zip.extractAllTo(targetDir, true, true); // With overwrite protection
 
 - [`detect-non-literal-fs-filename`](./detect-non-literal-fs-filename.md) - Path traversal in fs operations
 - [`no-toctou-vulnerability`](./no-toctou-vulnerability.md) - Race condition vulnerabilities
-
-

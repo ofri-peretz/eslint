@@ -2,20 +2,26 @@
 
 > **Keywords:** hardcoded credentials, CWE-798, security, ESLint rule, API keys, passwords, tokens, secrets, environment variables, secret management, OWASP, credential security, auto-fix, LLM-optimized, code security
 
-Detects hardcoded passwords, API keys, tokens, and other sensitive credentials in source code. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages that AI assistants can automatically fix.
+Detects hardcoded passwords, API keys, tokens, and other sensitive credentials in source code. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
 ⚠️ This rule **_warns_** by default in the `recommended` config.
 
 ## Quick Summary
 
-| Aspect            | Details                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
-| **CWE Reference** | CWE-798 (Use of Hard-coded Credentials)                                          |
-| **Severity**      | Critical (security vulnerability)                                                |
-| **Auto-Fix**      | ✅ Yes (suggests environment variables or secret managers)                       |
-| **Category**      | Security                                                                         |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                          |
-| **Best For**      | All applications handling sensitive data, API integrations, database connections |
+| Aspect            | Details                                                                                    |
+| ----------------- | ------------------------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-798](https://cwe.mitre.org/data/definitions/798.html) (Use of Hard-coded Credentials) |
+| **Severity**      | Critical (security vulnerability)                                                          |
+| **Auto-Fix**      | ✅ Yes (suggests environment variables or secret managers)                                 |
+| **Category**      | Security                                                                                   |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                                    |
+| **Best For**      | All applications handling sensitive data, API integrations, database connections           |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Embedding sensitive credentials (like passwords, API keys, or database connection strings) directly in the source code.
+
+**Risk:** This leads to credential exposure in version control systems, making them accessible to any developer with repository access or attackers if the code is leaked. It also makes credential rotation difficult and error-prone.
 
 ## Rule Details
 
@@ -87,7 +93,7 @@ const s3 = new AWS.S3(); // Uses IAM role
 ```javascript
 {
   rules: {
-    '@forge-js/llm-optimized/no-hardcoded-credentials': ['error', {
+    'secure-coding/no-hardcoded-credentials': ['error', {
       ignorePatterns: ['^test-'],           // Ignore test credentials
       allowInTests: false,                  // Allow in test files
       minLength: 8,                         // Minimum credential length
@@ -117,7 +123,7 @@ const s3 = new AWS.S3(); // Uses IAM role
 ```javascript
 {
   rules: {
-    '@forge-js/llm-optimized/no-hardcoded-credentials': ['error', {
+    'secure-coding/no-hardcoded-credentials': ['error', {
       ignorePatterns: ['^test-', '^mock-', '^fake-']
     }]
   }
@@ -129,7 +135,7 @@ const s3 = new AWS.S3(); // Uses IAM role
 ```javascript
 {
   rules: {
-    '@forge-js/llm-optimized/no-hardcoded-credentials': ['error', {
+    'secure-coding/no-hardcoded-credentials': ['error', {
       allowInTests: true  // Allows credentials in .test.ts and .spec.ts files
     }]
   }

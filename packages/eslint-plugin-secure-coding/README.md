@@ -6,15 +6,15 @@
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://www.npmjs.com/package/eslint-plugin-secure-coding)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> A comprehensive, feature-based security ESLint plugin with **45+ rules** mapped to OWASP Top 10, CWE, and CVSS, featuring LLM-optimized (MCP-ready) messages that guide developers toward secure code in enterprise environments.
+> A comprehensive, feature-based security ESLint plugin with **89 rules** mapped to OWASP Top 10 2021, **OWASP Mobile Top 10 2024**, CWE, and CVSS, featuring LLM-optimized (MCP-ready) messages that guide developers toward secure code in enterprise environments.
 
 ---
 
 ## 💡 What you get
 
-- **Feature-based coverage:** 45+ rules grouped by attack surface (injection, crypto, auth, cookies, headers, resource limits, platform specifics).
+- **Feature-based coverage:** 89 rules grouped by attack surface (injection, crypto, auth, cookies, headers, mobile security, resource limits, platform specifics).
 - **LLM-optimized & MCP-ready:** Structured 2-line messages with CWE + OWASP + CVSS + concrete fixes so humans _and_ AI auto-fixers stay aligned.
-- **Standards aligned:** OWASP Top 10, CWE tagging, CVSS scoring in every finding for compliance mapping.
+- **Standards aligned:** OWASP Top 10 Web + Mobile, CWE tagging, CVSS scoring in every finding for compliance mapping.
 - **Tiered presets:** `recommended`, `strict`, `owasp-top-10` for fast policy rollout.
 - **False-positive reduction:** Sanitizer awareness, annotations, ORM patterns, and safe-library detection keep noise low for org rollouts.
 
@@ -29,7 +29,7 @@ src/api.ts
 **Each message includes:**
 
 - 🔒 **CWE reference** - vulnerability classification
-- 📋 **OWASP category** - Top 10 mapping (e.g., `OWASP:A03-Injection`)
+- 📋 **OWASP category** - Top 10 mapping (Web or Mobile)
 - 📊 **CVSS score** - severity rating (0.0-10.0)
 - 🏢 **Compliance tags** - affected frameworks (SOC2, PCI-DSS, HIPAA)
 - ✅ **Fix instruction** - exact code to write
@@ -37,7 +37,41 @@ src/api.ts
 
 ---
 
-## 🔐 45+ Security Rules
+## 📊 OWASP Coverage Matrix
+
+### OWASP Top 10 Web 2021
+
+| Category     | Description               | Rules                                                                                                                                                                                 |
+| ------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **A01:2021** | Broken Access Control     | `no-privilege-escalation`, `no-missing-authorization`, `no-zip-slip`, `detect-non-literal-fs-filename`                                                                                |
+| **A02:2021** | Cryptographic Failures    | `no-weak-crypto`, `no-http-urls`, `require-https-only`, `no-timing-attack`, `no-insufficient-random`, `no-hardcoded-credentials`                                                      |
+| **A03:2021** | Injection                 | `no-sql-injection`, `database-injection`, `detect-eval-with-expression`, `detect-child-process`, `no-xxe-injection`, `no-xpath-injection`, `no-ldap-injection`, `no-unsanitized-html` |
+| **A04:2021** | Insecure Design           | `no-improper-type-validation`, `detect-weak-password-validation`                                                                                                                      |
+| **A05:2021** | Security Misconfiguration | `no-missing-cors-check`, `no-missing-security-headers`, `no-permissive-cors`, `require-csp-headers`                                                                                   |
+| **A06:2021** | Vulnerable Components     | `detect-suspicious-dependencies`, `require-package-lock`, `require-dependency-integrity`                                                                                              |
+| **A07:2021** | Auth/Session Failures     | `no-missing-authentication`, `no-insecure-cookie-settings`, `no-missing-csrf-protection`, `no-weak-password-recovery`                                                                 |
+| **A08:2021** | Software/Data Integrity   | `no-unsafe-deserialization`, `no-unsafe-dynamic-require`                                                                                                                              |
+| **A09:2021** | Security Logging          | `no-sensitive-data-exposure`, `no-pii-in-logs`                                                                                                                                        |
+| **A10:2021** | SSRF                      | `no-unvalidated-url-input`, `require-url-validation`                                                                                                                                  |
+
+### OWASP Mobile Top 10 2024
+
+| Category | Description                    | Rules                                                                                                                                            |
+| -------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **M1**   | Improper Credential Usage      | `no-credentials-in-storage-api`, `no-hardcoded-credentials`                                                                                      |
+| **M2**   | Inadequate Supply Chain        | `detect-suspicious-dependencies`, `require-package-lock`, `require-dependency-integrity`                                                         |
+| **M3**   | Insecure Authentication        | `no-client-side-auth-logic`, `detect-weak-password-validation`                                                                                   |
+| **M4**   | Insufficient Input/Output      | `no-unvalidated-deeplinks`, `require-mime-type-validation`, `require-url-validation`, `no-arbitrary-file-access`                                 |
+| **M5**   | Insecure Communication         | `no-allow-arbitrary-loads`, `no-http-urls`, `require-https-only`, `no-disabled-certificate-validation`                                           |
+| **M6**   | Inadequate Privacy             | `no-pii-in-logs`, `no-tracking-without-consent`, `no-sensitive-data-in-analytics`, `require-data-minimization`                                   |
+| **M7**   | Insufficient Binary Protection | `no-debug-code-in-production`, `require-code-minification`                                                                                       |
+| **M8**   | Security Misconfiguration      | `no-verbose-error-messages`, `require-secure-defaults`                                                                                           |
+| **M9**   | Insecure Data Storage          | `no-sensitive-data-in-cache`, `no-data-in-temp-storage`, `require-secure-deletion`, `require-storage-encryption`, `no-unencrypted-local-storage` |
+| **M10**  | Insufficient Crypto            | `no-weak-crypto`, `require-credential-storage`                                                                                                   |
+
+---
+
+## 🔐 89 Security Rules
 
 💼 = Set in `recommended` | ⚠️ = Warns in `recommended` | 🔧 = Auto-fixable | 💡 = Suggestions
 
@@ -56,6 +90,41 @@ src/api.ts
 | [no-ldap-injection](./docs/rules/no-ldap-injection.md)                     | CWE-90  | A03   | 9.8  | Prevent LDAP injection attacks                  | 💼  |     |     |     |
 | [no-directive-injection](./docs/rules/no-directive-injection.md)           | CWE-94  | A03   | 8.8  | Prevent template directive injection            | 💼  |     |     |     |
 | [no-format-string-injection](./docs/rules/no-format-string-injection.md)   | CWE-134 | A03   | 9.8  | Prevent format string vulnerabilities           | 💼  |     |     |     |
+
+### Mobile Security (30 rules)
+
+| Rule                                 | CWE     | OWASP Mobile | Description                         |
+| ------------------------------------ | ------- | ------------ | ----------------------------------- |
+| `no-http-urls`                       | CWE-319 | M5           | Prevent insecure HTTP URLs          |
+| `no-hardcoded-credentials`           | CWE-798 | M1           | Detect hardcoded secrets            |
+| `no-credentials-in-storage-api`      | CWE-522 | M1           | Prevent credentials in localStorage |
+| `no-credentials-in-query-params`     | CWE-598 | M1           | Detect credentials in URLs          |
+| `no-allow-arbitrary-loads`           | CWE-295 | M5           | Prevent insecure ATS configuration  |
+| `no-disabled-certificate-validation` | CWE-295 | M5           | Detect disabled cert validation     |
+| `require-https-only`                 | CWE-319 | M5           | Enforce HTTPS-only connections      |
+| `require-network-timeout`            | CWE-400 | M5           | Require network timeouts            |
+| `detect-weak-password-validation`    | CWE-521 | M3           | Detect weak password requirements   |
+| `no-client-side-auth-logic`          | CWE-602 | M3           | Prevent client-side auth            |
+| `no-hardcoded-session-tokens`        | CWE-798 | M3           | Detect hardcoded session tokens     |
+| `no-unvalidated-deeplinks`           | CWE-939 | M4           | Require deeplink validation         |
+| `require-url-validation`             | CWE-601 | M4           | Require URL validation              |
+| `require-mime-type-validation`       | CWE-434 | M4           | Require MIME type validation        |
+| `no-arbitrary-file-access`           | CWE-22  | M4           | Prevent path traversal              |
+| `no-pii-in-logs`                     | CWE-532 | M6           | Prevent PII in logs                 |
+| `no-tracking-without-consent`        | CWE-359 | M6           | Require tracking consent            |
+| `no-sensitive-data-in-analytics`     | CWE-359 | M6           | Prevent PII in analytics            |
+| `require-data-minimization`          | CWE-213 | M6           | Identify excessive data collection  |
+| `no-debug-code-in-production`        | CWE-489 | M7           | Detect debug code                   |
+| `require-code-minification`          | CWE-656 | M7           | Require minification config         |
+| `no-verbose-error-messages`          | CWE-209 | M8           | Prevent stack trace exposure        |
+| `require-secure-defaults`            | CWE-276 | M8           | Require secure default configs      |
+| `no-sensitive-data-in-cache`         | CWE-524 | M9           | Prevent sensitive cache data        |
+| `no-data-in-temp-storage`            | CWE-312 | M9           | Prevent sensitive temp data         |
+| `require-secure-deletion`            | CWE-459 | M9           | Require secure data deletion        |
+| `require-storage-encryption`         | CWE-311 | M9           | Require encrypted storage           |
+| `no-unencrypted-local-storage`       | CWE-312 | M9           | Prevent unencrypted local storage   |
+| `require-credential-storage`         | CWE-522 | M10          | Require secure credential storage   |
+| `no-exposed-debug-endpoints`         | CWE-489 | M8           | Prevent exposed debug endpoints     |
 
 ### Path & File Security (3 rules)
 
@@ -174,17 +243,17 @@ npx eslint .
 
 ## 📋 Available Presets (policy tiers)
 
-| Preset             | Description                                            |
-| ------------------ | ------------------------------------------------------ |
-| **`recommended`**  | Balanced security for most projects (45+ rules, mixed) |
-| **`strict`**       | Maximum security enforcement (all rules as errors)     |
-| **`owasp-top-10`** | OWASP Top 10 2021 compliance focused                   |
+| Preset             | Description                                           |
+| ------------------ | ----------------------------------------------------- |
+| **`recommended`**  | Balanced security for most projects (89 rules, mixed) |
+| **`strict`**       | Maximum security enforcement (all rules as errors)    |
+| **`owasp-top-10`** | OWASP Top 10 2021 compliance focused                  |
 
 ---
 
 ## 📚 Documentation
 
-- **[Rules Reference](./docs/RULES.md)** - Complete list of all 45+ rules with configuration options
+- **[Rules Reference](./docs/RULES.md)** - Complete list of all 89 rules with configuration options
 
 ---
 

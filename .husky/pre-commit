@@ -1,11 +1,10 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+# Ensure nvm-installed node/pnpm is in PATH
+export PATH="$HOME/.nvm/versions/node/v20.19.5/bin:$PATH"
 
-# Auto-fix linting issues for all projects
-echo "🔧 Running lint with --fix for all projects..."
-pnpm nx run-many -t lint --all --fix
+# Auto-fix linting issues for affected projects only
+echo "🔧 Running lint with --fix for affected projects..."
+pnpm nx affected -t lint --fix
 
-# Run tests
-echo "🧪 Running tests..."
-pnpm nx run eslint-plugin:test
-
+# Run tests for affected projects only
+echo "🧪 Running tests for affected projects..."
+pnpm nx affected -t test

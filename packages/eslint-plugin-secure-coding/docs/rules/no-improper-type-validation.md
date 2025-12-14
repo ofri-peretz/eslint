@@ -8,16 +8,23 @@ Detects improper type validation in user input handling. This rule is part of [`
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-1287 (Improper Validation of Specified Type of Input) |
-| **Severity** | Medium (CVSS 5.3) |
-| **Auto-Fix** | 💡 Suggestions available |
-| **Category** | Input Validation & XSS |
+| Aspect            | Details                                                                                                       |
+| ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-1287](https://cwe.mitre.org/data/definitions/1287.html) (Improper Validation of Specified Type of Input) |
+| **Severity**      | Medium (CVSS 5.3)                                                                                             |
+| **Auto-Fix**      | 💡 Suggestions available                                                                                      |
+| **Category**      | Input Validation & XSS                                                                                        |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Improper type validation occurs when the application relies on weak or incorrect checks to verify the type of user input (e.g., using `typeof null` which returns `'object'`, or loose equality).
+
+**Risk:** Attackers can exploit type confusion to bypass logic checks, cause application crashes (DoS) by passing unexpected types (like `null` where an object is expected), or manipulate program flow in unexpected ways.
 
 ## Rule Details
 
 Improper type validation can lead to security vulnerabilities when user input is not properly validated. Attackers can bypass security checks using:
+
 - Type coercion tricks
 - Prototype pollution
 - `null` value confusion
@@ -25,11 +32,11 @@ Improper type validation can lead to security vulnerabilities when user input is
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| 🔓 **Bypass** | Security control evasion | Use proper type guards |
-| 🎭 **Confusion** | Unexpected behavior | Validate with schema libraries |
-| 💥 **Crash** | Denial of service | Check for null/undefined |
+| Issue            | Impact                   | Solution                       |
+| ---------------- | ------------------------ | ------------------------------ |
+| 🔓 **Bypass**    | Security control evasion | Use proper type guards         |
+| 🎭 **Confusion** | Unexpected behavior      | Validate with schema libraries |
+| 💥 **Crash**     | Denial of service        | Check for null/undefined       |
 
 ## Examples
 
@@ -105,11 +112,11 @@ if (result.success) {
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `userInputVariables` | `string[]` | `['req', 'request', 'input']` | User input variable patterns |
-| `safeTypeCheckFunctions` | `string[]` | `['Array.isArray']` | Safe type checking functions |
-| `allowInstanceofSameRealm` | `boolean` | `false` | Allow instanceof in same-realm contexts |
+| Option                     | Type       | Default                       | Description                             |
+| -------------------------- | ---------- | ----------------------------- | --------------------------------------- |
+| `userInputVariables`       | `string[]` | `['req', 'request', 'input']` | User input variable patterns            |
+| `safeTypeCheckFunctions`   | `string[]` | `['Array.isArray']`           | Safe type checking functions            |
+| `allowInstanceofSameRealm` | `boolean`  | `false`                       | Allow instanceof in same-realm contexts |
 
 ## Error Message Format
 
@@ -128,5 +135,3 @@ if (result.success) {
 
 - [`no-unvalidated-user-input`](./no-unvalidated-user-input.md) - Unvalidated user input
 - [`detect-object-injection`](./detect-object-injection.md) - Prototype pollution
-
-

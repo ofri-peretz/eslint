@@ -8,16 +8,23 @@ Detects buffer access beyond bounds. This rule is part of [`eslint-plugin-secure
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-126 (Buffer Over-read) |
-| **Severity** | High (CVSS 7.5) |
-| **Auto-Fix** | 💡 Suggestions available |
-| **Category** | Buffer, Memory & DoS |
+| Aspect            | Details                                                                       |
+| ----------------- | ----------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-126](https://cwe.mitre.org/data/definitions/126.html) (Buffer Over-read) |
+| **Severity**      | High (CVSS 7.5)                                                               |
+| **Auto-Fix**      | 💡 Suggestions available                                                      |
+| **Category**      | Buffer, Memory & DoS                                                          |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Buffer over-read occurs when a program reads from a buffer (memory) past the buffer's boundary or before its beginning.
+
+**Risk:** This can lead to the exposure of sensitive information residing in adjacent memory locations (Information Leakage), cause the application to crash (Denial of Service), or result in unexpected application behavior.
 
 ## Rule Details
 
 Buffer overread occurs when reading from buffers beyond their allocated length. This can lead to:
+
 - Information disclosure (reading adjacent memory)
 - Application crashes
 - Security vulnerabilities like Heartbleed
@@ -25,11 +32,11 @@ Buffer overread occurs when reading from buffers beyond their allocated length. 
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| 📤 **Info Leak** | Sensitive data exposure | Validate buffer indices |
-| 💥 **Crash** | Denial of service | Check bounds before access |
-| 🔓 **Security Bypass** | Memory corruption | Use safe buffer methods |
+| Issue                  | Impact                  | Solution                   |
+| ---------------------- | ----------------------- | -------------------------- |
+| 📤 **Info Leak**       | Sensitive data exposure | Validate buffer indices    |
+| 💥 **Crash**           | Denial of service       | Check bounds before access |
+| 🔓 **Security Bypass** | Memory corruption       | Use safe buffer methods    |
 
 ## Examples
 
@@ -99,11 +106,11 @@ function safeRead(buf: Buffer, offset: number): number | undefined {
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `bufferMethods` | `string[]` | `['readUInt8', 'slice']` | Buffer methods to check |
-| `boundsCheckFunctions` | `string[]` | `['validateIndex']` | Bounds checking functions |
-| `bufferTypes` | `string[]` | `['Buffer', 'Uint8Array']` | Buffer types to monitor |
+| Option                 | Type       | Default                    | Description               |
+| ---------------------- | ---------- | -------------------------- | ------------------------- |
+| `bufferMethods`        | `string[]` | `['readUInt8', 'slice']`   | Buffer methods to check   |
+| `boundsCheckFunctions` | `string[]` | `['validateIndex']`        | Bounds checking functions |
+| `bufferTypes`          | `string[]` | `['Buffer', 'Uint8Array']` | Buffer types to monitor   |
 
 ## Error Message Format
 
@@ -115,6 +122,7 @@ function safeRead(buf: Buffer, offset: number): number | undefined {
 ## Further Reading
 
 - **[CWE-126](https://cwe.mitre.org/data/definitions/126.html)** - Buffer over-read
+- **[OWASP Buffer Overflow](https://owasp.org/www-community/vulnerabilities/Buffer_Overflow)** - General buffer overflow info
 - **[Node.js Buffer](https://nodejs.org/api/buffer.html)** - Buffer documentation
 - **[Heartbleed](https://heartbleed.com/)** - Famous buffer overread vulnerability
 
@@ -122,5 +130,3 @@ function safeRead(buf: Buffer, offset: number): number | undefined {
 
 - [`no-unlimited-resource-allocation`](./no-unlimited-resource-allocation.md) - Unbounded allocations
 - [`detect-non-literal-fs-filename`](./detect-non-literal-fs-filename.md) - Path traversal
-
-

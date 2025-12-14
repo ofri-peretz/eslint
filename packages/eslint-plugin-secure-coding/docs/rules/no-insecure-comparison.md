@@ -2,20 +2,26 @@
 
 > **Keywords:** insecure comparison, CWE-697, security, ESLint rule, loose equality, type coercion, == vs ===, strict equality, JavaScript security, auto-fix, LLM-optimized, code security
 
-Detects insecure comparison operators (`==`, `!=`) that can lead to type coercion vulnerabilities. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages that AI assistants can automatically fix.
+Detects insecure comparison operators (`==`, `!=`) that can lead to type coercion vulnerabilities. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
 ⚠️ This rule **_warns_** by default in the `recommended` config.
 
 ## Quick Summary
 
-| Aspect            | Details                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
-| **CWE Reference** | CWE-697 (Incorrect Comparison)                                                   |
-| **Severity**      | High (security vulnerability)                                                  |
-| **Auto-Fix**      | ✅ Yes (replaces == with ===, != with !==)                                       |
-| **Category**      | Security                                                                         |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                          |
-| **Best For**      | All JavaScript/TypeScript applications, especially security-sensitive code     |
+| Aspect            | Details                                                                    |
+| ----------------- | -------------------------------------------------------------------------- |
+| **CWE Reference** | CWE-697 (Incorrect Comparison)                                             |
+| **Severity**      | High (security vulnerability)                                              |
+| **Auto-Fix**      | ✅ Yes (replaces == with ===, != with !==)                                 |
+| **Category**      | Security                                                                   |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                    |
+| **Best For**      | All JavaScript/TypeScript applications, especially security-sensitive code |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Insecure comparison occurs when using loose equality operators (`==` or `!=`) which perform type coercion before comparison.
+
+**Risk:** This can lead to logic bypasses where different values are treated as equal (e.g., `0 == "0"` or `[] == 0`). Attackers can often exploit this behavior to bypass authentication checks or authorization logic.
 
 ## Rule Details
 
@@ -23,12 +29,12 @@ Insecure comparison operators (`==`, `!=`) use type coercion, which can lead to 
 
 ### Why This Matters
 
-| Issue                 | Impact                              | Solution                   |
-| --------------------- | ----------------------------------- | -------------------------- |
-| 🔒 **Security**       | Type coercion can bypass checks    | Use strict equality (===)  |
-| 🐛 **Bugs**           | Unexpected type conversions         | Compare type and value     |
-| 🔐 **Reliability**    | Hard-to-debug issues                | Predictable comparisons    |
-| 📊 **Best Practice**  | Violates JavaScript best practices  | Always use strict equality |
+| Issue                | Impact                             | Solution                   |
+| -------------------- | ---------------------------------- | -------------------------- |
+| 🔒 **Security**      | Type coercion can bypass checks    | Use strict equality (===)  |
+| 🐛 **Bugs**          | Unexpected type conversions        | Compare type and value     |
+| 🔐 **Reliability**   | Hard-to-debug issues               | Predictable comparisons    |
+| 📊 **Best Practice** | Violates JavaScript best practices | Always use strict equality |
 
 ## Detection Patterns
 
@@ -43,12 +49,14 @@ The rule detects:
 
 ```typescript
 // Insecure comparison with type coercion
-if (user.id == userId) { // ❌ Type coercion
+if (user.id == userId) {
+  // ❌ Type coercion
   // Process user
 }
 
 // Insecure inequality
-if (value != null) { // ❌ Type coercion
+if (value != null) {
+  // ❌ Type coercion
   // Handle value
 }
 
@@ -60,12 +68,14 @@ const result = a == b ? 1 : 0; // ❌ Type coercion
 
 ```typescript
 // Strict equality - no type coercion
-if (user.id === userId) { // ✅ Type and value match
+if (user.id === userId) {
+  // ✅ Type and value match
   // Process user
 }
 
 // Strict inequality
-if (value !== null && value !== undefined) { // ✅ Explicit checks
+if (value !== null && value !== undefined) {
+  // ✅ Explicit checks
   // Handle value
 }
 
@@ -79,22 +89,22 @@ const result = a === b ? 1 : 0; // ✅ Type and value match
 
 ```json
 {
-  "@forge-js/llm-optimized/security/no-insecure-comparison": "warn"
+  "secure-coding/no-insecure-comparison": "warn"
 }
 ```
 
 ### Options
 
-| Option          | Type      | Default                          | Description                        |
-| --------------- | --------- | -------------------------------- | ----------------------------------- |
-| `allowInTests`  | `boolean` | `false`                          | Allow insecure comparison in tests  |
-| `ignorePatterns`| `string[]`| `[]`                             | Additional patterns to ignore       |
+| Option           | Type       | Default | Description                        |
+| ---------------- | ---------- | ------- | ---------------------------------- |
+| `allowInTests`   | `boolean`  | `false` | Allow insecure comparison in tests |
+| `ignorePatterns` | `string[]` | `[]`    | Additional patterns to ignore      |
 
 ### Example Configuration
 
 ```json
 {
-  "@forge-js/llm-optimized/security/no-insecure-comparison": [
+  "secure-coding/no-insecure-comparison": [
     "warn",
     {
       "allowInTests": true,
@@ -121,4 +131,3 @@ const result = a === b ? 1 : 0; // ✅ Type and value match
 - [CWE-697: Incorrect Comparison](https://cwe.mitre.org/data/definitions/697.html)
 - [MDN: Equality comparisons and sameness](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness)
 - [JavaScript Equality Table](https://dorey.github.io/JavaScript-Equality-Table/)
-

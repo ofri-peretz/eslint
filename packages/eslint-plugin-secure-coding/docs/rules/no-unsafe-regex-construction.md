@@ -2,18 +2,25 @@
 
 > **Keywords:** no unsafe regex construction, security, ESLint rule, JavaScript, TypeScript, CWE-400, CWE-185, ReDoS, injection
 
-ESLint Rule: no-unsafe-regex-construction with LLM-optimized suggestions and auto-fix capabilities.
+ESLint Rule: no-unsafe-regex-construction with LLM-optimized suggestions and auto-fix capabilities. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
 ## Quick Summary
 
-| Aspect          | Details                                     |
-| --------------- | ------------------------------------------- |
-| **Severity**    | Error (Security)                            |
-| **Auto-Fix**    | ❌ No                                       |
-| **Category**    | Security                                    |
-| **ESLint MCP**  | ✅ Optimized for ESLint MCP integration     |
-| **Best For**    | Production applications handling user input |
-| **Suggestions** | ✅ Advice on escaping input                 |
+| Aspect            | Details                                                                                   |
+| ----------------- | ----------------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-185](https://cwe.mitre.org/data/definitions/185.html) (Incorrect Regular Expression) |
+| **Severity**      | Error (Security)                                                                          |
+| **Auto-Fix**      | ❌ No                                                                                     |
+| **Category**      | Security                                                                                  |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                                   |
+| **Best For**      | Production applications handling user input                                               |
+| **Suggestions**   | ✅ Advice on escaping input                                                               |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Constructing regular expressions from untrusted or unvalidated user input.
+
+**Risk:** Attackers can inject malicious regex patterns (Regex Injection) or complex patterns that cause excessive backtracking (ReDoS), leading to Denial of Service. They might also alter the logic of the regex to bypass validations (e.g., changing a match standard to match _anything_).
 
 ## Rule Details
 
@@ -66,7 +73,7 @@ This rule accepts an options object:
 ```typescript
 {
   "rules": {
-    "security/no-unsafe-regex-construction": ["error", {
+    "secure-coding/no-unsafe-regex-construction": ["error", {
       "allowLiterals": false,           // Default: false. Allow new RegExp("fixed-string").
       "trustedEscapingFunctions": ["escapeRegex", "escape", "sanitize"], // Default list of safe functions.
       "maxPatternLength": 100           // Default: 100. Limit the length of dynamic patterns.

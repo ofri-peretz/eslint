@@ -1,0 +1,176 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Upload Coverage to Codecov
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# WORKFLOW PURPOSE: Upload test coverage stats to Codecov
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# This workflow runs all tests with coverage enabled and uploads the results
+# to Codecov for tracking and badge generation.
+#
+# Trigger: Manual (workflow_dispatch) or weekly schedule
+# Required Secret: CODECOV_TOKEN
+# ═══════════════════════════════════════════════════════════════════════════════
+
+on:
+    workflow_dispatch:
+        inputs:
+            project:
+                description: "Project to test (leave empty for all)"
+                required: false
+                type: string
+                default: ""
+    schedule:
+        # Run weekly on Monday at 6 AM UTC to keep coverage fresh
+        - cron: "0 6 * * 1"
+
+# Prevent concurrent runs
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+env:
+    NODE_VERSION: "20"
+    PNPM_VERSION: "10.18.3"
+
+jobs:
+    coverage:
+        name: 📊 Test Coverage
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        permissions:
+            contents: read
+
+        steps:
+            - name: 📥 Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: ⚙️ Setup pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: ${{ env.PNPM_VERSION }}
+
+            - name: ⚙️ Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: "pnpm"
+
+            - name: 📦 Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: 🗄️ Restore NX cache
+              uses: actions/cache@v4
+              with:
+                  path: .nx/cache
+                  key: nx-cache-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+                  restore-keys: |
+                      nx-cache-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+                      nx-cache-${{ runner.os }}-
+
+            # ═══════════════════════════════════════════════════════════════════════
+            # RUN TESTS WITH COVERAGE
+            # ═══════════════════════════════════════════════════════════════════════
+
+            - name: 🧪 Run Tests with Coverage
+              id: tests
+              continue-on-error: true
+              run: |
+                  PROJECT="${{ inputs.project }}"
+
+                  # Validate project input if provided
+                  if [ -n "$PROJECT" ]; then
+                    if ! pnpm nx show project "$PROJECT" >/dev/null 2>&1; then
+                      echo "❌ Invalid project: $PROJECT"
+                      echo "Available projects:"
+                      pnpm nx show projects
+                      exit 1
+                    fi
+                    echo "📊 Running tests with coverage for: $PROJECT"
+                    pnpm nx test "$PROJECT" -c ci --coverage --verbose || echo "⚠️ Tests completed with issues"
+                  else
+                    echo "📊 Running tests with coverage for all packages..."
+                    pnpm nx run-many -t test --all -c ci --coverage --verbose --nxBail=false || echo "⚠️ Some tests may have failed"
+                  fi
+              env:
+                  NX_SKIP_NX_CLOUD: "true"
+
+            # ═══════════════════════════════════════════════════════════════════════
+            # UPLOAD TO CODECOV
+            # ═══════════════════════════════════════════════════════════════════════
+
+            - name: 📤 Upload coverage to Codecov
+              uses: codecov/codecov-action@v5
+              with:
+                  token: ${{ secrets.CODECOV_TOKEN }}
+                  fail_ci_if_error: false
+                  verbose: true
+                  flags: unittests
+                  name: codecov-${{ github.run_id }}
+                  # Explicit paths work better than globs
+                  files: |
+                      ./packages/eslint-plugin-secure-coding/coverage/lcov.info
+                      ./packages/eslint-plugin-agentic-security/coverage/lcov.info
+                      ./packages/eslint-plugin-openai-security/coverage/lcov.info
+                      ./packages/eslint-plugin-anthropic-security/coverage/lcov.info
+                      ./packages/eslint-plugin-google-ai-security/coverage/lcov.info
+                      ./packages/eslint-plugin-vercel-ai-security/coverage/lcov.info
+
+            # ═══════════════════════════════════════════════════════════════════════
+            # COVERAGE SUMMARY
+            # ═══════════════════════════════════════════════════════════════════════
+
+            - name: 📊 Generate Coverage Summary
+              if: always()
+              run: |
+                  echo "## 📊 Coverage Report" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "**Run triggered by:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+
+                  echo "### Packages with Coverage:" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+
+                  # List packages with coverage
+                  FOUND_COVERAGE=false
+                  for dir in packages/*/coverage; do
+                    if [ -d "$dir" ] && [ -f "$dir/lcov.info" ]; then
+                      FOUND_COVERAGE=true
+                      PKG=$(echo "$dir" | cut -d'/' -f2)
+                      
+                      # Calculate coverage percentage
+                      LINES_FOUND=$(grep -c "^DA:" "$dir/lcov.info" 2>/dev/null || echo "0")
+                      LINES_HIT=$(grep "^DA:" "$dir/lcov.info" 2>/dev/null | grep -v ",0$" | wc -l | tr -d ' ' || echo "0")
+                      
+                      if [ "$LINES_FOUND" -gt 0 ]; then
+                        PCT=$((LINES_HIT * 100 / LINES_FOUND))
+                        if [ "$PCT" -ge 80 ]; then
+                          EMOJI="🟢"
+                        elif [ "$PCT" -ge 60 ]; then
+                          EMOJI="🟡"
+                        else
+                          EMOJI="🔴"
+                        fi
+                        echo "- $EMOJI **$PKG**: ${PCT}% ($LINES_HIT/$LINES_FOUND lines)" >> $GITHUB_STEP_SUMMARY
+                      fi
+                    fi
+                  done
+
+                  if [ "$FOUND_COVERAGE" = "false" ]; then
+                    echo "⚠️ No coverage reports found" >> $GITHUB_STEP_SUMMARY
+                  fi
+
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "📈 [View on Codecov](https://codecov.io/gh/${{ github.repository }})" >> $GITHUB_STEP_SUMMARY
+
+            - name: 📤 Upload coverage artifacts
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: coverage-reports-${{ github.run_id }}
+                  path: |
+                      packages/*/coverage/
+                  retention-days: 7
+                  if-no-files-found: ignore

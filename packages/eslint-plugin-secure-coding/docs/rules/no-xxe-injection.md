@@ -8,16 +8,23 @@ Detects XML External Entity (XXE) injection vulnerabilities. This rule is part o
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-611 (XXE Injection) |
-| **Severity** | Critical (CVSS 9.1) |
-| **Auto-Fix** | ❌ Manual fix required |
-| **Category** | Injection Prevention |
+| Aspect            | Details                                                                    |
+| ----------------- | -------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-611](https://cwe.mitre.org/data/definitions/611.html) (XXE Injection) |
+| **Severity**      | Critical (CVSS 9.1)                                                        |
+| **Auto-Fix**      | ❌ Manual fix required                                                     |
+| **Category**      | Injection Prevention                                                       |
+
+## Vulnerability and Risk
+
+**Vulnerability:** XML External Entity (XXE) vulnerabilities occur when XML input containing a reference to an external entity is processed by a weakly configured XML parser.
+
+**Risk:** An attacker can use XXE to access local files on the server (Local File Inclusion), perform Server-Side Request Forgery (SSRF) attacks, or cause Denial of Service (DoS) via "Billion Laughs" attacks (recursive entity expansion).
 
 ## Rule Details
 
 XXE injection occurs when XML parsers process external entity references, allowing attackers to:
+
 - Read sensitive local files (`/etc/passwd`, config files)
 - Make HTTP requests to internal services (SSRF)
 - Cause DoS through entity expansion ("billion laughs" attack)
@@ -25,11 +32,11 @@ XXE injection occurs when XML parsers process external entity references, allowi
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
+| Issue                  | Impact                  | Solution                  |
+| ---------------------- | ----------------------- | ------------------------- |
 | 📂 **File Disclosure** | Sensitive data exposure | Disable external entities |
-| 🌐 **SSRF** | Internal network access | Use safe XML parsers |
-| 💣 **DoS** | Service unavailability | Limit entity expansion |
+| 🌐 **SSRF**            | Internal network access | Use safe XML parsers      |
+| 💣 **DoS**             | Service unavailability  | Limit entity expansion    |
 
 ## Examples
 
@@ -62,9 +69,9 @@ const doc = parser.parseFromString(sanitizedXml, 'text/xml');
 
 // Validate and sanitize XML input
 const safeXml = validateXml(userInput);
-const data = xmlParser.parse(safeXml, { 
-  noent: false,           // Disable entity resolution
-  resolveExternals: false // Disable external references
+const data = xmlParser.parse(safeXml, {
+  noent: false, // Disable entity resolution
+  resolveExternals: false, // Disable external references
 });
 
 // Use JSON instead of XML when possible
@@ -86,10 +93,10 @@ const data = JSON.parse(userInput);
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `safeParserOptions` | `string[]` | `['noent', 'resolveExternals']` | Options that indicate safe configuration |
-| `xmlValidationFunctions` | `string[]` | `['validateXml', 'sanitizeXml']` | Functions that validate XML input |
+| Option                   | Type       | Default                          | Description                              |
+| ------------------------ | ---------- | -------------------------------- | ---------------------------------------- |
+| `safeParserOptions`      | `string[]` | `['noent', 'resolveExternals']`  | Options that indicate safe configuration |
+| `xmlValidationFunctions` | `string[]` | `['validateXml', 'sanitizeXml']` | Functions that validate XML input        |
 
 ## Error Message Format
 
@@ -108,5 +115,3 @@ const data = JSON.parse(userInput);
 
 - [`no-xpath-injection`](./no-xpath-injection.md) - XPath injection prevention
 - [`no-sql-injection`](./no-sql-injection.md) - SQL injection prevention
-
-

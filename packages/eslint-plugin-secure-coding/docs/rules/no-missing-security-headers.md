@@ -2,18 +2,24 @@
 
 > **Keywords:** no missing security headers, security, ESLint rule, JavaScript, TypeScript, CWE-693
 
-ESLint Rule: no-missing-security-headers with LLM-optimized suggestions and auto-fix capabilities.
+ESLint Rule: no-missing-security-headers. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
 ## Quick Summary
 
-| Aspect         | Details                                      |
-| -------------- | -------------------------------------------- |
-| **Severity**   | Error (code quality)                        |
-| **Auto-Fix**   | ❌ No                                        |
-| **Category**   | Security |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration      |
-| **Best For**   | Production applications                      |
-| **Suggestions** | ✅ 4 available           |
+| Aspect            | Details                                                                                   |
+| ----------------- | ----------------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-693](https://cwe.mitre.org/data/definitions/693.html) (Protection Mechanism Failure) |
+| **Severity**      | Medium (security vulnerability)                                                           |
+| **Auto-Fix**      | ❌ No                                                                                     |
+| **Category**      | Security                                                                                  |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                                   |
+| **Best For**      | All web applications                                                                      |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Missing security headers (like HSTS, X-Frame-Options, Content-Security-Policy) leaves the application vulnerable to various attacks.
+
+**Risk:** Without these headers, applications are more susceptible to Man-in-the-Middle (MITM) attacks (missing HSTS), Clickjacking (missing X-Frame-Options), and Cross-Site Scripting (XSS) or Data Injection (missing CSP).
 
 ## Rule Details
 
@@ -45,11 +51,11 @@ flowchart TD
 
 ### Why This Matters
 
-| Issue                | Impact                                | Solution                    |
-| -------------------- | ------------------------------------- | --------------------------- |
+| Issue                        | Impact           | Solution            |
+| ---------------------------- | ---------------- | ------------------- |
 | 🔒 **Security/Code Quality** | [Specific issue] | [Solution approach] |
-| 🐛 **Maintainability** | [Impact] | [Fix] |
-| ⚡ **Performance**   | [Impact] | [Optimization] |
+| 🐛 **Maintainability**       | [Impact]         | [Fix]               |
+| ⚡ **Performance**           | [Impact]         | [Optimization]      |
 
 ## Configuration
 
@@ -78,7 +84,7 @@ flowchart TD
 export default [
   {
     rules: {
-      '@forge-js/no-missing-security-headers': 'error',
+      'secure-coding/no-missing-security-headers': 'error',
     },
   },
 ];
@@ -97,4 +103,5 @@ export default [
 
 ## Further Reading
 
-- **[Reference](https://example.com)** - Description
+- **[OWASP Secure Headers Project](https://owasp.org/www-project-secure-headers/)** - Best practices
+- **[CWE-693: Protection Mechanism Failure](https://cwe.mitre.org/data/definitions/693.html)** - Official CWE entry

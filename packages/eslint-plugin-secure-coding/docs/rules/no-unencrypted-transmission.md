@@ -2,20 +2,26 @@
 
 > **Keywords:** unencrypted, CWE-319, security, ESLint rule, HTTP, HTTPS, encryption, TLS, SSL, data transmission, LLM-optimized, code security
 
-Detects unencrypted data transmission (HTTP vs HTTPS, plain text protocols). This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages that AI assistants can automatically fix.
+Detects unencrypted data transmission (HTTP vs HTTPS, plain text protocols). This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
 💼 This rule is set to **error** by default in the `recommended` config.
 
 ## Quick Summary
 
-| Aspect            | Details                                                                          |
-| ----------------- | -------------------------------------------------------------------------------- |
-| **CWE Reference** | CWE-319 (Cleartext Transmission of Sensitive Information)                      |
-| **Severity**      | HIGH (security vulnerability)                                                   |
-| **Auto-Fix**      | ✅ Yes (replaces HTTP with HTTPS, WS with WSS, etc.)                           |
-| **Category**      | Security                                                                         |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                          |
-| **Best For**      | All applications making network requests, APIs, database connections          |
+| Aspect            | Details                                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-319](https://cwe.mitre.org/data/definitions/319.html) (Cleartext Transmission of Sensitive Information) |
+| **Severity**      | HIGH (security vulnerability)                                                                                |
+| **Auto-Fix**      | ✅ Yes (replaces HTTP with HTTPS, WS with WSS, etc.)                                                         |
+| **Category**      | Security                                                                                                     |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                                                      |
+| **Best For**      | All applications making network requests, APIs, database connections                                         |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Transmission of sensitive data over unencrypted protocols (HTTP) allows unauthorized parties to intercept or modify the data in transit.
+
+**Risk:** Man-in-the-Middle (MitM) attacks can capture sensitive information like authentication tokens, passwords, or personal data. Attackers can also inject malicious content into the response.
 
 ## Detection Flow
 
@@ -45,7 +51,7 @@ flowchart TD
     I --> N[❌ Report: Use MongoDB+srv]
     J --> O[❌ Report: Use Redis TLS]
     K --> P[❌ Report: Use MySQL SSL]
-    
+
     style C fill:#d1fae5,stroke:#059669,stroke-width:2px
     style E fill:#d1fae5,stroke:#059669,stroke-width:2px
     style L fill:#fee2e2,stroke:#dc2626,stroke-width:2px
@@ -57,12 +63,12 @@ flowchart TD
 
 ## Why This Matters
 
-| Issue                 | Impact                              | Solution                   |
-| --------------------- | ----------------------------------- | -------------------------- |
-| 🔒 **Man-in-Middle**  | Data intercepted in transit         | Use HTTPS/TLS              |
-| 🔐 **Data Breach**    | Sensitive data exposed              | Encrypt all transmissions  |
-| 🍪 **Compliance**     | Violates security standards         | Enforce encrypted protocols|
-| 📊 **Best Practice**  | All external connections need TLS   | Use secure protocols       |
+| Issue                | Impact                            | Solution                    |
+| -------------------- | --------------------------------- | --------------------------- |
+| 🔒 **Man-in-Middle** | Data intercepted in transit       | Use HTTPS/TLS               |
+| 🔐 **Data Breach**   | Sensitive data exposed            | Encrypt all transmissions   |
+| 🍪 **Compliance**    | Violates security standards       | Enforce encrypted protocols |
+| 📊 **Best Practice** | All external connections need TLS | Use secure protocols        |
 
 ## Detection Patterns
 
@@ -80,33 +86,33 @@ The rule detects:
 
 ```typescript
 // Unencrypted transmission
-fetch("http://api.example.com/data"); // ❌ HTTP instead of HTTPS
+fetch('http://api.example.com/data'); // ❌ HTTP instead of HTTPS
 
-const ws = new WebSocket("ws://socket.example.com"); // ❌ WS instead of WSS
+const ws = new WebSocket('ws://socket.example.com'); // ❌ WS instead of WSS
 
-const mongoUrl = "mongodb://localhost:27017/db"; // ❌ MongoDB without encryption
+const mongoUrl = 'mongodb://localhost:27017/db'; // ❌ MongoDB without encryption
 
-const redisUrl = "redis://localhost:6379"; // ❌ Redis without TLS
+const redisUrl = 'redis://localhost:6379'; // ❌ Redis without TLS
 
-const mysqlUrl = "mysql://user:pass@localhost/db"; // ❌ MySQL without SSL
+const mysqlUrl = 'mysql://user:pass@localhost/db'; // ❌ MySQL without SSL
 ```
 
 ### ✅ Correct
 
 ```typescript
 // Encrypted transmission
-fetch("https://api.example.com/data"); // ✅ HTTPS
+fetch('https://api.example.com/data'); // ✅ HTTPS
 
-const ws = new WebSocket("wss://socket.example.com"); // ✅ WSS
+const ws = new WebSocket('wss://socket.example.com'); // ✅ WSS
 
-const mongoUrl = "mongodb+srv://cluster.mongodb.net/db"; // ✅ MongoDB with encryption
+const mongoUrl = 'mongodb+srv://cluster.mongodb.net/db'; // ✅ MongoDB with encryption
 
-const redisUrl = "rediss://localhost:6379"; // ✅ Redis with TLS
+const redisUrl = 'rediss://localhost:6379'; // ✅ Redis with TLS
 
-const mysqlUrl = "mysql://user:pass@localhost/db?ssl=true"; // ✅ MySQL with SSL
+const mysqlUrl = 'mysql://user:pass@localhost/db?ssl=true'; // ✅ MySQL with SSL
 
 // localhost is allowed in test files
-fetch("http://localhost:3000/api"); // ✅ localhost in tests
+fetch('http://localhost:3000/api'); // ✅ localhost in tests
 ```
 
 ## Configuration
@@ -115,24 +121,24 @@ fetch("http://localhost:3000/api"); // ✅ localhost in tests
 
 ```json
 {
-  "@forge-js/llm-optimized/security/no-unencrypted-transmission": "error"
+  "secure-coding/no-unencrypted-transmission": "error"
 }
 ```
 
 ### Options
 
-| Option              | Type       | Default                          | Description                        |
-| ------------------- | ---------- | -------------------------------- | ----------------------------------- |
-| `allowInTests`      | `boolean`  | `false`                          | Allow unencrypted in tests          |
-| `insecureProtocols` | `string[]` | `['http', 'ws', ...]`           | Insecure protocol patterns         |
-| `secureAlternatives`| `object`   | `{http: 'https', ws: 'wss'}`    | Mapping to secure alternatives      |
-| `ignorePatterns`    | `string[]` | `[]`                             | Additional patterns to ignore       |
+| Option               | Type       | Default                      | Description                    |
+| -------------------- | ---------- | ---------------------------- | ------------------------------ |
+| `allowInTests`       | `boolean`  | `false`                      | Allow unencrypted in tests     |
+| `insecureProtocols`  | `string[]` | `['http', 'ws', ...]`        | Insecure protocol patterns     |
+| `secureAlternatives` | `object`   | `{http: 'https', ws: 'wss'}` | Mapping to secure alternatives |
+| `ignorePatterns`     | `string[]` | `[]`                         | Additional patterns to ignore  |
 
 ### Example Configuration
 
 ```json
 {
-  "@forge-js/llm-optimized/security/no-unencrypted-transmission": [
+  "secure-coding/no-unencrypted-transmission": [
     "error",
     {
       "allowInTests": true,
@@ -162,10 +168,10 @@ The rule provides automatic fixes that:
 
 ```typescript
 // Before (triggers rule)
-fetch("http://api.example.com/data");
+fetch('http://api.example.com/data');
 
 // After (auto-fixed)
-fetch("https://api.example.com/data");
+fetch('https://api.example.com/data');
 ```
 
 ## Best Practices
@@ -186,4 +192,3 @@ fetch("https://api.example.com/data");
 - [CWE-319: Cleartext Transmission of Sensitive Information](https://cwe.mitre.org/data/definitions/319.html)
 - [OWASP: Transport Layer Protection](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/09-Testing_for_Weak_Cryptography/)
 - [MDN: HTTPS](https://developer.mozilla.org/en-US/docs/Glossary/HTTPS)
-

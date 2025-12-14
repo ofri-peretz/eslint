@@ -15,78 +15,78 @@
  */
 
 // Injection Rules
-import type { Options as NoSqlInjectionOptions } from '../rules/security/no-sql-injection';
-import type { Options as DatabaseInjectionOptions } from '../rules/security/database-injection';
-import type { Options as DetectEvalWithExpressionOptions } from '../rules/security/detect-eval-with-expression';
-import type { Options as DetectChildProcessOptions } from '../rules/security/detect-child-process';
-import type { Options as NoUnsafeDynamicRequireOptions } from '../rules/security/no-unsafe-dynamic-require';
-import type { Options as NoGraphqlInjectionOptions } from '../rules/security/no-graphql-injection';
-import type { Options as NoXxeInjectionOptions } from '../rules/security/no-xxe-injection';
-import type { Options as NoXpathInjectionOptions } from '../rules/security/no-xpath-injection';
-import type { Options as NoLdapInjectionOptions } from '../rules/security/no-ldap-injection';
-import type { Options as NoDirectiveInjectionOptions } from '../rules/security/no-directive-injection';
-import type { Options as NoFormatStringInjectionOptions } from '../rules/security/no-format-string-injection';
+import type { Options as NoSqlInjectionOptions } from '../rules/no-sql-injection';
+import type { Options as DatabaseInjectionOptions } from '../rules/database-injection';
+import type { Options as DetectEvalWithExpressionOptions } from '../rules/detect-eval-with-expression';
+import type { Options as DetectChildProcessOptions } from '../rules/detect-child-process';
+import type { Options as NoUnsafeDynamicRequireOptions } from '../rules/no-unsafe-dynamic-require';
+import type { Options as NoGraphqlInjectionOptions } from '../rules/no-graphql-injection';
+import type { Options as NoXxeInjectionOptions } from '../rules/no-xxe-injection';
+import type { Options as NoXpathInjectionOptions } from '../rules/no-xpath-injection';
+import type { Options as NoLdapInjectionOptions } from '../rules/no-ldap-injection';
+import type { Options as NoDirectiveInjectionOptions } from '../rules/no-directive-injection';
+import type { Options as NoFormatStringInjectionOptions } from '../rules/no-format-string-injection';
 
 // Path & File Rules
-import type { Options as DetectNonLiteralFsFilenameOptions } from '../rules/security/detect-non-literal-fs-filename';
-import type { Options as NoZipSlipOptions } from '../rules/security/no-zip-slip';
-import type { Options as NoToctouVulnerabilityOptions } from '../rules/security/no-toctou-vulnerability';
+import type { Options as DetectNonLiteralFsFilenameOptions } from '../rules/detect-non-literal-fs-filename';
+import type { Options as NoZipSlipOptions } from '../rules/no-zip-slip';
+import type { Options as NoToctouVulnerabilityOptions } from '../rules/no-toctou-vulnerability';
 
 // Regex Rules
-import type { Options as DetectNonLiteralRegexpOptions } from '../rules/security/detect-non-literal-regexp';
-import type { Options as NoRedosVulnerableRegexOptions } from '../rules/security/no-redos-vulnerable-regex';
-import type { Options as NoUnsafeRegexConstructionOptions } from '../rules/security/no-unsafe-regex-construction';
+import type { Options as DetectNonLiteralRegexpOptions } from '../rules/detect-non-literal-regexp';
+import type { Options as NoRedosVulnerableRegexOptions } from '../rules/no-redos-vulnerable-regex';
+import type { Options as NoUnsafeRegexConstructionOptions } from '../rules/no-unsafe-regex-construction';
 
 // Object & Prototype Rules
-import type { Options as DetectObjectInjectionOptions } from '../rules/security/detect-object-injection';
-import type { Options as NoUnsafeDeserializationOptions } from '../rules/security/no-unsafe-deserialization';
+import type { Options as DetectObjectInjectionOptions } from '../rules/detect-object-injection';
+import type { Options as NoUnsafeDeserializationOptions } from '../rules/no-unsafe-deserialization';
 
 // Credentials & Crypto Rules
-import type { Options as NoHardcodedCredentialsOptions } from '../rules/security/no-hardcoded-credentials';
-import type { Options as NoWeakCryptoOptions } from '../rules/security/no-weak-crypto';
-import type { Options as NoInsufficientRandomOptions } from '../rules/security/no-insufficient-random';
-import type { Options as NoTimingAttackOptions } from '../rules/security/no-timing-attack';
-import type { Options as NoInsecureComparisonOptions } from '../rules/security/no-insecure-comparison';
-import type { Options as NoInsecureJwtOptions } from '../rules/security/no-insecure-jwt';
+import type { Options as NoHardcodedCredentialsOptions } from '../rules/no-hardcoded-credentials';
+import type { Options as NoWeakCryptoOptions } from '../rules/no-weak-crypto';
+import type { Options as NoInsufficientRandomOptions } from '../rules/no-insufficient-random';
+import type { Options as NoTimingAttackOptions } from '../rules/no-timing-attack';
+import type { Options as NoInsecureComparisonOptions } from '../rules/no-insecure-comparison';
+import type { Options as NoInsecureJwtOptions } from '../rules/no-insecure-jwt';
 
 // Input Validation & XSS Rules
-import type { Options as NoUnvalidatedUserInputOptions } from '../rules/security/no-unvalidated-user-input';
-import type { Options as NoUnsanitizedHtmlOptions } from '../rules/security/no-unsanitized-html';
-import type { Options as NoUnescapedUrlParameterOptions } from '../rules/security/no-unescaped-url-parameter';
-import type { Options as NoImproperSanitizationOptions } from '../rules/security/no-improper-sanitization';
-import type { Options as NoImproperTypeValidationOptions } from '../rules/security/no-improper-type-validation';
+import type { Options as NoUnvalidatedUserInputOptions } from '../rules/no-unvalidated-user-input';
+import type { Options as NoUnsanitizedHtmlOptions } from '../rules/no-unsanitized-html';
+import type { Options as NoUnescapedUrlParameterOptions } from '../rules/no-unescaped-url-parameter';
+import type { Options as NoImproperSanitizationOptions } from '../rules/no-improper-sanitization';
+import type { Options as NoImproperTypeValidationOptions } from '../rules/no-improper-type-validation';
 
 // Authentication & Authorization Rules
-import type { Options as NoMissingAuthenticationOptions } from '../rules/security/no-missing-authentication';
-import type { Options as NoPrivilegeEscalationOptions } from '../rules/security/no-privilege-escalation';
-import type { Options as NoWeakPasswordRecoveryOptions } from '../rules/security/no-weak-password-recovery';
+import type { Options as NoMissingAuthenticationOptions } from '../rules/no-missing-authentication';
+import type { Options as NoPrivilegeEscalationOptions } from '../rules/no-privilege-escalation';
+import type { Options as NoWeakPasswordRecoveryOptions } from '../rules/no-weak-password-recovery';
 
 // Session & Cookies Rules
-import type { Options as NoInsecureCookieSettingsOptions } from '../rules/security/no-insecure-cookie-settings';
-import type { Options as NoMissingCsrfProtectionOptions } from '../rules/security/no-missing-csrf-protection';
-import type { Options as NoDocumentCookieOptions } from '../rules/security/no-document-cookie';
+import type { Options as NoInsecureCookieSettingsOptions } from '../rules/no-insecure-cookie-settings';
+import type { Options as NoMissingCsrfProtectionOptions } from '../rules/no-missing-csrf-protection';
+import type { Options as NoDocumentCookieOptions } from '../rules/no-document-cookie';
 
 // Network & Headers Rules
-import type { Options as NoMissingCorsCheckOptions } from '../rules/security/no-missing-cors-check';
-import type { Options as NoMissingSecurityHeadersOptions } from '../rules/security/no-missing-security-headers';
-import type { Options as NoInsecureRedirectsOptions } from '../rules/security/no-insecure-redirects';
-import type { Options as NoUnencryptedTransmissionOptions } from '../rules/security/no-unencrypted-transmission';
-import type { Options as NoClickjackingOptions } from '../rules/security/no-clickjacking';
+import type { Options as NoMissingCorsCheckOptions } from '../rules/no-missing-cors-check';
+import type { Options as NoMissingSecurityHeadersOptions } from '../rules/no-missing-security-headers';
+import type { Options as NoInsecureRedirectsOptions } from '../rules/no-insecure-redirects';
+import type { Options as NoUnencryptedTransmissionOptions } from '../rules/no-unencrypted-transmission';
+import type { Options as NoClickjackingOptions } from '../rules/no-clickjacking';
 
 // Data Exposure Rules
-import type { Options as NoExposedSensitiveDataOptions } from '../rules/security/no-exposed-sensitive-data';
-import type { Options as NoSensitiveDataExposureOptions } from '../rules/security/no-sensitive-data-exposure';
+import type { Options as NoExposedSensitiveDataOptions } from '../rules/no-exposed-sensitive-data';
+import type { Options as NoSensitiveDataExposureOptions } from '../rules/no-sensitive-data-exposure';
 
 // Buffer & Memory Rules
-import type { Options as NoBufferOverreadOptions } from '../rules/security/no-buffer-overread';
+import type { Options as NoBufferOverreadOptions } from '../rules/no-buffer-overread';
 
 // Resource & DoS Rules
-import type { Options as NoUnlimitedResourceAllocationOptions } from '../rules/security/no-unlimited-resource-allocation';
-import type { Options as NoUncheckedLoopConditionOptions } from '../rules/security/no-unchecked-loop-condition';
+import type { Options as NoUnlimitedResourceAllocationOptions } from '../rules/no-unlimited-resource-allocation';
+import type { Options as NoUncheckedLoopConditionOptions } from '../rules/no-unchecked-loop-condition';
 
 // Platform Specific Rules
-import type { Options as NoElectronSecurityIssuesOptions } from '../rules/security/no-electron-security-issues';
-import type { Options as NoInsufficientPostmessageValidationOptions } from '../rules/security/no-insufficient-postmessage-validation';
+import type { Options as NoElectronSecurityIssuesOptions } from '../rules/no-electron-security-issues';
+import type { Options as NoInsufficientPostmessageValidationOptions } from '../rules/no-insufficient-postmessage-validation';
 
 // Export all types with consistent naming
 export type {
@@ -233,4 +233,3 @@ export type AllSecurityRulesOptions = {
   'no-electron-security-issues'?: NoElectronSecurityIssuesOptions;
   'no-insufficient-postmessage-validation'?: NoInsufficientPostmessageValidationOptions;
 };
-

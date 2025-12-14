@@ -2,19 +2,26 @@
 
 > **Keywords:** require, code injection, security, ESLint rule, dynamic require, path traversal, arbitrary code execution, module loading, auto-fix, LLM-optimized, code security
 
-Disallows dynamic `require()` calls with non-literal arguments that could lead to security vulnerabilities. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
+Disallows dynamic `require()` calls with non-literal arguments that could lead to security vulnerabilities. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages with fix suggestions.
 
 ⚠️ This rule **_warns_** by default in the `recommended` config.
 
 ## Quick Summary
 
-| Aspect         | Details                                                      |
-| -------------- | ------------------------------------------------------------ |
-| **Severity**   | Warning (security best practice)                             |
-| **Auto-Fix**   | ⚠️ Suggests fixes (manual application)                       |
-| **Category**   | Security                                                     |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration                      |
-| **Best For**   | Node.js applications, plugin systems, dynamic module loading |
+| Aspect            | Details                                                                           |
+| ----------------- | --------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-706](https://cwe.mitre.org/data/definitions/706.html) (Incorrect Resolution) |
+| **Severity**      | Warning (security best practice)                                                  |
+| **Auto-Fix**      | ⚠️ Suggests fixes (manual application)                                            |
+| **Category**      | Security                                                                          |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                           |
+| **Best For**      | Node.js applications, plugin systems, dynamic module loading                      |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Dynamic `require()` (or "dynamic imports") allows an application to load modules based on variable input. If this input is controlled by a user, it can be manipulated.
+
+**Risk:** Attackers can manipulate the input to load malicious code (Remote Code Execution) or read sensitive files from the server's filesystem that were not intended to be exposed (Information Disclosure).
 
 ## Rule Details
 
@@ -80,7 +87,7 @@ async function loadModule(name: string) {
 ```javascript
 {
   rules: {
-    '@forge-js/llm-optimized/no-unsafe-dynamic-require': ['error', {
+    'secure-coding/no-unsafe-dynamic-require': ['error', {
       allowDynamicImport: true  // Allow dynamic import() but warn on require()
     }]
   }
@@ -98,7 +105,7 @@ async function loadModule(name: string) {
 ```javascript
 {
   rules: {
-    '@forge-js/llm-optimized/no-unsafe-dynamic-require': ['error', {
+    'secure-coding/no-unsafe-dynamic-require': ['error', {
       allowDynamicImport: true
     }]
   }
@@ -162,4 +169,4 @@ This rule provides LLM-optimized error messages:
 
 ## Version
 
-This rule is available in `@forge-js/eslint-plugin-llm-optimized` v0.0.1+
+This rule is available in `eslint-plugin-secure-coding` v0.0.1+

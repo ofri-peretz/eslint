@@ -1,0 +1,145 @@
+# require-prompt-template-parameterization
+
+Enforce structured prompt templates instead of string interpolation for LLM APIs.
+
+**OWASP LLM Top 10 2025**: LLM01 - Prompt Injection  
+**CWE**: [CWE-20](https://cwe.mitre.org/data/definitions/20.html)  
+**Severity**: 🔴 Critical
+
+## Rule Details
+
+This rule enforces the use of structured message arrays or template engines instead of string interpolation when calling LLM APIs. Structured formats provide better separation between instructions and user data, reducing prompt injection risks.
+
+### ❌ Incorrect
+
+```typescript
+// Template literal passed directly
+await llm.complete(`Summarize: ${userInput}`);
+
+// String concatenation
+await llm.chat('Analyze: ' + userContent);
+
+// Template in OpenAI call
+await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: `Question: ${q}` }],
+});
+```
+
+### ✅ Correct
+
+```typescript
+// Structured messages array
+await llm.complete({
+  messages: [
+    { role: 'system', content: 'You are a helpful assistant' },
+    { role: 'user', content: userInput },
+  ],
+});
+
+// Messages as first argument
+const messages = [{ role: 'user', content: userQuery }];
+await llm.chat(messages);
+
+// LangChain PromptTemplate
+const template = new PromptTemplate({
+  template: 'Summarize: {input}',
+  inputVariables: ['input'],
+});
+await llm.complete(template.format({ input: userInput }));
+
+// ChatPromptTemplate
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', 'You are helpful'],
+  ['user', '{input}'],
+]);
+await llm.chat(await prompt.format({ input: userInput }));
+
+// Static string (no variables)
+await llm.complete('What is 2+2?');
+```
+
+## Options
+
+```json
+{
+  "secure-coding/require-prompt-template-parameterization": [
+    "error",
+    {
+      "llmApiPatterns": ["customLLM.*"],
+      "allowedTemplateEngines": ["MyPromptTemplate"]
+    }
+  ]
+}
+```
+
+### `llmApiPatterns`
+
+Array of additional LLM API patterns to check. Default patterns:
+
+- `llm.complete`, `llm.chat`
+- `openai.chat`, `openai.complete`
+- `anthropic.complete`
+- `chatCompletion`, `textCompletion`
+
+### `allowedTemplateEngines`
+
+Array of template engine names to allow. Default:
+
+- `PromptTemplate`
+- `ChatPromptTemplate`
+- `promptTemplate`
+
+## Why This Matters
+
+**Structured formats** provide:
+
+1. **Clear role separation** - System vs user messages
+2. **Type safety** - Structured data over strings
+3. **Better parsing** - Easier to validate and sanitize
+4. **LLM optimization** - Better instruction following
+
+## Examples
+
+### OpenAI SDK (Correct Usage)
+
+```typescript
+const completion = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [
+    { role: 'system', content: 'You are a helpful assistant.' },
+    { role: 'user', content: userQuestion },
+  ],
+});
+```
+
+### Anthropic SDK (Correct Usage)
+
+```typescript
+const message = await anthropic.messages.create({
+  model: 'claude-3-opus-20240229',
+  messages: [{ role: 'user', content: userPrompt }],
+});
+```
+
+## When Not To Use It
+
+- If your codebase doesn't use LLM APIs
+- If you have custom prompt safety mechanisms
+
+## Further Reading
+
+- [OpenAI Prompt Engineering Guide](https://platform.openai.com/docs/guides/prompt-engineering)
+- [LangChain Prompt Templates](https://js.langchain.com/docs/modules/prompts/)
+- [Anthropic Prompt Design](https://docs.anthropic.com/claude/docs/prompt-design)
+
+## Compatibility
+
+- ✅ ESLint 8.x
+- ✅ ESLint 9.x
+- ✅ TypeScript
+- ✅ JavaScript (ES6+)
+
+## Version
+
+This rule was introduced in `eslint-plugin-secure-coding` v2.3.0 (OWASP LLM 2025 support).

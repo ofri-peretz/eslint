@@ -125,15 +125,13 @@
   ],
   "release": {
     "projects": [
-      "packages/eslint-devkit",
-      "packages/eslint-plugin-secure-coding",
-      "@interlace/eslint-devkit",
-      "eslint-plugin-secure-coding"
+      "eslint-plugin-secure-coding",
+      "eslint-plugin-vercel-ai-security"
     ],
     "projectsRelationship": "independent",
     "preid": "rc",
     "version": {
-      "preVersionCommand": "pnpm nx run-many -t build",
+      "preVersionCommand": "pnpm nx affected -t build",
       "conventionalCommits": true,
       "generatorOptions": {
         "updateDependents": "always",
@@ -145,15 +143,15 @@
         "skipLockFileUpdate": true
       },
       "manifestRootsToUpdate": [
-        "{projectRoot}"
+        "{projectRoot}",
+        "dist/{projectRoot}"
       ],
-      "preReleaseCommand": "pnpm nx run-many -t build --projects=eslint-plugin,eslint-plugin-llm-optimized,cli,eslint-plugin-llm,eslint-plugin-mcp,eslint-plugin-mcp-optimized,eslint-plugin-secure-coding",
       "git": {
         "commit": true,
         "commitArgs": "--no-verify",
-        "commitMessage": "chore(release): {version}",
+        "commitMessage": "chore(release): {projectName}@{version}",
         "tag": true,
-        "tagMessage": "chore(release): {version}"
+        "tagMessage": "chore(release): {projectName}@{version}"
       }
     },
     "changelog": {
@@ -165,7 +163,7 @@
       "git": {
         "commit": true,
         "commitArgs": "--no-verify",
-        "commitMessage": "chore(release): {version}",
+        "commitMessage": "chore(release): {projectName}@{version} changelog",
         "tag": false
       }
     },

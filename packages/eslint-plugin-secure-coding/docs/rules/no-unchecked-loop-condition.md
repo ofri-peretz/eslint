@@ -8,16 +8,23 @@ Detects unchecked loop conditions that could cause DoS. This rule is part of [`e
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
+| Aspect            | Details                                                              |
+| ----------------- | -------------------------------------------------------------------- |
 | **CWE Reference** | CWE-400 (Uncontrolled Resource Consumption), CWE-835 (Infinite Loop) |
-| **Severity** | High (CVSS 7.5) |
-| **Auto-Fix** | 💡 Suggestions available |
-| **Category** | Buffer, Memory & DoS |
+| **Severity**      | High (CVSS 7.5)                                                      |
+| **Auto-Fix**      | 💡 Suggestions available                                             |
+| **Category**      | Buffer, Memory & DoS                                                 |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Unchecked loop conditions allow loops to execute potentially indefinitely or for an excessive number of iterations, often driven by user input.
+
+**Risk:** An attacker can provide input that causes the loop to run for a very long time or infinite times, consuming all available CPU or memory resources (Denial of Service - DoS), making the application unresponsive for legitimate users.
 
 ## Rule Details
 
 Loops with unchecked conditions can cause denial of service by consuming excessive CPU time or memory. This includes:
+
 - Infinite loops without termination
 - Loops with user-controlled bounds
 - Recursion without depth limits
@@ -25,11 +32,11 @@ Loops with unchecked conditions can cause denial of service by consuming excessi
 
 ### Why This Matters
 
-| Issue | Impact | Solution |
-|-------|--------|----------|
-| 🔄 **Infinite Loop** | Service unavailable | Add termination conditions |
-| ⏱️ **CPU Exhaustion** | Performance degradation | Limit iterations |
-| 💾 **Memory Exhaustion** | Application crash | Add timeout protection |
+| Issue                    | Impact                  | Solution                   |
+| ------------------------ | ----------------------- | -------------------------- |
+| 🔄 **Infinite Loop**     | Service unavailable     | Add termination conditions |
+| ⏱️ **CPU Exhaustion**    | Performance degradation | Limit iterations           |
+| 💾 **Memory Exhaustion** | Application crash       | Add timeout protection     |
 
 ## Examples
 
@@ -74,10 +81,7 @@ while (true) {
 
 // Limit user-controlled iterations
 const MAX_ITERATIONS = 1000;
-const iterations = Math.min(
-  parseInt(req.query.count) || 0,
-  MAX_ITERATIONS
-);
+const iterations = Math.min(parseInt(req.query.count) || 0, MAX_ITERATIONS);
 for (let i = 0; i < iterations; i++) {
   doWork();
 }
@@ -115,12 +119,12 @@ function recurse(data, depth = 0, maxDepth = 100) {
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `maxStaticIterations` | `number` | `10000` | Maximum allowed static iterations |
-| `userInputVariables` | `string[]` | `['req', 'request']` | User input variable patterns |
-| `allowWhileTrueWithBreak` | `boolean` | `true` | Allow while(true) with break |
-| `maxRecursionDepth` | `number` | `100` | Maximum recursion depth |
+| Option                    | Type       | Default              | Description                       |
+| ------------------------- | ---------- | -------------------- | --------------------------------- |
+| `maxStaticIterations`     | `number`   | `10000`              | Maximum allowed static iterations |
+| `userInputVariables`      | `string[]` | `['req', 'request']` | User input variable patterns      |
+| `allowWhileTrueWithBreak` | `boolean`  | `true`               | Allow while(true) with break      |
+| `maxRecursionDepth`       | `number`   | `100`                | Maximum recursion depth           |
 
 ## Error Message Format
 
@@ -139,5 +143,3 @@ function recurse(data, depth = 0, maxDepth = 100) {
 
 - [`no-unlimited-resource-allocation`](./no-unlimited-resource-allocation.md) - Unbounded allocations
 - [`no-redos-vulnerable-regex`](./no-redos-vulnerable-regex.md) - ReDoS patterns
-
-

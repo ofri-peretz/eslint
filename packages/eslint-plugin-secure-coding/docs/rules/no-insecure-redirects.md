@@ -2,18 +2,24 @@
 
 > **Keywords:** no insecure redirects, security, ESLint rule, JavaScript, TypeScript, CWE-601
 
-ESLint Rule: no-insecure-redirects with LLM-optimized suggestions and auto-fix capabilities.
+ESLint Rule: no-insecure-redirects. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
 ## Quick Summary
 
-| Aspect         | Details                                      |
-| -------------- | -------------------------------------------- |
-| **Severity**   | Error (code quality)                        |
-| **Auto-Fix**   | ❌ No                                        |
-| **Category**   | Security |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration      |
-| **Best For**   | Production applications                      |
-| **Suggestions** | ✅ 4 available           |
+| Aspect            | Details                                                                    |
+| ----------------- | -------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-601](https://cwe.mitre.org/data/definitions/601.html) (Open Redirect) |
+| **Severity**      | Medium (security vulnerability)                                            |
+| **Auto-Fix**      | ❌ No                                                                      |
+| **Category**      | Security                                                                   |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                    |
+| **Best For**      | Web applications with redirection logic                                    |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Insecure redirects (also known as Open Redirects) occur when an application redirects the user to a URL specified by untrusted user input without validation.
+
+**Risk:** Attackers can redirect users to phishing sites (to steal credentials) or malicious sites (to download malware), leveraging the trust the user has in the original domain.
 
 ## Rule Details
 
@@ -45,11 +51,11 @@ flowchart TD
 
 ### Why This Matters
 
-| Issue                | Impact                                | Solution                    |
-| -------------------- | ------------------------------------- | --------------------------- |
+| Issue                        | Impact           | Solution            |
+| ---------------------------- | ---------------- | ------------------- |
 | 🔒 **Security/Code Quality** | [Specific issue] | [Solution approach] |
-| 🐛 **Maintainability** | [Impact] | [Fix] |
-| ⚡ **Performance**   | [Impact] | [Optimization] |
+| 🐛 **Maintainability**       | [Impact]         | [Fix]               |
+| ⚡ **Performance**           | [Impact]         | [Optimization]      |
 
 ## Configuration
 
@@ -78,7 +84,7 @@ flowchart TD
 export default [
   {
     rules: {
-      '@forge-js/no-insecure-redirects': 'error',
+      'secure-coding/no-insecure-redirects': 'error',
     },
   },
 ];
@@ -97,4 +103,5 @@ export default [
 
 ## Further Reading
 
-- **[Reference](https://example.com)** - Description
+- **[OWASP Unvalidated Redirects Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html)** - Protection guide
+- **[CWE-601: URL Redirection to Untrusted Site](https://cwe.mitre.org/data/definitions/601.html)** - Official CWE entry

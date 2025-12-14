@@ -2,18 +2,24 @@
 
 > **Keywords:** no sensitive data exposure, security, ESLint rule, JavaScript, TypeScript, CWE-532
 
-ESLint Rule: no-sensitive-data-exposure with LLM-optimized suggestions and auto-fix capabilities.
+ESLint Rule: no-sensitive-data-exposure. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
 ## Quick Summary
 
-| Aspect         | Details                                      |
-| -------------- | -------------------------------------------- |
-| **Severity**   | Error (code quality)                        |
-| **Auto-Fix**   | ❌ No                                        |
-| **Category**   | Security |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration      |
-| **Best For**   | Production applications                      |
-| **Suggestions** | ✅ 4 available           |
+| Aspect            | Details                                                                           |
+| ----------------- | --------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-200](https://cwe.mitre.org/data/definitions/200.html) (Information Exposure) |
+| **Severity**      | High (security vulnerability)                                                     |
+| **Auto-Fix**      | ❌ No                                                                             |
+| **Category**      | Security                                                                          |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                           |
+| **Best For**      | Applications handling PII                                                         |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Sensitive data exposure happens when an application inadequately protects sensitive information such as passwords, financial data, or health records.
+
+**Risk:** Attackers can access this data to conduct identity theft, credit card fraud, or further attacks on the system. It often leads to severe regulatory penalties (GDPR, PCI-DSS compliance failure).
 
 ## Rule Details
 
@@ -45,11 +51,11 @@ flowchart TD
 
 ### Why This Matters
 
-| Issue                | Impact                                | Solution                    |
-| -------------------- | ------------------------------------- | --------------------------- |
+| Issue                        | Impact           | Solution            |
+| ---------------------------- | ---------------- | ------------------- |
 | 🔒 **Security/Code Quality** | [Specific issue] | [Solution approach] |
-| 🐛 **Maintainability** | [Impact] | [Fix] |
-| ⚡ **Performance**   | [Impact] | [Optimization] |
+| 🐛 **Maintainability**       | [Impact]         | [Fix]               |
+| ⚡ **Performance**           | [Impact]         | [Optimization]      |
 
 ## Configuration
 
@@ -78,7 +84,7 @@ flowchart TD
 export default [
   {
     rules: {
-      '@forge-js/no-sensitive-data-exposure': 'error',
+      'secure-coding/no-sensitive-data-exposure': 'error',
     },
   },
 ];
@@ -97,4 +103,5 @@ export default [
 
 ## Further Reading
 
-- **[Reference](https://example.com)** - Description
+- **[OWASP Selective Data Exposure](https://owasp.org/www-community/vulnerabilities/Sensitive_Data_Exposure)** - Guidelines
+- **[CWE-200: Exposure of Sensitive Information to an Unauthorized Actor](https://cwe.mitre.org/data/definitions/200.html)** - Official CWE entry

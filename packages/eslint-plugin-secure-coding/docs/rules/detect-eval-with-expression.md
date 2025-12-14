@@ -2,20 +2,26 @@
 
 > **Keywords:** eval, code injection, CWE-95, security, ESLint rule, remote code execution, RCE, arbitrary code execution, Function constructor, auto-fix, LLM-optimized, code security
 
-Detects `eval(variable)` which can allow an attacker to run arbitrary code inside your process. This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
+Detects `eval(variable)` which can allow an attacker to run arbitrary code inside your process. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages with fix suggestions.
 
 **🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-95 (Code Injection) |
-| **Severity** | Critical (security vulnerability) |
-| **Auto-Fix** | ⚠️ Suggests fixes (manual application) |
-| **Category** | Security |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
-| **Best For** | All applications, especially those handling user input |
+| Aspect            | Details                                                                   |
+| ----------------- | ------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-95](https://cwe.mitre.org/data/definitions/95.html) (Code Injection) |
+| **Severity**      | Critical (security vulnerability)                                         |
+| **Auto-Fix**      | ⚠️ Suggests fixes (manual application)                                    |
+| **Category**      | Security                                                                  |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                   |
+| **Best For**      | All applications, especially those handling user input                    |
+
+## Vulnerability and Risk
+
+**Vulnerability:** The use of `eval()` or similar functions (like `setTimeout`, `setInterval`, `new Function`) with dynamic arguments allows for the execution of arbitrary code derived from strings.
+
+**Risk:** If the string passed to `eval()` contains user-controlled input, an attacker can execute malicious JavaScript code within the context of the application. This can lead to data theft, session hijacking, or server-side remote code execution (RCE).
 
 ## Rule Details
 
@@ -75,26 +81,27 @@ The rule provides **LLM-optimized error messages** with actionable security guid
 
 ### Message Components
 
-| Component | Purpose | Example |
-|-----------|---------|---------|
-| **Risk Level** | Security severity | `CRITICAL` |
-| **CWE Reference** | Vulnerability type | `CWE-95: Code Injection` |
+| Component             | Purpose                  | Example                         |
+| --------------------- | ------------------------ | ------------------------------- |
+| **Risk Level**        | Security severity        | `CRITICAL`                      |
+| **CWE Reference**     | Vulnerability type       | `CWE-95: Code Injection`        |
 | **Pattern Detection** | Recognized usage pattern | `object access`, `JSON parsing` |
-| **Safe Alternative** | Recommended replacement | `JSON.parse()`, `Map`, etc. |
-| **Refactoring Steps** | Concrete fix actions | Numbered step-by-step guide |
-| **Time Estimate** | Effort assessment | `8 minutes` |
+| **Safe Alternative**  | Recommended replacement  | `JSON.parse()`, `Map`, etc.     |
+| **Refactoring Steps** | Concrete fix actions     | Numbered step-by-step guide     |
+| **Time Estimate**     | Effort assessment        | `8 minutes`                     |
 
 This format is optimized for:
+
 - 🤖 **LLMs** - Can parse structured guidance and implement fixes
 - 👨‍💻 **Developers** - Clear security context and actionable steps
 - 📊 **Security Teams** - Proper risk assessment and prioritization
 
 ## Configuration
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `allowLiteralStrings` | `boolean` | `false` | Allow eval with literal strings |
-| `additionalEvalFunctions` | `string[]` | `[]` | Additional functions to treat as eval-like |
+| Option                    | Type       | Default | Description                                |
+| ------------------------- | ---------- | ------- | ------------------------------------------ |
+| `allowLiteralStrings`     | `boolean`  | `false` | Allow eval with literal strings            |
+| `additionalEvalFunctions` | `string[]` | `[]`    | Additional functions to treat as eval-like |
 
 ## Examples
 
@@ -145,24 +152,28 @@ config.set(userKey, value);
 The rule automatically detects common eval patterns and provides targeted fixes:
 
 ### JSON Parsing Pattern
+
 ```
 ❌ eval('{"key": "' + value + '"}')
 ✅ JSON.parse('{"key": "' + value + '"}')
 ```
 
 ### Object Access Pattern
+
 ```
 ❌ eval('obj.' + property)
 ✅ const ALLOWED = ['name', 'age']; if (ALLOWED.includes(property)) obj[property]
 ```
 
 ### Template Pattern
+
 ```
 ❌ eval('Hello ' + name + '!')
 ✅ `Hello ${name}!`
 ```
 
 ### Math Operations Pattern
+
 ```
 ❌ eval(num1 + ' + ' + num2)
 ✅ const mathOps = { '+': (a, b) => a + b }; mathOps[op](num1, num2)
@@ -170,11 +181,11 @@ The rule automatically detects common eval patterns and provides targeted fixes:
 
 ## Security Impact
 
-| Vulnerability | CWE | OWASP | CVSS | Impact |
-|---------------|-----|-------|------|--------|
-| Code Injection | 95 | A03:2021 | 9.8 Critical | Complete server compromise |
-| Command Injection | 78 | A03:2021 | 9.8 Critical | System command execution |
-| Prototype Pollution | 915 | A01:2021 | 8.1 High | Object manipulation |
+| Vulnerability       | CWE | OWASP    | CVSS         | Impact                     |
+| ------------------- | --- | -------- | ------------ | -------------------------- |
+| Code Injection      | 95  | A03:2021 | 9.8 Critical | Complete server compromise |
+| Command Injection   | 78  | A03:2021 | 9.8 Critical | System command execution   |
+| Prototype Pollution | 915 | A01:2021 | 8.1 High     | Object manipulation        |
 
 ## Why This Matters
 
@@ -182,7 +193,7 @@ The rule automatically detects common eval patterns and provides targeted fixes:
 
 ```javascript
 // Attacker can execute arbitrary code
-const userInput = "process.exit()"; // Server shutdown
+const userInput = 'process.exit()'; // Server shutdown
 eval(userInput); // 💥 Server dies
 
 // Prototype pollution via eval
@@ -201,16 +212,18 @@ eval(userInput); // 💥 All objects polluted
 ## Migration Guide
 
 ### Phase 1: Discovery
+
 ```javascript
 // Enable rule with warnings first
 {
   rules: {
-    '@forge-js/detect-eval-with-expression': 'warn'
+    'secure-coding/detect-eval-with-expression': 'warn'
   }
 }
 ```
 
 ### Phase 2: Pattern Replacement
+
 ```javascript
 // Replace common patterns
 eval(`obj.${prop}`) → obj[prop] with validation
@@ -219,24 +232,25 @@ eval(mathExpr) → Safe math functions
 ```
 
 ### Phase 3: Enforcement
+
 ```javascript
 // Strict enforcement
 {
   rules: {
-    '@forge-js/detect-eval-with-expression': 'error'
+    'secure-coding/detect-eval-with-expression': 'error'
   }
 }
 ```
 
 ## Comparison with Alternatives
 
-| Feature | detect-eval-with-expression | eslint-plugin-security | eslint-plugin-sonarjs |
-|---------|---------------------------|------------------------|----------------------|
-| **Code Injection Detection** | ✅ Yes | ⚠️ Limited | ⚠️ Limited |
-| **CWE Reference** | ✅ CWE-95 included | ⚠️ Limited | ⚠️ Limited |
-| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
-| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
-| **Fix Suggestions** | ✅ Detailed | ⚠️ Basic | ⚠️ Basic |
+| Feature                      | detect-eval-with-expression | eslint-plugin-security | eslint-plugin-sonarjs |
+| ---------------------------- | --------------------------- | ---------------------- | --------------------- |
+| **Code Injection Detection** | ✅ Yes                      | ⚠️ Limited             | ⚠️ Limited            |
+| **CWE Reference**            | ✅ CWE-95 included          | ⚠️ Limited             | ⚠️ Limited            |
+| **LLM-Optimized**            | ✅ Yes                      | ❌ No                  | ❌ No                 |
+| **ESLint MCP**               | ✅ Optimized                | ❌ No                  | ❌ No                 |
+| **Fix Suggestions**          | ✅ Detailed                 | ⚠️ Basic               | ⚠️ Basic              |
 
 ## Related Rules
 

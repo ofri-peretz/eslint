@@ -83,6 +83,18 @@
         "command": "npm publish dist/packages/eslint-plugin-secure-coding --access public",
         "cwd": "{workspaceRoot}"
       }
+    },
+    "build:minimal": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "commands": [
+          "find dist/packages/eslint-plugin-secure-coding -name '*.js.map' -delete"
+        ],
+        "cwd": "{workspaceRoot}"
+      }
     }
   }
 }

@@ -1,25 +1,61 @@
-# Test files - exclude from package
-src/tests/
+# Test files - always exclude from package
+__tests__/
 **/*.test.ts
 **/*.test.js
-**/*test*.ts
-**/*test*.js
+**/*.spec.ts
+**/*.spec.js
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
 
 # Test configuration and reports
 vitest.config.mts
+vitest.config.ts
+jest.config.*
 test-report.junit.xml
+*.tap
 
-# Development files
+# Development configuration
 eslint.config.mjs
+eslint.config.js
 tsconfig*.json
+.eslintrc*
+.prettierrc*
+.editorconfig
+project.json
 
-# Documentation build artifacts
+# Build and CI artifacts
+coverage/
+*.tsbuildinfo
+*.log
+.nyc_output/
+
+# Development directories
+.analysis/
+.removed-rules/
+docs/
+
+# Node and package management
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.DS_Store
+
+# Git
+.git/
+.gitignore
+
+# Monorepo paths (in case of accidental pack from source)
 apps/
 packages/
 
-# Coverage reports
-coverage/
-
-# Build artifacts (keep only dist/)
-*.tsbuildinfo
-*.log
+# Build directories when packing from source
+dist/

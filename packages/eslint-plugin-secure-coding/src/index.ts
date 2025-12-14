@@ -13,81 +13,142 @@
  * @see https://github.com/ofri-peretz/eslint#readme
  */
 
-import type { TSESLint } from '@interlace/eslint-devkit';
 
 // Security rules - Injection
-import { noSqlInjection } from './rules/security/no-sql-injection';
-import { databaseInjection } from './rules/security/database-injection';
-import { detectEvalWithExpression } from './rules/security/detect-eval-with-expression';
-import { detectChildProcess } from './rules/security/detect-child-process';
-import { noUnsafeDynamicRequire } from './rules/security/no-unsafe-dynamic-require';
-import { noGraphqlInjection } from './rules/security/no-graphql-injection';
-import { noXxeInjection } from './rules/security/no-xxe-injection';
-import { noXpathInjection } from './rules/security/no-xpath-injection';
-import { noLdapInjection } from './rules/security/no-ldap-injection';
-import { noDirectiveInjection } from './rules/security/no-directive-injection';
-import { noFormatStringInjection } from './rules/security/no-format-string-injection';
+import { noSqlInjection } from './rules/no-sql-injection';
+import { databaseInjection } from './rules/database-injection';
+import { detectEvalWithExpression } from './rules/detect-eval-with-expression';
+import { detectChildProcess } from './rules/detect-child-process';
+import { noUnsafeDynamicRequire } from './rules/no-unsafe-dynamic-require';
+import { noGraphqlInjection } from './rules/no-graphql-injection';
+import { noXxeInjection } from './rules/no-xxe-injection';
+import { noXpathInjection } from './rules/no-xpath-injection';
+import { noLdapInjection } from './rules/no-ldap-injection';
+import { noDirectiveInjection } from './rules/no-directive-injection';
+import { noFormatStringInjection } from './rules/no-format-string-injection';
 
 // Security rules - Path & File
-import { detectNonLiteralFsFilename } from './rules/security/detect-non-literal-fs-filename';
-import { noZipSlip } from './rules/security/no-zip-slip';
-import { noToctouVulnerability } from './rules/security/no-toctou-vulnerability';
+import { detectNonLiteralFsFilename } from './rules/detect-non-literal-fs-filename';
+import { noZipSlip } from './rules/no-zip-slip';
+import { noToctouVulnerability } from './rules/no-toctou-vulnerability';
 
 // Security rules - Regex
-import { detectNonLiteralRegexp } from './rules/security/detect-non-literal-regexp';
-import { noRedosVulnerableRegex } from './rules/security/no-redos-vulnerable-regex';
-import { noUnsafeRegexConstruction } from './rules/security/no-unsafe-regex-construction';
+import { detectNonLiteralRegexp } from './rules/detect-non-literal-regexp';
+import { noRedosVulnerableRegex } from './rules/no-redos-vulnerable-regex';
+import { noUnsafeRegexConstruction } from './rules/no-unsafe-regex-construction';
 
 // Security rules - Object & Prototype
-import { detectObjectInjection } from './rules/security/detect-object-injection';
-import { noUnsafeDeserialization } from './rules/security/no-unsafe-deserialization';
+import { detectObjectInjection } from './rules/detect-object-injection';
+import { noUnsafeDeserialization } from './rules/no-unsafe-deserialization';
 
 // Security rules - Credentials & Crypto
-import { noHardcodedCredentials } from './rules/security/no-hardcoded-credentials';
-import { noWeakCrypto } from './rules/security/no-weak-crypto';
-import { noInsufficientRandom } from './rules/security/no-insufficient-random';
-import { noTimingAttack } from './rules/security/no-timing-attack';
-import { noInsecureComparison } from './rules/security/no-insecure-comparison';
-import { noInsecureJwt } from './rules/security/no-insecure-jwt';
+import { noHardcodedCredentials } from './rules/no-hardcoded-credentials';
+import { noWeakCrypto } from './rules/no-weak-crypto';
+import { noInsufficientRandom } from './rules/no-insufficient-random';
+import { noTimingAttack } from './rules/no-timing-attack';
+import { noInsecureComparison } from './rules/no-insecure-comparison';
+import { noInsecureJwt } from './rules/no-insecure-jwt';
 
 // Security rules - Input Validation & XSS
-import { noUnvalidatedUserInput } from './rules/security/no-unvalidated-user-input';
-import { noUnsanitizedHtml } from './rules/security/no-unsanitized-html';
-import { noUnescapedUrlParameter } from './rules/security/no-unescaped-url-parameter';
-import { noImproperSanitization } from './rules/security/no-improper-sanitization';
-import { noImproperTypeValidation } from './rules/security/no-improper-type-validation';
+import { noUnvalidatedUserInput } from './rules/no-unvalidated-user-input';
+import { noUnsanitizedHtml } from './rules/no-unsanitized-html';
+import { noUnescapedUrlParameter } from './rules/no-unescaped-url-parameter';
+import { noImproperSanitization } from './rules/no-improper-sanitization';
+import { noImproperTypeValidation } from './rules/no-improper-type-validation';
 
 // Security rules - Authentication & Authorization
-import { noMissingAuthentication } from './rules/security/no-missing-authentication';
-import { noPrivilegeEscalation } from './rules/security/no-privilege-escalation';
-import { noWeakPasswordRecovery } from './rules/security/no-weak-password-recovery';
+import { noMissingAuthentication } from './rules/no-missing-authentication';
+import { noPrivilegeEscalation } from './rules/no-privilege-escalation';
+import { noWeakPasswordRecovery } from './rules/no-weak-password-recovery';
 
 // Security rules - Session & Cookies
-import { noInsecureCookieSettings } from './rules/security/no-insecure-cookie-settings';
-import { noMissingCsrfProtection } from './rules/security/no-missing-csrf-protection';
-import { noDocumentCookie } from './rules/security/no-document-cookie';
+import { noInsecureCookieSettings } from './rules/no-insecure-cookie-settings';
+import { noMissingCsrfProtection } from './rules/no-missing-csrf-protection';
+import { noDocumentCookie } from './rules/no-document-cookie';
 
 // Security rules - Network & Headers
-import { noMissingCorsCheck } from './rules/security/no-missing-cors-check';
-import { noMissingSecurityHeaders } from './rules/security/no-missing-security-headers';
-import { noInsecureRedirects } from './rules/security/no-insecure-redirects';
-import { noUnencryptedTransmission } from './rules/security/no-unencrypted-transmission';
-import { noClickjacking } from './rules/security/no-clickjacking';
+import { noMissingCorsCheck } from './rules/no-missing-cors-check';
+import { noMissingSecurityHeaders } from './rules/no-missing-security-headers';
+import { noInsecureRedirects } from './rules/no-insecure-redirects';
+import { noUnencryptedTransmission } from './rules/no-unencrypted-transmission';
+import { noClickjacking } from './rules/no-clickjacking';
 
 // Security rules - Data Exposure
-import { noExposedSensitiveData } from './rules/security/no-exposed-sensitive-data';
-import { noSensitiveDataExposure } from './rules/security/no-sensitive-data-exposure';
+import { noExposedSensitiveData } from './rules/no-exposed-sensitive-data';
+import { noSensitiveDataExposure } from './rules/no-sensitive-data-exposure';
 
 // Security rules - Buffer & Memory
-import { noBufferOverread } from './rules/security/no-buffer-overread';
+import { noBufferOverread } from './rules/no-buffer-overread';
 
 // Security rules - Resource & DoS
-import { noUnlimitedResourceAllocation } from './rules/security/no-unlimited-resource-allocation';
-import { noUncheckedLoopCondition } from './rules/security/no-unchecked-loop-condition';
+import { noUnlimitedResourceAllocation } from './rules/no-unlimited-resource-allocation';
+import { noUncheckedLoopCondition } from './rules/no-unchecked-loop-condition';
 
 // Security rules - Platform Specific
-import { noElectronSecurityIssues } from './rules/security/no-electron-security-issues';
-import { noInsufficientPostmessageValidation } from './rules/security/no-insufficient-postmessage-validation';
+import { noElectronSecurityIssues } from './rules/no-electron-security-issues';
+import { noInsufficientPostmessageValidation } from './rules/no-insufficient-postmessage-validation';
+
+
+// OWASP Mobile Top 10 2023/2024 - Mobile Security Rules (40 rules)
+// M1: Improper Credential Usage (3 rules)
+import { noCredentialsInStorageApi } from './rules/no-credentials-in-storage-api';
+import { noCredentialsInQueryParams } from './rules/no-credentials-in-query-params';
+import { requireSecureCredentialStorage } from './rules/require-secure-credential-storage';
+
+// M2: Inadequate Supply Chain Security (4 rules)
+import { requireDependencyIntegrity } from './rules/require-dependency-integrity';
+import { detectSuspiciousDependencies } from './rules/detect-suspicious-dependencies';
+import { noDynamicDependencyLoading } from './rules/no-dynamic-dependency-loading';
+import { requirePackageLock } from './rules/require-package-lock';
+
+// M3: Insecure Authentication/Authorization (5 rules)
+import { noClientSideAuthLogic } from './rules/no-client-side-auth-logic';
+import { requireBackendAuthorization } from './rules/require-backend-authorization';
+import { noHardcodedSessionTokens } from './rules/no-hardcoded-session-tokens';
+import { detectWeakPasswordValidation } from './rules/detect-weak-password-validation';
+import { noPasswordInUrl } from './rules/no-password-in-url';
+
+// M4: Insufficient Input/Output Validation (6 rules)
+import { noUnvalidatedDeeplinks } from './rules/no-unvalidated-deeplinks';
+import { requireUrlValidation } from './rules/require-url-validation';
+import { noArbitraryFileAccess } from './rules/no-arbitrary-file-access';
+import { requireMimeTypeValidation } from './rules/require-mime-type-validation';
+import { noPostmessageOriginWildcard } from './rules/no-postmessage-origin-wildcard';
+import { requireCspHeaders } from './rules/require-csp-headers';
+
+// M5: Insecure Communication (7 rules)
+import { noHttpUrls } from './rules/no-http-urls';
+import { noDisabledCertificateValidation } from './rules/no-disabled-certificate-validation';
+import { requireHttpsOnly } from './rules/require-https-only';
+import { noInsecureWebsocket } from './rules/no-insecure-websocket';
+import { detectMixedContent } from './rules/detect-mixed-content';
+import { noAllowArbitraryLoads } from './rules/no-allow-arbitrary-loads';
+import { requireNetworkTimeout } from './rules/require-network-timeout';
+
+// M6: Inadequate Privacy Controls (4 rules)
+import { noPiiInLogs } from './rules/no-pii-in-logs';
+import { noTrackingWithoutConsent } from './rules/no-tracking-without-consent';
+import { requireDataMinimization } from './rules/require-data-minimization';
+import { noSensitiveDataInAnalytics } from './rules/no-sensitive-data-in-analytics';
+
+// M7: Insufficient Binary Protections (2 rules)
+import { noDebugCodeInProduction } from './rules/no-debug-code-in-production';
+import { requireCodeMinification } from './rules/require-code-minification';
+
+// M8: Security Misconfiguration (4 rules)
+import { noVerboseErrorMessages } from './rules/no-verbose-error-messages';
+import { noExposedDebugEndpoints } from './rules/no-exposed-debug-endpoints';
+import { requireSecureDefaults } from './rules/require-secure-defaults';
+import { noPermissiveCors } from './rules/no-permissive-cors';
+
+// M9: Insecure Data Storage (5 rules)
+import { noUnencryptedLocalStorage } from './rules/no-unencrypted-local-storage';
+import { noSensitiveDataInCache } from './rules/no-sensitive-data-in-cache';
+import { requireStorageEncryption } from './rules/require-storage-encryption';
+import { noDataInTempStorage } from './rules/no-data-in-temp-storage';
+import { requireSecureDeletion } from './rules/require-secure-deletion';
+
+import { TSESLint } from '@interlace/eslint-devkit';
 
 /**
  * Collection of all security ESLint rules
@@ -142,6 +203,65 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'no-unchecked-loop-condition': noUncheckedLoopCondition,
   'no-electron-security-issues': noElectronSecurityIssues,
   'no-insufficient-postmessage-validation': noInsufficientPostmessageValidation,
+
+  // OWASP Mobile Top 10 2023/2024 rules (40 rules)
+  // M1: Improper Credential Usage (3 rules)
+  'no-credentials-in-storage-api': noCredentialsInStorageApi,
+  'no-credentials-in-query-params': noCredentialsInQueryParams,
+  'require-secure-credential-storage': requireSecureCredentialStorage,
+
+  // M2: Inadequate Supply Chain Security (4 rules)
+  'require-dependency-integrity': requireDependencyIntegrity,
+  'detect-suspicious-dependencies': detectSuspiciousDependencies,
+  'no-dynamic-dependency-loading': noDynamicDependencyLoading,
+  'require-package-lock': requirePackageLock,
+
+  // M3: Insecure Authentication/Authorization (5 rules)
+  'no-client-side-auth-logic': noClientSideAuthLogic,
+  'require-backend-authorization': requireBackendAuthorization,
+  'no-hardcoded-session-tokens': noHardcodedSessionTokens,
+  'detect-weak-password-validation': detectWeakPasswordValidation,
+  'no-password-in-url': noPasswordInUrl,
+
+  // M4: Insufficient Input/Output Validation (6 rules)
+  'no-unvalidated-deeplinks': noUnvalidatedDeeplinks,
+  'require-url-validation': requireUrlValidation,
+  'no-arbitrary-file-access': noArbitraryFileAccess,
+  'require-mime-type-validation': requireMimeTypeValidation,
+  'no-postmessage-origin-wildcard': noPostmessageOriginWildcard,
+  'require-csp-headers': requireCspHeaders,
+
+  // M5: Insecure Communication (7 rules)
+  'no-http-urls': noHttpUrls,
+  'no-disabled-certificate-validation': noDisabledCertificateValidation,
+  'require-https-only': requireHttpsOnly,
+  'no-insecure-websocket': noInsecureWebsocket,
+  'detect-mixed-content': detectMixedContent,
+  'no-allow-arbitrary-loads': noAllowArbitraryLoads,
+  'require-network-timeout': requireNetworkTimeout,
+
+  // M6: Inadequate Privacy Controls (4 rules)
+  'no-pii-in-logs': noPiiInLogs,
+  'no-tracking-without-consent': noTrackingWithoutConsent,
+  'require-data-minimization': requireDataMinimization,
+  'no-sensitive-data-in-analytics': noSensitiveDataInAnalytics,
+
+  // M7: Insufficient Binary Protections (2 rules)
+  'no-debug-code-in-production': noDebugCodeInProduction,
+  'require-code-minification': requireCodeMinification,
+
+  // M8: Security Misconfiguration (4 rules)
+  'no-verbose-error-messages': noVerboseErrorMessages,
+  'no-exposed-debug-endpoints': noExposedDebugEndpoints,
+  'require-secure-defaults': requireSecureDefaults,
+  'no-permissive-cors': noPermissiveCors,
+
+  // M9: Insecure Data Storage (5 rules)
+  'no-unencrypted-local-storage': noUnencryptedLocalStorage,
+  'no-sensitive-data-in-cache': noSensitiveDataInCache,
+  'require-storage-encryption': requireStorageEncryption,
+  'no-data-in-temp-storage': noDataInTempStorage,
+  'require-secure-deletion': requireSecureDeletion,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**

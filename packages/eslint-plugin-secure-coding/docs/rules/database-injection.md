@@ -2,26 +2,33 @@
 
 > **Keywords:** database injection, SQL injection, NoSQL injection, CWE-89, security, ESLint rule, MongoDB injection, ORM security, SonarQube, auto-fix, LLM-optimized, code security
 
-Comprehensive database injection detection across SQL, NoSQL, and ORM queries (SonarQube-inspired). This rule is part of [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) and provides LLM-optimized error messages with fix suggestions.
+Comprehensive database injection detection across SQL, NoSQL, and ORM queries (SonarQube-inspired). This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages with fix suggestions.
 
 ⚠️ This rule **_errors_** in the `recommended` config.
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-89 (SQL Injection), CWE-943 (NoSQL Injection) |
-| **Severity** | Critical (security vulnerability) |
-| **Auto-Fix** | ⚠️ Suggests fixes (manual application) |
-| **Category** | Security |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
-| **Best For** | Applications with database interactions (SQL, MongoDB, Redis, ORMs) |
+| Aspect            | Details                                                                                                                                                |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) (SQL Injection), [CWE-943](https://cwe.mitre.org/data/definitions/943.html) (NoSQL Injection) |
+| **Severity**      | Critical (security vulnerability)                                                                                                                      |
+| **Auto-Fix**      | ⚠️ Suggests fixes (manual application)                                                                                                                 |
+| **Category**      | Security                                                                                                                                               |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                                                                                                |
+| **Best For**      | Applications with database interactions (SQL, MongoDB, Redis, ORMs)                                                                                    |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Database injection occurs when untrusted user input is directly concatenated or inserted into database queries without proper sanitization or parameterization. This includes SQL injection in relational databases and NoSQL injection in databases like MongoDB or Redis.
+
+**Risk:** Attackers can manipulate queries to bypass authentication, access unauthorized data, modify or delete data, and in some cases, execute arbitrary commands on the database server. This can lead to a complete compromise of the application's data integrity and confidentiality.
 
 ## Rule Details
 
 This advanced rule detects injection vulnerabilities across multiple database types:
+
 - **SQL**: MySQL, PostgreSQL, SQLite, SQL Server
-- **NoSQL**: MongoDB, Redis, DynamoDB  
+- **NoSQL**: MongoDB, Redis, DynamoDB
 - **ORMs**: Sequelize, TypeORM, Prisma (raw queries)
 
 Inspired by SonarQube's comprehensive injection detection.
@@ -35,7 +42,7 @@ Inspired by SonarQube's comprehensive injection detection.
 ```typescript
 // Raw SQL with concatenation
 db.query(`SELECT * FROM users WHERE email = '${email}'`);
-pool.execute("DELETE FROM logs WHERE id = " + logId);
+pool.execute('DELETE FROM logs WHERE id = ' + logId);
 
 // Sequelize raw queries
 sequelize.query(`SELECT * FROM users WHERE name = '${name}'`);
@@ -48,7 +55,7 @@ sequelize.query(`SELECT * FROM users WHERE name = '${name}'`);
 db.collection('users').find({ username: req.body.username });
 // If username is: { $gt: "" }, returns all users!
 
-// Redis injection  
+// Redis injection
 redis.eval(`return redis.call('GET', '${key}')`, 0);
 ```
 
@@ -56,8 +63,9 @@ redis.eval(`return redis.call('GET', '${key}')`, 0);
 
 ```typescript
 // TypeORM raw query
-const users = await getRepository(User)
-  .query(`SELECT * FROM users WHERE role = '${role}'`);
+const users = await getRepository(User).query(
+  `SELECT * FROM users WHERE role = '${role}'`,
+);
 
 // Prisma raw query
 await prisma.$executeRaw(`DELETE FROM users WHERE id = ${userId}`);
@@ -100,10 +108,10 @@ const users = await getRepository(User)
 await prisma.user.delete({ where: { id: userId } });
 
 // Sequelize parameterized
-sequelize.query(
-  'SELECT * FROM users WHERE name = ?',
-  { replacements: [name], type: QueryTypes.SELECT }
-);
+sequelize.query('SELECT * FROM users WHERE name = ?', {
+  replacements: [name],
+  type: QueryTypes.SELECT,
+});
 ```
 
 ## Configuration
@@ -111,7 +119,7 @@ sequelize.query(
 ```javascript
 {
   rules: {
-    '@forge-js/llm-optimized/database-injection': ['error', {
+    'secure-coding/database-injection': ['error', {
       detectNoSQL: true,         // Check MongoDB, Redis, etc.
       detectORMs: true,          // Check Sequelize, TypeORM raw queries
       trustedSources: [],        // Variables considered safe
@@ -123,19 +131,19 @@ sequelize.query(
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `detectNoSQL` | `boolean` | `true` | Detect NoSQL injection patterns (MongoDB, Redis) |
-| `detectORMs` | `boolean` | `true` | Check ORM raw query methods |
-| `trustedSources` | `string[]` | `[]` | Variable names considered safe (e.g., `CONFIG`, `SCHEMA`) |
-| `frameworkHints` | `boolean` | `true` | Provide framework-specific fix suggestions |
+| Option           | Type       | Default | Description                                               |
+| ---------------- | ---------- | ------- | --------------------------------------------------------- |
+| `detectNoSQL`    | `boolean`  | `true`  | Detect NoSQL injection patterns (MongoDB, Redis)          |
+| `detectORMs`     | `boolean`  | `true`  | Check ORM raw query methods                               |
+| `trustedSources` | `string[]` | `[]`    | Variable names considered safe (e.g., `CONFIG`, `SCHEMA`) |
+| `frameworkHints` | `boolean`  | `true`  | Provide framework-specific fix suggestions                |
 
 ### Disable NoSQL Detection
 
 ```javascript
 {
   rules: {
-    '@forge-js/llm-optimized/database-injection': ['error', {
+    'secure-coding/database-injection': ['error', {
       detectNoSQL: false,  // Only check SQL
       detectORMs: true
     }]
@@ -148,7 +156,7 @@ sequelize.query(
 ```javascript
 {
   rules: {
-    '@forge-js/llm-optimized/database-injection': ['error', {
+    'secure-coding/database-injection': ['error', {
       trustedSources: ['TABLES', 'COLUMNS', 'CONFIG']
     }]
   }
@@ -188,13 +196,13 @@ const query = `SELECT * FROM ${TABLES.users}`;
 ```typescript
 // Before
 const results = await db.query(
-  `SELECT * FROM users WHERE status = '${status}' AND role = '${role}'`
+  `SELECT * FROM users WHERE status = '${status}' AND role = '${role}'`,
 );
 
 // After
 const results = await db.query(
   'SELECT * FROM users WHERE status = ? AND role = ?',
-  [status, role]
+  [status, role],
 );
 ```
 
@@ -202,19 +210,20 @@ const results = await db.query(
 
 ```typescript
 // Before
-const user = await User.findOne({ 
-  $where: `this.username == '${username}'`
+const user = await User.findOne({
+  $where: `this.username == '${username}'`,
 });
 
 // After
-const user = await User.findOne({ 
-  username: { $eq: username }
+const user = await User.findOne({
+  username: { $eq: username },
 });
 ```
 
 ## Performance Impact
 
 This rule performs deep AST analysis and may increase linting time:
+
 - **Small projects (<100 files)**: Negligible (<100ms)
 - **Medium projects (100-500 files)**: ~500ms
 - **Large projects (>500 files)**: ~2s
@@ -231,24 +240,20 @@ Add these to `ignorePatterns`:
 
 ```javascript
 {
-  ignorePatterns: [
-    '**/migrations/**',
-    '**/seeds/**',
-    '**/fixtures/**'
-  ]
+  ignorePatterns: ['**/migrations/**', '**/seeds/**', '**/fixtures/**'];
 }
 ```
 
 ## Comparison with Alternatives
 
-| Feature | database-injection | no-sql-injection | eslint-plugin-security |
-|---------|-------------------|------------------|------------------------|
-| **SQL Detection** | ✅ Yes | ✅ Yes | ⚠️ Limited |
-| **NoSQL Detection** | ✅ Yes (MongoDB, Redis) | ❌ No | ⚠️ Limited |
-| **ORM Support** | ✅ Yes (Sequelize, TypeORM, Prisma) | ⚠️ Limited | ❌ No |
-| **LLM-Optimized** | ✅ Yes | ✅ Yes | ❌ No |
-| **ESLint MCP** | ✅ Optimized | ✅ Optimized | ❌ No |
-| **SonarQube-Inspired** | ✅ Yes | ❌ No | ❌ No |
+| Feature                | database-injection                  | no-sql-injection | eslint-plugin-security |
+| ---------------------- | ----------------------------------- | ---------------- | ---------------------- |
+| **SQL Detection**      | ✅ Yes                              | ✅ Yes           | ⚠️ Limited             |
+| **NoSQL Detection**    | ✅ Yes (MongoDB, Redis)             | ❌ No            | ⚠️ Limited             |
+| **ORM Support**        | ✅ Yes (Sequelize, TypeORM, Prisma) | ⚠️ Limited       | ❌ No                  |
+| **LLM-Optimized**      | ✅ Yes                              | ✅ Yes           | ❌ No                  |
+| **ESLint MCP**         | ✅ Optimized                        | ✅ Optimized     | ❌ No                  |
+| **SonarQube-Inspired** | ✅ Yes                              | ❌ No            | ❌ No                  |
 
 ## Related Rules
 
@@ -266,5 +271,4 @@ Add these to `ignorePatterns`:
 
 ## Version
 
-This rule is available in `@forge-js/eslint-plugin-llm-optimized` v0.0.1+
-
+This rule is available in `eslint-plugin-secure-coding` v0.0.1+
