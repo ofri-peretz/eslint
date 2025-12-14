@@ -64,7 +64,7 @@
     "typescript": ">=4.0.0",
     "@typescript-eslint/utils": "^8.46.2",
     "get-tsconfig": "^4.13.0",
-    "enhanced-resolve": "^5.18.3"
+    "enhanced-resolve": "^5.18.4"
   },
   "peerDependenciesMeta": {
     "get-tsconfig": {
@@ -76,7 +76,7 @@
   },
   "optionalDependencies": {
     "get-tsconfig": "^4.13.0",
-    "enhanced-resolve": "^5.18.3"
+    "enhanced-resolve": "^5.18.4"
   },
   "dependencies": {
     "tslib": "^2.3.0"
