@@ -72,6 +72,77 @@ describe('detect-object-injection', () => {
         {
           code: 'z += 10;',
         },
+        // Numeric index access - should be safe (array access)
+        {
+          code: `
+            const items = ['a', 'b', 'c'];
+            const first = items[0];
+            const second = items[1];
+          `,
+        },
+        // Validated with includes() - should be safe
+        {
+          code: `
+            const VALID_KEYS = ['name', 'email', 'age'];
+            function getField(obj, key) {
+              if (VALID_KEYS.includes(key)) {
+                return obj[key];
+              }
+            }
+          `,
+        },
+        // Validated with hasOwnProperty - should be safe
+        {
+          code: `
+            function safeGet(obj, key) {
+              if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                return obj[key];
+              }
+            }
+          `,
+        },
+        // Validated with Object.hasOwn - should be safe
+        {
+          code: `
+            function safeGet(obj, key) {
+              if (Object.hasOwn(obj, key)) {
+                return obj[key];
+              }
+            }
+          `,
+        },
+        // Validated with simple hasOwnProperty - should be safe
+        {
+          code: `
+            function safeGet(obj, key) {
+              if (obj.hasOwnProperty(key)) {
+                return obj[key];
+              }
+            }
+          `,
+        },
+        // Validated with 'in' operator - should be safe
+        {
+          code: `
+            function safeGet(obj, key) {
+              if (key in obj) {
+                return obj[key];
+              }
+            }
+          `,
+        },
+        // Validated and assigned - should be safe
+        {
+          code: `
+            const ALLOWED = ['light', 'dark', 'system'];
+            function setTheme(userTheme) {
+              if (!ALLOWED.includes(userTheme)) {
+                throw new Error('Invalid theme');
+              }
+              config[userTheme] = true;
+            }
+          `,
+        },
       ],
       invalid: [],
     });

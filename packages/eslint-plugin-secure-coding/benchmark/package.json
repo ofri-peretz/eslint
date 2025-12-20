@@ -1,0 +1,22 @@
+{
+    "name": "eslint-security-benchmark",
+    "version": "1.0.0",
+    "description": "Benchmark comparing eslint-plugin-secure-coding vs eslint-plugin-security",
+    "type": "module",
+    "scripts": {
+        "benchmark": "node benchmark.mjs",
+        "benchmark:fair": "node fair-benchmark.mjs",
+        "lint:secure-coding": "eslint --config eslint.config.secure-coding.mjs test-files/",
+        "lint:security": "eslint --config eslint.config.security.mjs test-files/"
+    },
+    "devDependencies": {
+        "@typescript-eslint/parser": "^8.18.1",
+        "eslint": "^9.39.2",
+        "eslint-plugin-secure-coding": "^2.2.6",
+        "eslint-plugin-security": "^3.0.1"
+    },
+    "dependencies": {
+    "@interlace/eslint-devkit": "1.2.1",
+    "tslib": "^2.8.1"
+  }
+}

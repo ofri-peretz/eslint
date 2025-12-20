@@ -7,7 +7,7 @@
  * @see https://cwe.mitre.org/data/definitions/22.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -227,8 +227,8 @@ allowLiterals = false,
       method: string;
       operation: FSOperation | null;
     } => {
-      const method = node.callee.type === 'MemberExpression' &&
-                    node.callee.property.type === 'Identifier'
+      const method = node.callee.type === AST_NODE_TYPES.MemberExpression &&
+                    node.callee.property.type === AST_NODE_TYPES.Identifier
                       ? node.callee.property.name
                       : 'unknown';
 
@@ -256,8 +256,166 @@ allowLiterals = false,
         return true;
       }
 
+      // SAFE: path.join(__dirname, 'literal', 'path') with all literal args
+      if (pathNode && isSafePathConstruction(pathNode)) {
+        return false;
+      }
+
+      // SAFE: Path variable inside validated if-block with startsWith check
+      if (pathNode && hasPathValidation(pathNode)) {
+        return false;
+      }
+
       // Any non-literal is dangerous
       return !pathNode || !isLiteralString(pathNode);
+    };
+
+    /**
+     * Check if path is constructed safely using path.join/__dirname with literal args
+     * 
+     * Safe patterns:
+     * - path.join(__dirname, 'data', 'file.json')
+     * - path.resolve(__dirname, 'uploads')
+     */
+    const isSafePathConstruction = (pathNode: TSESTree.Node): boolean => {
+      if (pathNode.type !== AST_NODE_TYPES.CallExpression) {
+        return false;
+      }
+      
+      const callee = pathNode.callee;
+      if (callee.type !== AST_NODE_TYPES.MemberExpression ||
+          callee.object.type !== AST_NODE_TYPES.Identifier ||
+          callee.object.name !== 'path' ||
+          callee.property.type !== AST_NODE_TYPES.Identifier) {
+        return false;
+      }
+      
+      const method = callee.property.name;
+      if (!['join', 'resolve'].includes(method)) {
+        return false;
+      }
+      
+      const args = pathNode.arguments;
+      if (args.length === 0) {
+        return false;
+      }
+      
+      // First arg should be __dirname or a literal
+      const firstArg = args[0];
+      const isFirstArgSafe = 
+        (firstArg.type === AST_NODE_TYPES.Identifier && firstArg.name === '__dirname') ||
+        (firstArg.type === AST_NODE_TYPES.Literal && typeof firstArg.value === 'string');
+      
+      if (!isFirstArgSafe) {
+        return false;
+      }
+      
+      // All remaining args should be literals
+      for (let i = 1; i < args.length; i++) {
+        const arg = args[i];
+        if (arg.type !== AST_NODE_TYPES.Literal || typeof arg.value !== 'string') {
+          return false;
+        }
+        // Also check for traversal patterns in literals
+        if (hasTraversalPatterns(String(arg.value))) {
+          return false;
+        }
+      }
+      
+      return true;
+    };
+
+    /**
+     * Check if the path variable has been validated with startsWith()
+     * 
+     * Safe patterns:
+     * 1. Inside if-block: if (safePath.startsWith(SAFE_DIR)) { fs.readFileSync(safePath); }
+     * 2. After guard clause: if (!safePath.startsWith(SAFE_DIR)) { throw }; fs.readFileSync(safePath);
+     */
+    const hasPathValidation = (pathNode: TSESTree.Node): boolean => {
+      if (pathNode.type !== AST_NODE_TYPES.Identifier) {
+        return false;
+      }
+      
+      const varName = pathNode.name;
+      
+      // AST-based validation detection (faster than getText + regex)
+      const isStartsWithOrIncludesCall = (testNode: TSESTree.Node): boolean => {
+        // Handle negation: !path.startsWith(...)
+        if (testNode.type === AST_NODE_TYPES.UnaryExpression && 
+            testNode.operator === '!' &&
+            testNode.argument.type === AST_NODE_TYPES.CallExpression) {
+          testNode = testNode.argument;
+        }
+        
+        // Pattern: varName.startsWith(...) or varName.includes(...)
+        if (testNode.type === AST_NODE_TYPES.CallExpression &&
+            testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
+            testNode.callee.object.type === AST_NODE_TYPES.Identifier &&
+            testNode.callee.object.name === varName &&
+            testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
+            (testNode.callee.property.name === 'startsWith' || 
+             testNode.callee.property.name === 'includes')) {
+          return true;
+        }
+        return false;
+      };
+
+      const hasEarlyExit = (consequent: TSESTree.Statement): boolean => {
+        if (consequent.type === AST_NODE_TYPES.BlockStatement) {
+          return consequent.body.some(stmt => 
+            stmt.type === AST_NODE_TYPES.ThrowStatement ||
+            stmt.type === AST_NODE_TYPES.ReturnStatement
+          );
+        }
+        return consequent.type === AST_NODE_TYPES.ThrowStatement ||
+               consequent.type === AST_NODE_TYPES.ReturnStatement;
+      };
+      
+      // Walk up to find enclosing IfStatement or BlockStatement
+      let current: TSESTree.Node | undefined = pathNode.parent;
+      let foundFunctionBody = false;
+      
+      while (current && !foundFunctionBody) {
+        // Check 1: Inside an if-block with validation
+        if (current.type === AST_NODE_TYPES.IfStatement) {
+          if (isStartsWithOrIncludesCall(current.test)) {
+            return true;
+          }
+        }
+        
+        // Check 2: In a function body, look for preceding sibling if-statements with guard clause
+        if (current.type === AST_NODE_TYPES.BlockStatement && current.parent && (
+            current.parent.type === AST_NODE_TYPES.FunctionDeclaration ||
+            current.parent.type === AST_NODE_TYPES.FunctionExpression ||
+            current.parent.type === AST_NODE_TYPES.ArrowFunctionExpression)) {
+          
+          foundFunctionBody = true;
+          const blockBody = current.body;
+          const nodeIndex = blockBody.findIndex((stmt: TSESTree.Statement) => {
+            let check: TSESTree.Node | undefined = pathNode;
+            while (check) {
+              if (check === stmt) return true;
+              check = check.parent;
+            }
+            return false;
+          });
+          
+          // Look at preceding statements for validation patterns with early exit
+          for (let i = 0; i < nodeIndex; i++) {
+            const stmt = blockBody[i];
+            if (stmt.type === AST_NODE_TYPES.IfStatement &&
+                isStartsWithOrIncludesCall(stmt.test) &&
+                hasEarlyExit(stmt.consequent)) {
+              return true;
+            }
+          }
+        }
+        
+        current = current.parent;
+      }
+      
+      return false;
     };
 
     /**

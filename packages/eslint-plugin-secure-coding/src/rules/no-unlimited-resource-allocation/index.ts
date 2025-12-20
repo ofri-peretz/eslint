@@ -468,6 +468,26 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
           if (args.length > 0) {
             // Check if file path comes from user input (potential for large files)
             const pathArg = args[0];
+            
+            // SAFE: Static path construction with path.join(__dirname, ...literals)
+            // This is a common pattern that doesn't involve user input
+            if (pathArg.type === 'CallExpression' &&
+                pathArg.callee.type === 'MemberExpression' &&
+                pathArg.callee.object.type === 'Identifier' &&
+                pathArg.callee.object.name === 'path' &&
+                pathArg.callee.property.type === 'Identifier' &&
+                (pathArg.callee.property.name === 'join' || pathArg.callee.property.name === 'resolve')) {
+              // Check if first arg is __dirname and all subsequent args are literals
+              const pathArgs = pathArg.arguments;
+              if (pathArgs.length > 0 &&
+                  pathArgs[0].type === 'Identifier' &&
+                  pathArgs[0].name === '__dirname' &&
+                  pathArgs.slice(1).every(arg => arg.type === 'Literal')) {
+                // Safe: path.join(__dirname, 'static', 'path')
+                return;
+              }
+            }
+            
             if (pathArg.type !== 'SpreadElement' && isUserInput(pathArg)) {
               /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
               if (safetyChecker.isSafe(node, context)) {

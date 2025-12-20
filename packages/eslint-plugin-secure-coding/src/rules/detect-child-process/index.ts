@@ -295,9 +295,9 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
     }: Options = options || {};
 
     /**
-     * Child process methods that can be dangerous
+     * Child process methods that can be dangerous (Set for O(1) lookup)
      */
-    const dangerousMethods = [
+    const dangerousMethodsSet = new Set([
       'exec',
       'execSync',
       'execFile',
@@ -307,7 +307,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       'fork',
       'forkSync',
       ...additionalMethods
-    ];
+    ]);
 
     /**
      * Track imported child_process identifiers so we can flag calls like
@@ -480,7 +480,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         node.callee.property.type === 'Identifier'
       ) {
         const methodName = node.callee.property.name;
-        if (!dangerousMethods.includes(methodName)) {
+        if (!dangerousMethodsSet.has(methodName)) {
           return null;
         }
 
@@ -494,7 +494,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       }
 
       // exec(...) when imported directly from child_process
-      if (node.callee.type === 'Identifier' && dangerousMethods.includes(node.callee.name)) {
+      if (node.callee.type === 'Identifier' && dangerousMethodsSet.has(node.callee.name)) {
         if (importedMethods.has(node.callee.name)) {
           return { method: node.callee.name, calleeNode: node.callee };
         }

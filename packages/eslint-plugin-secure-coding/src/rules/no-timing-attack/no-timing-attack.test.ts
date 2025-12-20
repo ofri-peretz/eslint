@@ -43,6 +43,27 @@ describe('no-timing-attack', () => {
             }
           `,
         },
+        // Non-auth function with includes() check - should NOT be flagged
+        {
+          code: `
+            const VALID_KEYS = ['name', 'email', 'age'];
+            function getField(obj, key) {
+              if (VALID_KEYS.includes(key)) {
+                return obj[key];
+              }
+            }
+          `,
+        },
+        // Non-auth function with hasOwnProperty check - should NOT be flagged
+        {
+          code: `
+            function safeGet(obj, key) {
+              if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                return obj[key];
+              }
+            }
+          `,
+        },
         // Timing-safe libraries
         {
           code: 'const bcrypt = require("bcrypt"); bcrypt.compare(password, hash);',

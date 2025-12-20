@@ -7,7 +7,7 @@
  * @see https://owasp.org/www-community/attacks/csrf
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'missingCsrfProtection' | 'addCsrfValidation';
@@ -46,16 +46,6 @@ const DEFAULT_CSRF_MIDDLEWARE_PATTERNS = [
  * Default HTTP methods that require CSRF protection
  */
 const DEFAULT_PROTECTED_METHODS = ['post', 'put', 'delete', 'patch'];
-
-/**
- * Check if a route handler method requires CSRF protection
- */
-function requiresCsrfProtection(
-  methodName: string,
-  protectedMethods: string[]
-): boolean {
-  return protectedMethods.some(method => method.toLowerCase() === methodName.toLowerCase());
-}
 
 /**
  * Check if a string matches any ignore pattern
@@ -157,9 +147,12 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
       ? customProtectedMethods
       : DEFAULT_PROTECTED_METHODS;
 
-    const filename = context.getFilename();
+    // Pre-compute Set for O(1) lookups (performance optimization)
+    const protectedMethodsSet = new Set(protectedMethods.map(m => m.toLowerCase()));
+
+    const filename = context.filename;
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     function checkCallExpression(node: TSESTree.CallExpression) {
       if (isTestFile) {
@@ -175,11 +168,11 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
       }
 
       // Check for route handler methods (app.post, router.put, etc.)
-      if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
+      if (callee.type === AST_NODE_TYPES.MemberExpression && callee.property.type === AST_NODE_TYPES.Identifier) {
         const methodName = callee.property.name;
         
-        // Only check if it's a route handler that requires CSRF
-        if (requiresCsrfProtection(methodName, protectedMethods)) {
+        // Only check if it's a route handler that requires CSRF (O(1) Set lookup)
+        if (protectedMethodsSet.has(methodName.toLowerCase())) {
           // Must have at least 2 arguments (path and handler)
           if (node.arguments.length < 2) {
             return;

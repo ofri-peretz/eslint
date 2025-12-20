@@ -35,6 +35,7 @@ coverage/
 .analysis/
 .removed-rules/
 docs/
+benchmark/
 
 # Node and package management
 node_modules/

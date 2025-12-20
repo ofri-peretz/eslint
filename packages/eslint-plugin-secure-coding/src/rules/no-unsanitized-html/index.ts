@@ -130,6 +130,65 @@ export const noUnsanitizedHtml = createRule<RuleOptions, MessageIds>({
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
     const sourceCode = context.sourceCode || context.sourceCode;
 
+    // Track variables that have been assigned sanitized content
+    const sanitizedVariables = new Set<string>();
+
+    /**
+     * Check if a call expression is a sanitization call
+     */
+    function isSanitizationCall(node: TSESTree.CallExpression): boolean {
+      const callee = node.callee;
+      if (callee.type === 'Identifier') {
+        const calleeName = callee.name.toLowerCase();
+        if (['sanitize', 'sanitizehtml', 'purify', 'escape'].includes(calleeName)) {
+          return true;
+        }
+        if (trustedLibraries.some(lib => calleeName.includes(lib.toLowerCase()))) {
+          return true;
+        }
+      }
+      if (callee.type === 'MemberExpression' && callee.object.type === 'Identifier') {
+        const objectName = callee.object.name.toLowerCase();
+        if (trustedLibraries.some(lib => objectName.includes(lib.toLowerCase()))) {
+          return true;
+        }
+        // Also check the method name
+        if (callee.property.type === 'Identifier') {
+          const methodName = callee.property.name.toLowerCase();
+          if (['sanitize', 'purify', 'escape', 'clean'].includes(methodName)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    /**
+     * Track variable declarations that are assigned sanitized content
+     */
+    function trackSanitizedAssignment(node: TSESTree.VariableDeclarator | TSESTree.AssignmentExpression) {
+      let varName: string | null = null;
+      let init: TSESTree.Node | null = null;
+
+      if (node.type === 'VariableDeclarator') {
+        if (node.id.type === 'Identifier' && node.init) {
+          varName = node.id.name;
+          init = node.init;
+        }
+      } else {
+        if (node.left.type === 'Identifier') {
+          varName = node.left.name;
+          init = node.right;
+        }
+      }
+
+      if (varName && init && init.type === 'CallExpression') {
+        if (isSanitizationCall(init)) {
+          sanitizedVariables.add(varName);
+        }
+      }
+    }
+
     function checkAssignmentExpression(node: TSESTree.AssignmentExpression) {
       if (isTestFile) {
         return;
@@ -187,6 +246,12 @@ export const noUnsanitizedHtml = createRule<RuleOptions, MessageIds>({
 
         // If right side is a literal string/number, allow it
         if (node.right.type === 'Literal') {
+          return;
+        }
+
+        // FALSE POSITIVE REDUCTION: Check if right side is a previously-sanitized variable
+        // Pattern: const clean = DOMPurify.sanitize(html); element.innerHTML = clean;
+        if (node.right.type === 'Identifier' && sanitizedVariables.has(node.right.name)) {
           return;
         }
 
@@ -321,7 +386,13 @@ export const noUnsanitizedHtml = createRule<RuleOptions, MessageIds>({
     }
 
     return {
-      AssignmentExpression: checkAssignmentExpression,
+      VariableDeclarator: trackSanitizedAssignment,
+      AssignmentExpression: (node: TSESTree.AssignmentExpression) => {
+        // Track sanitized assignments first
+        trackSanitizedAssignment(node);
+        // Then check for unsafe innerHTML
+        checkAssignmentExpression(node);
+      },
       JSXAttribute: checkJSXAttribute,
     };
   },

@@ -13,13 +13,8 @@
  * - JSDoc annotations (@safe, @validated)
  * - Input validation functions
  */
-import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
-import {
-  createSafetyChecker,
-  type SecurityRuleOptions,
-} from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree, SecurityRuleOptions } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons, createSafetyChecker } from '@interlace/eslint-devkit';
 
 type MessageIds =
   | 'bufferOverread'
@@ -251,27 +246,37 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       strictMode,
     });
 
+    // Pre-compute Sets for O(1) lookups (performance optimization)
+    const bufferTypesSet = new Set(bufferTypes.map(t => t.toLowerCase()));
+    const boundsCheckFunctionsSet = new Set(boundsCheckFunctions);
+    const userControlledKeywords = new Set(['req', 'request', 'query', 'params', 'input', 'user', 'offset', 'index', 'body']);
+
     // Track buffer variables
     const bufferVars = new Set<string>();
 
     /**
      * Check if variable is a buffer type
+     * Uses Set-based lookup for O(1) performance
      */
     const isBufferType = (varName: string): boolean => {
-      return bufferVars.has(varName) ||
-             bufferTypes.some(type => varName.toLowerCase().includes(type.toLowerCase()));
+      if (bufferVars.has(varName)) return true;
+      const lowerName = varName.toLowerCase();
+      for (const type of bufferTypesSet) {
+        if (lowerName.includes(type)) return true;
+      }
+      return false;
     };
 
     /**
      * Check if index is user-controlled
+     * Uses Set-based keyword matching for O(1) lookups
      */
     const isUserControlledIndex = (indexNode: TSESTree.Node): boolean => {
       if (indexNode.type === 'Identifier') {
         const varName = indexNode.name.toLowerCase();
-        if (['req', 'request', 'query', 'params', 'input', 'user', 'offset', 'index'].some(keyword =>
-          varName.includes(keyword)
-        )) {
-            return true;
+        // Check each part of the variable name against keywords Set
+        for (const keyword of userControlledKeywords) {
+          if (varName.includes(keyword)) return true;
         }
 
         // Trace variable definition
@@ -300,12 +305,12 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
                  }
                  
                  // Check CallExpression with user-controlled arguments (Number(req.query.index), parseInt(), etc.)
-                 if (init.type === 'CallExpression') {
+                 if (init.type === AST_NODE_TYPES.CallExpression) {
                      // Check if callee is a type conversion function
                      const typeConversionFunctions = ['number', 'parseint', 'parsefloat', 'string', 'boolean'];
                      let isTypeConversion = false;
                      
-                     if (init.callee.type === 'Identifier') {
+                     if (init.callee.type === AST_NODE_TYPES.Identifier) {
                          isTypeConversion = typeConversionFunctions.includes(init.callee.name.toLowerCase());
                      }
                      
@@ -324,9 +329,9 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       }
       
       // Check CallExpression arguments (Number(req.query.index))
-      if (indexNode.type === 'CallExpression') {
+      if (indexNode.type === AST_NODE_TYPES.CallExpression) {
           const typeConversionFunctions = ['Number', 'parseInt', 'parseFloat', 'String', 'Boolean'];
-          if (indexNode.callee.type === 'Identifier' &&
+          if (indexNode.callee.type === AST_NODE_TYPES.Identifier &&
               typeConversionFunctions.includes(indexNode.callee.name)) {
               // Check if arguments are user-controlled
               for (const arg of indexNode.arguments) {
@@ -338,7 +343,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       }
       
       // Check MemberExpression (req.query.index)
-      if (indexNode.type === 'MemberExpression') {
+      if (indexNode.type === AST_NODE_TYPES.MemberExpression) {
           const text = sourceCode.getText(indexNode).toLowerCase();
           const keywords = ['req.', 'request.', 'query.', 'params.', 'body.', 'input.', 'user.'];
           if (keywords.some(k => text.includes(k))) {
@@ -354,37 +359,37 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
      */
     const isIndexValidated = (indexNode: TSESTree.Node): boolean => {
       // If it's a literal number, check if it's non-negative
-      if (indexNode.type === 'Literal' && typeof indexNode.value === 'number') {
+      if (indexNode.type === AST_NODE_TYPES.Literal && typeof indexNode.value === 'number') {
         return indexNode.value >= 0;
       }
 
       // If it's an identifier, check if it comes from a bounds check function
-      if (indexNode.type === 'Identifier') {
+      if (indexNode.type === AST_NODE_TYPES.Identifier) {
         let current: TSESTree.Node | undefined = indexNode;
 
         // Walk up the AST to find where this variable was assigned
         while (current) {
           // Check if we're in a variable declaration
-          if (current.type === 'VariableDeclarator' &&
-              current.id.type === 'Identifier' &&
+          if (current.type === AST_NODE_TYPES.VariableDeclarator &&
+              current.id.type === AST_NODE_TYPES.Identifier &&
               current.id.name === indexNode.name &&
               current.init) {
 
             const init = current.init;
 
             // Check if assigned from a bounds check function
-            if (init.type === 'CallExpression' &&
-                init.callee.type === 'Identifier' &&
+            if (init.type === AST_NODE_TYPES.CallExpression &&
+                init.callee.type === AST_NODE_TYPES.Identifier &&
                 boundsCheckFunctions.includes(init.callee.name)) {
               return true;
             }
 
             // Check if assigned from Math.min/max with buffer.length
-            if (init.type === 'CallExpression' &&
-                init.callee.type === 'MemberExpression' &&
-                init.callee.object.type === 'Identifier' &&
+            if (init.type === AST_NODE_TYPES.CallExpression &&
+                init.callee.type === AST_NODE_TYPES.MemberExpression &&
+                init.callee.object.type === AST_NODE_TYPES.Identifier &&
                 init.callee.object.name === 'Math' &&
-                init.callee.property.type === 'Identifier' &&
+                init.callee.property.type === AST_NODE_TYPES.Identifier &&
                 (init.callee.property.name === 'min' || init.callee.property.name === 'max')) {
               return true;
             }
@@ -393,12 +398,12 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
           }
 
           // Check if it's a parameter in a function - assume validated if it's a function param
-          if (current.type === 'FunctionDeclaration' ||
-              current.type === 'FunctionExpression' ||
-              current.type === 'ArrowFunctionExpression') {
+          if (current.type === AST_NODE_TYPES.FunctionDeclaration ||
+              current.type === AST_NODE_TYPES.FunctionExpression ||
+              current.type === AST_NODE_TYPES.ArrowFunctionExpression) {
             const params = current.params;
             for (const param of params) {
-              if (param.type === 'Identifier' && param.name === indexNode.name) {
+              if (param.type === AST_NODE_TYPES.Identifier && param.name === indexNode.name) {
                 return true; // Function parameters are assumed validated
               }
             }
@@ -409,8 +414,8 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       }
 
       // Check if it's a call to a bounds check function directly
-      if (indexNode.type === 'CallExpression' &&
-          indexNode.callee.type === 'Identifier' &&
+      if (indexNode.type === AST_NODE_TYPES.CallExpression &&
+          indexNode.callee.type === AST_NODE_TYPES.Identifier &&
           boundsCheckFunctions.includes(indexNode.callee.name)) {
         return true;
       }
@@ -427,14 +432,14 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
 
       while (current) {
         // Check if we're in a function
-        if (current.type === 'FunctionDeclaration' ||
-            current.type === 'FunctionExpression' ||
-            current.type === 'ArrowFunctionExpression') {
+        if (current.type === AST_NODE_TYPES.FunctionDeclaration ||
+            current.type === AST_NODE_TYPES.FunctionExpression ||
+            current.type === AST_NODE_TYPES.ArrowFunctionExpression) {
           break;
         }
 
         // Look for if statements that check bounds
-        if (current.type === 'IfStatement') {
+        if (current.type === AST_NODE_TYPES.IfStatement) {
           const condition = current.test;
           const conditionText = sourceCode.getText(condition).toLowerCase();
 
@@ -448,7 +453,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
         }
 
         // Look for variable declarations that might be bounds checks
-        if (current.type === 'VariableDeclaration') {
+        if (current.type === AST_NODE_TYPES.VariableDeclaration) {
           for (const declarator of current.declarations) {
             if (declarator.init) {
               const initText = sourceCode.getText(declarator.init).toLowerCase();
@@ -462,7 +467,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
         }
 
         // Look for return statements or early returns that might indicate bounds checking
-        if (current.type === 'ReturnStatement' && current.argument) {
+        if (current.type === AST_NODE_TYPES.ReturnStatement && current.argument) {
           const returnText = sourceCode.getText(current.argument).toLowerCase();
           if (returnText.includes(`${bufferName}.length`)) {
             return true;
@@ -481,41 +486,41 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
     const couldBeNegative = (indexNode: TSESTree.Node): boolean => {
       // Check for literal negative numbers
       // Check for literal negative numbers
-      if (indexNode.type === 'Literal' && typeof indexNode.value === 'number') {
+      if (indexNode.type === AST_NODE_TYPES.Literal && typeof indexNode.value === 'number') {
         return indexNode.value < 0;
       }
 
       // Check for unary minus expressions like -1, -10, etc.
-      if (indexNode.type === 'UnaryExpression' &&
+      if (indexNode.type === AST_NODE_TYPES.UnaryExpression &&
           indexNode.operator === '-' &&
-          indexNode.argument.type === 'Literal' &&
+          indexNode.argument.type === AST_NODE_TYPES.Literal &&
           typeof indexNode.argument.value === 'number') {
         return true; // -N is always negative for positive N
       }
 
       // Check for binary expressions that could be negative like userInput - 10
-      if (indexNode.type === 'BinaryExpression' && indexNode.operator === '-') {
+      if (indexNode.type === AST_NODE_TYPES.BinaryExpression && indexNode.operator === '-') {
         // userInput - 10 could be negative, we can't be sure statically
         return true; // Conservative: assume it could be negative
       }
 
       // For variables, we can't be sure, but we can check for obvious patterns
-      if (indexNode.type === 'Identifier') {
+      if (indexNode.type === AST_NODE_TYPES.Identifier) {
         // Check if this variable is assigned a negative value somewhere
         // This is a simplified check - in practice we'd need more sophisticated analysis
         let current: TSESTree.Node | undefined = indexNode;
 
         while (current) {
-          if (current.type === 'VariableDeclarator' && current.init) {
-            if (current.init.type === 'Literal' &&
+          if (current.type === AST_NODE_TYPES.VariableDeclarator && current.init) {
+            if (current.init.type === AST_NODE_TYPES.Literal &&
                 typeof current.init.value === 'number' &&
                 current.init.value < 0) {
               return true;
             }
             // Check for unary minus assignments
-            if (current.init.type === 'UnaryExpression' &&
+            if (current.init.type === AST_NODE_TYPES.UnaryExpression &&
                 current.init.operator === '-' &&
-                current.init.argument.type === 'Literal' &&
+                current.init.argument.type === AST_NODE_TYPES.Literal &&
                 typeof current.init.argument.value === 'number') {
               return true;
             }
@@ -530,31 +535,31 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
     return {
       // Track buffer variable declarations
       VariableDeclarator(node: TSESTree.VariableDeclarator) {
-        if (node.id.type === 'Identifier' && node.init) {
+        if (node.id.type === AST_NODE_TYPES.Identifier && node.init) {
           const varName = node.id.name;
 
           // Check if assigned a buffer type
-          if (node.init.type === 'NewExpression' &&
-              node.init.callee.type === 'Identifier' &&
+          if (node.init.type === AST_NODE_TYPES.NewExpression &&
+              node.init.callee.type === AST_NODE_TYPES.Identifier &&
               bufferTypes.includes(node.init.callee.name)) {
             bufferVars.add(varName);
           }
 
           // Check if assigned from Buffer.from() or Buffer.alloc()
-          if (node.init.type === 'CallExpression' && 
-              node.init.callee.type === 'MemberExpression' &&
-              node.init.callee.object.type === 'Identifier' &&
+          if (node.init.type === AST_NODE_TYPES.CallExpression && 
+              node.init.callee.type === AST_NODE_TYPES.MemberExpression &&
+              node.init.callee.object.type === AST_NODE_TYPES.Identifier &&
               node.init.callee.object.name === 'Buffer' &&
-              node.init.callee.property.type === 'Identifier' &&
+              node.init.callee.property.type === AST_NODE_TYPES.Identifier &&
               ['from', 'alloc', 'allocUnsafe'].includes(node.init.callee.property.name)) {
              bufferVars.add(varName);
           }
 
           // Check if assigned a buffer method result
-          if (node.init.type === 'CallExpression') {
+          if (node.init.type === AST_NODE_TYPES.CallExpression) {
             const callee = node.init.callee;
-            if (callee.type === 'MemberExpression' &&
-                callee.property.type === 'Identifier' &&
+            if (callee.type === AST_NODE_TYPES.MemberExpression &&
+                callee.property.type === AST_NODE_TYPES.Identifier &&
                 bufferMethods.includes(callee.property.name)) {
               bufferVars.add(varName);
             }
@@ -570,7 +575,7 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       // Check member expressions (buffer[index], buffer.method())
       MemberExpression(node: TSESTree.MemberExpression) {
         // Check for buffer[index] access
-        if (node.computed && node.object.type === 'Identifier') {
+        if (node.computed && node.object.type === AST_NODE_TYPES.Identifier) {
           const bufferName = node.object.name;
           const indexNode = node.property;
 
@@ -675,10 +680,10 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
         }
 
         // Check for buffer read/write methods
-        if (callee.type === 'MemberExpression' &&
-            callee.property.type === 'Identifier' &&
+        if (callee.type === AST_NODE_TYPES.MemberExpression &&
+            callee.property.type === AST_NODE_TYPES.Identifier &&
             bufferMethods.includes(callee.property.name) &&
-            callee.object.type === 'Identifier' &&
+            callee.object.type === AST_NODE_TYPES.Identifier &&
             isBufferType(callee.object.name)) {
 
           const args = node.arguments;

@@ -104,12 +104,18 @@
   "plugins": [
     {
       "plugin": "@nx/eslint/plugin",
+      "exclude": [
+        "**/benchmark/**"
+      ],
       "options": {
         "targetName": "lint"
       }
     },
     {
       "plugin": "@nx/vite/plugin",
+      "exclude": [
+        "**/benchmark/**"
+      ],
       "options": {
         "buildTargetName": "build",
         "testTargetName": "vite:test",

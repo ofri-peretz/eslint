@@ -11,7 +11,7 @@
  * @see https://portswigger.net/web-security/prototype-pollution
  * @see https://cwe.mitre.org/data/definitions/915.html
  */
-import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { 
   formatLLMMessage, 
   MessageIcons,
@@ -243,7 +243,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * Check if a node is a literal string (potentially safe)
      */
     const isLiteralString = (node: TSESTree.Node): boolean => {
-      return node.type === 'Literal' && typeof node.value === 'string';
+      return node.type === AST_NODE_TYPES.Literal && typeof node.value === 'string';
     };
 
     /**
@@ -272,7 +272,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // Type-aware check: If we have TypeScript type information, check if the
       // property key is constrained to a union of safe string literals
       /* c8 ignore start -- TypeScript parser services often unavailable in RuleTester */
-      if (parserServices && propertyNode.type === 'Identifier') {
+      if (parserServices && propertyNode.type === AST_NODE_TYPES.Identifier) {
         try {
           const type = getTypeOfNode(propertyNode, parserServices);
           
@@ -302,9 +302,151 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
+     * Check if the property key has been validated before use.
+     * 
+     * Detects patterns like:
+     * - if (ARRAY.includes(key)) { obj[key] = value; }
+     * - if (Object.prototype.hasOwnProperty.call(obj, key)) { return obj[key]; }
+     * - if (Object.hasOwn(obj, key)) { return obj[key]; }
+     * 
+     * @param propertyNode - The property node (key in obj[key])
+     * @param node - The current node being checked
+     * @returns true if the key has been validated, false otherwise
+     */
+    const hasPrecedingValidation = (propertyNode: TSESTree.Node, node: TSESTree.Node): boolean => {
+      // Only check for identifier keys (obj[key] where key is a variable)
+      if (propertyNode.type !== AST_NODE_TYPES.Identifier) {
+        return false;
+      }
+      const keyName = propertyNode.name;
+
+      // AST-based validation detection (faster than getText + regex)
+      const isIncludesCall = (testNode: TSESTree.Node): boolean => {
+        // Pattern: ARRAY.includes(keyName)
+        if (testNode.type === AST_NODE_TYPES.CallExpression &&
+            testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
+            testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
+            testNode.callee.property.name === 'includes' &&
+            testNode.arguments.length > 0 &&
+            testNode.arguments[0].type === AST_NODE_TYPES.Identifier &&
+            testNode.arguments[0].name === keyName) {
+          return true;
+        }
+        // Handle negation: !ARRAY.includes(key)
+        if (testNode.type === AST_NODE_TYPES.UnaryExpression &&
+            testNode.operator === '!' &&
+            testNode.argument.type === AST_NODE_TYPES.CallExpression) {
+          return isIncludesCall(testNode.argument);
+        }
+        return false;
+      };
+
+      const isHasOwnPropertyCall = (testNode: TSESTree.Node): boolean => {
+        // Pattern: Object.prototype.hasOwnProperty.call(obj, key) OR obj.hasOwnProperty(key) OR Object.hasOwn(obj, key)
+        if (testNode.type !== AST_NODE_TYPES.CallExpression) return false;
+        const callee = testNode.callee;
+        const args = testNode.arguments;
+        
+        // Object.prototype.hasOwnProperty.call(obj, key)
+        if (callee.type === AST_NODE_TYPES.MemberExpression &&
+            callee.property.type === AST_NODE_TYPES.Identifier &&
+            callee.property.name === 'call' &&
+            args.length >= 2 &&
+            args[1].type === AST_NODE_TYPES.Identifier &&
+            args[1].name === keyName) {
+          return true;
+        }
+        
+        // obj.hasOwnProperty(key) OR Object.hasOwn(obj, key)
+        if (callee.type === AST_NODE_TYPES.MemberExpression &&
+            callee.property.type === AST_NODE_TYPES.Identifier &&
+            (callee.property.name === 'hasOwnProperty' || callee.property.name === 'hasOwn')) {
+          const keyArg = callee.property.name === 'hasOwn' ? args[1] : args[0];
+          if (keyArg?.type === AST_NODE_TYPES.Identifier && keyArg.name === keyName) {
+            return true;
+          }
+        }
+        return false;
+      };
+
+      const isInOperator = (testNode: TSESTree.Node): boolean => {
+        // Pattern: key in obj
+        return testNode.type === AST_NODE_TYPES.BinaryExpression &&
+               testNode.operator === 'in' &&
+               testNode.left.type === AST_NODE_TYPES.Identifier &&
+               testNode.left.name === keyName;
+      };
+
+      const hasValidation = (testNode: TSESTree.Node): boolean => {
+        return isIncludesCall(testNode) || isHasOwnPropertyCall(testNode) || isInOperator(testNode);
+      };
+
+      const hasEarlyExit = (consequent: TSESTree.Statement): boolean => {
+        // Check if block contains throw or return
+        if (consequent.type === AST_NODE_TYPES.BlockStatement) {
+          return consequent.body.some(stmt => 
+            stmt.type === AST_NODE_TYPES.ThrowStatement ||
+            stmt.type === AST_NODE_TYPES.ReturnStatement
+          );
+        }
+        return consequent.type === AST_NODE_TYPES.ThrowStatement ||
+               consequent.type === AST_NODE_TYPES.ReturnStatement;
+      };
+
+      // Walk up to find enclosing IfStatement with validation
+      let current: TSESTree.Node | undefined = node.parent;
+      let foundFunctionBody = false;
+      
+      while (current && !foundFunctionBody) {
+        // Check if we're inside an if-block with validation in the condition
+        if (current.type === AST_NODE_TYPES.IfStatement) {
+          if (hasValidation(current.test)) {
+            return true;
+          }
+        }
+        
+        // Check for function body - look for preceding sibling if-statements with early exit
+        if (current.type === AST_NODE_TYPES.BlockStatement && current.parent && (
+            current.parent.type === AST_NODE_TYPES.FunctionDeclaration ||
+            current.parent.type === AST_NODE_TYPES.FunctionExpression ||
+            current.parent.type === AST_NODE_TYPES.ArrowFunctionExpression)) {
+          
+          foundFunctionBody = true;
+          const blockBody = current.body;
+          const nodeIndex = blockBody.findIndex((stmt: TSESTree.Statement) => {
+            let check: TSESTree.Node | undefined = node;
+            while (check) {
+              if (check === stmt) return true;
+              check = check.parent;
+            }
+            return false;
+          });
+          
+          // Look at preceding statements for validation patterns with early exit
+          for (let i = 0; i < nodeIndex; i++) {
+            const stmt = blockBody[i];
+            if (stmt.type === AST_NODE_TYPES.IfStatement &&
+                hasValidation(stmt.test) &&
+                hasEarlyExit(stmt.consequent)) {
+              return true;
+            }
+          }
+        }
+        
+        current = current.parent;
+      }
+      
+      return false;
+    };
+    /**
      * Check if property access is potentially dangerous
      */
     const isDangerousPropertyAccess = (propertyNode: TSESTree.Node): boolean => {
+      // SAFE: Numeric literals (array index access like items[0], items[1])
+      if (propertyNode.type === AST_NODE_TYPES.Literal && typeof propertyNode.value === 'number') {
+        return false;
+      }
+
       // Check if it's a literal string first
       if (isLiteralString(propertyNode)) {
         const propName = String((propertyNode as TSESTree.Literal).value);
@@ -352,13 +494,13 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       let propertyNode: TSESTree.Node;
       let isAssignment = false;
 
-      if (node.type === 'AssignmentExpression' && node.left.type === 'MemberExpression') {
+      if (node.type === AST_NODE_TYPES.AssignmentExpression && node.left.type === AST_NODE_TYPES.MemberExpression) {
         // Assignment: obj[key] = value
         object = sourceCode.getText(node.left.object);
         property = sourceCode.getText(node.left.property);
         propertyNode = node.left.property;
         isAssignment = true;
-      } else if (node.type === 'MemberExpression') {
+      } else if (node.type === AST_NODE_TYPES.MemberExpression) {
         // Access: obj[key]
         object = sourceCode.getText(node.object);
         property = sourceCode.getText(node.property);
@@ -393,6 +535,11 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
       const { propertyNode } = extractPropertyAccess(node);
 
+      // Skip if the key has been validated (e.g., includes() or hasOwnProperty check)
+      if (hasPrecedingValidation(propertyNode, node)) {
+        return false;
+      }
+
       // Check for dangerous property access in assignment
       return isDangerousPropertyAccess(propertyNode);
     };
@@ -407,6 +554,11 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       }
 
       const { propertyNode } = extractPropertyAccess(node);
+
+      // Skip if the key has been validated (e.g., includes() or hasOwnProperty check)
+      if (hasPrecedingValidation(propertyNode, node)) {
+        return false;
+      }
 
       // Check for dangerous property access
       return isDangerousPropertyAccess(propertyNode);
@@ -436,7 +588,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       }
 
       // Mark the MemberExpression as handled to avoid double-reporting
-      if (node.left.type === 'MemberExpression') {
+      if (node.left.type === AST_NODE_TYPES.MemberExpression) {
         handledMemberExpressions.add(node.left);
       }
 
@@ -494,7 +646,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // Also check parent - if it's an AssignmentExpression and this node is the left side, skip
       // (This handles cases where WeakSet check didn't work due to visitor order)
       const parent = node.parent as TSESTree.Node | undefined;
-      if (parent && parent.type === 'AssignmentExpression' && parent.left === node) {
+      if (parent && parent.type === AST_NODE_TYPES.AssignmentExpression && parent.left === node) {
         return;
       }
 

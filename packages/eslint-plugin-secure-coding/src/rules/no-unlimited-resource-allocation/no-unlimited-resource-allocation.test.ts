@@ -50,6 +50,10 @@ describe('no-unlimited-resource-allocation', () => {
             }
           `,
         },
+        // Static path construction - should NOT be flagged as unlimited resource
+        {
+          code: `fs.readFileSync(path.join(__dirname, 'data', 'users.json'));`,
+        },
       ],
       invalid: [],
     });

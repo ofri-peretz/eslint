@@ -1,9 +1,41 @@
-# Changelog
+nx# Changelog
 
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [3.0.2] - 2025-12-20
+
+### Performance
+
+- **detect-object-injection**: Replaced `getText()` + regex with AST-based validation (~4x faster)
+- **detect-non-literal-fs-filename**: Replaced `getText()` + regex with AST-based validation
+- **no-timing-attack**: Set-based O(1) lookups for sensitive variables and auth patterns
+- **no-buffer-overread**: Set-based O(1) lookups for buffer methods and user-controlled keywords
+- **no-missing-csrf-protection**: Set-based O(1) lookups for protected HTTP methods
+- **detect-child-process**: Set-based O(1) lookups for dangerous child_process methods
+
+## [3.0.1] - 2025-12-20
+
+### Fixed
+
+- **detect-object-injection**: Reduced false positives by detecting validation patterns:
+  - `includes()` checks in enclosing if-blocks
+  - `hasOwnProperty()` / `Object.hasOwn()` / `in` operator checks
+  - Preceding guard clauses with early exit (`if (!valid) throw`)
+  - Numeric index access (`items[0]`, `items[1]`) now recognized as safe
+- **detect-non-literal-fs-filename**: Allow safe path patterns:
+  - `path.join(__dirname, ...literals)` with all literal arguments
+  - Paths validated with `startsWith()` checks (both inside if-blocks and after guard clauses)
+- **no-timing-attack**: Skip false positives in timing-safe contexts:
+  - Length comparisons before `crypto.timingSafeEqual()`
+  - Early returns inside functions using `timingSafeEqual`
+  - Fixed file-level sensitive variable detection to be function-scoped
+- **no-unsanitized-html**: Track sanitized variables:
+  - Variables assigned from `DOMPurify.sanitize()` now recognized as safe
+- **no-unlimited-resource-allocation**: Allow safe static paths:
+  - `fs.readFileSync(path.join(__dirname, ...literals))` patterns now recognized as safe
 
 ## [3.0.0] - 2025-12-14
 

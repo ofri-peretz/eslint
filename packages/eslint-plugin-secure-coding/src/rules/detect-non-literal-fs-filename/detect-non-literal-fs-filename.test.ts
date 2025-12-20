@@ -48,6 +48,24 @@ describe('detect-non-literal-fs-filename', () => {
         {
           code: 'obj.readFile(userPath);',
         },
+        // Guard clause validation - path validated with startsWith() before use
+        {
+          code: `
+            const SAFE_DIR = path.resolve(__dirname, 'uploads');
+            function safeReadFile(userFilename) {
+              const safeName = path.basename(userFilename);
+              const safePath = path.join(SAFE_DIR, safeName);
+              if (!safePath.startsWith(SAFE_DIR)) {
+                throw new Error('Invalid path');
+              }
+              return fs.readFileSync(safePath);
+            }
+          `,
+        },
+        // Static path construction with path.join(__dirname, ...literals)
+        {
+          code: `fs.readFileSync(path.join(__dirname, 'data', 'users.json'));`,
+        },
       ],
       invalid: [],
     });
