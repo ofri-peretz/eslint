@@ -94,13 +94,28 @@ Found child_process.exec() with non Literal first argument
 
 ## 📈 False Positive Analysis
 
-> **v2.2.6 Update**: After mitigation efforts, `secure-coding` now has **0 false positives** on safe-patterns.js!
+> **v2.3.0 Update**: All false positives have been **FIXED**! Both `recommended` and `strict` configs now achieve **100% precision**.
 
-| Category         | `secure-coding` FP | `security` FP | Notes                                     |
-| ---------------- | ------------------ | ------------- | ----------------------------------------- |
-| Object Injection | 0                  | 3 warnings    | Fixed via validation pattern detection    |
-| Path Traversal   | 0                  | 1 warning     | Fixed via guard clause & startsWith check |
-| **TOTAL**        | **0**              | **4**         |                                           |
+### Config Comparison
+
+| Config          | False Positives | Precision | Notes                      |
+| --------------- | --------------- | --------- | -------------------------- |
+| **recommended** | **0**           | **100%**  | Optimal for most projects  |
+| **strict**      | **0**           | **100%**  | Maximum detection coverage |
+
+### Fixes Applied in v2.3.0
+
+1. **`no-arbitrary-file-access`**: Now detects `path.basename()` sanitization, `startsWith()` guards, and safe variable naming
+2. **`no-weak-password-recovery`**: Narrowed scope to require BOTH password AND reset/recover/forgot keywords
+3. **`no-unvalidated-user-input`**: Removed overly broad `input` pattern, uses prefix-based ignorePatterns
+
+### eslint-plugin-security Comparison
+
+| Category         | `secure-coding` | `security` | Notes                                     |
+| ---------------- | --------------- | ---------- | ----------------------------------------- |
+| Object Injection | 0               | 3 warnings | Fixed via validation pattern detection    |
+| Path Traversal   | 0               | 1 warning  | Fixed via guard clause & startsWith check |
+| **TOTAL**        | **0**           | **4**      |                                           |
 
 ### `eslint-plugin-security` False Positives (4 total)
 

@@ -363,14 +363,29 @@ describe('no-unvalidated-user-input', () => {
             },
           ],
         },
+        // 'rawInput' now triggers (explicit unsafe naming)
+        {
+          code: 'const rawInput = req.body;',
+          errors: [
+            {
+              messageId: 'unvalidatedInput',
+            },
+          ],
+        },
       ],
     });
 
     ruleTester.run('edge cases - validation example for different input sources', noUnvalidatedUserInput, {
-      valid: [],
-      invalid: [
+      valid: [
+        // 'input' alone is now valid (too many false positives)
         {
           code: 'const data = input;',
+        },
+      ],
+      invalid: [
+        // 'unsafeInput' and 'rawInput' still trigger
+        {
+          code: 'const data = unsafeInput;',
           errors: [
             {
               messageId: 'unvalidatedInput',

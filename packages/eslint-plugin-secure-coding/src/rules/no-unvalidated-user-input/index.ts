@@ -7,7 +7,7 @@
  * @see https://owasp.org/www-community/vulnerabilities/Improper_Input_Validation
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unvalidatedInput' | 'useValidationLibrary' | 'useZod' | 'useJoi';
@@ -19,7 +19,7 @@ export interface Options {
   /** Trusted validation libraries. Default: ['zod', 'joi', 'yup', 'class-validator'] */
   trustedLibraries?: string[];
   
-  /** Additional safe patterns to ignore. Default: [] */
+  /** Additional safe patterns to ignore. Default: ['^safe', '^sanitized', '^validated', '^clean'] (prefix patterns) */
   ignorePatterns?: string[];
 }
 
@@ -44,9 +44,11 @@ const UNVALIDATED_INPUT_PATTERNS = [
   // Next.js patterns
   { pattern: /\bsearchParams\b/, name: 'searchParams', context: 'Next.js search params' },
   
-  // Generic patterns
+  // Generic patterns - ONLY flag clearly user-related patterns
+  // Removed 'input' as it's too generic and causes many false positives
   { pattern: /\buserInput\b/, name: 'userInput', context: 'Generic user input' },
-  { pattern: /\binput\b/, name: 'input', context: 'Generic input variable' },
+  { pattern: /\bunsafeInput\b/, name: 'unsafeInput', context: 'Explicitly unsafe input' },
+  { pattern: /\brawInput\b/, name: 'rawInput', context: 'Raw/unprocessed input' },
 ];
 
 /**
@@ -211,7 +213,7 @@ export const noUnvalidatedUserInput = createRule<RuleOptions, MessageIds>({
     {
       allowInTests: false,
       trustedLibraries: ['zod', 'joi', 'yup', 'class-validator'],
-      ignorePatterns: [],
+      ignorePatterns: ['^safe', '^sanitized', '^validated', '^clean'],
     },
   ],
   create(
@@ -221,7 +223,7 @@ export const noUnvalidatedUserInput = createRule<RuleOptions, MessageIds>({
     const {
       allowInTests = false,
       trustedLibraries = ['zod', 'joi', 'yup', 'class-validator'],
-      ignorePatterns = [],
+      ignorePatterns = ['^safe', '^sanitized', '^validated', '^clean'],
     } = options as Options;
 
     const filename = context.getFilename();
@@ -353,9 +355,10 @@ export const noUnvalidatedUserInput = createRule<RuleOptions, MessageIds>({
         }
       }
 
-      // Check for generic input patterns (userInput, input)
+      // Check for generic input patterns (userInput, unsafeInput, rawInput)
+      const genericInputPatternNames = ['userInput', 'unsafeInput', 'rawInput'];
       const matchedPattern = UNVALIDATED_INPUT_PATTERNS.find(p => 
-        (p.name === 'userInput' || p.name === 'input') && p.pattern.test(text)
+        genericInputPatternNames.includes(p.name) && p.pattern.test(text)
       );
       
       if (matchedPattern) {
@@ -393,21 +396,21 @@ export const noUnvalidatedUserInput = createRule<RuleOptions, MessageIds>({
       }
 
       // Check destructuring patterns like: const { page, limit } = req.query;
-      if (node.parent && node.parent.type === 'VariableDeclarator' && node.parent.init) {
+      if (node.parent && node.parent.type === AST_NODE_TYPES.VariableDeclarator && node.parent.init) {
         const init = node.parent.init;
         const initText = sourceCode.getText(init);
         
         // If init is a CallExpression, check if it's a validation call
         // If so, the input is being validated, so skip
-        if (init.type === 'CallExpression') {
+        if (init.type === AST_NODE_TYPES.CallExpression) {
           const callee = init.callee;
-          if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier') {
+          if (callee.type === AST_NODE_TYPES.MemberExpression && callee.property.type === AST_NODE_TYPES.Identifier) {
             const methodName = callee.property.name.toLowerCase();
             if (['parse', 'validate', 'safeparse', 'parseasync', 'validateasync', 'safe_parse'].includes(methodName)) {
               return; // It's a validation call, skip
             }
           }
-          if (callee.type === 'Identifier') {
+          if (callee.type === AST_NODE_TYPES.Identifier) {
             const calleeName = callee.name.toLowerCase();
             if (['validate', 'plaintoclass', 'transform'].includes(calleeName)) {
               return; // It's a validation call, skip
@@ -421,15 +424,15 @@ export const noUnvalidatedUserInput = createRule<RuleOptions, MessageIds>({
         if (matchedPattern) {
           // For CallExpressions, check the arguments to see if they're validated
           // The init itself being a validation call was already checked above
-          if (init.type === 'CallExpression') {
+          if (init.type === AST_NODE_TYPES.CallExpression) {
             // Check each argument to see if it's validated
             // If init is a validation call (like schema.validate(req.body)),
             // then req.body is validated, so skip
             const callee = init.callee;
             const isValidationCall = 
-              (callee.type === 'MemberExpression' && callee.property.type === 'Identifier' &&
+              (callee.type === AST_NODE_TYPES.MemberExpression && callee.property.type === AST_NODE_TYPES.Identifier &&
                ['parse', 'validate', 'safeparse', 'parseasync', 'validateasync', 'safe_parse'].includes(callee.property.name.toLowerCase())) ||
-              (callee.type === 'Identifier' &&
+              (callee.type === AST_NODE_TYPES.Identifier &&
                ['validate', 'plaintoclass', 'transform'].includes(callee.name.toLowerCase()));
             
             if (isValidationCall) {
@@ -438,7 +441,7 @@ export const noUnvalidatedUserInput = createRule<RuleOptions, MessageIds>({
             
             // If init is not a validation call, check if arguments are validated
             const hasValidatedArg = init.arguments.some((arg: TSESTree.CallExpressionArgument) => {
-              if (arg.type === 'MemberExpression' || arg.type === 'Identifier') {
+              if (arg.type === AST_NODE_TYPES.MemberExpression || arg.type === AST_NODE_TYPES.Identifier) {
                 return isInsideValidationCall(arg, sourceCode, trustedLibraries);
               }
               return false;
@@ -454,7 +457,7 @@ export const noUnvalidatedUserInput = createRule<RuleOptions, MessageIds>({
           }
 
           // Check if variable name matches ignore pattern
-          if (node.parent.id.type === 'ObjectPattern') {
+          if (node.parent.id.type === AST_NODE_TYPES.ObjectPattern) {
             const varText = sourceCode.getText(node.parent.id);
             if (matchesIgnorePattern(varText, ignorePatterns)) {
               return;

@@ -282,23 +282,33 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
 
     /**
      * Check if code is specifically related to password recovery
-     * Requires multiple indicators to avoid false positives on general token usage
+     * Requires MULTIPLE indicators to avoid false positives on general password handling
+     * Only returns true for functions that BOTH:
+     * 1. Have password/forgot in the name
+     * 2. AND have reset/recovery/forgot in the name
      */
     const isRecoveryRelated = (text: string): boolean => {
       const lowerText = text.toLowerCase();
       
-      // Must have at least one password-specific keyword
-      const passwordKeywords = ['password', 'forgot', 'reset', 'recovery'];
-      const hasPasswordContext = passwordKeywords.some(keyword => lowerText.includes(keyword));
+      // Require BOTH a password keyword AND a recovery action keyword
+      const passwordKeywords = ['password', 'pwd'];
+      const recoveryKeywords = ['reset', 'recover', 'forgot', 'restore'];
       
-      // Also check for common password recovery patterns
-      const recoveryPatterns = [
+      const hasPasswordKeyword = passwordKeywords.some(keyword => lowerText.includes(keyword));
+      const hasRecoveryKeyword = recoveryKeywords.some(keyword => lowerText.includes(keyword));
+      
+      // Both must be present to be considered recovery-related
+      if (hasPasswordKeyword && hasRecoveryKeyword) {
+        return true;
+      }
+      
+      // Also check for compound patterns that strongly indicate password recovery
+      const strongRecoveryPatterns = [
         'resetpassword', 'passwordreset', 'forgotpassword', 'passwordrecovery',
-        'resettoken', 'recoverytoken', 'password_reset', 'forgot_password'
+        'recoverytoken', 'password_reset', 'forgot_password', 'reset_password',
+        'passwordforgot', 'recoverpassword'
       ];
-      const hasRecoveryPattern = recoveryPatterns.some(pattern => lowerText.includes(pattern));
-      
-      return hasPasswordContext || hasRecoveryPattern;
+      return strongRecoveryPatterns.some(pattern => lowerText.includes(pattern));
     };
 
     /**
@@ -373,16 +383,18 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
       },
 
       // Check function declarations for recovery logic
+      // ONLY check function NAME to avoid FPs on any function that mentions "password"
       FunctionDeclaration(node: TSESTree.FunctionDeclaration) {
         if (!node.id) {
           return;
         }
 
-        const functionName = node.id.name.toLowerCase();
+        const functionName = node.id.name;
         const functionText = sourceCode.getText(node).toLowerCase();
 
-        // Check if function is recovery-related
-        if (isRecoveryRelated(functionName) || isRecoveryRelated(functionText)) {
+        // IMPORTANT: Only check the function NAME, not the entire body
+        // This prevents flagging every function that happens to contain "password"
+        if (isRecoveryRelated(functionName)) {
           // Check for token expiration
           if (!hasTokenExpiration(node)) {
             /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */

@@ -1,3 +1,5 @@
+// For development testing with local changes, use:
+// import secureCoding from '../../../dist/packages/eslint-plugin-secure-coding/index.cjs';
 import secureCoding from 'eslint-plugin-secure-coding';
 
 export default [
