@@ -1,6 +1,6 @@
 # eslint-plugin-pg
 
-**Security and best practices rules for the `pg` Node.js driver that AI assistants can understand and fix.**
+**Security and best practices rules for [node-postgres](https://node-postgres.com/) (`pg`) that AI assistants can understand and fix.**
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-pg.svg)](https://www.npmjs.com/package/eslint-plugin-pg)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-pg.svg)](https://www.npmjs.com/package/eslint-plugin-pg)

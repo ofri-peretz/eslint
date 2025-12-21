@@ -45,6 +45,14 @@
   "engines": {
     "node": ">=18.0.0"
   },
+  "peerDependencies": {
+    "pg": "^6.0.0 || ^7.0.0 || ^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "pg": {
+      "optional": true
+    }
+  },
   "dependencies": {
     "@interlace/eslint-devkit": "^1.2.1",
     "tslib": "^2.3.0"
