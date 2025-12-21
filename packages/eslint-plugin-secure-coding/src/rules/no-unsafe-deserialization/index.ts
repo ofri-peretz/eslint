@@ -406,7 +406,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
             
             if (!safe) {
                // Determine message ID
-               let messageId = 'unsafeDeserialization';
+               let messageId: MessageIds = 'unsafeDeserialization';
                // Check specifically for YAML
                const calleeText = sourceCode.getText(node.callee);
                if (calleeText.includes('yaml') || calleeText.includes('YAML')) {
@@ -414,11 +414,11 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
                }
 
                // Check for generic dangerous functions
-               if ((node.callee as any).name && ['eval', 'setTimeout', 'setInterval'].includes((node.callee as any).name)) {
+               if (node.callee.type === 'Identifier' && ['eval', 'setTimeout', 'setInterval'].includes(node.callee.name)) {
                   messageId = 'dangerousEvalUsage';
                }
 
-               const reportObj: any = {
+               context.report({
                  node,
                  messageId,
                  data: {
@@ -427,22 +427,16 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
                     line: String(node.loc?.start.line ?? 0),
                     severity: 'HIGH',
                     safeAlternative: 'Use JSON.parse() or validated safe deserialization libraries',
-                 }
-               };
+                 },
+                 suggest: messageId === 'dangerousEvalUsage' ? [{
+                    messageId: 'useSafeDeserializer' as const,
+                    fix: (fixer: TSESLint.RuleFixer) => {
+                       return fixer.replaceText(node, `JSON.parse(${sourceCode.getText(node.arguments[0])})`);
+                    }
+                 }] : undefined
+               });
 
-               if (messageId === 'dangerousEvalUsage') {
-                  reportObj.suggest = [{
-                     messageId: 'useSafeDeserializer',
-                     fix: (fixer: any) => {
-                        // Suggest JSON.parse
-                        return fixer.replaceText(node, `JSON.parse(${sourceCode.getText(node.arguments[0])})`);
-                     },
-                     // Suggestion output for tests
-                     output: `JSON.parse(${sourceCode.getText(node.arguments[0])})` 
-                  }];
-               }
 
-               context.report(reportObj);
             }
          }
       }   
@@ -551,12 +545,8 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
             if (['node-serialize', 'serialize-javascript', 'js-yaml', 'yaml'].includes(moduleName)) {
               // Check if this variable is used unsafely later
               if (node.id.type === 'Identifier') {
-                const varName = node.id.name;
-
                 // Look ahead to see if this library is used dangerously
                 // This is a simplified check - in practice, we'd need more sophisticated analysis
-                // Check if this variable is used unsafely later
-                if (node.id.type === 'Identifier') {
                   const variables = sourceCode.getDeclaredVariables(node);
                   for (const variable of variables) {
                     for (const reference of variable.references) {
@@ -592,7 +582,6 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
                         }
                       }
                     }
-                  }
                 }
               }
             }

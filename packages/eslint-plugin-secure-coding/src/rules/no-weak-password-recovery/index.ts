@@ -263,7 +263,6 @@ export const noWeakPasswordRecovery = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-      recoveryKeywords = ['reset', 'password', 'recovery', 'forgot', 'token', 'resetToken'],
       secureTokenFunctions = ['crypto.randomBytes', 'crypto.randomUUID', 'randomBytes', 'generateSecureToken'],
       trustedSanitizers = [],
       trustedAnnotations = ['secure-recovery', 'rate-limited'],

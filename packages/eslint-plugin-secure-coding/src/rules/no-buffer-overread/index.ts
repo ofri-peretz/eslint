@@ -248,7 +248,6 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
 
     // Pre-compute Sets for O(1) lookups (performance optimization)
     const bufferTypesSet = new Set(bufferTypes.map(t => t.toLowerCase()));
-    const boundsCheckFunctionsSet = new Set(boundsCheckFunctions);
     const userControlledKeywords = new Set(['req', 'request', 'query', 'params', 'input', 'user', 'offset', 'index', 'body']);
 
     // Track buffer variables

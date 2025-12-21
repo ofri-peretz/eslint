@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-dependencies",
   "version": "2.0.0",
-  "description": "ESLint plugin for dependency management with 30 LLM-optimized rules. Covers import validation, module resolution, circular dependencies, and export style enforcement.",
+  "description": "High-performance, Agentic alternative to eslint-plugin-import. Blisteringly fast cached circular dependency detection and AI-optimized architecture fixes.",
   "type": "commonjs",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",

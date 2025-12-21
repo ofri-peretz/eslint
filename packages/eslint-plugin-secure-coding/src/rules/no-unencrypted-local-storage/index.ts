@@ -40,8 +40,6 @@ export const noUnencryptedLocalStorage = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const sourceCode = context.sourceCode;
-    
     function report(node: TSESTree.Node) {
       context.report({
         node,

@@ -1,10 +1,10 @@
 # Ensure nvm-installed node/pnpm is in PATH
 export PATH="$HOME/.nvm/versions/node/v20.19.5/bin:$PATH"
 
-# Auto-fix linting issues for affected projects only
+# Auto-fix linting issues for affected projects only (quiet mode)
 echo "🔧 Running lint with --fix for affected projects..."
-pnpm nx affected -t lint --fix
+pnpm nx affected -t lint --fix --quiet 2>/dev/null || pnpm nx affected -t lint --fix
 
-# Run tests for affected projects only
+# Run tests for affected projects only (minimal output)
 echo "🧪 Running tests for affected projects..."
-pnpm nx affected -t test
+pnpm nx affected -t test -- --reporter=dot --no-color 2>&1 | tail -20

@@ -1,0 +1,39 @@
+# Development files
+src/
+tsconfig.json
+tsconfig.lib.json
+tsconfig.spec.json
+vite.config.ts
+project.json
+
+# Tests
+**/*.spec.ts
+**/*.spec.js
+**/*.test.ts
+**/*.test.js
+__tests__/
+*.spec.*
+*.test.*
+
+# Benchmark
+benchmark/
+
+# Source maps
+**/*.map
+**/*.js.map
+**/*.d.ts.map
+
+# Development docs
+docs/
+AGENTS.md
+
+# Dependencies & generated
+node_modules/
+.turbo/
+.nx/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+*.log

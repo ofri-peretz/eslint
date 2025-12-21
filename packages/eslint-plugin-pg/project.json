@@ -1,0 +1,91 @@
+{
+  "name": "eslint-plugin-pg",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/eslint-plugin-pg/src",
+  "projectType": "library",
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": [
+        "{projectRoot}",
+        "dist/{projectRoot}"
+      ],
+      "currentVersionResolver": "git-tag",
+      "fallbackCurrentVersionResolver": "disk"
+    }
+  },
+  "tags": [
+    "npm:public",
+    "npm:eslint",
+    "npm:eslint-plugin",
+    "npm:pg",
+    "npm:security"
+  ],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "dependsOn": [
+        "^build",
+        "test"
+      ],
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "outputPath": "dist/packages/eslint-plugin-pg",
+        "main": "packages/eslint-plugin-pg/src/index.ts",
+        "tsConfig": "packages/eslint-plugin-pg/tsconfig.lib.json",
+        "assets": [
+          "packages/eslint-plugin-pg/README.md",
+          "packages/eslint-plugin-pg/LICENSE"
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": [
+        "{projectRoot}/coverage"
+      ],
+      "options": {
+        "configFile": "packages/eslint-plugin-pg/vitest.config.mts"
+      },
+      "configurations": {
+        "ci": {
+          "coverage": true
+        }
+      }
+    },
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "^nx-release-publish",
+        "build"
+      ],
+      "options": {
+        "command": "pnpm publish dist/{projectRoot} --access public --no-git-checks",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "command": "npm publish dist/packages/eslint-plugin-pg --access public",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "build:minimal": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "commands": [
+          "find dist/packages/eslint-plugin-pg -name '*.js.map' -delete"
+        ],
+        "cwd": "{workspaceRoot}"
+      }
+    }
+  }
+}

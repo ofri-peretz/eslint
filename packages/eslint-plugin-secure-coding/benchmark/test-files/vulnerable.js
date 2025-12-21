@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, no-undef, @typescript-eslint/no-empty-function, no-empty */
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function, no-unused-vars */
 // Test file with various security vulnerabilities (JavaScript - no TypeScript)
 // These unused variables are intentional - they're test patterns for security linting
 const fs = require('node:fs');

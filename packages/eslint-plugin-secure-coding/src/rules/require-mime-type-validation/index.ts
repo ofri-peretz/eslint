@@ -2,7 +2,7 @@
  * @fileoverview Require MIME type validation for uploads
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -41,17 +41,17 @@ export const requireMimeTypeValidation = createRule<RuleOptions, MessageIds>({
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Detect multer().single() or multer().array() without fileFilter
-        if (node.callee.type === 'MemberExpression' &&
-            node.callee.property.type === 'Identifier' &&
+        if (node.callee.type === AST_NODE_TYPES.MemberExpression &&
+            node.callee.property.type === AST_NODE_TYPES.Identifier &&
             ['single', 'array', 'fields'].includes(node.callee.property.name)) {
           
           // Check if parent has fileFilter configuration
           const calleeObj = node.callee.object;
-          if (calleeObj.type === 'CallExpression') {
+          if (calleeObj.type === AST_NODE_TYPES.CallExpression) {
             const multerArgs = calleeObj.arguments[0];
-            if (multerArgs && multerArgs.type === 'ObjectExpression') {
+            if (multerArgs && multerArgs.type === AST_NODE_TYPES.ObjectExpression) {
               const hasFileFilter = multerArgs.properties.some(
-                (p: any) => p.key?.name === 'fileFilter' || p.key?.name === 'limits'
+                (p) => p.type === AST_NODE_TYPES.Property && p.key.type === AST_NODE_TYPES.Identifier && (p.key.name === 'fileFilter' || p.key.name === 'limits')
               );
               if (!hasFileFilter) {
                 report(node);
@@ -64,10 +64,10 @@ export const requireMimeTypeValidation = createRule<RuleOptions, MessageIds>({
         }
         
         // Detect upload() calls directly
-        if (node.callee.type === 'Identifier' && node.callee.name === 'upload') {
+        if (node.callee.type === AST_NODE_TYPES.Identifier && node.callee.name === 'upload') {
           // Check if there's validation in arguments
           if (node.arguments.length === 0 || 
-              (node.arguments[0]?.type === 'Identifier')) {
+              (node.arguments[0]?.type === AST_NODE_TYPES.Identifier)) {
             report(node);
           }
         }

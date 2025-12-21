@@ -1,0 +1,13 @@
+{
+    "name": "eslint-plugin-pg-benchmark",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "benchmark": "node benchmark.mjs"
+    },
+    "dependencies": {
+        "eslint": "^9.0.0",
+        "eslint-plugin-pg": "file:../dist"
+    }
+}

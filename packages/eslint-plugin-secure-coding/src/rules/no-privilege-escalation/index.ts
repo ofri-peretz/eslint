@@ -282,8 +282,7 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
                 suggest: [
                   {
                     messageId: 'addRoleCheck',
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                    fix: (_fixer: TSESLint.RuleFixer) => null,
+                    fix: () => null,
                   },
                 ],
               });
@@ -348,8 +347,7 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
                 suggest: [
                   {
                     messageId: 'addRoleCheck',
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                    fix: (_fixer: TSESLint.RuleFixer) => null,
+                    fix: () => null,
                   },
                 ],
               });
@@ -385,7 +383,7 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
                   suggest: [
                     {
                       messageId: 'addRoleCheck',
-                      fix: (_fixer: TSESLint.RuleFixer) => null, // No auto-fix for logic
+                      fix: () => null, // No auto-fix for logic
                     },
                   ],
                 });

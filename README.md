@@ -12,6 +12,18 @@ This monorepo is purpose-built for ESLint. It houses battle-tested plugins, shar
 
 ---
 
+## 🛡️ Show your security
+
+Add this badge to your README to show you are protected:
+
+[![Security: eslint-plugin-secure-coding](https://img.shields.io/badge/Security-eslint--plugin--secure--coding-blue?style=flat-square)](https://github.com/ofri-peretz/eslint)
+
+```markdown
+[![Security: eslint-plugin-secure-coding](https://img.shields.io/badge/Security-eslint--plugin--secure--coding-blue?style=flat-square)](https://github.com/ofri-peretz/eslint)
+```
+
+---
+
 ## 📦 Available Packages
 
 Independently versioned ESLint-focused packages: plugins, configs, resolvers, and supporting utilities.

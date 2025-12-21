@@ -4,7 +4,7 @@
  * @see https://cwe.mitre.org/data/definitions/942.html
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -40,8 +40,6 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
   create(context) {
-    const sourceCode = context.sourceCode;
-    
     function report(node: TSESTree.Node) {
       context.report({
         node,
@@ -53,7 +51,7 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
       CallExpression(node: TSESTree.CallExpression) {
         
       // Check for Access-Control-Allow-Origin: *
-      if (node.type === 'CallExpression' &&
+      if (node.type === AST_NODE_TYPES.CallExpression &&
           node.callee.property?.name === 'setHeader' &&
           node.arguments[0]?.value === 'Access-Control-Allow-Origin' &&
           node.arguments[1]?.value === '*') {
@@ -61,9 +59,9 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
       }
       
       // Check cors({ origin: '*' })
-      if (node.type === 'CallExpression' &&
+      if (node.type === AST_NODE_TYPES.CallExpression &&
           node.callee.name === 'cors' &&
-          node.arguments[0]?.type === 'ObjectExpression') {
+          node.arguments[0]?.type === AST_NODE_TYPES.ObjectExpression) {
         const originProp = node.arguments[0].properties.find(
           p => p.key?.name === 'origin'
         );

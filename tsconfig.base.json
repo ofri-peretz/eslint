@@ -46,7 +46,8 @@
       ],
       "eslint-plugin-google-ai-security": [
         "packages/eslint-plugin-google-ai-security/src/index.ts"
-      ]
+      ],
+      "eslint-plugin-pg": ["packages/eslint-plugin-pg/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
