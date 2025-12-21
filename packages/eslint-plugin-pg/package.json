@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-pg",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "ESLint plugin with security and best practices rules for the pg Node.js driver",
   "type": "commonjs",
   "main": "./src/index.js",
