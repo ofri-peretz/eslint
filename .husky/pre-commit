@@ -1,10 +1,21 @@
+#!/bin/sh
 # Ensure nvm-installed node/pnpm is in PATH
 export PATH="$HOME/.nvm/versions/node/v20.19.5/bin:$PATH"
 
-# Auto-fix linting issues for affected projects only (quiet mode)
-echo "🔧 Running lint with --fix for affected projects..."
-pnpm nx affected -t lint --fix --quiet 2>/dev/null || pnpm nx affected -t lint --fix
+# Skip if no staged changes in packages (docs, configs don't need checks)
+if ! git diff --cached --name-only | grep -q "^packages/"; then
+  echo "✅ No package changes detected, skipping checks"
+  exit 0
+fi
 
-# Run tests for affected projects only (minimal output)
-echo "🧪 Running tests for affected projects..."
-pnpm nx affected -t test -- --reporter=dot --no-color 2>&1 | tail -20
+echo "🚀 Running pre-commit checks (Nx cached)..."
+
+# Run lint and test in PARALLEL using Nx's built-in parallelization
+# This uses Nx's cache - if files haven't changed, results are instant
+pnpm nx affected -t lint,test \
+  --parallel=3 \
+  --output-style=compact \
+  -- --reporter=basic 2>&1 | tail -30
+
+# Exit with the actual result
+exit ${PIPESTATUS[0]}
