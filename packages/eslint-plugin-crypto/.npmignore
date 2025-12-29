@@ -1,0 +1,46 @@
+# Development files
+*.test.ts
+*.spec.ts
+*.test.js
+*.spec.js
+__tests__/
+test/
+tests/
+*.test.tsx
+*.spec.tsx
+
+# Source maps
+*.map
+
+# TypeScript source (only publish compiled)
+tsconfig*.json
+.eslintrc*
+eslint.config.*
+
+# Build configs
+vite.config.*
+vitest.config.*
+jest.config.*
+nx.json
+project.json
+
+# Development artifacts
+coverage/
+.nyc_output/
+*.log
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Misc
+.DS_Store
+Thumbs.db
+*.tgz

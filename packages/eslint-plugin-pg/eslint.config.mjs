@@ -5,4 +5,22 @@ export default [
   {
     ignores: ['benchmark/**'],
   },
+  {
+    files: ['**/*.json'],
+    rules: {
+      '@nx/dependency-checks': [
+        'error',
+        {
+          ignoredFiles: [
+            '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
+            '{projectRoot}/vite.config.{js,ts,mjs,mts}',
+          ],
+          ignoredDependencies: ['pg', 'vitest', '@nx/vite'], // Optional peer dep and dev tools
+        },
+      ],
+    },
+    languageOptions: {
+      parser: await import('jsonc-eslint-parser'),
+    },
+  },
 ];

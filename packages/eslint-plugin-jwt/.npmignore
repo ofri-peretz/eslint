@@ -1,0 +1,19 @@
+# Production files only
+src/
+dist/
+README.md
+CHANGELOG.md
+AGENTS.md
+LICENSE
+
+# Exclude dev/test files
+!src/**/*.test.ts
+!src/**/*.spec.ts
+!benchmark/
+!*.config.*
+!tsconfig*.json
+!.eslintrc*
+!vitest.config.*
+!project.json
+!test-report.junit.xml
+!coverage/

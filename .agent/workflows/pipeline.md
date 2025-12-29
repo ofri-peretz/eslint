@@ -10,19 +10,30 @@ Route tasks to specialized pipelines using this format:
 /pipeline <mode>: <task description>
 ```
 
-## Three-Phase Pipeline
+## Pipeline Modes
+
+### End-to-End (Recommended)
+
+| Command                  | Purpose                                 |
+| ------------------------ | --------------------------------------- |
+| `/pipeline orchestrate:` | Full flow: design → breakdown → execute |
+
+```mermaid
+graph LR
+    O["/pipeline orchestrate:"] --> D[Design]
+    D --> B[Breakdown]
+    B --> E[Execute]
+```
+
+**See**: [orchestrator-pipeline.md](file:///Users/ofri/repos/ofriperetz.dev/eslint/.agent/orchestrators/orchestrator-pipeline.md)
+
+### Individual Phases
 
 | Phase         | Command                | Purpose                          |
 | ------------- | ---------------------- | -------------------------------- |
 | **Design**    | `/pipeline design:`    | Multi-agent architectural review |
 | **Breakdown** | `/pipeline breakdown:` | Decompose plan into tasks        |
 | **Execute**   | `/pipeline execute:`   | Run tasks with parallelism       |
-
-```mermaid
-graph LR
-    D["/pipeline design:"] --> B["/pipeline breakdown:"]
-    B --> E["/pipeline execute:"]
-```
 
 ---
 
@@ -86,17 +97,27 @@ Run task breakdown with wave-based parallel execution.
 
 These shortcuts bypass the full pipeline:
 
-| Command                 | Description                       |
-| ----------------------- | --------------------------------- |
-| `/pipeline eslint:`     | ESLint dev agent directly         |
-| `/pipeline security:`   | Security research agent           |
-| `/pipeline release:`    | Package release flow              |
-| `/pipeline article:`    | Content writing agent             |
-| `/pipeline distribute:` | Marketing & distribution strategy |
+| Command                  | Description                       |
+| ------------------------ | --------------------------------- |
+| `/pipeline orchestrate:` | End-to-end flow (design→execute)  |
+| `/pipeline eslint:`      | ESLint dev agent directly         |
+| `/pipeline security:`    | Security research agent           |
+| `/pipeline release:`     | Package release flow              |
+| `/pipeline article:`     | Content writing agent             |
+| `/pipeline distribute:`  | Marketing & distribution strategy |
 
 ---
 
 ## Full Example Session
+
+### With Orchestrator (Recommended)
+
+```
+# End-to-end with checkpoints
+/pipeline orchestrate: Add rate limiting to the ESLint plugin metrics API
+```
+
+### Manual Phase Control
 
 ```
 # Step 1: Design with multi-agent review

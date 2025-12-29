@@ -32,8 +32,8 @@
       "eslint-plugin-react-a11y": [
         "packages/eslint-plugin-react-a11y/src/index.ts"
       ],
-      "eslint-plugin-dependencies": [
-        "packages/eslint-plugin-dependencies/src/index.ts"
+      "eslint-plugin-import-next": [
+        "packages/eslint-plugin-import-next/src/index.ts"
       ],
       "eslint-plugin-agentic-security": [
         "packages/eslint-plugin-agentic-security/src/index.ts"
@@ -47,7 +47,15 @@
       "eslint-plugin-google-ai-security": [
         "packages/eslint-plugin-google-ai-security/src/index.ts"
       ],
-      "eslint-plugin-pg": ["packages/eslint-plugin-pg/src/index.ts"]
+      "eslint-plugin-pg": ["packages/eslint-plugin-pg/src/index.ts"],
+      "eslint-plugin-crypto": ["packages/eslint-plugin-crypto/src/index.ts"],
+      "eslint-plugin-jwt": ["packages/eslint-plugin-jwt/src/index.ts"],
+      "eslint-plugin-express-security": [
+        "packages/eslint-plugin-express-security/src/index.ts"
+      ],
+      "eslint-plugin-nestjs-security": [
+        "packages/eslint-plugin-nestjs-security/src/index.ts"
+      ]
     }
   },
   "exclude": ["node_modules", "tmp"]

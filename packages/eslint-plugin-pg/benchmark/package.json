@@ -8,6 +8,6 @@
     },
     "dependencies": {
         "eslint": "^9.0.0",
-        "eslint-plugin-pg": "file:../dist"
+        "eslint-plugin-pg": "workspace:*"
     }
 }

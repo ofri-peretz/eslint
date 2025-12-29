@@ -1,0 +1,31 @@
+{
+  "name": "eslint-plugin-nestjs-security",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/eslint-plugin-nestjs-security/src",
+  "projectType": "library",
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": ["dist/{projectRoot}"],
+      "currentVersionResolver": "git-tag",
+      "fallbackCurrentVersionResolver": "disk"
+    }
+  },
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/eslint-plugin-nestjs-security",
+        "main": "packages/eslint-plugin-nestjs-security/src/index.ts",
+        "tsConfig": "packages/eslint-plugin-nestjs-security/tsconfig.lib.json",
+        "assets": ["packages/eslint-plugin-nestjs-security/*.md"]
+      }
+    },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "dist/{projectRoot}"
+      }
+    }
+  }
+}

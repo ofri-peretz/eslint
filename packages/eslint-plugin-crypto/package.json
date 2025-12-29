@@ -1,0 +1,80 @@
+{
+  "name": "eslint-plugin-crypto",
+  "version": "1.0.0",
+  "description": "Security-focused ESLint plugin with 24 AI-parseable rules for cryptographic best practices. Detects weak algorithms, insecure key handling, CVE-specific vulnerabilities, and deprecated crypto patterns.",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./types": {
+      "types": "./src/types/index.d.ts",
+      "default": "./src/types/index.js"
+    }
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-crypto/README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/eslint-plugin-crypto"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "docs/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "AGENTS.md"
+  ],
+  "keywords": [
+    "eslint",
+    "eslint-plugin",
+    "eslintplugin",
+    "security",
+    "crypto",
+    "cryptography",
+    "encryption",
+    "hashing",
+    "nodejs-crypto",
+    "cve",
+    "cwe",
+    "owasp",
+    "vulnerability",
+    "llm-optimized",
+    "ai-assistant",
+    "auto-fix",
+    "typescript",
+    "marvin-attack",
+    "timing-attack"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@interlace/eslint-devkit": "^1.2.1",
+    "tslib": "^2.3.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.46.2",
+    "@typescript-eslint/rule-tester": "^8.46.2",
+    "@vitest/coverage-v8": "^4.0.6",
+    "vitest": "^4.0.6"
+  }
+}
