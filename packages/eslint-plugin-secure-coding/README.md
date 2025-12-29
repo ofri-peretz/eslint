@@ -387,7 +387,15 @@ A: Yes, fully compatible.
 
 ## 🔗 Related ESLint Plugins
 
-- [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) - specialized security rules for Vercel AI SDK applications.
+Part of the **Forge-JS ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
+
+| Plugin                                                                                               | Description                                                                | Rules |
+| ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | :---: |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               | JWT security (algorithm confusion, weak secrets, claims validation)        |  13   |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                         | Cryptographic best practices (weak algorithms, key handling, CVE-specific) |  24   |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                                 | PostgreSQL/node-postgres security and best practices                       |  13   |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security (OWASP LLM + Agentic Top 10)                        |  19   |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)               | High-performance import linting with AI-guided cycle fixes                 |  12   |
 
 ## 📄 License
 

@@ -153,7 +153,15 @@ All rule messages follow a structured format optimized for AI coding assistants:
 
 ## 🔗 Related ESLint Plugins
 
-- [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) - 89+ miscellaneous security rules for general web & mobile apps (OWASP Top 10).
+Part of the **Forge-JS ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
+
+| Plugin                                                                                     | Description                                                  | Rules |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------ | :---: |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | Universal security (OWASP Top 10 Web + Mobile)               |  89   |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                     | JWT security (algorithm confusion, weak secrets, claims)     |  13   |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)               | Cryptographic best practices (weak algorithms, key handling) |  24   |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                       | PostgreSQL/node-postgres security                            |  13   |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)     | High-performance import linting                              |  12   |
 
 ## 📄 License
 

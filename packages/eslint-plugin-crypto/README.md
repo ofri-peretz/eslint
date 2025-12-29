@@ -139,6 +139,18 @@ All rules include LLM-optimized error messages with:
 - Direct fix suggestions with code examples
 - Documentation links
 
+## 🔗 Related ESLint Plugins
+
+Part of the **Forge-JS ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
+
+| Plugin                                                                                               | Description                                              | Rules |
+| ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | :---: |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)           | Universal security (OWASP Top 10 Web + Mobile)           |  89   |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               | JWT security (algorithm confusion, weak secrets, claims) |  13   |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                                 | PostgreSQL/node-postgres security                        |  13   |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security                                   |  19   |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)               | High-performance import linting                          |  12   |
+
 ## License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
