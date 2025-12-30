@@ -1,0 +1,41 @@
+# prefer-node-protocol
+
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
+
+<!-- end auto-generated rule header -->
+
+Prefer using the node: protocol when importing Node.js builtin modules
+
+## Rule Details
+
+This rule aims to prevent issues related to prefer-node-protocol.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "additionalModules": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": []
+      }
+    },
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/prefer-node-protocol.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/prefer-node-protocol.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

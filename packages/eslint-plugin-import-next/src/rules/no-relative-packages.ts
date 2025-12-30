@@ -28,7 +28,7 @@ const packageJsonCache = new Map<string, string | null>();
 
 function findPackageJson(startDir: string): string | null {
   if (packageJsonCache.has(startDir)) {
-    return packageJsonCache.get(startDir)!;
+    return packageJsonCache.get(startDir) ?? null;
   }
 
   let currentDir = startDir;

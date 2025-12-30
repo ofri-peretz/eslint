@@ -1,0 +1,1 @@
+// Valid example for no-deprecated\nexport const valid = true;\n

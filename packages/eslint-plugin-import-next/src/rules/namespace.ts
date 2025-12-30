@@ -69,7 +69,8 @@ export const namespace = createRule<RuleOptions, MessageIds>({
               type,
               propertyName,
             );
-            if (!propertySymbol) return;
+            
+            // Removed erroneous early return here
 
             if (!propertySymbol) {
               context.report({

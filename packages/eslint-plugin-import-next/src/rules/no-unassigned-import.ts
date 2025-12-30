@@ -3,7 +3,7 @@
  * Prevents unassigned imports (eslint-plugin-import inspired)
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unassignedImport' | 'sideEffectOnly' | 'missingAssignment';
@@ -110,25 +110,37 @@ export const noUnassignedImport = createRule<RuleOptions, MessageIds>({
       // Also check require() calls
       CallExpression(node: TSESTree.CallExpression) {
         if (
-          node.callee.type === 'Identifier' &&
+          node.callee.type === AST_NODE_TYPES.Identifier &&
           node.callee.name === 'require' &&
           node.arguments.length === 1
         ) {
           const arg = node.arguments[0];
           if (arg.type === 'Literal' && typeof arg.value === 'string') {
             if (!shouldAllow(arg.value)) {
-              // Check if require is assigned
               const parent = node.parent;
-              if (
-                !parent ||
-                (parent.type !== 'VariableDeclarator' &&
-                  parent.type !== 'AssignmentExpression' &&
-                  parent.type !== 'Property')
-              ) {
+              // Only report if the parent is an ExpressionStatement
+              // This strictly catches `require('foo');` which is a side-effect import.
+              // Any other parent (VariableDecl, Assignment, Call, Conditional, etc.) means it's used.
+              if (parent && parent.type === AST_NODE_TYPES.ExpressionStatement) {
                 context.report({
                   node: arg,
                   messageId: 'unassignedImport',
                 });
+              }
+              // Also check SequenceExpression: (a, require('b')) -> b is returned, a is unassigned.
+              // But strictly `no-unassigned-import` might only care about top level.
+              // For safety and compatibility, we report if it's in a sequence and NOT the last item.
+              else if (
+                parent && 
+                parent.type === AST_NODE_TYPES.SequenceExpression
+              ) {
+                const expressions = parent.expressions;
+                if (expressions[expressions.length - 1] !== node) {
+                  context.report({
+                    node: arg,
+                    messageId: 'unassignedImport',
+                  });
+                }
               }
             }
           }

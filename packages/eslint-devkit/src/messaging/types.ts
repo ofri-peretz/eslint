@@ -167,3 +167,39 @@ export interface SARIFResult {
     fix?: string;
   };
 }
+
+/**
+ * Execution environment for message formatting
+ * Used to determine the output format (Human vs Agent)
+ */
+export type MessagingEnvironment =
+  | 'CLI'          // Standard human-readable terminal output
+  | 'CI'           // Machine-parsable logs (minimal colors)
+  | 'IDE_CURSOR'   // Hybrid: Human text + hidden Agent hints
+  | 'AGENT_JSON';  // Pure structured JSON-L for Agents
+
+/**
+ * Options for AI-Native messaging
+ * Extends enterprise options with agent-specific fields
+ */
+export interface AgentMessageOptions extends EnterpriseMessageOptions {
+  /**
+   * Precise AST selector for the issue
+   * Guides the agent to the exact code construct to fix
+   * @example "CallExpression[callee.name='eval']"
+   */
+  astSelector?: string;
+
+  /**
+   * Hidden reasoning hints for the agent
+   * Embedded as comments or metadata
+   */
+  aiHints?: string[];
+
+  /**
+   * Difficulty level for the AI to fix
+   * 'trivial': Simple search/replace or defined fix
+   * 'reasoning_required': Needs context/logic analysis
+   */
+  aiDifficulty?: 'trivial' | 'reasoning_required';
+}

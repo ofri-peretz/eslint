@@ -99,7 +99,7 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
       allowInFiles = [],
       allowNames = [],
       allowPatterns = [],
-      suggestDefault = true,
+      // suggestDefault // unused option
     } = options || {};
 
     const filename = context.getFilename();
@@ -112,12 +112,22 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
       // Check if file is in allowed list
       const allowedByFile = allowInFiles.some((pattern: string) => {
         if (pattern.includes('*')) {
-          // Simple glob matching: ** matches any path, * matches any name
-          const regexPattern = pattern
-            .replace(/\*\*/g, '.*')
-            .replace(/\*/g, '[^/]*');
-          const regex = new RegExp(`^${regexPattern}$`);
-          return regex.test(filename);
+          const regexStr = '^' + pattern
+             .replace(/[.+?^${}()|[\]\\]/g, (match) => {
+                 if (match === '*') return '*'; 
+                 return '\\' + match;
+             })
+             .replace(/\*\*/g, '.*')
+             .replace(/\*/g, '[^/]*') + '$';
+             
+          try {
+             const regex = new RegExp(regexStr);
+             const result = regex.test(filename);
+             // DEBUG LOGIC if needed, but relying on report below
+             return result;
+          } catch {
+             return false;
+          }
         }
         return filename.includes(pattern);
       });
@@ -129,12 +139,17 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
       // Check if filename matches allowed patterns
       const allowedByPattern = allowPatterns.some((pattern: string) => {
         if (pattern.includes('*')) {
-          // Simple glob matching: ** matches any path, * matches any name
-          const regexPattern = pattern
-            .replace(/\*\*/g, '.*')
-            .replace(/\*/g, '[^/]*');
-          const regex = new RegExp(`^${regexPattern}$`);
-          return regex.test(filename);
+          const regexStr = '^' + pattern
+             .replace(/[.+?^${}()|[\]\\]/g, (match) => {
+                 if (match === '*') return '*'; 
+                 return '\\' + match;
+             })
+             .replace(/\*\*/g, '.*')
+             .replace(/\*/g, '[^/]*') + '$';
+          try {   
+            const regex = new RegExp(regexStr);
+            return regex.test(filename);
+          } catch { return false; }
         }
         return filename.includes(pattern);
       });
@@ -157,6 +172,16 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
 
     return {
       ExportNamedDeclaration(node: TSESTree.ExportNamedDeclaration) {
+        // Skip type exports
+        if (
+          node.exportKind === 'type' ||
+          (node.declaration &&
+             (node.declaration.type === 'TSInterfaceDeclaration' || 
+              node.declaration.type === 'TSTypeAliasDeclaration'))
+        ) {
+          return;
+        }
+
         // Check each specifier individually
         if (node.specifiers && node.specifiers.length > 0) {
           for (const specifier of node.specifiers) {
@@ -166,23 +191,12 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
               specifier.exported.name !== 'default' &&
               !shouldAllow(specifier)
             ) {
-              context.report({
-                node: specifier,
-                messageId: 'namedExport',
-                suggest: suggestDefault
-                  ? [
-                      {
-                        messageId: 'suggestDefault',
-                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                        fix(_fixer: TSESLint.RuleFixer) {
-                          // Convert named export to default export
-                          // This would require more complex logic to handle the export statement
-                          return null; // Placeholder - would need AST manipulation
-                        },
-                      },
-                    ]
-                  : [],
-              });
+              if (specifier.exportKind !== 'type') {
+                context.report({
+                  node: specifier,
+                  messageId: 'namedExport',
+                });
+              }
             }
           }
         }
@@ -196,44 +210,23 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
                 declarator.id.type === 'Identifier'
                   ? declarator.id.name
                   : undefined;
-              const isAllowed = varName && allowNames.includes(varName);
+              const isAllowed = (varName && allowNames.includes(varName)) || shouldAllow();
               if (!isAllowed) {
                 context.report({
                   node: declarator,
                   messageId: 'namedExport',
-                  suggest: suggestDefault
-                    ? [
-                        {
-                          messageId: 'suggestDefault',
-                          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                          fix(_fixer: TSESLint.RuleFixer) {
-                            // Convert named export to default export
-                            return null; // Placeholder - would need AST manipulation
-                          },
-                        },
-                      ]
-                    : [],
                 });
               }
             }
-          } else {
-            // For other declaration types (FunctionDeclaration, ClassDeclaration, etc.)
-            if (!shouldAllow()) {
+          } else if (
+            node.declaration.type === 'FunctionDeclaration' ||
+            node.declaration.type === 'ClassDeclaration'
+          ) {
+            const name = node.declaration.id?.name;
+            if (name && !allowNames.includes(name) && !shouldAllow()) {
               context.report({
                 node: node.declaration,
                 messageId: 'namedExport',
-                suggest: suggestDefault
-                  ? [
-                      {
-                        messageId: 'suggestDefault',
-                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                        fix(_fixer: TSESLint.RuleFixer) {
-                          // Convert named export to default export
-                          return null; // Placeholder - would need AST manipulation
-                        },
-                      },
-                    ]
-                  : [],
               });
             }
           }

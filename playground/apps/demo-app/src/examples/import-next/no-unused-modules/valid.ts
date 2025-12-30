@@ -1,0 +1,1 @@
+// Valid example for no-unused-modules\nexport const valid = true;\n

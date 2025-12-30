@@ -1,0 +1,1 @@
+// Valid example for enforce-import-order\nexport const valid = true;\n

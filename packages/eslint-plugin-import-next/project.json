@@ -32,7 +32,8 @@
       "executor": "@nx/js:tsc",
       "dependsOn": [
         "^build",
-        "test"
+        "test",
+        "generate-docs"
       ],
       "outputs": [
         "{options.outputPath}"
@@ -82,6 +83,13 @@
       ],
       "options": {
         "command": "npm publish dist/packages/eslint-plugin-import-next --access public",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "generate-docs": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx ts-node -r tsconfig-paths/register packages/eslint-plugin-import-next/scripts/generate-docs.ts",
         "cwd": "{workspaceRoot}"
       }
     }

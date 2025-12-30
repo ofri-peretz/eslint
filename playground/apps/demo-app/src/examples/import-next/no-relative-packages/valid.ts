@@ -1,0 +1,1 @@
+// Valid example for no-relative-packages\nexport const valid = true;\n

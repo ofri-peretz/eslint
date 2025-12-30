@@ -1,0 +1,1 @@
+// Invalid example for no-restricted-paths\n// TODO: Add failing code\nexport const invalid = true;\n

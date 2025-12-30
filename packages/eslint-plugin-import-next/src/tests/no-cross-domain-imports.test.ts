@@ -89,6 +89,23 @@ describe('no-cross-domain-imports', () => {
           filename: 'modules/user/user-module.ts',
           options: [{ domainPatterns: ['modules'] }],
         },
+        // Dynamic import with non-literal (should be skipped)
+        {
+            code: `import(someVar);`,
+            filename: 'domains/user/user-service.ts'
+        },
+        // Custom rules - Allowed
+        {
+            code: `import { shared } from '../../features/shared/utils';`,
+            filename: 'features/legacy/old.ts',
+            options: [{
+                customRules: [{
+                    from: 'features/legacy',
+                    to: ['features/shared'],
+                    allowed: ['utils']
+                }]
+            }]
+        }
       ],
       invalid: [
         {
@@ -99,6 +116,18 @@ describe('no-cross-domain-imports', () => {
           options: [{ domainPatterns: ['modules'] }],
           errors: [{ messageId: 'crossDomainImport' }],
         },
+        // Custom rules - Restricted
+        {
+            code: `import { secret } from '../../features/internal/secret';`,
+            filename: 'features/legacy/old.ts',
+            options: [{
+                customRules: [{
+                    from: 'features/legacy',
+                    to: ['features/internal']
+                }]
+            }],
+            errors: [{ messageId: 'crossDomainImport' }]
+        }
       ],
     });
   });

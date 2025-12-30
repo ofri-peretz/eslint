@@ -1,0 +1,1 @@
+// Valid example for no-cross-domain-imports\nexport const valid = true;\n

@@ -1,0 +1,1 @@
+// Valid example for newline-after-import\nexport const valid = true;\n

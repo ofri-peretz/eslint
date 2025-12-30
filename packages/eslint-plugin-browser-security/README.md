@@ -200,16 +200,16 @@ All rules include structured remediation guidance designed for AI assistants:
 
 ## 🔗 Related Packages
 
-Part of the [Interlace ESLint Ecosystem](https://github.com/ofri-peretz/eslint):
+Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Package                                                               | Focus                       |
-| --------------------------------------------------------------------- | --------------------------- |
-| [`eslint-plugin-secure-coding`](../eslint-plugin-secure-coding)       | Universal security patterns |
-| [`eslint-plugin-crypto`](../eslint-plugin-crypto)                     | Cryptographic security      |
-| [`eslint-plugin-jwt`](../eslint-plugin-jwt)                           | JWT handling security       |
-| [`eslint-plugin-express-security`](../eslint-plugin-express-security) | Express.js security         |
-| [`eslint-plugin-nestjs-security`](../eslint-plugin-nestjs-security)   | NestJS security             |
-| [`eslint-plugin-lambda-security`](../eslint-plugin-lambda-security)   | AWS Lambda security         |
+| Plugin                                                                                           |                                                              Downloads                                                               | Description                 | Rules |
+| ------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------: | --------------------------- | :---: |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)       |    [![npm](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://npmjs.com/package/eslint-plugin-secure-coding)    | Universal security patterns |  89   |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                     |           [![npm](https://img.shields.io/npm/dm/eslint-plugin-crypto.svg)](https://npmjs.com/package/eslint-plugin-crypto)           | Cryptographic security      |  24   |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                           |              [![npm](https://img.shields.io/npm/dm/eslint-plugin-jwt.svg)](https://npmjs.com/package/eslint-plugin-jwt)              | JWT handling security       |  13   |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![npm](https://img.shields.io/npm/dm/eslint-plugin-express-security.svg)](https://npmjs.com/package/eslint-plugin-express-security) | Express.js security         |   8   |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)   |  [![npm](https://img.shields.io/npm/dm/eslint-plugin-nestjs-security.svg)](https://npmjs.com/package/eslint-plugin-nestjs-security)  | NestJS security             |   5   |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)   |  [![npm](https://img.shields.io/npm/dm/eslint-plugin-lambda-security.svg)](https://npmjs.com/package/eslint-plugin-lambda-security)  | AWS Lambda security         |   5   |
 
 ## 📄 License
 

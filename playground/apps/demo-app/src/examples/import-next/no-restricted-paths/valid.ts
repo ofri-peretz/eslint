@@ -1,0 +1,1 @@
+// Valid example for no-restricted-paths\nexport const valid = true;\n

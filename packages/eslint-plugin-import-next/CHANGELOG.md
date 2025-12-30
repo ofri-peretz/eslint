@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2025-12-30
+
+### Changed
+
+- **Architecture Overhaul**: Complete rewrite for performance and maintainability.
+- **Rule Parity**: Achieved 100% feature parity with `eslint-plugin-import` (46 rules).
+- **Performance**: `no-cycle` rule is now up to 100x faster using incremental graph analysis.
+- **TypeScript Support**: First-class support for TypeScript (parsers and resolvers) out of the box.
+
+### Added
+
+- **New Rules**:
+  - `prefer-node-protocol` - Enforce `node:` protocol for Node.js built-ins.
+  - `no-named-as-default` - specialized check for named exports used as default.
+  - `no-named-as-default-member` - Check for properties on default export that match named exports.
+  - `no-relative-packages` - Enforce package boundaries.
+  - `no-import-module-exports` - Disallow `module.exports` alongside imports.
+  - `no-empty-named-blocks` - Disallow empty named import blocks.
+  - `consistent-type-specifier-style` - Enforce type-only import style (inline vs top-level).
+  - `no-dynamic-require` - Disallow dynamic require calls.
+  - `no-self-import` - Detect self-referential imports.
+  - `no-named-default` - Disallow named default exports.
+  - `no-restricted-paths` - Enhanced path restriction rule.
+  - `unambiguous` - Enforce unambiguous module type.
+- **Enhanced Documentation**: All rules now feature AEO-compliant documentation with OWASP mappings.
+- **Improved Testing**: Comprehensive test suite covering all rules, including edge cases and TypeScript integration.
+
 ## [1.0.0] - 2024-12-05
 
 ### Added

@@ -1,0 +1,1 @@
+// Valid example for unambiguous\nexport const valid = true;\n

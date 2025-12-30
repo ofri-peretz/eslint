@@ -1,0 +1,56 @@
+# prefer-default-export
+
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
+
+<!-- end auto-generated rule header -->
+
+Prefer a default export if module exports a single name
+
+## Rule Details
+
+This rule aims to prevent issues related to prefer-default-export.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "target": {
+        "type": "string",
+        "enum": [
+          "always",
+          "single",
+          "as-needed"
+        ],
+        "default": "single",
+        "description": "When to enforce default exports: always (all), single (single export), as-needed (when beneficial)"
+      },
+      "ignoreFiles": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "File patterns to ignore"
+      },
+      "allowNamedExports": {
+        "type": "boolean",
+        "default": false,
+        "description": "Allow named exports without warnings"
+      }
+    },
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/prefer-default-export.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/prefer-default-export.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

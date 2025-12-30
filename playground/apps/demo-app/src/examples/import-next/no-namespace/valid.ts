@@ -1,0 +1,1 @@
+// Valid example for no-namespace\nexport const valid = true;\n

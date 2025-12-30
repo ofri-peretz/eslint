@@ -1,0 +1,1 @@
+// Valid example for no-commonjs\nexport const valid = true;\n

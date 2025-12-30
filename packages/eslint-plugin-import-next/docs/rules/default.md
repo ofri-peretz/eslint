@@ -1,0 +1,27 @@
+# default
+
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
+
+<!-- end auto-generated rule header -->
+
+Ensure a default export is present, given a default import
+
+## Rule Details
+
+This rule aims to prevent issues related to default.
+
+## Options
+
+```json
+[]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/default.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/default.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

@@ -1,0 +1,1 @@
+// Valid example for prefer-node-protocol\nexport const valid = true;\n

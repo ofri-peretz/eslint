@@ -1,0 +1,1 @@
+// Valid example for no-named-as-default\nexport const valid = true;\n

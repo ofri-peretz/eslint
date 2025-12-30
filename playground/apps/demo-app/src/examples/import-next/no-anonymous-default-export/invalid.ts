@@ -1,0 +1,1 @@
+// Invalid example for no-anonymous-default-export\n// TODO: Add failing code\nexport const invalid = true;\n

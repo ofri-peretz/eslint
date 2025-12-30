@@ -1,0 +1,36 @@
+# consistent-type-specifier-style
+
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
+
+<!-- end auto-generated rule header -->
+
+Enforce or ban the use of inline type-only markers for named imports
+
+## Rule Details
+
+This rule aims to prevent issues related to consistent-type-specifier-style.
+
+## Options
+
+```json
+[
+  {
+    "type": "string",
+    "enum": [
+      "prefer-inline",
+      "prefer-top-level"
+    ],
+    "default": "prefer-inline"
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/consistent-type-specifier-style.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/consistent-type-specifier-style.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

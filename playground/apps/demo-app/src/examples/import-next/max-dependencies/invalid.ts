@@ -1,0 +1,1 @@
+// Invalid example for max-dependencies\n// TODO: Add failing code\nexport const invalid = true;\n

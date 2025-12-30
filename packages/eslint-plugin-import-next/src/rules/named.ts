@@ -5,6 +5,7 @@ import {
   hasParserServices,
   getParserServices,
 } from '@interlace/eslint-devkit';
+import ts from 'typescript';
 
 type MessageIds = 'named';
 
@@ -52,11 +53,22 @@ export const named = createRule<RuleOptions, MessageIds>({
           return;
 
         const tsNode = services.esTreeNodeToTSNodeMap.get(node.imported);
-        const symbol = checker?.getSymbolAtLocation?.(tsNode);
+        let symbol = checker?.getSymbolAtLocation?.(tsNode);
 
-        // If symbol is undefined, it means TS couldn't resolve it.
-        // However, we need to be careful about "any" types or unchecked JS.
-        // If the file is .ts, we expect resolution.
+        // Resolve alias if needed
+        if (symbol && (symbol.flags & ts.SymbolFlags.Alias)) {
+            try {
+                symbol = checker?.getAliasedSymbol?.(symbol);
+            } catch {
+                // If resolving alias fails, symbol implies broken import
+                symbol = undefined;
+            }
+        }
+
+        // Check if symbol is "unknown" or broken
+        if (symbol && symbol.escapedName === 'unknown') {
+            symbol = undefined;
+        }
 
         if (!symbol) {
           // Check if module itself resolves
@@ -64,10 +76,10 @@ export const named = createRule<RuleOptions, MessageIds>({
           if (!source) return;
           const moduleNode = services.esTreeNodeToTSNodeMap.get(source);
           const moduleSymbol = checker?.getSymbolAtLocation?.(moduleNode);
+          
           if (!moduleSymbol) return;
 
           if (moduleSymbol) {
-            // Module found, but export not found
             context.report({
               node: node.imported,
               messageId: 'named',

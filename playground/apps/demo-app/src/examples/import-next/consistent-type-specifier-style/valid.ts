@@ -1,0 +1,1 @@
+// Valid example for consistent-type-specifier-style\nexport const valid = true;\n

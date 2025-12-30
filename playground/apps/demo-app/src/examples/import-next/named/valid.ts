@@ -1,0 +1,1 @@
+// Valid example for named\nexport const valid = true;\n

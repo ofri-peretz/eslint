@@ -1,0 +1,1 @@
+// Valid example for no-import-module-exports\nexport const valid = true;\n

@@ -621,19 +621,20 @@ pluginName.configs.recommended,
 
 ## 🔗 Related Packages
 
-> **Part of the [ESLint Ecosystem](https://github.com/ofri-peretz/eslint)**
+> **Part of the [Interlace ESLint Ecosystem](https://github.com/ofri-peretz/eslint)** — AI-native security plugins with LLM-optimized error messages
 
-| Plugin                                                                                           | Description                       | Rules |
-| ------------------------------------------------------------------------------------------------ | --------------------------------- | :---: |
-| [`eslint-plugin-secure-coding`](https://npmjs.com/package/eslint-plugin-secure-coding)           | Universal security (OWASP Top 10) |  88   |
-| [`eslint-plugin-crypto`](https://npmjs.com/package/eslint-plugin-crypto)                         | Cryptographic security            |  24   |
-| [`eslint-plugin-jwt`](https://npmjs.com/package/eslint-plugin-jwt)                               | JWT token handling                |  13   |
-| [`eslint-plugin-browser-security`](https://npmjs.com/package/eslint-plugin-browser-security)     | Browser APIs & DOM                |  21   |
-| [`eslint-plugin-express-security`](https://npmjs.com/package/eslint-plugin-express-security)     | Express.js framework              |   9   |
-| [`eslint-plugin-nestjs-security`](https://npmjs.com/package/eslint-plugin-nestjs-security)       | NestJS framework                  |   5   |
-| [`eslint-plugin-lambda-security`](https://npmjs.com/package/eslint-plugin-lambda-security)       | AWS Lambda & Middy                |   5   |
-| [`eslint-plugin-pg`](https://npmjs.com/package/eslint-plugin-pg)                                 | PostgreSQL security               |  13   |
-| [`eslint-plugin-vercel-ai-security`](https://npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK                     |  19   |
+| Plugin                                                                                           |                                                                Downloads                                                                 | Description                       | Rules |
+| ------------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------: | --------------------------------- | :---: |
+| [`eslint-plugin-secure-coding`](https://npmjs.com/package/eslint-plugin-secure-coding)           |      [![npm](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://npmjs.com/package/eslint-plugin-secure-coding)      | Universal security (OWASP Top 10) |  89   |
+| [`eslint-plugin-crypto`](https://npmjs.com/package/eslint-plugin-crypto)                         |             [![npm](https://img.shields.io/npm/dm/eslint-plugin-crypto.svg)](https://npmjs.com/package/eslint-plugin-crypto)             | Cryptographic security            |  24   |
+| [`eslint-plugin-jwt`](https://npmjs.com/package/eslint-plugin-jwt)                               |                [![npm](https://img.shields.io/npm/dm/eslint-plugin-jwt.svg)](https://npmjs.com/package/eslint-plugin-jwt)                | JWT token handling                |  13   |
+| [`eslint-plugin-browser-security`](https://npmjs.com/package/eslint-plugin-browser-security)     |   [![npm](https://img.shields.io/npm/dm/eslint-plugin-browser-security.svg)](https://npmjs.com/package/eslint-plugin-browser-security)   | Browser APIs & DOM                |  21   |
+| [`eslint-plugin-express-security`](https://npmjs.com/package/eslint-plugin-express-security)     |   [![npm](https://img.shields.io/npm/dm/eslint-plugin-express-security.svg)](https://npmjs.com/package/eslint-plugin-express-security)   | Express.js framework              |   9   |
+| [`eslint-plugin-nestjs-security`](https://npmjs.com/package/eslint-plugin-nestjs-security)       |    [![npm](https://img.shields.io/npm/dm/eslint-plugin-nestjs-security.svg)](https://npmjs.com/package/eslint-plugin-nestjs-security)    | NestJS framework                  |   5   |
+| [`eslint-plugin-lambda-security`](https://npmjs.com/package/eslint-plugin-lambda-security)       |    [![npm](https://img.shields.io/npm/dm/eslint-plugin-lambda-security.svg)](https://npmjs.com/package/eslint-plugin-lambda-security)    | AWS Lambda & Middy                |   5   |
+| [`eslint-plugin-pg`](https://npmjs.com/package/eslint-plugin-pg)                                 |                 [![npm](https://img.shields.io/npm/dm/eslint-plugin-pg.svg)](https://npmjs.com/package/eslint-plugin-pg)                 | PostgreSQL security               |  13   |
+| [`eslint-plugin-vercel-ai-security`](https://npmjs.com/package/eslint-plugin-vercel-ai-security) | [![npm](https://img.shields.io/npm/dm/eslint-plugin-vercel-ai-security.svg)](https://npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK                     |  19   |
+| [`eslint-plugin-import-next`](https://npmjs.com/package/eslint-plugin-import-next)               |        [![npm](https://img.shields.io/npm/dm/eslint-plugin-import-next.svg)](https://npmjs.com/package/eslint-plugin-import-next)        | High-performance import linting   |  12   |
 
 ---
 

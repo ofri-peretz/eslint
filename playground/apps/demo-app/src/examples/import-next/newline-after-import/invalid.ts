@@ -1,0 +1,1 @@
+// Invalid example for newline-after-import\n// TODO: Add failing code\nexport const invalid = true;\n

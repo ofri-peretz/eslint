@@ -1,0 +1,1 @@
+// Invalid example for prefer-node-protocol\n// TODO: Add failing code\nexport const invalid = true;\n

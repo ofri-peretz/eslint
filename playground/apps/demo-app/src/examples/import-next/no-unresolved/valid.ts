@@ -1,0 +1,1 @@
+// Valid example for no-unresolved\nexport const valid = true;\n

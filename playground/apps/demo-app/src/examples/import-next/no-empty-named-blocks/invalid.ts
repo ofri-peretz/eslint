@@ -1,0 +1,1 @@
+// Invalid example for no-empty-named-blocks\n// TODO: Add failing code\nexport const invalid = true;\n

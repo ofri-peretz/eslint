@@ -1,0 +1,1 @@
+// Valid example for no-anonymous-default-export\nexport const valid = true;\n

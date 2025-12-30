@@ -1,0 +1,92 @@
+# no-cross-domain-imports
+
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
+
+<!-- end auto-generated rule header -->
+
+Prevents imports across domain/feature boundaries
+
+## Rule Details
+
+This rule aims to prevent issues related to cross-domain-imports.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "domainPatterns": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": [
+          "domains",
+          "features",
+          "modules"
+        ],
+        "description": "Domain/feature directory patterns"
+      },
+      "allowedSharedModules": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": [
+          "shared",
+          "common",
+          "utils"
+        ],
+        "description": "Shared modules that can be imported"
+      },
+      "ignoreNodeModules": {
+        "type": "boolean",
+        "default": true,
+        "description": "Ignore imports from node_modules"
+      },
+      "customRules": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string"
+            },
+            "to": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "allowed": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "from",
+            "to"
+          ]
+        },
+        "default": [],
+        "description": "Custom domain boundary rules"
+      }
+    },
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-cross-domain-imports.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-cross-domain-imports.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

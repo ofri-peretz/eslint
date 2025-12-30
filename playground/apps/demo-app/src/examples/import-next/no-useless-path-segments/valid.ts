@@ -1,0 +1,1 @@
+// Valid example for no-useless-path-segments\nexport const valid = true;\n

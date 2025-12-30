@@ -1,30 +1,58 @@
+/**
+ * Tests for named rule (import/named)
+ */
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 import { named } from '../rules/named';
+import * as path from 'node:path';
 
 RuleTester.afterAll = afterAll;
-RuleTester.it = it;
-RuleTester.itOnly = it.only;
 RuleTester.describe = describe;
+RuleTester.it = it;
 
 const ruleTester = new RuleTester({
   languageOptions: {
     parser,
-    ecmaVersion: 2022,
-    sourceType: 'module',
+    parserOptions: {
+      ecmaVersion: 2020,
+      sourceType: 'module',
+      tsconfigRootDir: path.resolve(__dirname, '../../'),
+      // Use projectService with explicit nested patterns
+      projectService: {
+        allowDefaultProject: ['src/*.ts', 'src/files/*.ts'],
+        defaultProject: 'tsconfig.json'
+      },
+    },
   },
 });
 
-describe('named', () => {
-  ruleTester.run('named', named, {
-    valid: [
-      // Without parser services/type checking, these should pass (rule returns early)
-      "import { foo } from './bar';",
-    ],
-    invalid: [
-      // We can't easily test the type-checking logic without a full project setup in RuleTester
-      // But we verify the rule doesn't crash
-    ],
-  });
+ruleTester.run('named', named, {
+  valid: [
+    { 
+        code: `import { bar } from './files/foo.ts';`,
+        name: 'Valid named import from file with named export',
+        filename: 'src/valid_named.ts'
+    },
+    { 
+        code: `import { foo } from './files/no-default.ts';`,
+        name: 'Valid named import from another file',
+        filename: 'src/valid_named_2.ts'
+    },
+  ],
+  
+  invalid: [
+    {
+        code: `import { baz } from './files/foo.ts';`,
+        name: 'Invalid named import (export does not exist)',
+        filename: 'src/invalid_named.ts',
+        errors: [{ messageId: 'named' }]
+    },
+    {
+        code: `import { foo } from './files/foo.ts';`,
+        name: 'Invalid named import of default export name',
+        filename: 'src/invalid_named_default.ts',
+        errors: [{ messageId: 'named' }]
+    }
+  ],
 });

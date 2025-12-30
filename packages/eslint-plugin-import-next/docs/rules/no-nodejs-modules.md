@@ -1,0 +1,53 @@
+# no-nodejs-modules
+
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
+
+<!-- end auto-generated rule header -->
+
+Prevents Node.js builtin imports
+
+## Rule Details
+
+This rule aims to prevent issues related to nodejs-modules.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "allow": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Node.js builtins to allow."
+      },
+      "additionalBuiltins": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Additional modules to treat as builtins."
+      },
+      "suggestAlternatives": {
+        "type": "boolean",
+        "default": true,
+        "description": "Suggest browser-compatible alternatives."
+      }
+    },
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-nodejs-modules.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-nodejs-modules.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

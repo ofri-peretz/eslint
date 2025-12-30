@@ -466,4 +466,56 @@ describe('no-commonjs', () => {
       ],
     });
   });
+
+  describe('Complex Fixes', () => {
+      ruleTester.run('complex fixes', noCommonjs, {
+          valid: [],
+          invalid: [
+            {
+               code: 'module.exports = { foo: 1 };',
+               filename: '/src/utils/complex.js',
+               errors: [
+                    {
+                        messageId: 'commonjsExport',
+                        suggestions: [
+                            {
+                                messageId: 'commonjsExport',
+                                output: '// Convert to: export default { foo: 1 };\nmodule.exports = { foo: 1 };'
+                            }
+                        ]
+                    }
+               ]
+            },
+            {
+               code: 'exports.foo = { bar: 1 };',
+               filename: '/src/utils/complex.js',
+               errors: [
+                    {
+                        messageId: 'commonjsModule',
+                        suggestions: [
+                            {
+                                messageId: 'commonjsModule',
+                                output: '// Convert to: export const foo = { bar: 1 };\nexports.foo = { bar: 1 };'
+                            }
+                        ]
+                    }
+               ]
+            }
+          ]
+      });
+  });
+
+  describe('TypeScript import = require allows', () => {
+      ruleTester.run('allow import = require when configured', noCommonjs, {
+          valid: [
+              {
+                  code: 'import foo = require("foo");',
+                  filename: 'test.ts',
+                  options: [{ allowRequire: true }]
+              }
+          ],
+          invalid: []
+      });
+  });
 });
+

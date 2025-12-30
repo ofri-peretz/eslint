@@ -1,0 +1,1 @@
+// Valid example for extensions\nexport const valid = true;\n

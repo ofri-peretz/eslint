@@ -98,7 +98,7 @@ export const noMutableExports = createRule<RuleOptions, MessageIds>({
     }
 
     function reportMutableExport(
-      node: TSESTree.VariableDeclaration,
+      node: TSESTree.Node,
       exportName: string,
       declarationKind: 'var' | 'let',
     ) {
@@ -112,6 +112,30 @@ export const noMutableExports = createRule<RuleOptions, MessageIds>({
         node,
         messageId,
       });
+    }
+
+    function checkPattern(
+      node: TSESTree.BindingName,
+      kind: 'var' | 'let',
+      reportNode: TSESTree.Node = node,
+    ) {
+      if (node.type === 'Identifier') {
+        reportMutableExport(reportNode, node.name, kind);
+      } else if (node.type === 'ObjectPattern') {
+        node.properties.forEach((prop: TSESTree.RestElement | TSESTree.Property) => {
+          if (prop.type === 'Property' && prop.value) {
+            checkPattern(prop.value as TSESTree.BindingName, kind, prop.key);
+          } else if (prop.type === 'RestElement') {
+            checkPattern(prop.argument as TSESTree.BindingName, kind, prop);
+          }
+        });
+      } else if (node.type === 'ArrayPattern') {
+        node.elements.forEach((element: TSESTree.DestructuringPattern | null) => {
+          if (element) {
+            checkPattern(element as TSESTree.BindingName, kind, element);
+          }
+        });
+      }
     }
 
     return {
@@ -131,13 +155,7 @@ export const noMutableExports = createRule<RuleOptions, MessageIds>({
         }
 
         declarations.forEach((decl: TSESTree.VariableDeclarator) => {
-          if (decl.id.type === 'Identifier') {
-            reportMutableExport(
-              node.declaration as TSESTree.VariableDeclaration,
-              decl.id.name,
-              kind,
-            );
-          }
+          checkPattern(decl.id, kind);
         });
       },
 
@@ -168,7 +186,7 @@ export const noMutableExports = createRule<RuleOptions, MessageIds>({
                 'g',
               );
               if (exportPattern.test(fileText)) {
-                reportMutableExport(node, varName, node.kind);
+                reportMutableExport(decl.id, varName, node.kind);
               }
             }
           });

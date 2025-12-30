@@ -1,0 +1,1 @@
+// Valid example for no-amd\nexport const valid = true;\n

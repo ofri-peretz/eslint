@@ -1,0 +1,1 @@
+// Invalid example for no-cycle\n// TODO: Add failing code\nexport const invalid = true;\n

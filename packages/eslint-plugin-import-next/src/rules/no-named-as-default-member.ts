@@ -64,7 +64,7 @@ export const noNamedAsDefaultMember = createRule<RuleOptions, MessageIds>({
               spec.imported.type === AST_NODE_TYPES.Identifier
                 ? spec.imported.name
                 : spec.imported.value;
-            namedImportsBySource.get(source)!.add(importedName);
+            namedImportsBySource.get(source)?.add(importedName);
           }
         });
       },
@@ -81,7 +81,8 @@ export const noNamedAsDefaultMember = createRule<RuleOptions, MessageIds>({
         // Skip computed properties like obj[prop]
         if (node.computed) return;
 
-        const defaultImportInfo = defaultImports.get(node.object.name)!;
+        const defaultImportInfo = defaultImports.get(node.object.name);
+        if (!defaultImportInfo) return;
 
         // Get the property name being accessed
         if (node.property.type !== AST_NODE_TYPES.Identifier) return;

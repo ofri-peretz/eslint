@@ -1,0 +1,1 @@
+// Valid example for no-self-import\nexport const valid = true;\n

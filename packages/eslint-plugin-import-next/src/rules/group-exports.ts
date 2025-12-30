@@ -6,7 +6,6 @@
  */
 import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
 import {
-  AST_NODE_TYPES,
   createRule,
   formatLLMMessage,
   MessageIcons,
@@ -56,7 +55,7 @@ export const groupExports = createRule<RuleOptions, MessageIds>({
             if (!reExportSources.has(source)) {
               reExportSources.set(source, []);
             }
-            reExportSources.get(source)!.push(node);
+            reExportSources.get(source)?.push(node);
           } else {
             // Local export
             separateExports.push(node);

@@ -1,0 +1,1 @@
+// Valid example for no-duplicates\nexport const valid = true;\n

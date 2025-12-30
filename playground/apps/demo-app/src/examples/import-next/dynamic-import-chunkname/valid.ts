@@ -1,0 +1,1 @@
+// Valid example for dynamic-import-chunkname\nexport const valid = true;\n

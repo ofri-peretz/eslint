@@ -1,0 +1,1 @@
+// Valid example for first\nexport const valid = true;\n

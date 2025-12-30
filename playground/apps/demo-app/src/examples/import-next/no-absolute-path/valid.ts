@@ -1,0 +1,1 @@
+// Valid example for no-absolute-path\nexport const valid = true;\n

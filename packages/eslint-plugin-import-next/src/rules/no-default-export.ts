@@ -3,7 +3,7 @@
  * Prevents default exports (eslint-plugin-import inspired)
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -193,13 +193,21 @@ export const noDefaultExport = createRule<RuleOptions, MessageIds>({
             if (declaration.type === 'Identifier') {
               // export default foo; -> export { foo };
               return fixer.replaceText(node, `export { ${declaration.name} };`);
-            } else if (declaration.type === 'Literal') {
-              // export default "value"; -> const defaultExport = "value"; export { defaultExport };
+            } else if (
+              declaration.type === 'Literal' ||
+              declaration.type === 'ObjectExpression' ||
+              declaration.type === 'ArrayExpression' ||
+              declaration.type === 'ArrowFunctionExpression' ||
+              declaration.type === 'CallExpression' ||
+              declaration.type === 'NewExpression'
+            ) {
+              // export default value; -> const defaultExport = value; export { defaultExport };
               const exprText = sourceCode.getText(declaration);
+              // Use a heuristic to handle potential semicolons or multiline
               const namedExport = `const defaultExport = ${exprText};\nexport { defaultExport };`;
               return fixer.replaceText(node, namedExport);
             } else {
-              // For all other cases, replace 'export default' with 'export'
+              // For FunctionDeclaration and ClassDeclaration, replace 'export default' with 'export'
               const nodeText = sourceCode.getText(node);
               const namedExport = nodeText.replace(/^export default/, 'export');
               return fixer.replaceText(node, namedExport);
@@ -270,7 +278,7 @@ export const noDefaultExport = createRule<RuleOptions, MessageIds>({
 
       TSTypeAliasDeclaration(node: TSESTree.TSTypeAliasDeclaration) {
         // Similar to interfaces
-        if (node.parent && node.parent.type === 'ExportDefaultDeclaration') {
+        if (node.parent && node.parent.type === AST_NODE_TYPES.ExportDefaultDeclaration) {
           return;
         }
       },

@@ -1,0 +1,1 @@
+// Valid example for group-exports\nexport const valid = true;\n
