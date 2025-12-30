@@ -89,10 +89,10 @@ jobs:
               exit 1
             fi
             echo "📊 Running tests with coverage for: $PROJECT"
-            pnpm nx test "$PROJECT" -c ci --coverage --verbose || echo "⚠️ Tests completed with issues"
+            pnpm nx test "$PROJECT" -c ci --coverage --verbose --skip-nx-cache || echo "⚠️ Tests completed with issues"
           else
             echo "📊 Running tests with coverage for all packages..."
-            pnpm nx run-many -t test --all -c ci --coverage --verbose --nxBail=false || echo "⚠️ Some tests may have failed"
+            pnpm nx run-many -t test --all -c ci --coverage --verbose --skip-nx-cache --nxBail=false || echo "⚠️ Some tests may have failed"
           fi
         env:
           NX_SKIP_NX_CLOUD: "true"
