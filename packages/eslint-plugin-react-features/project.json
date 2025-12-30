@@ -55,6 +55,12 @@
           "packages/eslint-plugin-react-features/**/*.{ts,tsx,js,jsx}"
         ]
       }
+    },
+    "nx-release-publish": {
+      "executor": "@nx/js:release-publish",
+      "options": {
+        "packageRoot": "dist/{projectRoot}"
+      }
     }
   }
 }

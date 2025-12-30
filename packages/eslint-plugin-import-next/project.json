@@ -62,6 +62,12 @@
         "command": "npx ts-node -r tsconfig-paths/register packages/eslint-plugin-import-next/scripts/generate-docs.ts",
         "cwd": "{workspaceRoot}"
       }
+    },
+    "nx-release-publish": {
+      "executor": "@nx/js:release-publish",
+      "options": {
+        "packageRoot": "dist/{projectRoot}"
+      }
     }
   }
 }

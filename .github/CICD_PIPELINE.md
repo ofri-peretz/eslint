@@ -274,13 +274,26 @@ sequenceDiagram
 
 ### Deadlock Prevention
 
-| Threat                      | Prevention                 |
-| --------------------------- | -------------------------- |
-| Git tag exists, npm doesn't | Auto-delete orphaned tag   |
-| npm exists, git tag doesn't | Bump to next version       |
-| 403 during publish          | Treat as skip, not failure |
-| Concurrent releases         | Queue, don't cancel        |
-| Dependency failed           | Skip dependents            |
+| Threat                      | Prevention               |
+| --------------------------- | ------------------------ |
+| Git tag exists, npm doesn't | Auto-delete orphaned tag |
+| npm exists, git tag doesn't | Bump to next version     |
+
+### Orphaned Tag Cleanup (Audit Logging)
+
+The workflow automatically detects and cleans orphaned tags **before** affected detection. Every deleted tag is logged for audit:
+
+```
+🗑️ ORPHANED TAG FOUND: eslint-plugin-example@1.2.3
+   └─ Git tag exists but npm version eslint-plugin-example@1.2.3 does not exist
+   └─ Deleting local and remote tag...
+   ✅ Deleted orphaned tag: eslint-plugin-example@1.2.3
+```
+
+This prevents deadlocks where previous failed releases left git tags without corresponding npm packages.
+| 403 during publish | Treat as skip, not failure |
+| Concurrent releases | Queue, don't cancel |
+| Dependency failed | Skip dependents |
 
 **Key Guarantee:** You can always just re-run the workflow.
 
