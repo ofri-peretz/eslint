@@ -682,115 +682,39 @@ jobs:
                         
                         # ERROR: 401 Unauthorized
                         if echo "$PUBLISH_OUTPUT" | grep -qiE "(401|unauthorized|ENEEDAUTH|not logged in)"; then
-                          echo "┌─────────────────────────────────────────────────────────────────┐"
-                          echo "│ ❌ NPM PUBLISH FAILED: 401 UNAUTHORIZED                         │"
-                          echo "├─────────────────────────────────────────────────────────────────┤"
-                          echo "│ 📦 Package: $NPM_NAME                                           │"
-                          echo "│                                                                 │"
-                          echo "│ 🔍 ROOT CAUSE: Authentication credentials invalid or expired    │"
-                          echo "│                                                                 │"
-                          echo "│ 📋 FIX OPTIONS:                                                 │"
-                          echo "│                                                                 │"
-                          echo "│ OPTION A - Trusted Publishers (Recommended for existing pkgs): │"
-                          echo "│    1. Go to: npmjs.com → Package '$NPM_NAME' → Settings        │"
-                          echo "│    2. Click: 'Publishing access' → 'Add trusted publisher'     │"
-                          echo "│    3. Configure: GitHub repo + workflow file + environment     │"
-                          echo "│    4. Re-run this workflow (no token needed!)                  │"
-                          echo "│                                                                 │"
-                          echo "│ OPTION B - NPM Token (Required for first release):             │"
-                          echo "│    1. Go to: npmjs.com → Avatar → Access Tokens                │"
-                          echo "│    2. Generate: Granular Access Token                          │"
-                          echo "│    3. Scopes: Read and write for '$NPM_NAME'                   │"
-                          echo "│    4. Add to: GitHub → Repo Settings → Secrets → NPM_TOKEN     │"
-                          echo "│                                                                 │"
-                          echo "└─────────────────────────────────────────────────────────────────┘"
+                          echo "❌ NPM 401: Auth credentials invalid/expired for $NPM_NAME"
+                          echo "   └─ Fix: Configure Trusted Publishers at npmjs.com or update NPM_TOKEN"
                           FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
                           continue
                         fi
                         
                         # ERROR: 403 Forbidden (not version conflict)
                         if echo "$PUBLISH_OUTPUT" | grep -qiE "(403|forbidden|EPERM)" && ! echo "$PUBLISH_OUTPUT" | grep -qiE "(already exists|cannot publish over)"; then
-                          echo "┌─────────────────────────────────────────────────────────────────┐"
-                          echo "│ ❌ NPM PUBLISH FAILED: 403 FORBIDDEN                            │"
-                          echo "├─────────────────────────────────────────────────────────────────┤"
-                          echo "│ 📦 Package: $NPM_NAME                                           │"
-                          echo "│                                                                 │"
-                          echo "│ 🔍 ROOT CAUSE: Token lacks permission for this package          │"
-                          echo "│                                                                 │"
-                          echo "│ 📋 CHECKLIST:                                                   │"
-                          echo "│    □ Token has 'Read and write' scope for '$NPM_NAME'?         │"
-                          echo "│    □ Package name is not taken by another user?                │"
-                          echo "│    □ You are a maintainer/owner of this package on npm?        │"
-                          echo "│    □ 2FA is not blocking automated publishes?                  │"
-                          echo "│                                                                 │"
-                          echo "│ 💡 TIP: If using Trusted Publishers, verify:                   │"
-                          echo "│    - Correct repository: ofri-peretz/eslint                    │"
-                          echo "│    - Correct workflow: .github/workflows/release.yml           │"
-                          echo "│    - Correct environment: production                           │"
-                          echo "│                                                                 │"
-                          echo "└─────────────────────────────────────────────────────────────────┘"
+                          echo "❌ NPM 403: Token lacks permission for $NPM_NAME"
+                          echo "   └─ Fix: Verify Trusted Publishers config (repo: ofri-peretz/eslint, workflow: release.yml)"
                           FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
                           continue
                         fi
                         
                         # ERROR: 404 Not Found (for updates to non-existent package)
                         if echo "$PUBLISH_OUTPUT" | grep -qiE "(404|not found)" && [ "$IS_FIRST_RELEASE" = "false" ]; then
-                          echo "┌─────────────────────────────────────────────────────────────────┐"
-                          echo "│ ❌ NPM PUBLISH FAILED: 404 PACKAGE NOT FOUND                    │"
-                          echo "├─────────────────────────────────────────────────────────────────┤"
-                          echo "│ 📦 Package: $NPM_NAME                                           │"
-                          echo "│                                                                 │"
-                          echo "│ 🔍 ROOT CAUSE: Package doesn't exist yet on npm                 │"
-                          echo "│                                                                 │"
-                          echo "│ 📋 ACTION REQUIRED:                                             │"
-                          echo "│    This appears to be a first-time release but wasn't detected. │"
-                          echo "│    Re-run the workflow - it should now detect --first-release.  │"
-                          echo "│                                                                 │"
-                          echo "│ 💡 AFTER FIRST PUBLISH:                                         │"
-                          echo "│    1. Go to: npmjs.com → Package '$NPM_NAME' → Settings        │"
-                          echo "│    2. Configure: Trusted Publishers for future releases        │"
-                          echo "│                                                                 │"
-                          echo "└─────────────────────────────────────────────────────────────────┘"
+                          echo "❌ NPM 404: Package $NPM_NAME not found - may be first release"
+                          echo "   └─ Fix: Re-run workflow - it should detect --first-release"
                           FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
                           continue
                         fi
                         
                         # ERROR: Network/Registry issues
                         if echo "$PUBLISH_OUTPUT" | grep -qiE "(ECONNREFUSED|ETIMEDOUT|ENOTFOUND|network|registry)"; then
-                          echo "┌─────────────────────────────────────────────────────────────────┐"
-                          echo "│ ❌ NPM PUBLISH FAILED: NETWORK ERROR                            │"
-                          echo "├─────────────────────────────────────────────────────────────────┤"
-                          echo "│ 📦 Package: $NPM_NAME                                           │"
-                          echo "│                                                                 │"
-                          echo "│ 🔍 ROOT CAUSE: Cannot reach npm registry                        │"
-                          echo "│                                                                 │"
-                          echo "│ 📋 POSSIBLE CAUSES:                                             │"
-                          echo "│    • npm registry is experiencing issues                        │"
-                          echo "│    • GitHub Actions runner network issue                        │"
-                          echo "│    • Temporary DNS resolution failure                           │"
-                          echo "│                                                                 │"
-                          echo "│ 💡 ACTION: Wait a few minutes and re-run the workflow          │"
-                          echo "│    Check: https://status.npmjs.org/                             │"
-                          echo "│                                                                 │"
-                          echo "└─────────────────────────────────────────────────────────────────┘"
+                          echo "❌ NPM Network Error: Cannot reach registry for $NPM_NAME"
+                          echo "   └─ Fix: Wait and re-run. Check https://status.npmjs.org/"
                           FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
                           continue
                         fi
                         
                         # GENERIC ERROR: Unknown failure
-                        echo "┌─────────────────────────────────────────────────────────────────┐"
-                        echo "│ ❌ NPM PUBLISH FAILED: UNKNOWN ERROR                            │"
-                        echo "├─────────────────────────────────────────────────────────────────┤"
-                        echo "│ 📦 Package: $NPM_NAME                                           │"
-                        echo "│ 📊 Exit code: $PUBLISH_EXIT                                     │"
-                        echo "│                                                                 │"
-                        echo "│ 📋 DEBUGGING STEPS:                                             │"
-                        echo "│    1. Review the full error output above                        │"
-                        echo "│    2. Try publishing locally: pnpm nx release publish \\        │"
-                        echo "│         --projects=$PACKAGE --dry-run                           │"
-                        echo "│    3. Check npm status: https://status.npmjs.org/               │"
-                        echo "│                                                                 │"
-                        echo "└─────────────────────────────────────────────────────────────────┘"
+                        echo "❌ NPM Publish Failed for $NPM_NAME (exit $PUBLISH_EXIT)"
+                        echo "   └─ Fix: Try 'pnpm nx release publish --projects=$PACKAGE --dry-run' locally"
                         FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
                         continue
                       }
@@ -800,23 +724,7 @@ jobs:
                       
                       # First-release post-publish guidance
                       if [ "$IS_FIRST_RELEASE" = "true" ]; then
-                        echo ""
-                        echo "┌─────────────────────────────────────────────────────────────────┐"
-                        echo "│ 🎉 FIRST RELEASE SUCCESSFUL!                                    │"
-                        echo "├─────────────────────────────────────────────────────────────────┤"
-                        echo "│ 📦 Package: $NPM_NAME@$NEW_VERSION                              │"
-                        echo "│                                                                 │"
-                        echo "│ 📋 NEXT STEP - Configure Trusted Publishers:                   │"
-                        echo "│    1. Go to: npmjs.com → '$NPM_NAME' → Settings                │"
-                        echo "│    2. Click: 'Publishing access' → 'Add trusted publisher'     │"
-                        echo "│    3. Select: GitHub Actions                                   │"
-                        echo "│    4. Enter:                                                   │"
-                        echo "│       • Repository: ofri-peretz/eslint                         │"
-                        echo "│       • Workflow: .github/workflows/release.yml                │"
-                        echo "│       • Environment: production                                │"
-                        echo "│                                                                 │"
-                        echo "│ 💡 After setup, future releases won't need NPM_TOKEN!          │"
-                        echo "└─────────────────────────────────────────────────────────────────┘"
+                        echo "🎉 First release success! Configure Trusted Publishers: npmjs.com → $NPM_NAME → Settings → Publishing access → Add GitHub Actions (repo: ofri-peretz/eslint, workflow: release.yml)"
                       fi
                       
                       RELEASED_PACKAGES="$RELEASED_PACKAGES $PACKAGE@$NEW_VERSION"
