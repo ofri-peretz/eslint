@@ -220,8 +220,8 @@ jobs:
                       COUNT=$(echo "$PUBLISHABLE_PACKAGES" | tr ',' '\n' | wc -l | tr -d ' ')
                       echo "package-count=$COUNT" >> $GITHUB_OUTPUT
                       
-                      # Create matrix JSON (for sequential release)
-                      MATRIX_JSON=$(echo "$PUBLISHABLE_PACKAGES" | tr ',' '\n' | jq -R . | jq -s '{package: .}')
+                      # Create matrix JSON (compact, single-line for GitHub Actions)
+                      MATRIX_JSON=$(echo "$PUBLISHABLE_PACKAGES" | tr ',' '\n' | jq -R . | jq -sc '{package: .}')
                       echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
                     fi
                   else
