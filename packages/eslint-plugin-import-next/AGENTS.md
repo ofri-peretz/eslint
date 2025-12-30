@@ -1,165 +1,95 @@
-# eslint-plugin-dependencies - AI Agent Guide
+# AGENTS.md
 
-## Package Overview
+> Context for AI coding agents working on eslint-plugin-import-next
 
-| Field           | Value                                                               |
-| --------------- | ------------------------------------------------------------------- |
-| **Name**        | eslint-plugin-dependencies                                          |
-| **Version**     | 1.0.0                                                               |
-| **Description** | ESLint plugin for dependency management with 30 LLM-optimized rules |
-| **Type**        | ESLint Plugin                                                       |
-| **Language**    | TypeScript                                                          |
-| **Node.js**     | >=18.0.0                                                            |
-| **ESLint**      | ^8.0.0 \|\| ^9.0.0                                                  |
-| **License**     | MIT                                                                 |
-| **Homepage**    | https://github.com/ofri-peretz/forge-js#readme                      |
-| **Repository**  | https://github.com/ofri-peretz/forge-js.git                         |
-| **Directory**   | packages/eslint-plugin-dependencies                                 |
-
-## Installation
+## Setup Commands
 
 ```bash
-npm install --save-dev eslint-plugin-dependencies
-# or
-pnpm add -D eslint-plugin-dependencies
-# or
-yarn add -D eslint-plugin-dependencies
+# Install dependencies (from monorepo root)
+pnpm install
+
+# Build this package
+nx build eslint-plugin-import-next
+
+# Run tests
+nx test eslint-plugin-import-next
+
+# Run tests with coverage
+nx test eslint-plugin-import-next --coverage
+
+# Lint this package
+nx lint eslint-plugin-import-next
 ```
 
-## Quick Start
+## Code Style
 
-```javascript
-// eslint.config.js
-import dependencies from 'eslint-plugin-dependencies';
+- TypeScript strict mode with `@interlace/eslint-devkit` types
+- Use `AST_NODE_TYPES` constants, never string literals for node types
+- Use `formatLLMMessage()` for all rule error messages
+- Use `c8 ignore` comments with documented reasons for untestable code
+- Single-pass AST traversal patterns (O(n) complexity)
 
-export default [dependencies.configs.recommended];
+## Testing Instructions
+
+- Tests use `@typescript-eslint/rule-tester` with Vitest
+- Each rule has `index.ts` (implementation) and `*.test.ts` (tests) in same directory
+- Run specific rule test: `nx test eslint-plugin-import-next --testPathPattern="no-circular"`
+- Coverage target: ≥90% lines, ≥95% functions
+- All tests must pass before committing
+
+## Project Structure
+
 ```
+src/
+├── index.ts          # Plugin entry, 6 configs
+└── rules/            # 30 rule directories
+    └── [rule-name]/
+        ├── index.ts       # Rule implementation
+        └── *.test.ts      # Rule tests
+```
+
+## Plugin Purpose
+
+ESLint plugin for **dependency management** with 30 LLM-optimized rules. Covers module resolution, ES module enforcement, architecture boundaries, export/import style, and dependency management.
 
 ## Available Presets
 
-| Preset                | Rules                       | Description                              |
-| --------------------- | --------------------------- | ---------------------------------------- |
-| **recommended**       | 13 rules (mixed error/warn) | Balanced configuration for most projects |
-| **strict**            | 30 rules (all errors)       | Maximum enforcement                      |
-| **module-resolution** | 7 rules                     | Focus on import/export validation        |
-| **import-style**      | 5 rules                     | Focus on import formatting               |
-| **esm**               | 3 rules                     | Enforce ES Modules only                  |
-| **architecture**      | 6 rules                     | Enforce module boundaries                |
+| Preset              | Description                                 |
+| ------------------- | ------------------------------------------- |
+| `recommended`       | Balanced configuration (13 rules)           |
+| `strict`            | All 30 rules as errors                      |
+| `module-resolution` | Focus on import/export validation (7 rules) |
+| `import-style`      | Focus on import formatting (5 rules)        |
+| `esm`               | Enforce ES Modules only (3 rules)           |
+| `architecture`      | Enforce module boundaries (6 rules)         |
 
 ## Rule Categories
 
-### Module Resolution (7 rules)
+| Category              | Rules                                                                                                                                                             |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Module Resolution     | `no-unresolved`, `named`, `default`, `namespace`, `extensions`, `no-self-import`, `no-duplicates`                                                                 |
+| Module System         | `no-amd`, `no-commonjs`, `no-nodejs-modules`                                                                                                                      |
+| Dependency Boundaries | `no-circular-dependencies`, `no-internal-modules`, `no-cross-domain-imports`, `enforce-dependency-direction`, `no-restricted-paths`, `no-relative-parent-imports` |
+| Export Style          | `no-default-export`, `no-named-export`, `prefer-default-export`, `no-anonymous-default-export`, `no-mutable-exports`, `no-deprecated`                             |
+| Import Style          | `enforce-import-order`, `first`, `newline-after-import`, `no-unassigned-import`                                                                                   |
+| Dependency Management | `no-extraneous-dependencies`, `no-unused-modules`, `max-dependencies`, `prefer-node-protocol`                                                                     |
 
-- `no-unresolved` - Ensure imports resolve
-- `named` - Ensure named imports exist
-- `default` - Ensure default export exists
-- `namespace` - Validate namespace imports
-- `extensions` - Enforce file extensions
-- `no-self-import` - Prevent self-imports
-- `no-duplicates` - Prevent duplicate imports
+## Common Fix Patterns
 
-### Module System (3 rules)
+```typescript
+// Circular dependencies (CWE-407)
+// BAD: A.ts imports B.ts, B.ts imports A.ts
+// GOOD: Extract shared code to types.ts, break cycle
 
-- `no-amd` - Disallow AMD
-- `no-commonjs` - Disallow CommonJS
-- `no-nodejs-modules` - Disallow Node.js builtins
+// Node.js protocol
+// BAD: import { readFile } from 'fs'
+// GOOD: import { readFile } from 'node:fs'
 
-### Dependency Boundaries (6 rules)
+// Import order
+// BAD: import local from './local'; import external from 'external';
+// GOOD: import external from 'external'; import local from './local';
 
-- `no-circular-dependencies` - Detect cycles
-- `no-internal-modules` - Forbid deep imports
-- `no-cross-domain-imports` - Enforce domains
-- `enforce-dependency-direction` - Layered architecture
-- `no-restricted-paths` - Restrict paths
-- `no-relative-parent-imports` - No `../` imports
-
-### Export Style (6 rules)
-
-- `no-default-export` - Disallow default exports
-- `no-named-export` - Disallow named exports
-- `prefer-default-export` - Prefer default
-- `no-anonymous-default-export` - Named defaults only
-- `no-mutable-exports` - Immutable exports
-- `no-deprecated` - No deprecated exports
-
-### Import Style (4 rules)
-
-- `enforce-import-order` - Order imports
-- `first` - Imports at top
-- `newline-after-import` - Newline after imports
-- `no-unassigned-import` - No side-effect imports
-
-### Dependency Management (4 rules)
-
-- `no-extraneous-dependencies` - Listed deps only
-- `no-unused-modules` - No unused exports
-- `max-dependencies` - Limit deps
-- `prefer-node-protocol` - Use `node:` prefix
-
-## Error Message Format
-
-All rules produce LLM-optimized 2-line structured messages:
-
+// No CommonJS
+// BAD: const x = require('./module')
+// GOOD: import x from './module'
 ```
-Line 1: [Icon] [CWE (if applicable)] | [Description] | [SEVERITY]
-Line 2:    Fix: [instruction] | [doc-link]
-```
-
-**Example:**
-
-```
-🏗️ CWE-407 | Circular dependency detected: A → B → C → A | HIGH
-   Fix: Extract shared code to types.ts, break cycle at C.ts | https://en.wikipedia.org/wiki/Circular_dependency
-```
-
-## ESLint MCP Integration
-
-Configure in `.cursor/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "eslint": {
-      "command": "npx",
-      "args": ["@eslint/mcp@latest"]
-    }
-  }
-}
-```
-
-## Key Features
-
-| Feature              | Value                      |
-| -------------------- | -------------------------- |
-| **Total Rules**      | 30                         |
-| **AI Auto-Fix Rate** | 60-80%                     |
-| **Performance**      | <10ms overhead per file    |
-| **Privacy**          | 100% local, no cloud calls |
-
-## FAQ
-
-**Q: How do I enable all rules?**
-A: Use `dependencies.configs.strict`
-
-**Q: How do I configure a specific rule?**
-A: `'dependencies/no-circular-dependencies': ['error', { maxDepth: 5 }]`
-
-**Q: How do I disable a rule inline?**
-A: `// eslint-disable-next-line dependencies/no-circular-dependencies`
-
-**Q: Is it compatible with TypeScript?**
-A: Yes, native TypeScript support.
-
-**Q: Does it work with ESLint 9 flat config?**
-A: Yes, fully compatible.
-
-## Related Packages
-
-- **@forge-js/eslint-plugin-llm-optimized** - Full plugin with 100+ rules
-- **eslint-plugin-secure-coding** - Security-focused rules
-- **eslint-plugin-react-a11y** - Accessibility rules
-- **@interlace/eslint-devkit** - Build custom LLM-optimized rules
-
-## License
-
-MIT © Ofri Peretz

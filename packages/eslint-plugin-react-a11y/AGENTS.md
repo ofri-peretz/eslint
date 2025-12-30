@@ -1,175 +1,110 @@
-# eslint-plugin-react-a11y - AI Agent Guide
+# AGENTS.md
 
-## Package Overview
+> Context for AI coding agents working on eslint-plugin-react-a11y
 
-| Field | Value |
-|-------|-------|
-| **Name** | eslint-plugin-react-a11y |
-| **Version** | 1.0.0 |
-| **Description** | React accessibility ESLint plugin with 37 LLM-optimized rules for WCAG 2.1 compliance |
-| **Type** | ESLint Plugin |
-| **Language** | TypeScript |
-| **Node.js** | >=18.0.0 |
-| **ESLint** | ^8.0.0 \|\| ^9.0.0 |
-| **License** | MIT |
-| **Homepage** | https://github.com/ofri-peretz/forge-js#readme |
-| **Repository** | https://github.com/ofri-peretz/forge-js.git |
-| **Directory** | packages/eslint-plugin-react-a11y |
-
-## Installation
+## Setup Commands
 
 ```bash
-npm install --save-dev eslint-plugin-react-a11y
-# or
-pnpm add -D eslint-plugin-react-a11y
-# or
-yarn add -D eslint-plugin-react-a11y
+# Install dependencies (from monorepo root)
+pnpm install
+
+# Build this package
+nx build eslint-plugin-react-a11y
+
+# Run tests
+nx test eslint-plugin-react-a11y
+
+# Run tests with coverage
+nx test eslint-plugin-react-a11y --coverage
+
+# Lint this package
+nx lint eslint-plugin-react-a11y
 ```
 
-## Quick Start
+## Code Style
 
-```javascript
-// eslint.config.js
-import reactA11y from 'eslint-plugin-react-a11y';
+- TypeScript strict mode with `@interlace/eslint-devkit` types
+- Use `AST_NODE_TYPES` constants, never string literals for node types
+- Use `formatLLMMessage()` for all rule error messages
+- Include WCAG reference in every accessibility message
+- Use `c8 ignore` comments with documented reasons for untestable code
+- Single-pass AST traversal patterns (O(n) complexity)
 
-export default [
-  reactA11y.configs.recommended,
-];
+## Testing Instructions
+
+- Tests use `@typescript-eslint/rule-tester` with Vitest
+- Each rule has `index.ts` (implementation) and `*.test.ts` (tests) in same directory
+- Run specific rule test: `nx test eslint-plugin-react-a11y --testPathPattern="img-requires-alt"`
+- Coverage target: ≥90% lines, ≥95% functions
+- All tests must pass before committing
+
+## Project Structure
+
 ```
+src/
+├── index.ts          # Plugin entry, 4 configs
+└── rules/            # 37 rule directories
+    └── [rule-name]/
+        ├── index.ts       # Rule implementation
+        └── *.test.ts      # Rule tests
+```
+
+## Plugin Purpose
+
+React accessibility ESLint plugin with **37 LLM-optimized rules** for WCAG 2.1 compliance. Covers anchor elements, ARIA attributes, form controls, images, interactive elements, and focus management.
 
 ## Available Presets
 
-| Preset | Rules | Description |
-|--------|-------|-------------|
-| **recommended** | 37 rules (mixed error/warn) | Balanced accessibility for most projects |
-| **strict** | 37 rules (all errors) | Maximum accessibility enforcement |
-| **wcag-a** | 16 rules | WCAG 2.1 Level A compliance |
-| **wcag-aa** | 24 rules | WCAG 2.1 Level AA compliance |
+| Preset        | Description                             |
+| ------------- | --------------------------------------- |
+| `recommended` | Balanced accessibility (37 rules mixed) |
+| `strict`      | All 37 rules as errors                  |
+| `wcag-a`      | WCAG 2.1 Level A compliance (16 rules)  |
+| `wcag-aa`     | WCAG 2.1 Level AA compliance (24 rules) |
 
 ## Rule Categories
 
-### Anchor Rules (3 rules)
-- `anchor-ambiguous-text` - Prevent ambiguous link text
-- `anchor-has-content` - Require content in anchor elements
-- `anchor-is-valid` - Require valid href on anchors
-
-### ARIA Rules (4 rules)
-- `aria-activedescendant-has-tabindex` - WCAG 4.1.2
-- `aria-props` - Validate ARIA property names
-- `aria-role` - Validate ARIA role values
-- `aria-unsupported-elements` - Prevent ARIA on unsupported elements
-
-### Form & Input Rules (3 rules)
-- `autocomplete-valid` - WCAG 1.3.5
-- `control-has-associated-label` - WCAG 1.3.1
-- `label-has-associated-control` - WCAG 1.3.1
-
-### Event Rules (2 rules)
-- `click-events-have-key-events` - WCAG 2.1.1 keyboard accessibility
-- `mouse-events-have-key-events` - WCAG 2.1.1 keyboard accessibility
-
-### Content Rules (5 rules)
-- `heading-has-content` - WCAG 1.3.1
-- `html-has-lang` - WCAG 3.1.1
-- `iframe-has-title` - WCAG 4.1.2
-- `lang` - Validate lang attribute
-- `media-has-caption` - WCAG 1.2.2
-
-### Image Rules (2 rules)
-- `img-redundant-alt` - Prevent redundant alt text
-- `img-requires-alt` - WCAG 1.1.1 non-text content
-
-### Interactive Element Rules (6 rules)
-- `interactive-supports-focus` - WCAG 2.1.1
-- `no-interactive-element-to-noninteractive-role` - Prevent role demotion
-- `no-noninteractive-element-interactions` - WCAG 2.1.1
-- `no-noninteractive-element-to-interactive-role` - Prevent role promotion
-- `no-noninteractive-tabindex` - WCAG 2.4.3
-- `no-static-element-interactions` - WCAG 2.1.1
-
-### Focus & Navigation Rules (5 rules)
-- `no-access-key` - Prevent accessKey usage
-- `no-aria-hidden-on-focusable` - WCAG 4.1.2
-- `no-autofocus` - WCAG 2.4.3
-- `no-keyboard-inaccessible-elements` - WCAG 2.1.1
-- `tabindex-no-positive` - WCAG 2.4.3
-
-### Visual & Distraction Rules (3 rules)
-- `no-distracting-elements` - WCAG 2.3.1
-- `no-missing-aria-labels` - WCAG 4.1.2
-- `no-redundant-roles` - Prevent redundant ARIA roles
-
-### Role Rules (3 rules)
-- `role-has-required-aria-props` - WCAG 4.1.2
-- `role-supports-aria-props` - WCAG 4.1.2
-- `prefer-tag-over-role` - Semantic HTML preference
-
-### Scope Rule (1 rule)
-- `scope` - Validate scope attribute usage
+| Category | Rules                                                                                        | WCAG         |
+| -------- | -------------------------------------------------------------------------------------------- | ------------ |
+| Anchor   | `anchor-ambiguous-text`, `anchor-has-content`, `anchor-is-valid`                             | 2.4.4        |
+| ARIA     | `aria-activedescendant-has-tabindex`, `aria-props`, `aria-role`, `aria-unsupported-elements` | 4.1.2        |
+| Forms    | `autocomplete-valid`, `control-has-associated-label`, `label-has-associated-control`         | 1.3.1, 1.3.5 |
+| Events   | `click-events-have-key-events`, `mouse-events-have-key-events`                               | 2.1.1        |
+| Images   | `img-redundant-alt`, `img-requires-alt`                                                      | 1.1.1        |
+| Focus    | `interactive-supports-focus`, `no-autofocus`, `tabindex-no-positive`                         | 2.4.3        |
 
 ## Error Message Format
 
-All rules produce LLM-optimized 2-line structured messages:
+All rules produce WCAG-referenced messages:
 
-```
-Line 1: [Icon] [WCAG Ref] | [Description] | [SEVERITY]
-Line 2:    Fix: [instruction] | [doc-link]
-```
-
-**Example:**
 ```
 ♿ WCAG 1.1.1 | Image missing alt text | CRITICAL
    Fix: Add alt="Descriptive text about image" | https://www.w3.org/WAI/tutorials/images/
 ```
 
-## ESLint MCP Integration
+## Common Fix Patterns
 
-Configure in `.cursor/mcp.json`:
-```json
-{
-  "mcpServers": {
-    "eslint": {
-      "command": "npx",
-      "args": ["@eslint/mcp@latest"]
-    }
-  }
-}
+```tsx
+// Image alt (WCAG 1.1.1)
+// BAD: <img src="photo.jpg" />
+// GOOD: <img src="photo.jpg" alt="Description of image" />
+
+// Anchor content (WCAG 2.4.4)
+// BAD: <a href="/page">Click here</a>
+// GOOD: <a href="/page">View product details</a>
+
+// Form labels (WCAG 1.3.1)
+// BAD: <input type="text" />
+// GOOD: <label>Name: <input type="text" /></label>
+// GOOD: <input type="text" aria-label="Name" />
+
+// Keyboard events (WCAG 2.1.1)
+// BAD: <div onClick={handleClick}>...</div>
+// GOOD: <div onClick={handleClick} onKeyDown={handleKeyDown} tabIndex={0}>...</div>
 ```
 
-## Key Features
+## Security Considerations
 
-| Feature | Value |
-|---------|-------|
-| **Total Rules** | 37 |
-| **WCAG Coverage** | Level A, AA, AAA |
-| **AI Auto-Fix Rate** | 60-80% |
-| **Performance** | <10ms overhead per file |
-| **Privacy** | 100% local, no cloud calls |
-
-## FAQ
-
-**Q: How do I enable all accessibility rules?**
-A: Use `reactA11y.configs.strict`
-
-**Q: How do I configure a specific rule?**
-A: `'react-a11y/img-requires-alt': ['error', { allowAriaLabel: true }]`
-
-**Q: How do I disable a rule inline?**
-A: `// eslint-disable-next-line react-a11y/img-requires-alt`
-
-**Q: Is it compatible with TypeScript?**
-A: Yes, native TypeScript support.
-
-**Q: Does it work with ESLint 9 flat config?**
-A: Yes, fully compatible.
-
-## Related Packages
-
-- **@forge-js/eslint-plugin-llm-optimized** - Full plugin with 144+ rules
-- **eslint-plugin-secure-coding** - Security-focused rules
-- **@interlace/eslint-devkit** - Build custom LLM-optimized rules
-
-## License
-
-MIT © Ofri Peretz
-
+- All rules map to WCAG 2.1 success criteria
+- Covers Level A, AA, and AAA requirements
+- Prevents common accessibility anti-patterns

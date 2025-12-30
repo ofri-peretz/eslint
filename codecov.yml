@@ -220,3 +220,6 @@ ignore:
   # Infrastructure packages without tests
   - "packages/cli/**"
   - "packages/eslint-plugin/**"
+  # Plugin entry points (configuration code, not tested)
+  - "packages/*/src/index.ts"
+
