@@ -90,11 +90,11 @@ jobs:
             fi
             echo "📊 Running tests with coverage for: $PROJECT"
             # Add JUnit reporter for Codecov Test Analytics
-            pnpm nx test "$PROJECT" -c ci --coverage --verbose --skip-nx-cache -- --reporter=default --reporter=junit --outputFile=test-results/junit.xml || echo "⚠️ Tests completed with issues"
+            pnpm nx test "$PROJECT" -c ci --coverage --verbose -- --reporter=default --reporter=junit --outputFile=test-results/junit.xml || echo "⚠️ Tests completed with issues"
           else
             echo "📊 Running tests with coverage for all packages..."
             # Add JUnit reporter for Codecov Test Analytics
-            pnpm nx run-many -t test --all -c ci --coverage --verbose --skip-nx-cache --nxBail=false -- --reporter=default --reporter=junit --outputFile=test-results/junit.xml || echo "⚠️ Some tests may have failed"
+            pnpm nx run-many -t test --all -c ci --coverage --verbose --nxBail=false -- --reporter=default --reporter=junit --outputFile=test-results/junit.xml || echo "⚠️ Some tests may have failed"
           fi
         env:
           NX_SKIP_NX_CLOUD: "true"

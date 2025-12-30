@@ -1,0 +1,527 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="248" failures="0" errors="0" time="1.022811249">
+    <testsuite name="src/utils/utils.test.ts" timestamp="2025-12-30T23:04:00.236Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="36" failures="0" errors="0" skipped="0" time="0.004876833">
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; isJwtLibraryCall &gt; should detect direct calls" time="0.000634583">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; isJwtLibraryCall &gt; should detect member calls" time="0.000114125">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; isJwtLibraryCall &gt; should return false for non-matching calls" time="0.000147667">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; isJwtLibraryCall &gt; should return false for non-identifier/member callee (line 117)" time="0.000130291">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; isJwtLibraryCall &gt; should return false for member with non-identifier property" time="0.00011975">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; isStringLiteral &gt; should return true for string literals" time="0.00006925">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; isStringLiteral &gt; should return true when value matches" time="0.000045292">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; isStringLiteral &gt; should return false when value does not match" time="0.000041125">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; isStringLiteral &gt; should return false for non-string literals" time="0.000108458">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; extractAlgorithms &gt; should extract single algorithm" time="0.000364208">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; extractAlgorithms &gt; should extract algorithms from array" time="0.000067833">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; extractAlgorithms &gt; should return empty array for no algorithms" time="0.000049833">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; extractAlgorithms &gt; should handle alg key" time="0.000094708">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; extractAlgorithms &gt; should skip SpreadElement properties (line 143)" time="0.000195708">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; extractAlgorithms &gt; should skip properties with non-identifier keys" time="0.0001525">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; hasOption &gt; should return true when option exists" time="0.000097458">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; hasOption &gt; should return false when option missing" time="0.000123">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; getOptionValue &gt; should return option value" time="0.00004725">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; getOptionValue &gt; should return undefined for missing option" time="0.000048583">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; isWeakSecret &gt; should return true for short secrets" time="0.000055459">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; isWeakSecret &gt; should return false for long secrets" time="0.000042667">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; isWeakSecret &gt; should return false for non-literals" time="0.000035875">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; isEnvVariable &gt; should return true for process.env.X" time="0.000053167">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; isEnvVariable &gt; should return false for other nodes" time="0.000033958">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; operation checkers &gt; isSignOperation detects sign calls" time="0.000057334">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; operation checkers &gt; isVerifyOperation detects verify calls" time="0.0001635">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; operation checkers &gt; isDecodeOperation detects decode calls" time="0.000089">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; getOptionsArgument &gt; should return options object at default index" time="0.000120708">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; getOptionsArgument &gt; should return undefined if no options" time="0.000043084">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; isTestFile &gt; should return true for test files" time="0.000160666">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; isTestFile &gt; should return false for non-test files" time="0.000091792">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; constants &gt; should have sensitive fields" time="0.000065917">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; constants &gt; should have symmetric algorithms" time="0.000035833">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; constants &gt; should have secure algorithms" time="0.000046042">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; constants &gt; should have insecure algorithms" time="0.000031792">
+        </testcase>
+        <testcase classname="src/utils/utils.test.ts" name="JWT Utils &gt; constants &gt; should have JWT libraries" time="0.000047">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/rules/no-algorithm-none/no-algorithm-none.test.ts" timestamp="2025-12-30T23:04:00.240Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="28" failures="0" errors="0" skipped="0" time="0.106384334">
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Valid Code - Secure Algorithms &gt; valid - secure algorithms &gt; valid &gt; jwt.verify(token, publicKey, { algorithms: [&apos;RS256&apos;] });" time="0.026952959">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Valid Code - Secure Algorithms &gt; valid - secure algorithms &gt; valid &gt; jwt.verify(token, publicKey, { algorithms: [&apos;ES256&apos;] });" time="0.003390292">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Valid Code - Secure Algorithms &gt; valid - secure algorithms &gt; valid &gt; jwt.verify(token, key, { algorithms: [&apos;RS256&apos;, &apos;RS384&apos;, &apos;RS512&apos;] });" time="0.002302833">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Valid Code - Secure Algorithms &gt; valid - secure algorithms &gt; valid &gt; jwt.verify(token, secret, { algorithm: &apos;HS256&apos; });" time="0.001745292">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Valid Code - Secure Algorithms &gt; valid - secure algorithms &gt; valid &gt; jwtVerify(token, key, { algorithms: [&apos;RS256&apos;] });" time="0.00161175">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Valid Code - Secure Algorithms &gt; valid - secure algorithms &gt; valid &gt; jwt.verify(token, secret);" time="0.001234458">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Valid Code - Secure Algorithms &gt; valid - secure algorithms &gt; valid &gt; jwt.sign(payload, secret, { algorithm: &apos;RS256&apos; });" time="0.001371125">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Valid Code - Secure Algorithms &gt; valid - secure algorithms &gt; valid &gt; jwt.verify(token, key, { ...opts, algorithms: [&apos;RS256&apos;] });" time="0.004549959">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Valid Code - Secure Algorithms &gt; valid - secure algorithms &gt; valid &gt; jwt.verify(token, key, { issuer: &apos;auth&apos;, complete: true });" time="0.003101625">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Valid Code - Secure Algorithms &gt; valid - secure algorithms &gt; valid &gt; jwt.sign(payload, secret, { expiresIn: &apos;1h&apos;, subject: &apos;user&apos; });" time="0.003206542">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Valid Code - Secure Algorithms &gt; valid - secure algorithms &gt; valid &gt; jwt.verify(token, key, { algorithms: allowedAlgorithms });" time="0.007008375">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Valid Code - Secure Algorithms &gt; valid - secure algorithms &gt; valid &gt; jwt.verify(token, key, { algorithms: [defaultAlg] });" time="0.003026375">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Valid Code - Secure Algorithms &gt; valid - secure algorithms &gt; valid &gt; jwt.verify(token, key, { algorithms: [123] });" time="0.001673125">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Valid Code - Secure Algorithms &gt; valid - secure algorithms &gt; valid &gt; console.log(&apos;hello&apos;);" time="0.003327292">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Valid Code - Secure Algorithms &gt; valid - secure algorithms &gt; valid &gt; someOtherFunction(token, key, { algorithm: &apos;none&apos; });" time="0.002055375">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Invalid Code - Algorithm None &gt; invalid - algorithm none &gt; invalid &gt; jwt.verify(token, secret, { algorithm: &apos;none&apos; });" time="0.002481792">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Invalid Code - Algorithm None &gt; invalid - algorithm none &gt; invalid &gt; jwt.verify(token, secret, { algorithms: [&apos;none&apos;] });" time="0.001939041">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Invalid Code - Algorithm None &gt; invalid - algorithm none &gt; invalid &gt; jwt.verify(token, secret, { algorithms: [&apos;RS256&apos;, &apos;none&apos;] });" time="0.002176208">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Invalid Code - Algorithm None &gt; invalid - algorithm none &gt; invalid &gt; jwt.verify(token, secret, { algorithm: &apos;None&apos; });" time="0.001292834">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Invalid Code - Algorithm None &gt; invalid - algorithm none &gt; invalid &gt; jwt.verify(token, secret, { algorithms: [&apos;NONE&apos;] });" time="0.004780541">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Invalid Code - Algorithm None &gt; invalid - algorithm none &gt; invalid &gt; jwt.verify(token, secret, { alg: &apos;none&apos; });" time="0.001331708">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Invalid Code - Algorithm None &gt; invalid - algorithm none &gt; invalid &gt; jwt.verify(token, secret, { algorithms: [] });" time="0.001772708">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Invalid Code - Algorithm None &gt; invalid - algorithm none &gt; invalid &gt; jwt.sign(payload, secret, { algorithm: &apos;none&apos; });" time="0.001303209">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Invalid Code - Algorithm None &gt; invalid - algorithm none &gt; invalid &gt; jwtVerify(token, key, { algorithms: [&apos;none&apos;] });" time="0.011971334">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Invalid Code - Algorithm None &gt; invalid - algorithm none &gt; invalid &gt; signJWT(payload, key, { algorithm: &apos;none&apos; });" time="0.003464084">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Configuration Options &gt; config - allowInTests &gt; valid &gt; jwt.verify(token, secret, { algorithm: &apos;none&apos; });" time="0.001095625">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Configuration Options &gt; config - allowInTests &gt; valid &gt; jwt.verify(token, secret, { algorithm: &apos;none&apos; });" time="0.004220834">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-none/no-algorithm-none.test.ts" name="no-algorithm-none &gt; Configuration Options &gt; config - allowInTests &gt; invalid &gt; jwt.verify(token, secret, { algorithm: &apos;none&apos; });" time="0.001079916">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" timestamp="2025-12-30T23:04:00.242Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="20" failures="0" errors="0" skipped="0" time="0.10485875">
+        <testcase classname="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" name="no-algorithm-confusion &gt; Valid Code - Safe Patterns &gt; valid - asymmetric algorithms with public keys &gt; valid &gt; jwt.verify(token, publicKey, { algorithms: [&apos;RS256&apos;] });" time="0.028393708">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" name="no-algorithm-confusion &gt; Valid Code - Safe Patterns &gt; valid - asymmetric algorithms with public keys &gt; valid &gt; jwt.verify(token, publicKey, { algorithms: [&apos;ES256&apos;] });" time="0.002737417">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" name="no-algorithm-confusion &gt; Valid Code - Safe Patterns &gt; valid - asymmetric algorithms with public keys &gt; valid &gt; jwt.verify(token, publicKey, { algorithms: [&apos;RS256&apos;, &apos;ES256&apos;] });" time="0.002229625">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" name="no-algorithm-confusion &gt; Valid Code - Safe Patterns &gt; valid - asymmetric algorithms with public keys &gt; valid &gt; jwt.verify(token, secret, { algorithms: [&apos;HS256&apos;] });" time="0.001849083">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" name="no-algorithm-confusion &gt; Valid Code - Safe Patterns &gt; valid - asymmetric algorithms with public keys &gt; valid &gt; jwt.verify(token, process.env.JWT_SECRET, { algorithms: [&apos;HS256&apos;] });" time="0.001948792">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" name="no-algorithm-confusion &gt; Valid Code - Safe Patterns &gt; valid - asymmetric algorithms with public keys &gt; valid &gt; jwt.verify(token, publicKey);" time="0.001208875">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" name="no-algorithm-confusion &gt; Valid Code - Safe Patterns &gt; valid - asymmetric algorithms with public keys &gt; valid &gt; jwt.sign(payload, privateKey, { algorithm: &apos;HS256&apos; });" time="0.001368958">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" name="no-algorithm-confusion &gt; Valid Code - Safe Patterns &gt; valid - asymmetric algorithms with public keys &gt; valid &gt; jwt.verify(token);" time="0.004693458">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" name="no-algorithm-confusion &gt; Valid Code - Safe Patterns &gt; valid - asymmetric algorithms with public keys &gt; valid &gt; jwt.verify(token, sharedSecret, { algorithms: [&apos;HS256&apos;] });" time="0.002221792">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" name="no-algorithm-confusion &gt; Valid Code - Safe Patterns &gt; valid - asymmetric algorithms with public keys &gt; valid &gt; jwt.verify(token, publicKey, {});" time="0.001968083">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" name="no-algorithm-confusion &gt; Valid Code - Safe Patterns &gt; valid - asymmetric algorithms with public keys &gt; valid &gt; jwt.verify(token, publicKey, { complete: true });" time="0.015565125">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" name="no-algorithm-confusion &gt; Invalid Code - Algorithm Confusion &gt; invalid - symmetric with public key &gt; invalid &gt; jwt.verify(token, publicKey, { algorithms: [&apos;HS256&apos;] });" time="0.002852375">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" name="no-algorithm-confusion &gt; Invalid Code - Algorithm Confusion &gt; invalid - symmetric with public key &gt; invalid &gt; jwt.verify(token, publicKey, { algorithms: [&apos;HS384&apos;] });" time="0.002881875">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" name="no-algorithm-confusion &gt; Invalid Code - Algorithm Confusion &gt; invalid - symmetric with public key &gt; invalid &gt; jwt.verify(token, publicKey, { algorithms: [&apos;HS512&apos;] });" time="0.002948875">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" name="no-algorithm-confusion &gt; Invalid Code - Algorithm Confusion &gt; invalid - symmetric with public key &gt; invalid &gt; jwt.verify(token, publicKey, { algorithm: &apos;HS256&apos; });" time="0.004426792">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" name="no-algorithm-confusion &gt; Invalid Code - Algorithm Confusion &gt; invalid - symmetric with public key &gt; invalid &gt; jwt.verify(token, publicKey, { algorithms: [&apos;RS256&apos;, &apos;HS256&apos;] });" time="0.002326667">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" name="no-algorithm-confusion &gt; Invalid Code - Algorithm Confusion &gt; invalid - symmetric with public key &gt; invalid &gt; jwt.verify(token, getPublicKey(), { algorithms: [&apos;HS256&apos;] });" time="0.00175675">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" name="no-algorithm-confusion &gt; Invalid Code - Algorithm Confusion &gt; invalid - symmetric with public key &gt; invalid &gt; jwt.verify(token, jwksKey, { algorithms: [&apos;HS256&apos;] });" time="0.001299167">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" name="no-algorithm-confusion &gt; Invalid Code - Algorithm Confusion &gt; invalid - symmetric with public key &gt; invalid &gt; jwt.verify(token, publicKey, { alg: &apos;HS256&apos; });" time="0.013170791">
+        </testcase>
+        <testcase classname="src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts" name="no-algorithm-confusion &gt; Invalid Code - Algorithm Confusion &gt; invalid - symmetric with public key &gt; invalid &gt; jwtVerify(token, publicKey, { algorithms: [&apos;HS256&apos;] });" time="0.007482084">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/rules/no-decode-without-verify/no-decode-without-verify.test.ts" timestamp="2025-12-30T23:04:00.243Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="10" failures="0" errors="0" skipped="0" time="0.061857416">
+        <testcase classname="src/rules/no-decode-without-verify/no-decode-without-verify.test.ts" name="no-decode-without-verify &gt; Valid Code - Verify Operations &gt; valid - verify operations &gt; valid &gt; const payload = jwt.verify(token, secret);" time="0.024813291">
+        </testcase>
+        <testcase classname="src/rules/no-decode-without-verify/no-decode-without-verify.test.ts" name="no-decode-without-verify &gt; Valid Code - Verify Operations &gt; valid - verify operations &gt; valid &gt; jwt.verify(token, publicKey, { algorithms: [&apos;RS256&apos;] });" time="0.006284625">
+        </testcase>
+        <testcase classname="src/rules/no-decode-without-verify/no-decode-without-verify.test.ts" name="no-decode-without-verify &gt; Valid Code - Verify Operations &gt; valid - verify operations &gt; valid &gt; const { payload } = await jwtVerify(token, key);" time="0.005821709">
+        </testcase>
+        <testcase classname="src/rules/no-decode-without-verify/no-decode-without-verify.test.ts" name="no-decode-without-verify &gt; Valid Code - Verify Operations &gt; valid - verify operations &gt; valid &gt; jwt.sign(payload, secret);" time="0.003520041">
+        </testcase>
+        <testcase classname="src/rules/no-decode-without-verify/no-decode-without-verify.test.ts" name="no-decode-without-verify &gt; Invalid Code - Decode Operations &gt; invalid - decode without verify &gt; invalid &gt; const payload = jwt.decode(token);" time="0.007042333">
+        </testcase>
+        <testcase classname="src/rules/no-decode-without-verify/no-decode-without-verify.test.ts" name="no-decode-without-verify &gt; Invalid Code - Decode Operations &gt; invalid - decode without verify &gt; invalid &gt; const decoded = jwt.decode(token, { complete: true });" time="0.002053583">
+        </testcase>
+        <testcase classname="src/rules/no-decode-without-verify/no-decode-without-verify.test.ts" name="no-decode-without-verify &gt; Invalid Code - Decode Operations &gt; invalid - decode without verify &gt; invalid &gt; const userId = jwt.decode(token).sub;" time="0.001831625">
+        </testcase>
+        <testcase classname="src/rules/no-decode-without-verify/no-decode-without-verify.test.ts" name="no-decode-without-verify &gt; Invalid Code - Decode Operations &gt; invalid - decode without verify &gt; invalid &gt; const payload = jwtDecode(accessToken);" time="0.001500542">
+        </testcase>
+        <testcase classname="src/rules/no-decode-without-verify/no-decode-without-verify.test.ts" name="no-decode-without-verify &gt; Invalid Code - Decode Operations &gt; invalid - decode without verify &gt; invalid &gt; const payload = jwt_decode(accessToken);" time="0.004416584">
+        </testcase>
+        <testcase classname="src/rules/no-decode-without-verify/no-decode-without-verify.test.ts" name="no-decode-without-verify &gt; Invalid Code - Decode Operations &gt; invalid - decode without verify &gt; invalid &gt; const payload = decodeJWT(token);" time="0.003546417">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" timestamp="2025-12-30T23:04:00.244Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="42" failures="0" errors="0" skipped="0" time="0.153583125">
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Valid Code - Safe Payloads &gt; valid - standard claims &gt; valid &gt; jwt.sign({ sub: &apos;user123&apos;, role: &apos;admin&apos; }, secret);" time="0.031017334">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Valid Code - Safe Payloads &gt; valid - standard claims &gt; valid &gt; jwt.sign({ userId: &apos;123&apos;, permissions: [] }, secret);" time="0.002768333">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Valid Code - Safe Payloads &gt; valid - standard claims &gt; valid &gt; jwt.sign({ sub: &apos;user&apos;, iss: &apos;auth&apos;, aud: &apos;api&apos;, exp: 123 }, secret);" time="0.002483375">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Valid Code - Safe Payloads &gt; valid - standard claims &gt; valid &gt; jwt.sign(payload, secret);" time="0.004023333">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Valid Code - Safe Payloads &gt; valid - standard claims &gt; valid &gt; jwt.verify(token, secret);" time="0.004782666">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Valid Code - Safe Payloads &gt; valid - standard claims &gt; valid &gt; jwt.sign();" time="0.0021795">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Valid Code - Safe Payloads &gt; valid - standard claims &gt; valid &gt; sign(payload, secret);" time="0.00139675">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Valid Code - Safe Payloads &gt; valid - standard claims &gt; valid &gt; jwt.sign({ passwordResetToken: false }, secret);" time="0.001433875">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Valid Code - Safe Payloads &gt; valid - standard claims &gt; valid &gt; jwt.sign({ emailVerified: true }, secret);" time="0.001946834">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Valid Code - Safe Payloads &gt; valid - standard claims &gt; valid &gt; jwt.sign({ phoneVerified: true }, secret);" time="0.001907834">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - Password Fields &gt; invalid - password variations &gt; invalid &gt; jwt.sign({ password: &apos;secret123&apos; }, secret);" time="0.013925292">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - Password Fields &gt; invalid - password variations &gt; invalid &gt; jwt.sign({ passwd: &apos;abc&apos; }, secret);" time="0.001883875">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - Password Fields &gt; invalid - password variations &gt; invalid &gt; jwt.sign({ pwd: &apos;123&apos; }, secret);" time="0.001893083">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - Password Fields &gt; invalid - password variations &gt; invalid &gt; jwt.sign({ pass: &apos;xyz&apos; }, secret);" time="0.003986625">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - PII Fields &gt; invalid - personal identifiable information &gt; invalid &gt; jwt.sign({ email: &apos;user@example.com&apos; }, secret);" time="0.002892375">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - PII Fields &gt; invalid - personal identifiable information &gt; invalid &gt; jwt.sign({ emailAddress: &apos;user@test.com&apos; }, secret);" time="0.00185125">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - PII Fields &gt; invalid - personal identifiable information &gt; invalid &gt; jwt.sign({ phone: &apos;555-1234&apos; }, secret);" time="0.001428542">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - PII Fields &gt; invalid - personal identifiable information &gt; invalid &gt; jwt.sign({ phoneNumber: &apos;1234567890&apos; }, secret);" time="0.00190375">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - PII Fields &gt; invalid - personal identifiable information &gt; invalid &gt; jwt.sign({ ssn: &apos;123-45-6789&apos; }, secret);" time="0.013273667">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - PII Fields &gt; invalid - personal identifiable information &gt; invalid &gt; jwt.sign({ address: &apos;123 Main St&apos; }, secret);" time="0.003857791">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - PII Fields &gt; invalid - personal identifiable information &gt; invalid &gt; jwt.sign({ dob: &apos;1990-01-01&apos; }, secret);" time="0.004119">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - PII Fields &gt; invalid - personal identifiable information &gt; invalid &gt; jwt.sign({ dateOfBirth: &apos;1990-01-01&apos; }, secret);" time="0.003338833">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - Financial Fields &gt; invalid - financial data &gt; invalid &gt; jwt.sign({ creditCard: &apos;4111111111111111&apos; }, secret);" time="0.003116667">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - Financial Fields &gt; invalid - financial data &gt; invalid &gt; jwt.sign({ credit_card: &apos;4111111111111111&apos; }, secret);" time="0.002199">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - Financial Fields &gt; invalid - financial data &gt; invalid &gt; jwt.sign({ cardNumber: &apos;1234&apos; }, secret);" time="0.002817041">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - Financial Fields &gt; invalid - financial data &gt; invalid &gt; jwt.sign({ cvv: &apos;123&apos; }, secret);" time="0.002027042">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - Financial Fields &gt; invalid - financial data &gt; invalid &gt; jwt.sign({ cvc: &apos;456&apos; }, secret);" time="0.002518125">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - Financial Fields &gt; invalid - financial data &gt; invalid &gt; jwt.sign({ pin: &apos;1234&apos; }, secret);" time="0.00251875">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - Financial Fields &gt; invalid - financial data &gt; invalid &gt; jwt.sign({ bankAccount: &apos;123456&apos; }, secret);" time="0.001346292">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - Financial Fields &gt; invalid - financial data &gt; invalid &gt; jwt.sign({ accountNumber: &apos;789&apos; }, secret);" time="0.000954125">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - Financial Fields &gt; invalid - financial data &gt; invalid &gt; jwt.sign({ routingNumber: &apos;111&apos; }, secret);" time="0.0017245">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - API Keys and Secrets &gt; invalid - secrets and keys &gt; invalid &gt; jwt.sign({ apiKey: &apos;sk_live_123&apos; }, secret);" time="0.015114542">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - API Keys and Secrets &gt; invalid - secrets and keys &gt; invalid &gt; jwt.sign({ api_key: &apos;sk_live_123&apos; }, secret);" time="0.001173541">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - API Keys and Secrets &gt; invalid - secrets and keys &gt; invalid &gt; jwt.sign({ secret: &apos;abc123&apos; }, secret);" time="0.000925583">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - API Keys and Secrets &gt; invalid - secrets and keys &gt; invalid &gt; jwt.sign({ accessToken: &apos;abc123&apos; }, secret);" time="0.000931291">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - API Keys and Secrets &gt; invalid - secrets and keys &gt; invalid &gt; jwt.sign({ refreshToken: &apos;xyz789&apos; }, secret);" time="0.000890542">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - API Keys and Secrets &gt; invalid - secrets and keys &gt; invalid &gt; jwt.sign({ bearerToken: &apos;bearer123&apos; }, secret);" time="0.000850625">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - API Keys and Secrets &gt; invalid - secrets and keys &gt; invalid &gt; jwt.sign({ privateKey: &apos;-----BEGIN RSA&apos; }, secret);" time="0.00087675">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - API Keys and Secrets &gt; invalid - secrets and keys &gt; invalid &gt; jwt.sign({ secretKey: &apos;key123&apos; }, secret);" time="0.000813041">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - Multiple Sensitive Fields &gt; invalid - multiple violations &gt; invalid &gt; jwt.sign({ email: &apos;user@test.com&apos;, phone: &apos;555-1234&apos; }, secret);" time="0.001049292">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Invalid Code - Multiple Sensitive Fields &gt; invalid - multiple violations &gt; invalid &gt; jwt.sign({ sub: &apos;user&apos;, password: &apos;secret&apos; }, secret);" time="0.000877583">
+        </testcase>
+        <testcase classname="src/rules/no-sensitive-payload/no-sensitive-payload.test.ts" name="no-sensitive-payload &gt; Edge Cases - Custom Configuration &gt; custom sensitive fields &gt; invalid &gt; jwt.sign({ customSecret: &apos;value&apos; }, secret);" time="0.001030958">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/rules/no-weak-secret/no-weak-secret.test.ts" timestamp="2025-12-30T23:04:00.246Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="16" failures="0" errors="0" skipped="0" time="0.084466208">
+        <testcase classname="src/rules/no-weak-secret/no-weak-secret.test.ts" name="no-weak-secret &gt; Valid Code - Strong Secrets &gt; valid - strong secrets &gt; valid &gt; jwt.sign(payload, process.env.JWT_SECRET);" time="0.026957083">
+        </testcase>
+        <testcase classname="src/rules/no-weak-secret/no-weak-secret.test.ts" name="no-weak-secret &gt; Valid Code - Strong Secrets &gt; valid - strong secrets &gt; valid &gt; jwt.sign(payload, &apos;ThisIsAVeryStrongSecretThatIs32Ch+&apos;);" time="0.0025705">
+        </testcase>
+        <testcase classname="src/rules/no-weak-secret/no-weak-secret.test.ts" name="no-weak-secret &gt; Valid Code - Strong Secrets &gt; valid - strong secrets &gt; valid &gt; jwt.sign(payload, getSecret());" time="0.002028584">
+        </testcase>
+        <testcase classname="src/rules/no-weak-secret/no-weak-secret.test.ts" name="no-weak-secret &gt; Valid Code - Strong Secrets &gt; valid - strong secrets &gt; valid &gt; jwt.sign(payload, secret);" time="0.001843167">
+        </testcase>
+        <testcase classname="src/rules/no-weak-secret/no-weak-secret.test.ts" name="no-weak-secret &gt; Valid Code - Strong Secrets &gt; valid - strong secrets &gt; valid &gt; jwt.sign(payload, crypto.randomBytes(32).toString(&apos;hex&apos;));" time="0.006032541">
+        </testcase>
+        <testcase classname="src/rules/no-weak-secret/no-weak-secret.test.ts" name="no-weak-secret &gt; Valid Code - Strong Secrets &gt; valid - strong secrets &gt; valid &gt; jwt.verify(token, process.env.JWT_SECRET);" time="0.004986667">
+        </testcase>
+        <testcase classname="src/rules/no-weak-secret/no-weak-secret.test.ts" name="no-weak-secret &gt; Invalid Code - Weak Secrets &gt; invalid - weak secrets &gt; invalid &gt; jwt.sign(payload, &apos;secret&apos;);" time="0.007988084">
+        </testcase>
+        <testcase classname="src/rules/no-weak-secret/no-weak-secret.test.ts" name="no-weak-secret &gt; Invalid Code - Weak Secrets &gt; invalid - weak secrets &gt; invalid &gt; jwt.sign(payload, &apos;password&apos;);" time="0.0025255">
+        </testcase>
+        <testcase classname="src/rules/no-weak-secret/no-weak-secret.test.ts" name="no-weak-secret &gt; Invalid Code - Weak Secrets &gt; invalid - weak secrets &gt; invalid &gt; jwt.sign(payload, &apos;short&apos;);" time="0.003119041">
+        </testcase>
+        <testcase classname="src/rules/no-weak-secret/no-weak-secret.test.ts" name="no-weak-secret &gt; Invalid Code - Weak Secrets &gt; invalid - weak secrets &gt; invalid &gt; jwt.sign(payload, &apos;abcdefghijklmnopqrstuvwxyz12345&apos;);" time="0.002245709">
+        </testcase>
+        <testcase classname="src/rules/no-weak-secret/no-weak-secret.test.ts" name="no-weak-secret &gt; Invalid Code - Weak Secrets &gt; invalid - weak secrets &gt; invalid &gt; jwt.sign(payload, &apos;testkey&apos;);" time="0.001449125">
+        </testcase>
+        <testcase classname="src/rules/no-weak-secret/no-weak-secret.test.ts" name="no-weak-secret &gt; Invalid Code - Weak Secrets &gt; invalid - weak secrets &gt; invalid &gt; jwt.verify(token, &apos;demo123&apos;);" time="0.001932333">
+        </testcase>
+        <testcase classname="src/rules/no-weak-secret/no-weak-secret.test.ts" name="no-weak-secret &gt; Invalid Code - Weak Secrets &gt; invalid - weak secrets &gt; invalid &gt; jwt.sign(payload, `secret`);" time="0.012957958">
+        </testcase>
+        <testcase classname="src/rules/no-weak-secret/no-weak-secret.test.ts" name="no-weak-secret &gt; Invalid Code - Weak Secrets &gt; invalid - weak secrets &gt; invalid &gt; jwt.sign(payload, &apos;changeme&apos;);" time="0.003707125">
+        </testcase>
+        <testcase classname="src/rules/no-weak-secret/no-weak-secret.test.ts" name="no-weak-secret &gt; Configuration Options &gt; config - custom min length &gt; valid &gt; jwt.sign(payload, &apos;sixteen_chars!!!&apos;);" time="0.001463084">
+        </testcase>
+        <testcase classname="src/rules/no-weak-secret/no-weak-secret.test.ts" name="no-weak-secret &gt; Configuration Options &gt; config - custom min length &gt; invalid &gt; jwt.sign(payload, &apos;fifteen_chars!!&apos;);" time="0.001794417">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/rules/require-algorithm-whitelist/require-algorithm-whitelist.test.ts" timestamp="2025-12-30T23:04:00.247Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="13" failures="0" errors="0" skipped="0" time="0.062735292">
+        <testcase classname="src/rules/require-algorithm-whitelist/require-algorithm-whitelist.test.ts" name="require-algorithm-whitelist &gt; Valid Code &gt; valid - with algorithms &gt; valid &gt; jwt.verify(token, secret, { algorithms: [&apos;RS256&apos;] });" time="0.025990625">
+        </testcase>
+        <testcase classname="src/rules/require-algorithm-whitelist/require-algorithm-whitelist.test.ts" name="require-algorithm-whitelist &gt; Valid Code &gt; valid - with algorithms &gt; valid &gt; jwt.verify(token, secret, { algorithms: [&apos;RS256&apos;, &apos;ES256&apos;] });" time="0.002863">
+        </testcase>
+        <testcase classname="src/rules/require-algorithm-whitelist/require-algorithm-whitelist.test.ts" name="require-algorithm-whitelist &gt; Valid Code &gt; valid - with algorithms &gt; valid &gt; jwt.verify(token, secret, { algorithm: &apos;RS256&apos; });" time="0.002136208">
+        </testcase>
+        <testcase classname="src/rules/require-algorithm-whitelist/require-algorithm-whitelist.test.ts" name="require-algorithm-whitelist &gt; Valid Code &gt; valid - with algorithms &gt; valid &gt; jwt.verify(token, secret, { alg: &apos;RS256&apos; });" time="0.001800542">
+        </testcase>
+        <testcase classname="src/rules/require-algorithm-whitelist/require-algorithm-whitelist.test.ts" name="require-algorithm-whitelist &gt; Valid Code &gt; valid - with algorithms &gt; valid &gt; jwt.sign(payload, secret);" time="0.00146875">
+        </testcase>
+        <testcase classname="src/rules/require-algorithm-whitelist/require-algorithm-whitelist.test.ts" name="require-algorithm-whitelist &gt; Valid Code &gt; valid - with algorithms &gt; valid &gt; jwt.verify(token);" time="0.001181333">
+        </testcase>
+        <testcase classname="src/rules/require-algorithm-whitelist/require-algorithm-whitelist.test.ts" name="require-algorithm-whitelist &gt; Valid Code &gt; valid - with algorithms &gt; valid &gt; jwtVerify(token, key, { algorithms: [&apos;RS256&apos;] });" time="0.001467959">
+        </testcase>
+        <testcase classname="src/rules/require-algorithm-whitelist/require-algorithm-whitelist.test.ts" name="require-algorithm-whitelist &gt; Invalid Code &gt; invalid - no algorithms &gt; invalid &gt; jwt.verify(token, secret);" time="0.00502475">
+        </testcase>
+        <testcase classname="src/rules/require-algorithm-whitelist/require-algorithm-whitelist.test.ts" name="require-algorithm-whitelist &gt; Invalid Code &gt; invalid - no algorithms &gt; invalid &gt; jwt.verify(token, secret, {});" time="0.002280208">
+        </testcase>
+        <testcase classname="src/rules/require-algorithm-whitelist/require-algorithm-whitelist.test.ts" name="require-algorithm-whitelist &gt; Invalid Code &gt; invalid - no algorithms &gt; invalid &gt; jwt.verify(token, secret, { complete: true });" time="0.002049">
+        </testcase>
+        <testcase classname="src/rules/require-algorithm-whitelist/require-algorithm-whitelist.test.ts" name="require-algorithm-whitelist &gt; Invalid Code &gt; invalid - no algorithms &gt; invalid &gt; jwt.verify(token, secret, { issuer: &apos;auth.example.com&apos; });" time="0.004451417">
+        </testcase>
+        <testcase classname="src/rules/require-algorithm-whitelist/require-algorithm-whitelist.test.ts" name="require-algorithm-whitelist &gt; Invalid Code &gt; invalid - no algorithms &gt; invalid &gt; jwtVerify(token, key);" time="0.009310667">
+        </testcase>
+        <testcase classname="src/rules/require-algorithm-whitelist/require-algorithm-whitelist.test.ts" name="require-algorithm-whitelist &gt; Invalid Code &gt; invalid - no algorithms &gt; invalid &gt; verifyJWT(token, key, { issuer: &apos;auth.example.com&apos; });" time="0.00147">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/rules/no-timestamp-manipulation/no-timestamp-manipulation.test.ts" timestamp="2025-12-30T23:04:00.248Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="7" failures="0" errors="0" skipped="0" time="0.054333917">
+        <testcase classname="src/rules/no-timestamp-manipulation/no-timestamp-manipulation.test.ts" name="no-timestamp-manipulation &gt; Valid Code &gt; valid - default timestamps &gt; valid &gt; jwt.sign(payload, secret);" time="0.030882083">
+        </testcase>
+        <testcase classname="src/rules/no-timestamp-manipulation/no-timestamp-manipulation.test.ts" name="no-timestamp-manipulation &gt; Valid Code &gt; valid - default timestamps &gt; valid &gt; jwt.sign(payload, secret, {});" time="0.004883584">
+        </testcase>
+        <testcase classname="src/rules/no-timestamp-manipulation/no-timestamp-manipulation.test.ts" name="no-timestamp-manipulation &gt; Valid Code &gt; valid - default timestamps &gt; valid &gt; jwt.sign(payload, secret, { expiresIn: &apos;1h&apos; });" time="0.003884125">
+        </testcase>
+        <testcase classname="src/rules/no-timestamp-manipulation/no-timestamp-manipulation.test.ts" name="no-timestamp-manipulation &gt; Valid Code &gt; valid - default timestamps &gt; valid &gt; jwt.sign(payload, secret, { noTimestamp: false });" time="0.0022355">
+        </testcase>
+        <testcase classname="src/rules/no-timestamp-manipulation/no-timestamp-manipulation.test.ts" name="no-timestamp-manipulation &gt; Valid Code &gt; valid - default timestamps &gt; valid &gt; jwt.verify(token, secret);" time="0.001456417">
+        </testcase>
+        <testcase classname="src/rules/no-timestamp-manipulation/no-timestamp-manipulation.test.ts" name="no-timestamp-manipulation &gt; Invalid Code &gt; invalid - noTimestamp true &gt; invalid &gt; jwt.sign(payload, secret, { noTimestamp: true });" time="0.002241125">
+        </testcase>
+        <testcase classname="src/rules/no-timestamp-manipulation/no-timestamp-manipulation.test.ts" name="no-timestamp-manipulation &gt; Invalid Code &gt; invalid - noTimestamp true &gt; invalid &gt; jwt.sign(payload, secret, { algorithm: &apos;RS256&apos;, noTimestamp: true });" time="0.007682959">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/rules/require-expiration/require-expiration.test.ts" timestamp="2025-12-30T23:04:00.249Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="13" failures="0" errors="0" skipped="0" time="0.066531">
+        <testcase classname="src/rules/require-expiration/require-expiration.test.ts" name="require-expiration &gt; Valid Code &gt; valid - with expiration &gt; valid &gt; jwt.sign(payload, secret, { expiresIn: &apos;1h&apos; });" time="0.031575542">
+        </testcase>
+        <testcase classname="src/rules/require-expiration/require-expiration.test.ts" name="require-expiration &gt; Valid Code &gt; valid - with expiration &gt; valid &gt; jwt.sign(payload, secret, { expiresIn: 3600 });" time="0.002798417">
+        </testcase>
+        <testcase classname="src/rules/require-expiration/require-expiration.test.ts" name="require-expiration &gt; Valid Code &gt; valid - with expiration &gt; valid &gt; jwt.sign({ sub: &apos;user&apos;, exp: 1234567890 }, secret);" time="0.002151917">
+        </testcase>
+        <testcase classname="src/rules/require-expiration/require-expiration.test.ts" name="require-expiration &gt; Valid Code &gt; valid - with expiration &gt; valid &gt; jwt.sign({ exp: Math.floor(Date.now()/1000) + 3600 }, secret);" time="0.002552625">
+        </testcase>
+        <testcase classname="src/rules/require-expiration/require-expiration.test.ts" name="require-expiration &gt; Valid Code &gt; valid - with expiration &gt; valid &gt; jwt.verify(token, secret);" time="0.002818875">
+        </testcase>
+        <testcase classname="src/rules/require-expiration/require-expiration.test.ts" name="require-expiration &gt; Valid Code &gt; valid - with expiration &gt; valid &gt; signJWT(payload, key, { expiresIn: &apos;1h&apos; });" time="0.001650125">
+        </testcase>
+        <testcase classname="src/rules/require-expiration/require-expiration.test.ts" name="require-expiration &gt; Valid Code &gt; valid - with expiration &gt; valid &gt; jwt.sign();" time="0.001235459">
+        </testcase>
+        <testcase classname="src/rules/require-expiration/require-expiration.test.ts" name="require-expiration &gt; Invalid Code &gt; invalid - no expiration &gt; invalid &gt; jwt.sign(payload, secret);" time="0.001922084">
+        </testcase>
+        <testcase classname="src/rules/require-expiration/require-expiration.test.ts" name="require-expiration &gt; Invalid Code &gt; invalid - no expiration &gt; invalid &gt; jwt.sign(payload, secret, {});" time="0.002131458">
+        </testcase>
+        <testcase classname="src/rules/require-expiration/require-expiration.test.ts" name="require-expiration &gt; Invalid Code &gt; invalid - no expiration &gt; invalid &gt; jwt.sign(payload, secret, { algorithm: &apos;RS256&apos; });" time="0.001951875">
+        </testcase>
+        <testcase classname="src/rules/require-expiration/require-expiration.test.ts" name="require-expiration &gt; Invalid Code &gt; invalid - no expiration &gt; invalid &gt; jwt.sign({ sub: &apos;user&apos;, iat: Date.now() }, secret);" time="0.008720833">
+        </testcase>
+        <testcase classname="src/rules/require-expiration/require-expiration.test.ts" name="require-expiration &gt; Invalid Code &gt; invalid - no expiration &gt; invalid &gt; sign(payload, key);" time="0.003979791">
+        </testcase>
+        <testcase classname="src/rules/require-expiration/require-expiration.test.ts" name="require-expiration &gt; Invalid Code &gt; invalid - no expiration &gt; invalid &gt; signJWT({ sub: &apos;user&apos; }, key, { algorithm: &apos;RS256&apos; });" time="0.002268791">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" timestamp="2025-12-30T23:04:00.249Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="21" failures="0" errors="0" skipped="0" time="0.0784765">
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Valid Code - Safe Key Sources &gt; valid - environment and config &gt; valid &gt; jwt.sign(payload, process.env.JWT_SECRET);" time="0.023834875">
+        </testcase>
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Valid Code - Safe Key Sources &gt; valid - environment and config &gt; valid &gt; jwt.verify(token, process.env.JWT_SECRET);" time="0.002653041">
+        </testcase>
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Valid Code - Safe Key Sources &gt; valid - environment and config &gt; valid &gt; jwt.sign(payload, secret);" time="0.002527916">
+        </testcase>
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Valid Code - Safe Key Sources &gt; valid - environment and config &gt; valid &gt; jwt.verify(token, privateKey);" time="0.002329">
+        </testcase>
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Valid Code - Safe Key Sources &gt; valid - environment and config &gt; valid &gt; jwt.sign(payload, getSecretKey());" time="0.003403834">
+        </testcase>
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Valid Code - Safe Key Sources &gt; valid - environment and config &gt; valid &gt; jwt.verify(token, await loadPublicKey());" time="0.00164425">
+        </testcase>
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Valid Code - Safe Key Sources &gt; valid - environment and config &gt; valid &gt; jwt.sign(payload, config.jwtSecret);" time="0.001402833">
+        </testcase>
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Valid Code - Safe Key Sources &gt; valid - environment and config &gt; valid &gt; jwt.verify(token, settings.publicKey);" time="0.001813458">
+        </testcase>
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Valid Code - Safe Key Sources &gt; valid - environment and config &gt; valid &gt; jwt.verify(token, await importJWK(jwk));" time="0.002139667">
+        </testcase>
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Valid Code - Safe Key Sources &gt; valid - environment and config &gt; valid &gt; jwt.sign(payload, crypto.randomBytes(32));" time="0.001969584">
+        </testcase>
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Valid Code - Safe Key Sources &gt; valid - environment and config &gt; valid &gt; jwt.sign(payload);" time="0.007701917">
+        </testcase>
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Valid Code - Safe Key Sources &gt; valid - environment and config &gt; valid &gt; jwt.verify(token);" time="0.008215417">
+        </testcase>
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Valid Code - Safe Key Sources &gt; valid - environment and config &gt; valid &gt; jwt.sign(payload, keys.current);" time="0.00158175">
+        </testcase>
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Valid Code - Safe Key Sources &gt; valid - environment and config &gt; valid &gt; signJWT(payload, process.env.SECRET);" time="0.00132075">
+        </testcase>
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Invalid Code - Hardcoded Secrets &gt; invalid - hardcoded strings &gt; invalid &gt; jwt.sign(payload, &apos;my-secret-key&apos;);" time="0.003600625">
+        </testcase>
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Invalid Code - Hardcoded Secrets &gt; invalid - hardcoded strings &gt; invalid &gt; jwt.sign(payload, &apos;this-is-a-very-long-secret-but-still-hardcoded&apos;);" time="0.002269875">
+        </testcase>
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Invalid Code - Hardcoded Secrets &gt; invalid - hardcoded strings &gt; invalid &gt; jwt.sign(payload, `my-secret-key`);" time="0.001490333">
+        </testcase>
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Invalid Code - Hardcoded Secrets &gt; invalid - hardcoded strings &gt; invalid &gt; jwt.verify(token, &apos;hardcoded-public-key&apos;);" time="0.002887667">
+        </testcase>
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Invalid Code - Hardcoded Secrets &gt; invalid - hardcoded strings &gt; invalid &gt; jwt.verify(token, &apos;-----BEGIN PUBLIC KEY-----\\nMIIBIj...&apos;);" time="0.002514792">
+        </testcase>
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Invalid Code - Hardcoded Secrets &gt; invalid - hardcoded strings &gt; invalid &gt; signJWT(payload, &apos;hardcoded&apos;);" time="0.001031958">
+        </testcase>
+        <testcase classname="src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts" name="no-hardcoded-secret &gt; Invalid Code - Hardcoded Secrets &gt; invalid - hardcoded strings &gt; invalid &gt; sign(payload, &apos;secret123&apos;);" time="0.001373584">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/rules/require-audience-validation/require-audience-validation.test.ts" timestamp="2025-12-30T23:04:00.251Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="11" failures="0" errors="0" skipped="0" time="0.0698405">
+        <testcase classname="src/rules/require-audience-validation/require-audience-validation.test.ts" name="require-audience-validation &gt; Valid Code &gt; valid - with audience &gt; valid &gt; jwt.verify(token, secret, { audience: &apos;https://api.example.com&apos; });" time="0.039099958">
+        </testcase>
+        <testcase classname="src/rules/require-audience-validation/require-audience-validation.test.ts" name="require-audience-validation &gt; Valid Code &gt; valid - with audience &gt; valid &gt; jwt.verify(token, secret, { aud: &apos;api.example.com&apos; });" time="0.0029475">
+        </testcase>
+        <testcase classname="src/rules/require-audience-validation/require-audience-validation.test.ts" name="require-audience-validation &gt; Valid Code &gt; valid - with audience &gt; valid &gt; jwt.verify(token, secret, { audience: [&apos;api&apos;, &apos;web&apos;] });" time="0.002305375">
+        </testcase>
+        <testcase classname="src/rules/require-audience-validation/require-audience-validation.test.ts" name="require-audience-validation &gt; Valid Code &gt; valid - with audience &gt; valid &gt; jwt.sign(payload, secret);" time="0.004957458">
+        </testcase>
+        <testcase classname="src/rules/require-audience-validation/require-audience-validation.test.ts" name="require-audience-validation &gt; Valid Code &gt; valid - with audience &gt; valid &gt; jwt.verify(token);" time="0.001563375">
+        </testcase>
+        <testcase classname="src/rules/require-audience-validation/require-audience-validation.test.ts" name="require-audience-validation &gt; Valid Code &gt; valid - with audience &gt; valid &gt; jwtVerify(token, key, { audience: &apos;https://api.example.com&apos; });" time="0.001513667">
+        </testcase>
+        <testcase classname="src/rules/require-audience-validation/require-audience-validation.test.ts" name="require-audience-validation &gt; Invalid Code &gt; invalid - missing audience &gt; invalid &gt; jwt.verify(token, secret);" time="0.003510667">
+        </testcase>
+        <testcase classname="src/rules/require-audience-validation/require-audience-validation.test.ts" name="require-audience-validation &gt; Invalid Code &gt; invalid - missing audience &gt; invalid &gt; jwt.verify(token, secret, {});" time="0.002509458">
+        </testcase>
+        <testcase classname="src/rules/require-audience-validation/require-audience-validation.test.ts" name="require-audience-validation &gt; Invalid Code &gt; invalid - missing audience &gt; invalid &gt; jwt.verify(token, secret, { issuer: &apos;auth.example.com&apos; });" time="0.004055875">
+        </testcase>
+        <testcase classname="src/rules/require-audience-validation/require-audience-validation.test.ts" name="require-audience-validation &gt; Invalid Code &gt; invalid - missing audience &gt; invalid &gt; jwtVerify(token, key);" time="0.002169666">
+        </testcase>
+        <testcase classname="src/rules/require-audience-validation/require-audience-validation.test.ts" name="require-audience-validation &gt; Invalid Code &gt; invalid - missing audience &gt; invalid &gt; jwtVerify(token, key, { issuer: &apos;auth.example.com&apos; });" time="0.004084625">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/rules/require-issued-at/require-issued-at.test.ts" timestamp="2025-12-30T23:04:00.251Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="9" failures="0" errors="0" skipped="0" time="0.049758083">
+        <testcase classname="src/rules/require-issued-at/require-issued-at.test.ts" name="require-issued-at &gt; Valid Code &gt; valid - with iat &gt; valid &gt; jwt.sign({ sub: &apos;user&apos;, iat: Date.now() }, secret);" time="0.025232792">
+        </testcase>
+        <testcase classname="src/rules/require-issued-at/require-issued-at.test.ts" name="require-issued-at &gt; Valid Code &gt; valid - with iat &gt; valid &gt; jwt.sign(payload, secret);" time="0.003434459">
+        </testcase>
+        <testcase classname="src/rules/require-issued-at/require-issued-at.test.ts" name="require-issued-at &gt; Valid Code &gt; valid - with iat &gt; valid &gt; jwt.sign(payload, secret, { expiresIn: &apos;1h&apos; });" time="0.004165167">
+        </testcase>
+        <testcase classname="src/rules/require-issued-at/require-issued-at.test.ts" name="require-issued-at &gt; Valid Code &gt; valid - with iat &gt; valid &gt; jwt.verify(token, secret);" time="0.001984667">
+        </testcase>
+        <testcase classname="src/rules/require-issued-at/require-issued-at.test.ts" name="require-issued-at &gt; Valid Code &gt; valid - with iat &gt; valid &gt; sign();" time="0.004956917">
+        </testcase>
+        <testcase classname="src/rules/require-issued-at/require-issued-at.test.ts" name="require-issued-at &gt; Valid Code &gt; valid - with iat &gt; valid &gt; jwt.sign({ iat: Math.floor(Date.now() / 1000), sub: &apos;user&apos; }, secret);" time="0.003358792">
+        </testcase>
+        <testcase classname="src/rules/require-issued-at/require-issued-at.test.ts" name="require-issued-at &gt; Invalid Code &gt; invalid - noTimestamp disables iat &gt; invalid &gt; jwt.sign({ sub: &apos;user&apos; }, secret, { noTimestamp: true });" time="0.002419917">
+        </testcase>
+        <testcase classname="src/rules/require-issued-at/require-issued-at.test.ts" name="require-issued-at &gt; Invalid Code &gt; invalid - noTimestamp disables iat &gt; invalid &gt; jwt.sign(payload, secret, { expiresIn: &apos;1h&apos;, noTimestamp: true });" time="0.001524875">
+        </testcase>
+        <testcase classname="src/rules/require-issued-at/require-issued-at.test.ts" name="require-issued-at &gt; Invalid Code &gt; invalid - noTimestamp disables iat &gt; invalid &gt; signJWT(payload, key, { noTimestamp: true });" time="0.001865333">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/rules/require-issuer-validation/require-issuer-validation.test.ts" timestamp="2025-12-30T23:04:00.252Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="11" failures="0" errors="0" skipped="0" time="0.05552075">
+        <testcase classname="src/rules/require-issuer-validation/require-issuer-validation.test.ts" name="require-issuer-validation &gt; Valid Code &gt; valid - with issuer &gt; valid &gt; jwt.verify(token, secret, { issuer: &apos;https://auth.example.com&apos; });" time="0.025323417">
+        </testcase>
+        <testcase classname="src/rules/require-issuer-validation/require-issuer-validation.test.ts" name="require-issuer-validation &gt; Valid Code &gt; valid - with issuer &gt; valid &gt; jwt.verify(token, secret, { iss: &apos;auth.example.com&apos; });" time="0.003219667">
+        </testcase>
+        <testcase classname="src/rules/require-issuer-validation/require-issuer-validation.test.ts" name="require-issuer-validation &gt; Valid Code &gt; valid - with issuer &gt; valid &gt; jwt.verify(token, secret, { issuer: &apos;auth&apos;, algorithms: [&apos;RS256&apos;] });" time="0.006719167">
+        </testcase>
+        <testcase classname="src/rules/require-issuer-validation/require-issuer-validation.test.ts" name="require-issuer-validation &gt; Valid Code &gt; valid - with issuer &gt; valid &gt; jwt.sign(payload, secret);" time="0.002570167">
+        </testcase>
+        <testcase classname="src/rules/require-issuer-validation/require-issuer-validation.test.ts" name="require-issuer-validation &gt; Valid Code &gt; valid - with issuer &gt; valid &gt; jwt.verify(token);" time="0.002591083">
+        </testcase>
+        <testcase classname="src/rules/require-issuer-validation/require-issuer-validation.test.ts" name="require-issuer-validation &gt; Valid Code &gt; valid - with issuer &gt; valid &gt; jwtVerify(token, key, { issuer: &apos;https://auth.example.com&apos; });" time="0.001509375">
+        </testcase>
+        <testcase classname="src/rules/require-issuer-validation/require-issuer-validation.test.ts" name="require-issuer-validation &gt; Invalid Code &gt; invalid - missing issuer &gt; invalid &gt; jwt.verify(token, secret);" time="0.002054292">
+        </testcase>
+        <testcase classname="src/rules/require-issuer-validation/require-issuer-validation.test.ts" name="require-issuer-validation &gt; Invalid Code &gt; invalid - missing issuer &gt; invalid &gt; jwt.verify(token, secret, {});" time="0.001458875">
+        </testcase>
+        <testcase classname="src/rules/require-issuer-validation/require-issuer-validation.test.ts" name="require-issuer-validation &gt; Invalid Code &gt; invalid - missing issuer &gt; invalid &gt; jwt.verify(token, secret, { algorithms: [&apos;RS256&apos;] });" time="0.003350542">
+        </testcase>
+        <testcase classname="src/rules/require-issuer-validation/require-issuer-validation.test.ts" name="require-issuer-validation &gt; Invalid Code &gt; invalid - missing issuer &gt; invalid &gt; jwtVerify(token, key);" time="0.00196775">
+        </testcase>
+        <testcase classname="src/rules/require-issuer-validation/require-issuer-validation.test.ts" name="require-issuer-validation &gt; Invalid Code &gt; invalid - missing issuer &gt; invalid &gt; jwtVerify(token, key, {});" time="0.003994333">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/rules/require-max-age/require-max-age.test.ts" timestamp="2025-12-30T23:04:00.253Z" hostname="Snappy-Ofri-Peretz-DHH04HQPQW" tests="11" failures="0" errors="0" skipped="0" time="0.069588541">
+        <testcase classname="src/rules/require-max-age/require-max-age.test.ts" name="require-max-age &gt; Valid Code &gt; valid - with maxAge &gt; valid &gt; jwt.verify(token, secret, { maxAge: &apos;1h&apos; });" time="0.0350615">
+        </testcase>
+        <testcase classname="src/rules/require-max-age/require-max-age.test.ts" name="require-max-age &gt; Valid Code &gt; valid - with maxAge &gt; valid &gt; jwt.verify(token, secret, { maxAge: 3600 });" time="0.002734083">
+        </testcase>
+        <testcase classname="src/rules/require-max-age/require-max-age.test.ts" name="require-max-age &gt; Valid Code &gt; valid - with maxAge &gt; valid &gt; jwt.verify(token, secret, { clockTolerance: 30 });" time="0.007075959">
+        </testcase>
+        <testcase classname="src/rules/require-max-age/require-max-age.test.ts" name="require-max-age &gt; Valid Code &gt; valid - with maxAge &gt; valid &gt; jwt.sign(payload, secret);" time="0.002094375">
+        </testcase>
+        <testcase classname="src/rules/require-max-age/require-max-age.test.ts" name="require-max-age &gt; Valid Code &gt; valid - with maxAge &gt; valid &gt; jwt.verify(token);" time="0.001400875">
+        </testcase>
+        <testcase classname="src/rules/require-max-age/require-max-age.test.ts" name="require-max-age &gt; Valid Code &gt; valid - with maxAge &gt; valid &gt; jwtVerify(token, key, { maxAge: &apos;24h&apos; });" time="0.0014295">
+        </testcase>
+        <testcase classname="src/rules/require-max-age/require-max-age.test.ts" name="require-max-age &gt; Invalid Code &gt; invalid - missing maxAge &gt; invalid &gt; jwt.verify(token, secret);" time="0.001975583">
+        </testcase>
+        <testcase classname="src/rules/require-max-age/require-max-age.test.ts" name="require-max-age &gt; Invalid Code &gt; invalid - missing maxAge &gt; invalid &gt; jwt.verify(token, secret, {});" time="0.001490625">
+        </testcase>
+        <testcase classname="src/rules/require-max-age/require-max-age.test.ts" name="require-max-age &gt; Invalid Code &gt; invalid - missing maxAge &gt; invalid &gt; jwt.verify(token, secret, { algorithms: [&apos;RS256&apos;] });" time="0.004220416">
+        </testcase>
+        <testcase classname="src/rules/require-max-age/require-max-age.test.ts" name="require-max-age &gt; Invalid Code &gt; invalid - missing maxAge &gt; invalid &gt; jwtVerify(token, key);" time="0.002696708">
+        </testcase>
+        <testcase classname="src/rules/require-max-age/require-max-age.test.ts" name="require-max-age &gt; Invalid Code &gt; invalid - missing maxAge &gt; invalid &gt; verifyJWT(token, key, { algorithms: [&apos;RS256&apos;] });" time="0.002338625">
+        </testcase>
+    </testsuite>
+</testsuites>
