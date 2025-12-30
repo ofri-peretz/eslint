@@ -1,91 +1,77 @@
 {
-    "name": "eslint-plugin-quality",
-    "$schema": "../../node_modules/nx/schemas/project-schema.json",
-    "sourceRoot": "packages/eslint-plugin-quality/src",
-    "projectType": "library",
-    "release": {
-        "version": {
-            "manifestRootsToUpdate": [
-                "{projectRoot}",
-                "dist/{projectRoot}"
-            ],
-            "currentVersionResolver": "git-tag",
-            "fallbackCurrentVersionResolver": "disk",
-            "generatorOptions": {
-                "packageRoot": "{projectRoot}",
-                "currentVersionResolver": "git-tag"
-            }
-        }
+  "name": "eslint-plugin-quality",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/eslint-plugin-quality/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "dependsOn": [
+        "^build",
+        "test"
+      ],
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "outputPath": "dist/packages/eslint-plugin-quality",
+        "main": "packages/eslint-plugin-quality/src/index.ts",
+        "tsConfig": "packages/eslint-plugin-quality/tsconfig.lib.json",
+        "assets": [
+          "packages/eslint-plugin-quality/README.md",
+          "packages/eslint-plugin-quality/CHANGELOG.md",
+          "packages/eslint-plugin-quality/LICENSE",
+          {
+            "glob": "packages/eslint-plugin-quality/README.md",
+            "input": "packages/eslint-plugin-quality",
+            "output": "./"
+          }
+        ]
+      }
     },
-    "tags": [],
-    "targets": {
-        "build": {
-            "executor": "@nx/js:tsc",
-            "dependsOn": [
-                "^build",
-                "test"
-            ],
-            "outputs": [
-                "{options.outputPath}"
-            ],
-            "options": {
-                "outputPath": "dist/packages/eslint-plugin-quality",
-                "main": "packages/eslint-plugin-quality/src/index.ts",
-                "tsConfig": "packages/eslint-plugin-quality/tsconfig.lib.json",
-                "assets": [
-                    "packages/eslint-plugin-quality/README.md",
-                    "packages/eslint-plugin-quality/CHANGELOG.md",
-                    "packages/eslint-plugin-quality/LICENSE",
-                    {
-                        "glob": "packages/eslint-plugin-quality/README.md",
-                        "input": "packages/eslint-plugin-quality",
-                        "output": "./"
-                    }
-                ]
-            }
-        },
-        "test": {
-            "executor": "@nx/vite:test",
-            "outputs": [
-                "{projectRoot}/coverage"
-            ],
-            "options": {
-                "configFile": "packages/eslint-plugin-quality/vitest.config.mts",
-                "passWithNoTests": true
-            },
-            "configurations": {
-                "ci": {
-                    "coverage": true
-                }
-            }
-        },
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": [
-                "{options.outputFile}"
-            ],
-            "options": {
-                "lintFilePatterns": [
-                    "packages/eslint-plugin-quality/**/*.{ts,tsx,js,jsx}"
-                ]
-            }
-        },
-        "nx-release-publish": {
-            "executor": "nx:run-commands",
-            "options": {
-                "command": "npm publish dist/{projectRoot} --access public --auth-type=web",
-                "cwd": "{workspaceRoot}"
-            }
-        },
-        "publish": {
-            "executor": "nx:run-commands",
-            "dependsOn": [
-                "build"
-            ],
-            "options": {
-                "command": "npm publish dist/packages/eslint-plugin-quality --access public",
-                "cwd": "{workspaceRoot}"
-            }
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": [
+        "{projectRoot}/coverage"
+      ],
+      "options": {
+        "configFile": "packages/eslint-plugin-quality/vitest.config.mts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "coverage": true
         }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": [
+        "{options.outputFile}"
+      ],
+      "options": {
+        "lintFilePatterns": [
+          "packages/eslint-plugin-quality/**/*.{ts,tsx,js,jsx}"
+        ]
+      }
+    },
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm publish dist/{projectRoot} --access public --auth-type=web",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "command": "npm publish dist/packages/eslint-plugin-quality --access public",
+        "cwd": "{workspaceRoot}"
+      }
     }
+  }
 }

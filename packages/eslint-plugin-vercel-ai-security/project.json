@@ -1,85 +1,75 @@
 {
-    "name": "eslint-plugin-vercel-ai-security",
-    "$schema": "../../node_modules/nx/schemas/project-schema.json",
-    "sourceRoot": "packages/eslint-plugin-vercel-ai-security/src",
-    "projectType": "library",
-    "release": {
-        "version": {
-            "manifestRootsToUpdate": [
-                "{projectRoot}",
-                "dist/{projectRoot}"
-            ],
-            "currentVersionResolver": "git-tag",
-            "fallbackCurrentVersionResolver": "disk"
-        }
+  "name": "eslint-plugin-vercel-ai-security",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/eslint-plugin-vercel-ai-security/src",
+  "projectType": "library",
+  "tags": [
+    "npm:public",
+    "npm:eslint",
+    "npm:eslint-plugin",
+    "npm:typescript",
+    "npm:linting",
+    "npm:security",
+    "npm:vercel-ai",
+    "npm:ai-sdk",
+    "npm:owasp-llm",
+    "npm:llm-optimized",
+    "npm:code-quality",
+    "npm:static-analysis"
+  ],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "dependsOn": [
+        "^build",
+        "test"
+      ],
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "outputPath": "dist/packages/eslint-plugin-vercel-ai-security",
+        "main": "packages/eslint-plugin-vercel-ai-security/src/index.ts",
+        "tsConfig": "packages/eslint-plugin-vercel-ai-security/tsconfig.lib.json",
+        "assets": [
+          "packages/eslint-plugin-vercel-ai-security/README.md",
+          "packages/eslint-plugin-vercel-ai-security/CHANGELOG.md",
+          "packages/eslint-plugin-vercel-ai-security/LICENSE",
+          "packages/eslint-plugin-vercel-ai-security/AGENTS.md",
+          "packages/eslint-plugin-vercel-ai-security/.npmignore"
+        ]
+      }
     },
-    "tags": [
-        "npm:public",
-        "npm:eslint",
-        "npm:eslint-plugin",
-        "npm:typescript",
-        "npm:linting",
-        "npm:security",
-        "npm:vercel-ai",
-        "npm:ai-sdk",
-        "npm:owasp-llm",
-        "npm:llm-optimized",
-        "npm:code-quality",
-        "npm:static-analysis"
-    ],
-    "targets": {
-        "build": {
-            "executor": "@nx/js:tsc",
-            "dependsOn": [
-                "^build",
-                "test"
-            ],
-            "outputs": [
-                "{options.outputPath}"
-            ],
-            "options": {
-                "outputPath": "dist/packages/eslint-plugin-vercel-ai-security",
-                "main": "packages/eslint-plugin-vercel-ai-security/src/index.ts",
-                "tsConfig": "packages/eslint-plugin-vercel-ai-security/tsconfig.lib.json",
-                "assets": [
-                    "packages/eslint-plugin-vercel-ai-security/README.md",
-                    "packages/eslint-plugin-vercel-ai-security/CHANGELOG.md",
-                    "packages/eslint-plugin-vercel-ai-security/LICENSE",
-                    "packages/eslint-plugin-vercel-ai-security/AGENTS.md",
-                    "packages/eslint-plugin-vercel-ai-security/.npmignore"
-                ]
-            }
-        },
-        "test": {
-            "executor": "@nx/vite:test",
-            "outputs": [
-                "{projectRoot}/coverage"
-            ],
-            "options": {
-                "configFile": "packages/eslint-plugin-vercel-ai-security/vitest.config.mts"
-            },
-            "configurations": {
-                "ci": {
-                    "coverage": true
-                }
-            }
-        },
-        "nx-release-publish": {
-            "executor": "nx:run-commands",
-            "options": {
-                "command": "npm publish dist/{projectRoot} --access public --auth-type=web",
-                "cwd": "{workspaceRoot}"
-            }
-        },
-        "publish": {
-            "executor": "nx:run-commands",
-            "dependsOn": [
-                "build"
-            ],
-            "options": {
-                "command": "npm publish dist/packages/eslint-plugin-vercel-ai-security --access public",
-                "cwd": "{workspaceRoot}"
-            }
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": [
+        "{projectRoot}/coverage"
+      ],
+      "options": {
+        "configFile": "packages/eslint-plugin-vercel-ai-security/vitest.config.mts"
+      },
+      "configurations": {
+        "ci": {
+          "coverage": true
         }
+      }
+    },
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm publish dist/{projectRoot} --access public --auth-type=web",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "command": "npm publish dist/packages/eslint-plugin-vercel-ai-security --access public",
+        "cwd": "{workspaceRoot}"
+      }
     }
+  }
 }

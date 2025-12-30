@@ -3,16 +3,6 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "packages/eslint-plugin-import-next/src",
   "projectType": "library",
-  "release": {
-    "version": {
-      "manifestRootsToUpdate": [
-        "{projectRoot}",
-        "dist/{projectRoot}"
-      ],
-      "currentVersionResolver": "git-tag",
-      "fallbackCurrentVersionResolver": "disk"
-    }
-  },
   "tags": [
     "npm:public",
     "npm:eslint",

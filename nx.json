@@ -150,7 +150,6 @@
       "cli"
     ],
     "projectsRelationship": "independent",
-    "preid": "rc",
     "conventionalCommits": {
       "types": {
         "feat": {
@@ -187,12 +186,10 @@
     },
     "version": {
       "preVersionCommand": "pnpm nx run-many -t build --projects={projects}",
-      "generatorOptions": {
-        "updateDependents": "always",
-        "currentVersionResolver": "git-tag",
-        "fallbackCurrentVersionResolver": "disk",
-        "specifierSource": "conventional-commits"
-      },
+      "updateDependents": "always",
+      "currentVersionResolver": "git-tag",
+      "fallbackCurrentVersionResolver": "disk",
+      "specifierSource": "conventional-commits",
       "versionActionsOptions": {
         "skipLockFileUpdate": true
       },
