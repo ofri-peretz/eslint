@@ -61,7 +61,7 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Exposed Sensitive Field',
         cwe: 'CWE-200',
-        owasp: 'A01',
+        owasp: 'A01:2021',
         cvss: 7.5,
         description: 'Sensitive field "{{field}}" may be exposed in API responses',
         severity: 'HIGH',

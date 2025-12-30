@@ -23,32 +23,46 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
-// JWT detection patterns (keys and values)
+// JWT detection patterns (keys) - these are regex patterns with word boundary semantics
 const JWT_KEY_PATTERNS = [
-  'jwt',
-  'token',
-  'access_token',
-  'accessToken',
-  'refresh_token',
-  'refreshToken',
-  'id_token',
-  'idToken',
-  'bearer',
-  'auth_token',
-  'authToken',
+  /^jwt$/i,                    // exact 'jwt'
+  /^token$/i,                  // exact 'token'  
+  /^access[_-]?token$/i,       // access_token, accessToken, access-token
+  /^refresh[_-]?token$/i,      // refresh_token, refreshToken
+  /^id[_-]?token$/i,           // id_token, idToken
+  /^bearer$/i,                 // exact 'bearer'
+  /^auth[_-]?token$/i,         // auth_token, authToken
+  /token$/i,                   // ends with 'token' (authToken, jwtToken, etc.)
+  /^jwt[_-]?/i,                // starts with 'jwt' (jwt_value, jwtData, etc.)
+  /[_-]jwt$/i,                 // ends with '_jwt' or '-jwt'
 ];
 
 // JWT structure regex: base64.base64.base64
 const JWT_VALUE_REGEX = /^eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+$/;
 
+// Exclude patterns - known false positives
+const EXCLUDE_PATTERNS = [
+  /count$/i,                   // tokenCount, refreshTokenCount
+  /length$/i,                  // tokenLength
+  /size$/i,                    // tokenSize
+  /limit$/i,                   // tokenLimit
+  /max$/i,                     // maxToken, tokenMax
+  /min$/i,                     // minToken, tokenMin
+  /num$/i,                     // tokenNum, numToken
+  /index$/i,                   // tokenIndex
+  /position$/i,                // tokenPosition
+];
+
 /**
- * Check if key suggests JWT storage
+ * Check if key suggests JWT storage (with false positive filtering)
  */
 function isJwtKey(key: string): boolean {
-  const lowerKey = key.toLowerCase();
-  return JWT_KEY_PATTERNS.some((pattern) =>
-    lowerKey.includes(pattern.toLowerCase()),
-  );
+  // First check exclusion patterns
+  if (EXCLUDE_PATTERNS.some((pattern) => pattern.test(key))) {
+    return false;
+  }
+  // Then check if it matches any JWT pattern
+  return JWT_KEY_PATTERNS.some((pattern) => pattern.test(key));
 }
 
 /**

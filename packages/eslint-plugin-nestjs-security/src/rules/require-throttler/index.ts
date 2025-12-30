@@ -108,7 +108,7 @@ export const requireThrottler = createRule<RuleOptions, MessageIds>({
           const callee = dec.expression.callee;
           if (callee.type === AST_NODE_TYPES.Identifier && callee.name === 'UseGuards') {
             return dec.expression.arguments.some(
-              (arg) => arg.type === AST_NODE_TYPES.Identifier && arg.name === 'ThrottlerGuard'
+              (arg: TSESTree.CallExpressionArgument) => arg.type === AST_NODE_TYPES.Identifier && arg.name === 'ThrottlerGuard'
             );
           }
         }

@@ -56,11 +56,11 @@
   },
   "dependencies": {
     "@interlace/eslint-devkit": "workspace:*",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "vitest": "^4.0.6",
+    "@nx/vite": "^22.0.3"
   },
-  "peerDependencies": {
-    "eslint": ">=8.0.0"
-  },
+  "peerDependencies": {},
   "peerDependenciesMeta": {
     "@nestjs/common": {
       "optional": true

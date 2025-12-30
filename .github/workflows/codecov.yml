@@ -2,11 +2,11 @@
 name: Upload Coverage to Codecov
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# WORKFLOW PURPOSE: Upload test coverage stats to Codecov
+# WORKFLOW PURPOSE: Upload test coverage stats to Codecov for Nx Monorepo
 # ═══════════════════════════════════════════════════════════════════════════════
 #
 # This workflow runs all tests with coverage enabled and uploads the results
-# to Codecov for tracking and badge generation.
+# to Codecov for tracking and badge generation using Components for monorepo support.
 #
 # Trigger: Manual (workflow_dispatch) or weekly schedule
 # Required Secret: CODECOV_TOKEN
@@ -98,36 +98,47 @@ jobs:
           NX_SKIP_NX_CLOUD: "true"
 
       # ═══════════════════════════════════════════════════════════════════════
-      # UPLOAD TO CODECOV
+      # UPLOAD TO CODECOV USING CLI (Recommended for Monorepos)
       # ═══════════════════════════════════════════════════════════════════════
+
+      - name: 📥 Install Codecov CLI
+        run: |
+          curl -Os https://cli.codecov.io/latest/linux/codecov
+          chmod +x codecov
 
       - name: 🔍 Find coverage files
         id: find-coverage
         run: |
-          # Find all lcov.info files dynamically
-          COVERAGE_FILES=$(find packages -name "lcov.info" -type f 2>/dev/null | tr '\n' ',' | sed 's/,$//')
+          echo "🔍 Searching for coverage files..."
 
-          if [ -z "$COVERAGE_FILES" ]; then
-            echo "⚠️ No coverage files found"
-            echo "has_coverage=false" >> $GITHUB_OUTPUT
-            echo "files=" >> $GITHUB_OUTPUT
-          else
-            echo "✅ Found coverage files:"
-            echo "$COVERAGE_FILES" | tr ',' '\n'
+          # Find all coverage files (lcov.info and coverage-final.json)
+          LCOV_FILES=$(find . -name "lcov.info" -type f -not -path "./.nx/cache/*" 2>/dev/null | head -50)
+          JSON_FILES=$(find . -name "coverage-final.json" -type f -not -path "./.nx/cache/*" 2>/dev/null | head -50)
+
+          echo "📁 Found lcov.info files:"
+          echo "$LCOV_FILES" | grep -v "^$" || echo "  (none)"
+
+          echo ""
+          echo "📁 Found coverage-final.json files:"
+          echo "$JSON_FILES" | grep -v "^$" || echo "  (none)"
+
+          if [ -n "$LCOV_FILES" ] || [ -n "$JSON_FILES" ]; then
             echo "has_coverage=true" >> $GITHUB_OUTPUT
-            echo "files=$COVERAGE_FILES" >> $GITHUB_OUTPUT
+          else
+            echo "has_coverage=false" >> $GITHUB_OUTPUT
+            echo "⚠️ No coverage files found"
           fi
 
       - name: 📤 Upload coverage to Codecov
         if: steps.find-coverage.outputs.has_coverage == 'true'
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false
-          verbose: true
-          flags: unittests
-          name: codecov-${{ github.run_id }}
-          files: ${{ steps.find-coverage.outputs.files }}
+        run: |
+          echo "📤 Uploading coverage to Codecov..."
+          ./codecov upload-process \
+            --token ${{ secrets.CODECOV_TOKEN }} \
+            --git-service github \
+            --fail-on-error || echo "⚠️ Codecov upload completed with warnings"
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       # ═══════════════════════════════════════════════════════════════════════
       # COVERAGE SUMMARY
@@ -144,7 +155,7 @@ jobs:
           echo "### Packages with Coverage:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          # List packages with coverage
+          # List packages with coverage from packages/*/coverage
           FOUND_COVERAGE=false
           for dir in packages/*/coverage; do
             if [ -d "$dir" ] && [ -f "$dir/lcov.info" ]; then
@@ -169,6 +180,15 @@ jobs:
             fi
           done
 
+          # Also check coverage/packages/*/
+          for dir in coverage/packages/*/; do
+            if [ -d "$dir" ] && [ -f "$dir/coverage-final.json" ]; then
+              FOUND_COVERAGE=true
+              PKG=$(echo "$dir" | cut -d'/' -f3)
+              echo "- ✅ **$PKG**: coverage-final.json found" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
           if [ "$FOUND_COVERAGE" = "false" ]; then
             echo "⚠️ No coverage reports found" >> $GITHUB_STEP_SUMMARY
           fi
@@ -183,5 +203,6 @@ jobs:
           name: coverage-reports-${{ github.run_id }}
           path: |
             packages/*/coverage/
+            coverage/
           retention-days: 7
           if-no-files-found: ignore

@@ -72,6 +72,15 @@ ruleTester.run('require-helmet', requireHelmet, {
       options: [{ allowInTests: true }],
       filename: 'app.test.ts',
     },
+    // assumeHelmetMiddleware option (helmet provided by infrastructure)
+    {
+      code: `
+        import express from 'express';
+        const app = express();
+        app.use(express.json());
+      `,
+      options: [{ assumeHelmetMiddleware: true }],
+    },
   ],
   invalid: [
     // Express without helmet

@@ -66,6 +66,37 @@ ruleTester.run('no-missing-validation-pipe', noMissingValidationPipe, {
       `,
       filename: 'users.controller.spec.ts',
     },
+    // ========== VALID: assumeGlobalPipes: true ==========
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Post()
+          create(@Body() dto: CreateUserDto) {}
+        }
+      `,
+      options: [{ assumeGlobalPipes: true }],
+    },
+    // ========== VALID: @Param with DTO type (but primitive-like usage) ==========
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Delete(':id')
+          remove(@Param('id') id: number) {}
+        }
+      `,
+    },
+    // ========== VALID: Primitive @Body type (unlikely but allowed) ==========
+    {
+      code: `
+        @Controller('data')
+        class DataController {
+          @Post()
+          process(@Body() data: boolean) {}
+        }
+      `,
+    },
   ],
   invalid: [
     // ========== INVALID: Missing ValidationPipe with DTO body ==========

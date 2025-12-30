@@ -58,31 +58,63 @@ import browserSecurity from 'eslint-plugin-browser-security';
 export default [browserSecurity.configs.recommended];
 ```
 
-## 📋 Rules
+## 📋 Rules (21 total)
 
-| Rule                                                                                   | Description                                                                       | CVSS | CWE      |
-| -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ---- | -------- |
-| [`no-eval`](./docs/rules/no-eval.md)                                                   | Prevent code injection via `eval()`, `new Function()`, and string-based callbacks | 9.3  | CWE-95   |
-| [`no-innerhtml`](./docs/rules/no-innerhtml.md)                                         | Prevent XSS via `innerHTML`, `outerHTML`, and `insertAdjacentHTML()`              | 8.1  | CWE-79   |
-| [`no-sensitive-localstorage`](./docs/rules/no-sensitive-localstorage.md)               | Prevent storing sensitive data in localStorage                                    | 7.5  | CWE-922  |
-| [`require-postmessage-origin-check`](./docs/rules/require-postmessage-origin-check.md) | Require origin validation in postMessage handlers                                 | 9.3  | CWE-346  |
-| [`no-postmessage-wildcard-origin`](./docs/rules/no-postmessage-wildcard-origin.md)     | Prevent wildcard targetOrigin in postMessage calls                                | 7.5  | CWE-346  |
-| [`no-sensitive-cookie-js`](./docs/rules/no-sensitive-cookie-js.md)                     | Prevent storing sensitive data in cookies via JavaScript                          | 8.1  | CWE-1004 |
-| [`require-websocket-wss`](./docs/rules/require-websocket-wss.md)                       | Require secure WebSocket connections (wss://)                                     | 7.5  | CWE-319  |
+### XSS Prevention
 
-### 🗺️ Roadmap: Coming Soon
+| Rule                                           | Description                                                                       | CVSS | CWE    |
+| ---------------------------------------------- | --------------------------------------------------------------------------------- | ---- | ------ |
+| [`no-eval`](./docs/rules/no-eval.md)           | Prevent code injection via `eval()`, `new Function()`, and string-based callbacks | 9.3  | CWE-95 |
+| [`no-innerhtml`](./docs/rules/no-innerhtml.md) | Prevent XSS via `innerHTML`, `outerHTML`, and `insertAdjacentHTML()`              | 8.1  | CWE-79 |
 
-The following rules are planned based on [browser security research](./docs/BROWSER-SECURITY-RESEARCH.md):
+### postMessage Security
 
-| Category         | Rules                                                                              | Priority |
-| ---------------- | ---------------------------------------------------------------------------------- | -------- |
-| **Storage APIs** | `no-sensitive-sessionstorage`, `no-jwt-in-storage`, `no-sensitive-indexeddb`       | P0       |
-| **postMessage**  | `no-postmessage-innerhtml`                                                         | P0       |
-| **Cookies**      | `no-cookie-auth-tokens`, `require-cookie-secure-attrs`                             | P0-P1    |
-| **File API**     | `no-filereader-innerhtml`, `require-blob-url-revocation`, `no-blob-html-execution` | P0-P1    |
-| **WebSocket**    | `no-websocket-innerhtml`, `no-websocket-eval`                                      | P0-P1    |
-| **Workers**      | `no-dynamic-service-worker-url`, `no-worker-message-innerhtml`                     | P1       |
-| **CSP**          | `no-unsafe-inline-csp`, `no-unsafe-eval-csp`                                       | P1       |
+| Rule                                                                                   | Description                                        | CVSS | CWE     |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------- | ---- | ------- |
+| [`require-postmessage-origin-check`](./docs/rules/require-postmessage-origin-check.md) | Require origin validation in postMessage handlers  | 9.3  | CWE-346 |
+| [`no-postmessage-wildcard-origin`](./docs/rules/no-postmessage-wildcard-origin.md)     | Prevent wildcard targetOrigin in postMessage calls | 7.5  | CWE-346 |
+| [`no-postmessage-innerhtml`](./docs/rules/no-postmessage-innerhtml.md)                 | Prevent XSS via innerHTML in postMessage handlers  | 8.8  | CWE-79  |
+
+### Storage Security
+
+| Rule                                                                         | Description                                      | CVSS | CWE     |
+| ---------------------------------------------------------------------------- | ------------------------------------------------ | ---- | ------- |
+| [`no-sensitive-localstorage`](./docs/rules/no-sensitive-localstorage.md)     | Prevent storing sensitive data in localStorage   | 7.5  | CWE-922 |
+| [`no-sensitive-sessionstorage`](./docs/rules/no-sensitive-sessionstorage.md) | Prevent storing sensitive data in sessionStorage | 7.5  | CWE-922 |
+| [`no-sensitive-indexeddb`](./docs/rules/no-sensitive-indexeddb.md)           | Prevent storing sensitive data in IndexedDB      | 7.5  | CWE-922 |
+| [`no-jwt-in-storage`](./docs/rules/no-jwt-in-storage.md)                     | Prevent storing JWT tokens in browser storage    | 8.1  | CWE-922 |
+
+### Cookie Security
+
+| Rule                                                                         | Description                                              | CVSS | CWE      |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------- | ---- | -------- |
+| [`no-sensitive-cookie-js`](./docs/rules/no-sensitive-cookie-js.md)           | Prevent storing sensitive data in cookies via JavaScript | 8.1  | CWE-1004 |
+| [`no-cookie-auth-tokens`](./docs/rules/no-cookie-auth-tokens.md)             | Prevent auth tokens in JS-accessible cookies             | 8.5  | CWE-1004 |
+| [`require-cookie-secure-attrs`](./docs/rules/require-cookie-secure-attrs.md) | Require Secure and SameSite cookie attributes            | 6.5  | CWE-614  |
+
+### WebSocket Security
+
+| Rule                                                               | Description                                     | CVSS | CWE     |
+| ------------------------------------------------------------------ | ----------------------------------------------- | ---- | ------- |
+| [`require-websocket-wss`](./docs/rules/require-websocket-wss.md)   | Require secure WebSocket connections (wss://)   | 7.5  | CWE-319 |
+| [`no-websocket-innerhtml`](./docs/rules/no-websocket-innerhtml.md) | Prevent XSS via innerHTML in WebSocket handlers | 8.1  | CWE-79  |
+| [`no-websocket-eval`](./docs/rules/no-websocket-eval.md)           | Prevent RCE via eval() in WebSocket handlers    | 9.8  | CWE-95  |
+
+### File API & Workers Security
+
+| Rule                                                                             | Description                                          | CVSS | CWE     |
+| -------------------------------------------------------------------------------- | ---------------------------------------------------- | ---- | ------- |
+| [`no-filereader-innerhtml`](./docs/rules/no-filereader-innerhtml.md)             | Prevent XSS via innerHTML with FileReader data       | 8.1  | CWE-79  |
+| [`require-blob-url-revocation`](./docs/rules/require-blob-url-revocation.md)     | Require revoking Blob URLs to prevent memory leaks   | 5.3  | CWE-401 |
+| [`no-dynamic-service-worker-url`](./docs/rules/no-dynamic-service-worker-url.md) | Prevent dynamic URLs in service worker registration  | 8.1  | CWE-829 |
+| [`no-worker-message-innerhtml`](./docs/rules/no-worker-message-innerhtml.md)     | Prevent XSS via innerHTML in Worker message handlers | 7.5  | CWE-79  |
+
+### CSP Security
+
+| Rule                                                           | Description                     | CVSS | CWE    |
+| -------------------------------------------------------------- | ------------------------------- | ---- | ------ |
+| [`no-unsafe-inline-csp`](./docs/rules/no-unsafe-inline-csp.md) | Disallow 'unsafe-inline' in CSP | 7.5  | CWE-79 |
+| [`no-unsafe-eval-csp`](./docs/rules/no-unsafe-eval-csp.md)     | Disallow 'unsafe-eval' in CSP   | 8.1  | CWE-95 |
 
 ## 🔍 Detection Examples
 

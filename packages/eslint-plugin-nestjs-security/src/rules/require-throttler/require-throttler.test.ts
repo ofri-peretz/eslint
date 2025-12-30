@@ -77,6 +77,39 @@ ruleTester.run('require-throttler', requireThrottler, {
       `,
       filename: 'users.controller.spec.ts',
     },
+    // ========== VALID: assumeGlobalThrottler option ==========
+    {
+      code: `
+        @Controller('users')
+        class UsersController {
+          @Get()
+          findAll() {}
+        }
+      `,
+      options: [{ assumeGlobalThrottler: true }],
+    },
+    // ========== VALID: @Throttle without parentheses (bare decorator) ==========
+    {
+      code: `
+        @Controller('users')
+        @Throttle
+        class UsersController {
+          @Get()
+          findAll() {}
+        }
+      `,
+    },
+    // ========== VALID: Method-level ThrottlerGuard ==========
+    {
+      code: `
+        @Controller('auth')
+        class AuthController {
+          @Post('login')
+          @UseGuards(ThrottlerGuard)
+          login() {}
+        }
+      `,
+    },
   ],
   invalid: [
     // ========== INVALID: Controller without throttling ==========

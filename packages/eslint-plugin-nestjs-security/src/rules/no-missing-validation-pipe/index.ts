@@ -104,7 +104,7 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
           const callee = dec.expression.callee;
           if (callee.type === AST_NODE_TYPES.Identifier && callee.name === 'UsePipes') {
             // Check if ValidationPipe is in the arguments
-            return dec.expression.arguments.some((arg) => {
+            return dec.expression.arguments.some((arg: TSESTree.CallExpressionArgument) => {
               if (arg.type === AST_NODE_TYPES.Identifier && arg.name === 'ValidationPipe') {
                 return true;
               }

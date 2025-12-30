@@ -68,7 +68,9 @@
   },
   "dependencies": {
     "@interlace/eslint-devkit": "^1.2.1",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "vitest": "^4.0.6",
+    "@nx/vite": "^22.0.3"
   },
   "peerDependencies": {},
   "peerDependenciesMeta": {

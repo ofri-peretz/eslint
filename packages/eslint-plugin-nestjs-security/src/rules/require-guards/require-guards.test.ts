@@ -88,6 +88,28 @@ ruleTester.run('require-guards', requireGuards, {
       `,
       options: [{ assumeGlobalGuards: true }],
     },
+    // ========== VALID: @UseGuards without parentheses (bare decorator) ==========
+    {
+      code: `
+        @Controller('users')
+        @UseGuards
+        class UsersController {
+          @Get()
+          findAll() {}
+        }
+      `,
+    },
+    // ========== VALID: AllowAnonymous decorator ==========
+    {
+      code: `
+        @Controller('public')
+        class PublicController {
+          @Get()
+          @AllowAnonymous()
+          getPublic() {}
+        }
+      `,
+    },
   ],
   invalid: [
     // ========== INVALID: Controller without guards ==========

@@ -105,7 +105,7 @@ export const requireClassValidator = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Missing Class Validator',
         cwe: 'CWE-20',
-        owasp: 'A03',
+        owasp: 'A03:2021',
         cvss: 7.5,
         description: 'DTO property "{{property}}" lacks class-validator decorators',
         severity: 'MEDIUM',
@@ -154,7 +154,7 @@ export const requireClassValidator = createRule<RuleOptions, MessageIds>({
       }
       // Check for class-validator or API decorators at class level
       if (node.decorators) {
-        return node.decorators.some((dec) => {
+        return node.decorators.some((dec: TSESTree.Decorator) => {
           const name =
             dec.expression.type === AST_NODE_TYPES.Identifier
               ? dec.expression.name

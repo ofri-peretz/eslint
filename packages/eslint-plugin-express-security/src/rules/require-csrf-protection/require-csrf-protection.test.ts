@@ -284,6 +284,20 @@ ruleTester.run('require-csrf-protection', requireCsrfProtection, {
       `,
       errors: [{ messageId: 'missingCsrf' }],
     },
+    // Inline express.Router().post() pattern
+    {
+      code: `
+        express.Router().post('/inline-create', handler);
+      `,
+      errors: [{ messageId: 'missingCsrf' }],
+    },
+    // Inline express().post() pattern
+    {
+      code: `
+        express().post('/inline-express', handler);
+      `,
+      errors: [{ messageId: 'missingCsrf' }],
+    },
     // Test file WITHOUT allowInTests option
     {
       code: `

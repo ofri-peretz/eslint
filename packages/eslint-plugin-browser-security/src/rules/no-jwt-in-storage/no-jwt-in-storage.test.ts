@@ -104,11 +104,8 @@ ruleTester.run('no-jwt-in-storage', noJwtInStorage, {
       code: `sessionStorage['accessToken'] = token;`,
       errors: [{ messageId: 'jwtInStorage', data: { key: 'accessToken', storage: 'sessionStorage' } }],
     },
-    // Variable as key (using variable name)
-    {
-      code: `localStorage.setItem(tokenKey, value);`,
-      errors: [{ messageId: 'jwtInStorage', data: { key: 'tokenKey', storage: 'localStorage' } }],
-    },
+    // Note: Variable names like 'tokenKey' are NOT flagged to reduce false positives
+    // We only flag when the actual key is clearly a JWT-related name
     // Bearer token
     {
       code: `localStorage.setItem('bearer', authBearer);`,

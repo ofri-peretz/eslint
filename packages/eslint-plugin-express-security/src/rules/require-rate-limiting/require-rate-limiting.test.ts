@@ -60,6 +60,15 @@ ruleTester.run('require-rate-limiting', requireRateLimiting, {
       options: [{ allowInTests: true }],
       filename: 'app.test.ts',
     },
+    // assumeRateLimiting option (rate limiting provided by API Gateway)
+    {
+      code: `
+        import express from 'express';
+        const app = express();
+        app.use(express.json());
+      `,
+      options: [{ assumeRateLimiting: true }],
+    },
   ],
   invalid: [
     // Express without rate limiting
