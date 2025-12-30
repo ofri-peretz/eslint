@@ -636,11 +636,17 @@ jobs:
               # BUILD (test runs automatically as dependency via nx graph)
               # ──────────────────────────────────────────────────────────────
               echo "🔨 Building..."
-              pnpm nx build $PACKAGE || {
+              BUILD_LOG="/tmp/build-$PACKAGE.log"
+              if pnpm nx build $PACKAGE --output-style=static > "$BUILD_LOG" 2>&1; then
+                echo "   ✅ Build complete"
+              else
                 echo "❌ FAILED: $PACKAGE (build)"
+                echo "--- Build Log ---"
+                cat "$BUILD_LOG"
+                echo "-----------------"
                 FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
                 continue
-              }
+              fi
               
               # ──────────────────────────────────────────────────────────────
               # CHANGELOG
