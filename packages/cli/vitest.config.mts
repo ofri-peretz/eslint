@@ -37,6 +37,7 @@ export default defineConfig({
       reportOnFailure: true,
       // Directory where coverage reports are written (relative to project root)
       reportsDirectory: './coverage',
+      include: ['src/**/*.ts'],
       exclude: ['node_modules/', 'dist/', '**/*.test.ts'],
       // Clean coverage directory on each run (safe now that globalSetup ensures dirs exist)
       clean: true,

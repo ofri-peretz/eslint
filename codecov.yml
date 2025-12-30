@@ -210,10 +210,16 @@ component_management:
       paths:
         - packages/eslint-plugin-mcp-optimized/**
 
-# Ignore paths
+# Ignore paths (these files don't contain runtime logic)
 ignore:
   - "**/*.test.ts"
   - "**/*.spec.ts"
   - "**/node_modules/**"
   - "**/dist/**"
   - "**/.nx/**"
+  - "**/types/**"
+  - "**/types/index.ts"
+  - "**/coverage/**"
+  - "**/*.config.ts"
+  - "**/*.config.mts"
+  - "**/vitest.global-setup.ts"

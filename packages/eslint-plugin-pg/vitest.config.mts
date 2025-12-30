@@ -35,6 +35,12 @@ export default defineConfig({
       ignoreClassMethods: ['context.report'],
       clean: true,
       reporter: ['text', 'text-summary', 'html', 'lcov'],
+      watermarks: {
+        lines: [80, 90],
+        branches: [70, 80],
+        functions: [80, 90],
+        statements: [80, 90],
+      },
       thresholds: {
         lines: 80,
         branches: 70,
