@@ -1,0 +1,60 @@
+# no-sensitive-indexeddb
+
+Prevent storing sensitive data in IndexedDB.
+
+## ⚠️ Security Issue
+
+| Property     | Value                                                                                                 |
+| ------------ | ----------------------------------------------------------------------------------------------------- |
+| **CWE**      | [CWE-922: Insecure Storage of Sensitive Information](https://cwe.mitre.org/data/definitions/922.html) |
+| **OWASP**    | A02:2021 - Cryptographic Failures                                                                     |
+| **CVSS**     | 7.5 (High)                                                                                            |
+| **Severity** | HIGH                                                                                                  |
+
+## 📋 Description
+
+IndexedDB is accessible via JavaScript and can be stolen through XSS attacks. Sensitive data like passwords, tokens, and API keys should not be stored in client-side databases.
+
+## ❌ Incorrect
+
+```javascript
+// Creating object store for sensitive data
+db.createObjectStore('passwords');
+db.createObjectStore('secrets');
+db.createObjectStore('apiKeys');
+
+// Storing sensitive data
+store.add({ password: userPassword });
+store.put({ apiKey: key });
+```
+
+## ✅ Correct
+
+```javascript
+// Store non-sensitive data
+db.createObjectStore('preferences');
+db.createObjectStore('cachedData');
+
+// Store user preferences
+store.add({ theme: 'dark', language: 'en' });
+```
+
+## 🛠️ Options
+
+```json
+{
+  "rules": {
+    "@interlace/browser-security/no-sensitive-indexeddb": [
+      "error",
+      {
+        "allowInTests": true
+      }
+    ]
+  }
+}
+```
+
+## 📚 Related Resources
+
+- [MDN: IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API)
+- [OWASP: HTML5 Security](https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html)

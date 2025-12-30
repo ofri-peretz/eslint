@@ -107,5 +107,43 @@ ruleTester.run('no-sensitive-localstorage', noSensitiveLocalstorage, {
         },
       ],
     },
+    // Variable key that looks sensitive (identifier detection)
+    {
+      code: `localStorage.setItem(password, value);`,
+      errors: [
+        {
+          messageId: 'sensitiveLocalStorage',
+        },
+      ],
+    },
+    // Identifier property access with sensitive name
+    {
+      code: `localStorage.secret = secretValue;`,
+      errors: [
+        {
+          messageId: 'sensitiveLocalStorage',
+        },
+      ],
+    },
+    // Bracket with string literal
+    {
+      code: `localStorage['apiKey'] = keyValue;`,
+      errors: [
+        {
+          messageId: 'sensitiveLocalStorage',
+        },
+      ],
+    },
+    // allowInTests: false in test file
+    {
+      code: `localStorage.setItem('token', jwt);`,
+      filename: 'auth.test.ts',
+      options: [{ allowInTests: false }],
+      errors: [
+        {
+          messageId: 'sensitiveLocalStorage',
+        },
+      ],
+    },
   ],
 });

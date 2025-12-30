@@ -118,5 +118,25 @@ ruleTester.run('no-jwt-in-storage', noJwtInStorage, {
       options: [{ allowInTests: false }],
       errors: [{ messageId: 'jwtInStorage', data: { key: 'jwt', storage: 'localStorage' } }],
     },
+    // Variable key that looks like JWT (identifier detection)
+    {
+      code: `localStorage.setItem(accessToken, value);`,
+      errors: [{ messageId: 'jwtInStorage', data: { key: 'accessToken', storage: 'localStorage' } }],
+    },
+    // Identifier property access assignment
+    {
+      code: `localStorage.jwt = tokenValue;`,
+      errors: [{ messageId: 'jwtInStorage', data: { key: 'jwt', storage: 'localStorage' } }],
+    },
+    // sessionStorage with identifier key
+    {
+      code: `sessionStorage.setItem(refreshToken, value);`,
+      errors: [{ messageId: 'jwtInStorage', data: { key: 'refreshToken', storage: 'sessionStorage' } }],
+    },
+    // Direct assignment with JWT value
+    {
+      code: `localStorage['userData'] = '${EXAMPLE_JWT}';`,
+      errors: [{ messageId: 'jwtInStorage', data: { key: 'userData', storage: 'localStorage' } }],
+    },
   ],
 });

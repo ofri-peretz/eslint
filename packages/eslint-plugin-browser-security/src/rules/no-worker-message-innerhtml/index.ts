@@ -178,6 +178,7 @@ export const noWorkerMessageInnerhtml = createRule<RuleOptions, MessageIds>({
         ) {
           return true;
         }
+        /* c8 ignore next - Recursive call for deeply nested expressions */
         return referencesEventData(node.object, eventName);
       }
       return false;

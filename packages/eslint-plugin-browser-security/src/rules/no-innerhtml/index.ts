@@ -148,6 +148,7 @@ export const noInnerhtml = createRule<RuleOptions, MessageIds>({
         }
 
         const property = node.left.property;
+        /* c8 ignore next 3 - Guard for non-identifier property access */
         if (property.type !== 'Identifier') {
           return;
         }

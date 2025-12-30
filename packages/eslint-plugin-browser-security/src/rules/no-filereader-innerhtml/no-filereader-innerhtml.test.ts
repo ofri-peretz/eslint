@@ -144,5 +144,41 @@ ruleTester.run('no-filereader-innerhtml', noFilereaderInnerhtml, {
       options: [{ allowInTests: false }],
       errors: [{ messageId: 'unsafeInnerhtml', data: { method: 'innerHTML' } }],
     },
+    // addEventListener('load') pattern
+    {
+      code: `
+        reader.addEventListener('load', (e) => {
+          element.innerHTML = e.target.result;
+        });
+      `,
+      errors: [{ messageId: 'unsafeInnerhtml', data: { method: 'innerHTML' } }],
+    },
+    // addEventListener('loadend') pattern
+    {
+      code: `
+        fileReader.addEventListener('loadend', (event) => {
+          container.innerHTML = event.target.result;
+        });
+      `,
+      errors: [{ messageId: 'unsafeInnerhtml', data: { method: 'innerHTML' } }],
+    },
+    // document.write with FileReader data
+    {
+      code: `
+        reader.onload = (e) => {
+          document.write(e.target.result);
+        };
+      `,
+      errors: [{ messageId: 'unsafeInnerhtml', data: { method: 'write' } }],
+    },
+    // document.writeln with FileReader data
+    {
+      code: `
+        reader.onload = (e) => {
+          document.writeln(e.target.result);
+        };
+      `,
+      errors: [{ messageId: 'unsafeInnerhtml', data: { method: 'writeln' } }],
+    },
   ],
 });

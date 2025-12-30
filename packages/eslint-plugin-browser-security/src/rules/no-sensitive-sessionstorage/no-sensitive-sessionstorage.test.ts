@@ -57,5 +57,26 @@ ruleTester.run('no-sensitive-sessionstorage', noSensitiveSessionstorage, {
       options: [{ allowInTests: false }],
       errors: [{ messageId: 'sensitiveInSessionStorage', data: { key: 'password' } }],
     },
+    // Variable key that looks sensitive (identifier detection)
+    {
+      code: `sessionStorage.setItem(password, value);`,
+      errors: [{ messageId: 'sensitiveInSessionStorage', data: { key: 'password' } }],
+    },
+    // Identifier property access with sensitive name
+    {
+      code: `sessionStorage.apiKey = keyValue;`,
+      errors: [{ messageId: 'sensitiveInSessionStorage', data: { key: 'apiKey' } }],
+    },
+    // Bracket with string literal (another pattern)
+    {
+      code: `sessionStorage['authToken'] = tokenValue;`,
+      errors: [{ messageId: 'sensitiveInSessionStorage', data: { key: 'authToken' } }],
+    },
+    // Custom additionalPatterns
+    {
+      code: `sessionStorage.setItem('userPin', pin);`,
+      options: [{ additionalPatterns: ['pin'] }],
+      errors: [{ messageId: 'sensitiveInSessionStorage', data: { key: 'userPin' } }],
+    },
   ],
 });

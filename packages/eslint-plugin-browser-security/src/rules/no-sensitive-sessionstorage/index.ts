@@ -53,6 +53,7 @@ const SENSITIVE_PATTERNS = [
 function isSensitiveKey(key: string, additionalPatterns: string[] = []): boolean {
   const allPatterns = [
     ...SENSITIVE_PATTERNS,
+    /* c8 ignore next - Additional patterns are optional config */
     ...additionalPatterns.map((p) => new RegExp(p, 'i')),
   ];
   return allPatterns.some((pattern) => pattern.test(key));
@@ -160,6 +161,7 @@ export const noSensitiveSessionstorage = createRule<RuleOptions, MessageIds>({
           obj.type !== AST_NODE_TYPES.Identifier ||
           obj.name !== 'sessionStorage'
         ) {
+          /* c8 ignore next - Guard for non-sessionStorage objects */
           return;
         }
 

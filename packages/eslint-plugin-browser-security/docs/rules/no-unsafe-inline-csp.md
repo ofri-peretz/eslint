@@ -1,0 +1,91 @@
+# no-unsafe-inline-csp
+
+Disallow 'unsafe-inline' in Content Security Policy directives.
+
+## ⚠️ Security Issue
+
+| Property     | Value                                                                          |
+| ------------ | ------------------------------------------------------------------------------ |
+| **CWE**      | [CWE-79: Cross-site Scripting](https://cwe.mitre.org/data/definitions/79.html) |
+| **OWASP**    | A03:2021 - Injection                                                           |
+| **CVSS**     | 7.5 (High)                                                                     |
+| **Severity** | HIGH                                                                           |
+
+## 📋 Description
+
+The `'unsafe-inline'` CSP directive allows inline JavaScript and CSS, completely bypassing the protection CSP provides against XSS attacks. This is one of the most common CSP misconfigurations.
+
+## 🔍 What This Rule Detects
+
+```mermaid
+flowchart TD
+    A[CSP String Detected] --> B{Contains 'unsafe-inline'?}
+    B -->|Yes| C[🔒 Security Warning]
+    B -->|No| D[✅ Safe CSP]
+    C --> E[Inline scripts can execute]
+    E --> F[XSS protection bypassed]
+```
+
+## ❌ Incorrect
+
+```javascript
+// Literal string with unsafe-inline
+const csp = "script-src 'unsafe-inline'";
+
+// Template literal
+const policy = `default-src 'self'; style-src 'unsafe-inline'`;
+
+// In HTTP header
+res.setHeader('Content-Security-Policy', "script-src 'unsafe-inline'");
+
+// In meta tag content
+const meta = { content: "script-src 'unsafe-inline'" };
+```
+
+## ✅ Correct
+
+```javascript
+// Use nonce-based approach
+const csp = "script-src 'self' 'nonce-abc123'";
+
+// Use hash-based approach
+const policy = "script-src 'self' 'sha256-xxxxx'";
+
+// Strict CSP without inline
+res.setHeader('Content-Security-Policy', "default-src 'self'");
+```
+
+## 🛠️ Options
+
+```json
+{
+  "rules": {
+    "@interlace/browser-security/no-unsafe-inline-csp": [
+      "error",
+      {
+        "allowInTests": true
+      }
+    ]
+  }
+}
+```
+
+| Option         | Type      | Default | Description                    |
+| -------------- | --------- | ------- | ------------------------------ |
+| `allowInTests` | `boolean` | `true`  | Disable the rule in test files |
+
+## 💡 Why This Matters
+
+CSP is one of the most effective defenses against XSS attacks. Using `'unsafe-inline'` completely undermines this protection by allowing any inline script to execute, which is exactly what CSP was designed to prevent.
+
+### Alternatives to unsafe-inline:
+
+1. **Nonces**: Generate a random nonce per request
+2. **Hashes**: Calculate SHA hashes of allowed inline scripts
+3. **External scripts**: Move inline scripts to external files
+
+## 📚 Related Resources
+
+- [MDN: Content-Security-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP)
+- [OWASP: CSP Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html)
+- [CSP Evaluator](https://csp-evaluator.withgoogle.com/)

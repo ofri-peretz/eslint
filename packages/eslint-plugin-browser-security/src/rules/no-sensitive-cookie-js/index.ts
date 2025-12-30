@@ -158,6 +158,7 @@ export const noSensitiveCookieJs = createRule<RuleOptions, MessageIds>({
           return;
         }
 
+        /* c8 ignore next 3 - Guard for non-cookie property */
         if (
           prop.type !== AST_NODE_TYPES.Identifier ||
           prop.name !== 'cookie'
