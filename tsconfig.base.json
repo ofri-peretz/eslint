@@ -16,16 +16,6 @@
     "baseUrl": ".",
     "paths": {
       "@interlace/eslint-devkit": ["packages/eslint-devkit/src/index.ts"],
-      "eslint-plugin-mcp": ["packages/eslint-plugin-mcp/src/index.ts"],
-      "eslint-plugin-mcp-optimized": [
-        "packages/eslint-plugin-mcp-optimized/src/index.ts"
-      ],
-      "eslint-plugin-code-mode": [
-        "packages/eslint-plugin-code-mode/src/index.ts"
-      ],
-      "eslint-plugin-generalist": [
-        "packages/eslint-plugin-generalist/src/index.ts"
-      ],
       "eslint-plugin-secure-coding": [
         "packages/eslint-plugin-secure-coding/src/index.ts"
       ],
@@ -35,17 +25,8 @@
       "eslint-plugin-import-next": [
         "packages/eslint-plugin-import-next/src/index.ts"
       ],
-      "eslint-plugin-agentic-security": [
-        "packages/eslint-plugin-agentic-security/src/index.ts"
-      ],
       "eslint-plugin-openai-security": [
         "packages/eslint-plugin-openai-security/src/index.ts"
-      ],
-      "eslint-plugin-anthropic-security": [
-        "packages/eslint-plugin-anthropic-security/src/index.ts"
-      ],
-      "eslint-plugin-google-ai-security": [
-        "packages/eslint-plugin-google-ai-security/src/index.ts"
       ],
       "eslint-plugin-pg": ["packages/eslint-plugin-pg/src/index.ts"],
       "eslint-plugin-crypto": ["packages/eslint-plugin-crypto/src/index.ts"],
