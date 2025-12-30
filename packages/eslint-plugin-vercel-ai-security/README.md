@@ -5,10 +5,12 @@
 **eslint-plugin-vercel-ai-security** is a specialized ESLint plugin that provides **SDK-aware security rules** for the [Vercel AI SDK](https://sdk.vercel.ai/). Unlike generic AI security linters, this plugin has **full knowledge** of the AI SDK's API structure, enabling precise detection of security vulnerabilities in `generateText`, `streamText`, `generateObject`, `streamObject`, and tool definitions.
 
 [![npm version](https://badge.fury.io/js/eslint-plugin-vercel-ai-security.svg)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security)
+[![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-vercel-ai-security.svg)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=vercel_ai_security)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=vercel_ai_security)
 [![OWASP LLM Coverage](https://img.shields.io/badge/OWASP%20LLM%202025-10%2F10-brightgreen)](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
 [![OWASP Agentic Coverage](https://img.shields.io/badge/OWASP%20Agentic%202026-9%2F10-brightgreen)](https://owasp.org)
+[![Dec 2025](https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white)](https://github.com/ofri-peretz/eslint)
 
 ---
 
@@ -156,13 +158,17 @@ All rule messages follow a structured format optimized for AI coding assistants:
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin                                                                                     |                                                           Downloads                                                            | Description                                                  | Rules |
-| ------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------: | ------------------------------------------------------------ | :---: |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![npm](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://npmjs.com/package/eslint-plugin-secure-coding) | Universal security (OWASP Top 10 Web + Mobile)               |  89   |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                     |           [![npm](https://img.shields.io/npm/dm/eslint-plugin-jwt.svg)](https://npmjs.com/package/eslint-plugin-jwt)           | JWT security (algorithm confusion, weak secrets, claims)     |  13   |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)               |        [![npm](https://img.shields.io/npm/dm/eslint-plugin-crypto.svg)](https://npmjs.com/package/eslint-plugin-crypto)        | Cryptographic best practices (weak algorithms, key handling) |  24   |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                       |            [![npm](https://img.shields.io/npm/dm/eslint-plugin-pg.svg)](https://npmjs.com/package/eslint-plugin-pg)            | PostgreSQL/node-postgres security                            |  13   |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)     |   [![npm](https://img.shields.io/npm/dm/eslint-plugin-import-next.svg)](https://npmjs.com/package/eslint-plugin-import-next)   | High-performance import linting                              |  12   |
+| Plugin                                                                                           |                                                              Downloads                                                               | Description                                                  | Rules |
+| ------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------: | ------------------------------------------------------------ | :---: |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)       |    [![npm](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://npmjs.com/package/eslint-plugin-secure-coding)    | Universal security (OWASP Top 10 Web + Mobile)               |  89   |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                           |              [![npm](https://img.shields.io/npm/dm/eslint-plugin-jwt.svg)](https://npmjs.com/package/eslint-plugin-jwt)              | JWT security (algorithm confusion, weak secrets, claims)     |  13   |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                     |           [![npm](https://img.shields.io/npm/dm/eslint-plugin-crypto.svg)](https://npmjs.com/package/eslint-plugin-crypto)           | Cryptographic best practices (weak algorithms, key handling) |  24   |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                             |               [![npm](https://img.shields.io/npm/dm/eslint-plugin-pg.svg)](https://npmjs.com/package/eslint-plugin-pg)               | PostgreSQL/node-postgres security                            |  13   |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![npm](https://img.shields.io/npm/dm/eslint-plugin-express-security.svg)](https://npmjs.com/package/eslint-plugin-express-security) | Express.js security (CORS, cookies, CSRF, helmet)            |   8   |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)   |  [![npm](https://img.shields.io/npm/dm/eslint-plugin-nestjs-security.svg)](https://npmjs.com/package/eslint-plugin-nestjs-security)  | NestJS security (guards, validation pipes, throttler)        |   5   |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)   |  [![npm](https://img.shields.io/npm/dm/eslint-plugin-lambda-security.svg)](https://npmjs.com/package/eslint-plugin-lambda-security)  | AWS Lambda/Middy security (API Gateway, CORS, secrets)       |   5   |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![npm](https://img.shields.io/npm/dm/eslint-plugin-browser-security.svg)](https://npmjs.com/package/eslint-plugin-browser-security) | Browser security (XSS, postMessage, storage, cookies)        |  21   |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)           |      [![npm](https://img.shields.io/npm/dm/eslint-plugin-import-next.svg)](https://npmjs.com/package/eslint-plugin-import-next)      | High-performance import linting                              |  12   |
 
 ## 📄 License
 
