@@ -152,8 +152,41 @@
     "projectsRelationship": "independent",
     "preid": "rc",
     "version": {
-      "preVersionCommand": "pnpm nx affected -t build",
-      "conventionalCommits": true,
+      "preVersionCommand": "pnpm nx run-many -t build --projects={projects}",
+      "conventionalCommits": {
+        "types": {
+          "feat": {
+            "semverBump": "minor"
+          },
+          "fix": {
+            "semverBump": "patch"
+          },
+          "perf": {
+            "semverBump": "patch"
+          },
+          "docs": {
+            "semverBump": "patch"
+          },
+          "refactor": {
+            "semverBump": "patch"
+          },
+          "style": {
+            "semverBump": "patch"
+          },
+          "test": {
+            "semverBump": "patch"
+          },
+          "build": {
+            "semverBump": "patch"
+          },
+          "ci": {
+            "semverBump": "patch"
+          },
+          "chore": {
+            "semverBump": "patch"
+          }
+        }
+      },
       "generatorOptions": {
         "updateDependents": "always",
         "currentVersionResolver": "git-tag",
@@ -164,8 +197,7 @@
         "skipLockFileUpdate": true
       },
       "manifestRootsToUpdate": [
-        "{projectRoot}",
-        "dist/{projectRoot}"
+        "{projectRoot}"
       ],
       "git": {
         "commit": true,
