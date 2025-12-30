@@ -1,2 +1,66 @@
-npx --no -- commitlint --edit $1
+#!/bin/sh
 
+# Read the commit message
+COMMIT_MSG=$(cat "$1")
+
+# Function to print error with clear formatting
+print_error() {
+  echo ""
+  echo "❌ COMMIT MESSAGE ERROR"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "Your commit message:"
+  echo "  \"$COMMIT_MSG\""
+  echo ""
+  echo "$1"
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "📚 Format: <type>(<scope>): <subject>"
+  echo "   Example: feat(crypto): add new encryption rule"
+  echo ""
+  echo "✅ Valid types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert"
+  echo ""
+}
+
+# Check for common issues before running commitlint
+
+# 1. Check if subject ends with a period
+if echo "$COMMIT_MSG" | head -1 | grep -q '\.$'; then
+  print_error "⚠️  Subject must NOT end with a period (.)"
+  echo "Fix: Remove the trailing period from your commit message"
+  echo ""
+  exit 1
+fi
+
+# 2. Check if subject starts with uppercase (after the colon)
+SUBJECT=$(echo "$COMMIT_MSG" | head -1 | sed 's/^[^:]*: *//')
+if echo "$SUBJECT" | grep -q '^[A-Z]'; then
+  print_error "⚠️  Subject should start with lowercase letter"
+  echo "Fix: Start your subject with a lowercase letter"
+  echo "     Instead of: docs: Add new feature"
+  echo "     Use:        docs: add new feature"
+  echo ""
+  exit 1
+fi
+
+# 3. Check for valid type prefix
+TYPE=$(echo "$COMMIT_MSG" | head -1 | sed 's/^\([a-z]*\).*/\1/')
+VALID_TYPES="feat fix docs style refactor perf test build ci chore revert"
+if ! echo "$VALID_TYPES" | grep -qw "$TYPE"; then
+  print_error "⚠️  Invalid commit type: '$TYPE'"
+  echo "Fix: Use one of: $VALID_TYPES"
+  echo ""
+  exit 1
+fi
+
+# 4. Check for colon after type
+if ! echo "$COMMIT_MSG" | head -1 | grep -q '^[a-z]*\(([^)]*)\)\?: '; then
+  print_error "⚠️  Missing colon and space after type"
+  echo "Fix: Format should be 'type: subject' or 'type(scope): subject'"
+  echo "     Example: fix: resolve memory leak"
+  echo ""
+  exit 1
+fi
+
+# All pre-checks passed, run commitlint for full validation
+npx --no -- commitlint --edit "$1"
