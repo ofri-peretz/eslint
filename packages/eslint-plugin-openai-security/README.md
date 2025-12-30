@@ -4,7 +4,7 @@
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-openai-security.svg)](https://www.npmjs.com/package/eslint-plugin-openai-security)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=eslint-plugin-openai-security)](https://codecov.io/gh/ofri-peretz/eslint)
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=openai_security)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=openai_security)
 
 ## Overview
 

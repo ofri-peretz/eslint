@@ -4,7 +4,7 @@
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-code-mode.svg)](https://www.npmjs.com/package/eslint-plugin-code-mode)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-code-mode.svg)](https://www.npmjs.com/package/eslint-plugin-code-mode)
-[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=eslint-plugin-code-mode)](https://codecov.io/gh/ofri-peretz/eslint)
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=code_mode)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=code_mode)
 
 > **Keywords:** ESLint plugin, Code Mode, AI assistant, auto-fix, code quality, security rules, TypeScript ESLint, automated code fixes, GitHub Copilot, Cursor AI, Claude AI, structured error messages, CWE references, deterministic fixes
 

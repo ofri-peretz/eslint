@@ -1,5 +1,5 @@
 # @eslint/eslint-plugin-quality
-[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=eslint-plugin-quality)](https://codecov.io/gh/ofri-peretz/eslint)
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=quality)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=quality)
 
 ESLint plugin for code quality, error handling, and complexity metrics.
 

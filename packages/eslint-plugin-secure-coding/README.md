@@ -5,7 +5,7 @@
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-secure-coding.svg)](https://www.npmjs.com/package/eslint-plugin-secure-coding)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://www.npmjs.com/package/eslint-plugin-secure-coding)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=eslint-plugin-secure-coding)](https://codecov.io/gh/ofri-peretz/eslint)
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=secure_coding)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=secure_coding)
 
 > **A complete security standard:** This plugin provides **full mitigation** for both **OWASP Top 10 Web (2021)** AND **OWASP Mobile Top 10 (2024)**.  
 > With **78 active rules** (+ 11 deprecated) mapped to CWE and CVSS, it transforms your linter into an enterprise-grade security auditor that AI assistants can understand and fix.

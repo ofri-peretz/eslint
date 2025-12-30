@@ -1,5 +1,5 @@
 # eslint-plugin-agentic-security
-[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=eslint-plugin-agentic-security)](https://codecov.io/gh/ofri-peretz/eslint)
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=agentic_security)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=agentic_security)
 
 > ⚠️ **DEPRECATION NOTICE**
 >

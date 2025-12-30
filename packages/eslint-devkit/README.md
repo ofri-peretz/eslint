@@ -1,4 +1,5 @@
 # @interlace/eslint-devkit
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint_devkit)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint_devkit)
 
 **Build ESLint plugins that write themselves** - TypeScript utilities for creating rules that AI assistants can understand and auto-fix.
 

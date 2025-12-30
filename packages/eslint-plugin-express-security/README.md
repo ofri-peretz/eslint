@@ -5,7 +5,7 @@
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-express-security.svg)](https://www.npmjs.com/package/eslint-plugin-express-security)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-express-security.svg)](https://www.npmjs.com/package/eslint-plugin-express-security)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=eslint-plugin-express-security)](https://codecov.io/gh/ofri-peretz/eslint)
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=express_security)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=express_security)
 
 > **Express-first security:** This plugin provides comprehensive security rules for **Express.js** applications.
 > With **8 security rules** mapped to OWASP Top 10, CWE and CVSS, it transforms your linter into an Express security auditor that AI assistants can understand and fix.

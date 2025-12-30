@@ -4,7 +4,7 @@
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-mcp-optimized.svg)](https://www.npmjs.com/package/eslint-plugin-mcp-optimized)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-mcp-optimized.svg)](https://www.npmjs.com/package/eslint-plugin-mcp-optimized)
-[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=eslint-plugin-mcp-optimized)](https://codecov.io/gh/ofri-peretz/eslint)
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=mcp_optimized)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=mcp_optimized)
 
 > **Keywords:** ESLint plugin, ESLint MCP, Model Context Protocol, MCP server, AI assistant, auto-fix, code quality, security rules, TypeScript ESLint, automated code fixes, GitHub Copilot, Cursor AI, Claude AI, structured error messages, CWE references, deterministic fixes, @eslint/mcp, MCP optimized
 

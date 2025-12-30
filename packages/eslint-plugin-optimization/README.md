@@ -1,5 +1,5 @@
 # @eslint/eslint-plugin-optimization
-[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=eslint-plugin-optimization)](https://codecov.io/gh/ofri-peretz/eslint)
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=optimization)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=optimization)
 
 ESLint plugin for performance optimization and best practices.
 
