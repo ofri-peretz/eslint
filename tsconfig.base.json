@@ -55,6 +55,12 @@
       ],
       "eslint-plugin-nestjs-security": [
         "packages/eslint-plugin-nestjs-security/src/index.ts"
+      ],
+      "eslint-plugin-lambda-security": [
+        "packages/eslint-plugin-lambda-security/src/index.ts"
+      ],
+      "eslint-plugin-browser-security": [
+        "packages/eslint-plugin-browser-security/src/index.ts"
       ]
     }
   },

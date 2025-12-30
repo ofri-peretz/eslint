@@ -1,4 +1,5 @@
 # @eslint/eslint-plugin-react-features
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=eslint-plugin-react-features)](https://codecov.io/gh/ofri-peretz/eslint)
 
 ESLint plugin for React features, hooks, and migration helpers.
 

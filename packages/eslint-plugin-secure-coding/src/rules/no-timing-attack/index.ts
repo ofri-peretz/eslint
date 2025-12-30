@@ -50,6 +50,8 @@ export const noTimingAttack = createRule<RuleOptions, MessageIds>({
   name: 'no-timing-attack',
   meta: {
     type: 'problem',
+    deprecated: true,
+    replacedBy: ['@see eslint-plugin-crypto/no-timing-unsafe-compare'],
     docs: {
       description: 'Detects timing attack vulnerabilities in authentication code',
     },

@@ -18,6 +18,8 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
   name: 'no-permissive-cors',
   meta: {
     type: 'problem',
+    deprecated: true,
+    replacedBy: ['@see eslint-plugin-express-security/no-permissive-cors'],
     docs: {
       description: 'Prevent overly permissive CORS configuration',
       category: 'Security',

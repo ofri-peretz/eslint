@@ -4,6 +4,7 @@
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-generalist.svg)](https://www.npmjs.com/package/eslint-plugin-generalist)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-generalist.svg)](https://www.npmjs.com/package/eslint-plugin-generalist)
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=eslint-plugin-generalist)](https://codecov.io/gh/ofri-peretz/eslint)
 
 > **Keywords:** eslint, generalist, all-in-one, security, react, architecture, import, unicorn, code-quality, ai-optimized, automation
 

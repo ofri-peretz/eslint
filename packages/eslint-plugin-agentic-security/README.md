@@ -1,4 +1,5 @@
 # eslint-plugin-agentic-security
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=eslint-plugin-agentic-security)](https://codecov.io/gh/ofri-peretz/eslint)
 
 > ⚠️ **DEPRECATION NOTICE**
 >

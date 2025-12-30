@@ -109,6 +109,8 @@ export const noMissingSecurityHeaders = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-security-headers',
   meta: {
     type: 'problem',
+    deprecated: true,
+    replacedBy: ['@see eslint-plugin-express-security/require-helmet'],
     docs: {
       description: 'Detects missing security headers in HTTP responses',
     },

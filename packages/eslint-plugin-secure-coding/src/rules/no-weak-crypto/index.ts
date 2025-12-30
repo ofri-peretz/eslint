@@ -192,6 +192,8 @@ export const noWeakCrypto = createRule<RuleOptions, MessageIds>({
   name: 'no-weak-crypto',
   meta: {
     type: 'problem',
+    deprecated: true,
+    replacedBy: ['@see eslint-plugin-crypto for 24 crypto security rules'],
     docs: {
       description: 'Detects use of weak cryptography algorithms (MD5, SHA1, DES)',
     },

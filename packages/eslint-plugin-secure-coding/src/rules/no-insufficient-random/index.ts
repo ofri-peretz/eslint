@@ -148,6 +148,8 @@ export const noInsufficientRandom = createRule<RuleOptions, MessageIds>({
   name: 'no-insufficient-random',
   meta: {
     type: 'problem',
+    deprecated: true,
+    replacedBy: ['@see eslint-plugin-crypto/no-math-random-crypto'],
     docs: {
       description: 'Detects weak random number generation (Math.random(), weak PRNG)',
     },

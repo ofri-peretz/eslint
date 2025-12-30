@@ -4,6 +4,7 @@
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-react-a11y.svg)](https://www.npmjs.com/package/eslint-plugin-react-a11y)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=eslint-plugin-react-a11y)](https://codecov.io/gh/ofri-peretz/eslint)
 
 A comprehensive ESLint plugin for React accessibility with LLM-optimized error messages, auto-fix capabilities, and structured context for AI assistants.
 

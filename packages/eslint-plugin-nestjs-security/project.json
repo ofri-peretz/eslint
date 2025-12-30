@@ -5,7 +5,9 @@
   "projectType": "library",
   "release": {
     "version": {
-      "manifestRootsToUpdate": ["dist/{projectRoot}"],
+      "manifestRootsToUpdate": [
+        "dist/{projectRoot}"
+      ],
       "currentVersionResolver": "git-tag",
       "fallbackCurrentVersionResolver": "disk"
     }
@@ -14,13 +16,32 @@
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "outputPath": "dist/packages/eslint-plugin-nestjs-security",
         "main": "packages/eslint-plugin-nestjs-security/src/index.ts",
         "tsConfig": "packages/eslint-plugin-nestjs-security/tsconfig.lib.json",
-        "assets": ["packages/eslint-plugin-nestjs-security/*.md"]
+        "assets": [
+          "packages/eslint-plugin-nestjs-security/*.md"
+        ]
       }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": [
+        "{options.reportsDirectory}"
+      ],
+      "options": {
+        "reportsDirectory": "../../coverage/packages/eslint-plugin-nestjs-security"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": [
+        "{options.outputFile}"
+      ]
     },
     "nx-release-publish": {
       "options": {

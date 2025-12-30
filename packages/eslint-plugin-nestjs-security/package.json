@@ -1,10 +1,89 @@
 {
   "name": "eslint-plugin-nestjs-security",
   "version": "0.0.1",
+  "description": "Security-focused ESLint rules for NestJS applications. Detects missing guards, validation pipes, throttling, exposed sensitive fields, and more.",
   "type": "commonjs",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/eslint-plugin-nestjs-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "keywords": [
+    "eslint",
+    "eslint-plugin",
+    "eslintplugin",
+    "nestjs",
+    "nest",
+    "security",
+    "guards",
+    "validation",
+    "throttler",
+    "class-validator",
+    "class-transformer",
+    "owasp",
+    "cwe",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript",
+    "static-analysis"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
+    "@interlace/eslint-devkit": "workspace:*",
     "tslib": "^2.3.0"
+  },
+  "peerDependencies": {
+    "eslint": ">=8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@nestjs/common": {
+      "optional": true
+    },
+    "@nestjs/throttler": {
+      "optional": true
+    },
+    "class-validator": {
+      "optional": true
+    },
+    "class-transformer": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.46.2",
+    "@typescript-eslint/rule-tester": "^8.46.2",
+    "@vitest/coverage-v8": "^4.0.6",
+    "vitest": "^4.0.6"
   }
 }

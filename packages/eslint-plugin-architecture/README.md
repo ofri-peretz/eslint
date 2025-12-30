@@ -1,4 +1,5 @@
 # @eslint/eslint-plugin-architecture
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=eslint-plugin-architecture)](https://codecov.io/gh/ofri-peretz/eslint)
 
 ESLint architecture rules enforcing DDD, API boundaries, and project structure.
 

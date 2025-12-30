@@ -1,0 +1,90 @@
+{
+  "name": "eslint-plugin-browser-security",
+  "version": "0.0.1",
+  "description": "Security-focused ESLint plugin for browser applications. Detects XSS vulnerabilities, postMessage abuse, localStorage/sessionStorage/IndexedDB token exposure, cookie security issues, WebSocket security, Blob URL leaks, Service Worker risks, and CSP misconfigurations.",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./types": {
+      "types": "./src/types/index.d.ts",
+      "default": "./src/types/index.js"
+    }
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/eslint-plugin-browser-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "AGENTS.md"
+  ],
+  "keywords": [
+    "eslint",
+    "eslint-plugin",
+    "eslintplugin",
+    "browser",
+    "browser-security",
+    "web-security",
+    "security",
+    "xss",
+    "dom-xss",
+    "postmessage",
+    "localstorage",
+    "sessionstorage",
+    "indexeddb",
+    "cookies",
+    "websocket",
+    "service-worker",
+    "web-worker",
+    "file-api",
+    "blob-url",
+    "csp",
+    "content-security-policy",
+    "innerhtml",
+    "eval",
+    "owasp",
+    "cwe",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript",
+    "static-analysis"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@interlace/eslint-devkit": "^1.2.1",
+    "tslib": "^2.3.0"
+  },
+  "peerDependencies": {},
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.46.2",
+    "@typescript-eslint/rule-tester": "^8.46.2",
+    "@vitest/coverage-v8": "^4.0.6",
+    "vitest": "^4.0.6"
+  }
+}

@@ -65,6 +65,8 @@ export const noMissingCsrfProtection = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-csrf-protection',
   meta: {
     type: 'problem',
+    deprecated: true,
+    replacedBy: ['@see eslint-plugin-express-security/require-csrf-protection'],
     docs: {
       description: 'Detects missing CSRF token validation in POST/PUT/DELETE requests',
     },

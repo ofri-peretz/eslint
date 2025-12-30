@@ -31,7 +31,7 @@ export default defineConfig({
       exclude: ['node_modules/', 'dist/', '**/*.test.ts'],
       ignoreClassMethods: ['context.report'],
       clean: true,
-      reporter: ['text', 'text-summary', 'html'],
+      reporter: ['text', 'text-summary', 'html', 'lcov'],
       thresholds: {
         lines: 98,
         branches: 75,

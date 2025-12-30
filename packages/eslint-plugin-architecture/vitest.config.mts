@@ -14,7 +14,7 @@ export default defineConfig({
     globalSetup: ['../../vitest.global-setup.ts'],
     coverage: {
       provider: 'v8',
-      reporter: ['json', 'text'],
+      reporter: ['json', 'text', 'lcov'],
       reportOnFailure: true,
       reportsDirectory: './coverage',
       exclude: ['node_modules/', 'dist/', '**/*.test.ts'],

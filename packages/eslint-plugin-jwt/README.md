@@ -2,6 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-jwt.svg)](https://www.npmjs.com/package/eslint-plugin-jwt)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=eslint-plugin-jwt)](https://codecov.io/gh/ofri-peretz/eslint)
 
 **Comprehensive JWT security ESLint plugin with 13 AI-parseable rules.** Detects algorithm confusion (CVE-2022-23540), "Back to the Future" replay attacks (LightSEC 2025), weak secrets, and library-specific vulnerabilities. Every rule provides CWE references, CVSS severity, and AI-assisted fix guidance.
 

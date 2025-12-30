@@ -1,0 +1,97 @@
+{
+  "name": "eslint-plugin-lambda-security",
+  "version": "0.0.1",
+  "description": "Security-focused ESLint plugin for AWS Lambda and Middy applications. Detects insecure API Gateway responses, missing security headers, CORS misconfigurations, input validation issues, and more.",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./types": {
+      "types": "./src/types/index.d.ts",
+      "default": "./src/types/index.js"
+    }
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/eslint-plugin-lambda-security"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "AGENTS.md"
+  ],
+  "keywords": [
+    "eslint",
+    "eslint-plugin",
+    "eslintplugin",
+    "aws",
+    "lambda",
+    "aws-lambda",
+    "middy",
+    "api-gateway",
+    "serverless",
+    "security",
+    "cors",
+    "headers",
+    "validation",
+    "owasp",
+    "cwe",
+    "llm-optimized",
+    "ai-assistant",
+    "typescript",
+    "static-analysis"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@interlace/eslint-devkit": "^1.2.1",
+    "tslib": "^2.3.0"
+  },
+  "peerDependencies": {},
+  "peerDependenciesMeta": {
+    "@aws-sdk/client-lambda": {
+      "optional": true
+    },
+    "@middy/core": {
+      "optional": true
+    },
+    "@middy/http-cors": {
+      "optional": true
+    },
+    "@middy/http-security-headers": {
+      "optional": true
+    },
+    "@middy/validator": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.46.2",
+    "@typescript-eslint/rule-tester": "^8.46.2",
+    "@vitest/coverage-v8": "^4.0.6",
+    "vitest": "^4.0.6"
+  }
+}

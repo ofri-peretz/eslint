@@ -5,6 +5,7 @@
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-dependencies.svg)](https://www.npmjs.com/package/eslint-plugin-dependencies)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=eslint-plugin-import-next)](https://codecov.io/gh/ofri-peretz/eslint)
 
 **Why switch?**
 

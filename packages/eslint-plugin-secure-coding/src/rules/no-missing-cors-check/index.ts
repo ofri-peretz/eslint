@@ -43,6 +43,8 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-cors-check',
   meta: {
     type: 'problem',
+    deprecated: true,
+    replacedBy: ['@see eslint-plugin-express-security/no-permissive-cors'],
     docs: {
       description: 'Detects missing CORS validation (wildcard CORS, missing origin check)',
     },

@@ -48,6 +48,8 @@ export const noInsecureJwt = createRule<RuleOptions, MessageIds>({
   name: 'no-insecure-jwt',
   meta: {
     type: 'problem',
+    deprecated: true,
+    replacedBy: ['@see eslint-plugin-jwt for 13 specialized JWT security rules'],
     docs: {
       description: 'Detects insecure JWT operations and missing signature verification',
     },

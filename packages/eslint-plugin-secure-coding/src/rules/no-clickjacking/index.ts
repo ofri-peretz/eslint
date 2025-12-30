@@ -53,6 +53,8 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
   name: 'no-clickjacking',
   meta: {
     type: 'problem',
+    deprecated: true,
+    replacedBy: ['@see eslint-plugin-express-security/require-helmet'],
     docs: {
       description: 'Detects clickjacking vulnerabilities and missing frame protections',
     },

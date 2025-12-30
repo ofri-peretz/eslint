@@ -1,4 +1,5 @@
 # eslint-plugin-crypto
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=eslint-plugin-crypto)](https://codecov.io/gh/ofri-peretz/eslint)
 
 > Security-focused ESLint plugin with **24 AI-parseable rules** for cryptographic best practices.
 

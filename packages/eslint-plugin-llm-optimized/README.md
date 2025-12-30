@@ -4,6 +4,7 @@
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-llm-optimized.svg)](https://www.npmjs.com/package/eslint-plugin-llm-optimized)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-llm-optimized.svg)](https://www.npmjs.com/package/eslint-plugin-llm-optimized)
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=eslint-plugin-llm-optimized)](https://codecov.io/gh/ofri-peretz/eslint)
 
 > **Keywords:** ESLint plugin, LLM-optimized, AI assistant, auto-fix, ESLint MCP, Model Context Protocol, code quality, security rules, TypeScript ESLint, automated code fixes, GitHub Copilot, Cursor AI, Claude AI, structured error messages, CWE references, deterministic fixes
 

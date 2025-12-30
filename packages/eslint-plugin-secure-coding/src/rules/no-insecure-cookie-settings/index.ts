@@ -114,6 +114,8 @@ export const noInsecureCookieSettings = createRule<RuleOptions, MessageIds>({
   name: 'no-insecure-cookie-settings',
   meta: {
     type: 'problem',
+    deprecated: true,
+    replacedBy: ['@see eslint-plugin-express-security/no-insecure-cookie-options'],
     docs: {
       description: 'Detects insecure cookie configurations (missing httpOnly, secure, sameSite flags)',
     },

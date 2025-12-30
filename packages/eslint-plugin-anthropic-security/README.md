@@ -4,6 +4,7 @@
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-anthropic-security.svg)](https://www.npmjs.com/package/eslint-plugin-anthropic-security)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=eslint-plugin-anthropic-security)](https://codecov.io/gh/ofri-peretz/eslint)
 
 ## Overview
 

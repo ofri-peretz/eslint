@@ -6,6 +6,7 @@
 
 [![npm version](https://badge.fury.io/js/eslint-plugin-vercel-ai-security.svg)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?flag=eslint-plugin-vercel-ai-security)](https://codecov.io/gh/ofri-peretz/eslint)
 [![OWASP LLM Coverage](https://img.shields.io/badge/OWASP%20LLM%202025-10%2F10-brightgreen)](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
 [![OWASP Agentic Coverage](https://img.shields.io/badge/OWASP%20Agentic%202026-9%2F10-brightgreen)](https://owasp.org)
 
