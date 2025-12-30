@@ -72,7 +72,7 @@
         "^nx-release-publish"
       ],
       "options": {
-        "command": "pnpm publish dist/{projectRoot} --access public --no-git-checks",
+        "command": "npm publish dist/{projectRoot} --access public --auth-type=web",
         "cwd": "{workspaceRoot}"
       }
     },

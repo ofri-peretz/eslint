@@ -5,7 +5,9 @@
   "projectType": "library",
   "release": {
     "version": {
-      "manifestRootsToUpdate": ["dist/{projectRoot}"],
+      "manifestRootsToUpdate": [
+        "dist/{projectRoot}"
+      ],
       "currentVersionResolver": "git-tag",
       "fallbackCurrentVersionResolver": "disk"
     }
@@ -14,17 +16,24 @@
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "outputPath": "dist/packages/eslint-plugin-crypto",
         "main": "packages/eslint-plugin-crypto/src/index.ts",
         "tsConfig": "packages/eslint-plugin-crypto/tsconfig.lib.json",
-        "assets": ["packages/eslint-plugin-crypto/*.md", "packages/eslint-plugin-crypto/.npmignore"]
+        "assets": [
+          "packages/eslint-plugin-crypto/*.md",
+          "packages/eslint-plugin-crypto/.npmignore"
+        ]
       }
     },
     "nx-release-publish": {
+      "executor": "nx:run-commands",
       "options": {
-        "packageRoot": "dist/{projectRoot}"
+        "command": "npm publish dist/{projectRoot} --access public --auth-type=web",
+        "cwd": "{workspaceRoot}"
       }
     }
   }

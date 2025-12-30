@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-jwt",
-  "version": "1.0.0",
+  "version": "2.0.4",
   "description": "Security-focused ESLint plugin for JWT operations. Detects algorithm confusion (CVE-2022-23540), weak secrets, missing validation, and library-specific vulnerabilities across jsonwebtoken, jose, express-jwt, @nestjs/jwt, jwks-rsa, and jwt-decode.",
   "type": "commonjs",
   "main": "./src/index.js",
