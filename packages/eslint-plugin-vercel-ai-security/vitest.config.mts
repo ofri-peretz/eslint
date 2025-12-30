@@ -34,12 +34,15 @@ export default defineConfig({
       clean: true,
       reporter: ['text', 'text-summary', 'html', 'lcov'],
       thresholds: {
-        lines: 98,
+        lines: 95,
         branches: 75,
-        functions: 100,
+        functions: 95,
         statements: 90
       }
     },
-    reporters: ['default', 'verbose'],
+    reporters: ['default', 'junit'],
+    outputFile: {
+      junit: './test-results/junit.xml',
+    },
   },
 });

@@ -49,6 +49,9 @@ export default defineConfig({
         statements: 80
       }
     },
-    reporters: ['default', 'verbose'],
+    reporters: ['default', 'junit'],
+    outputFile: {
+      junit: './test-results/junit.xml',
+    },
   },
 });

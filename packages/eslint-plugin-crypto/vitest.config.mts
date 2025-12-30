@@ -18,6 +18,9 @@ export default defineConfig({
       exclude: ['node_modules/', 'dist/', '**/*.test.ts', '**/*.spec.ts'],
       reporter: ['text', 'text-summary', 'html', 'lcov'],
     },
-    reporters: ['default', 'verbose'],
+    reporters: ['default', 'junit'],
+    outputFile: {
+      junit: './test-results/junit.xml',
+    },
   },
 });

@@ -89,12 +89,10 @@ jobs:
               exit 1
             fi
             echo "📊 Running tests with coverage for: $PROJECT"
-            # Add JUnit reporter for Codecov Test Analytics
-            pnpm nx test "$PROJECT" -c ci --coverage --verbose -- --reporter=default --reporter=junit --outputFile=test-results/junit.xml || echo "⚠️ Tests completed with issues"
+            pnpm nx test "$PROJECT" -c ci --coverage --verbose || echo "⚠️ Tests completed with issues"
           else
             echo "📊 Running tests with coverage for all packages..."
-            # Add JUnit reporter for Codecov Test Analytics
-            pnpm nx run-many -t test --all -c ci --coverage --verbose --nxBail=false -- --reporter=default --reporter=junit --outputFile=test-results/junit.xml || echo "⚠️ Some tests may have failed"
+            pnpm nx run-many -t test --all -c ci --coverage --verbose --nxBail=false || echo "⚠️ Some tests may have failed"
           fi
         env:
           NX_SKIP_NX_CLOUD: "true"
@@ -138,18 +136,14 @@ jobs:
           ./codecov upload-process \
             --token ${{ secrets.CODECOV_TOKEN }} \
             --git-service github \
+            --exclude .nx/cache \
             --fail-on-error || echo "⚠️ Codecov upload completed with warnings"
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: 🧪 Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: packages/*/test-results/junit.xml
-          fail_ci_if_error: false
-          verbose: true
+      # NOTE: Test Analytics requires JUnit XML files, but nx run-many doesn't
+      # support per-project output files cleanly. Coverage components provide
+      # sufficient per-package tracking for this monorepo.
 
       # ═══════════════════════════════════════════════════════════════════════
       # COVERAGE SUMMARY

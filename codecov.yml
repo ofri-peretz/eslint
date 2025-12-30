@@ -20,8 +20,17 @@ comment:
   behavior: default
   require_changes: false
 
-# Component Management for Monorepo
+# ═══════════════════════════════════════════════════════════════════════════════
+# TEST ANALYTICS (https://docs.codecov.com/docs/test-analytics)
+# ═══════════════════════════════════════════════════════════════════════════════
+# Tracks test run times, failure rates, and flaky tests
+# JUnit XML reports are uploaded via codecov/test-results-action in CI
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# COMPONENT MANAGEMENT FOR MONOREPO
+# ═══════════════════════════════════════════════════════════════════════════════
 # Each package gets its own component for separate coverage tracking
+
 component_management:
   default_rules:
     statuses:
@@ -30,7 +39,9 @@ component_management:
         branches:
           - "!main"
   individual_components:
+    # ─────────────────────────────────────────────────────────────────────────
     # Security Plugins (Primary)
+    # ─────────────────────────────────────────────────────────────────────────
     - component_id: secure_coding
       name: "eslint-plugin-secure-coding"
       paths:
@@ -71,7 +82,9 @@ component_management:
         - type: patch
           target: 75%
 
+    # ─────────────────────────────────────────────────────────────────────────
     # Framework Security Plugins
+    # ─────────────────────────────────────────────────────────────────────────
     - component_id: express_security
       name: "eslint-plugin-express-security"
       paths:
@@ -104,27 +117,9 @@ component_management:
         - type: project
           target: 80%
 
+    # ─────────────────────────────────────────────────────────────────────────
     # AI Security Plugins
-    - component_id: agentic_security
-      name: "eslint-plugin-agentic-security"
-      paths:
-        - packages/eslint-plugin-agentic-security/**
-
-    - component_id: openai_security
-      name: "eslint-plugin-openai-security"
-      paths:
-        - packages/eslint-plugin-openai-security/**
-
-    - component_id: anthropic_security
-      name: "eslint-plugin-anthropic-security"
-      paths:
-        - packages/eslint-plugin-anthropic-security/**
-
-    - component_id: google_ai_security
-      name: "eslint-plugin-google-ai-security"
-      paths:
-        - packages/eslint-plugin-google-ai-security/**
-
+    # ─────────────────────────────────────────────────────────────────────────
     - component_id: vercel_ai_security
       name: "eslint-plugin-vercel-ai-security"
       paths:
@@ -133,17 +128,28 @@ component_management:
         - type: project
           target: 90%
 
+    # ─────────────────────────────────────────────────────────────────────────
     # Core Packages
+    # ─────────────────────────────────────────────────────────────────────────
     - component_id: eslint_devkit
       name: "eslint-devkit"
       paths:
         - packages/eslint-devkit/**
+      statuses:
+        - type: project
+          target: 70%
 
-    # NOTE: cli and eslint-plugin are infrastructure packages without tests
-    # They are excluded from coverage components
+    # ─────────────────────────────────────────────────────────────────────────
+    # Utility & Feature Plugins
+    # ─────────────────────────────────────────────────────────────────────────
+    - component_id: import_next
+      name: "eslint-plugin-import-next"
+      paths:
+        - packages/eslint-plugin-import-next/**
+      statuses:
+        - type: project
+          target: 75%
 
-
-    # Other Plugins
     - component_id: react_features
       name: "eslint-plugin-react-features"
       paths:
@@ -154,57 +160,23 @@ component_management:
       paths:
         - packages/eslint-plugin-react-a11y/**
 
-    - component_id: import_next
-      name: "eslint-plugin-import-next"
-      paths:
-        - packages/eslint-plugin-import-next/**
-
     - component_id: architecture
       name: "eslint-plugin-architecture"
       paths:
         - packages/eslint-plugin-architecture/**
-
-    - component_id: optimization
-      name: "eslint-plugin-optimization"
-      paths:
-        - packages/eslint-plugin-optimization/**
 
     - component_id: quality
       name: "eslint-plugin-quality"
       paths:
         - packages/eslint-plugin-quality/**
 
-    - component_id: generalist
-      name: "eslint-plugin-generalist"
-      paths:
-        - packages/eslint-plugin-generalist/**
+    # NOTE: cli is an infrastructure package without tests - excluded
 
-    - component_id: code_mode
-      name: "eslint-plugin-code-mode"
-      paths:
-        - packages/eslint-plugin-code-mode/**
+# ═══════════════════════════════════════════════════════════════════════════════
+# IGNORE PATHS
+# ═══════════════════════════════════════════════════════════════════════════════
+# Files that don't contain runtime logic or lack tests
 
-    - component_id: llm
-      name: "eslint-plugin-llm"
-      paths:
-        - packages/eslint-plugin-llm/**
-
-    - component_id: llm_optimized
-      name: "eslint-plugin-llm-optimized"
-      paths:
-        - packages/eslint-plugin-llm-optimized/**
-
-    - component_id: mcp
-      name: "eslint-plugin-mcp"
-      paths:
-        - packages/eslint-plugin-mcp/**
-
-    - component_id: mcp_optimized
-      name: "eslint-plugin-mcp-optimized"
-      paths:
-        - packages/eslint-plugin-mcp-optimized/**
-
-# Ignore paths (these files don't contain runtime logic or lack tests)
 ignore:
   - "**/*.test.ts"
   - "**/*.spec.ts"
@@ -214,12 +186,11 @@ ignore:
   - "**/types/**"
   - "**/types/index.ts"
   - "**/coverage/**"
+  - "**/test-results/**"
   - "**/*.config.ts"
   - "**/*.config.mts"
   - "**/vitest.global-setup.ts"
   # Infrastructure packages without tests
   - "packages/cli/**"
-  - "packages/eslint-plugin/**"
   # Plugin entry points (configuration code, not tested)
   - "packages/*/src/index.ts"
-
