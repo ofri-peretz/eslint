@@ -630,27 +630,14 @@ jobs:
               fi
               
               NEW_VERSION=$(node -p "require('./packages/$PACKAGE/package.json').version")
-              echo "✅ New version: $NEW_VERSION"
+              echo "✅ Version: $NEW_VERSION"
               
               # ──────────────────────────────────────────────────────────────
-              # TEST + BUILD (Always required - build depends on test)
+              # BUILD (test runs automatically as dependency via nx graph)
               # ──────────────────────────────────────────────────────────────
-              echo ""
-              echo "🧪 Testing package..."
-              pnpm nx test $PACKAGE -c ci  || {
-                echo "❌ FAILED: $PACKAGE"
-                echo "   └─ Stage: Test (pre-publish)"
-                echo "   └─ Action: Run 'pnpm nx test $PACKAGE' locally to see failures"
-                FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
-                continue
-              }
-              
-              echo ""
-              echo "🔨 Building package..."
-              pnpm nx build $PACKAGE  || {
-                echo "❌ FAILED: $PACKAGE"
-                echo "   └─ Stage: Build (pre-publish)"
-                echo "   └─ Action: Run 'pnpm nx build $PACKAGE' locally to see errors"
+              echo "🔨 Building..."
+              pnpm nx build $PACKAGE || {
+                echo "❌ FAILED: $PACKAGE (build)"
                 FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
                 continue
               }
