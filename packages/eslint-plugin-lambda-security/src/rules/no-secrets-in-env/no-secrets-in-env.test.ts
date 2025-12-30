@@ -109,5 +109,54 @@ ruleTester.run('no-secrets-in-env', noSecretsInEnv, {
       options: [{ allowInTests: false }],
       errors: [{ messageId: 'secretsInEnv' }],
     },
+    // ========== INVALID: Bracket notation for process.env ==========
+    {
+      code: `process.env['API_SECRET'] = 'my-bracket-secret-123456';`,
+      errors: [{ messageId: 'secretsInEnv' }],
+    },
+    {
+      code: `process.env['PASSWORD'] = 'my-bracket-password-123456';`,
+      errors: [{ messageId: 'secretsInEnv' }],
+    },
+    // ========== INVALID: Bracket notation for property keys ==========
+    {
+      code: `
+        const envConfig = {
+          'DB_PASSWORD': 'string-key-secret-12345'
+        };
+      `,
+      errors: [{ messageId: 'secretsInEnv' }],
+    },
+    {
+      code: `
+        const config = {
+          'CLIENT_SECRET': 'another-string-secret-123456'
+        };
+      `,
+      errors: [{ messageId: 'secretsInEnv' }],
+    },
+    // ========== INVALID: Template literals with secrets ==========
+    {
+      code: 'process.env.DB_PASSWORD = `my-template-secret-${version}-12345`;',
+      errors: [{ messageId: 'secretsInEnv' }],
+    },
+    {
+      code: `
+        const envConfig = {
+          API_KEY: \`hardcoded-template-key-12345\`
+        };
+      `,
+      errors: [{ messageId: 'secretsInEnv' }],
+    },
+    // ========== INVALID: Custom patterns with additionalPatterns ==========
+    {
+      code: `
+        const settings = {
+          MY_CUSTOM_CREDENTIAL: 'custom-cred-value-12345678'
+        };
+      `,
+      options: [{ additionalPatterns: ['custom_credential'] }],
+      errors: [{ messageId: 'secretsInEnv' }],
+    },
   ],
 });

@@ -1,0 +1,219 @@
+# Codecov Configuration for ofri-peretz/eslint monorepo
+# https://docs.codecov.com/docs/codecov-yaml
+
+coverage:
+  precision: 2
+  round: down
+  range: "70...100"
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 5%
+    patch:
+      default:
+        target: auto
+        threshold: 5%
+
+comment:
+  layout: "header, diff, flags, components"
+  behavior: default
+  require_changes: false
+
+# Component Management for Monorepo
+# Each package gets its own component for separate coverage tracking
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: auto
+        branches:
+          - "!main"
+  individual_components:
+    # Security Plugins (Primary)
+    - component_id: secure_coding
+      name: "eslint-plugin-secure-coding"
+      paths:
+        - packages/eslint-plugin-secure-coding/**
+      statuses:
+        - type: project
+          target: 85%
+        - type: patch
+          target: 80%
+
+    - component_id: crypto
+      name: "eslint-plugin-crypto"
+      paths:
+        - packages/eslint-plugin-crypto/**
+      statuses:
+        - type: project
+          target: 85%
+        - type: patch
+          target: 80%
+
+    - component_id: jwt
+      name: "eslint-plugin-jwt"
+      paths:
+        - packages/eslint-plugin-jwt/**
+      statuses:
+        - type: project
+          target: 85%
+        - type: patch
+          target: 80%
+
+    - component_id: pg
+      name: "eslint-plugin-pg"
+      paths:
+        - packages/eslint-plugin-pg/**
+      statuses:
+        - type: project
+          target: 80%
+        - type: patch
+          target: 75%
+
+    # Framework Security Plugins
+    - component_id: express_security
+      name: "eslint-plugin-express-security"
+      paths:
+        - packages/eslint-plugin-express-security/**
+      statuses:
+        - type: project
+          target: 80%
+
+    - component_id: nestjs_security
+      name: "eslint-plugin-nestjs-security"
+      paths:
+        - packages/eslint-plugin-nestjs-security/**
+      statuses:
+        - type: project
+          target: 80%
+
+    - component_id: lambda_security
+      name: "eslint-plugin-lambda-security"
+      paths:
+        - packages/eslint-plugin-lambda-security/**
+      statuses:
+        - type: project
+          target: 80%
+
+    - component_id: browser_security
+      name: "eslint-plugin-browser-security"
+      paths:
+        - packages/eslint-plugin-browser-security/**
+      statuses:
+        - type: project
+          target: 80%
+
+    # AI Security Plugins
+    - component_id: agentic_security
+      name: "eslint-plugin-agentic-security"
+      paths:
+        - packages/eslint-plugin-agentic-security/**
+
+    - component_id: openai_security
+      name: "eslint-plugin-openai-security"
+      paths:
+        - packages/eslint-plugin-openai-security/**
+
+    - component_id: anthropic_security
+      name: "eslint-plugin-anthropic-security"
+      paths:
+        - packages/eslint-plugin-anthropic-security/**
+
+    - component_id: google_ai_security
+      name: "eslint-plugin-google-ai-security"
+      paths:
+        - packages/eslint-plugin-google-ai-security/**
+
+    - component_id: vercel_ai_security
+      name: "eslint-plugin-vercel-ai-security"
+      paths:
+        - packages/eslint-plugin-vercel-ai-security/**
+      statuses:
+        - type: project
+          target: 90%
+
+    # Core Packages
+    - component_id: eslint_devkit
+      name: "eslint-devkit"
+      paths:
+        - packages/eslint-devkit/**
+
+    - component_id: eslint_plugin
+      name: "eslint-plugin"
+      paths:
+        - packages/eslint-plugin/**
+
+    - component_id: cli
+      name: "cli"
+      paths:
+        - packages/cli/**
+
+    # Other Plugins
+    - component_id: react_features
+      name: "eslint-plugin-react-features"
+      paths:
+        - packages/eslint-plugin-react-features/**
+
+    - component_id: react_a11y
+      name: "eslint-plugin-react-a11y"
+      paths:
+        - packages/eslint-plugin-react-a11y/**
+
+    - component_id: import_next
+      name: "eslint-plugin-import-next"
+      paths:
+        - packages/eslint-plugin-import-next/**
+
+    - component_id: architecture
+      name: "eslint-plugin-architecture"
+      paths:
+        - packages/eslint-plugin-architecture/**
+
+    - component_id: optimization
+      name: "eslint-plugin-optimization"
+      paths:
+        - packages/eslint-plugin-optimization/**
+
+    - component_id: quality
+      name: "eslint-plugin-quality"
+      paths:
+        - packages/eslint-plugin-quality/**
+
+    - component_id: generalist
+      name: "eslint-plugin-generalist"
+      paths:
+        - packages/eslint-plugin-generalist/**
+
+    - component_id: code_mode
+      name: "eslint-plugin-code-mode"
+      paths:
+        - packages/eslint-plugin-code-mode/**
+
+    - component_id: llm
+      name: "eslint-plugin-llm"
+      paths:
+        - packages/eslint-plugin-llm/**
+
+    - component_id: llm_optimized
+      name: "eslint-plugin-llm-optimized"
+      paths:
+        - packages/eslint-plugin-llm-optimized/**
+
+    - component_id: mcp
+      name: "eslint-plugin-mcp"
+      paths:
+        - packages/eslint-plugin-mcp/**
+
+    - component_id: mcp_optimized
+      name: "eslint-plugin-mcp-optimized"
+      paths:
+        - packages/eslint-plugin-mcp-optimized/**
+
+# Ignore paths
+ignore:
+  - "**/*.test.ts"
+  - "**/*.spec.ts"
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/.nx/**"
