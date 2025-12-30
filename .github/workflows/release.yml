@@ -123,7 +123,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  NODE_VERSION: "20"
+  NODE_VERSION: "24"
   PNPM_VERSION: "10.18.3"
   # Dependency order: devkit MUST be first since others depend on it
   # This array defines the release sequence for all-affected mode
@@ -161,6 +161,70 @@ jobs:
 
       - name: 📦 Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: 🧹 Clean up orphaned tags
+        id: cleanup-tags
+        run: |
+          echo "🧹 Checking for orphaned tags (git tag exists but npm version doesn't)..."
+          echo ""
+
+          ORPHANED_TAGS=""
+          CLEANED_COUNT=0
+
+          # Check all publishable packages
+          for pkg in eslint-devkit eslint-plugin-secure-coding eslint-plugin-crypto eslint-plugin-jwt eslint-plugin-pg eslint-plugin-express-security eslint-plugin-nestjs-security eslint-plugin-browser-security eslint-plugin-lambda-security eslint-plugin-vercel-ai-security eslint-plugin-architecture eslint-plugin-quality eslint-plugin-react-a11y eslint-plugin-react-features eslint-plugin-import-next cli; do
+            # Resolve npm package name
+            case "$pkg" in
+              eslint-devkit) NPM_NAME="@interlace/eslint-devkit" ;;
+              cli) NPM_NAME="@interlace/cli" ;;
+              *) NPM_NAME="$pkg" ;;
+            esac
+            
+            # Get local version from package.json
+            LOCAL_VER=$(node -p "require('./packages/$pkg/package.json').version" 2>/dev/null || echo "")
+            if [ -z "$LOCAL_VER" ]; then
+              continue
+            fi
+            
+            EXPECTED_TAG="${pkg}@${LOCAL_VER}"
+            
+            # Check if git tag exists
+            if git rev-parse "$EXPECTED_TAG" >/dev/null 2>&1; then
+              # Check if npm version exists
+              NPM_VER=$(npm view "$NPM_NAME@$LOCAL_VER" version 2>/dev/null || echo "")
+              
+              if [ -z "$NPM_VER" ]; then
+                echo "🗑️ ORPHANED TAG FOUND: $EXPECTED_TAG"
+                echo "   └─ Git tag exists but npm version $NPM_NAME@$LOCAL_VER does not exist"
+                echo "   └─ Deleting local and remote tag..."
+                
+                # Delete local tag
+                git tag -d "$EXPECTED_TAG" 2>/dev/null || true
+                
+                # Delete remote tag
+                git push origin ":refs/tags/$EXPECTED_TAG" 2>/dev/null || true
+                
+                echo "   ✅ Deleted orphaned tag: $EXPECTED_TAG"
+                ORPHANED_TAGS="$ORPHANED_TAGS $EXPECTED_TAG"
+                CLEANED_COUNT=$((CLEANED_COUNT + 1))
+              fi
+            fi
+          done
+
+          if [ $CLEANED_COUNT -gt 0 ]; then
+            echo ""
+            echo "═══════════════════════════════════════════════════════════════"
+            echo "🧹 ORPHANED TAG CLEANUP SUMMARY"
+            echo "═══════════════════════════════════════════════════════════════"
+            echo "Deleted $CLEANED_COUNT orphaned tag(s):$ORPHANED_TAGS"
+            echo "These tags existed in git but their versions were never published to npm."
+            echo "═══════════════════════════════════════════════════════════════"
+          else
+            echo "✅ No orphaned tags found"
+          fi
+
+          echo "orphaned-count=$CLEANED_COUNT" >> $GITHUB_OUTPUT
+          echo "orphaned-tags=$ORPHANED_TAGS" >> $GITHUB_OUTPUT
 
       - name: 🔍 Detect packages to release
         id: detect
@@ -282,6 +346,12 @@ jobs:
 
       - name: 📦 Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: ⬆️ Upgrade npm for Trusted Publishers
+        run: |
+          echo "📦 Upgrading npm to 11+ for Trusted Publishers OIDC support..."
+          npm install -g npm@latest
+          echo "✅ npm version: $(npm --version)"
 
       - name: 🗄️ Restore NX cache
         uses: actions/cache@v4
