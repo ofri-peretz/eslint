@@ -540,7 +540,7 @@ jobs:
               
               # LINT (matches lint-pr.yml)
               echo "📝 Linting..."
-              pnpm nx lint $PACKAGE --verbose || {
+              pnpm nx lint $PACKAGE  || {
                 echo "❌ FAILED: $PACKAGE"
                 echo "   └─ Stage: Lint"
                 echo "   └─ Action: Run 'pnpm nx lint $PACKAGE' locally to see errors"
@@ -550,7 +550,7 @@ jobs:
               
               # TEST (matches ci-pr.yml)
               echo "🧪 Testing..."
-              pnpm nx test $PACKAGE -c ci --verbose || {
+              pnpm nx test $PACKAGE -c ci  || {
                 echo "❌ FAILED: $PACKAGE"
                 echo "   └─ Stage: Test"
                 echo "   └─ Action: Run 'pnpm nx test $PACKAGE' locally to see failures"
@@ -560,7 +560,7 @@ jobs:
               
               # BUILD (matches ci-pr.yml)
               echo "🔨 Building..."
-              pnpm nx build $PACKAGE --verbose || {
+              pnpm nx build $PACKAGE  || {
                 echo "❌ FAILED: $PACKAGE"
                 echo "   └─ Stage: Build"
                 echo "   └─ Action: Run 'pnpm nx build $PACKAGE' locally to see errors"
@@ -570,7 +570,7 @@ jobs:
               
               # TYPECHECK (matches ci-pr.yml)
               echo "🔍 Typechecking..."
-              pnpm nx typecheck $PACKAGE --verbose || {
+              pnpm nx typecheck $PACKAGE  || {
                 echo "❌ FAILED: $PACKAGE"
                 echo "   └─ Stage: Typecheck"
                 echo "   └─ Action: Run 'pnpm nx typecheck $PACKAGE' locally to see errors"
@@ -637,7 +637,7 @@ jobs:
               # ──────────────────────────────────────────────────────────────
               echo ""
               echo "🧪 Testing package..."
-              pnpm nx test $PACKAGE -c ci --verbose || {
+              pnpm nx test $PACKAGE -c ci  || {
                 echo "❌ FAILED: $PACKAGE"
                 echo "   └─ Stage: Test (pre-publish)"
                 echo "   └─ Action: Run 'pnpm nx test $PACKAGE' locally to see failures"
@@ -647,7 +647,7 @@ jobs:
               
               echo ""
               echo "🔨 Building package..."
-              pnpm nx build $PACKAGE --verbose || {
+              pnpm nx build $PACKAGE  || {
                 echo "❌ FAILED: $PACKAGE"
                 echo "   └─ Stage: Build (pre-publish)"
                 echo "   └─ Action: Run 'pnpm nx build $PACKAGE' locally to see errors"
