@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-architecture",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "ESLint architecture rules enforcing DDD, API boundaries, and project structure.",
   "type": "commonjs",
   "main": "./src/index.js",
