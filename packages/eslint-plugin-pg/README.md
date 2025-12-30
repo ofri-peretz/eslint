@@ -28,35 +28,37 @@ src/db.ts
 
 ---
 
-## 🔐 13 Rules by Category
+## 🔐 Rules
+
+💼 = Set in `recommended` | 🔧 = Auto-fixable | 💡 = Has suggestions
 
 ### Security (6 rules)
 
-| Rule                                                                 | CWE     | Severity | Description                                     |
-| -------------------------------------------------------------------- | ------- | -------- | ----------------------------------------------- |
-| [no-unsafe-query](./docs/rules/no-unsafe-query.md)                   | CWE-89  | Critical | Prevents SQL injection via string interpolation |
-| [no-insecure-ssl](./docs/rules/no-insecure-ssl.md)                   | CWE-295 | High     | Prevents disabling SSL certificate validation   |
-| [no-hardcoded-credentials](./docs/rules/no-hardcoded-credentials.md) | CWE-798 | High     | Prevents hardcoded passwords in config          |
-| [no-unsafe-search-path](./docs/rules/no-unsafe-search-path.md)       | CWE-426 | High     | Prevents dynamic search_path hijacking          |
-| [no-unsafe-copy-from](./docs/rules/no-unsafe-copy-from.md)           | CWE-22  | Critical | Prevents COPY FROM file path exposure           |
-| [no-transaction-on-pool](./docs/rules/no-transaction-on-pool.md)     | CWE-362 | High     | Prevents transaction commands on pool           |
+| Rule                                                                 | CWE     | OWASP    | Description                                     | 💼  | 🔧  | 💡  |
+| -------------------------------------------------------------------- | ------- | -------- | ----------------------------------------------- | --- | --- | --- |
+| [no-unsafe-query](./docs/rules/no-unsafe-query.md)                   | CWE-89  | A03:2021 | Prevents SQL injection via string interpolation | 💼  |     | 💡  |
+| [no-insecure-ssl](./docs/rules/no-insecure-ssl.md)                   | CWE-295 | A05:2021 | Prevents disabling SSL certificate validation   | 💼  |     | 💡  |
+| [no-hardcoded-credentials](./docs/rules/no-hardcoded-credentials.md) | CWE-798 | A05:2021 | Prevents hardcoded passwords in config          | 💼  |     | 💡  |
+| [no-unsafe-search-path](./docs/rules/no-unsafe-search-path.md)       | CWE-426 | A01:2021 | Prevents dynamic search_path hijacking          | 💼  |     | 💡  |
+| [no-unsafe-copy-from](./docs/rules/no-unsafe-copy-from.md)           | CWE-22  | A03:2021 | Prevents COPY FROM file path exposure           | 💼  |     | 💡  |
+| [no-transaction-on-pool](./docs/rules/no-transaction-on-pool.md)     | CWE-362 | A04:2021 | Prevents transaction commands on pool           | 💼  |     | 💡  |
 
 ### Resource Management (3 rules)
 
-| Rule                                                                   | CWE     | Severity | Description                        |
-| ---------------------------------------------------------------------- | ------- | -------- | ---------------------------------- |
-| [no-missing-client-release](./docs/rules/no-missing-client-release.md) | CWE-772 | High     | Ensures pool clients are released  |
-| [prevent-double-release](./docs/rules/prevent-double-release.md)       | CWE-415 | Medium   | Prevents double client.release()   |
-| [no-floating-query](./docs/rules/no-floating-query.md)                 | CWE-252 | Medium   | Ensures query promises are handled |
+| Rule                                                                   | CWE     | OWASP    | Description                        | 💼  | 🔧  | 💡  |
+| ---------------------------------------------------------------------- | ------- | -------- | ---------------------------------- | --- | --- | --- |
+| [no-missing-client-release](./docs/rules/no-missing-client-release.md) | CWE-772 | A09:2021 | Ensures pool clients are released  | 💼  |     | 💡  |
+| [prevent-double-release](./docs/rules/prevent-double-release.md)       | CWE-415 | A04:2021 | Prevents double client.release()   | 💼  |     | 💡  |
+| [no-floating-query](./docs/rules/no-floating-query.md)                 | CWE-252 | A06:2021 | Ensures query promises are handled | 💼  |     | 💡  |
 
 ### Quality & Performance (4 rules)
 
-| Rule                                                         | Severity | Description                                    |
-| ------------------------------------------------------------ | -------- | ---------------------------------------------- |
-| [check-query-params](./docs/rules/check-query-params.md)     | Medium   | Validates parameter count matches placeholders |
-| [no-select-all](./docs/rules/no-select-all.md)               | Low      | Discourages SELECT \*                          |
-| [prefer-pool-query](./docs/rules/prefer-pool-query.md)       | Low      | Suggests pool.query() for simple queries       |
-| [no-batch-insert-loop](./docs/rules/no-batch-insert-loop.md) | Medium   | Prevents N+1 mutation queries                  |
+| Rule                                                         | CWE     | OWASP    | Description                                    | 💼  | 🔧  | 💡  |
+| ------------------------------------------------------------ | ------- | -------- | ---------------------------------------------- | --- | --- | --- |
+| [check-query-params](./docs/rules/check-query-params.md)     | CWE-20  | A06:2021 | Validates parameter count matches placeholders | 💼  |     | 💡  |
+| [no-select-all](./docs/rules/no-select-all.md)               | CWE-400 | A04:2021 | Discourages SELECT \*                          |     |     | 💡  |
+| [prefer-pool-query](./docs/rules/prefer-pool-query.md)       | CWE-404 | A04:2021 | Suggests pool.query() for simple queries       |     |     | 💡  |
+| [no-batch-insert-loop](./docs/rules/no-batch-insert-loop.md) | CWE-400 | A04:2021 | Prevents N+1 mutation queries                  | 💼  |     | 💡  |
 
 ---
 

@@ -694,6 +694,77 @@ AGENTS.md
 .idea/
 ```
 
+### npm Publishing Requirements
+
+> **CRITICAL**: Every published npm package MUST include `README.md`. A package without a README provides no value to users and damages brand perception.
+
+#### Required Files in Published Package
+
+| File           |     Required     | Purpose                                              |
+| -------------- | :--------------: | ---------------------------------------------------- |
+| `README.md`    | ✅ **MANDATORY** | Primary documentation shown on npm                   |
+| `package.json` |        ✅        | Package metadata                                     |
+| `LICENSE`      |        ✅        | Legal requirements                                   |
+| `CHANGELOG.md` |        ✅        | Version history                                      |
+| `AGENTS.md`    |        ⚠️        | AI assistant instructions (optional but recommended) |
+| `*.d.ts`       |        ✅        | TypeScript type definitions                          |
+| `*.js`         |        ✅        | Compiled JavaScript                                  |
+
+#### project.json Assets Configuration
+
+Every plugin's `project.json` MUST include README.md in the build assets:
+
+```json
+{
+  "targets": {
+    "build": {
+      "options": {
+        "assets": [
+          "packages/{plugin-name}/README.md", // ← MANDATORY
+          "packages/{plugin-name}/LICENSE",
+          "packages/{plugin-name}/CHANGELOG.md",
+          "packages/{plugin-name}/.npmignore"
+        ]
+      }
+    }
+  }
+}
+```
+
+Alternative glob pattern (also acceptable):
+
+```json
+"assets": ["packages/{plugin-name}/*.md", "packages/{plugin-name}/.npmignore"]
+```
+
+#### Pre-Publish Verification Checklist
+
+Before running `npm publish`, verify:
+
+```bash
+# 1. Build the package
+nx run {plugin-name}:build
+
+# 2. Verify README.md exists in dist
+ls -la dist/packages/{plugin-name}/README.md
+
+# 3. Check README.md content is not empty
+head -20 dist/packages/{plugin-name}/README.md
+
+# 4. Verify all required files exist
+ls dist/packages/{plugin-name}/ | grep -E "(README|LICENSE|CHANGELOG|package.json)"
+```
+
+#### ❌ BLOCKING: Missing README
+
+If `README.md` is missing from the dist folder:
+
+1. **DO NOT PUBLISH** - npm will show "This package does not have a README"
+2. Check `project.json` assets configuration
+3. Verify the source `README.md` exists in the package root
+4. Run `nx run {plugin-name}:build --skip-nx-cache` to rebuild
+5. Verify the file was copied to `dist/packages/{plugin-name}/README.md`
+
 ### CHANGELOG.md Format
 
 ```markdown
