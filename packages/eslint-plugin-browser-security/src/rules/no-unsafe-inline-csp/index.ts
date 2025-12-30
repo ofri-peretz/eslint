@@ -8,7 +8,6 @@
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import {
-  AST_NODE_TYPES,
   createRule,
   formatLLMMessage,
   MessageIcons,
