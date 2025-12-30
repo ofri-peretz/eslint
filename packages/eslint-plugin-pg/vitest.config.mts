@@ -30,7 +30,7 @@ export default defineConfig({
       provider: 'v8',
       reportOnFailure: true,
       reportsDirectory: './coverage',
-      include: ['src/rules/**/index.ts'],
+      include: ['src/**/*.ts'],
       exclude: ['node_modules/', 'dist/', '**/*.test.ts', '**/*.spec.ts'],
       ignoreClassMethods: ['context.report'],
       clean: true,
