@@ -85,7 +85,7 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
         // Export with declaration: export const foo = 1;
         if (node.declaration) {
           if (node.declaration.type === AST_NODE_TYPES.VariableDeclaration) {
-            node.declaration.declarations.forEach((decl) => {
+            node.declaration.declarations.forEach((decl: TSESTree.VariableDeclarator) => {
               if (decl.id.type === AST_NODE_TYPES.Identifier) {
                 checkAndAddExport(decl.id.name, node);
               }
@@ -109,7 +109,7 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
         }
 
         // Export specifiers: export { foo, bar };
-        node.specifiers.forEach((spec) => {
+        node.specifiers.forEach((spec: TSESTree.ExportSpecifier) => {
           const exportedName =
             spec.exported.type === AST_NODE_TYPES.Identifier
               ? spec.exported.name
@@ -126,10 +126,7 @@ export const exportRule = createRule<RuleOptions, MessageIds>({
       ExportAllDeclaration(node: TSESTree.ExportAllDeclaration) {
         // export * as name from '...'
         if (node.exported) {
-          const exportedName =
-            node.exported.type === AST_NODE_TYPES.Identifier
-              ? node.exported.name
-              : node.exported.value;
+          const exportedName = node.exported.name;
           checkAndAddExport(exportedName, node);
         }
         // Regular export * doesn't create named conflicts we can statically detect

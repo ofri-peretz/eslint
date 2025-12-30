@@ -4,8 +4,13 @@
  *
  * @see https://github.com/import-js/eslint-plugin-import/blob/main/docs/rules/consistent-type-specifier-style.md
  */
-import type { TSESTree, TSESLint } from '@interlace/eslint-devkit';
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import type { TSESTree } from '@interlace/eslint-devkit';
+import {
+  createRule,
+  formatLLMMessage,
+  MessageIcons,
+  TSESLint,
+} from '@interlace/eslint-devkit';
 
 type MessageIds = 'preferInline' | 'preferTopLevel';
 
@@ -58,6 +63,22 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
     const style = context.options[0] || 'prefer-inline';
     const sourceCode = context.getSourceCode();
 
+    /**
+     * Get the text for a specifier, handling aliasing
+     */
+    function getSpecifierText(spec: TSESTree.ImportSpecifier): string {
+      const imported =
+        spec.imported.type === 'Identifier'
+          ? spec.imported.name
+          : spec.imported.value;
+      const local = spec.local.name;
+
+      if (imported === local) {
+        return imported;
+      }
+      return `${imported} as ${local}`;
+    }
+
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const isTypeImport = node.importKind === 'type';
@@ -66,35 +87,30 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
           // If using top-level type import with named specifiers, suggest inline
           if (isTypeImport && node.specifiers.length > 0) {
             const namedSpecifiers = node.specifiers.filter(
-              (s) => s.type === 'ImportSpecifier',
-            ) as TSESTree.ImportSpecifier[];
+              (s: TSESTree.ImportClause): s is TSESTree.ImportSpecifier =>
+                s.type === 'ImportSpecifier',
+            );
 
             if (namedSpecifiers.length > 0) {
               context.report({
                 node,
                 messageId: 'preferInline',
                 data: {
-                  name: namedSpecifiers
-                    .map((s) => s.local.name)
-                    .join(', '),
+                  name: namedSpecifiers.map((s: TSESTree.ImportSpecifier) => s.local.name).join(', '),
                 },
-                fix(fixer) {
+                fix(fixer: TSESLint.RuleFixer) {
+                  // Build the new import statement using AST
                   // Convert: import type { Foo, Bar } from 'x'
                   // To: import { type Foo, type Bar } from 'x'
-                  const importText = sourceCode.getText(node);
-                  const fixed = importText
-                    .replace(/^import\s+type\s*\{/, 'import {')
-                    .replace(/\{([^}]+)\}/, (match, inner: string) => {
-                      const parts = inner.split(',').map((part) => {
-                        const trimmed = part.trim();
-                        if (trimmed && !trimmed.startsWith('type ')) {
-                          return ' type ' + trimmed;
-                        }
-                        return part;
-                      });
-                      return '{' + parts.join(',') + '}';
-                    });
-                  return fixer.replaceText(node, fixed);
+
+                  const specifiersText = namedSpecifiers
+                    .map((spec: TSESTree.ImportSpecifier) => `type ${getSpecifierText(spec)}`)
+                    .join(', ');
+
+                  const sourceText = sourceCode.getText(node.source);
+                  const newImport = `import { ${specifiersText} } from ${sourceText};`;
+
+                  return fixer.replaceText(node, newImport);
                 },
               });
             }
@@ -103,11 +119,11 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
           // prefer-top-level
           // Check for inline type specifiers
           const namedSpecifiers = node.specifiers.filter(
-            (s) => s.type === 'ImportSpecifier',
-          ) as TSESTree.ImportSpecifier[];
+            (s: TSESTree.ImportClause): s is TSESTree.ImportSpecifier => s.type === 'ImportSpecifier',
+          );
 
           const inlineTypeSpecifiers = namedSpecifiers.filter(
-            (s) => s.importKind === 'type',
+            (s: TSESTree.ImportSpecifier) => s.importKind === 'type',
           );
 
           // If all named imports are type imports, suggest top-level
@@ -120,19 +136,21 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
               node,
               messageId: 'preferTopLevel',
               data: {
-                name: namedSpecifiers
-                  .map((s) => s.local.name)
-                  .join(', '),
+                name: namedSpecifiers.map((s: TSESTree.ImportSpecifier) => s.local.name).join(', '),
               },
-              fix(fixer) {
+              fix(fixer: TSESLint.RuleFixer) {
+                // Build the new import statement using AST
                 // Convert: import { type Foo, type Bar } from 'x'
                 // To: import type { Foo, Bar } from 'x'
-                const importText = sourceCode.getText(node);
-                const fixed = importText
-                  .replace(/^import\s*\{/, 'import type {')
-                  .replace(/\{\s*type\s+/g, '{ ')
-                  .replace(/,\s*type\s+/g, ', ');
-                return fixer.replaceText(node, fixed);
+
+                const specifiersText = namedSpecifiers
+                  .map((spec: TSESTree.ImportSpecifier) => getSpecifierText(spec))
+                  .join(', ');
+
+                const sourceText = sourceCode.getText(node.source);
+                const newImport = `import type { ${specifiersText} } from ${sourceText};`;
+
+                return fixer.replaceText(node, newImport);
               },
             });
           }

@@ -56,7 +56,7 @@ export const noNamespace = createRule<RuleOptions, MessageIds>({
     const ignorePatterns = options.ignore || [];
 
     function isIgnored(source: string): boolean {
-      return ignorePatterns.some((pattern) => {
+      return ignorePatterns.some((pattern: string) => {
         // Simple glob matching
         const regex = new RegExp(
           '^' +
@@ -78,7 +78,7 @@ export const noNamespace = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        node.specifiers.forEach((spec) => {
+        node.specifiers.forEach((spec: TSESTree.ImportClause) => {
           if (spec.type === 'ImportNamespaceSpecifier') {
             context.report({
               node: spec,

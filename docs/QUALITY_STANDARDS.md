@@ -413,6 +413,76 @@ Identifier(node) {
    - ⚠️ String.includes: OK, but cache if repeated
    - ❌ JSON.parse in visitor: Never
 
+### 3.1 AST-First Rule Design
+
+> **Principle**: Always prefer AST validation over regex manipulation. AST-based detection is **significantly more performant** and **more reliable** than string/regex parsing.
+
+#### When to Use AST vs Regex
+
+| Scenario                       | Approach | Rationale                                       |
+| ------------------------------ | -------- | ----------------------------------------------- |
+| **Detecting code patterns**    | ✅ AST   | Nodes provide structured, reliable access       |
+| **Auto-fixing code**           | ✅ AST   | Build new code from nodes, not string manip     |
+| **Validating imports/exports** | ✅ AST   | ImportDeclaration, ExportDeclaration nodes      |
+| **Parsing comment content**    | ⚠️ Regex | Comments don't have AST - regex acceptable here |
+| **Matching arbitrary strings** | ⚠️ Regex | User-defined patterns need regex                |
+| **Detecting string literals**  | ✅ AST   | Use `Literal` node + type checking              |
+
+#### AST-First Examples
+
+```typescript
+// ❌ BAD: Using regex to modify import statement
+fix(fixer) {
+  const importText = sourceCode.getText(node);
+  const fixed = importText
+    .replace(/^import\s+type\s*\{/, 'import {')
+    .replace(/\{([^}]+)\}/, ...);  // Fragile!
+  return fixer.replaceText(node, fixed);
+}
+
+// ✅ GOOD: Using AST to build new import
+fix(fixer) {
+  const specifiersText = namedSpecifiers
+    .map((spec) => getSpecifierText(spec))
+    .join(', ');
+  const sourceText = sourceCode.getText(node.source);
+  const newImport = `import { ${specifiersText} } from ${sourceText};`;
+  return fixer.replaceText(node, newImport);
+}
+```
+
+#### Acceptable Regex Use Cases
+
+1. **Comment parsing** (no AST representation):
+
+   ```typescript
+   // Comments don't have structured AST - regex is appropriate
+   const match = comment.value.match(/webpackChunkName:\s*["']([^"']+)["']/);
+   ```
+
+2. **User-configurable patterns**:
+
+   ```typescript
+   // Allow users to define their own ignore patterns
+   const ignorePatterns = options.ignore || [];
+   return ignorePatterns.some((pattern) => new RegExp(pattern).test(source));
+   ```
+
+3. **String content validation** (not code structure):
+   ```typescript
+   // Checking the VALUE of a string, not code structure
+   if (/password|secret|key/i.test(node.value)) { ... }
+   ```
+
+#### Pre-Commit Review Checklist
+
+```
+□ Every regex in the rule - is there an AST alternative?
+□ All fixers use AST node manipulation, not string regex
+□ Any remaining regex is pre-compiled outside hot paths
+□ Regex used only for: comments, user patterns, or string content
+```
+
 ---
 
 ## 4. Documentation Standards

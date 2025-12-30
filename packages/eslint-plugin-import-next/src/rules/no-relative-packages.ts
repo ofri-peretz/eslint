@@ -122,7 +122,7 @@ export const noRelativePackages = createRule<RuleOptions, MessageIds>({
               importPath,
               packageName,
             },
-            fix(fixer) {
+            fix(fixer: TSESLint.RuleFixer) {
               // Calculate the subpath within the package
               const subPath = path.relative(importPackageRoot, resolvedPath);
               const newImport =

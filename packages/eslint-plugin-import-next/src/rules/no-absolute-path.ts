@@ -86,7 +86,7 @@ export const noAbsolutePath = createRule<RuleOptions, MessageIds>({
             importPath,
             relativePath,
           },
-          fix(fixer) {
+          fix(fixer: TSESLint.RuleFixer) {
             return fixer.replaceText(source, `'${relativePath}'`);
           },
         });
@@ -122,7 +122,7 @@ export const noAbsolutePath = createRule<RuleOptions, MessageIds>({
 
         // AMD define/require
         if (amd && (calleeName === 'define' || calleeName === 'require')) {
-          node.arguments.forEach((arg) => {
+          node.arguments.forEach((arg: TSESTree.CallExpressionArgument) => {
             if (arg.type === 'Literal') {
               checkImport(node, arg as TSESTree.Literal);
             }

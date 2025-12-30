@@ -117,7 +117,7 @@ export const noUselessPathSegments = createRule<RuleOptions, MessageIds>({
             importPath,
             simplifiedPath: simplified,
           },
-          fix(fixer) {
+          fix(fixer: TSESLint.RuleFixer) {
             const quote = source.raw?.charAt(0) || "'";
             return fixer.replaceText(source, `${quote}${simplified}${quote}`);
           },

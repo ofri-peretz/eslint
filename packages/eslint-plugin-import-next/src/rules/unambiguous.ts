@@ -74,7 +74,7 @@ export const unambiguous = createRule<RuleOptions, MessageIds>({
 
         // Check for 'use strict' directive
         const hasUseStrict = node.body.some(
-          (statement) =>
+          (statement: TSESTree.ProgramStatement) =>
             statement.type === AST_NODE_TYPES.ExpressionStatement &&
             statement.expression.type === AST_NODE_TYPES.Literal &&
             statement.expression.value === 'use strict',
@@ -92,7 +92,7 @@ export const unambiguous = createRule<RuleOptions, MessageIds>({
 
         // Check if there are any actual statements (not just comments)
         const hasStatements = node.body.some(
-          (statement) =>
+          (statement: TSESTree.Statement) =>
             statement.type !== AST_NODE_TYPES.EmptyStatement,
         );
 

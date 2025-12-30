@@ -43,13 +43,13 @@ export const noEmptyNamedBlocks = createRule<RuleOptions, MessageIds>({
         // Check if this import has empty named imports: import {} from 'foo'
         // or import Foo, {} from 'foo'
         const hasDefaultImport = node.specifiers.some(
-          (spec) => spec.type === 'ImportDefaultSpecifier',
+          (spec: TSESTree.ImportClause) => spec.type === 'ImportDefaultSpecifier',
         );
         const hasNamespaceImport = node.specifiers.some(
-          (spec) => spec.type === 'ImportNamespaceSpecifier',
+          (spec: TSESTree.ImportClause) => spec.type === 'ImportNamespaceSpecifier',
         );
         const namedImports = node.specifiers.filter(
-          (spec) => spec.type === 'ImportSpecifier',
+          (spec: TSESTree.ImportClause) => spec.type === 'ImportSpecifier',
         );
 
         // Get the source code
@@ -65,14 +65,14 @@ export const noEmptyNamedBlocks = createRule<RuleOptions, MessageIds>({
             context.report({
               node,
               messageId: 'emptyNamedBlock',
-              fix(fixer) {
+              fix(fixer: TSESLint.RuleFixer) {
                 // Remove the entire import statement
                 return fixer.remove(node);
               },
               suggest: [
                 {
                   messageId: 'suggestRemove',
-                  fix(fixer) {
+                  fix(fixer: TSESLint.RuleFixer) {
                     return fixer.remove(node);
                   },
                 },
@@ -84,7 +84,7 @@ export const noEmptyNamedBlocks = createRule<RuleOptions, MessageIds>({
             context.report({
               node,
               messageId: 'emptyNamedBlock',
-              fix(fixer) {
+              fix(fixer: TSESLint.RuleFixer) {
                 // Remove the ", {}" part
                 const fixedText = importText.replace(/,\s*\{\s*\}/, '');
                 return fixer.replaceText(node, fixedText);
@@ -92,7 +92,7 @@ export const noEmptyNamedBlocks = createRule<RuleOptions, MessageIds>({
               suggest: [
                 {
                   messageId: 'suggestRemove',
-                  fix(fixer) {
+                  fix(fixer: TSESLint.RuleFixer) {
                     const fixedText = importText.replace(/,\s*\{\s*\}/, '');
                     return fixer.replaceText(node, fixedText);
                   },
@@ -113,13 +113,13 @@ export const noEmptyNamedBlocks = createRule<RuleOptions, MessageIds>({
           context.report({
             node,
             messageId: 'emptyNamedBlock',
-            fix(fixer) {
+            fix(fixer: TSESLint.RuleFixer) {
               return fixer.remove(node);
             },
             suggest: [
               {
                 messageId: 'suggestRemove',
-                fix(fixer) {
+                fix(fixer: TSESLint.RuleFixer) {
                   return fixer.remove(node);
                 },
               },

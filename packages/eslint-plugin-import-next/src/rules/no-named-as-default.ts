@@ -56,14 +56,14 @@ export const noNamedAsDefault = createRule<RuleOptions, MessageIds>({
           ) {
             exportedNames.add(node.declaration.id.name);
           } else if (node.declaration.type === 'VariableDeclaration') {
-            node.declaration.declarations.forEach((decl) => {
+            node.declaration.declarations.forEach((decl: TSESTree.VariableDeclarator) => {
               if (decl.id.type === 'Identifier') {
                 exportedNames.add(decl.id.name);
               }
             });
           }
         }
-        node.specifiers.forEach((spec) => {
+        node.specifiers.forEach((spec: TSESTree.ExportSpecifier) => {
           if (spec.exported.type === 'Identifier') {
             exportedNames.add(spec.exported.name);
           }
@@ -95,7 +95,7 @@ export const noNamedAsDefault = createRule<RuleOptions, MessageIds>({
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         // Check if default import name matches a named import from same module
         const defaultSpec = node.specifiers.find(
-          (s) => s.type === 'ImportDefaultSpecifier',
+          (s: TSESTree.ImportClause) => s.type === 'ImportDefaultSpecifier',
         );
         if (!defaultSpec) return;
 
@@ -103,7 +103,7 @@ export const noNamedAsDefault = createRule<RuleOptions, MessageIds>({
 
         // Check if there's also a named import with the same name being imported
         const namedSpecs = node.specifiers.filter(
-          (s) => s.type === 'ImportSpecifier',
+          (s: TSESTree.ImportClause) => s.type === 'ImportSpecifier',
         ) as TSESTree.ImportSpecifier[];
 
         for (const namedSpec of namedSpecs) {

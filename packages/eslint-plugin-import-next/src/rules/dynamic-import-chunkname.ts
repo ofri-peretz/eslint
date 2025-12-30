@@ -108,7 +108,7 @@ export const dynamicImportChunkname = createRule<RuleOptions, MessageIds>({
             suggest: [
               {
                 messageId: 'suggestChunkName',
-                fix(fixer) {
+                fix(fixer: TSESLint.RuleFixer) {
                   // Generate a chunk name from the import path
                   const source = node.source;
                   if (source.type === 'Literal' && typeof source.value === 'string') {

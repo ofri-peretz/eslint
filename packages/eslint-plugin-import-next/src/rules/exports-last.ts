@@ -49,7 +49,7 @@ export const exportsLast = createRule<RuleOptions, MessageIds>({
         const exportIndices: number[] = [];
         const nonExportIndices: number[] = [];
 
-        body.forEach((statement, index) => {
+        body.forEach((statement: TSESTree.ProgramStatement, index: number) => {
           const isExport =
             statement.type === AST_NODE_TYPES.ExportDefaultDeclaration ||
             statement.type === AST_NODE_TYPES.ExportNamedDeclaration ||

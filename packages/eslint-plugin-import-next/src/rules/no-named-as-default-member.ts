@@ -53,7 +53,7 @@ export const noNamedAsDefaultMember = createRule<RuleOptions, MessageIds>({
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         const source = node.source.value as string;
 
-        node.specifiers.forEach((spec) => {
+        node.specifiers.forEach((spec: TSESTree.ImportClause) => {
           if (spec.type === AST_NODE_TYPES.ImportDefaultSpecifier) {
             defaultImports.set(spec.local.name, { source, node: spec });
           } else if (spec.type === AST_NODE_TYPES.ImportSpecifier) {

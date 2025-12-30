@@ -37,7 +37,7 @@ export const noNamedDefault = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        node.specifiers.forEach((spec) => {
+        node.specifiers.forEach((spec: TSESTree.ImportClause) => {
           if (spec.type === 'ImportSpecifier') {
             const importedName =
               spec.imported.type === 'Identifier'
