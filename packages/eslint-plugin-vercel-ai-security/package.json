@@ -70,17 +70,10 @@
     "@interlace/eslint-devkit": "^1.0.0",
     "tslib": "^2.3.0"
   },
-  "scripts": {
-    "test": "vitest run",
-    "test:watch": "vitest watch",
-    "test:coverage": "vitest run --coverage"
-  },
   "devDependencies": {
     "@ai-sdk/openai": "^2.0.86",
     "@typescript-eslint/parser": "^8.46.2",
     "@typescript-eslint/rule-tester": "^8.46.2",
-    "@vitest/coverage-v8": "^4.0.6",
-    "ai": "^5.0.113",
-    "vitest": "^4.0.6"
+    "ai": "^5.0.113"
   }
 }

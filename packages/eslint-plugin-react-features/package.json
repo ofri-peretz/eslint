@@ -1,58 +1,52 @@
 {
-    "name": "eslint-plugin-react-features",
-    "version": "1.0.0",
-    "description": "ESLint React rules for modern react features, hooks, and patterns.",
-    "type": "commonjs",
-    "main": "./src/index.js",
-    "types": "./src/index.d.ts",
-    "exports": {
-        ".": {
-            "types": "./src/index.d.ts",
-            "default": "./src/index.js"
-        },
-        "./types": {
-            "types": "./src/types/index.d.ts",
-            "default": "./src/types/index.js"
-        }
+  "name": "eslint-plugin-react-features",
+  "version": "1.0.0",
+  "description": "ESLint React rules for modern react features, hooks, and patterns.",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
     },
-    "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
-    "license": "MIT",
-    "publishConfig": {
-        "access": "public"
-    },
-    "scripts": {
-        "test": "vitest run",
-        "test:watch": "vitest",
-        "build": "tsc -b"
-    },
-    "files": [
-        "src/",
-        "dist/",
-        "README.md",
-        "LICENSE",
-        "CHANGELOG.md"
-    ],
-    "keywords": [
-        "eslint",
-        "eslint-plugin",
-        "react",
-        "jsx",
-        "hooks",
-        "llm-optimized"
-    ],
-    "engines": {
-        "node": ">=18.0.0"
-    },
-    "peerDependencies": {
-        "typescript": "^5.9.3"
-    },
-    "dependencies": {
-        "tslib": "^2.3.0",
-        "@interlace/eslint-devkit": "workspace:*"
-    },
-    "devDependencies": {
-        "@typescript-eslint/parser": "^8.46.2",
-        "@typescript-eslint/rule-tester": "^8.46.2",
-        "vitest": "^4.0.4"
+    "./types": {
+      "types": "./src/types/index.d.ts",
+      "default": "./src/types/index.js"
     }
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "keywords": [
+    "eslint",
+    "eslint-plugin",
+    "react",
+    "jsx",
+    "hooks",
+    "llm-optimized"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "@interlace/eslint-devkit": "workspace:*"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.46.2",
+    "@typescript-eslint/rule-tester": "^8.46.2"
+  }
 }

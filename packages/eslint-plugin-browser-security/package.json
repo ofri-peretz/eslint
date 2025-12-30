@@ -73,20 +73,11 @@
   },
   "dependencies": {
     "@interlace/eslint-devkit": "^1.2.1",
-    "vitest": "^4.0.6",
-    "@nx/vite": "^22.0.3",
     "tslib": "^2.8.1"
   },
   "peerDependencies": {},
-  "scripts": {
-    "test": "vitest run",
-    "test:watch": "vitest watch",
-    "test:coverage": "vitest run --coverage"
-  },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",
-    "@typescript-eslint/rule-tester": "^8.46.2",
-    "@vitest/coverage-v8": "^4.0.6",
-    "vitest": "^4.0.6"
+    "@typescript-eslint/rule-tester": "^8.46.2"
   }
 }

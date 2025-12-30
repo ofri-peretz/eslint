@@ -119,7 +119,7 @@
       ],
       "options": {
         "buildTargetName": "build",
-        "testTargetName": "vite:test",
+        "testTargetName": "test",
         "serveTargetName": "serve",
         "devTargetName": "dev",
         "previewTargetName": "preview",

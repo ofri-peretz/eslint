@@ -7,10 +7,6 @@
     "forge": "./bin/forge.js"
   },
   "main": "./src/index.js",
-  "scripts": {
-    "build": "tsc",
-    "dev": "node ./bin/forge.js"
-  },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
   "license": "MIT",
   "homepage": "https://github.com/ofri-peretz/eslint#readme",
