@@ -296,45 +296,44 @@ jobs:
               if: inputs.dry-run == false
               id: npm-auth
               run: |
-                  echo "🔍 Verifying NPM authentication..."
+                  echo "🔍 Verifying NPM authentication setup..."
                   echo ""
 
-                  # Check if NPM_TOKEN is available (needed for first-release packages)
+                  # For Trusted Publishers, no NPM_TOKEN is needed
+                  # The OIDC token is minted at publish time by npm
+                  # NPM_TOKEN is only needed for first-release packages
+
                   HAS_TOKEN=false
                   if [ -n "$NPM_TOKEN" ]; then
                     HAS_TOKEN=true
-                    echo "✅ NPM_TOKEN secret is configured"
+                    echo "✅ NPM_TOKEN is configured (will be used for any first-release packages)"
+                    
+                    # Try to verify token validity
+                    AUTH_USER=$(npm whoami --registry=https://registry.npmjs.org/ 2>&1) || {
+                      echo "⚠️ NPM_TOKEN may be invalid (npm whoami failed)"
+                      echo "   └─ This is OK if all packages use Trusted Publishers"
+                      echo "   └─ First-release packages will fail without a valid token"
+                    }
+                    
+                    if [ -n "$AUTH_USER" ] && ! echo "$AUTH_USER" | grep -qi "error"; then
+                      echo "✅ NPM_TOKEN verified - authenticated as: $AUTH_USER"
+                      echo "npm-user=$AUTH_USER" >> $GITHUB_OUTPUT
+                    fi
                   else
-                    echo "⚠️ NPM_TOKEN not configured (OK if all packages have Trusted Publishers)"
+                    echo "ℹ️ No NPM_TOKEN configured"
+                    echo "   └─ Existing packages: Will use Trusted Publishers (OIDC)"
+                    echo "   └─ First-release packages: Will FAIL (token required)"
                   fi
 
-                  # Try to authenticate
-                  AUTH_USER=$(npm whoami --registry=https://registry.npmjs.org/ 2>&1) || {
-                    echo ""
-                    echo "┌─────────────────────────────────────────────────────────────────┐"
-                    echo "│ ❌ NPM AUTHENTICATION FAILED                                    │"
-                    echo "├─────────────────────────────────────────────────────────────────┤"
-                    echo "│                                                                 │"
-                    echo "│ 🔍 ROOT CAUSE: Unable to authenticate with npm registry         │"
-                    echo "│                                                                 │"
-                    echo "│ 📋 CHECKLIST:                                                   │"
-                    echo "│    1. Go to: GitHub Repo → Settings → Secrets → Actions        │"
-                    echo "│    2. Check NPM_TOKEN exists and is not expired                 │"
-                    echo "│    3. Token must have 'Read and write' permission for packages  │"
-                    echo "│    4. Token must not be IP-restricted (GitHub Actions IPs vary) │"
-                    echo "│                                                                 │"
-                    echo "│ 🔗 CREATE NEW TOKEN:                                            │"
-                    echo "│    npmjs.com → Avatar → Access Tokens → Generate New Token     │"
-                    echo "│    → Granular Access Token → Select packages → Read and write  │"
-                    echo "│                                                                 │"
-                    echo "└─────────────────────────────────────────────────────────────────┘"
-                    echo ""
-                    exit 1
-                  }
-
-                  echo "✅ Authenticated as: $AUTH_USER"
                   echo "has-token=$HAS_TOKEN" >> $GITHUB_OUTPUT
-                  echo "npm-user=$AUTH_USER" >> $GITHUB_OUTPUT
+                  echo ""
+                  echo "📦 Publishing will proceed using:"
+                  echo "   • Trusted Publishers (OIDC) for existing packages"
+                  if [ "$HAS_TOKEN" = "true" ]; then
+                    echo "   • NPM_TOKEN for first-release packages"
+                  else
+                    echo "   • ⚠️ NPM_TOKEN NOT available for first-release packages"
+                  fi
               env:
                   NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
