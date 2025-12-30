@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-quality",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "ESLint quality rules for code health, error handling, and complexity management.",
   "type": "commonjs",
   "main": "./src/index.js",
