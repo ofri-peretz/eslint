@@ -1,6 +1,6 @@
 # eslint-plugin-secure-coding
 
-**Feature-based security rules that AI assistants can actually understand and fix.**
+> **Feature-based security rules that AI assistants can actually understand and fix.**
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-secure-coding.svg)](https://www.npmjs.com/package/eslint-plugin-secure-coding)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://www.npmjs.com/package/eslint-plugin-secure-coding)

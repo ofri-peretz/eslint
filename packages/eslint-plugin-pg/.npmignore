@@ -1,39 +1,28 @@
-# Development files
-src/
-tsconfig.json
-tsconfig.lib.json
-tsconfig.spec.json
-vite.config.ts
-project.json
+# Source maps (debug-only, not needed in package)
+**/*.js.map
 
-# Tests
-**/*.spec.ts
-**/*.spec.js
+# Test files
 **/*.test.ts
 **/*.test.js
+**/*.spec.ts
+**/*.spec.js
 __tests__/
-*.spec.*
-*.test.*
+test/
+coverage/
 
-# Benchmark
-benchmark/
+# TypeScript source (we ship compiled JS + .d.ts)
+src/**/*.ts
+!**/*.d.ts
 
-# Source maps
-**/*.map
-**/*.js.map
-**/*.d.ts.map
+# Config files
+tsconfig*.json
+vitest.config.*
+jest.config.*
+.eslintrc*
+eslint.config.*
 
-# Development docs
-docs/
-AGENTS.md
-
-# Dependencies & generated
-node_modules/
-.turbo/
-.nx/
-
-# IDE & OS
+# Development
+.git/
 .vscode/
 .idea/
-.DS_Store
 *.log

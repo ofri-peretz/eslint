@@ -19,7 +19,7 @@
         "outputPath": "dist/packages/eslint-plugin-jwt",
         "main": "packages/eslint-plugin-jwt/src/index.ts",
         "tsConfig": "packages/eslint-plugin-jwt/tsconfig.lib.json",
-        "assets": ["packages/eslint-plugin-jwt/*.md"]
+        "assets": ["packages/eslint-plugin-jwt/*.md", "packages/eslint-plugin-jwt/.npmignore"]
       }
     },
     "nx-release-publish": {

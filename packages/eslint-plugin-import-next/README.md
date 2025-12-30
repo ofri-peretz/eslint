@@ -1,29 +1,44 @@
-# ⚡ eslint-plugin-dependencies
+# eslint-plugin-import-next
 
-> **The high-performance, agentic alternative to `eslint-plugin-import`.**
-> Detect cycles 100x faster with caching, and fix them automatically with AI-optimized suggestions.
+> **The high-performance, agentic alternative to `eslint-plugin-import`.** Detect cycles 100x faster with caching, and fix them automatically with AI-optimized suggestions.
 
-[![npm version](https://img.shields.io/npm/v/eslint-plugin-dependencies.svg)](https://www.npmjs.com/package/eslint-plugin-dependencies)
+[![npm version](https://img.shields.io/npm/v/eslint-plugin-import-next.svg)](https://www.npmjs.com/package/eslint-plugin-import-next)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=import_next)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=import_next)
 
-**Why switch?**
+---
 
-- 🚀 **Instant Feedback:** Uses **shared filesystem caching** to make `no-circular-dependencies` blisteringly fast, even in large monorepos.
-- 🤖 **Agentic Fixes:** Doesn't just say "Cycle Detected". It tells you exactly how to refactor (e.g., "Extract types to `types.ts`" vs "Use Dependency Injection").
-- 🧠 **LLM-Optimized:** Error messages are structured for Cursor/Copilot to understand and fix without hallucinating.
+## 💡 What you get
+
+- **100x faster cycle detection:** Uses **shared filesystem caching** for instant feedback, even in large monorepos.
+- **LLM-optimized & MCP-ready:** Structured 2-line messages with CWE + concrete fixes so humans _and_ AI auto-fixers stay aligned.
+- **Smart refactoring suggestions:** Doesn't just say "Cycle Detected" - tells you exactly how to refactor (e.g., "Extract types to `types.ts`" vs "Use Dependency Injection").
+- **Tiered presets:** `recommended`, `architecture` for fast policy rollout.
+- **Zero false positives:** Precise detection with incremental caching.
+
+---
+
+## 📊 OWASP Coverage Matrix
+
+> **Note:** This plugin focuses on **code architecture and dependency management** rather than OWASP security. For security rules, see [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
+
+| Category                  | CWE      | Rules                                                 |
+| ------------------------- | -------- | ----------------------------------------------------- |
+| **Circular Dependencies** | CWE-407  | `no-circular-dependencies`                            |
+| **Module Resolution**     | CWE-829  | `no-unresolved`, `no-self-import`, `no-duplicates`    |
+| **Architecture**          | CWE-1047 | `no-internal-modules`, `enforce-dependency-direction` |
 
 ---
 
 ## ⚡ Performance: The "Killer Feature"
 
 `import/no-cycle` is notorious for slowing down builds because it re-analyzes the entire graph for every file.
-**`dependencies/no-circular-dependencies`** uses a **smart incremential cache** that persists across lint runs.
+**`import-next/no-circular-dependencies`** uses a **smart incremental cache** that persists across lint runs.
 
-| Rule                                        | Time (10k files)   | Memory |
-| ------------------------------------------- | ------------------ | ------ |
-| `import/no-cycle`                           | ~45s               | High   |
-| **`dependencies/no-circular-dependencies`** | **~0.4s** (cached) | Low    |
+| Rule                                       | Time (10k files)   | Memory |
+| ------------------------------------------ | ------------------ | ------ |
+| `import/no-cycle`                          | ~45s               | High   |
+| **`import-next/no-circular-dependencies`** | **~0.4s** (cached) | Low    |
 
 ---
 

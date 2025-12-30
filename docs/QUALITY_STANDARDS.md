@@ -13,6 +13,7 @@ Use this checklist for every rule before release:
 ```
 □ Conceptual Fit - Rule belongs in this plugin (see §1)
 □ Test Coverage - 90%+ line coverage (see §2)
+□ FP/FN Prevention - Zero false positives, documented limitations (see §2.1)
 □ Rule Complexity - Minimal AST traversal, O(n) or better (see §3)
 □ Documentation - Complete README, rule docs, CHANGELOG (see §4)
 □ Rule Documentation - Has description, examples, OWASP mapping (see §5)
@@ -54,21 +55,16 @@ Each plugin has a specific scope. Rules must NOT leak across boundaries.
 
 #### AI Provider-Specific Plugins
 
-| Plugin                             | Scope            | Examples                                    | ❌ NOT Allowed         |
-| ---------------------------------- | ---------------- | ------------------------------------------- | ---------------------- |
-| `eslint-plugin-vercel-ai-security` | Vercel AI SDK    | `require-max-tokens`, `require-rate-limit`  | OpenAI, Anthropic SDKs |
-| `eslint-plugin-openai-security`    | OpenAI SDK       | `no-raw-api-key`, `require-moderation`      | Vercel, Anthropic SDKs |
-| `eslint-plugin-anthropic-security` | Anthropic SDK    | `require-max-tokens`, `no-hardcoded-key`    | Vercel, OpenAI SDKs    |
-| `eslint-plugin-google-ai-security` | Google AI SDK    | `require-safety-settings`, `no-raw-api-key` | Other AI SDKs          |
-| `eslint-plugin-agentic-security`   | Agentic patterns | `require-tool-confirmation`, `no-auto-exec` | SDK-specific impl      |
+| Plugin                             | Scope         | Examples                                   | ❌ NOT Allowed |
+| ---------------------------------- | ------------- | ------------------------------------------ | -------------- |
+| `eslint-plugin-vercel-ai-security` | Vercel AI SDK | `require-max-tokens`, `require-rate-limit` | Other AI SDKs  |
 
 #### Utility Plugins
 
-| Plugin                        | Scope                  | Examples                                    | ❌ NOT Allowed  |
-| ----------------------------- | ---------------------- | ------------------------------------------- | --------------- |
-| `eslint-plugin-import-next`   | Import optimization    | `no-circular-deps`, `no-deprecated-imports` | Security rules  |
-| `eslint-plugin-react-a11y`    | React accessibility    | `require-alt-text`, `require-aria-labels`   | Security rules  |
-| `eslint-plugin-llm-optimized` | LLM message formatting | Message clarity standards                   | Detection logic |
+| Plugin                      | Scope               | Examples                                    | ❌ NOT Allowed |
+| --------------------------- | ------------------- | ------------------------------------------- | -------------- |
+| `eslint-plugin-import-next` | Import optimization | `no-circular-deps`, `no-deprecated-imports` | Security rules |
+| `eslint-plugin-react-a11y`  | React accessibility | `require-alt-text`, `require-aria-labels`   | Security rules |
 
 ### Review Questions
 
@@ -205,6 +201,163 @@ Is the code covered?
 
 ---
 
+## 2.1 False Positive & False Negative Prevention
+
+> **Zero-FP Philosophy**: Our rules are designed for automated pipelines where noise is the enemy. Every rule MUST be audited for both false positives and false negatives.
+
+### Definitions
+
+| Term                    | Definition                                          | Impact                                          |
+| ----------------------- | --------------------------------------------------- | ----------------------------------------------- |
+| **False Positive (FP)** | Rule reports an error where no vulnerability exists | Erodes developer trust, leads to rule disabling |
+| **False Negative (FN)** | Rule misses an actual vulnerability                 | Security gap, defeats purpose of the rule       |
+| **True Positive (TP)**  | Rule correctly identifies a vulnerability           | Desired behavior                                |
+| **True Negative (TN)**  | Rule correctly allows safe code                     | Desired behavior                                |
+
+### Required Test Categories
+
+Every rule MUST have explicit tests for:
+
+| Category               | Purpose                                              | Minimum Tests |
+| ---------------------- | ---------------------------------------------------- | :-----------: |
+| **True Positives**     | Verify rule catches vulnerabilities                  |      5+       |
+| **True Negatives**     | Verify rule allows safe patterns                     |      5+       |
+| **Known FP Scenarios** | Document and test edge cases that could FP           |      3+       |
+| **Known FN Scenarios** | Document patterns rule cannot catch (with rationale) | Document only |
+
+### False Positive Test Patterns
+
+```typescript
+// ✅ Test cases that SHOULD NOT trigger the rule (valid code):
+
+ruleTester.run('no-sql-injection', rule, {
+  valid: [
+    // FP Prevention: Parameterized queries are safe
+    { code: `db.query('SELECT * FROM users WHERE id = $1', [userId])` },
+
+    // FP Prevention: Constant strings are safe
+    { code: `db.query('SELECT * FROM users WHERE id = 1')` },
+
+    // FP Prevention: Template literals with no interpolation
+    { code: 'db.query(`SELECT * FROM users`)' },
+
+    // FP Prevention: Sanitized input (when using DOMPurify, etc.)
+    { code: `element.innerHTML = DOMPurify.sanitize(userInput)` },
+
+    // FP Prevention: Test files should be allowed (with option)
+    {
+      code: `db.query(\`SELECT * FROM users WHERE id = \${id}\`)`,
+      filename: 'test/user.test.ts',
+      options: [{ allowInTests: true }],
+    },
+  ],
+});
+```
+
+### False Negative Awareness
+
+Document what your rule CANNOT catch (static analysis limitations):
+
+```typescript
+/**
+ * @rule no-sql-injection
+ *
+ * KNOWN FALSE NEGATIVES (cannot detect statically):
+ *
+ * 1. Dynamic query building across modules
+ *    - Query built in moduleA, executed in moduleB
+ *
+ * 2. Indirect variable assignment
+ *    - let query = safe; query = unsafe; db.query(query);
+ *
+ * 3. Runtime-determined values
+ *    - db.query(config.getQuery()); // Can't know what getQuery returns
+ *
+ * 4. Obfuscated patterns
+ *    - eval('db' + '.query')(userInput);
+ */
+```
+
+### FP/FN Audit Checklist
+
+Before release, verify each rule against this checklist:
+
+```
+□ All common safe patterns tested as `valid` cases
+□ Edge cases documented (safe patterns that look dangerous)
+□ Known FN scenarios documented in rule JSDoc
+□ Rule options exist for legitimate overrides (allowInTests, allowPatterns)
+□ Error messages explain WHY code is flagged (helps devs verify FP)
+□ Playground demo includes both TP and TN examples
+```
+
+### FP/FN Metrics
+
+Track precision for each rule:
+
+| Metric        | Formula                                         |               Target               |
+| ------------- | ----------------------------------------------- | :--------------------------------: |
+| **Precision** | TP / (TP + FP)                                  |               ≥ 99%                |
+| **Recall**    | TP / (TP + FN)                                  | ≥ 95% (document known limitations) |
+| **F1 Score**  | 2 × (Precision × Recall) / (Precision + Recall) |               ≥ 97%                |
+
+### Common FP Sources
+
+| Pattern         | Why it FPs                          | Solution                |
+| --------------- | ----------------------------------- | ----------------------- |
+| Sanitized input | Rule doesn't recognize sanitization | Add sanitizer detection |
+| Test files      | Intentionally insecure for testing  | `allowInTests` option   |
+| Constants       | Constant strings aren't user input  | Check for literals      |
+| Comments/docs   | Code examples in comments           | Exclude string literals |
+| Type narrowing  | TypeScript already validated        | Check type annotations  |
+
+### Example: FP-Aware Rule Design
+
+```typescript
+export const rule = createRule({
+  meta: {
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          // FP Prevention: Allow in test files
+          allowInTests: { type: 'boolean', default: false },
+
+          // FP Prevention: Allow specific patterns
+          allowPatterns: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+          },
+
+          // FP Prevention: Recognize sanitizers
+          knownSanitizers: {
+            type: 'array',
+            items: { type: 'string' },
+            default: ['DOMPurify.sanitize', 'escape', 'sanitizeHtml'],
+          },
+        },
+      },
+    ],
+  },
+
+  create(context) {
+    const options = context.options[0] || {};
+
+    // FP Prevention: Skip test files if configured
+    if (options.allowInTests && isTestFile(context.filename)) {
+      return {};
+    }
+
+    return {
+      // Rule logic with FP-aware checks
+    };
+  },
+});
+```
+
+---
+
 ## 3. Rule Complexity & Performance
 
 ### DevEx Principle
@@ -276,46 +429,163 @@ Identifier(node) {
 | `.npmignore`      | Publish optimization |    ✅    | Exclude tests, docs, config files from npm     |
 | `docs/rules/`     | Rule documentation   |    ✅    | One `.md` file per rule with examples          |
 
-### README.md Structure (Highly Navigable)
+### README.md Structure (Highly Navigable + AEO-Optimized)
 
-Every README must include cross-plugin navigation for ecosystem discoverability:
+Every README must be optimized for both human and AI consumption (Answer Engine Optimization):
+
+#### AEO (Answer Engine Optimization) Requirements
+
+| Element                  | Purpose                    | Example                                                                           |
+| ------------------------ | -------------------------- | --------------------------------------------------------------------------------- |
+| **Concise headline**     | AI can summarize in 1 line | "Feature-based security rules that AI assistants can actually understand and fix" |
+| **Structured badges**    | Machine-readable metadata  | npm version, codecov, license badges                                              |
+| **FAQ-friendly headers** | LLMs can answer questions  | `## What you get`, `## Quick Start`                                               |
+| **Structured tables**    | Parseable rule lists       | CWE, OWASP, CVSS columns                                                          |
+| **Code blocks**          | Copy-paste ready           | Complete eslint.config.js examples                                                |
+| **Callout boxes**        | Highlight important info   | `> [!NOTE]`, `> [!WARNING]`, `> [!IMPORTANT]`                                     |
+
+#### Required Badges
+
+Every README must include appropriate badges in the header section. Badges provide machine-readable metadata and quick visual indicators.
+
+| Badge             | Required | When to Include                          | Markdown Template                                                                                                                                                                     |
+| ----------------- | :------: | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **npm version**   |    ✅    | Always (after first npm publish)         | `[![npm version](https://img.shields.io/npm/v/{package-name}.svg)](https://www.npmjs.com/package/{package-name})`                                                                     |
+| **License**       |    ✅    | Always                                   | `[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)`                                                                         |
+| **codecov**       |    ✅    | Always (after codecov integration)       | `[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component={component})](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D={component})` |
+| **npm downloads** |    ⚠️    | For established packages (>100 weekly)   | `[![npm downloads](https://img.shields.io/npm/dw/{package-name}.svg)](https://www.npmjs.com/package/{package-name})`                                                                  |
+| **AI-Native**     |    ⚠️    | For plugins with MCP/agent integration   | `[![AI-Native: Agent Ready](https://img.shields.io/badge/AI--Native-Agent%20Ready-success)](https://eslint.org/docs/latest/use/mcp)`                                                  |
+| **TypeScript**    |    ⚠️    | For plugins with full TypeScript support | `[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)`                                                                            |
+| **Build Status**  |    ❌    | Only for standalone repos (not monorepo) | `[![Build Status](https://github.com/{org}/{repo}/actions/workflows/ci.yml/badge.svg)](https://github.com/{org}/{repo}/actions)`                                                      |
+| **Bundle Size**   |    ❌    | Only for performance-critical packages   | `[![Bundle Size](https://img.shields.io/bundlephobia/minzip/{package-name})](https://bundlephobia.com/package/{package-name})`                                                        |
+
+##### Badge Placement Order
 
 ```markdown
 # eslint-plugin-{name}
 
-Brief description (1-2 sentences)
+> 🔐 [Concise headline - one sentence describing the plugin]
 
-## Installation
-
-## Quick Start
-
-## Available Rules (with OWASP mapping)
-
-| Rule                                   | Description | OWASP    | Fixable |
-| -------------------------------------- | ----------- | -------- | :-----: |
-| [rule-name](./docs/rules/rule-name.md) | Description | A03:2021 |   ✅    |
-
-## Configurations (minimal, recommended, strict)
-
-## OWASP Coverage Matrix
-
-## Related Packages
-
-> **Part of the [Forge-JS ESLint Ecosystem](https://github.com/user/eslint)**
-
-| Package                                                             | Description                 |
-| ------------------------------------------------------------------- | --------------------------- |
-| [eslint-plugin-secure-coding](../eslint-plugin-secure-coding)       | Framework-agnostic security |
-| [eslint-plugin-crypto](../eslint-plugin-crypto)                     | Cryptographic security      |
-| [eslint-plugin-jwt](../eslint-plugin-jwt)                           | JWT token handling          |
-| [eslint-plugin-express-security](../eslint-plugin-express-security) | Express.js framework        |
-| [eslint-plugin-nestjs-security](../eslint-plugin-nestjs-security)   | NestJS framework            |
-| [eslint-plugin-lambda-security](../eslint-plugin-lambda-security)   | AWS Lambda & Middy          |
-| [eslint-plugin-browser-security](../eslint-plugin-browser-security) | Browser APIs & DOM          |
-| [eslint-plugin-pg](../eslint-plugin-pg)                             | PostgreSQL security         |
-
-## Contributing
+[![npm version]...] [![License]...] [![codecov]...]
+[![npm downloads]...] [![AI-Native]...] <!-- Optional badges on second line -->
 ```
+
+##### Badge Conditions Explained
+
+- **npm version**: Add after first `npm publish`. Use `0.0.1` placeholder badge until published.
+- **codecov**: Add after package is integrated into Codecov components. Use component name matching folder (e.g., `crypto`, `jwt`, `pg`).
+- **npm downloads**: Add only when package has established usage (reduces clutter for new packages).
+- **AI-Native**: Add for plugins that include `AGENTS.md` and are optimized for MCP/agent consumption.
+- **TypeScript**: Add for plugins with full `.d.ts` exports and type-safe configurations.
+- **Build Status**: Avoid in monorepos (covered by root CI). Only for standalone repositories.
+- **Bundle Size**: Only relevant for frontend-heavy packages where bundle size matters.
+
+#### Required README Sections (in order)
+
+```markdown
+# eslint-plugin-{name}
+
+**[Concise value proposition - 1 sentence max]**
+
+[![npm version]...] [![codecov]...] [![License]...]
+
+> [!NOTE]
+> [Key announcement or version note if applicable]
+
+---
+
+## 💡 What you get
+
+- **Feature 1:** Brief description
+- **LLM-optimized:** Structured messages with CWE + OWASP + fix guidance
+- **Standards aligned:** OWASP mapping, CWE tagging
+
+---
+
+## 📊 OWASP Coverage Matrix
+
+| Category     | Description            | Rules              |
+| ------------ | ---------------------- | ------------------ |
+| **A01:2021** | Broken Access Control  | `rule-1`, `rule-2` |
+| **A02:2021** | Cryptographic Failures | `rule-3`, `rule-4` |
+
+---
+
+## 🔐 Rules (with full metadata)
+
+💼 = Set in `recommended` | ⚠️ = Warns | 🔧 = Auto-fixable | 💡 = Suggestions
+
+### Category Name (N rules)
+
+| Rule                                   | CWE    | OWASP | CVSS | Description       | 💼  | 🔧  | 💡  |
+| -------------------------------------- | ------ | ----- | ---- | ----------------- | --- | --- | --- |
+| [rule-name](./docs/rules/rule-name.md) | CWE-79 | A03   | 6.1  | Brief description | 💼  | 🔧  |     |
+
+---
+
+## 🚀 Quick Start
+
+\`\`\`bash
+npm install --save-dev eslint-plugin-{name}
+\`\`\`
+
+\`\`\`javascript
+// eslint.config.js
+import pluginName from 'eslint-plugin-{name}';
+
+export default [
+pluginName.configs.recommended,
+];
+\`\`\`
+
+---
+
+## 📋 Available Presets
+
+| Preset        | Description         |
+| ------------- | ------------------- |
+| `recommended` | Balanced defaults   |
+| `strict`      | All rules as errors |
+
+---
+
+## 🔗 Related Packages
+
+> **Part of the [ESLint Ecosystem](https://github.com/ofri-peretz/eslint)**
+
+| Plugin                                                                                           | Description                       | Rules |
+| ------------------------------------------------------------------------------------------------ | --------------------------------- | :---: |
+| [`eslint-plugin-secure-coding`](https://npmjs.com/package/eslint-plugin-secure-coding)           | Universal security (OWASP Top 10) |  88   |
+| [`eslint-plugin-crypto`](https://npmjs.com/package/eslint-plugin-crypto)                         | Cryptographic security            |  24   |
+| [`eslint-plugin-jwt`](https://npmjs.com/package/eslint-plugin-jwt)                               | JWT token handling                |  13   |
+| [`eslint-plugin-browser-security`](https://npmjs.com/package/eslint-plugin-browser-security)     | Browser APIs & DOM                |  21   |
+| [`eslint-plugin-express-security`](https://npmjs.com/package/eslint-plugin-express-security)     | Express.js framework              |   9   |
+| [`eslint-plugin-nestjs-security`](https://npmjs.com/package/eslint-plugin-nestjs-security)       | NestJS framework                  |   5   |
+| [`eslint-plugin-lambda-security`](https://npmjs.com/package/eslint-plugin-lambda-security)       | AWS Lambda & Middy                |   5   |
+| [`eslint-plugin-pg`](https://npmjs.com/package/eslint-plugin-pg)                                 | PostgreSQL security               |  13   |
+| [`eslint-plugin-vercel-ai-security`](https://npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK                     |  19   |
+
+---
+
+## 📄 License
+
+MIT © [Ofri Peretz](https://github.com/ofri-peretz)
+```
+
+#### Rules Table Format (Full Metadata)
+
+Every rules table MUST include:
+
+| Column               | Required | Purpose                         |
+| -------------------- | :------: | ------------------------------- |
+| **Rule**             |    ✅    | Link to rule documentation      |
+| **CWE**              |    ✅    | Common Weakness Enumeration ID  |
+| **OWASP**            |    ✅    | OWASP Top 10 category (A01-A10) |
+| **CVSS**             |    ⚠️    | Severity score (0.0-10.0)       |
+| **Description**      |    ✅    | Brief 1-line description        |
+| **💼 (Recommended)** |    ✅    | Shows if in recommended config  |
+| **🔧 (Fixable)**     |    ✅    | Shows if auto-fixable           |
+| **💡 (Suggestions)** |    ⚠️    | Shows if provides suggestions   |
 
 ### AGENTS.md Structure (Following [agents.md](https://agents.md) Best Practices)
 

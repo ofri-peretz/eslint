@@ -77,9 +77,8 @@ export const noUnsafeCopyFrom: TSESLint.RuleModule<
         } else if (queryArg.type === AST_NODE_TYPES.BinaryExpression) {
             // Simplified check: if any literal part has "COPY" and "FROM"
              const parts: string[] = [];
-             const stack: any[] = [queryArg];
-             while(stack.length > 0) {
-               const curr = stack.pop();
+              const stack: TSESTree.Node[] = [queryArg];
+             for (let curr = stack.pop(); curr !== undefined; curr = stack.pop()) {
                if (curr.type === AST_NODE_TYPES.BinaryExpression && curr.operator === '+') {
                  stack.push(curr.right);
                  stack.push(curr.left);

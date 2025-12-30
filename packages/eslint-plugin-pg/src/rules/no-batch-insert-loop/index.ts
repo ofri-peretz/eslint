@@ -1,4 +1,4 @@
-import { TSESLint, AST_NODE_TYPES, TSESTree, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { TSESLint, AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { NoBatchInsertLoopOptions } from '../../types';
 
 export const noBatchInsertLoop: TSESLint.RuleModule<

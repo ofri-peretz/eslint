@@ -1,12 +1,12 @@
 # eslint-plugin-jwt
 
+> 🔐 Security-focused ESLint plugin for JWT authentication. Detects algorithm confusion (CVE-2022-23540), replay attacks, weak secrets, and library-specific vulnerabilities with AI-optimized fix guidance.
+
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-jwt.svg)](https://www.npmjs.com/package/eslint-plugin-jwt)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=jwt)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=jwt)
 
-**Comprehensive JWT security ESLint plugin with 13 AI-parseable rules.** Detects algorithm confusion (CVE-2022-23540), "Back to the Future" replay attacks (LightSEC 2025), weak secrets, and library-specific vulnerabilities. Every rule provides CWE references, CVSS severity, and AI-assisted fix guidance.
-
-## 🎯 Key Features
+## 💡 What You Get
 
 - **13 Security Rules** - Algorithm attacks, replay prevention, claim validation
 - **6 JWT Libraries** - jsonwebtoken, jose, express-jwt, @nestjs/jwt, jwks-rsa, jwt-decode

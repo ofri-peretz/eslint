@@ -1,19 +1,28 @@
-# Production files only
-src/
-dist/
-README.md
-CHANGELOG.md
-AGENTS.md
-LICENSE
+# Source maps (debug-only, not needed in package)
+**/*.js.map
 
-# Exclude dev/test files
-!src/**/*.test.ts
-!src/**/*.spec.ts
-!benchmark/
-!*.config.*
-!tsconfig*.json
-!.eslintrc*
-!vitest.config.*
-!project.json
-!test-report.junit.xml
-!coverage/
+# Test files
+**/*.test.ts
+**/*.test.js
+**/*.spec.ts
+**/*.spec.js
+__tests__/
+test/
+coverage/
+
+# TypeScript source (we ship compiled JS + .d.ts)
+src/**/*.ts
+!**/*.d.ts
+
+# Config files
+tsconfig*.json
+vitest.config.*
+jest.config.*
+.eslintrc*
+eslint.config.*
+
+# Development
+.git/
+.vscode/
+.idea/
+*.log

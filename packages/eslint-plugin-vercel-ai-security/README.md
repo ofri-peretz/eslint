@@ -12,24 +12,24 @@
 
 ---
 
-## 🎯 Why Use This Plugin?
+## 💡 What you get
 
-### The Problem
+- **SDK-aware detection:** Full knowledge of `generateText`, `streamText`, `generateObject`, `streamObject`, and tool definitions for precise vulnerability detection.
+- **LLM-optimized & MCP-ready:** Structured 2-line messages with CWE + OWASP + CVSS + concrete fixes so humans _and_ AI auto-fixers stay aligned.
+- **Complete OWASP coverage:** 100% of OWASP LLM Top 10 2025 + 90% of OWASP Agentic Top 10 2026.
+- **Tiered presets:** `recommended`, `strict`, `minimal` for fast policy rollout.
+- **Zero false positives:** SDK-specific detection eliminates generic pattern matching noise.
 
-When building AI applications with the Vercel AI SDK, developers face unique security challenges:
+---
 
-- **Prompt Injection**: User input that manipulates AI behavior
-- **System Prompt Leakage**: Exposing AI instructions to clients
-- **Sensitive Data Leaks**: Accidentally passing secrets/PII to LLMs
-- **Training Data Exposure**: User data sent to model training
-- **Model DoS**: Unbounded requests without timeouts
-- **Tool Misuse**: AI agents executing dangerous operations
-- **RAG Poisoning**: Malicious documents injecting instructions
-- **Misinformation**: AI output displayed without validation
+## 📊 OWASP Coverage Matrix
 
-### The Solution
+| Framework                     | Coverage     | Categories               |
+| ----------------------------- | ------------ | ------------------------ |
+| **OWASP LLM Top 10 2025**     | 10/10 (100%) | LLM01-LLM10              |
+| **OWASP Agentic Top 10 2026** | 9/10 (90%)   | ASI01-ASI05, ASI07-ASI10 |
 
-This plugin provides **19 security rules** covering **100% of OWASP LLM Top 10 2025** and **90% of OWASP Agentic Top 10 2026** (the remaining 10% is N/A for TypeScript).
+> **Note:** ASI06 (Memory Corruption) is N/A for TypeScript/JavaScript as these are memory-safe languages.
 
 ---
 

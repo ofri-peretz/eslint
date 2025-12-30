@@ -46,7 +46,8 @@
           "packages/eslint-plugin-secure-coding/README.md",
           "packages/eslint-plugin-secure-coding/CHANGELOG.md",
           "packages/eslint-plugin-secure-coding/LICENSE",
-          "packages/eslint-plugin-secure-coding/AGENTS.md"
+          "packages/eslint-plugin-secure-coding/AGENTS.md",
+          "packages/eslint-plugin-secure-coding/.npmignore"
         ]
       }
     },

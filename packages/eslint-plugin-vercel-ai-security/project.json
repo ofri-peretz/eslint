@@ -45,7 +45,8 @@
                     "packages/eslint-plugin-vercel-ai-security/README.md",
                     "packages/eslint-plugin-vercel-ai-security/CHANGELOG.md",
                     "packages/eslint-plugin-vercel-ai-security/LICENSE",
-                    "packages/eslint-plugin-vercel-ai-security/AGENTS.md"
+                    "packages/eslint-plugin-vercel-ai-security/AGENTS.md",
+                    "packages/eslint-plugin-vercel-ai-security/.npmignore"
                 ]
             }
         },

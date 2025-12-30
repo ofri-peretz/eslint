@@ -1,6 +1,6 @@
 # eslint-plugin-lambda-security
 
-**Feature-based security rules that AI assistants can actually understand and fix.**
+> 🔐 Security-focused ESLint plugin for AWS Lambda and serverless applications. Detects hardcoded credentials, permissive CORS, environment secrets, and logging issues with AI-optimized fix guidance.
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-lambda-security.svg)](https://www.npmjs.com/package/eslint-plugin-lambda-security)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-lambda-security.svg)](https://www.npmjs.com/package/eslint-plugin-lambda-security)

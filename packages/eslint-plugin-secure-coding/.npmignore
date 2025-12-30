@@ -1,62 +1,28 @@
-# Test files - always exclude from package
-__tests__/
+# Source maps (debug-only, not needed in package)
+**/*.js.map
+
+# Test files
 **/*.test.ts
 **/*.test.js
 **/*.spec.ts
 **/*.spec.js
-*.test.ts
-*.test.js
-*.spec.ts
-*.spec.js
-
-# Test configuration and reports
-vitest.config.mts
-vitest.config.ts
-jest.config.*
-test-report.junit.xml
-*.tap
-
-# Development configuration
-eslint.config.mjs
-eslint.config.js
-tsconfig*.json
-.eslintrc*
-.prettierrc*
-.editorconfig
-project.json
-
-# Build and CI artifacts
+__tests__/
+test/
 coverage/
-*.tsbuildinfo
-*.log
-.nyc_output/
 
-# Development directories
-.analysis/
-.removed-rules/
-docs/
-benchmark/
+# TypeScript source (we ship compiled JS + .d.ts)
+src/**/*.ts
+!**/*.d.ts
 
-# Node and package management
-node_modules/
-package-lock.json
-pnpm-lock.yaml
-yarn.lock
+# Config files
+tsconfig*.json
+vitest.config.*
+jest.config.*
+.eslintrc*
+eslint.config.*
 
-# IDE and editor files
-.idea/
-.vscode/
-*.swp
-*.swo
-*.DS_Store
-
-# Git
+# Development
 .git/
-.gitignore
-
-# Monorepo paths (in case of accidental pack from source)
-apps/
-packages/
-
-# Build directories when packing from source
-dist/
+.vscode/
+.idea/
+*.log

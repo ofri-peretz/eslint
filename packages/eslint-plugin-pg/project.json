@@ -36,7 +36,8 @@
         "tsConfig": "packages/eslint-plugin-pg/tsconfig.lib.json",
         "assets": [
           "packages/eslint-plugin-pg/README.md",
-          "packages/eslint-plugin-pg/LICENSE"
+          "packages/eslint-plugin-pg/LICENSE",
+          "packages/eslint-plugin-pg/.npmignore"
         ]
       }
     },

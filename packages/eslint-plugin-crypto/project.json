@@ -19,7 +19,7 @@
         "outputPath": "dist/packages/eslint-plugin-crypto",
         "main": "packages/eslint-plugin-crypto/src/index.ts",
         "tsConfig": "packages/eslint-plugin-crypto/tsconfig.lib.json",
-        "assets": ["packages/eslint-plugin-crypto/*.md"]
+        "assets": ["packages/eslint-plugin-crypto/*.md", "packages/eslint-plugin-crypto/.npmignore"]
       }
     },
     "nx-release-publish": {

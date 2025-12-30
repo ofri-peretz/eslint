@@ -1,6 +1,6 @@
 # eslint-plugin-express-security
 
-**Feature-based security rules that AI assistants can actually understand and fix.**
+> 🔐 Security-focused ESLint plugin for Express.js applications. Detects CORS vulnerabilities, CSRF issues, insecure cookies, missing security headers, and rate limiting gaps with AI-optimized fix guidance.
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-express-security.svg)](https://www.npmjs.com/package/eslint-plugin-express-security)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-express-security.svg)](https://www.npmjs.com/package/eslint-plugin-express-security)

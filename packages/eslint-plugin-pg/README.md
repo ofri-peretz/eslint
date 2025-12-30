@@ -1,14 +1,12 @@
 # eslint-plugin-pg
 
-**Security and best practices rules for [node-postgres](https://node-postgres.com/) (`pg`) that AI assistants can understand and fix.**
+> 🔐 Security-focused ESLint plugin for PostgreSQL/node-postgres. Detects SQL injection, connection leaks, transaction issues, and hardcoded credentials with LLM-optimized fix guidance.
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-pg.svg)](https://www.npmjs.com/package/eslint-plugin-pg)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-pg.svg)](https://www.npmjs.com/package/eslint-plugin-pg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=pg)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=pg)
 [![AI-Native: Agent Ready](https://img.shields.io/badge/AI--Native-Agent%20Ready-success)](https://eslint.org/docs/latest/use/mcp)
-
-> **PostgreSQL Security Standard:** 13 rules for SQL injection prevention, connection management, and database best practices with CWE references and LLM-optimized messages.
 
 ---
 
@@ -135,6 +133,19 @@ This plugin runs **100% locally**. No data ever leaves your machine.
 ## 📚 Documentation
 
 - **[Rules Reference](./docs/RULES.md)** - Complete list of all 13 rules
+
+---
+
+## 🗂️ OWASP Top 10 2021 Coverage
+
+| OWASP Category                         | Rules                                                                         | Coverage |
+| -------------------------------------- | :---------------------------------------------------------------------------- | :------: |
+| **A01:2021 Broken Access Control**     | `no-unsafe-search-path`                                                       |    ✅    |
+| **A03:2021 Injection**                 | `no-unsafe-query`, `no-unsafe-copy-from`                                      |    ✅    |
+| **A04:2021 Insecure Design**           | `no-transaction-on-pool`, `prevent-double-release`                            |    ✅    |
+| **A05:2021 Security Misconfiguration** | `no-insecure-ssl`, `no-hardcoded-credentials`                                 |    ✅    |
+| **A06:2021 Vulnerable Components**     | `no-floating-query`, `check-query-params`                                     |    ✅    |
+| **A09:2021 Logging Failures**          | `no-missing-client-release` (connection leak → resource exhaustion detection) |    ✅    |
 
 ---
 

@@ -1,28 +1,28 @@
-# Ignore test files
+# Source maps (debug-only, not needed in package)
+**/*.js.map
+
+# Test files
 **/*.test.ts
+**/*.test.js
 **/*.spec.ts
-
-# Ignore config files
-vitest.config.mts
-tsconfig.json
-tsconfig.lib.json
-tsconfig.spec.json
-eslint.config.mjs
-.eslintrc.json
-
-# Ignore development files
+**/*.spec.js
+__tests__/
+test/
 coverage/
-.analysis/
-.removed-rules/
-*.md.bak
 
-# Ignore source maps
-*.map
+# TypeScript source (we ship compiled JS + .d.ts)
+src/**/*.ts
+!**/*.d.ts
 
-# Include compiled and essential files
-!src/
-!dist/
-!README.md
-!LICENSE
-!CHANGELOG.md
-!AGENTS.md
+# Config files
+tsconfig*.json
+vitest.config.*
+jest.config.*
+.eslintrc*
+eslint.config.*
+
+# Development
+.git/
+.vscode/
+.idea/
+*.log

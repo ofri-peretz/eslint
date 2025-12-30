@@ -46,7 +46,7 @@ export const noMissingClientRelease: TSESLint.RuleModule<
         // Parent of AwaitExpression is VariableDeclarator
         
         // Check ancestry up to VariableDeclarator
-        let currentNode: any = node;
+        let currentNode: TSESTree.Node = node;
         if (node.parent?.type === AST_NODE_TYPES.AwaitExpression) {
           currentNode = node.parent;
         }
@@ -61,7 +61,7 @@ export const noMissingClientRelease: TSESLint.RuleModule<
           return;
         }
 
-        const clientVarName = declarator.id.name;
+        // Variable name is available as declarator.id.name if needed for debugging
         
         // Find the scope of the variable
         const variable = context.sourceCode.getDeclaredVariables(declarator)[0];

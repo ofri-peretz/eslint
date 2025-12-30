@@ -111,10 +111,9 @@ export const noUnsafeSearchPath: TSESLint.RuleModule<
             
             // This is a simplified visitor for the binary expression tree
             const parts: string[] = [];
-            const stack: any[] = [queryArg];
+            const stack: TSESTree.Node[] = [queryArg];
             
-            while(stack.length > 0) {
-              const curr = stack.pop();
+            for (let curr = stack.pop(); curr !== undefined; curr = stack.pop()) {
               if (curr.type === AST_NODE_TYPES.BinaryExpression && curr.operator === '+') {
                 stack.push(curr.right);
                 stack.push(curr.left);

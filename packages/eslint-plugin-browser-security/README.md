@@ -6,6 +6,15 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=browser_security)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=browser_security)
 
+## 💡 What You Get
+
+- **21 security rules** targeting browser-specific vulnerabilities
+- **XSS prevention** via DOM manipulation and dynamic content detection
+- **Storage security** preventing sensitive data exposure in localStorage/sessionStorage/IndexedDB
+- **Cross-origin protection** with postMessage origin validation
+- **LLM-optimized messages** with CWE references and auto-fix suggestions
+- **OWASP Top 10 coverage** for browser security patterns
+
 ## 🎯 Why This Plugin?
 
 Modern browser applications face unique security challenges across storage APIs, cross-origin communication, and dynamic content rendering. This plugin provides static analysis rules specifically designed for browser security patterns:

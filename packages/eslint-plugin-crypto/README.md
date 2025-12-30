@@ -1,9 +1,18 @@
 # eslint-plugin-crypto
+
+> 🔐 Security-focused ESLint plugin for cryptographic best practices. Detects weak algorithms, insecure key handling, CVE vulnerabilities, and guides you to modern, secure alternatives.
+
+[![npm version](https://img.shields.io/npm/v/eslint-plugin-crypto.svg)](https://www.npmjs.com/package/eslint-plugin-crypto)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=crypto)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=crypto)
 
-> Security-focused ESLint plugin with **24 AI-parseable rules** for cryptographic best practices.
+## 💡 What You Get
 
-Detects weak algorithms, insecure key handling, deprecated crypto patterns, CVE vulnerabilities, and guides you to modern, secure alternatives.
+- **24 security rules** covering cryptographic best practices
+- **CVE detection** for CVE-2023-46809, CVE-2020-36732, CVE-2023-46233
+- **OWASP Top 10 coverage** for cryptographic vulnerabilities
+- **LLM-optimized messages** with CWE references and fix guidance
+- **Package support** for crypto-hash, crypto-random-string, crypto-js
 
 ## Features
 
@@ -19,7 +28,7 @@ Detects weak algorithms, insecure key handling, deprecated crypto patterns, CVE 
 npm install eslint-plugin-crypto --save-dev
 ```
 
-## Usage
+## 🚀 Quick Start
 
 ### ESLint Flat Config (eslint.config.js)
 
@@ -139,6 +148,16 @@ All rules include LLM-optimized error messages with:
 - Severity levels (CRITICAL, HIGH, MEDIUM, LOW)
 - Direct fix suggestions with code examples
 - Documentation links
+
+## 🗂️ OWASP Top 10 2021 Coverage
+
+| OWASP Category                         | Rules                                                                                                          | Coverage |
+| -------------------------------------- | :------------------------------------------------------------------------------------------------------------- | :------: |
+| **A02:2021 Cryptographic Failures**    | `no-weak-hash-algorithm`, `no-weak-cipher-algorithm`, `no-static-iv`, `no-ecb-mode`, `no-hardcoded-crypto-key` |    ✅    |
+| **A03:2021 Injection**                 | `no-insecure-rsa-padding` (CVE-2023-46809)                                                                     |    ✅    |
+| **A04:2021 Insecure Design**           | `require-authenticated-encryption`, `require-key-length`, `no-insecure-key-derivation`                         |    ✅    |
+| **A05:2021 Security Misconfiguration** | `no-self-signed-certs`, `prefer-native-crypto`                                                                 |    ✅    |
+| **A07:2021 Identification Failures**   | `no-math-random-crypto`, `no-predictable-salt`, `require-random-iv`                                            |    ✅    |
 
 ## 🔗 Related ESLint Plugins
 

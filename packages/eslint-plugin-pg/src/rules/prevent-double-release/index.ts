@@ -93,8 +93,8 @@ export const preventDoubleRelease: TSESLint.RuleModule<
                         // Case 1: Same Block
                         if (parentA && parentB && parentA === parentB && parentA.type === AST_NODE_TYPES.BlockStatement) {
                              const block = parentA as TSESTree.BlockStatement;
-                             const indexA = block.body.indexOf(callA.parent as any);
-                             const indexB = block.body.indexOf(callB.parent as any);
+                              const indexA = block.body.indexOf(callA.parent as TSESTree.Statement);
+                              const indexB = block.body.indexOf(callB.parent as TSESTree.Statement);
                              if (indexB > indexA) { // strict ordering
                                  // Check for return
                                  let returns = false;

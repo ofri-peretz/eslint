@@ -1,4 +1,4 @@
-import { TSESLint, AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { TSESLint, AST_NODE_TYPES, TSESTree, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { NoInsecureSslOptions } from '../../types';
 
 export const noInsecureSsl: TSESLint.RuleModule<
@@ -41,7 +41,7 @@ export const noInsecureSsl: TSESLint.RuleModule<
         }
 
         const sslProp = configArg.properties.find(
-          (prop): prop is any =>
+          (prop): prop is TSESTree.Property =>
             prop.type === AST_NODE_TYPES.Property && prop.key.type === AST_NODE_TYPES.Identifier && prop.key.name === 'ssl'
         );
 
@@ -50,7 +50,7 @@ export const noInsecureSsl: TSESLint.RuleModule<
         // ssl: { rejectUnauthorized: false }
         if (sslProp.value.type === AST_NODE_TYPES.ObjectExpression) {
           const rejectUnauthorized = sslProp.value.properties.find(
-            (prop): prop is any =>
+            (prop): prop is TSESTree.Property =>
               prop.type === AST_NODE_TYPES.Property &&
               prop.key.type === AST_NODE_TYPES.Identifier &&
               prop.key.name === 'rejectUnauthorized'

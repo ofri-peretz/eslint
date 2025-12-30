@@ -1,6 +1,6 @@
 # eslint-plugin-nestjs-security
 
-**Feature-based security rules that AI assistants can actually understand and fix.**
+> 🔐 Security-focused ESLint plugin for NestJS applications. Detects missing guards, validation pipes, throttling, and exposed private fields with AI-optimized fix guidance.
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-nestjs-security.svg)](https://www.npmjs.com/package/eslint-plugin-nestjs-security)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-nestjs-security.svg)](https://www.npmjs.com/package/eslint-plugin-nestjs-security)

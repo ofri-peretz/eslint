@@ -1,5 +1,3 @@
-import { TSESLint } from '@interlace/eslint-devkit';
-
 export type NoUnsafeQueryOptions = [];
 export type NoInsecureSslOptions = [];
 export type NoHardcodedCredentialsOptions = [];

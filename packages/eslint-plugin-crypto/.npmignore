@@ -1,46 +1,28 @@
-# Development files
-*.test.ts
-*.spec.ts
-*.test.js
-*.spec.js
+# Source maps (debug-only, not needed in package)
+**/*.js.map
+
+# Test files
+**/*.test.ts
+**/*.test.js
+**/*.spec.ts
+**/*.spec.js
 __tests__/
 test/
-tests/
-*.test.tsx
-*.spec.tsx
+coverage/
 
-# Source maps
-*.map
+# TypeScript source (we ship compiled JS + .d.ts)
+src/**/*.ts
+!**/*.d.ts
 
-# TypeScript source (only publish compiled)
+# Config files
 tsconfig*.json
+vitest.config.*
+jest.config.*
 .eslintrc*
 eslint.config.*
 
-# Build configs
-vite.config.*
-vitest.config.*
-jest.config.*
-nx.json
-project.json
-
-# Development artifacts
-coverage/
-.nyc_output/
-*.log
-npm-debug.log*
-
-# IDE
+# Development
+.git/
 .vscode/
 .idea/
-*.swp
-*.swo
-
-# Git
-.git/
-.gitignore
-
-# Misc
-.DS_Store
-Thumbs.db
-*.tgz
+*.log
