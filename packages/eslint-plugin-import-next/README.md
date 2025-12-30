@@ -8,7 +8,7 @@
 
 ---
 
-## � Migrate from `eslint-plugin-import` in 60 Seconds
+## 🚀 Migrate from `eslint-plugin-import` in 60 Seconds
 
 **Step 1: Install**
 
@@ -45,27 +45,27 @@ Every rule from `eslint-plugin-import` is implemented with **the same name** and
 | `named`                      | `named`                      | ✅     | TypeScript-native, no extra config needed  |
 | `default`                    | `default`                    | ✅     | Faster validation                          |
 | `namespace`                  | `namespace`                  | ✅     | Deep path validation                       |
-| `no-absolute-path`           | `no-absolute-path`           | 🔜     | Coming soon                                |
-| `no-dynamic-require`         | `no-dynamic-require`         | 🔜     | Coming soon                                |
+| `no-absolute-path`           | `no-absolute-path`           | ✅     | Auto-fix to relative paths                 |
+| `no-dynamic-require`         | `no-dynamic-require`         | ✅     | Optional ESM import() check                |
 | `no-internal-modules`        | `no-internal-modules`        | ✅     | More glob patterns, better defaults        |
-| `no-relative-packages`       | `no-relative-packages`       | 🔜     | Coming soon                                |
+| `no-relative-packages`       | `no-relative-packages`       | ✅     | Auto-fix to package name                   |
 | `no-relative-parent-imports` | `no-relative-parent-imports` | ✅     | Smarter detection                          |
 | `no-self-import`             | `no-self-import`             | ✅     | Handles aliases correctly                  |
 | `no-cycle`                   | `no-cycle`                   | ✅     | **100x faster** with caching               |
-| `no-useless-path-segments`   | `no-useless-path-segments`   | �      | Coming soon                                |
+| `no-useless-path-segments`   | `no-useless-path-segments`   | ✅     | Auto-fix with noUselessIndex               |
 | `no-restricted-paths`        | `no-restricted-paths`        | ✅     | Extended zone options                      |
 
 ### ✅ Helpful Warnings (All Implemented)
 
 | `import/*` Rule              | `import-next/*` Rule         | Status | Improvements                             |
 | ---------------------------- | ---------------------------- | ------ | ---------------------------------------- |
-| `export`                     | `export`                     | 🔜     | Coming soon                              |
+| `export`                     | `export`                     | ✅     | Detects duplicate exports                |
 | `no-deprecated`              | `no-deprecated`              | ✅     | JSDoc + TypeScript `@deprecated` support |
-| `no-empty-named-blocks`      | `no-empty-named-blocks`      | 🔜     | Coming soon                              |
+| `no-empty-named-blocks`      | `no-empty-named-blocks`      | ✅     | Auto-fix and suggestions                 |
 | `no-extraneous-dependencies` | `no-extraneous-dependencies` | ✅     | Monorepo-aware, peerDeps support         |
 | `no-mutable-exports`         | `no-mutable-exports`         | ✅     | Detects `let` + `var` correctly          |
-| `no-named-as-default`        | `no-named-as-default`        | 🔜     | Coming soon                              |
-| `no-named-as-default-member` | `no-named-as-default-member` | 🔜     | Coming soon                              |
+| `no-named-as-default`        | `no-named-as-default`        | ✅     | Warns on shadowing                       |
+| `no-named-as-default-member` | `no-named-as-default-member` | ✅     | Warns on property access                 |
 | `no-unused-modules`          | `no-unused-modules`          | ✅     | Caches results, faster re-runs           |
 
 ### ✅ Module Systems (All Implemented)
@@ -74,31 +74,31 @@ Every rule from `eslint-plugin-import` is implemented with **the same name** and
 | -------------------------- | -------------------------- | ------ | ------------------------------------ |
 | `no-amd`                   | `no-amd`                   | ✅     | Better define() detection            |
 | `no-commonjs`              | `no-commonjs`              | ✅     | Distinguishes CJS from bundler shims |
-| `no-import-module-exports` | `no-import-module-exports` | 🔜     | Coming soon                          |
+| `no-import-module-exports` | `no-import-module-exports` | ✅     | Detects mixed module syntax          |
 | `no-nodejs-modules`        | `no-nodejs-modules`        | ✅     | `node:` protocol aware               |
-| `unambiguous`              | `unambiguous`              | 🔜     | Coming soon                          |
+| `unambiguous`              | `unambiguous`              | ✅     | Warns on ambiguous parse goal        |
 
 ### ✅ Style Guide (All Implemented)
 
-| `import/*` Rule                   | `import-next/*` Rule              | Status | Improvements                   |
-| --------------------------------- | --------------------------------- | ------ | ------------------------------ |
-| `consistent-type-specifier-style` | `consistent-type-specifier-style` | 🔜     | Coming soon                    |
-| `dynamic-import-chunkname`        | `dynamic-import-chunkname`        | 🔜     | Coming soon                    |
-| `exports-last`                    | `exports-last`                    | 🔜     | Coming soon                    |
-| `extensions`                      | `extensions`                      | ✅     | Smart defaults for TypeScript  |
-| `first`                           | `first`                           | ✅     | Better auto-fix                |
-| `group-exports`                   | `group-exports`                   | 🔜     | Coming soon                    |
-| `max-dependencies`                | `max-dependencies`                | ✅     | Category breakdown in messages |
-| `newline-after-import`            | `newline-after-import`            | ✅     | Respects grouped imports       |
-| `no-anonymous-default-export`     | `no-anonymous-default-export`     | ✅     | More patterns detected         |
-| `no-default-export`               | `no-default-export`               | ✅     | Suggestion to convert to named |
-| `no-duplicates`                   | `no-duplicates`                   | ✅     | Auto-merges imports            |
-| `no-named-default`                | `no-named-default`                | 🔜     | Coming soon                    |
-| `no-named-export`                 | `no-named-export`                 | ✅     | For default-only codebases     |
-| `no-namespace`                    | `no-namespace`                    | 🔜     | Coming soon                    |
-| `no-unassigned-import`            | `no-unassigned-import`            | ✅     | Smarter side-effect detection  |
-| `order`                           | `enforce-import-order`            | ✅     | **Enhanced** sorting algorithm |
-| `prefer-default-export`           | `prefer-default-export`           | ✅     | Configurable thresholds        |
+| `import/*` Rule                   | `import-next/*` Rule              | Status | Improvements                      |
+| --------------------------------- | --------------------------------- | ------ | --------------------------------- |
+| `consistent-type-specifier-style` | `consistent-type-specifier-style` | ✅     | Auto-fix between inline/top-level |
+| `dynamic-import-chunkname`        | `dynamic-import-chunkname`        | ✅     | Suggestions for chunk names       |
+| `exports-last`                    | `exports-last`                    | ✅     | Enforces export ordering          |
+| `extensions`                      | `extensions`                      | ✅     | Smart defaults for TypeScript     |
+| `first`                           | `first`                           | ✅     | Better auto-fix                   |
+| `group-exports`                   | `group-exports`                   | ✅     | Suggests combining exports        |
+| `max-dependencies`                | `max-dependencies`                | ✅     | Category breakdown in messages    |
+| `newline-after-import`            | `newline-after-import`            | ✅     | Respects grouped imports          |
+| `no-anonymous-default-export`     | `no-anonymous-default-export`     | ✅     | More patterns detected            |
+| `no-default-export`               | `no-default-export`               | ✅     | Suggestion to convert to named    |
+| `no-duplicates`                   | `no-duplicates`                   | ✅     | Auto-merges imports               |
+| `no-named-default`                | `no-named-default`                | ✅     | Warns on `{ default as }`         |
+| `no-named-export`                 | `no-named-export`                 | ✅     | For default-only codebases        |
+| `no-namespace`                    | `no-namespace`                    | ✅     | With ignore patterns              |
+| `no-unassigned-import`            | `no-unassigned-import`            | ✅     | Smarter side-effect detection     |
+| `order`                           | `order` / `enforce-import-order`  | ✅     | **Enhanced** sorting algorithm    |
+| `prefer-default-export`           | `prefer-default-export`           | ✅     | Configurable thresholds           |
 
 ### 🆕 Exclusive to `import-next`
 
@@ -120,7 +120,7 @@ Every rule from `eslint-plugin-import` is implemented with **the same name** and
 | **TypeScript**             | Requires extra resolver setup   | **Works out of the box**                    |
 | **Error Messages**         | Generic                         | **LLM-optimized** with CWE + specific fixes |
 | **Monorepo Support**       | Basic                           | **Excellent** (pnpm, Nx, Turborepo)         |
-| **Active Maintenance**     | Sporadic                        | **Actively maintained**                     |
+| **Total Rules**            | 43                              | **46** (+ architecture rules)               |
 
 ---
 
@@ -175,7 +175,7 @@ export default [
     rules: {
       'import-next/no-cycle': 'error',
       'import-next/no-duplicates': 'error',
-      'import-next/enforce-import-order': 'warn',
+      'import-next/order': 'warn',
     },
   },
 ];
@@ -183,21 +183,40 @@ export default [
 
 ---
 
-## 🔐 All 30 Rules
+## 📚 Available Presets
+
+| Preset              | Description                                  |
+| ------------------- | -------------------------------------------- |
+| `recommended`       | Essential rules for most projects            |
+| `strict`            | All rules enabled as errors                  |
+| `typescript`        | Optimized for TypeScript projects            |
+| `module-resolution` | Focus on import resolution                   |
+| `import-style`      | Focus on import formatting                   |
+| `esm`               | Enforce ES Modules only                      |
+| `architecture`      | Clean architecture boundaries                |
+| `errors`            | Matches eslint-plugin-import errors preset   |
+| `warnings`          | Matches eslint-plugin-import warnings preset |
+
+---
+
+## 🔐 All 46 Rules
 
 💼 = In `recommended` | 🔧 = Auto-fixable | 💡 = Has suggestions
 
 ### ⚡ Module Resolution
 
-| Rule             | Description                       | 💼  | 🔧  | 💡  |
-| ---------------- | --------------------------------- | :-: | :-: | :-: |
-| `no-unresolved`  | Ensure imports resolve            | 💼  |     | 💡  |
-| `named`          | Ensure named imports exist        | 💼  |     |     |
-| `default`        | Ensure default export exists      | 💼  |     |     |
-| `namespace`      | Ensure namespace properties exist | 💼  |     |     |
-| `extensions`     | Enforce file extension usage      |     |     |     |
-| `no-self-import` | Prevent self-imports              | 💼  |     | 💡  |
-| `no-duplicates`  | Merge duplicate imports           | 💼  | 🔧  |     |
+| Rule                       | Description                       | 💼  | 🔧  | 💡  |
+| -------------------------- | --------------------------------- | :-: | :-: | :-: |
+| `no-unresolved`            | Ensure imports resolve            | 💼  |     | 💡  |
+| `named`                    | Ensure named imports exist        | 💼  |     |     |
+| `default`                  | Ensure default export exists      | 💼  |     |     |
+| `namespace`                | Ensure namespace properties exist | 💼  |     |     |
+| `extensions`               | Enforce file extension usage      |     |     |     |
+| `no-self-import`           | Prevent self-imports              | 💼  |     | 💡  |
+| `no-duplicates`            | Merge duplicate imports           | 💼  | 🔧  |     |
+| `no-absolute-path`         | Forbid absolute paths             |     | 🔧  |     |
+| `no-useless-path-segments` | Simplify paths                    |     | 🔧  |     |
+| `export`                   | Forbid duplicate exports          | 💼  |     |     |
 
 ### 🔄 Dependency Boundaries
 
@@ -209,14 +228,18 @@ export default [
 | `enforce-dependency-direction` | Enforce layered imports         |     |     | 💡  |
 | `no-restricted-paths`          | Custom path restrictions        |     |     |     |
 | `no-relative-parent-imports`   | Prevent `../` imports           |     |     |     |
+| `no-relative-packages`         | Use package names               |     | 🔧  |     |
+| `no-dynamic-require`           | Forbid dynamic require()        |     |     |     |
 
 ### 📦 Module Systems
 
-| Rule                | Description               | 💼  | 🔧  | 💡  |
-| ------------------- | ------------------------- | :-: | :-: | :-: |
-| `no-amd`            | Forbid AMD require/define |     |     |     |
-| `no-commonjs`       | Forbid CommonJS           |     |     |     |
-| `no-nodejs-modules` | Forbid Node.js builtins   |     |     |     |
+| Rule                       | Description               | 💼  | 🔧  | 💡  |
+| -------------------------- | ------------------------- | :-: | :-: | :-: |
+| `no-amd`                   | Forbid AMD require/define |     |     |     |
+| `no-commonjs`              | Forbid CommonJS           |     |     |     |
+| `no-nodejs-modules`        | Forbid Node.js builtins   |     |     |     |
+| `no-import-module-exports` | No mixed ES/CJS           |     |     |     |
+| `unambiguous`              | Warn on ambiguous modules |     |     |     |
 
 ### 🎨 Export Style
 
@@ -228,24 +251,33 @@ export default [
 | `no-anonymous-default-export` | Require named default exports     |     |     |     |
 | `no-mutable-exports`          | Forbid `let`/`var` exports        |     |     |     |
 | `no-deprecated`               | Warn on `@deprecated` imports     |     |     |     |
+| `exports-last`                | Exports at end of file            |     |     |     |
+| `group-exports`               | Group exports together            |     |     |     |
 
 ### 📝 Import Style
 
-| Rule                   | Description                | 💼  | 🔧  | 💡  |
-| ---------------------- | -------------------------- | :-: | :-: | :-: |
-| `enforce-import-order` | Sort and group imports     | 💼  | 🔧  |     |
-| `first`                | Imports must be first      |     | 🔧  |     |
-| `newline-after-import` | Newline after imports      |     | 🔧  |     |
-| `no-unassigned-import` | Forbid side-effect imports |     |     |     |
+| Rule                              | Description                 | 💼  | 🔧  | 💡  |
+| --------------------------------- | --------------------------- | :-: | :-: | :-: |
+| `order`                           | Sort and group imports      | 💼  | 🔧  |     |
+| `first`                           | Imports must be first       |     | 🔧  |     |
+| `newline-after-import`            | Newline after imports       |     | 🔧  |     |
+| `no-unassigned-import`            | Forbid side-effect imports  |     |     |     |
+| `no-empty-named-blocks`           | Forbid empty `{}`           |     | 🔧  | 💡  |
+| `no-named-as-default`             | Warn on default shadowing   | 💼  |     |     |
+| `no-named-as-default-member`      | Warn on property access     | 💼  |     |     |
+| `no-named-default`                | Use default import syntax   |     |     |     |
+| `no-namespace`                    | Forbid `* as` imports       |     |     |     |
+| `consistent-type-specifier-style` | Type import style           |     | 🔧  |     |
+| `dynamic-import-chunkname`        | Require webpack chunk names |     |     | 💡  |
 
 ### 📊 Dependency Management
 
 | Rule                         | Description               | 💼  | 🔧  | 💡  |
 | ---------------------------- | ------------------------- | :-: | :-: | :-: |
-| `no-extraneous-dependencies` | Prevent unlisted deps     |     |     | 💡  |
+| `no-extraneous-dependencies` | Prevent unlisted deps     | 💼  |     | 💡  |
 | `no-unused-modules`          | Find dead code            |     |     | 💡  |
 | `max-dependencies`           | Limit module dependencies |     |     |     |
-| `prefer-node-protocol`       | Prefer `node:` protocol   |     |  �  |     |
+| `prefer-node-protocol`       | Prefer `node:` protocol   |     | 🔧  |     |
 
 ---
 
