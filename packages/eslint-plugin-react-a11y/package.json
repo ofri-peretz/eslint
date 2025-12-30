@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-react-a11y",
-  "version": "2.0.4",
+  "version": "3.0.0",
   "description": "React accessibility ESLint plugin with 37 LLM-optimized rules for WCAG 2.1 compliance. Provides structured error messages for AI assistants and auto-fix capabilities.",
   "type": "commonjs",
   "main": "./src/index.js",
