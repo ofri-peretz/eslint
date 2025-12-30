@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-react-features",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "ESLint React rules for modern react features, hooks, and patterns.",
   "type": "commonjs",
   "main": "./src/index.js",
