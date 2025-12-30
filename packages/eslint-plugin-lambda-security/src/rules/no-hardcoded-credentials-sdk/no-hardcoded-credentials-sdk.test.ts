@@ -1,3 +1,4 @@
+import { describe, it, afterAll } from 'vitest';
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { noHardcodedCredentialsSdk } from './index';
 

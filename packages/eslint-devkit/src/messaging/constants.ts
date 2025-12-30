@@ -9,6 +9,7 @@ import type {
   OWASP2025Category,
   OWASP2021Category,
   OWASPCategory,
+  OWASPServerlessCategory,
   ComplianceFramework,
 } from './types';
 
@@ -210,7 +211,78 @@ export const OWASP_2021_DETAILS: Record<
 };
 
 /**
- * Combined OWASP details (2025 + 2021)
+ * OWASP Serverless Top 10 (SAS) category details
+ * @see https://owasp.org/www-project-serverless-top-10/
+ */
+
+export const OWASP_SERVERLESS_DETAILS: Record<
+  OWASPServerlessCategory,
+  { name: string; description: string; link: string }
+> = {
+  'SAS-1': {
+    name: 'Function Event Data Injection',
+    description:
+      'Injecting malicious input via event data sources (API Gateway, S3, DynamoDB, etc.)',
+    link: 'https://owasp.org/www-project-serverless-top-10/',
+  },
+  'SAS-2': {
+    name: 'Broken Authentication',
+    description:
+      'Weak or missing authentication in serverless functions and API endpoints',
+    link: 'https://owasp.org/www-project-serverless-top-10/',
+  },
+  'SAS-3': {
+    name: 'Insecure Serverless Deployment Configuration',
+    description:
+      'Misconfigured serverless settings exposing functions or data',
+    link: 'https://owasp.org/www-project-serverless-top-10/',
+  },
+  'SAS-4': {
+    name: 'Over-Privileged Function Permissions',
+    description:
+      'Functions with excessive IAM permissions beyond what is needed',
+    link: 'https://owasp.org/www-project-serverless-top-10/',
+  },
+  'SAS-5': {
+    name: 'Inadequate Function Monitoring and Logging',
+    description:
+      'Insufficient logging, monitoring, and alerting for serverless functions',
+    link: 'https://owasp.org/www-project-serverless-top-10/',
+  },
+  'SAS-6': {
+    name: 'Insecure Third-Party Dependencies',
+    description:
+      'Vulnerable or malicious packages in serverless function dependencies',
+    link: 'https://owasp.org/www-project-serverless-top-10/',
+  },
+  'SAS-7': {
+    name: 'Insecure Application Secrets Storage',
+    description:
+      'Hardcoded secrets or improper secret management in serverless environments',
+    link: 'https://owasp.org/www-project-serverless-top-10/',
+  },
+  'SAS-8': {
+    name: 'Denial of Service & Financial Resource Exhaustion',
+    description:
+      'Attacks causing function overload, timeout, or cost explosion',
+    link: 'https://owasp.org/www-project-serverless-top-10/',
+  },
+  'SAS-9': {
+    name: 'Serverless Business Logic Manipulation',
+    description:
+      'Exploiting business logic flaws in stateless serverless functions',
+    link: 'https://owasp.org/www-project-serverless-top-10/',
+  },
+  'SAS-10': {
+    name: 'Improper Exception Handling',
+    description:
+      'Error handling that leaks sensitive information or fails silently',
+    link: 'https://owasp.org/www-project-serverless-top-10/',
+  },
+};
+
+/**
+ * Combined OWASP details (2025 + 2021 + Serverless)
  */
 export const OWASP_DETAILS: Record<
   OWASPCategory,
@@ -218,6 +290,7 @@ export const OWASP_DETAILS: Record<
 > = {
   ...OWASP_2025_DETAILS,
   ...OWASP_2021_DETAILS,
+  ...OWASP_SERVERLESS_DETAILS,
 };
 
 /**

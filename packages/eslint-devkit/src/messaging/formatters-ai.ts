@@ -2,6 +2,8 @@
  * AI-Native Runtime functions for LLM message formatting (Next-Gen)
  *
  * Contains the "Dual-Hertz" formatting engine for Agentic workflows
+ * This module provides context-aware message formatting that automatically
+ * routes between Human (CLI), Agent (JSON), and Hybrid (Cursor) modes.
  */
 
 import type {
@@ -17,17 +19,145 @@ import {
   severityToCVSS,
 } from './constants';
 import {
+  resolveAIMode,
+  resolveCompression,
   getAIMessagingMode,
   isTokenCompressionEnabled,
+  type RuleContextLike,
 } from './config';
 
 // ============================================================================
-// CORE FORMATTING FUNCTIONS (AI-NATIVE)
+// AST SELECTOR BUILDER
+// ============================================================================
+
+/**
+ * Node-like interface for AST selector building
+ * Compatible with TSESTree nodes
+ */
+export interface ASTNodeLike {
+  type: string;
+  parent?: ASTNodeLike;
+  callee?: { name?: string; property?: { name?: string } };
+  key?: { name?: string };
+  id?: { name?: string };
+  name?: string;
+}
+
+/**
+ * Builds a relative esquery selector from an AST node
+ * Goes up to the nearest "anchor" (function, class, method) for context
+ *
+ * @param node - The AST node that triggered the lint error
+ * @param maxDepth - Maximum levels to traverse up (default: 3)
+ * @returns An esquery-compatible selector string
+ *
+ * @example
+ * ```typescript
+ * // For a node: db.query('SELECT...')
+ * buildASTSelector(node)
+ * // Returns: "CallExpression[callee.property.name='query']"
+ *
+ * // For a node inside a method:
+ * buildASTSelector(node)
+ * // Returns: "MethodDefinition[key.name='getUser'] CallExpression[callee.name='eval']"
+ * ```
+ */
+export function buildASTSelector(node: ASTNodeLike, maxDepth = 3): string {
+  const parts: string[] = [];
+  let current: ASTNodeLike | undefined = node;
+  let depth = 0;
+
+  while (current && depth < maxDepth) {
+    const selector = buildNodeSelector(current);
+    if (selector) {
+      parts.unshift(selector);
+    }
+
+    // Stop at anchor nodes (stable reference points)
+    if (isAnchorNode(current.type)) {
+      break;
+    }
+
+    current = current.parent;
+    depth++;
+  }
+
+  return parts.join(' ');
+}
+
+/**
+ * Builds a selector for a single node
+ */
+function buildNodeSelector(node: ASTNodeLike): string | null {
+  switch (node.type) {
+    case 'CallExpression':
+      if (node.callee?.name) {
+        return `CallExpression[callee.name='${node.callee.name}']`;
+      }
+      if (node.callee?.property?.name) {
+        return `CallExpression[callee.property.name='${node.callee.property.name}']`;
+      }
+      return 'CallExpression';
+
+    case 'MethodDefinition':
+      if (node.key?.name) {
+        return `MethodDefinition[key.name='${node.key.name}']`;
+      }
+      return 'MethodDefinition';
+
+    case 'FunctionDeclaration':
+      if (node.id?.name) {
+        return `FunctionDeclaration[id.name='${node.id.name}']`;
+      }
+      return 'FunctionDeclaration';
+
+    case 'ClassDeclaration':
+      if (node.id?.name) {
+        return `ClassDeclaration[id.name='${node.id.name}']`;
+      }
+      return 'ClassDeclaration';
+
+    case 'VariableDeclarator':
+      if (node.id?.name) {
+        return `VariableDeclarator[id.name='${node.id.name}']`;
+      }
+      return 'VariableDeclarator';
+
+    case 'MemberExpression':
+      return 'MemberExpression';
+
+    case 'Identifier':
+      if (node.name) {
+        return `Identifier[name='${node.name}']`;
+      }
+      return 'Identifier';
+
+    default:
+      return node.type;
+  }
+}
+
+/**
+ * Checks if a node type is an "anchor" (stable reference point)
+ */
+function isAnchorNode(type: string): boolean {
+  return [
+    'FunctionDeclaration',
+    'FunctionExpression',
+    'ArrowFunctionExpression',
+    'MethodDefinition',
+    'ClassDeclaration',
+    'ClassExpression',
+    'Program',
+  ].includes(type);
+}
+
+// ============================================================================
+// CWE ENRICHMENT
 // ============================================================================
 
 /**
  * Auto-enriches options with security benchmark data based on CWE
- * (Duplicated helper to keep this file standalone-ish or importable if exported)
  */
 function enrichFromCWE(
   options: EnterpriseMessageOptions,
@@ -45,13 +175,19 @@ function enrichFromCWE(
   };
 }
 
+// ============================================================================
+// FORMATTERS
+// ============================================================================
+
 /**
- * Formats a message as a compressed JSON-L string for AI Agents
+ * Formats a message as structured JSON for AI Agents
  * Minimizes token usage while retaining strict semantic targeting
  */
-export function formatAgentMessage(options: AgentMessageOptions): string {
+export function formatAgentMessage(
+  options: AgentMessageOptions,
+  compress = false,
+): string {
   const enriched = enrichFromCWE(options);
-  const compress = isTokenCompressionEnabled();
 
   // Compressed keys if enabled (Token Economy)
   if (compress) {
@@ -83,55 +219,40 @@ export function formatAgentMessage(options: AgentMessageOptions): string {
 }
 
 /**
- * Next-Gen Message Formatter
- * Routes between Human (CLI), Agent (JSON), and Hybrid (Cursor) modes
- * @param options Full message options including agent hints
+ * Formats a human-readable message with optional hidden AI hints
  */
-export function formatLLMMessageNextGen(
-  options: LLMMessageOptions | EnterpriseMessageOptions | AgentMessageOptions,
+function formatHumanMessage(
+  options: EnterpriseMessageOptions,
+  includeHints = false,
 ): string {
-  const mode = getAIMessagingMode();
-
-  // Route to Agent Formatter if in AGENT_JSON mode
-  if (mode === 'AGENT_JSON') {
-    return formatAgentMessage(options as AgentMessageOptions);
-  }
-
-  // Enrich with security benchmark data from CWE
-  const enriched = enrichFromCWE(options as EnterpriseMessageOptions);
+  const enriched = enrichFromCWE(options);
   const { icon, cwe, description, severity, fix, documentationLink } = enriched;
-  const owasp = (enriched as EnterpriseMessageOptions).owasp;
-  const cvss = (enriched as EnterpriseMessageOptions).cvss;
-  const compliance = (enriched as EnterpriseMessageOptions).compliance;
+  const owasp = enriched.owasp;
+  const cvss = enriched.cvss;
+  const compliance = enriched.compliance;
 
-  // Build standards reference string (labeled for LLM + human clarity)
+  // Build standards reference string
   const standards: string[] = [];
   if (cwe) standards.push(cwe);
   if (owasp) {
-    // Format: "OWASP:A05-Injection" - includes category name for clarity across years
-    const owaspCode = owasp.split(':')[0]; // "A05" from "A05:2025"
+    const owaspCode = owasp.split(':')[0];
     const owaspDetails = OWASP_DETAILS[owasp];
-    const owaspName = owaspDetails?.name?.split(' ')[0] || ''; // First word: "Injection", "Broken", etc.
+    const owaspName = owaspDetails?.name?.split(' ')[0] || '';
     standards.push(`OWASP:${owaspCode}-${owaspName}`);
   }
   if (cvss !== undefined) standards.push(`CVSS:${cvss}`);
 
   const standardsPart = standards.length > 0 ? `${standards.join(' ')} | ` : '';
-
-  // Build compliance tags (compact)
   const compliancePart =
     compliance && compliance.length > 0
       ? ` [${compliance.slice(0, 4).join(',')}]`
       : '';
 
-  // Line 1: Icon + Standards + Description + Severity + Compliance
   const firstLine = `${icon} ${standardsPart}${description} | ${severity}${compliancePart}`;
-
-  // Line 2: Fix instruction + documentation link
   let secondLine = `   Fix: ${fix} | ${documentationLink}`;
 
-  // Hybrid Mode: Inject hidden AI hints for Cursor/Copilot
-  if (mode === 'IDE_CURSOR') {
+  // Inject hidden AI hints for Cursor/Copilot (Hybrid Mode)
+  if (includeHints) {
     const agentOptions = options as AgentMessageOptions;
     if (agentOptions.astSelector || agentOptions.aiHints) {
       const hints = [
@@ -145,4 +266,81 @@ export function formatLLMMessageNextGen(
   }
 
   return `${firstLine}\n${secondLine}`;
+}
+
+// ============================================================================
+// MAIN ENTRY POINT (Context-Aware)
+// ============================================================================
+
+/**
+ * Context-aware message formatter (Next-Gen)
+ *
+ * Automatically routes between output formats based on the resolved AI mode:
+ * - CLI: Human-readable with emojis and prose
+ * - CI: Human-readable (no colors)
+ * - IDE_CURSOR: Human-readable + hidden AI hints
+ * - AGENT_JSON: Structured JSON for agents
+ *
+ * @param options - Message options including optional agent hints
+ * @param context - ESLint rule context (for accessing settings)
+ * @returns Formatted message string
+ *
+ * @example
+ * ```typescript
+ * // In an ESLint rule
+ * context.report({
+ *   node,
+ *   message: formatMessageNextGen({
+ *     icon: '🔒',
+ *     severity: 'CRITICAL',
+ *     description: 'SQL Injection',
+ *     fix: 'Use parameterized queries',
+ *     astSelector: buildASTSelector(node),
+ *   }, context),
+ * });
+ * ```
+ */
+export function formatMessageNextGen(
+  options: LLMMessageOptions | EnterpriseMessageOptions | AgentMessageOptions,
+  context?: RuleContextLike,
+): string {
+  const mode = resolveAIMode(context);
+  const compress = resolveCompression(context);
+
+  switch (mode) {
+    case 'AGENT_JSON':
+      return formatAgentMessage(options as AgentMessageOptions, compress);
+
+    case 'IDE_CURSOR':
+      return formatHumanMessage(options as EnterpriseMessageOptions, true);
+
+    case 'CI':
+    case 'CLI':
+    default:
+      return formatHumanMessage(options as EnterpriseMessageOptions, false);
+  }
+}
+
+// ============================================================================
+// LEGACY API (Backward compatibility)
+// ============================================================================
+
+/**
+ * @deprecated Use formatMessageNextGen(options, context) instead
+ * Legacy formatter that uses global state instead of context
+ */
+export function formatLLMMessageNextGen(
+  options: LLMMessageOptions | EnterpriseMessageOptions | AgentMessageOptions,
+): string {
+  const mode = getAIMessagingMode();
+  const compress = isTokenCompressionEnabled();
+
+  if (mode === 'AGENT_JSON') {
+    return formatAgentMessage(options as AgentMessageOptions, compress);
+  }
+
+  return formatHumanMessage(
+    options as EnterpriseMessageOptions,
+    mode === 'IDE_CURSOR',
+  );
 }

@@ -108,6 +108,96 @@ These shortcuts bypass the full pipeline:
 
 ---
 
+## Release Pipeline
+
+**Trigger**: Manual only (`workflow_dispatch`)
+
+### Architecture
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                      release.yml (Unified)                        │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │  📦 Package Selector                                        │ │
+│  │  ├── all-affected (default) - releases all changed pkgs    │ │
+│  │  ├── eslint-devkit (released FIRST - dependency order)     │ │
+│  │  └── [14 more packages...]                                  │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+│                              ↓                                    │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │  🔍 Detect Affected                                         │ │
+│  │  Uses Nx --affected to find changed packages               │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+│                              ↓                                    │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │  🚀 Sequential Release Loop                                 │ │
+│  │  For each package (devkit first):                          │ │
+│  │   → Tag Reconciliation (deadlock prevention)               │ │
+│  │   → CI Validation (optional)                               │ │
+│  │   → Version Bump (conventional commits + fallback)         │ │
+│  │   → Build                                                  │ │
+│  │   → Git Push (source of truth)                            │ │
+│  │   → NPM Publish (with provenance)                         │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Workflow File
+
+| File          | Purpose                                 |
+| ------------- | --------------------------------------- |
+| `release.yml` | Unified release workflow with all logic |
+
+### Available Packages
+
+| Package                          | npm Name                           |
+| -------------------------------- | ---------------------------------- |
+| eslint-plugin-secure-coding      | `eslint-plugin-secure-coding`      |
+| eslint-plugin-import-next        | `eslint-plugin-import-next`        |
+| eslint-plugin-express-security   | `eslint-plugin-express-security`   |
+| eslint-plugin-nestjs-security    | `eslint-plugin-nestjs-security`    |
+| eslint-plugin-browser-security   | `eslint-plugin-browser-security`   |
+| eslint-plugin-crypto             | `eslint-plugin-crypto`             |
+| eslint-plugin-jwt                | `eslint-plugin-jwt`                |
+| eslint-plugin-pg                 | `eslint-plugin-pg`                 |
+| eslint-plugin-lambda-security    | `eslint-plugin-lambda-security`    |
+| eslint-plugin-vercel-ai-security | `eslint-plugin-vercel-ai-security` |
+| eslint-plugin-architecture       | `eslint-plugin-architecture`       |
+| eslint-plugin-quality            | `eslint-plugin-quality`            |
+| eslint-plugin-react-a11y         | `eslint-plugin-react-a11y`         |
+| eslint-plugin-react-features     | `eslint-plugin-react-features`     |
+| eslint-devkit                    | `@interlace/eslint-devkit`         |
+| cli                              | `@interlace/cli`                   |
+
+### Usage
+
+1. Go to **Actions** → **Release Package** → **Run workflow**
+2. Select **package** from dropdown
+3. Configure options:
+   - **version-specifier**: `auto` (conventional commits), `patch`, `minor`, `major`, etc.
+   - **dist-tag**: `latest`, `next`, `beta`, `rc`, `alpha`
+   - **run-ci**: Enable/disable pre-publish validation
+   - **dry-run**: Preview changes without publishing
+   - **force-version**: Override with specific version (e.g., `2.1.0`)
+   - **generate-changelog**: Create GitHub release
+
+### Deadlock Prevention
+
+The release workflow handles these failure modes automatically:
+
+| Failure        | Symptom                            | Resolution                   |
+| -------------- | ---------------------------------- | ---------------------------- |
+| Orphaned Tag   | Git tag exists, npm publish failed | Auto-cleanup of orphaned tag |
+| NPM Ahead      | Package on npm but no git tag      | Skip with warning            |
+| Race Condition | Concurrent releases                | Blocked by concurrency group |
+| No Changes     | Conventional commits yield nothing | Fallback to patch            |
+
+### Trusted Publishers (Future)
+
+Workflows are configured with `id-token: write` for future migration to npm Trusted Publishers (OIDC). See `.gemini/design-release-pipeline.md` for setup checklist.
+
+---
+
 ## Full Example Session
 
 ### With Orchestrator (Recommended)

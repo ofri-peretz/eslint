@@ -16,6 +16,10 @@ export default [
             '{projectRoot}/vite.config.{js,ts,mjs,mts}',
             '{projectRoot}/vitest.config.{js,ts,mjs,mts}',
           ],
+          ignoredDependencies: [
+            'vitest', // Dev dependency - used for testing only
+            '@nx/vite', // Dev dependency - Nx plugin for Vite/Vitest
+          ],
         },
       ],
     },

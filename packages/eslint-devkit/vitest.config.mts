@@ -26,6 +26,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    watch: false,
     include: ['src/**/*.test.ts'],
     passWithNoTests: true,
     // Global setup runs once before all tests to ensure coverage directories exist

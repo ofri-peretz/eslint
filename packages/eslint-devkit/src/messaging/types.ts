@@ -30,7 +30,26 @@ export type OWASP2021Category =
   | 'A09:2021' // Logging Failures
   | 'A10:2021'; // SSRF
 
-export type OWASPCategory = OWASP2025Category | OWASP2021Category;
+/**
+ * OWASP Serverless Top 10 (SAS) Categories
+ * @see https://owasp.org/www-project-serverless-top-10/
+ */
+export type OWASPServerlessCategory =
+  | 'SAS-1' // Injection
+  | 'SAS-2' // Broken Authentication
+  | 'SAS-3' // Insecure Serverless Deployment Configuration
+  | 'SAS-4' // Over-Privileged Function Permissions
+  | 'SAS-5' // Inadequate Function Monitoring and Logging
+  | 'SAS-6' // Insecure Third-Party Dependencies
+  | 'SAS-7' // Insecure Application Secrets Storage
+  | 'SAS-8' // Denial of Service & Financial Resource Exhaustion
+  | 'SAS-9' // Serverless Business Logic Manipulation
+  | 'SAS-10'; // Improper Exception Handling
+
+export type OWASPCategory =
+  | OWASP2025Category
+  | OWASP2021Category
+  | OWASPServerlessCategory;
 
 export type ComplianceFramework =
   | 'SOC2'

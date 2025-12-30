@@ -7,10 +7,61 @@ if ! git diff --cached --name-only | grep -q "^packages/"; then
   exit 0
 fi
 
-echo "🚀 Running pre-commit checks (Nx cached)..."
+echo "🚀 Running pre-commit checks..."
 
-# Run lint and test in PARALLEL using Nx's built-in parallelization
-# This uses Nx's cache - if files haven't changed, results are instant
-pnpm nx affected -t lint,test \
-  --parallel=3 \
-  --output-style=stream-without-prefixes
+# Get affected projects based on staged changes (uncommitted)
+# Using --uncommitted ensures we check what's actually being committed
+# Using --output-style=static prevents VS Code output overload (no dynamic rewrites)
+
+# Run lint first (faster, catches most issues)
+echo "📝 Running lint..."
+LINT_OUTPUT=$(pnpm nx affected -t lint \
+  --uncommitted \
+  --parallel=4 \
+  --output-style=static 2>&1)
+LINT_EXIT=$?
+
+if [ $LINT_EXIT -ne 0 ]; then
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "📋 Affected projects detected:"
+  pnpm nx show projects --affected --uncommitted 2>/dev/null | head -20
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "$LINT_OUTPUT" | tail -50
+  echo "❌ Lint failed"
+  echo ""
+  echo "💡 Tip: Run 'pnpm nx affected -t lint --uncommitted' to see full output"
+  exit 1
+fi
+
+# Show minimal lint summary (last few lines)
+echo "$LINT_OUTPUT" | grep -E "(Successfully|passed|warning|error)" | tail -5
+
+# Run tests (only if lint passes)
+echo "🧪 Running tests..."
+TEST_OUTPUT=$(pnpm nx affected -t test \
+  --uncommitted \
+  --parallel=4 \
+  --output-style=static 2>&1)
+TEST_EXIT=$?
+
+if [ $TEST_EXIT -ne 0 ]; then
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "📋 Affected projects detected:"
+  pnpm nx show projects --affected --uncommitted 2>/dev/null | head -20
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "$TEST_OUTPUT" | tail -100
+  echo "❌ Tests failed"
+  echo ""
+  echo "💡 Tip: Run 'pnpm nx affected -t test --uncommitted' to see full output"
+  exit 1
+fi
+
+# Show minimal test summary
+echo "$TEST_OUTPUT" | grep -E "(Test Files|Tests|passed|failed)" | tail -5
+
+echo "✅ All checks passed!"
+exit 0

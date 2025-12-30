@@ -9,6 +9,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    watch: false,
     include: ['src/**/*.test.ts'],
     passWithNoTests: true,
     globalSetup: ['../../vitest.global-setup.ts'],

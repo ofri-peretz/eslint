@@ -1,5 +1,6 @@
 import nx from '@nx/eslint-plugin';
 import eslintPluginUnicorn from 'eslint-plugin-unicorn';
+import localPlugin from './tools/eslint-rules/index.js';
 
 export default [
   ...nx.configs['flat/base'],
@@ -49,6 +50,16 @@ export default [
       'unicorn/prefer-node-protocol': 'error',
     },
   },
+  // Local rule: Ensure vitest configs have watch: false for CI
+  {
+    files: ['**/vitest.config.mts', '**/vitest.config.ts', '**/vitest.config.js'],
+    plugins: {
+      local: localPlugin,
+    },
+    rules: {
+      'local/require-vitest-watch-false': 'error',
+    },
+  },
   {
     files: ['**/*.json'],
     rules: {
@@ -62,6 +73,8 @@ export default [
           ],
           ignoredDependencies: [
             'eslint', // Peer dependency - provided by consuming projects
+            'vitest', // Dev dependency - used for testing only
+            '@nx/vite', // Dev dependency - Nx plugin for Vite/Vitest
           ],
         },
       ],
@@ -71,3 +84,4 @@ export default [
     },
   },
 ];
+

@@ -45,20 +45,20 @@ src/handlers/api.ts
 
 | OWASP Category                         | Coverage | Rules                                                                            |
 | -------------------------------------- | :------: | -------------------------------------------------------------------------------- |
-| **SAS-1: Injection**                   |    🔜    | `no-unvalidated-event-body` (planned)                                            |
+| **SAS-1: Injection**                   |    ✅    | `no-unvalidated-event-body`                                                      |
 | **SAS-2: Broken Authentication**       |    ✅    | `no-hardcoded-credentials-sdk`                                                   |
 | **SAS-3: Sensitive Data Exposure**     |    ✅    | `no-env-logging`, `no-secrets-in-env`                                            |
 | **SAS-4: Security Misconfiguration**   |    ✅    | `no-permissive-cors-*`                                                           |
-| **SAS-5: Broken Access Control**       |    🔜    | Coming soon                                                                      |
-| **SAS-6: Insufficient Logging**        |    🔜    | Coming soon                                                                      |
-| **SAS-7: Denial of Service**           |    🔜    | Coming soon                                                                      |
-| **SAS-8: Server-Side Request Forgery** |    🔜    | Coming soon                                                                      |
-| **SAS-9: Functions Misconfiguration**  |    🔜    | Coming soon                                                                      |
-| **SAS-10: Improper Crypto**            |    🔜    | Use [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) |
+| **SAS-5: Broken Access Control**       |    ✅    | `no-missing-authorization-check`, `no-overly-permissive-iam-policy`              |
+| **SAS-6: Insufficient Logging**        |    ✅    | `no-error-swallowing`                                                            |
+| **SAS-7: Denial of Service**           |    ✅    | `require-timeout-handling`, `no-unbounded-batch-processing`                      |
+| **SAS-8: Server-Side Request Forgery** |    ✅    | `no-user-controlled-requests`                                                    |
+| **SAS-9: Functions Misconfiguration**  |    ✅    | `no-exposed-error-details`                                                       |
+| **SAS-10: Improper Crypto**            |    ➡️    | Use [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) |
 
 ---
 
-## 🔐 5 Security Rules
+## 🔐 13 Security Rules
 
 💼 = Set in `recommended` | ⚠️ = Warns in `recommended` | 🔧 = Auto-fixable | 💡 = Suggestions
 
@@ -76,6 +76,24 @@ src/handlers/api.ts
 | ----------------------------------------------------------- | ------- | ----- | ---- | ---------------------------------------------- | --- | --- | --- | --- |
 | [no-permissive-cors-response](#no-permissive-cors-response) | CWE-942 | SAS-4 | 9.1  | Wildcard CORS in Lambda response headers       | 💼  |     | 🔧  |     |
 | [no-permissive-cors-middy](#no-permissive-cors-middy)       | CWE-942 | SAS-4 | 9.1  | Permissive CORS in @middy/http-cors middleware | 💼  |     |     |     |
+
+### Input Validation & Access Control (4 rules)
+
+| Rule                            | CWE     | OWASP | CVSS | Description                                         | 💼  | ⚠️  | 🔧  | 💡  |
+| ------------------------------- | ------- | ----- | ---- | --------------------------------------------------- | --- | --- | --- | --- |
+| no-unvalidated-event-body       | CWE-20  | SAS-1 | 8.0  | Lambda handlers using event body without validation |     | ⚠️  |     | 💡  |
+| no-missing-authorization-check  | CWE-862 | SAS-5 | 7.5  | Lambda handlers without authorization checks        |     | ⚠️  |     | 💡  |
+| no-overly-permissive-iam-policy | CWE-732 | SAS-5 | 6.5  | IAM policies with wildcard permissions              | 💼  |     |     | 💡  |
+| no-user-controlled-requests     | CWE-918 | SAS-8 | 9.1  | HTTP requests with user-controlled URLs (SSRF)      | 💼  |     |     | 💡  |
+
+### Security Operations (4 rules)
+
+| Rule                          | CWE     | OWASP | CVSS | Description                                  | 💼  | ⚠️  | 🔧  | 💡  |
+| ----------------------------- | ------- | ----- | ---- | -------------------------------------------- | --- | --- | --- | --- |
+| no-error-swallowing           | CWE-390 | SAS-6 | 5.0  | Empty catch blocks and missing error logging |     | ⚠️  |     | 💡  |
+| require-timeout-handling      | CWE-400 | SAS-7 | 6.0  | External calls without timeout handling      |     | ⚠️  |     | 💡  |
+| no-unbounded-batch-processing | CWE-770 | SAS-7 | 5.5  | Processing batch records without size limits |     | ⚠️  |     | 💡  |
+| no-exposed-error-details      | CWE-209 | SAS-9 | 4.3  | Exposing internal error details in responses |     | ⚠️  |     | 💡  |
 
 ---
 

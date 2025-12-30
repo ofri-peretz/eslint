@@ -1,0 +1,893 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Release Package
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# UNIFIED RELEASE WORKFLOW
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Single workflow to release packages in the monorepo.
+# - Select a specific package OR
+# - Select "all-affected" to release all packages with changes since last release
+#
+# Dependency Order: @interlace/eslint-devkit is ALWAYS released first when affected,
+# since other packages depend on it.
+#
+# Trigger: Manual only (workflow_dispatch)
+# Branch: main only
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+# NPM AUTHENTICATION STRATEGY (2025+)
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# PRIORITY 1: NPM Trusted Publishers (OIDC - Recommended for existing packages)
+#   - Requires: id-token: write permission
+#   - Requires: Package already exists on npm with Trusted Publisher configured
+#   - Setup: npm.js.com → Package Settings → Publishing access → Add GitHub Actions
+#   - Uses GitHub OIDC to mint short-lived tokens (no secrets needed)
+#   - Publishes with provenance attestation
+#
+# PRIORITY 2: NPM_TOKEN (Legacy - Required for first-release)
+#   - Required for NEW packages that don't exist on npm yet
+#   - After first publish, configure Trusted Publishers and remove token
+#   - Uses Granular Access Token with minimal scopes
+#
+# FIRST RELEASE FLOW:
+#   1. Workflow detects package doesn't exist on npm (404)
+#   2. Uses NPM_TOKEN + --first-release flag for initial publish
+#   3. After success, go to npmjs.com and configure Trusted Publishers
+#   4. Future releases use OIDC (no token needed)
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+on:
+    workflow_dispatch:
+        inputs:
+            package:
+                description: "Package to release (all-affected = release all changed packages)"
+                required: false
+                type: choice
+                default: "all-affected"
+                options:
+                    - all-affected
+                    - eslint-devkit
+                    - eslint-plugin-secure-coding
+                    - eslint-plugin-import-next
+                    - eslint-plugin-express-security
+                    - eslint-plugin-nestjs-security
+                    - eslint-plugin-browser-security
+                    - eslint-plugin-crypto
+                    - eslint-plugin-jwt
+                    - eslint-plugin-pg
+                    - eslint-plugin-lambda-security
+                    - eslint-plugin-vercel-ai-security
+                    - eslint-plugin-architecture
+                    - eslint-plugin-quality
+                    - eslint-plugin-react-a11y
+                    - eslint-plugin-react-features
+                    - cli
+
+            version-specifier:
+                description: "Version bump strategy (auto = conventional commits)"
+                required: false
+                type: choice
+                options:
+                    - auto
+                    - major
+                    - minor
+                    - patch
+                    - premajor
+                    - preminor
+                    - prepatch
+                    - prerelease
+                default: "auto"
+
+            dist-tag:
+                description: "NPM distribution tag"
+                required: false
+                type: choice
+                options:
+                    - latest
+                    - next
+                    - beta
+                    - rc
+                    - alpha
+                default: "latest"
+
+            run-ci:
+                description: "Run CI validation (usually not needed - main already passed CI)"
+                required: false
+                type: boolean
+                default: false
+
+            dry-run:
+                description: "Dry run: preview changes without modifying git or NPM"
+                required: false
+                type: boolean
+                default: false
+
+            force-version:
+                description: "Force specific version (e.g., 3.1.0) - overrides version-specifier"
+                required: false
+                type: string
+                default: ""
+
+            generate-changelog:
+                description: "Generate changelog (creates GitHub release)"
+                required: false
+                type: boolean
+                default: true
+
+# Prevent concurrent release runs
+concurrency:
+    group: release-workflow
+    cancel-in-progress: false
+
+env:
+    NODE_VERSION: "20"
+    PNPM_VERSION: "10.18.3"
+    # Dependency order: devkit MUST be first since others depend on it
+    # This array defines the release sequence for all-affected mode
+    DEPENDENCY_ORDER: "eslint-devkit,eslint-plugin-secure-coding,eslint-plugin-crypto,eslint-plugin-jwt,eslint-plugin-pg,eslint-plugin-express-security,eslint-plugin-nestjs-security,eslint-plugin-browser-security,eslint-plugin-lambda-security,eslint-plugin-vercel-ai-security,eslint-plugin-architecture,eslint-plugin-quality,eslint-plugin-react-a11y,eslint-plugin-react-features,eslint-plugin-import-next,cli"
+
+jobs:
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # STEP 1: DETECT AFFECTED PACKAGES
+    # ═══════════════════════════════════════════════════════════════════════════════
+    detect-affected:
+        name: 🔍 Detect Affected Packages
+        runs-on: ubuntu-latest
+        outputs:
+            packages: ${{ steps.detect.outputs.packages }}
+            package-count: ${{ steps.detect.outputs.package-count }}
+            matrix: ${{ steps.detect.outputs.matrix }}
+        steps:
+            - name: 📥 Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  fetch-tags: true
+                  ref: main
+
+            - name: ⚙️ Setup pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: ${{ env.PNPM_VERSION }}
+
+            - name: ⚙️ Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: "pnpm"
+
+            - name: 📦 Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: 🔍 Detect packages to release
+              id: detect
+              run: |
+                  SELECTED="${{ inputs.package }}"
+
+                  if [ "$SELECTED" = "all-affected" ]; then
+                    echo "🔍 Detecting all affected packages..."
+                    
+                    # Find the last release tag to compare against
+                    LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+                    
+                    if [ -z "$LAST_TAG" ]; then
+                      echo "⚠️ No previous tags found, checking all packages"
+                      BASE="HEAD~10"
+                    else
+                      echo "📌 Comparing against last tag: $LAST_TAG"
+                      BASE="$LAST_TAG"
+                    fi
+                    
+                    # Get affected projects using Nx
+                    AFFECTED=$(pnpm nx show projects --affected --base=$BASE --head=HEAD 2>/dev/null || echo "")
+                    
+                    # Filter to only publishable packages (in packages/ directory)
+                    PUBLISHABLE_PACKAGES=""
+                    for pkg in eslint-devkit eslint-plugin-secure-coding eslint-plugin-crypto eslint-plugin-jwt eslint-plugin-pg eslint-plugin-express-security eslint-plugin-nestjs-security eslint-plugin-browser-security eslint-plugin-lambda-security eslint-plugin-vercel-ai-security eslint-plugin-architecture eslint-plugin-quality eslint-plugin-react-a11y eslint-plugin-react-features eslint-plugin-import-next cli; do
+                      if echo "$AFFECTED" | grep -q "^$pkg$"; then
+                        if [ -z "$PUBLISHABLE_PACKAGES" ]; then
+                          PUBLISHABLE_PACKAGES="$pkg"
+                        else
+                          PUBLISHABLE_PACKAGES="$PUBLISHABLE_PACKAGES,$pkg"
+                        fi
+                      fi
+                    done
+                    
+                    # If eslint-devkit is affected, ensure it's first (dependency order)
+                    if echo "$PUBLISHABLE_PACKAGES" | grep -q "eslint-devkit"; then
+                      # Remove devkit from wherever it is
+                      OTHERS=$(echo "$PUBLISHABLE_PACKAGES" | sed 's/eslint-devkit,//g' | sed 's/,eslint-devkit//g' | sed 's/^eslint-devkit$//g')
+                      if [ -n "$OTHERS" ]; then
+                        PUBLISHABLE_PACKAGES="eslint-devkit,$OTHERS"
+                      else
+                        PUBLISHABLE_PACKAGES="eslint-devkit"
+                      fi
+                    fi
+                    
+                    if [ -z "$PUBLISHABLE_PACKAGES" ]; then
+                      echo "ℹ️ No affected packages found"
+                      echo "packages=" >> $GITHUB_OUTPUT
+                      echo "package-count=0" >> $GITHUB_OUTPUT
+                      echo "matrix={\"package\":[]}" >> $GITHUB_OUTPUT
+                    else
+                      echo "📦 Affected packages (in dependency order): $PUBLISHABLE_PACKAGES"
+                      echo "packages=$PUBLISHABLE_PACKAGES" >> $GITHUB_OUTPUT
+                      
+                      # Count packages
+                      COUNT=$(echo "$PUBLISHABLE_PACKAGES" | tr ',' '\n' | wc -l | tr -d ' ')
+                      echo "package-count=$COUNT" >> $GITHUB_OUTPUT
+                      
+                      # Create matrix JSON (for sequential release)
+                      MATRIX_JSON=$(echo "$PUBLISHABLE_PACKAGES" | tr ',' '\n' | jq -R . | jq -s '{package: .}')
+                      echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+                    fi
+                  else
+                    echo "📦 Single package selected: $SELECTED"
+                    echo "packages=$SELECTED" >> $GITHUB_OUTPUT
+                    echo "package-count=1" >> $GITHUB_OUTPUT
+                    echo "matrix={\"package\":[\"$SELECTED\"]}" >> $GITHUB_OUTPUT
+                  fi
+
+            - name: 📊 Summary
+              run: |
+                  echo "## 🔍 Package Detection" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  if [ "${{ steps.detect.outputs.package-count }}" = "0" ]; then
+                    echo "ℹ️ No packages to release" >> $GITHUB_STEP_SUMMARY
+                  else
+                    echo "| Package | Status |" >> $GITHUB_STEP_SUMMARY
+                    echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+                    echo "${{ steps.detect.outputs.packages }}" | tr ',' '\n' | while read pkg; do
+                      echo "| \`$pkg\` | 🚀 Pending |" >> $GITHUB_STEP_SUMMARY
+                    done
+                  fi
+
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # STEP 2: RELEASE PACKAGES (Sequential to respect dependencies)
+    # ═══════════════════════════════════════════════════════════════════════════════
+    release:
+        name: 🚀 Release
+        needs: detect-affected
+        if: needs.detect-affected.outputs.package-count != '0'
+        runs-on: ubuntu-latest
+        environment: production
+        timeout-minutes: 60
+        permissions:
+            contents: write
+            id-token: write
+
+        steps:
+            - name: 📥 Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  fetch-tags: true
+                  ref: main
+                  token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: ⚙️ Setup pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: ${{ env.PNPM_VERSION }}
+
+            - name: ⚙️ Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  registry-url: https://registry.npmjs.org/
+                  cache: "pnpm"
+
+            - name: 📦 Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: 🗄️ Restore NX cache
+              uses: actions/cache@v4
+              with:
+                  path: .nx/cache
+                  key: nx-cache-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+                  restore-keys: |
+                      nx-cache-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+                      nx-cache-${{ runner.os }}-
+
+            - name: 🔍 Verify NPM Authentication
+              if: inputs.dry-run == false
+              id: npm-auth
+              run: |
+                  echo "🔍 Verifying NPM authentication..."
+                  echo ""
+
+                  # Check if NPM_TOKEN is available (needed for first-release packages)
+                  HAS_TOKEN=false
+                  if [ -n "$NPM_TOKEN" ]; then
+                    HAS_TOKEN=true
+                    echo "✅ NPM_TOKEN secret is configured"
+                  else
+                    echo "⚠️ NPM_TOKEN not configured (OK if all packages have Trusted Publishers)"
+                  fi
+
+                  # Try to authenticate
+                  AUTH_USER=$(npm whoami --registry=https://registry.npmjs.org/ 2>&1) || {
+                    echo ""
+                    echo "┌─────────────────────────────────────────────────────────────────┐"
+                    echo "│ ❌ NPM AUTHENTICATION FAILED                                    │"
+                    echo "├─────────────────────────────────────────────────────────────────┤"
+                    echo "│                                                                 │"
+                    echo "│ 🔍 ROOT CAUSE: Unable to authenticate with npm registry         │"
+                    echo "│                                                                 │"
+                    echo "│ 📋 CHECKLIST:                                                   │"
+                    echo "│    1. Go to: GitHub Repo → Settings → Secrets → Actions        │"
+                    echo "│    2. Check NPM_TOKEN exists and is not expired                 │"
+                    echo "│    3. Token must have 'Read and write' permission for packages  │"
+                    echo "│    4. Token must not be IP-restricted (GitHub Actions IPs vary) │"
+                    echo "│                                                                 │"
+                    echo "│ 🔗 CREATE NEW TOKEN:                                            │"
+                    echo "│    npmjs.com → Avatar → Access Tokens → Generate New Token     │"
+                    echo "│    → Granular Access Token → Select packages → Read and write  │"
+                    echo "│                                                                 │"
+                    echo "└─────────────────────────────────────────────────────────────────┘"
+                    echo ""
+                    exit 1
+                  }
+
+                  echo "✅ Authenticated as: $AUTH_USER"
+                  echo "has-token=$HAS_TOKEN" >> $GITHUB_OUTPUT
+                  echo "npm-user=$AUTH_USER" >> $GITHUB_OUTPUT
+              env:
+                  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            - name: 🔧 Configure Git
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+
+            # ──────────────────────────────────────────────────────────────────────
+            # RELEASE LOOP - Sequential to respect dependencies
+            # ──────────────────────────────────────────────────────────────────────
+            - name: 🚀 Release Packages (Sequential)
+              id: release-all
+              run: |
+                  PACKAGES="${{ needs.detect-affected.outputs.packages }}"
+                  DRY_RUN="${{ inputs.dry-run }}"
+                  VERSION_SPEC="${{ inputs.version-specifier }}"
+                  DIST_TAG="${{ inputs.dist-tag }}"
+                  FORCE_VERSION="${{ inputs.force-version }}"
+                  GENERATE_CHANGELOG="${{ inputs.generate-changelog }}"
+                  RUN_CI="${{ inputs.run-ci }}"
+
+                  RELEASED_PACKAGES=""
+                  FAILED_PACKAGES=""
+                  SKIPPED_PACKAGES=""
+
+
+                  echo "═══════════════════════════════════════════════════════════════"
+                  echo "🚀 RELEASE PIPELINE - Sequential Mode"
+                  echo "═══════════════════════════════════════════════════════════════"
+                  echo "📦 Packages: $PACKAGES"
+                  echo "📝 Version: $VERSION_SPEC"
+                  echo "🏷️ Dist tag: $DIST_TAG"
+                  echo "🔍 Dry run: $DRY_RUN"
+                  echo ""
+
+                  # Convert comma-separated to array
+                  IFS=',' read -ra PACKAGE_ARRAY <<< "$PACKAGES"
+
+                  for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
+                    echo ""
+                    echo "═══════════════════════════════════════════════════════════════"
+                    echo "📦 Processing: $PACKAGE"
+                    echo "═══════════════════════════════════════════════════════════════"
+                    
+                    # Check if any of this package's dependencies failed (using Nx graph)
+                    FAILED_DEP=""
+                    if [ -n "$FAILED_PACKAGES" ]; then
+                      # Get this package's dependencies from Nx
+                      DEPS=$(pnpm nx show project $PACKAGE --json 2>/dev/null | jq -r '.implicitDependencies // [] | .[]' 2>/dev/null || echo "")
+                      # Also check sourceRoot-based dependencies
+                      DEPS="$DEPS $(pnpm nx graph --print-affected --focus=$PACKAGE 2>/dev/null | jq -r '.nodes | keys[]' 2>/dev/null | grep -v "^$PACKAGE$" || echo "")"
+                      
+                      for dep in $DEPS; do
+                        if echo "$FAILED_PACKAGES" | grep -q "$dep"; then
+                          FAILED_DEP="$dep"
+                          break
+                        fi
+                      done
+                    fi
+                    
+                    if [ -n "$FAILED_DEP" ]; then
+                      echo "⏭️ SKIPPED: $PACKAGE"
+                      echo "   └─ Reason: Dependency '$FAILED_DEP' failed to release"
+                      echo "   └─ Action: Fix $FAILED_DEP first, then re-run release"
+                      SKIPPED_PACKAGES="$SKIPPED_PACKAGES $PACKAGE(dep:$FAILED_DEP)"
+                      continue
+                    fi
+                    
+                    # Resolve npm package name
+                    case "$PACKAGE" in
+                      eslint-devkit)
+                        NPM_NAME="@interlace/eslint-devkit"
+                        ;;
+                      cli)
+                        NPM_NAME="@interlace/cli"
+                        ;;
+                      *)
+                        NPM_NAME="$PACKAGE"
+                        ;;
+                    esac
+                    
+                    echo "🎯 Target project: $PACKAGE"
+                    echo "📛 NPM name: $NPM_NAME"
+                    
+                    # ──────────────────────────────────────────────────────────────
+                    # TAG RECONCILIATION - Deadlock Prevention
+                    # ──────────────────────────────────────────────────────────────
+                    CURRENT_VERSION=$(node -p "require('./packages/$PACKAGE/package.json').version")
+                    EXPECTED_TAG="${PACKAGE}@${CURRENT_VERSION}"
+                    
+                    echo "📌 Current version: $CURRENT_VERSION"
+                    echo "🏷️ Expected tag: $EXPECTED_TAG"
+                    
+                    # Check for conflicts
+                    TAG_EXISTS=false
+                    NPM_EXISTS=false
+                    
+                    if git rev-parse "$EXPECTED_TAG" >/dev/null 2>&1; then
+                      TAG_EXISTS=true
+                      echo "⚠️ Git tag exists: $EXPECTED_TAG"
+                    fi
+                    
+                    if npm view "$NPM_NAME@$CURRENT_VERSION" version >/dev/null 2>&1; then
+                      NPM_EXISTS=true
+                      echo "⚠️ NPM version exists: $NPM_NAME@$CURRENT_VERSION"
+                    fi
+                    
+                    # Decision matrix for deadlock prevention
+                    if [ "$TAG_EXISTS" = "true" ] && [ "$NPM_EXISTS" = "true" ]; then
+                      echo "✅ Already released - skipping"
+                      SKIPPED_PACKAGES="$SKIPPED_PACKAGES $PACKAGE"
+                      continue
+                    elif [ "$TAG_EXISTS" = "true" ] && [ "$NPM_EXISTS" = "false" ]; then
+                      echo "⚠️ Orphaned tag detected - cleaning up..."
+                      if [ "$DRY_RUN" = "false" ]; then
+                        git tag -d "$EXPECTED_TAG" 2>/dev/null || true
+                        git push origin ":refs/tags/$EXPECTED_TAG" 2>/dev/null || true
+                        echo "✅ Orphaned tag cleaned"
+                      else
+                        echo "🔍 [DRY RUN] Would delete orphaned tag"
+                      fi
+                    elif [ "$TAG_EXISTS" = "false" ] && [ "$NPM_EXISTS" = "true" ]; then
+                      echo "⚠️ NPM ahead of git - will bump version"
+                    fi
+                    
+                    # ──────────────────────────────────────────────────────────────
+                    # CI VALIDATION (Optional) - Matches ci-pr.yml + lint-pr.yml
+                    # ──────────────────────────────────────────────────────────────
+                    if [ "$RUN_CI" = "true" ]; then
+                      echo ""
+                      echo "🧪 Running CI validation (matches ci-pr.yml + lint-pr.yml)..."
+                      
+                      # LINT (matches lint-pr.yml)
+                      echo "📝 Linting..."
+                      pnpm nx lint $PACKAGE --verbose || {
+                        echo "❌ FAILED: $PACKAGE"
+                        echo "   └─ Stage: Lint"
+                        echo "   └─ Action: Run 'pnpm nx lint $PACKAGE' locally to see errors"
+                        FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+                        continue
+                      }
+                      
+                      # TEST (matches ci-pr.yml)
+                      echo "🧪 Testing..."
+                      pnpm nx test $PACKAGE -c ci --verbose || {
+                        echo "❌ FAILED: $PACKAGE"
+                        echo "   └─ Stage: Test"
+                        echo "   └─ Action: Run 'pnpm nx test $PACKAGE' locally to see failures"
+                        FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+                        continue
+                      }
+                      
+                      # BUILD (matches ci-pr.yml)
+                      echo "🔨 Building..."
+                      pnpm nx build $PACKAGE --verbose || {
+                        echo "❌ FAILED: $PACKAGE"
+                        echo "   └─ Stage: Build"
+                        echo "   └─ Action: Run 'pnpm nx build $PACKAGE' locally to see errors"
+                        FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+                        continue
+                      }
+                      
+                      # TYPECHECK (matches ci-pr.yml)
+                      echo "🔍 Typechecking..."
+                      pnpm nx typecheck $PACKAGE --verbose || {
+                        echo "❌ FAILED: $PACKAGE"
+                        echo "   └─ Stage: Typecheck"
+                        echo "   └─ Action: Run 'pnpm nx typecheck $PACKAGE' locally to see errors"
+                        FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+                        continue
+                      }
+                      
+                      echo "✅ CI validation passed (lint + test + build + typecheck)"
+                    fi
+                    
+                    # ──────────────────────────────────────────────────────────────
+                    # VERSION BUMP
+                    # ──────────────────────────────────────────────────────────────
+                    if [ "$DRY_RUN" = "true" ]; then
+                      echo ""
+                      echo "🔍 [DRY RUN] Version bump preview:"
+                      if [ -n "$FORCE_VERSION" ]; then
+                        pnpm nx release version $FORCE_VERSION --projects=$PACKAGE --dry-run || true
+                      elif [ "$VERSION_SPEC" != "auto" ]; then
+                        pnpm nx release version $VERSION_SPEC --projects=$PACKAGE --dry-run || true
+                      else
+                        pnpm nx release version --projects=$PACKAGE --dry-run || true
+                      fi
+                    else
+                      echo ""
+                      echo "📝 Bumping version..."
+                      
+                      VERSION_FAILED=false
+                      if [ -n "$FORCE_VERSION" ]; then
+                        pnpm nx release version $FORCE_VERSION --projects=$PACKAGE || VERSION_FAILED=true
+                      elif [ "$VERSION_SPEC" != "auto" ]; then
+                        pnpm nx release version $VERSION_SPEC --projects=$PACKAGE || VERSION_FAILED=true
+                      else
+                        OUTPUT=$(pnpm nx release version --projects=$PACKAGE 2>&1) || VERSION_FAILED=true
+                        echo "$OUTPUT"
+                        
+                        # Fallback to patch if no conventional commits
+                        if [ "$VERSION_FAILED" = "true" ] && echo "$OUTPUT" | grep -q "No changes detected"; then
+                          echo "ℹ️ No conventional commits, falling back to patch..."
+                          pnpm nx release version patch --projects=$PACKAGE || {
+                            echo "❌ FAILED: $PACKAGE"
+                            echo "   └─ Stage: Version bump (patch fallback)"
+                            echo "   └─ Action: Check nx release configuration"
+                            FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+                            continue
+                          }
+                          VERSION_FAILED=false
+                        fi
+                      fi
+                      
+                      if [ "$VERSION_FAILED" = "true" ]; then
+                        echo "❌ FAILED: $PACKAGE"
+                        echo "   └─ Stage: Version bump"
+                        echo "   └─ Action: Run 'pnpm nx release version --projects=$PACKAGE' locally"
+                        FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+                        continue
+                      fi
+                      
+                      NEW_VERSION=$(node -p "require('./packages/$PACKAGE/package.json').version")
+                      echo "✅ New version: $NEW_VERSION"
+                      
+                      # ──────────────────────────────────────────────────────────────
+                      # TEST + BUILD (Always required - build depends on test)
+                      # ──────────────────────────────────────────────────────────────
+                      echo ""
+                      echo "🧪 Testing package..."
+                      pnpm nx test $PACKAGE -c ci --verbose || {
+                        echo "❌ FAILED: $PACKAGE"
+                        echo "   └─ Stage: Test (pre-publish)"
+                        echo "   └─ Action: Run 'pnpm nx test $PACKAGE' locally to see failures"
+                        FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+                        continue
+                      }
+                      
+                      echo ""
+                      echo "🔨 Building package..."
+                      pnpm nx build $PACKAGE --verbose || {
+                        echo "❌ FAILED: $PACKAGE"
+                        echo "   └─ Stage: Build (pre-publish)"
+                        echo "   └─ Action: Run 'pnpm nx build $PACKAGE' locally to see errors"
+                        FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+                        continue
+                      }
+                      
+                      # ──────────────────────────────────────────────────────────────
+                      # CHANGELOG
+                      # ──────────────────────────────────────────────────────────────
+                      if [ "$GENERATE_CHANGELOG" = "true" ]; then
+                        echo ""
+                        echo "📝 Generating changelog..."
+                        pnpm nx release changelog --projects=$PACKAGE || echo "⚠️ Changelog failed (non-blocking)"
+                      fi
+                      
+                      # ──────────────────────────────────────────────────────────────
+                      # PUSH (Git is source of truth - push BEFORE npm)
+                      # ──────────────────────────────────────────────────────────────
+                      echo ""
+                      echo "📤 Pushing changes to git..."
+                      
+                      # Pull latest to avoid push conflicts
+                      git pull --rebase origin main || {
+                        echo "❌ FAILED: $PACKAGE"
+                        echo "   └─ Stage: Git pull --rebase"
+                        echo "   └─ Cause: Merge conflict or upstream changes"
+                        echo "   └─ Action: Pull latest changes locally and resolve conflicts"
+                        FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+                        continue
+                      }
+                      
+                      git push origin main || {
+                        echo "❌ FAILED: $PACKAGE"
+                        echo "   └─ Stage: Git push"
+                        echo "   └─ Cause: Push rejected (race condition or permission issue)"
+                        echo "   └─ Action: Re-run the release workflow"
+                        FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+                        continue
+                      }
+                      
+                      git push origin --tags || echo "⚠️ Some tags may already exist"
+                      echo "✅ Git push successful"
+                      
+                      # ──────────────────────────────────────────────────────────────
+                      # PUBLISH TO NPM (with First-Release + Trusted Publishers support)
+                      # ──────────────────────────────────────────────────────────────
+                      echo ""
+                      echo "📤 Publishing to NPM..."
+                      
+                      # ────────────────────────────────────────────────────────────
+                      # STEP 1: Detect if this is a first-release (package doesn't exist on npm)
+                      # ────────────────────────────────────────────────────────────
+                      IS_FIRST_RELEASE=false
+                      PACKAGE_EXISTS_CHECK=$(npm view "$NPM_NAME" name 2>&1) || true
+                      
+                      if echo "$PACKAGE_EXISTS_CHECK" | grep -qiE "(404|not found|no such package)"; then
+                        IS_FIRST_RELEASE=true
+                        echo "🆕 First release detected - package '$NPM_NAME' does not exist on npm yet"
+                        echo "   └─ Will use --first-release flag"
+                        echo "   └─ After success: Configure Trusted Publishers at npmjs.com"
+                      fi
+                      
+                      # Pre-publish check: version already exists?
+                      if [ "$IS_FIRST_RELEASE" = "false" ]; then
+                        if npm view "$NPM_NAME@$NEW_VERSION" version >/dev/null 2>&1; then
+                          echo "⚠️ Version $NEW_VERSION already on npm - skipping publish"
+                          SKIPPED_PACKAGES="$SKIPPED_PACKAGES $PACKAGE"
+                          continue
+                        fi
+                      fi
+                      
+                      # ────────────────────────────────────────────────────────────
+                      # STEP 2: Build publish command with appropriate flags
+                      # ────────────────────────────────────────────────────────────
+                      PUBLISH_CMD="pnpm nx release publish --projects=$PACKAGE --tag $DIST_TAG"
+                      
+                      if [ "$IS_FIRST_RELEASE" = "true" ]; then
+                        PUBLISH_CMD="$PUBLISH_CMD --first-release"
+                        echo "📦 Command: $PUBLISH_CMD"
+                      fi
+                      
+                      # ────────────────────────────────────────────────────────────
+                      # STEP 3: Execute publish with comprehensive error handling
+                      # ────────────────────────────────────────────────────────────
+                      PUBLISH_OUTPUT=$($PUBLISH_CMD 2>&1) || {
+                        PUBLISH_EXIT=$?
+                        echo "$PUBLISH_OUTPUT"
+                        echo ""
+                        
+                        # ════════════════════════════════════════════════════════════
+                        # ACTIONABLE ERROR DIAGNOSIS
+                        # ════════════════════════════════════════════════════════════
+                        
+                        # ERROR: Version already exists (403/EPUBLISHCONFLICT)
+                        if echo "$PUBLISH_OUTPUT" | grep -qiE "(403|EPUBLISHCONFLICT|cannot publish over|already exists)"; then
+                          echo "⚠️ Version $NEW_VERSION already on npm (detected during publish) - marking as skipped"
+                          SKIPPED_PACKAGES="$SKIPPED_PACKAGES $PACKAGE"
+                          continue
+                        fi
+                        
+                        # ERROR: 401 Unauthorized
+                        if echo "$PUBLISH_OUTPUT" | grep -qiE "(401|unauthorized|ENEEDAUTH|not logged in)"; then
+                          echo "┌─────────────────────────────────────────────────────────────────┐"
+                          echo "│ ❌ NPM PUBLISH FAILED: 401 UNAUTHORIZED                         │"
+                          echo "├─────────────────────────────────────────────────────────────────┤"
+                          echo "│ 📦 Package: $NPM_NAME                                           │"
+                          echo "│                                                                 │"
+                          echo "│ 🔍 ROOT CAUSE: Authentication credentials invalid or expired    │"
+                          echo "│                                                                 │"
+                          echo "│ 📋 FIX OPTIONS:                                                 │"
+                          echo "│                                                                 │"
+                          echo "│ OPTION A - Trusted Publishers (Recommended for existing pkgs): │"
+                          echo "│    1. Go to: npmjs.com → Package '$NPM_NAME' → Settings        │"
+                          echo "│    2. Click: 'Publishing access' → 'Add trusted publisher'     │"
+                          echo "│    3. Configure: GitHub repo + workflow file + environment     │"
+                          echo "│    4. Re-run this workflow (no token needed!)                  │"
+                          echo "│                                                                 │"
+                          echo "│ OPTION B - NPM Token (Required for first release):             │"
+                          echo "│    1. Go to: npmjs.com → Avatar → Access Tokens                │"
+                          echo "│    2. Generate: Granular Access Token                          │"
+                          echo "│    3. Scopes: Read and write for '$NPM_NAME'                   │"
+                          echo "│    4. Add to: GitHub → Repo Settings → Secrets → NPM_TOKEN     │"
+                          echo "│                                                                 │"
+                          echo "└─────────────────────────────────────────────────────────────────┘"
+                          FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+                          continue
+                        fi
+                        
+                        # ERROR: 403 Forbidden (not version conflict)
+                        if echo "$PUBLISH_OUTPUT" | grep -qiE "(403|forbidden|EPERM)" && ! echo "$PUBLISH_OUTPUT" | grep -qiE "(already exists|cannot publish over)"; then
+                          echo "┌─────────────────────────────────────────────────────────────────┐"
+                          echo "│ ❌ NPM PUBLISH FAILED: 403 FORBIDDEN                            │"
+                          echo "├─────────────────────────────────────────────────────────────────┤"
+                          echo "│ 📦 Package: $NPM_NAME                                           │"
+                          echo "│                                                                 │"
+                          echo "│ 🔍 ROOT CAUSE: Token lacks permission for this package          │"
+                          echo "│                                                                 │"
+                          echo "│ 📋 CHECKLIST:                                                   │"
+                          echo "│    □ Token has 'Read and write' scope for '$NPM_NAME'?         │"
+                          echo "│    □ Package name is not taken by another user?                │"
+                          echo "│    □ You are a maintainer/owner of this package on npm?        │"
+                          echo "│    □ 2FA is not blocking automated publishes?                  │"
+                          echo "│                                                                 │"
+                          echo "│ 💡 TIP: If using Trusted Publishers, verify:                   │"
+                          echo "│    - Correct repository: ofri-peretz/eslint                    │"
+                          echo "│    - Correct workflow: .github/workflows/release.yml           │"
+                          echo "│    - Correct environment: production                           │"
+                          echo "│                                                                 │"
+                          echo "└─────────────────────────────────────────────────────────────────┘"
+                          FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+                          continue
+                        fi
+                        
+                        # ERROR: 404 Not Found (for updates to non-existent package)
+                        if echo "$PUBLISH_OUTPUT" | grep -qiE "(404|not found)" && [ "$IS_FIRST_RELEASE" = "false" ]; then
+                          echo "┌─────────────────────────────────────────────────────────────────┐"
+                          echo "│ ❌ NPM PUBLISH FAILED: 404 PACKAGE NOT FOUND                    │"
+                          echo "├─────────────────────────────────────────────────────────────────┤"
+                          echo "│ 📦 Package: $NPM_NAME                                           │"
+                          echo "│                                                                 │"
+                          echo "│ 🔍 ROOT CAUSE: Package doesn't exist yet on npm                 │"
+                          echo "│                                                                 │"
+                          echo "│ 📋 ACTION REQUIRED:                                             │"
+                          echo "│    This appears to be a first-time release but wasn't detected. │"
+                          echo "│    Re-run the workflow - it should now detect --first-release.  │"
+                          echo "│                                                                 │"
+                          echo "│ 💡 AFTER FIRST PUBLISH:                                         │"
+                          echo "│    1. Go to: npmjs.com → Package '$NPM_NAME' → Settings        │"
+                          echo "│    2. Configure: Trusted Publishers for future releases        │"
+                          echo "│                                                                 │"
+                          echo "└─────────────────────────────────────────────────────────────────┘"
+                          FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+                          continue
+                        fi
+                        
+                        # ERROR: Network/Registry issues
+                        if echo "$PUBLISH_OUTPUT" | grep -qiE "(ECONNREFUSED|ETIMEDOUT|ENOTFOUND|network|registry)"; then
+                          echo "┌─────────────────────────────────────────────────────────────────┐"
+                          echo "│ ❌ NPM PUBLISH FAILED: NETWORK ERROR                            │"
+                          echo "├─────────────────────────────────────────────────────────────────┤"
+                          echo "│ 📦 Package: $NPM_NAME                                           │"
+                          echo "│                                                                 │"
+                          echo "│ 🔍 ROOT CAUSE: Cannot reach npm registry                        │"
+                          echo "│                                                                 │"
+                          echo "│ 📋 POSSIBLE CAUSES:                                             │"
+                          echo "│    • npm registry is experiencing issues                        │"
+                          echo "│    • GitHub Actions runner network issue                        │"
+                          echo "│    • Temporary DNS resolution failure                           │"
+                          echo "│                                                                 │"
+                          echo "│ 💡 ACTION: Wait a few minutes and re-run the workflow          │"
+                          echo "│    Check: https://status.npmjs.org/                             │"
+                          echo "│                                                                 │"
+                          echo "└─────────────────────────────────────────────────────────────────┘"
+                          FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+                          continue
+                        fi
+                        
+                        # GENERIC ERROR: Unknown failure
+                        echo "┌─────────────────────────────────────────────────────────────────┐"
+                        echo "│ ❌ NPM PUBLISH FAILED: UNKNOWN ERROR                            │"
+                        echo "├─────────────────────────────────────────────────────────────────┤"
+                        echo "│ 📦 Package: $NPM_NAME                                           │"
+                        echo "│ 📊 Exit code: $PUBLISH_EXIT                                     │"
+                        echo "│                                                                 │"
+                        echo "│ 📋 DEBUGGING STEPS:                                             │"
+                        echo "│    1. Review the full error output above                        │"
+                        echo "│    2. Try publishing locally: pnpm nx release publish \\        │"
+                        echo "│         --projects=$PACKAGE --dry-run                           │"
+                        echo "│    3. Check npm status: https://status.npmjs.org/               │"
+                        echo "│                                                                 │"
+                        echo "└─────────────────────────────────────────────────────────────────┘"
+                        FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+                        continue
+                      }
+                      
+                      echo "$PUBLISH_OUTPUT"
+                      echo "✅ Published $NPM_NAME@$NEW_VERSION"
+                      
+                      # First-release post-publish guidance
+                      if [ "$IS_FIRST_RELEASE" = "true" ]; then
+                        echo ""
+                        echo "┌─────────────────────────────────────────────────────────────────┐"
+                        echo "│ 🎉 FIRST RELEASE SUCCESSFUL!                                    │"
+                        echo "├─────────────────────────────────────────────────────────────────┤"
+                        echo "│ 📦 Package: $NPM_NAME@$NEW_VERSION                              │"
+                        echo "│                                                                 │"
+                        echo "│ 📋 NEXT STEP - Configure Trusted Publishers:                   │"
+                        echo "│    1. Go to: npmjs.com → '$NPM_NAME' → Settings                │"
+                        echo "│    2. Click: 'Publishing access' → 'Add trusted publisher'     │"
+                        echo "│    3. Select: GitHub Actions                                   │"
+                        echo "│    4. Enter:                                                   │"
+                        echo "│       • Repository: ofri-peretz/eslint                         │"
+                        echo "│       • Workflow: .github/workflows/release.yml                │"
+                        echo "│       • Environment: production                                │"
+                        echo "│                                                                 │"
+                        echo "│ 💡 After setup, future releases won't need NPM_TOKEN!          │"
+                        echo "└─────────────────────────────────────────────────────────────────┘"
+                      fi
+                      
+                      RELEASED_PACKAGES="$RELEASED_PACKAGES $PACKAGE@$NEW_VERSION"
+                    fi
+                  done
+
+                  # Output results
+                  echo ""
+                  echo "═══════════════════════════════════════════════════════════════"
+                  echo "📊 RELEASE SUMMARY"
+                  echo "═══════════════════════════════════════════════════════════════"
+                  echo "✅ Released: $RELEASED_PACKAGES"
+                  echo "⏭️ Skipped: $SKIPPED_PACKAGES"
+                  echo "❌ Failed: $FAILED_PACKAGES"
+
+                  echo "released=$RELEASED_PACKAGES" >> $GITHUB_OUTPUT
+                  echo "skipped=$SKIPPED_PACKAGES" >> $GITHUB_OUTPUT
+                  echo "failed=$FAILED_PACKAGES" >> $GITHUB_OUTPUT
+
+                  # Fail workflow if any packages failed
+                  if [ -n "$FAILED_PACKAGES" ]; then
+                    echo "❌ Some packages failed to release"
+                    exit 1
+                  fi
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+                  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+                  NPM_CONFIG_PROVENANCE: true
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  NX_SKIP_NX_CLOUD: "true"
+
+            # ──────────────────────────────────────────────────────────────────────
+            # SUMMARY
+            # ──────────────────────────────────────────────────────────────────────
+            - name: 📊 Generate Summary
+              if: always()
+              run: |
+                  echo "## 📦 Release Summary" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+
+                  if [ "${{ inputs.dry-run }}" = "true" ]; then
+                    echo "### 🔍 Dry Run Mode" >> $GITHUB_STEP_SUMMARY
+                    echo "No changes were made." >> $GITHUB_STEP_SUMMARY
+                  else
+                    RELEASED="${{ steps.release-all.outputs.released }}"
+                    SKIPPED="${{ steps.release-all.outputs.skipped }}"
+                    FAILED="${{ steps.release-all.outputs.failed }}"
+                    
+                    if [ -n "$RELEASED" ]; then
+                      echo "### ✅ Released" >> $GITHUB_STEP_SUMMARY
+                      echo "" >> $GITHUB_STEP_SUMMARY
+                      for pkg in $RELEASED; do
+                        echo "- \`$pkg\`" >> $GITHUB_STEP_SUMMARY
+                      done
+                    fi
+                    
+                    if [ -n "$SKIPPED" ]; then
+                      echo "" >> $GITHUB_STEP_SUMMARY
+                      echo "### ⏭️ Skipped (already released)" >> $GITHUB_STEP_SUMMARY
+                      echo "" >> $GITHUB_STEP_SUMMARY
+                      for pkg in $SKIPPED; do
+                        echo "- \`$pkg\`" >> $GITHUB_STEP_SUMMARY
+                      done
+                    fi
+                    
+                    if [ -n "$FAILED" ]; then
+                      echo "" >> $GITHUB_STEP_SUMMARY
+                      echo "### ❌ Failed" >> $GITHUB_STEP_SUMMARY
+                      echo "" >> $GITHUB_STEP_SUMMARY
+                      for pkg in $FAILED; do
+                        echo "- \`$pkg\`" >> $GITHUB_STEP_SUMMARY
+                      done
+                    fi
+                  fi
