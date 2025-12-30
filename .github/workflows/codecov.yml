@@ -89,10 +89,12 @@ jobs:
               exit 1
             fi
             echo "📊 Running tests with coverage for: $PROJECT"
-            pnpm nx test "$PROJECT" -c ci --coverage --verbose --skip-nx-cache || echo "⚠️ Tests completed with issues"
+            # Add JUnit reporter for Codecov Test Analytics
+            pnpm nx test "$PROJECT" -c ci --coverage --verbose --skip-nx-cache -- --reporter=default --reporter=junit --outputFile=test-results/junit.xml || echo "⚠️ Tests completed with issues"
           else
             echo "📊 Running tests with coverage for all packages..."
-            pnpm nx run-many -t test --all -c ci --coverage --verbose --skip-nx-cache --nxBail=false || echo "⚠️ Some tests may have failed"
+            # Add JUnit reporter for Codecov Test Analytics
+            pnpm nx run-many -t test --all -c ci --coverage --verbose --skip-nx-cache --nxBail=false -- --reporter=default --reporter=junit --outputFile=test-results/junit.xml || echo "⚠️ Some tests may have failed"
           fi
         env:
           NX_SKIP_NX_CLOUD: "true"
@@ -139,6 +141,15 @@ jobs:
             --fail-on-error || echo "⚠️ Codecov upload completed with warnings"
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: 🧪 Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/*/test-results/junit.xml
+          fail_ci_if_error: false
+          verbose: true
 
       # ═══════════════════════════════════════════════════════════════════════
       # COVERAGE SUMMARY
