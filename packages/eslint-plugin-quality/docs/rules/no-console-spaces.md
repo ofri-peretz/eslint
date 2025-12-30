@@ -56,7 +56,7 @@ console.log(`Value: ${value}`);
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-console-spaces': 'warn'
+    'quality/no-console-spaces': 'warn'
   }
 }
 ```

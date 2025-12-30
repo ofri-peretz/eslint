@@ -59,7 +59,7 @@ export function Component() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/react-in-jsx-scope': 'error'
+    'react-features/react-in-jsx-scope': 'error'
   }
 }
 ```
@@ -69,7 +69,7 @@ export function Component() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/react-in-jsx-scope': 'off'
+    'react-features/react-in-jsx-scope': 'off'
   }
 }
 ```

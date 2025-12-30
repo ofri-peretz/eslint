@@ -78,7 +78,7 @@ flowchart TD
 export default [
   {
     rules: {
-      'eslint-plugin/no-missing-null-checks': 'error',
+      'quality/no-missing-null-checks': 'error',
     },
   },
 ];

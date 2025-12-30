@@ -131,7 +131,7 @@ function Card() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/jsx-no-literals': 'warn'
+    'react-features/jsx-no-literals': 'warn'
   }
 }
 ```
@@ -141,7 +141,7 @@ function Card() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/jsx-no-literals': ['error', {
+    'react-features/jsx-no-literals': ['error', {
       noStrings: true,
       allowedStrings: ['©', '•', '|', '-', '→', '←'],
       ignoreProps: true
@@ -155,7 +155,7 @@ function Card() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/jsx-no-literals': ['error', {
+    'react-features/jsx-no-literals': ['error', {
       noStrings: true,
       allowedStrings: [],
       ignoreProps: false
@@ -169,7 +169,7 @@ function Card() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/jsx-no-literals': ['warn', {
+    'react-features/jsx-no-literals': ['warn', {
       noStrings: true,
       allowedStrings: [' ', '\n'],
       ignoreProps: true

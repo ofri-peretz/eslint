@@ -134,7 +134,7 @@ class UserService {
 export default [
   {
     rules: {
-      'eslint-plugin/no-console-log': 'error',
+      'quality/no-console-log': 'error',
     },
   },
 ];
@@ -151,7 +151,7 @@ export default [
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-console-log': ['error', {
+    'quality/no-console-log': ['error', {
       strategy: 'remove'
     }]
   }
@@ -176,7 +176,7 @@ function calculate() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-console-log': ['error', {
+    'quality/no-console-log': ['error', {
       strategy: 'convert',
       loggerName: 'logger',      // Replace 'console' with 'logger'
       loggerMethod: 'info'        // Replace '.log()' with '.info()'
@@ -198,7 +198,7 @@ logger.info('User logged in', userId);
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-console-log': ['error', {
+    'quality/no-console-log': ['error', {
       strategy: 'convert',
       loggerName: 'winston',
       severityMap: {
@@ -229,7 +229,7 @@ winston.error('Something failed');
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-console-log': ['error', {
+    'quality/no-console-log': ['error', {
       strategy: 'comment'
     }]
   }
@@ -249,7 +249,7 @@ console.log('Debug info', data);
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-console-log': ['error', {
+    'quality/no-console-log': ['error', {
       strategy: 'warn'
     }]
   }
@@ -269,7 +269,7 @@ console.warn('Important notice');
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-console-log': ['error', {
+    'quality/no-console-log': ['error', {
       strategy: 'remove',
       ignorePaths: [
         'test',           // Ignore test directories
@@ -287,7 +287,7 @@ console.warn('Important notice');
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-console-log': ['error', {
+    'quality/no-console-log': ['error', {
       maxOccurrences: 10  // Only report first 10 violations
     }]
   }
@@ -301,7 +301,7 @@ Perfect for migrating legacy projects with mixed logging approaches:
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-console-log': ['error', {
+    'quality/no-console-log': ['error', {
       strategy: 'convert',
       loggerName: 'logger',                          // Target logger
       sourcePatterns: ['console', 'winston', 'oldLogger'],  // Replace all these
@@ -337,7 +337,7 @@ Map specific console methods to different logger methods:
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-console-log': ['error', {
+    'quality/no-console-log': ['error', {
       strategy: 'convert',
       loggerName: 'logger',
       loggerMethod: 'info',       // Default for unmapped methods
@@ -371,7 +371,7 @@ logger.error('Error message');
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-console-log': ['error', {
+    'quality/no-console-log': ['error', {
       strategy: 'convert',
       autoDetectLogger: true,     // Auto-detect 'logger', 'log', etc. in imports
       loggerName: 'winston',      // Fallback if no logger detected
@@ -397,7 +397,7 @@ myLogger.info(...)  // Auto-detected 'myLogger' (contains 'log')
 // Development environment
 {
   rules: {
-    'eslint-plugin/no-console-log': ['warn', {
+    'quality/no-console-log': ['warn', {
       strategy: 'comment',
       ignorePaths: ['test', 'scripts']
     }]
@@ -407,7 +407,7 @@ myLogger.info(...)  // Auto-detected 'myLogger' (contains 'log')
 // Production environment
 {
   rules: {
-    'eslint-plugin/no-console-log': ['error', {
+    'quality/no-console-log': ['error', {
       strategy: 'convert',
       customLogger: 'logger',
       maxOccurrences: 0  // Report all violations
@@ -553,7 +553,7 @@ sequenceDiagram
 // apps/web/eslint.config.mjs
 {
   rules: {
-    'eslint-plugin/no-console-log': ['error', {
+    'quality/no-console-log': ['error', {
       strategy: 'remove',
       ignorePaths: ['test']
     }]
@@ -563,7 +563,7 @@ sequenceDiagram
 // apps/api/eslint.config.mjs
 {
   rules: {
-    'eslint-plugin/no-console-log': ['error', {
+    'quality/no-console-log': ['error', {
       strategy: 'convert',
       customLogger: 'winston',
       ignorePaths: ['scripts', 'migrations']
@@ -593,7 +593,7 @@ sequenceDiagram
 
 ## Comparison with Other Solutions
 
-| Feature             | eslint-plugin/no-console-log | eslint-plugin-no-console | eslint built-in |
+| Feature             | quality/no-console-log | eslint-plugin-no-console | eslint built-in |
 | ------------------- | ------------------------ | ------------------------ | --------------- |
 | ✅ Auto-fix         | ✅ 4 strategies          | ❌ No                    | ❌ No           |
 | 🎯 Suggestions      | ✅ All strategies        | ❌ No                    | ❌ No           |

@@ -128,7 +128,7 @@ async function fetchWithLimit(urls: string[]) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-await-in-loop': 'warn'
+    'architecture/no-await-in-loop': 'warn'
   }
 }
 ```
@@ -138,7 +138,7 @@ async function fetchWithLimit(urls: string[]) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-await-in-loop': ['warn', {
+    'architecture/no-await-in-loop': ['warn', {
       allowForOf: true,
       allowWhile: false
     }]
@@ -151,7 +151,7 @@ async function fetchWithLimit(urls: string[]) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-await-in-loop': ['error', {
+    'architecture/no-await-in-loop': ['error', {
       allowForOf: false,
       allowWhile: false,
       checkConcurrency: true

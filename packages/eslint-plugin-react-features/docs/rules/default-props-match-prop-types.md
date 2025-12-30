@@ -77,7 +77,7 @@ function UserCard({ name = "Guest", count = 0 }: Props) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/default-props-match-prop-types': 'warn'
+    'react-features/default-props-match-prop-types': 'warn'
   }
 }
 ```

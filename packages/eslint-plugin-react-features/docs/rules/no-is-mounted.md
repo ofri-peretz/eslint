@@ -86,7 +86,7 @@ function MyComponent() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-is-mounted': 'error'
+    'react-features/no-is-mounted': 'error'
   }
 }
 ```

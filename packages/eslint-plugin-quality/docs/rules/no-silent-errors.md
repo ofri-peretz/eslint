@@ -78,7 +78,7 @@ flowchart TD
 export default [
   {
     rules: {
-      'eslint-plugin/no-silent-errors': 'error',
+      'quality/no-silent-errors': 'error',
     },
   },
 ];

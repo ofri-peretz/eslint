@@ -63,7 +63,7 @@ Add these topics to your GitHub repository for better discoverability:
 ### Recommended Settings
 
 1. **Description**: Use the description above
-2. **Website**: `https://github.com/ofri-peretz/forge-js#readme`
+2. **Website**: `https://github.com/ofri-peretz/eslint#readme`
 3. **Topics**: Add all topics from the list above
 4. **Social Preview**: Upload a custom image (optional but recommended)
 

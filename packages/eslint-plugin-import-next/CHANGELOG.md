@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `no-commonjs` - Disallow CommonJS imports
   - `no-nodejs-modules` - Disallow Node.js built-in modules
 - **Dependency Boundaries Rules** (6 rules):
-  - `no-circular-dependencies` - Detect circular dependency chains
+  - `no-cycle` - Detect circular dependency chains
   - `no-internal-modules` - Forbid deep/internal module imports
   - `no-cross-domain-imports` - Enforce domain boundaries
   - `enforce-dependency-direction` - Enforce layered architecture

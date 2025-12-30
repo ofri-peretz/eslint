@@ -81,7 +81,7 @@ function UserProfile({ userId }: Props) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/react-class-to-hooks': ['warn', {
+    'react-features/react-class-to-hooks': ['warn', {
       ignorePureRenderComponents: false,
       allowComplexLifecycle: false
     }]

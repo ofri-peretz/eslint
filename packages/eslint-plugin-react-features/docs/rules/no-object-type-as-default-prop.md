@@ -85,7 +85,7 @@ function UserCard({ user, style, options }) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-object-type-as-default-prop': 'warn'
+    'react-features/no-object-type-as-default-prop': 'warn'
   }
 }
 ```

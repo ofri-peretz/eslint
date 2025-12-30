@@ -107,7 +107,7 @@ function UserCard({ name, email, age = 0, role = 'user' }: UserCardProps) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/prop-types': ['warn', {
+    'react-features/prop-types': ['warn', {
       ignore: ['Link', 'Router'],           // Third-party components
       customValidators: ['customPropType'], // Custom validators
       skipUndeclared: true                  // Skip components not using props
@@ -123,7 +123,7 @@ function UserCard({ name, email, age = 0, role = 'user' }: UserCardProps) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/prop-types': 'warn'
+    'react-features/prop-types': 'warn'
   }
 }
 ```
@@ -133,7 +133,7 @@ function UserCard({ name, email, age = 0, role = 'user' }: UserCardProps) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/prop-types': 'error'
+    'react-features/prop-types': 'error'
   }
 }
 ```

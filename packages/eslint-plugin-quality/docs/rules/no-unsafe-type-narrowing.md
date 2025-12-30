@@ -78,7 +78,7 @@ flowchart TD
 export default [
   {
     rules: {
-      'eslint-plugin/no-unsafe-type-narrowing': 'error',
+      'quality/no-unsafe-type-narrowing': 'error',
     },
   },
 ];

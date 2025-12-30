@@ -52,7 +52,7 @@ element.textContent = 'Hello';  // Faster
 ```javascript
 {
   rules: {
-    'eslint-plugin/prefer-dom-node-text-content': 'warn'
+    'quality/prefer-dom-node-text-content': 'warn'
   }
 }
 ```

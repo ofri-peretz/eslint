@@ -120,7 +120,7 @@ function SanitizedContent({ html }) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-danger': 'error'
+    'react-features/no-danger': 'error'
   }
 }
 ```
@@ -129,7 +129,7 @@ function SanitizedContent({ html }) {
 
 ```tsx
 // When sanitization is properly implemented
-// eslint-disable-next-line eslint-plugin/no-danger -- HTML sanitized with DOMPurify
+// eslint-disable-next-line react-features/no-danger -- HTML sanitized with DOMPurify
 <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }} />
 ```
 
@@ -179,7 +179,7 @@ function SanitizedHTML({ html }) {
     });
   }, [html]);
 
-  // eslint-disable-next-line eslint-plugin/no-danger -- Sanitized with DOMPurify
+  // eslint-disable-next-line react-features/no-danger -- Sanitized with DOMPurify
   return <div dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />;
 }
 ```
@@ -195,11 +195,11 @@ Only disable this rule when:
 
 ```tsx
 // ✅ Acceptable disable with justification
-// eslint-disable-next-line eslint-plugin/no-danger -- CMS content sanitized server-side
+// eslint-disable-next-line react-features/no-danger -- CMS content sanitized server-side
 <div dangerouslySetInnerHTML={{ __html: sanitizedCmsContent }} />
 
 // ❌ Never do this
-// eslint-disable-next-line eslint-plugin/no-danger
+// eslint-disable-next-line react-features/no-danger
 <div dangerouslySetInnerHTML={{ __html: userInput }} />
 ```
 

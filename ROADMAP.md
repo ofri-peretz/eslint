@@ -1,118 +1,63 @@
-# 🗺️ Project Roadmap & Documentation
+# 🗺️ Project Roadmap
 
-This document serves as the central source of truth for the **eslint-plugin-secure-coding** project, consolidating roadmaps, security policies, and optimization guides.
-
----
-
-## 🔒 Unified Security Roadmap
-
-### OWASP LLM Top 10 2025 & Agentic Security
-
-**Status:** 🏗️ Partially Implemented (Phase 2 Complete)
-
-We are implementing a comprehensive suite of rules addressing the OWASP Top 10 for Large Language Models (2025) and Agentic AI systems.
-
-#### Key Categories & Current Status
-
-- **LLM01: Prompt Injection**: Implemented.
-- **LLM02: Insecure Output Handling**: Implemented (e.g., `no-unsafe-output`).
-- **LLM03: Training Data Poisoning**: 🚧 Planned.
-- **LLM07: System Prompt Leakage**: Implemented.
-- **Agentic Rules**: Foundation set for agent permissions and tool usage is in progress (`eslint-plugin-agentic-security`).
-
-### Framework-Agnostic Mobile Security
-
-**Status:** ✅ Implementation Complete (State-of-the-Art)
-
-We have implemented 40 framework-agnostic security rules covering critical mobile security risks, aligned with OWASP MASVS.
-
-- **M1: Improper Credential Usage**: `no-hardcoded-credentials`, `no-credentials-in-query-params`.
-- **M2: Inadequate Supply Chain Security**: `detect-suspicious-dependencies`.
-- **M3: Insecure Authentication/Authorization**: `no-missing-authentication`.
-- **M5: Insecure Communication**: `no-http-urls`, `no-insecure-redirects`.
-- **M9: Insecure Data Storage**: `no-unencrypted-local-storage`.
-
-### Advanced Accessibility (A11y)
-
-**Status:** 📅 Planned
-
-Future expansion to go beyond basic WCAG compliance, focusing on cognitive accessibility and AI-assisted interfaces.
-
-- **Focus**: Dynamic content updates, meaningful AI responses, and accessible data visualizations.
+This document tracks the current focus areas and future plans for the ESLint monorepo.
 
 ---
 
-## 🛡️ Security Policy
+## 🔒 Security Rules
 
-### Supported Versions
+### Current State
 
-We release patches for security vulnerabilities based on CVSS v3.0 Rating.
+We have implemented comprehensive security coverage across multiple domains:
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.0.x   | :white_check_mark: |
+| Plugin                             | Focus Area             | Status    |
+| ---------------------------------- | ---------------------- | --------- |
+| `eslint-plugin-secure-coding`      | General security       | ✅ Stable |
+| `eslint-plugin-crypto`             | Cryptographic security | ✅ Stable |
+| `eslint-plugin-jwt`                | JWT best practices     | ✅ Stable |
+| `eslint-plugin-pg`                 | PostgreSQL security    | ✅ Stable |
+| `eslint-plugin-browser-security`   | Browser/DOM security   | ✅ Stable |
+| `eslint-plugin-express-security`   | Express.js security    | ✅ Stable |
+| `eslint-plugin-nestjs-security`    | NestJS security        | ✅ Stable |
+| `eslint-plugin-lambda-security`    | AWS Lambda security    | ✅ Stable |
+| `eslint-plugin-vercel-ai-security` | Vercel AI SDK security | ✅ Stable |
 
-### Reporting a Vulnerability
+### OWASP Coverage
 
-**Do not report security vulnerabilities on public GitHub issues.**
-Please report them via email to: [ofriperetzdev@gmail.com](mailto:ofriperetzdev@gmail.com)
-
-**Include in your report:**
-
-1.  Type of issue (e.g., buffer overflow, SQLi).
-2.  Full paths of affected source files.
-3.  Step-by-step reproduction instructions.
-4.  Proof-of-concept (if possible).
-
-We aim to acknowledge reports within 48 hours and provide an initial assessment within 5 business days.
-
-### Security Best Practices
-
-1.  **Keep dependencies updated** regularly.
-2.  **Use lock files** (`pnpm-lock.yaml`) to ensure consistency.
-3.  **Review rule configurations** for your specific security posture.
+- **OWASP Web Top 10 2021**: Comprehensive coverage via `eslint-plugin-secure-coding`
+- **OWASP LLM Top 10 2025**: Partial coverage via AI SDK plugins
+- **OWASP Mobile Top 10**: Framework-agnostic rules in `eslint-plugin-secure-coding`
 
 ---
 
-## ⚡ ESLint Optimization & Performance
+## 🏗️ Code Quality Rules
 
-### Advanced Optimization Techniques
-
-Real-world, benchmarked techniques to keep linting fast in a monorepo.
-
-1.  **Enable Caching (Biggest Impact)**
-
-    ```bash
-    eslint . --cache --cache-location .eslintcache
-    ```
-
-    _Impact: 50-80% faster on subsequent runs._
-
-2.  **Scope Your Linting**
-    Don't lint everything every time. Use `nx affected` or similar tools.
-
-    ```bash
-    nx affected -t lint
-    ```
-
-3.  **Optimize Rule Configuration**
-    - Disable unused rules.
-    - Use `warn` instead of `error` for stylistic issues during dev to avoid breaking flow (enforce on CI).
-    - **Avoid Type-Aware Rules on large files** if not strictly necessary, as they require full parser services.
-
-### Troubleshooting Performance
-
-- **TIMING=1**: Run with `TIMING=1 eslint .` to see which rules take the most time.
-- **Debug Mode**: Use `DEBUG=eslint:*` to trace internal execution.
+| Plugin                         | Focus Area               | Status    |
+| ------------------------------ | ------------------------ | --------- |
+| `eslint-plugin-architecture`   | Structure and boundaries | ✅ Stable |
+| `eslint-plugin-quality`        | Code quality metrics     | ✅ Stable |
+| `eslint-plugin-import-next`    | Import/export analysis   | ✅ Stable |
+| `eslint-plugin-react-features` | React best practices     | ✅ Stable |
+| `eslint-plugin-react-a11y`     | React accessibility      | ✅ Stable |
 
 ---
 
-## 📦 SDK Security Plugins
+## 📅 Future Plans
 
-We are modularizing security rules into SDK-specific plugins to provide tailored protection:
+### Short Term
 
-- `@vercel-ai/security`
-- `@langchain/security`
-- `@anthropic/security`
+- Improve rule documentation with more examples
+- Add auto-fix capabilities to more rules
+- Expand test coverage
 
-These plugins focus on usage patterns specific to their respective SDKs (e.g., preventing insecure default configs in Vercel AI SDK).
+### Long Term
+
+- Additional framework-specific security plugins
+- Advanced circular dependency detection
+- Performance profiling tools
+
+---
+
+## 📞 Feedback
+
+Have suggestions for the roadmap? [Open a discussion](https://github.com/ofri-peretz/eslint/discussions).

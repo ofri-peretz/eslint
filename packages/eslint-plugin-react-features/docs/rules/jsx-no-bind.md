@@ -79,7 +79,7 @@ function MyComponent({ id }) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/jsx-no-bind': 'warn'
+    'react-features/jsx-no-bind': 'warn'
   }
 }
 ```

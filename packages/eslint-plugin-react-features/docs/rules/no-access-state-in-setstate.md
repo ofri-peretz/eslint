@@ -115,7 +115,7 @@ class Counter extends React.Component {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-access-state-in-setstate': 'error'
+    'react-features/no-access-state-in-setstate': 'error'
   }
 }
 ```

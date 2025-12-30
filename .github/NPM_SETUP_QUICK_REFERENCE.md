@@ -65,7 +65,7 @@ permissions:
 2. Organizations → Your Org → Publishing
 3. Add GitHub as Trusted Publisher:
    ```
-   Repository: ofriperetz/forge-js
+   Repository: ofri-peretz/eslint
    ```
 4. Done! 🎉
 

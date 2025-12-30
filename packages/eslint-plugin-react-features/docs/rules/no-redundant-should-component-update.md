@@ -89,7 +89,7 @@ const MemoizedComponent = React.memo(function MyComponent({ value }) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-redundant-should-component-update': 'warn'
+    'react-features/no-redundant-should-component-update': 'warn'
   }
 }
 ```

@@ -10,7 +10,7 @@
  * - Auto-fix capabilities where safe
  * - Structured context for AI assistants
  * 
- * @see https://github.com/ofri-peretz/forge-js#readme
+ * @see https://github.com/ofri-peretz/eslint#readme
  */
 
 import type { TSESLint } from '@interlace/eslint-devkit';

@@ -126,7 +126,7 @@ function App() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/require-optimization': ['warn', {
+    'react-features/require-optimization': ['warn', {
       suggestMemo: true,
       suggestUseMemo: true,
       suggestUseCallback: true,
@@ -143,7 +143,7 @@ function App() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/require-optimization': 'warn'
+    'react-features/require-optimization': 'warn'
   }
 }
 ```
@@ -153,7 +153,7 @@ function App() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/require-optimization': ['warn', {
+    'react-features/require-optimization': ['warn', {
       minPropsForMemo: 6,
       suggestUseCallback: false  // Only for critical paths
     }]

@@ -142,7 +142,7 @@ function getStatusColor(status: string): string {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-nested-ternary': 'warn'
+    'quality/no-nested-ternary': 'warn'
   }
 }
 ```
@@ -152,7 +152,7 @@ function getStatusColor(status: string): string {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-nested-ternary': 'error'
+    'quality/no-nested-ternary': 'error'
   }
 }
 ```

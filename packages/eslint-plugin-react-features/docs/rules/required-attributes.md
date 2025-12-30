@@ -67,7 +67,7 @@ Ensures React components have required attributes (e.g., accessibility attribute
 ```javascript
 {
   rules: {
-    'eslint-plugin/required-attributes': ['error', {
+    'react-features/required-attributes': ['error', {
       attributes: [
         {
           attribute: 'alt',
@@ -92,7 +92,7 @@ Ensures React components have required attributes (e.g., accessibility attribute
 ```javascript
 {
   rules: {
-    'eslint-plugin/required-attributes': ['warn', {
+    'react-features/required-attributes': ['warn', {
       attributes: [
         {
           attribute: 'data-testid',

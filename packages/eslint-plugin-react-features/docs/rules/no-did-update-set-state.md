@@ -83,7 +83,7 @@ function UserProfile({ userId }) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-did-update-set-state': ['error', {
+    'react-features/no-did-update-set-state': ['error', {
       allowInCallback: true
     }]
   }
@@ -97,7 +97,7 @@ function UserProfile({ userId }) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-did-update-set-state': 'error'
+    'react-features/no-did-update-set-state': 'error'
   }
 }
 ```

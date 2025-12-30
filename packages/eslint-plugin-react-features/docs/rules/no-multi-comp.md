@@ -90,7 +90,7 @@ export function UserCard({ user }) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-multi-comp': ['warn', {
+    'react-features/no-multi-comp': ['warn', {
       ignoreStateless: true  // Allow small helper components
     }]
   }
@@ -104,7 +104,7 @@ export function UserCard({ user }) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-multi-comp': 'warn'
+    'react-features/no-multi-comp': 'warn'
   }
 }
 ```
@@ -114,7 +114,7 @@ export function UserCard({ user }) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-multi-comp': 'error'
+    'react-features/no-multi-comp': 'error'
   }
 }
 ```

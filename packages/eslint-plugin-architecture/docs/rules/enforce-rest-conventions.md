@@ -78,7 +78,7 @@ flowchart TD
 export default [
   {
     rules: {
-      'eslint-plugin/enforce-rest-conventions': 'error',
+      'architecture/enforce-rest-conventions': 'error',
     },
   },
 ];

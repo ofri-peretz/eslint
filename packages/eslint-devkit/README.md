@@ -151,7 +151,7 @@ Rules built with this utility package achieve:
 | **OWASP Mapping**       | ✅ 2021 + 2025 | Forward-compatible security standards |
 | **Compliance Tags**     | ✅ Auto        | SOC2, HIPAA, PCI-DSS, GDPR, ISO27001  |
 
-> 📊 **[Full Benchmarks →](https://github.com/ofri-peretz/forge-js/blob/main/docs/BENCHMARK.md)**
+> 📊 **[Full Benchmarks →](https://github.com/ofri-peretz/eslint/blob/main/docs/BENCHMARK.md)**
 
 ---
 
@@ -520,7 +520,7 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 ## Contributing
 
-Contributions welcome! See [CONTRIBUTING.md](https://github.com/ofri-peretz/forge-js/blob/main/CONTRIBUTING.md).
+Contributions welcome! See [CONTRIBUTING.md](https://github.com/ofri-peretz/eslint/blob/main/CONTRIBUTING.md).
 
 ---
 

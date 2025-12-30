@@ -78,7 +78,7 @@ flowchart TD
 export default [
   {
     rules: {
-      'eslint-plugin/no-unnecessary-rerenders': 'error',
+      'react-features/no-unnecessary-rerenders': 'error',
     },
   },
 ];

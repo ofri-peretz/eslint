@@ -59,7 +59,7 @@ appRef.current?.doSomething();
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-render-return-value': 'error'
+    'react-features/no-render-return-value': 'error'
   }
 }
 ```

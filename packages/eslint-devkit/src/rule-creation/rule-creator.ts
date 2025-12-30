@@ -42,7 +42,7 @@ export function createRuleCreator(urlCreator: DocsUrl) {
  */
 export const createRule = ESLintUtils.RuleCreator(
   (name) =>
-    `https://github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/${name}.md`,
+    `https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin/docs/rules/${name}.md`,
 );
 
 /**

@@ -96,7 +96,7 @@ flowchart TD
 ```javascript
 {
   rules: {
-    'eslint-plugin/jsx-handler-names': 'warn'
+    'react-features/jsx-handler-names': 'warn'
   }
 }
 ```

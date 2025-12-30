@@ -60,7 +60,7 @@ React uses camelCase for DOM attributes and has some renamed attributes (e.g., `
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-unknown-property': 'error'
+    'react-features/no-unknown-property': 'error'
   }
 }
 ```

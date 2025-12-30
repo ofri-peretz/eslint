@@ -140,7 +140,7 @@ class UserProfile extends React.Component {
 ```javascript
 {
   rules: {
-    'eslint-plugin/sort-comp': ['warn', {
+    'react-features/sort-comp': ['warn', {
       order: [
         'static-variables',
         'static-methods',
@@ -169,7 +169,7 @@ class UserProfile extends React.Component {
 ```javascript
 {
   rules: {
-    'eslint-plugin/sort-comp': 'warn'
+    'react-features/sort-comp': 'warn'
   }
 }
 ```

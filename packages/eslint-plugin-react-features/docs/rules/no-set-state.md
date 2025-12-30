@@ -91,7 +91,7 @@ function TodoList() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-set-state': 'warn'
+    'react-features/no-set-state': 'warn'
   }
 }
 ```
@@ -101,7 +101,7 @@ function TodoList() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-set-state': 'error'
+    'react-features/no-set-state': 'error'
   }
 }
 ```

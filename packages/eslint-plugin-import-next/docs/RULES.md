@@ -28,7 +28,7 @@
 
 | Name                                                                    | Description                         | 💼  | ⚠️  | 🔧  | 💡  |
 | ----------------------------------------------------------------------- | ----------------------------------- | --- | --- | --- | --- |
-| [no-circular-dependencies](./rules/no-circular-dependencies.md)         | Detect circular dependency chains   | 💼  |     |     | 💡  |
+| [no-cycle](./rules/no-cycle.md)         | Detect circular dependency chains   | 💼  |     |     | 💡  |
 | [no-internal-modules](./rules/no-internal-modules.md)                   | Forbid deep/internal module imports |     |     |     | 💡  |
 | [no-cross-domain-imports](./rules/no-cross-domain-imports.md)           | Enforce domain boundaries           |     |     |     | 💡  |
 | [enforce-dependency-direction](./rules/enforce-dependency-direction.md) | Enforce layered architecture        |     |     |     | 💡  |
@@ -107,7 +107,7 @@ export default [dependencies.configs.architecture];
 
 **Includes:**
 
-- `no-circular-dependencies`
+- `no-cycle`
 - `no-internal-modules`
 - `no-cross-domain-imports`
 - `enforce-dependency-direction`
@@ -139,7 +139,7 @@ export default [dependencies.configs.esm];
 ```javascript
 {
   rules: {
-    'dependencies/no-circular-dependencies': ['error', {
+    'dependencies/no-cycle': ['error', {
       maxDepth: 5,
       ignorePatterns: ['**/*.test.ts'],
     }],

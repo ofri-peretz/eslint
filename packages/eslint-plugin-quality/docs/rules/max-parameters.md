@@ -78,7 +78,7 @@ flowchart TD
 export default [
   {
     rules: {
-      'eslint-plugin/max-parameters': 'error',
+      'quality/max-parameters': 'error',
     },
   },
 ];

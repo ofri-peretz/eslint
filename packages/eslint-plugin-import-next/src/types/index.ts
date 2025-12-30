@@ -5,7 +5,7 @@
  */
 
 // Dependency Boundaries
-import type { Options as NoCircularDependenciesOptions } from '../rules/no-circular-dependencies';
+import type { Options as NoCycleOptions } from '../rules/no-cycle';
 import type { Options as NoInternalModulesOptions } from '../rules/no-internal-modules';
 import type { Options as NoCrossDomainImportsOptions } from '../rules/no-cross-domain-imports';
 import type { Options as EnforceDependencyDirectionOptions } from '../rules/enforce-dependency-direction';
@@ -28,7 +28,7 @@ import type { Options as PreferNodeProtocolOptions } from '../rules/prefer-node-
 
 // Export all types
 export type {
-  NoCircularDependenciesOptions,
+  NoCycleOptions,
   NoInternalModulesOptions,
   NoCrossDomainImportsOptions,
   EnforceDependencyDirectionOptions,

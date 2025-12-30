@@ -41,7 +41,7 @@ If using `eslint-plugin/` scope:
 3. Click **Configure Trusted Publishers**
 4. Add GitHub:
    ```
-   Repository URL: https://github.com/ofriperetz/forge-js
+   Repository URL: https://github.com/ofri-peretz/eslint
    Repository Owner: ofriperetz
    Action: "Publish" or "All"
    Environment: (leave blank or use "production")

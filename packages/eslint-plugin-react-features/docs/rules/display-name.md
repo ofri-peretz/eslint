@@ -141,7 +141,7 @@ MemoizedComponent.displayName = 'MemoizedComponent';
 ```javascript
 {
   rules: {
-    'eslint-plugin/display-name': 'warn'
+    'react-features/display-name': 'warn'
   }
 }
 ```
@@ -151,7 +151,7 @@ MemoizedComponent.displayName = 'MemoizedComponent';
 ```javascript
 {
   rules: {
-    'eslint-plugin/display-name': 'error'
+    'react-features/display-name': 'error'
   }
 }
 ```

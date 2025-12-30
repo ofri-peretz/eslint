@@ -58,7 +58,7 @@ Passing `children` as a prop instead of nesting is less readable and can cause i
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-children-prop': 'warn'
+    'react-features/no-children-prop': 'warn'
   }
 }
 ```

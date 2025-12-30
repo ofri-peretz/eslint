@@ -78,7 +78,7 @@ flowchart TD
 export default [
   {
     rules: {
-      'eslint-plugin/ddd-value-object-immutability': 'error',
+      'architecture/ddd-value-object-immutability': 'error',
     },
   },
 ];

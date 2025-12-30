@@ -61,7 +61,7 @@ describe('createRule', () => {
     expect(testRule.meta.docs?.url).toBeDefined();
     // The default URL creator should generate a URL
     expect(testRule.meta.docs?.url).toContain(
-      'github.com/ofri-peretz/forge-js/blob/main/packages/eslint-plugin/docs/rules/test-rule.md',
+      'github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin/docs/rules/test-rule.md',
     );
   });
 });

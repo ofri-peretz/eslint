@@ -121,7 +121,7 @@ function Counter({ initialCount = 0 }) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/state-in-constructor': 'warn'
+    'react-features/state-in-constructor': 'warn'
   }
 }
 ```
@@ -131,7 +131,7 @@ function Counter({ initialCount = 0 }) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/state-in-constructor': 'off'
+    'react-features/state-in-constructor': 'off'
   }
 }
 ```

@@ -69,7 +69,7 @@ function MyComponent() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-namespace': 'warn'
+    'react-features/no-namespace': 'warn'
   }
 }
 ```

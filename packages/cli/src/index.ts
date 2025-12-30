@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Forge CLI - Release Management Tool for forge-js monorepo
+ * ESLint CLI - Release Management Tool for eslint monorepo
  * 
  * This CLI provides commands for managing releases, pre-releases, and publishing
  * packages in the monorepo with smart distribution tag detection.
@@ -16,7 +16,7 @@ const program = new Command();
 
 program
   .name('forge')
-  .description('CLI tool for managing releases in the forge-js monorepo')
+  .description('CLI tool for managing releases in the eslint monorepo')
   .version('0.0.1', '-v, --version', 'Display version number')
   .helpOption('-h, --help', 'Display help for command');
 

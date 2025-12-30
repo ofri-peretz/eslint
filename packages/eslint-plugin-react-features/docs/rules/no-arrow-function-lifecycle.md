@@ -86,7 +86,7 @@ function MyComponent() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-arrow-function-lifecycle': 'error'
+    'react-features/no-arrow-function-lifecycle': 'error'
   }
 }
 ```

@@ -28,9 +28,9 @@ import { noNodejsModules } from './rules/no-nodejs-modules';
 
 // Dependency Boundaries Rules
 import {
-  noCircularDependencies,
+  noCycle,
   clearCircularDependencyCache,
-} from './rules/no-circular-dependencies';
+} from './rules/no-cycle';
 import { noInternalModules } from './rules/no-internal-modules';
 import { noCrossDomainImports } from './rules/no-cross-domain-imports';
 import { enforceDependencyDirection } from './rules/enforce-dependency-direction';
@@ -72,7 +72,7 @@ export const rules = {
   'no-amd': noAmd,
   'no-commonjs': noCommonjs,
   'no-nodejs-modules': noNodejsModules,
-  'no-circular-dependencies': noCircularDependencies,
+  'no-cycle': noCycle,
   'no-internal-modules': noInternalModules,
   'no-cross-domain-imports': noCrossDomainImports,
   'enforce-dependency-direction': enforceDependencyDirection,
@@ -131,7 +131,7 @@ export const configs = {
       'dependencies/no-duplicates': 'error',
 
       // Dependency Boundaries - Critical
-      'dependencies/no-circular-dependencies': 'error',
+      'dependencies/no-cycle': 'error',
       'dependencies/no-self-import': 'error',
 
       // Module System - Recommended
@@ -173,7 +173,7 @@ export const configs = {
       'dependencies/no-nodejs-modules': 'error',
 
       // Dependency Boundaries
-      'dependencies/no-circular-dependencies': 'error',
+      'dependencies/no-cycle': 'error',
       'dependencies/no-internal-modules': 'error',
       'dependencies/no-cross-domain-imports': 'error',
       'dependencies/enforce-dependency-direction': 'error',
@@ -263,7 +263,7 @@ export const configs = {
       dependencies: plugin,
     },
     rules: {
-      'dependencies/no-circular-dependencies': 'error',
+      'dependencies/no-cycle': 'error',
       'dependencies/no-internal-modules': 'error',
       'dependencies/no-cross-domain-imports': 'error',
       'dependencies/enforce-dependency-direction': 'error',

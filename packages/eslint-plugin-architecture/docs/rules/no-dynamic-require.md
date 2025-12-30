@@ -63,7 +63,7 @@ const plugin = plugins[name];
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-dynamic-require': 'warn'
+    'architecture/no-dynamic-require': 'warn'
   }
 }
 ```

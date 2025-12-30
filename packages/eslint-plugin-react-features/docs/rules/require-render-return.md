@@ -73,7 +73,7 @@ class AnotherComponent extends React.Component {
 ```javascript
 {
   rules: {
-    'eslint-plugin/require-render-return': 'error'
+    'react-features/require-render-return': 'error'
   }
 }
 ```

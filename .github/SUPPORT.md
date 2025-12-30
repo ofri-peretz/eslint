@@ -2,7 +2,7 @@
 
 ## Getting Help
 
-We're here to help! Here are the best ways to get support for forge-js:
+We're here to help! Here are the best ways to get support for this eslint monorepo:
 
 ### 📚 Documentation
 
@@ -28,11 +28,11 @@ Have an idea? We'd love to hear it! Use our [feature request template](.github/I
 ### 💬 Discussions
 
 For questions, ideas, or general discussion:
-- [GitHub Discussions](https://github.com/ofri-peretz/forge-js/discussions)
+- [GitHub Discussions](https://github.com/ofri-peretz/eslint/discussions)
 
 ### 📧 Direct Contact
 
-- **GitHub Issues**: [Open an issue](https://github.com/ofri-peretz/forge-js/issues/new)
+- **GitHub Issues**: [Open an issue](https://github.com/ofri-peretz/eslint/issues/new)
 - **Email**: ofriperetzdev@gmail.com
 
 ## Response Times
@@ -54,7 +54,7 @@ We welcome contributions! See our [Contributing Guide](../CONTRIBUTING.md) for d
 
 ## Resources
 
-- **NPM Packages**: [eslint-plugin on npm](https://www.npmjs.com/search?q=%40forge-js)
-- **GitHub Repository**: [github.com/ofri-peretz/forge-js](https://github.com/ofri-peretz/forge-js)
+- **NPM Packages**: [eslint-plugin on npm](https://www.npmjs.com/search?q=eslint-plugin)
+- **GitHub Repository**: [github.com/ofri-peretz/eslint](https://github.com/ofri-peretz/eslint)
 - **Documentation**: [docs/](../docs/) directory
 

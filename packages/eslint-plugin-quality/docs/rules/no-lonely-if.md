@@ -79,7 +79,7 @@ if (a) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-lonely-if': 'warn'
+    'quality/no-lonely-if': 'warn'
   }
 }
 ```

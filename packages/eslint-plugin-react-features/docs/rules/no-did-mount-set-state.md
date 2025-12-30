@@ -88,7 +88,7 @@ function UserProfile() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-did-mount-set-state': 'warn'
+    'react-features/no-did-mount-set-state': 'warn'
   }
 }
 ```

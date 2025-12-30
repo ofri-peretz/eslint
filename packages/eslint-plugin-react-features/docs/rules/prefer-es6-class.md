@@ -67,7 +67,7 @@ function MyComponent() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/prefer-es6-class': 'error'
+    'react-features/prefer-es6-class': 'error'
   }
 }
 ```

@@ -54,7 +54,7 @@ for (const char of string) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/prefer-code-point': 'warn'
+    'quality/prefer-code-point': 'warn'
   }
 }
 ```

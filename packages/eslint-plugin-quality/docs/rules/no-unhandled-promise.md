@@ -132,7 +132,7 @@ async function handleOrder(orderId) {
 export default [
   {
     rules: {
-      'eslint-plugin/no-unhandled-promise': 'error',
+      'quality/no-unhandled-promise': 'error',
     },
   },
 ];
@@ -143,7 +143,7 @@ export default [
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-unhandled-promise': ['error', {
+    'quality/no-unhandled-promise': ['error', {
       ignoreInTests: true  // Default: true
     }]
   }
@@ -155,7 +155,7 @@ export default [
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-unhandled-promise': ['error', {
+    'quality/no-unhandled-promise': ['error', {
       ignoreInTests: false,
       ignoreVoidExpressions: false
     }]

@@ -212,7 +212,7 @@ function processValidItem(item: OrderItem) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/cognitive-complexity': ['warn', {
+    'quality/cognitive-complexity': ['warn', {
       maxComplexity: 15
     }]
   }
@@ -224,7 +224,7 @@ function processValidItem(item: OrderItem) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/cognitive-complexity': ['error', {
+    'quality/cognitive-complexity': ['error', {
       maxComplexity: 10,
       includeMetrics: true
     }]
@@ -237,7 +237,7 @@ function processValidItem(item: OrderItem) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/cognitive-complexity': ['warn', {
+    'quality/cognitive-complexity': ['warn', {
       maxComplexity: 25,
       includeMetrics: false  // Less verbose for gradual refactoring
     }]

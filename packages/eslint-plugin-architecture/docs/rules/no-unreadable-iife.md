@@ -72,7 +72,7 @@ const config = (() => {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-unreadable-iife': 'warn'
+    'architecture/no-unreadable-iife': 'warn'
   }
 }
 ```

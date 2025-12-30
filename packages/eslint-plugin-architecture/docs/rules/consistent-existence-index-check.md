@@ -57,7 +57,7 @@ if (index !== -1) {
 ```javascript
 {
   rules: {
-    'eslint-plugin/consistent-existence-index-check': 'warn'
+    'architecture/consistent-existence-index-check': 'warn'
   }
 }
 ```

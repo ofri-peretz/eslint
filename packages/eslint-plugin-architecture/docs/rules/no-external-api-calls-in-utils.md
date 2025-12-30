@@ -78,7 +78,7 @@ flowchart TD
 export default [
   {
     rules: {
-      'eslint-plugin/no-external-api-calls-in-utils': 'error',
+      'architecture/no-external-api-calls-in-utils': 'error',
     },
   },
 ];

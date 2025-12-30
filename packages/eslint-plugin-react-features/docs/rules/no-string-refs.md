@@ -78,7 +78,7 @@ function MyComponent() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-string-refs': 'error'
+    'react-features/no-string-refs': 'error'
   }
 }
 ```

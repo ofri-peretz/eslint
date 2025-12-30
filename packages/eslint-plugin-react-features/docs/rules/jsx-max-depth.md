@@ -109,7 +109,7 @@ function ShallowComponent() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/jsx-max-depth': 'warn'
+    'react-features/jsx-max-depth': 'warn'
   }
 }
 ```
@@ -119,7 +119,7 @@ function ShallowComponent() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/jsx-max-depth': ['error', { max: 3 }]
+    'react-features/jsx-max-depth': ['error', { max: 3 }]
   }
 }
 ```
@@ -129,7 +129,7 @@ function ShallowComponent() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/jsx-max-depth': ['warn', { max: 7 }]
+    'react-features/jsx-max-depth': ['warn', { max: 7 }]
   }
 }
 ```

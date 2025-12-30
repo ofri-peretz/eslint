@@ -1,6 +1,6 @@
 # @eslint/cli
 
-Comprehensive CLI tool for managing releases in the forge-js monorepo.
+Comprehensive CLI tool for managing releases in the eslint monorepo.
 
 ---
 

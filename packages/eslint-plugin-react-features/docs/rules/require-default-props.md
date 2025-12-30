@@ -121,7 +121,7 @@ Button.propTypes = {
 ```javascript
 {
   rules: {
-    'eslint-plugin/require-default-props': ['warn', {
+    'react-features/require-default-props': ['warn', {
       forbidDefaultForRequired: true  // Flag unnecessary defaults
     }]
   }
@@ -135,7 +135,7 @@ Button.propTypes = {
 ```javascript
 {
   rules: {
-    'eslint-plugin/require-default-props': 'warn'
+    'react-features/require-default-props': 'warn'
   }
 }
 ```

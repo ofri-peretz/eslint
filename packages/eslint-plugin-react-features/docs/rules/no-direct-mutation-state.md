@@ -65,7 +65,7 @@ function Counter() {
 ```javascript
 {
   rules: {
-    'eslint-plugin/no-direct-mutation-state': 'error'
+    'react-features/no-direct-mutation-state': 'error'
   }
 }
 ```

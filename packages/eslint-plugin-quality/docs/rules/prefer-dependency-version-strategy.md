@@ -550,14 +550,14 @@ This rule **complements** `@nx/dependency-checks`:
 
 ## Related Rules
 
-- [`@nx/dependency-checks`](https://nx.dev/packages/eslint-plugin/documents/dependency-checks) - Validates dependency versions against lockfile
+- [`@nx/dependency-checks`](https://nx.dev/packages/quality/documents/dependency-checks) - Validates dependency versions against lockfile
 - [`no-console-log`](./no-console-log.md) - Disallow console.log statements
 
 ## Resources
 
 - [npm Semantic Versioning](https://docs.npmjs.com/cli/v10/configuring-npm/package-json#dependencies)
 - [Semantic Versioning Specification](https://semver.org/)
-- [Nx Dependency Checks](https://nx.dev/packages/eslint-plugin/documents/dependency-checks)
+- [Nx Dependency Checks](https://nx.dev/packages/quality/documents/dependency-checks)
 
 ## Version History
 
