@@ -96,6 +96,94 @@ flowchart TB
 
 ---
 
+## ⚙️ Key Configuration Files
+
+These files directly impact CI/CD behavior. If releases fail, check these files for misconfiguration.
+
+### Quick Reference
+
+| File                   | Purpose                                           | Common Issues                                                    |
+| ---------------------- | ------------------------------------------------- | ---------------------------------------------------------------- |
+| `nx.json`              | Release config, build order, conventional commits | Package not in `release.projects`, wrong `manifestRootsToUpdate` |
+| `pnpm-lock.yaml`       | Dependency versions                               | Out of sync with package.json (run `pnpm install`)               |
+| `tsconfig.base.json`   | TypeScript paths                                  | Path aliases not matching package structure                      |
+| `.npmrc`               | NPM registry settings                             | Wrong registry URL, auth issues                                  |
+| `commitlint.config.js` | Commit message rules                              | Commit type not triggering expected version bump                 |
+
+### `nx.json` Release Configuration
+
+The `release` section in `nx.json` controls **all** release behavior:
+
+```json
+{
+  "release": {
+    "projects": [
+      "eslint-devkit", // ⚠️ MUST list ALL packages to release
+      "eslint-plugin-*", // Or use patterns
+      "cli"
+    ],
+    "conventionalCommits": {
+      "types": {
+        "feat": { "semverBump": "minor" },
+        "fix": { "semverBump": "patch" },
+        "docs": { "semverBump": "patch" }, // ⚠️ docs triggers patch!
+        "refactor": { "semverBump": "patch" },
+        "chore": { "semverBump": "patch" }
+      }
+    },
+    "manifestRootsToUpdate": [
+      "{projectRoot}" // ⚠️ Don't include dist/ here
+    ]
+  }
+}
+```
+
+#### Common Errors & Fixes
+
+| Error Message                              | Root Cause                                                  | Fix                                                      |
+| ------------------------------------------ | ----------------------------------------------------------- | -------------------------------------------------------- |
+| `No projects are set to be processed`      | Package not in `release.projects`                           | Add package to `nx.json` → `release.projects` array      |
+| `package.json file not available in dist/` | `manifestRootsToUpdate` includes `dist/` but dist not built | Remove `dist/{projectRoot}` from `manifestRootsToUpdate` |
+| `No changes detected`                      | No conventional commits since last release                  | Use `--version-specifier=patch` to force bump            |
+
+### Conventional Commit → Version Mapping
+
+| Commit Type        | Version Bump  | Example                                |
+| ------------------ | ------------- | -------------------------------------- |
+| `feat:`            | Minor (0.x.0) | `feat(crypto): add AES-256 support`    |
+| `fix:`             | Patch (0.0.x) | `fix(jwt): validate expiry correctly`  |
+| `docs:`            | Patch (0.0.x) | `docs(readme): update examples`        |
+| `refactor:`        | Patch (0.0.x) | `refactor(core): simplify parser`      |
+| `perf:`            | Patch (0.0.x) | `perf(lint): cache AST traversal`      |
+| `style:`           | Patch (0.0.x) | `style: format code`                   |
+| `test:`            | Patch (0.0.x) | `test: add edge cases`                 |
+| `build:`           | Patch (0.0.x) | `build: update dependencies`           |
+| `ci:`              | Patch (0.0.x) | `ci: fix workflow`                     |
+| `chore:`           | Patch (0.0.x) | `chore: update gitignore`              |
+| `BREAKING CHANGE:` | Major (x.0.0) | Footer: `BREAKING CHANGE: removed API` |
+
+### Package Dependencies
+
+Each package must have correct dependencies in its `project.json` or inferred by Nx:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  If package A imports from package B:                          │
+│    → A depends on B                                            │
+│    → B must be released BEFORE A                               │
+│    → If B fails, A is automatically SKIPPED                    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Pre-commit Hooks (`.husky/`)
+
+Pre-commit hooks run before every commit to catch issues early:
+
+| Hook         | Purpose                             | Bypass                   |
+| ------------ | ----------------------------------- | ------------------------ |
+| `pre-commit` | Lint staged files                   | `git commit --no-verify` |
+| `commit-msg` | Validate conventional commit format | `git commit --no-verify` |
+
 ## 🔒 PR Gates (lint-pr.yml + ci-pr.yml)
 
 ### What Gets Validated Before Merge
