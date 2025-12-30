@@ -19,13 +19,6 @@
           "packages/eslint-plugin-jwt/.npmignore"
         ]
       }
-    },
-    "nx-release-publish": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm publish dist/{projectRoot} --access public --auth-type=web",
-        "cwd": "{workspaceRoot}"
-      }
     }
   }
 }

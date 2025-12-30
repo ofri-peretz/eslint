@@ -11,7 +11,123 @@ This document describes the complete CI/CD pipeline for the Interlace ESLint mon
 
 ---
 
-## 🗺️ Pipeline Overview
+## ⚡ TL;DR Quick Start
+
+> **Read this section first!** Everything below is reference material for when you need details.
+
+### The Pipeline in 30 Seconds
+
+```mermaid
+flowchart LR
+    subgraph "PR Phase"
+        A[Push PR] --> B{Lint + Test + Build}
+        B -->|Pass| C[✅ Merge]
+        B -->|Fail| D[❌ Fix & Push]
+    end
+
+    subgraph "Release Phase"
+        C -.->|Manual Trigger| E[release.yml]
+        E --> F[For each package]
+        F --> G{Already released?}
+        G -->|Yes| H[⏭️ Skip]
+        G -->|No| I[📦 Publish to NPM]
+        I --> J[✅ Done]
+    end
+```
+
+### Essential Commands
+
+| Task                  | Command                                       |
+| --------------------- | --------------------------------------------- |
+| **Run tests locally** | `pnpm nx test <package>`                      |
+| **Run lint locally**  | `pnpm nx lint <package>`                      |
+| **Build package**     | `pnpm nx build <package>`                     |
+| **Dry-run release**   | `pnpm nx release --dry-run`                   |
+| **Trigger release**   | GitHub Actions → `release.yml` → Run workflow |
+
+### Commit Message Format
+
+```
+<type>(<scope>): <subject>
+
+Examples:
+  feat(crypto): add AES-256 detection     → minor bump (0.x.0)
+  fix(jwt): validate token expiry         → patch bump (0.0.x)
+  docs: update README                     → patch bump (0.0.x)
+```
+
+### Something Broke? Quick Fixes
+
+| Problem                  | Solution                                                                                           |
+| ------------------------ | -------------------------------------------------------------------------------------------------- |
+| **PR blocked**           | Fix lint/test/build errors locally, push                                                           |
+| **Release failed**       | Just re-run the workflow (it auto-recovers)                                                        |
+| **"Already released"**   | Normal - package was already published                                                             |
+| **"Orphaned tag"**       | Automatic cleanup - just re-run                                                                    |
+| **Auth error (401/403)** | Configure [Trusted Publishers](#method-1-npm-trusted-publishers-recommended) or update `NPM_TOKEN` |
+| **First release**        | Needs `NPM_TOKEN`, then configure Trusted Publishers                                               |
+
+### Key Principle
+
+> **You can always just re-run the release workflow.** The pipeline auto-skips completed packages and auto-cleans partial failures.
+
+---
+
+## � Table of Contents
+
+- [🗺️ Pipeline Overview](#️-pipeline-overview)
+- [📁 Workflow Files](#-workflow-files)
+- [⚙️ Key Configuration Files](#️-key-configuration-files)
+  - [Quick Reference](#quick-reference)
+  - [`nx.json` Release Configuration](#nxjson-release-configuration)
+  - [Conventional Commit → Version Mapping](#conventional-commit--version-mapping)
+  - [Nx Release Documentation Deep Dive](#nx-release-documentation-deep-dive)
+    - [1. Automatic Versioning with Conventional Commits](#1-automatic-versioning-with-conventional-commits)
+    - [2. Customizing Conventional Commit Types](#2-customizing-conventional-commit-types)
+    - [3. Automating GitHub Releases](#3-automating-github-releases)
+  - [Package Dependencies](#package-dependencies)
+  - [Pre-commit Hooks](#pre-commit-hooks-husky)
+- [🔒 PR Gates (lint-pr.yml + ci-pr.yml)](#-pr-gates-lint-pryml--ci-pryml)
+- [🚀 Release Pipeline (release.yml)](#-release-pipeline-releaseyml)
+  - [Inputs](#inputs)
+  - [Dependency Order (Nx Graph)](#dependency-order-nx-graph)
+- [🛡️ Failure Scenario Catalog](#️-failure-scenario-catalog)
+  - [Phase 1: CI Validation (PR Gates)](#phase-1-ci-validation-pr-gates)
+    - [CI-01 to CI-05](#ci-01-lint-failure-lint-pryml)
+  - [Phase 2: Release Pipeline](#phase-2-release-pipeline-releaseyml)
+    - [📋 Release Scenario Master List](#-release-scenario-master-list)
+    - [R01: Clean State](#r01-clean-state)
+    - [R02: Already Released](#r02-already-released)
+    - [R03: Orphaned Tag](#r03-orphaned-tag)
+    - [R04: NPM Ahead](#r04-npm-ahead)
+    - [R05: Publish Conflict (403)](#r05-publish-conflict-403)
+    - [R06: No Conventional Commits](#r06-no-conventional-commits)
+    - [R07: Git Push Conflict](#r07-git-push-conflict)
+    - [R08: Concurrent Release](#r08-concurrent-release)
+    - [R09: Dependency Failed](#r09-dependency-failed)
+    - [R10: Test Failure](#r10-test-failure-release)
+    - [R11: Build Failure](#r11-build-failure-release)
+    - [R12: NPM Auth Failure](#r12-npm-auth-failure)
+    - [R13: Network Failure](#r13-network-failure)
+    - [R14: Workflow Timeout](#r14-workflow-timeout)
+    - [R15: Manual Cancellation](#r15-manual-cancellation)
+    - [R16: First Release](#r16-first-release)
+- [🔄 Recovery Matrix](#-recovery-matrix)
+- [🚨 Deadlock Prevention Summary](#-deadlock-prevention-summary)
+- [🔄 Release Flow Diagram](#-release-flow-diagram)
+- [✅ Verification Checklist](#-verification-checklist)
+- [🔐 Security & NPM Authentication](#-security--npm-authentication)
+  - [NPM Authentication Strategy (2025+)](#npm-authentication-strategy-2025)
+  - [Method 1: NPM Trusted Publishers](#method-1-npm-trusted-publishers-recommended)
+  - [Method 2: NPM_TOKEN](#method-2-npm_token-legacyfirst-release)
+- [📊 Expected Outcomes](#-expected-outcomes)
+- [📋 Actionable Error Diagnostics](#-actionable-error-diagnostics)
+- [🔧 Pre-commit Hooks](#-pre-commit-hooks)
+- [🔗 Related Files](#-related-files)
+
+---
+
+## �🗺️ Pipeline Overview
 
 ```mermaid
 flowchart TB
@@ -161,6 +277,225 @@ The `release` section in `nx.json` controls **all** release behavior:
 | `ci:`              | Patch (0.0.x) | `ci: fix workflow`                     |
 | `chore:`           | Patch (0.0.x) | `chore: update gitignore`              |
 | `BREAKING CHANGE:` | Major (x.0.0) | Footer: `BREAKING CHANGE: removed API` |
+
+---
+
+### Nx Release Documentation Deep Dive
+
+This section provides in-depth explanations of Nx Release features. For the most up-to-date information, refer to the official documentation:
+
+- [**Customize Conventional Commit Types**](https://nx.dev/docs/guides/nx-release/customize-conventional-commit-types)
+- [**Automatically Version with Conventional Commits**](https://nx.dev/docs/guides/nx-release/automatically-version-with-conventional-commits)
+- [**Automate GitHub Releases**](https://nx.dev/docs/guides/nx-release/automate-github-releases)
+
+---
+
+#### 1. Automatic Versioning with Conventional Commits
+
+**Purpose:** Enable fully automated version bumps based on commit messages—perfect for CI/CD pipelines.
+
+**Enable in `nx.json`:**
+
+```json
+{
+  "release": {
+    "version": {
+      "conventionalCommits": true
+    }
+  }
+}
+```
+
+**How Nx Determines the Version Bump:**
+
+Nx Release analyzes commit messages since the last release and selects the **highest** applicable bump:
+
+| Commit Type | Version Bump |
+| ----------- | ------------ |
+| `feat`      | **minor**    |
+| `fix`       | **patch**    |
+
+**Example Git History:**
+
+```
+- fix(pkg-1): fix something
+- feat(pkg-2): add a new feature
+- chore(pkg-3): update docs
+- chore(release): 1.0.0
+```
+
+**Result:** `1.1.0` (minor bump selected because a `feat` commit exists since the last release)
+
+**"No Changes Detected" Behavior:**
+
+If Nx Release doesn't find any relevant commits since the last release, it will **skip releasing** that project. This works seamlessly with independent releases—only projects with changes are released.
+
+> **Note:** Our pipeline uses R06 (Forced Patch Fallback) to override this behavior when needed, ensuring a release always happens even for non-code changes.
+
+---
+
+#### 2. Customizing Conventional Commit Types
+
+**Purpose:** Fine-tune which commit types trigger version bumps and how they appear in changelogs.
+
+**Full Configuration Example:**
+
+```json
+{
+  "release": {
+    "conventionalCommits": {
+      "types": {
+        // Standard types with custom bumps
+        "feat": { "semverBump": "minor" },
+        "fix": { "semverBump": "patch" },
+        "perf": { "semverBump": "patch" },
+
+        // Documentation triggers patches in this repo
+        "docs": {
+          "semverBump": "patch",
+          "changelog": { "title": "Documentation" }
+        },
+
+        // Disable versioning but keep in changelog
+        "style": {
+          "semverBump": "none"
+        },
+
+        // Hide from changelog entirely
+        "chore": {
+          "changelog": false
+        },
+
+        // Completely disable (no version, no changelog)
+        "wip": false,
+
+        // Custom non-standard type
+        "security": {
+          "semverBump": "patch",
+          "changelog": { "title": "🔒 Security" }
+        }
+      }
+    }
+  }
+}
+```
+
+**Configuration Options:**
+
+| Option                            | Effect                                             |
+| --------------------------------- | -------------------------------------------------- |
+| `"type": false`                   | Disable completely (no version bump, no changelog) |
+| `"semverBump": "none"`            | No version bump, but still appears in changelog    |
+| `"semverBump": "patch/minor"`     | Trigger specific version bump                      |
+| `"changelog": false`              | Trigger version bump but hide from changelog       |
+| `"changelog": { "hidden": true }` | Same as `"changelog": false`                       |
+| `"changelog": { "title": "X" }`   | Custom changelog section title                     |
+
+**This Repo's Configuration (from `nx.json`):**
+
+All commit types (`feat`, `fix`, `perf`, `docs`, `refactor`, `style`, `test`, `build`, `ci`, `chore`) trigger **patch** bumps, except:
+
+- `feat` → **minor** bump
+
+This ensures any change to a package results in a version bump, preventing "stale" packages.
+
+---
+
+#### 3. Automating GitHub Releases
+
+**Purpose:** Automatically create GitHub Releases with changelogs generated from conventional commits.
+
+**Authentication:**
+
+Nx Release supports two authentication methods (in priority order):
+
+1. **Environment Variable:** `GITHUB_TOKEN` or `GH_TOKEN`
+2. **GitHub CLI:** Falls back to authenticated `gh` CLI if installed
+
+In GitHub Actions, the `GITHUB_TOKEN` is automatically available and configured in our workflow.
+
+**Enable GitHub Release Creation:**
+
+```json
+{
+  "release": {
+    "changelog": {
+      "workspaceChangelog": {
+        "createRelease": "github",
+        "file": "CHANGELOG.md"
+      }
+    }
+  }
+}
+```
+
+**GitHub Release Contents:**
+
+When a release is created, Nx generates a changelog with:
+
+- `feat` commits in "Features" section
+- `fix` commits in "Bug Fixes" section
+- Other enabled types in their respective sections
+
+**Project-Level Changelogs (for independent releases):**
+
+Since this repo uses `projectsRelationship: "independent"`, we enable project-level changelogs:
+
+```json
+{
+  "release": {
+    "changelog": {
+      "projectChangelogs": true
+    }
+  }
+}
+```
+
+This creates separate changelogs and GitHub releases per package (e.g., `eslint-plugin-jwt@1.0.5`).
+
+**Disable Local CHANGELOG.md File:**
+
+If you only want GitHub Releases without local files:
+
+```json
+{
+  "release": {
+    "changelog": {
+      "workspaceChangelog": {
+        "file": false,
+        "createRelease": "github"
+      }
+    }
+  }
+}
+```
+
+> **Note:** Nx won't delete existing changelog files—it just stops updating them.
+
+**Preview Before Releasing:**
+
+```bash
+nx release --dry-run
+```
+
+This shows exactly what the GitHub release would look like without publishing anything.
+
+---
+
+#### Quick Reference: This Repo's Configuration
+
+Our `nx.json` implements all three concepts:
+
+| Feature                    | Configuration                                                  |
+| -------------------------- | -------------------------------------------------------------- |
+| **Automatic Versioning**   | `release.version.specifierSource: "conventional-commits"`      |
+| **Custom Commit Types**    | `release.conventionalCommits.types: { ... }`                   |
+| **GitHub Releases**        | `release.changelog.workspaceChangelog.createRelease: "github"` |
+| **Independent Releases**   | `release.projectsRelationship: "independent"`                  |
+| **Per-Project Changelogs** | `release.changelog.projectChangelogs: true`                    |
+| **Release Tag Pattern**    | `release.releaseTagPattern: "{projectName}@{version}"`         |
+
+---
 
 ### Package Dependencies
 

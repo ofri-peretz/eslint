@@ -1,0 +1,134 @@
+---
+description: Standards for generating valid commit messages that pass commitlint and husky validation
+---
+
+# Commit Message Standards
+
+Before generating any commit message, review and follow these rules to ensure the commit passes all validation hooks.
+
+## Format
+
+```
+<type>(<scope>): <subject>
+
+[optional body]
+
+[optional footer]
+```
+
+## Required Rules
+
+### 1. Type (REQUIRED)
+
+Must be one of the following **lowercase** types:
+
+| Type       | Purpose                                                 |
+| ---------- | ------------------------------------------------------- |
+| `feat`     | New feature                                             |
+| `fix`      | Bug fix                                                 |
+| `docs`     | Documentation only changes                              |
+| `style`    | Code style (formatting, missing semi-colons, etc)       |
+| `refactor` | Code change that neither fixes a bug nor adds a feature |
+| `perf`     | Performance improvement                                 |
+| `test`     | Adding or updating tests                                |
+| `build`    | Changes to build system or dependencies                 |
+| `ci`       | Changes to CI configuration                             |
+| `chore`    | Other changes that don't modify src or test files       |
+| `revert`   | Reverts a previous commit                               |
+
+### 2. Scope (OPTIONAL)
+
+- Wrap in parentheses: `feat(crypto): ...`
+- Use package name or component: `crypto`, `jwt`, `express-security`, `ci`
+- Can be omitted for workspace-wide changes: `chore: update dependencies`
+
+### 3. Subject (REQUIRED)
+
+**MUST:**
+
+- Start with **lowercase** letter
+- Be present (not empty)
+- Follow the colon with a single space: `type: subject`
+
+**MUST NOT:**
+
+- End with a period (`.`)
+- Start with uppercase letter
+- Use PascalCase or UPPER_CASE
+
+### 4. Colon Format (REQUIRED)
+
+- Must have colon and **single space** after type: `fix: message`
+- With scope: `fix(scope): message`
+- **NOT:** `fix:message` or `fix : message`
+
+## ✅ Valid Examples
+
+```
+feat(crypto): add AES-256 encryption rule
+fix(jwt): validate expiry correctly
+docs: update README with installation steps
+refactor(devkit): simplify AST traversal logic
+chore: update dependencies
+ci: add codecov integration
+test(pg): add edge cases for SQL injection
+build: bump vitest to v2.0
+perf(import-next): cache module resolution
+```
+
+## ❌ Invalid Examples
+
+| Invalid                      | Issue                         | Fixed                       |
+| ---------------------------- | ----------------------------- | --------------------------- |
+| `Feat: add feature`          | Type must be lowercase        | `feat: add feature`         |
+| `feat: Add feature`          | Subject must start lowercase  | `feat: add feature`         |
+| `feat: add feature.`         | Subject must not end with `.` | `feat: add feature`         |
+| `feat:add feature`           | Missing space after colon     | `feat: add feature`         |
+| `feat (crypto): add feature` | No space before parentheses   | `feat(crypto): add feature` |
+| `feature: add feature`       | `feature` is not a valid type | `feat: add feature`         |
+| `: add feature`              | Missing type                  | `feat: add feature`         |
+| `feat:`                      | Missing subject               | `feat: add feature`         |
+
+## Breaking Changes
+
+For breaking changes, add `BREAKING CHANGE:` in the footer:
+
+```
+feat(api): change authentication flow
+
+BREAKING CHANGE: removed legacy token support
+```
+
+This triggers a **major** version bump in Nx Release.
+
+## Multi-line Commits
+
+For detailed commits:
+
+```
+fix(jwt): handle expired tokens gracefully
+
+Previously, expired tokens would cause an unhandled exception.
+Now we catch the error and return a structured response.
+
+Closes #123
+```
+
+## Validation Pipeline
+
+Commit messages are validated in this order:
+
+1. **Husky pre-check** (`.husky/commit-msg`): Fast regex checks for common issues
+2. **Commitlint** (`commitlint.config.mjs`): Full conventional commit validation
+
+If either fails, the commit is rejected with a helpful error message.
+
+## Version Bump Mapping
+
+The commit type determines the version bump in Nx Release (configured in `nx.json`):
+
+| Type                        | Version Bump |
+| --------------------------- | ------------ |
+| `feat`                      | **minor**    |
+| `fix`, `docs`, `perf`, etc. | **patch**    |
+| `BREAKING CHANGE:` footer   | **major**    |

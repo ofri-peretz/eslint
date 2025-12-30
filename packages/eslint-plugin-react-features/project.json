@@ -55,23 +55,6 @@
           "packages/eslint-plugin-react-features/**/*.{ts,tsx,js,jsx}"
         ]
       }
-    },
-    "nx-release-publish": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm publish dist/{projectRoot} --access public --auth-type=web",
-        "cwd": "{workspaceRoot}"
-      }
-    },
-    "publish": {
-      "executor": "nx:run-commands",
-      "dependsOn": [
-        "build"
-      ],
-      "options": {
-        "command": "npm publish dist/packages/eslint-plugin-react-features --access public",
-        "cwd": "{workspaceRoot}"
-      }
     }
   }
 }
