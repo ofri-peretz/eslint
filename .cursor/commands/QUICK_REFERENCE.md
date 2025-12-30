@@ -26,7 +26,7 @@ I want to add a new rule that detects unsafe dynamic requires.
 ```
 /new-package
 
-I need to create a new package called @forge-js/test-utils
+I need to create a new package called eslint-plugin/test-utils
 ```
 
 ### Example 3: Updating a Workflow

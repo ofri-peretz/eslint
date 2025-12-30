@@ -129,7 +129,7 @@ currentImplementation();
 ```javascript
 {
   rules: {
-    '@forge-js/expiring-todo-comments': 'warn'
+    'eslint-plugin/expiring-todo-comments': 'warn'
   }
 }
 ```
@@ -139,7 +139,7 @@ currentImplementation();
 ```javascript
 {
   rules: {
-    '@forge-js/expiring-todo-comments': ['warn', {
+    'eslint-plugin/expiring-todo-comments': ['warn', {
       terms: ['TODO', 'FIXME', 'XXX', 'HACK', 'BUG']
     }]
   }
@@ -151,7 +151,7 @@ currentImplementation();
 ```javascript
 {
   rules: {
-    '@forge-js/expiring-todo-comments': ['error', {
+    'eslint-plugin/expiring-todo-comments': ['error', {
       terms: ['TODO', 'FIXME']
     }]
   }

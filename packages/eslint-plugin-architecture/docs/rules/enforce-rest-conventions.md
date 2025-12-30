@@ -78,7 +78,7 @@ flowchart TD
 export default [
   {
     rules: {
-      '@forge-js/enforce-rest-conventions': 'error',
+      'eslint-plugin/enforce-rest-conventions': 'error',
     },
   },
 ];

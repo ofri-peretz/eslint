@@ -1,4 +1,4 @@
-# Cursor Commands - Forge.js Monorepo
+# Cursor Commands - ESLint Monorepo
 
 This directory contains Cursor IDE commands that inject checklists into prompts for consistent development workflows.
 
@@ -9,7 +9,7 @@ This directory contains Cursor IDE commands that inject checklists into prompts 
 **Purpose:** Include the ESLint Rule Addition Checklist
 
 **When to use:**
-- Adding a new ESLint rule to `@forge-js/eslint-plugin-llm-optimized`
+- Adding a new ESLint rule to `eslint-plugin-llm-optimized`
 - Creating rule documentation
 - Updating rule exports
 

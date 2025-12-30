@@ -88,7 +88,7 @@ function UserProfile() {
 ```javascript
 {
   rules: {
-    '@forge-js/no-did-mount-set-state': 'warn'
+    'eslint-plugin/no-did-mount-set-state': 'warn'
   }
 }
 ```

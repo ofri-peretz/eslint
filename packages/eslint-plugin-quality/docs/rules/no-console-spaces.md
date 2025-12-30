@@ -56,7 +56,7 @@ console.log(`Value: ${value}`);
 ```javascript
 {
   rules: {
-    '@forge-js/no-console-spaces': 'warn'
+    'eslint-plugin/no-console-spaces': 'warn'
   }
 }
 ```

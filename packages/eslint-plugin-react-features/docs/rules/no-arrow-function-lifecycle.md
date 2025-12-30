@@ -86,7 +86,7 @@ function MyComponent() {
 ```javascript
 {
   rules: {
-    '@forge-js/no-arrow-function-lifecycle': 'error'
+    'eslint-plugin/no-arrow-function-lifecycle': 'error'
   }
 }
 ```

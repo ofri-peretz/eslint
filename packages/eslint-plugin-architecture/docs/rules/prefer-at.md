@@ -64,7 +64,7 @@ const lastChar = string.at(-1);
 ```javascript
 {
   rules: {
-    '@forge-js/prefer-at': 'warn'
+    'eslint-plugin/prefer-at': 'warn'
   }
 }
 ```

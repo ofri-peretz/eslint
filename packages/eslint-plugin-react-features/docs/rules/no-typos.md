@@ -62,7 +62,7 @@ class MyComponent extends React.Component {
 ```javascript
 {
   rules: {
-    '@forge-js/no-typos': 'error'
+    'eslint-plugin/no-typos': 'error'
   }
 }
 ```

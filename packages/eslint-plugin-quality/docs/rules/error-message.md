@@ -118,7 +118,7 @@ throw new Error(`Invalid configuration: ${JSON.stringify(config)}`);
 ```javascript
 {
   rules: {
-    '@forge-js/error-message': 'error'
+    'eslint-plugin/error-message': 'error'
   }
 }
 ```
@@ -128,7 +128,7 @@ throw new Error(`Invalid configuration: ${JSON.stringify(config)}`);
 ```javascript
 {
   rules: {
-    '@forge-js/error-message': ['error', {
+    'eslint-plugin/error-message': ['error', {
       allowEmptyCatch: true
     }]
   }

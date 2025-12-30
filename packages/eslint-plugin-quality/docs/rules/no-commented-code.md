@@ -78,7 +78,7 @@ flowchart TD
 export default [
   {
     rules: {
-      '@forge-js/no-commented-code': 'error',
+      'eslint-plugin/no-commented-code': 'error',
     },
   },
 ];

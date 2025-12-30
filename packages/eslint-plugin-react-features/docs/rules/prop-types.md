@@ -107,7 +107,7 @@ function UserCard({ name, email, age = 0, role = 'user' }: UserCardProps) {
 ```javascript
 {
   rules: {
-    '@forge-js/prop-types': ['warn', {
+    'eslint-plugin/prop-types': ['warn', {
       ignore: ['Link', 'Router'],           // Third-party components
       customValidators: ['customPropType'], // Custom validators
       skipUndeclared: true                  // Skip components not using props
@@ -123,7 +123,7 @@ function UserCard({ name, email, age = 0, role = 'user' }: UserCardProps) {
 ```javascript
 {
   rules: {
-    '@forge-js/prop-types': 'warn'
+    'eslint-plugin/prop-types': 'warn'
   }
 }
 ```
@@ -133,7 +133,7 @@ function UserCard({ name, email, age = 0, role = 'user' }: UserCardProps) {
 ```javascript
 {
   rules: {
-    '@forge-js/prop-types': 'error'
+    'eslint-plugin/prop-types': 'error'
   }
 }
 ```

@@ -1,6 +1,6 @@
 # GitHub Workflow Maintenance Checklist
 
-This checklist ensures consistency and best practices when working with GitHub Actions workflows in the forge-js monorepo.
+This checklist ensures consistency and best practices when working with GitHub Actions workflows in the eslint monorepo.
 
 ## 🎯 When to Use This Checklist
 

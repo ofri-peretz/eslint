@@ -206,7 +206,7 @@ pnpm nx run-many -t test --all --verbose
 2. **Verify output:** Should show all 3 packages found
 3. **Push to PR:** GitHub Actions will run CI automatically
 4. **Check PR comments:** Codecov should comment with component breakdown
-5. **View dashboard:** https://codecov.io/gh/ofri-peretz/forge-js
+5. **View dashboard:** https://codecov.io/gh/ofri-peretz/eslint
 
 ## ✅ Checklist Before Pushing
 

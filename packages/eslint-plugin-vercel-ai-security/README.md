@@ -154,7 +154,7 @@ All rule messages follow a structured format optimized for AI coding assistants:
 
 ## 🔗 Related ESLint Plugins
 
-Part of the **Forge-JS ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
+Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
 | Plugin                                                                                     | Description                                                  | Rules |
 | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------ | :---: |

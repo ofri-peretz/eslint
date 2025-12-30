@@ -68,7 +68,7 @@ function createMultiplier(factor: number) {
 ```javascript
 {
   rules: {
-    '@forge-js/consistent-function-scoping': 'warn'
+    'eslint-plugin/consistent-function-scoping': 'warn'
   }
 }
 ```

@@ -1,7 +1,7 @@
 # 📊 Code Coverage Analysis Report
 
 **Generated:** November 3, 2025  
-**Project:** forge-js (Monorepo)  
+**Project:** eslint (Monorepo)  
 **Status:** 🔴 Coverage Below Targets (Needs Improvement)
 
 ---

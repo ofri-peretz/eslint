@@ -85,10 +85,10 @@ const inlineConfig: ReactNoInlineFunctionsOptions = {
 export default [
   {
     plugins: {
-      '@forge-js/llm-optimized': llmOptimized,
+      'eslint-plugin-llm-optimized': llmOptimized,
     },
     rules: {
-      '@forge-js/llm-optimized/performance/react-no-inline-functions': [
+      'eslint-plugin-llm-optimized/performance/react-no-inline-functions': [
         'warn',
         inlineConfig,
       ],

@@ -64,7 +64,7 @@ export default [quality.configs.recommended];
 
 ## 🔗 Related ESLint Plugins
 
-Part of the **Forge-JS ESLint Ecosystem** — AI-native plugins with LLM-optimized error messages:
+Part of the **Interlace ESLint Ecosystem** — AI-native plugins with LLM-optimized error messages:
 
 | Plugin                                                                                     | Description                                    | Rules |
 | ------------------------------------------------------------------------------------------ | ---------------------------------------------- | :---: |

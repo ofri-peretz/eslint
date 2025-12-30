@@ -1,5 +1,5 @@
 ---
-description: Complete checklist for adding new ESLint rules to @forge-js/eslint-plugin-llm-optimized
+description: Complete checklist for adding new ESLint rules to eslint-plugin-llm-optimized
 globs:
   - 'packages/eslint-plugin/src/rules/**/*.ts'
   - 'packages/eslint-plugin/docs/rules/**/*.md'
@@ -12,7 +12,7 @@ alwaysApply: true
 
 > **Purpose:** Ensure all new ESLint rules are properly integrated, documented, and released following project standards.
 
-**⚠️ CRITICAL:** When adding a new ESLint rule to `@forge-js/eslint-plugin-llm-optimized`, you MUST complete ALL items in this checklist. Missing any item will cause issues in the release process.
+**⚠️ CRITICAL:** When adding a new ESLint rule to `eslint-plugin-llm-optimized`, you MUST complete ALL items in this checklist. Missing any item will cause issues in the release process.
 
 ## 📋 Complete Checklist
 
@@ -93,9 +93,9 @@ alwaysApply: true
   - [ ] Add rule configuration if needed
   - [ ] Ensure plugin is imported correctly
 - [ ] **Plugin exports verified:**
-  - [ ] Rule accessible via `@forge-js/eslint-plugin-llm-optimized`
+  - [ ] Rule accessible via `eslint-plugin-llm-optimized`
   - [ ] Both flat name and categorized name work
-  - [ ] Test with: `import llmOptimized from '@forge-js/eslint-plugin-llm-optimized'`
+  - [ ] Test with: `import llmOptimized from 'eslint-plugin-llm-optimized'`
 
 ### 5. Version & Release ✅
 

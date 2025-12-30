@@ -70,7 +70,7 @@ Characters like `>`, `"`, `'`, `}` have special meaning in JSX and must be escap
 ```javascript
 {
   rules: {
-    '@forge-js/no-unescaped-entities': 'error'
+    'eslint-plugin/no-unescaped-entities': 'error'
   }
 }
 ```

@@ -351,7 +351,7 @@ export const noCircularDependencies = createRule<RuleOptions, MessageIds>({
     const settings = context.settings as Record<string, unknown>;
     const resolverSettings: ResolverSetting | undefined =
       (settings?.['import/resolver'] as ResolverSetting) ||
-      (settings?.['@forge-js/llm-optimized/resolver'] as ResolverSetting);
+      (settings?.['eslint-plugin-llm-optimized/resolver'] as ResolverSetting);
 
     // Skip ignored files early
     if (

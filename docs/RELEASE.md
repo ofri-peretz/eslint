@@ -8,7 +8,7 @@ All packages in this monorepo are released using **Nx Release** with **Semantic 
 
 **Active Packages:**
 
-- `@forge-js/eslint-plugin-llm-optimized` (packages/eslint-plugin)
+- `eslint-plugin-llm-optimized` (packages/eslint-plugin)
 - `@interlace/eslint-devkit` (packages/eslint-devkit)
 
 ## Release Process Flow
@@ -150,7 +150,7 @@ All release settings are in `nx.json`:
 
 ```ini
 # Root .npmrc - Safe to commit
-@forge-js:registry=https://registry.npmjs.org/
+eslint-plugin:registry=https://registry.npmjs.org/
 registry=https://registry.npmjs.org/
 ```
 
@@ -170,7 +170,7 @@ Each package has a `publishConfig` in `package.json`:
 
 ```
 1. ✅ Version Detection
-   └─ Reads latest git tag: @forge-js/eslint-plugin@0.2.1
+   └─ Reads latest git tag: eslint-plugin-llm-optimized@0.2.1
    └─ Scans commits since tag
    └─ Detects: fix:, feat:, BREAKING CHANGE:
 
@@ -185,7 +185,7 @@ Each package has a `publishConfig` in `package.json`:
 
 4. 🏷️ Create Git Tag
    └─ Tag format: {projectName}@{version}
-   └─ Example: @forge-js/eslint-plugin@0.2.2
+   └─ Example: eslint-plugin-llm-optimized@0.2.2
 
 5. 📦 Publish to NPM
    └─ Packages built before publishing

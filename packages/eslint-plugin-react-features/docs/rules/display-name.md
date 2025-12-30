@@ -141,7 +141,7 @@ MemoizedComponent.displayName = 'MemoizedComponent';
 ```javascript
 {
   rules: {
-    '@forge-js/display-name': 'warn'
+    'eslint-plugin/display-name': 'warn'
   }
 }
 ```
@@ -151,7 +151,7 @@ MemoizedComponent.displayName = 'MemoizedComponent';
 ```javascript
 {
   rules: {
-    '@forge-js/display-name': 'error'
+    'eslint-plugin/display-name': 'error'
   }
 }
 ```

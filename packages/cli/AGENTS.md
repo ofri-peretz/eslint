@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> Context for AI coding agents working on @forge-js/cli
+> Context for AI coding agents working on @eslint/cli
 
 ## Setup Commands
 

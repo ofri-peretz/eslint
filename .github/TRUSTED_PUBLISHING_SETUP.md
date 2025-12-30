@@ -26,15 +26,15 @@ Trusted Publishing requires your packages to be properly configured on npmjs.com
 1. Go to https://npmjs.com
 2. Login to your account
 3. Verify you own/maintain these packages:
-   - `@forge-js/eslint-plugin`
+   - `eslint-plugin-llm-optimized`
    - `@interlace/eslint-devkit`
-   - `@forge-js/cli`
+   - `@eslint/cli`
 
 ### Step 2: Configure Trusted Publishing on NPM
 
 #### For Organization Scope (Recommended)
 
-If using `@forge-js/` scope:
+If using `eslint-plugin/` scope:
 
 1. Go to npmjs.com → Organizations → Your Organization
 2. Navigate to **Publishing** settings
@@ -212,9 +212,9 @@ No special configuration needed for Trusted Publishing - npm handles OIDC automa
 1. **For unscoped packages** (e.g., `eslint-plugin-llm-optimized`, `eslint-plugin-mcp`):
    - Contact npm support to enable Trusted Publishing for your specific unscoped packages
    - OR use `NPM_TOKEN` secret as fallback (uncomment in workflow)
-   - OR move packages to a scope (e.g., `@forge-js/eslint-plugin-llm-optimized`)
+   - OR move packages to a scope (e.g., `eslint-plugin-llm-optimized`)
 
-2. **For scoped packages** (`@forge-js/*`):
+2. **For scoped packages** (`eslint-plugin/*`):
    - Trusted Publishing works automatically if configured in npm organization settings
    - Verify GitHub repository is added as trusted publisher in npm organization settings
 

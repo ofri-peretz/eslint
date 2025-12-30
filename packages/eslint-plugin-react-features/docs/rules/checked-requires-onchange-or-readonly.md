@@ -112,7 +112,7 @@ flowchart TD
 ```javascript
 {
   rules: {
-    '@forge-js/checked-requires-onchange-or-readonly': 'error'
+    'eslint-plugin/checked-requires-onchange-or-readonly': 'error'
   }
 }
 ```

@@ -36,7 +36,7 @@ The core offering: ESLint plugins with rules that enforce team conventions and p
 
 | Package Name                                                            | Version                                                                                                                                           |
 | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`@forge-js/eslint-plugin-llm-optimized`](./packages/eslint-plugin)     | [![npm](https://img.shields.io/npm/v/@forge-js/eslint-plugin-llm-optimized)](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized) |
+| [`eslint-plugin-llm-optimized`](./packages/eslint-plugin)     | [![npm](https://img.shields.io/npm/v/eslint-plugin-llm-optimized)](https://www.npmjs.com/package/eslint-plugin-llm-optimized) |
 | [`eslint-plugin-llm-optimized`](./packages/eslint-plugin-llm-optimized) | [![npm](https://img.shields.io/npm/v/eslint-plugin-llm-optimized)](https://www.npmjs.com/package/eslint-plugin-llm-optimized)                     |
 | [`eslint-plugin-llm`](./packages/eslint-plugin-llm)                     | [![npm](https://img.shields.io/npm/v/eslint-plugin-llm)](https://www.npmjs.com/package/eslint-plugin-llm)                                         |
 | [`eslint-plugin-mcp`](./packages/eslint-plugin-mcp)                     | [![npm](https://img.shields.io/npm/v/eslint-plugin-mcp)](https://www.npmjs.com/package/eslint-plugin-mcp)                                         |
@@ -48,7 +48,7 @@ The core offering: ESLint plugins with rules that enforce team conventions and p
 
 | Package                                                      | Version                                                                                                                 | What It Does                              |
 | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| [`@forge-js/cli`](./packages/cli)                            | [![npm](https://img.shields.io/npm/v/@forge-js/cli)](https://www.npmjs.com/package/@forge-js/cli)                       | CLI utilities for common team workflows   |
+| [`@eslint/cli`](./packages/cli)                            | [![npm](https://img.shields.io/npm/v/@eslint/cli)](https://www.npmjs.com/package/@eslint/cli)                       | CLI utilities for common team workflows   |
 | [`@interlace/eslint-devkit`](./packages/eslint-plugin-utils) | [![npm](https://img.shields.io/npm/v/@interlace/eslint-devkit)](https://www.npmjs.com/package/@interlace/eslint-devkit) | Build your own team-specific ESLint rules |
 
 ---

@@ -150,10 +150,10 @@ export default [
   {
     files: ['**/package.json'],
     plugins: {
-      '@forge-js/llm-optimized': llmOptimized,
+      'eslint-plugin-llm-optimized': llmOptimized,
     },
     rules: {
-      '@forge-js/llm-optimized/development/prefer-dependency-version-strategy': [
+      'eslint-plugin-llm-optimized/development/prefer-dependency-version-strategy': [
         'warn',
         {
           strategy: 'caret',
@@ -175,7 +175,7 @@ export default [
 ```javascript
 // Enforce exact versions (strict)
 {
-  '@forge-js/llm-optimized/development/prefer-dependency-version-strategy': [
+  'eslint-plugin-llm-optimized/development/prefer-dependency-version-strategy': [
     'error',
     { strategy: 'exact' }
   ]
@@ -183,7 +183,7 @@ export default [
 
 // Enforce tilde (patch updates only)
 {
-  '@forge-js/llm-optimized/development/prefer-dependency-version-strategy': [
+  'eslint-plugin-llm-optimized/development/prefer-dependency-version-strategy': [
     'warn',
     { strategy: 'tilde' }
   ]
@@ -198,7 +198,7 @@ Override the default strategy for specific packages. This allows you to have str
 
 ```javascript
 {
-  '@forge-js/llm-optimized/development/prefer-dependency-version-strategy': [
+  'eslint-plugin-llm-optimized/development/prefer-dependency-version-strategy': [
     'warn',
     {
       strategy: 'caret', // Default: use caret for all packages
@@ -218,7 +218,7 @@ Override the default strategy for specific packages. This allows you to have str
 
 ```javascript
 {
-  '@forge-js/llm-optimized/development/prefer-dependency-version-strategy': [
+  'eslint-plugin-llm-optimized/development/prefer-dependency-version-strategy': [
     'warn',
     {
       strategy: 'caret',
@@ -252,7 +252,7 @@ Override the default strategy for specific packages. This allows you to have str
 
 ```javascript
 {
-  '@forge-js/llm-optimized/development/prefer-dependency-version-strategy': [
+  'eslint-plugin-llm-optimized/development/prefer-dependency-version-strategy': [
     'warn',
     {
       strategy: 'caret',
@@ -295,7 +295,7 @@ This rule **complements** `@nx/dependency-checks`:
 {
   rules: {
     '@nx/dependency-checks': ['error', { /* ... */ }],
-    '@forge-js/llm-optimized/development/prefer-dependency-version-strategy': [
+    'eslint-plugin-llm-optimized/development/prefer-dependency-version-strategy': [
       'warn',
       { strategy: 'caret' }
     ],

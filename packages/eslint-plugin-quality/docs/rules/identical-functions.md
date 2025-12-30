@@ -129,7 +129,7 @@ const processGuestOrder = (order: GuestOrder) => processOrder(order);
 ```javascript
 {
   rules: {
-    '@forge-js/identical-functions': ['error', {
+    'eslint-plugin/identical-functions': ['error', {
       minLines: 3,
       similarityThreshold: 0.85
     }]
@@ -142,7 +142,7 @@ const processGuestOrder = (order: GuestOrder) => processOrder(order);
 ```javascript
 {
   rules: {
-    '@forge-js/identical-functions': ['error', {
+    'eslint-plugin/identical-functions': ['error', {
       minLines: 2,              // Catch even small duplications
       similarityThreshold: 0.7,  // Lower threshold = more sensitive
       ignoreTestFiles: false     // Check test files too
@@ -156,7 +156,7 @@ const processGuestOrder = (order: GuestOrder) => processOrder(order);
 ```javascript
 {
   rules: {
-    '@forge-js/identical-functions': ['warn', {
+    'eslint-plugin/identical-functions': ['warn', {
       minLines: 5,               // Only large duplications
       similarityThreshold: 0.95, // Must be nearly identical
       ignoreTestFiles: true

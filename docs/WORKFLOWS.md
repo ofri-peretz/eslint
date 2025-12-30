@@ -109,8 +109,8 @@ on:
 📊 Code Coverage Analysis
 
 ### Coverage Results:
-✅ **@forge-js/eslint-plugin**: Coverage 92%
-✅ **@forge-js/cli**: Coverage 88%
+✅ **eslint-plugin-llm-optimized**: Coverage 92%
+✅ **@eslint/cli**: Coverage 88%
 ⚠️ **@interlace/eslint-devkit**: Coverage 45% (< 50% threshold)
 
 Action Required: Some packages have coverage below 50%. 
@@ -152,7 +152,7 @@ on:
 on:
   workflow_dispatch:
     inputs:
-      tag:        # e.g., @forge-js/eslint-plugin@1.0.0
+      tag:        # e.g., eslint-plugin-llm-optimized@1.0.0
       npm-tag:    # latest, next, beta, alpha, rc, canary
       dry-run:    # true/false
 ```
@@ -182,7 +182,7 @@ on:
 - 📦 Available for testing
 - 🔄 Runs every push to main
 
-**Example:** `@forge-js/eslint-plugin@2.0.0-canary.123`
+**Example:** `eslint-plugin-llm-optimized@2.0.0-canary.123`
 
 ---
 
@@ -293,7 +293,7 @@ on:
 1. Go to Actions → publish-manual.yml
 
 2. Run workflow with parameters:
-   - tag: @forge-js/eslint-plugin@1.0.0
+   - tag: eslint-plugin-llm-optimized@1.0.0
    - npm-tag: latest
    - dry-run: false
 

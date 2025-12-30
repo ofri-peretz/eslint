@@ -78,7 +78,7 @@ flowchart TD
 export default [
   {
     rules: {
-      '@forge-js/no-unnecessary-rerenders': 'error',
+      'eslint-plugin/no-unnecessary-rerenders': 'error',
     },
   },
 ];

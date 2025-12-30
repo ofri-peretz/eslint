@@ -6,7 +6,7 @@ set -euo pipefail
 # Run: ./scripts/setup-branch-protection.sh
 
 REPO_OWNER="${GITHUB_REPOSITORY_OWNER:-ofri-peretz}"
-REPO_NAME="${GITHUB_REPOSITORY_NAME:-forge-js}"
+REPO_NAME="${GITHUB_REPOSITORY_NAME:-eslint}"
 BRANCH="main"
 
 echo "🔒 Setting up branch protection for '$BRANCH' branch"

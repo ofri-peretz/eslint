@@ -96,7 +96,7 @@ flowchart TD
 ```javascript
 {
   rules: {
-    '@forge-js/jsx-handler-names': 'warn'
+    'eslint-plugin/jsx-handler-names': 'warn'
   }
 }
 ```

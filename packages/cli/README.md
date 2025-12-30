@@ -1,4 +1,4 @@
-# @forge-js/cli
+# @eslint/cli
 
 Comprehensive CLI tool for managing releases in the forge-js monorepo.
 
@@ -160,7 +160,7 @@ The CLI is designed to work seamlessly with GitHub Actions:
 
 ```yaml
 - name: Publish packages
-  run: npx @forge-js/cli publish
+  run: npx @eslint/cli publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 ```

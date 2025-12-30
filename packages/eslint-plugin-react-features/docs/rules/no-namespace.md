@@ -69,7 +69,7 @@ function MyComponent() {
 ```javascript
 {
   rules: {
-    '@forge-js/no-namespace': 'warn'
+    'eslint-plugin/no-namespace': 'warn'
   }
 }
 ```

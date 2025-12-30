@@ -65,7 +65,7 @@ function Counter() {
 ```javascript
 {
   rules: {
-    '@forge-js/no-direct-mutation-state': 'error'
+    'eslint-plugin/no-direct-mutation-state': 'error'
   }
 }
 ```

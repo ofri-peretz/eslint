@@ -57,7 +57,7 @@ This is your entry point into mass adoption because _everyone_ hates `eslint-plu
 
 Instead of just loose plugins, position them as a **Standard Library** for Agentic Engineering.
 
-- **Future Goal:** `@forge-js/eslint-plugin-all` - A single install for full coverage.
+- **Future Goal:** `eslint-plugin-llm-optimized-all` - A single install for full coverage.
 - **Documentation:** Centralize docs. A single searchable site for all rules.
 
 ## 4. Viral "Growth Engineering" Tactics

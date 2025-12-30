@@ -110,7 +110,7 @@ class UserCard extends React.Component {
 ```javascript
 {
   rules: {
-    '@forge-js/no-this-in-sfc': 'error'
+    'eslint-plugin/no-this-in-sfc': 'error'
   }
 }
 ```

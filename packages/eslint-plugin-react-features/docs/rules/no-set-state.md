@@ -91,7 +91,7 @@ function TodoList() {
 ```javascript
 {
   rules: {
-    '@forge-js/no-set-state': 'warn'
+    'eslint-plugin/no-set-state': 'warn'
   }
 }
 ```
@@ -101,7 +101,7 @@ function TodoList() {
 ```javascript
 {
   rules: {
-    '@forge-js/no-set-state': 'error'
+    'eslint-plugin/no-set-state': 'error'
   }
 }
 ```

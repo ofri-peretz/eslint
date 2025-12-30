@@ -72,7 +72,7 @@ const config = (() => {
 ```javascript
 {
   rules: {
-    '@forge-js/no-unreadable-iife': 'warn'
+    'eslint-plugin/no-unreadable-iife': 'warn'
   }
 }
 ```

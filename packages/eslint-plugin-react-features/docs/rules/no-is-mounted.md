@@ -86,7 +86,7 @@ function MyComponent() {
 ```javascript
 {
   rules: {
-    '@forge-js/no-is-mounted': 'error'
+    'eslint-plugin/no-is-mounted': 'error'
   }
 }
 ```

@@ -78,7 +78,7 @@ flowchart TD
 export default [
   {
     rules: {
-      '@forge-js/ddd-value-object-immutability': 'error',
+      'eslint-plugin/ddd-value-object-immutability': 'error',
     },
   },
 ];

@@ -220,11 +220,11 @@ flowchart TD
 | 🟢 Coverage trends | Historical graphs on Codecov dashboard                                                                                          |
 | 📈 Diff coverage   | Shows coverage impact of your changes                                                                                           |
 | 📝 PR comments     | Auto-comments with coverage summary                                                                                             |
-| 🎯 Badges          | Add to README: `[![codecov](https://codecov.io/gh/YOUR_ORG/forge-js/graph/badge.svg)](https://codecov.io/gh/YOUR_ORG/forge-js)` |
+| 🎯 Badges          | Add to README: `[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg)](https://codecov.io/gh/ofri-peretz/eslint)` |
 
 ### Accessing Reports
 
-- **Codecov Dashboard:** [https://codecov.io/gh/YOUR_ORG/forge-js](https://codecov.io/gh/YOUR_ORG/forge-js)
+- **Codecov Dashboard:** [https://codecov.io/gh/ofri-peretz/eslint](https://codecov.io/gh/ofri-peretz/eslint)
 - **PR Comments:** Each PR gets an automatic comment with coverage metrics
 - **Badge:** Add to README for CI status visibility
 
@@ -309,7 +309,7 @@ git push origin main
 ```bash
 # Via GitHub Actions UI:
 # 1. Actions → Manual Publish → Run workflow
-# 2. Enter tag: @forge-js/eslint-plugin-llm-optimized@1.0.0
+# 2. Enter tag: eslint-plugin-llm-optimized@1.0.0
 # 3. Select npm-tag: latest, next, beta, alpha, rc, canary
 # 4. Optionally enable dry-run
 # 5. Run workflow
@@ -366,7 +366,7 @@ act -W .github/workflows/ci.yml -s NPM_TOKEN=xxxxx
 Add to README.md:
 
 ```markdown
-[![CI](https://github.com/YOUR_ORG/forge-js/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_ORG/forge-js/actions/workflows/ci.yml)
+[![CI](https://github.com/ofri-peretz/eslint/actions/workflows/ci.yml/badge.svg)](https://github.com/ofri-peretz/eslint/actions/workflows/ci.yml)
 ```
 
 ### Failed Workflow Notifications

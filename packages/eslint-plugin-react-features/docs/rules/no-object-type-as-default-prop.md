@@ -85,7 +85,7 @@ function UserCard({ user, style, options }) {
 ```javascript
 {
   rules: {
-    '@forge-js/no-object-type-as-default-prop': 'warn'
+    'eslint-plugin/no-object-type-as-default-prop': 'warn'
   }
 }
 ```

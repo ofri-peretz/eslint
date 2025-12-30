@@ -128,7 +128,7 @@ async function fetchWithLimit(urls: string[]) {
 ```javascript
 {
   rules: {
-    '@forge-js/no-await-in-loop': 'warn'
+    'eslint-plugin/no-await-in-loop': 'warn'
   }
 }
 ```
@@ -138,7 +138,7 @@ async function fetchWithLimit(urls: string[]) {
 ```javascript
 {
   rules: {
-    '@forge-js/no-await-in-loop': ['warn', {
+    'eslint-plugin/no-await-in-loop': ['warn', {
       allowForOf: true,
       allowWhile: false
     }]
@@ -151,7 +151,7 @@ async function fetchWithLimit(urls: string[]) {
 ```javascript
 {
   rules: {
-    '@forge-js/no-await-in-loop': ['error', {
+    'eslint-plugin/no-await-in-loop': ['error', {
       allowForOf: false,
       allowWhile: false,
       checkConcurrency: true

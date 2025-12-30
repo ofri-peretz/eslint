@@ -54,7 +54,7 @@ We welcome contributions! See our [Contributing Guide](../CONTRIBUTING.md) for d
 
 ## Resources
 
-- **NPM Packages**: [@forge-js on npm](https://www.npmjs.com/search?q=%40forge-js)
+- **NPM Packages**: [eslint-plugin on npm](https://www.npmjs.com/search?q=%40forge-js)
 - **GitHub Repository**: [github.com/ofri-peretz/forge-js](https://github.com/ofri-peretz/forge-js)
 - **Documentation**: [docs/](../docs/) directory
 

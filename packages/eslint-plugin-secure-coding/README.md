@@ -412,7 +412,7 @@ A: Yes, fully compatible.
 
 ## 🔗 Related ESLint Plugins
 
-Part of the **Forge-JS ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
+Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
 ### Migration Guide (v3.0.0)
 

@@ -53,7 +53,7 @@ Validates that HTML attribute values are valid according to HTML spec.
 ```javascript
 {
   rules: {
-    '@forge-js/no-invalid-html-attribute': 'warn'
+    'eslint-plugin/no-invalid-html-attribute': 'warn'
   }
 }
 ```

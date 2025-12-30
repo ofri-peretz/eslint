@@ -1,6 +1,6 @@
-# Cursor Rules - Forge.js Monorepo
+# Cursor Rules - ESLint Monorepo
 
-This directory contains checklists and guidelines for common development tasks in the forge-js monorepo.
+This directory contains checklists and guidelines for common development tasks in the eslint monorepo.
 
 ## 🚀 Quick Start: Using Cursor Commands
 
@@ -54,7 +54,7 @@ See [`.cursor/commands/README.md`](../.cursor/commands/README.md) for full docum
 
 **When to use:**
 
-- Adding a new rule to `@forge-js/eslint-plugin-llm-optimized`
+- Adding a new rule to `eslint-plugin-llm-optimized`
 - Creating rule documentation
 - Updating rule exports
 
@@ -105,7 +105,7 @@ See [`.cursor/commands/README.md`](../.cursor/commands/README.md) for full docum
 ### Package Type Decision
 
 ```
-Is package name prefixed with @forge-js/?
+Is package name prefixed with eslint-plugin/?
 │
 ├─ YES → SCOPED Package
 │   ├─ Use: release.yml workflow

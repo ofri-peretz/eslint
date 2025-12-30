@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * Performance Benchmarks for @forge-js/eslint-plugin-llm-optimized
+ * Performance Benchmarks for eslint-plugin-llm-optimized
  *
  * Run with: pnpm tsx scripts/benchmark-plugin.ts
  *

@@ -81,7 +81,7 @@ function UserProfile({ userId }: Props) {
 ```javascript
 {
   rules: {
-    '@forge-js/react-class-to-hooks': ['warn', {
+    'eslint-plugin/react-class-to-hooks': ['warn', {
       ignorePureRenderComponents: false,
       allowComplexLifecycle: false
     }]

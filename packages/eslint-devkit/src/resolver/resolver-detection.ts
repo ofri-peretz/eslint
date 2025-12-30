@@ -174,16 +174,16 @@ export function migrateFromEslintImport(oldConfig: Record<string, unknown>): {
         if (ruleName.startsWith('import/')) {
           // Rule mapping
           const ruleMappings: Record<string, string> = {
-            'import/no-unresolved': '@forge-js/llm-optimized/no-unresolved',
+            'import/no-unresolved': 'eslint-plugin-llm-optimized/no-unresolved',
             'import/no-cycle':
-              '@forge-js/llm-optimized/no-circular-dependencies',
-            'import/no-self-import': '@forge-js/llm-optimized/no-self-import',
+              'eslint-plugin-llm-optimized/no-circular-dependencies',
+            'import/no-self-import': 'eslint-plugin-llm-optimized/no-self-import',
             'import/no-absolute-path':
-              '@forge-js/llm-optimized/no-absolute-path',
+              'eslint-plugin-llm-optimized/no-absolute-path',
             'import/no-dynamic-require':
-              '@forge-js/llm-optimized/no-dynamic-require',
+              'eslint-plugin-llm-optimized/no-dynamic-require',
             'import/no-webpack-loader-syntax':
-              '@forge-js/llm-optimized/no-webpack-loader-syntax',
+              'eslint-plugin-llm-optimized/no-webpack-loader-syntax',
           };
 
           if (ruleMappings[ruleName]) {

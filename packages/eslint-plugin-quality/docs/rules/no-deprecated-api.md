@@ -66,7 +66,7 @@ newFunction({ data: 'test' });
 ```javascript
 {
   rules: {
-    '@forge-js/no-deprecated-api': ['error', {
+    'eslint-plugin/no-deprecated-api': ['error', {
       warnDaysBeforeRemoval: 90,
       apis: [
         {
@@ -96,7 +96,7 @@ newFunction({ data: 'test' });
 ```javascript
 {
   rules: {
-    '@forge-js/no-deprecated-api': ['warn', {
+    'eslint-plugin/no-deprecated-api': ['warn', {
       warnDaysBeforeRemoval: 30,
       apis: [
         {

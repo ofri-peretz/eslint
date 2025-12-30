@@ -64,35 +64,37 @@ export default [
 ];
 ```
 
-## 📋 Rules Overview
+## 🔐 Rules
+
+💼 = Set in `recommended` | 🔧 = Auto-fixable | 💡 = Has suggestions
 
 ### Critical Severity (Algorithm Attacks)
 
-| Rule                                                             | CWE     | Description                                  |
-| ---------------------------------------------------------------- | ------- | -------------------------------------------- |
-| [`no-algorithm-none`](docs/rules/no-algorithm-none.md)           | CWE-347 | Prevent `alg:"none"` attack (CVE-2022-23540) |
-| [`no-algorithm-confusion`](docs/rules/no-algorithm-confusion.md) | CWE-347 | Prevent RS256→HS256 key confusion            |
+| Rule                                                           | CWE     | OWASP    | Description                                  | 💼  | 🔧  | 💡  |
+| -------------------------------------------------------------- | ------- | -------- | -------------------------------------------- | --- | --- | --- |
+| [no-algorithm-none](docs/rules/no-algorithm-none.md)           | CWE-347 | A02:2021 | Prevent `alg:"none"` attack (CVE-2022-23540) | 💼  |     | 💡  |
+| [no-algorithm-confusion](docs/rules/no-algorithm-confusion.md) | CWE-347 | A02:2021 | Prevent RS256→HS256 key confusion            | 💼  |     | 💡  |
 
 ### High Severity (Verification & Secrets)
 
-| Rule                                                                       | CWE     | Description                              |
-| -------------------------------------------------------------------------- | ------- | ---------------------------------------- |
-| [`require-algorithm-whitelist`](docs/rules/require-algorithm-whitelist.md) | CWE-757 | Require explicit algorithm specification |
-| [`no-decode-without-verify`](docs/rules/no-decode-without-verify.md)       | CWE-345 | Prevent trusting decoded payloads        |
-| [`no-weak-secret`](docs/rules/no-weak-secret.md)                           | CWE-326 | Require 256-bit minimum secrets          |
-| [`no-hardcoded-secret`](docs/rules/no-hardcoded-secret.md)                 | CWE-798 | Prevent secrets in source code           |
-| [`no-timestamp-manipulation`](docs/rules/no-timestamp-manipulation.md)     | CWE-294 | Prevent disabling automatic `iat`        |
+| Rule                                                                     | CWE     | OWASP    | Description                              | 💼  | 🔧  | 💡  |
+| ------------------------------------------------------------------------ | ------- | -------- | ---------------------------------------- | --- | --- | --- |
+| [require-algorithm-whitelist](docs/rules/require-algorithm-whitelist.md) | CWE-757 | A02:2021 | Require explicit algorithm specification | 💼  |     | 💡  |
+| [no-decode-without-verify](docs/rules/no-decode-without-verify.md)       | CWE-345 | A04:2021 | Prevent trusting decoded payloads        | 💼  |     | 💡  |
+| [no-weak-secret](docs/rules/no-weak-secret.md)                           | CWE-326 | A02:2021 | Require 256-bit minimum secrets          | 💼  |     | 💡  |
+| [no-hardcoded-secret](docs/rules/no-hardcoded-secret.md)                 | CWE-798 | A05:2021 | Prevent secrets in source code           | 💼  |     | 💡  |
+| [no-timestamp-manipulation](docs/rules/no-timestamp-manipulation.md)     | CWE-294 | A05:2021 | Prevent disabling automatic `iat`        | 💼  |     | 💡  |
 
 ### Medium Severity (Claims & Best Practices)
 
-| Rule                                                                       | CWE     | Description                          |
-| -------------------------------------------------------------------------- | ------- | ------------------------------------ |
-| [`require-expiration`](docs/rules/require-expiration.md)                   | CWE-613 | Require `exp` claim or `expiresIn`   |
-| [`require-issued-at`](docs/rules/require-issued-at.md)                     | CWE-294 | Require `iat` claim for freshness    |
-| [`require-issuer-validation`](docs/rules/require-issuer-validation.md)     | CWE-287 | Require issuer validation            |
-| [`require-audience-validation`](docs/rules/require-audience-validation.md) | CWE-287 | Require audience validation          |
-| [`require-max-age`](docs/rules/require-max-age.md)                         | CWE-294 | Require maxAge for replay prevention |
-| [`no-sensitive-payload`](docs/rules/no-sensitive-payload.md)               | CWE-359 | Prevent PII in token payload         |
+| Rule                                                                     | CWE     | OWASP    | Description                          | 💼  | 🔧  | 💡  |
+| ------------------------------------------------------------------------ | ------- | -------- | ------------------------------------ | --- | --- | --- |
+| [require-expiration](docs/rules/require-expiration.md)                   | CWE-613 | A04:2021 | Require `exp` claim or `expiresIn`   | 💼  |     | 💡  |
+| [require-issued-at](docs/rules/require-issued-at.md)                     | CWE-294 | A04:2021 | Require `iat` claim for freshness    | 💼  |     | 💡  |
+| [require-issuer-validation](docs/rules/require-issuer-validation.md)     | CWE-287 | A01:2021 | Require issuer validation            | 💼  |     | 💡  |
+| [require-audience-validation](docs/rules/require-audience-validation.md) | CWE-287 | A01:2021 | Require audience validation          | 💼  |     | 💡  |
+| [require-max-age](docs/rules/require-max-age.md)                         | CWE-294 | A04:2021 | Require maxAge for replay prevention | 💼  |     | 💡  |
+| [no-sensitive-payload](docs/rules/no-sensitive-payload.md)               | CWE-359 | A01:2021 | Prevent PII in token payload         | 💼  |     | 💡  |
 
 ## 🔐 OWASP Top 10 2021 Coverage
 
@@ -198,7 +200,7 @@ Every rule uses `formatLLMMessage` for structured output:
 
 ## 🔗 Related ESLint Plugins
 
-Part of the **Forge-JS ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
+Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
 | Plugin                                                                                               | Description                                                  | Rules |
 | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | :---: |

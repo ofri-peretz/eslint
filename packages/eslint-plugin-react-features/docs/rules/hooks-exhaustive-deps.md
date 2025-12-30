@@ -140,7 +140,7 @@ function UserProfile({ userId }) {
 ```javascript
 {
   rules: {
-    '@forge-js/hooks-exhaustive-deps': 'warn'
+    'eslint-plugin/hooks-exhaustive-deps': 'warn'
   }
 }
 ```
@@ -150,7 +150,7 @@ function UserProfile({ userId }) {
 ```javascript
 {
   rules: {
-    '@forge-js/hooks-exhaustive-deps': ['warn', {
+    'eslint-plugin/hooks-exhaustive-deps': ['warn', {
       additionalHooks: '(useMyCustomEffect|useDeepCompareEffect)'
     }]
   }
@@ -210,7 +210,7 @@ function Component({ onSuccess }) {
 function Component({ initialValue }) {
   useEffect(() => {
     setup(initialValue);
-    // eslint-disable-next-line @forge-js/hooks-exhaustive-deps
+    // eslint-disable-next-line eslint-plugin/hooks-exhaustive-deps
   }, []);  // Intentionally run once
 }
 ```

@@ -71,10 +71,10 @@ flowchart TD
 ```javascript
 // Your standards become code
 {
-  '@forge-js/llm-optimized/no-sql-injection': 'error',
-  '@forge-js/llm-optimized/detect-eval-with-expression': 'error',
-  '@forge-js/llm-optimized/no-circular-dependencies': 'error',
-  '@forge-js/llm-optimized/cognitive-complexity': 'warn',
+  'eslint-plugin-llm-optimized/no-sql-injection': 'error',
+  'eslint-plugin-llm-optimized/detect-eval-with-expression': 'error',
+  'eslint-plugin-llm-optimized/no-circular-dependencies': 'error',
+  'eslint-plugin-llm-optimized/cognitive-complexity': 'warn',
 }
 ```
 
@@ -524,7 +524,7 @@ export default createRule({
    - Calculate current time spent on lint/style reviews
 
 2. **Week 2: Setup**
-   - Install [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized)
+   - Install [`eslint-plugin-llm-optimized`](https://www.npmjs.com/package/eslint-plugin-llm-optimized)
    - Configure recommended rules in warn mode
    - Set up ESLint MCP integration (see [ESLint MCP docs](https://eslint.org/docs/latest/use/mcp))
 
@@ -543,14 +543,14 @@ export default createRule({
 **Installation:**
 
 ```bash
-npm install --save-dev @forge-js/eslint-plugin-llm-optimized
+npm install --save-dev eslint-plugin-llm-optimized
 ```
 
 **Configuration:**
 
 ```javascript
 // eslint.config.js
-import llmOptimized from '@forge-js/eslint-plugin-llm-optimized';
+import llmOptimized from 'eslint-plugin-llm-optimized';
 
 export default [llmOptimized.configs.recommended];
 ```
@@ -560,7 +560,7 @@ export default [llmOptimized.configs.recommended];
 ## Next Steps
 
 1. **Select your 5 most important standards** (security, performance, consistency)
-2. **Find/create ESLint rules** for each (or use [`@forge-js/eslint-plugin-llm-optimized`](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized))
+2. **Find/create ESLint rules** for each (or use [`eslint-plugin-llm-optimized`](https://www.npmjs.com/package/eslint-plugin-llm-optimized))
 3. **Optimize messages** for LLM consumption (already done in this plugin)
 4. **Deploy to CI/CD** (warn mode first)
 5. **Measure & celebrate** improvements
@@ -572,7 +572,7 @@ export default [llmOptimized.configs.recommended];
 
 ## Related Resources
 
-- **[@forge-js/eslint-plugin-llm-optimized](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized)** - Pre-configured LLM-optimized ESLint rules
+- **[eslint-plugin-llm-optimized](https://www.npmjs.com/package/eslint-plugin-llm-optimized)** - Pre-configured LLM-optimized ESLint rules
 - **[ESLint MCP Documentation](https://eslint.org/docs/latest/use/mcp)** - Setup ESLint Model Context Protocol for AI integration
 - **[ESLint Official Docs](https://eslint.org/)** - Complete ESLint documentation
 - **[OWASP Top 10](https://owasp.org/www-project-top-ten/)** - Security standards reference

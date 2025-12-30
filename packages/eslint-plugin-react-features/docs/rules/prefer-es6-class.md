@@ -67,7 +67,7 @@ function MyComponent() {
 ```javascript
 {
   rules: {
-    '@forge-js/prefer-es6-class': 'error'
+    'eslint-plugin/prefer-es6-class': 'error'
   }
 }
 ```

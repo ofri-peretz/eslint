@@ -62,7 +62,7 @@ emitter.dispatch('change', { value: 42 });
 ```javascript
 {
   rules: {
-    '@forge-js/prefer-event-target': 'warn'
+    'eslint-plugin/prefer-event-target': 'warn'
   }
 }
 ```

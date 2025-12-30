@@ -77,7 +77,7 @@ The workflow doesn't validate prerequisites before starting:
 
 ```
 npm ERR! code E403
-npm ERR! 403 Forbidden - PUT https://registry.npmjs.org/@forge-js%2feslint-plugin
+npm ERR! 403 Forbidden - PUT https://registry.npmjs.org/eslint-plugin%2feslint-plugin
 npm ERR! You cannot publish over the previously published versions
 ```
 
@@ -219,7 +219,7 @@ Add explicit validation in the publish step:
     # Check if packages are already published
     for package in $(pnpm nx show projects --json | jq -r '.[]'); do
       version=$(jq -r '.version' packages/$package/package.json)
-      if npm view @forge-js/$package@$version version 2>/dev/null; then
+      if npm view eslint-plugin/$package@$version version 2>/dev/null; then
         echo "❌ Package $package@$version already published"
         exit 1
       fi
@@ -345,7 +345,7 @@ This checks if a release would succeed without making any changes.
 ✅ Version calculation validated
 
 📦 Packages that would be released:
-@forge-js/eslint-plugin: 1.2.3 → 1.3.0
+eslint-plugin-llm-optimized: 1.2.3 → 1.3.0
 @interlace/eslint-devkit: 1.0.1 → 1.0.2
 
 ✅ Release validation passed!

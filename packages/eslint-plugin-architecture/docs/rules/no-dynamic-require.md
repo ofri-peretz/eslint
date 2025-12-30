@@ -63,7 +63,7 @@ const plugin = plugins[name];
 ```javascript
 {
   rules: {
-    '@forge-js/no-dynamic-require': 'warn'
+    'eslint-plugin/no-dynamic-require': 'warn'
   }
 }
 ```

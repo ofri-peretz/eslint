@@ -78,7 +78,7 @@ flowchart TD
 export default [
   {
     rules: {
-      '@forge-js/ddd-anemic-domain-model': 'error',
+      'eslint-plugin/ddd-anemic-domain-model': 'error',
     },
   },
 ];

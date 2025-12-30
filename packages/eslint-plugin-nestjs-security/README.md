@@ -422,7 +422,7 @@ This plugin is optimized for ESLint's [Model Context Protocol (MCP)](https://esl
 
 ## 🔗 Related ESLint Plugins
 
-Part of the **Forge-JS ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
+Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
 | Plugin                                                                                               | Description                                                                | Rules |
 | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | :---: |

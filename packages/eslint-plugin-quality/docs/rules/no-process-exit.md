@@ -67,7 +67,7 @@ function gracefulShutdown(signal: string) {
   // Force exit after timeout
   setTimeout(() => {
     console.error('Forced shutdown after timeout');
-    process.exit(1);  // eslint-disable-line @forge-js/no-process-exit
+    process.exit(1);  // eslint-disable-line eslint-plugin/no-process-exit
   }, 30000);
 }
 
@@ -82,7 +82,7 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 ```javascript
 {
   rules: {
-    '@forge-js/no-process-exit': 'warn'
+    'eslint-plugin/no-process-exit': 'warn'
   }
 }
 ```
@@ -91,7 +91,7 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 ```typescript
 // CLI tools may legitimately use process.exit
-// eslint-disable-next-line @forge-js/no-process-exit
+// eslint-disable-next-line eslint-plugin/no-process-exit
 process.exit(exitCode);
 ```
 

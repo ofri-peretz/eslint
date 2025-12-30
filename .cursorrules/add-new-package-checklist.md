@@ -1,5 +1,5 @@
 ---
-description: Complete checklist for adding new packages to the forge-js monorepo
+description: Complete checklist for adding new packages to the eslint monorepo
 globs:
   - 'packages/**/package.json'
   - 'packages/**/project.json'
@@ -12,7 +12,7 @@ alwaysApply: true
 
 > **Purpose:** Ensure all new packages are properly integrated, configured, and released following project standards.
 
-**⚠️ CRITICAL:** When adding a new package to the forge-js monorepo, you MUST complete ALL items in this checklist. Missing any item will cause issues in the release process.
+**⚠️ CRITICAL:** When adding a new package to the eslint monorepo, you MUST complete ALL items in this checklist. Missing any item will cause issues in the release process.
 
 When adding a new package to this monorepo, **ALWAYS** follow this checklist:
 
@@ -44,7 +44,7 @@ When adding a new package to this monorepo, **ALWAYS** follow this checklist:
 
 **Determine if package is SCOPED or UNscoped:**
 
-### For SCOPED Packages (`@forge-js/*`):
+### For SCOPED Packages (`eslint-plugin/*`):
 
 - [ ] Add to `.github/workflows/release.yml`:
   - Find `SCOPED_PROJECTS` variable (appears in multiple places)
@@ -54,7 +54,7 @@ When adding a new package to this monorepo, **ALWAYS** follow this checklist:
     - Publish step (around line 573)
     - Dry-run step (around line 675)
   - Update workflow documentation at top of file (around line 8) listing the new package
-- [ ] Verify `scope: "@forge-js"` is set in `setup-node@v6` step (around line 153)
+- [ ] Verify `scope: "eslint-plugin"` is set in `setup-node@v6` step (around line 153)
 - [ ] Package will use **Trusted Publishing (OIDC)**
 
 ### For UNscoped Packages (`eslint-plugin-*` or similar):
@@ -73,7 +73,7 @@ When adding a new package to this monorepo, **ALWAYS** follow this checklist:
 ## 4. Package.json Configuration
 
 - [ ] Set correct `name` field:
-  - Scoped: `"@forge-js/<package-name>"`
+  - Scoped: `"eslint-plugin/<package-name>"`
   - Unscoped: `"<package-name>"`
 - [ ] Set `version` to `"0.0.0"` (or appropriate starting version)
 - [ ] Add `publishConfig` if publishing:
@@ -86,7 +86,7 @@ When adding a new package to this monorepo, **ALWAYS** follow this checklist:
   ```json
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ofri-peretz/forge-js.git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
     "directory": "packages/<package-name>"
   }
   ```
@@ -141,9 +141,9 @@ When adding a new package to this monorepo, **ALWAYS** follow this checklist:
 
 ## 10. NPM Publishing Setup
 
-### For Scoped Packages (`@forge-js/*`):
+### For Scoped Packages (`eslint-plugin/*`):
 
-- [ ] Verify Trusted Publishing is configured at: https://www.npmjs.com/org/forge-js/settings/publishing
+- [ ] Verify Trusted Publishing is configured at: https://www.npmjs.com/org/eslint/settings/publishing
 - [ ] Ensure GitHub repository is listed as Trusted Publisher
 - [ ] No NPM_TOKEN needed (uses OIDC)
 
@@ -183,13 +183,13 @@ When adding a new package to this monorepo, **ALWAYS** follow this checklist:
 ## 🎯 Package Type Decision Tree
 
 ```
-Is package name prefixed with @forge-js/?
+Is package name prefixed with eslint-plugin/?
 │
 ├─ YES → SCOPED Package
 │   ├─ Use: release.yml workflow
 │   ├─ Add to: SCOPED_PROJECTS variable
 │   ├─ Auth: Trusted Publishing (OIDC)
-│   └─ Scope: @forge-js (set in setup-node@v6)
+│   └─ Scope: eslint-plugin (set in setup-node@v6)
 │
 └─ NO → UNscoped Package
     ├─ Use: release-unscoped.yml workflow
@@ -200,11 +200,11 @@ Is package name prefixed with @forge-js/?
 
 ## 📋 Current Package List
 
-### Scoped Packages (`@forge-js/*`)
+### Scoped Packages (`eslint-plugin/*`)
 
-- `eslint-plugin` → `@forge-js/eslint-plugin-llm-optimized`
+- `eslint-plugin` → `eslint-plugin-llm-optimized`
 - `eslint-plugin-utils` → `@interlace/eslint-devkit`
-- `cli` → `@forge-js/cli`
+- `cli` → `@eslint/cli`
 
 ### Unscoped Packages
 

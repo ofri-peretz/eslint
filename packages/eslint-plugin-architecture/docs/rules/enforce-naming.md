@@ -110,7 +110,7 @@ class CustomerOrder {
 ```javascript
 {
   rules: {
-    '@forge-js/enforce-naming': ['error', {
+    'eslint-plugin/enforce-naming': ['error', {
       domain: 'e-commerce',
       glossaryUrl: 'https://wiki.company.com/glossary',
       terms: [
@@ -143,7 +143,7 @@ class CustomerOrder {
 ```javascript
 {
   rules: {
-    '@forge-js/enforce-naming': ['error', {
+    'eslint-plugin/enforce-naming': ['error', {
       domain: 'finance',
       glossaryUrl: 'https://internal.bank.com/glossary',
       terms: [
@@ -176,7 +176,7 @@ class CustomerOrder {
 ```javascript
 {
   rules: {
-    '@forge-js/enforce-naming': ['error', {
+    'eslint-plugin/enforce-naming': ['error', {
       domain: 'healthcare',
       glossaryUrl: 'https://hipaa.health.gov/glossary',
       terms: [
@@ -209,7 +209,7 @@ class CustomerOrder {
 ```javascript
 {
   rules: {
-    '@forge-js/enforce-naming': ['error', {
+    'eslint-plugin/enforce-naming': ['error', {
       domain: 'shipping',
       terms: [
         {
@@ -297,7 +297,7 @@ function calculateOrderTotal(order: Order) {
 ```javascript
 {
   rules: {
-    '@forge-js/enforce-naming': ['error', {
+    'eslint-plugin/enforce-naming': ['error', {
       domain: 'e-commerce',
       terms: [
         {

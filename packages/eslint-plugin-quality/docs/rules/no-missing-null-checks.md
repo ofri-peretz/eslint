@@ -78,7 +78,7 @@ flowchart TD
 export default [
   {
     rules: {
-      '@forge-js/no-missing-null-checks': 'error',
+      'eslint-plugin/no-missing-null-checks': 'error',
     },
   },
 ];

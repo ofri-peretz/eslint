@@ -506,7 +506,7 @@ const rule = createRule<[], 'messageId'>({
 
 ## Related Packages
 
-- **[@forge-js/eslint-plugin-llm-optimized](https://www.npmjs.com/package/@forge-js/eslint-plugin-llm-optimized)** - Ready-to-use LLM-optimized rules built with this package
+- **[eslint-plugin-llm-optimized](https://www.npmjs.com/package/eslint-plugin-llm-optimized)** - Ready-to-use LLM-optimized rules built with this package
 - **[@typescript-eslint/utils](https://www.npmjs.com/package/@typescript-eslint/utils)** - Official TypeScript ESLint utilities
 - **[eslint-plugin-import](https://www.npmjs.com/package/eslint-plugin-import)** - Import/export validation
 

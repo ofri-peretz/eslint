@@ -93,31 +93,33 @@ export default [
 
 ---
 
-## 🔧 Rule Categories
+## 🔐 Rules
 
-### ⚡ Performance & Architecture (The Good Stuff)
+💼 = Set in `recommended` | 🔧 = Auto-fixable | 💡 = Has suggestions
 
-| Rule                                                                           | Description                                                    | Fix      |
-| ------------------------------------------------------------------------------ | -------------------------------------------------------------- | -------- |
-| [`no-circular-dependencies`](./docs/rules/no-circular-dependencies.md)         | **Fast**, cached cycle detection.                              | 🧠 Smart |
-| [`no-internal-modules`](./docs/rules/no-internal-modules.md)                   | Enforce entry points (no `import .../dist/utils`).             |          |
-| [`enforce-dependency-direction`](./docs/rules/enforce-dependency-direction.md) | Enforce layered architecture (e.g., `feature` imports `core`). |          |
+### ⚡ Performance & Architecture
+
+| Rule                                                                         | CWE      | Description                                       | 💼  | 🔧  | 💡  |
+| ---------------------------------------------------------------------------- | -------- | ------------------------------------------------- | --- | --- | --- |
+| [no-circular-dependencies](./docs/rules/no-circular-dependencies.md)         | CWE-407  | **Fast**, cached cycle detection                  | 💼  |     | 💡  |
+| [no-internal-modules](./docs/rules/no-internal-modules.md)                   | CWE-1047 | Enforce entry points (no `import .../dist/utils`) | 💼  |     | 💡  |
+| [enforce-dependency-direction](./docs/rules/enforce-dependency-direction.md) | CWE-1047 | Enforce layered architecture                      | 💼  |     | 💡  |
 
 ### 📦 Module Resolution
 
-| Rule                                               | Description                      |
-| -------------------------------------------------- | -------------------------------- |
-| [`no-unresolved`](./docs/rules/no-unresolved.md)   | Ensure imports verify.           |
-| [`no-duplicates`](./docs/rules/no-duplicates.md)   | Merge duplicate imports.         |
-| [`no-self-import`](./docs/rules/no-self-import.md) | Prevent importing the same file. |
+| Rule                                             | CWE     | Description                     | 💼  | 🔧  | 💡  |
+| ------------------------------------------------ | ------- | ------------------------------- | --- | --- | --- |
+| [no-unresolved](./docs/rules/no-unresolved.md)   | CWE-829 | Ensure imports resolve          | 💼  |     | 💡  |
+| [no-duplicates](./docs/rules/no-duplicates.md)   | CWE-561 | Merge duplicate imports         | 💼  | 🔧  |     |
+| [no-self-import](./docs/rules/no-self-import.md) | CWE-835 | Prevent importing the same file | 💼  |     | 💡  |
 
 ### 🧹 Clean Code
 
-| Rule                                                                       | Description                                |
-| -------------------------------------------------------------------------- | ------------------------------------------ |
-| [`enforce-import-order`](./docs/rules/enforce-import-order.md)             | Group imports automatically.               |
-| [`no-unused-modules`](./docs/rules/no-unused-modules.md)                   | Find dead code.                            |
-| [`no-extraneous-dependencies`](./docs/rules/no-extraneous-dependencies.md) | Prevent importing devDependencies in prod. |
+| Rule                                                                     | CWE      | Description                 | 💼  | 🔧  | 💡  |
+| ------------------------------------------------------------------------ | -------- | --------------------------- | --- | --- | --- |
+| [enforce-import-order](./docs/rules/enforce-import-order.md)             | CWE-1078 | Group imports automatically | 💼  | 🔧  |     |
+| [no-unused-modules](./docs/rules/no-unused-modules.md)                   | CWE-561  | Find dead code              |     |     | 💡  |
+| [no-extraneous-dependencies](./docs/rules/no-extraneous-dependencies.md) | CWE-1104 | Prevent devDeps in prod     | 💼  |     | 💡  |
 
 ---
 
@@ -140,7 +142,7 @@ This plugin is optimized for **Cursor** and **GitHub Copilot**. Add this to your
 
 ## 🔗 Related ESLint Plugins
 
-Part of the **Forge-JS ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
+Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
 | Plugin                                                                                               | Description                                                  | Rules |
 | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | :---: |

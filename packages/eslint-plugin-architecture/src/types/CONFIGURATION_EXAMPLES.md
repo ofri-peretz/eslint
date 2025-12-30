@@ -18,13 +18,13 @@ Comprehensive examples demonstrating how to use the exported type-safe configura
 
 ```typescript
 // Method 1: From main package (recommended)
-import type { ReactNoInlineFunctionsOptions } from '@forge-js/eslint-plugin-llm-optimized';
+import type { ReactNoInlineFunctionsOptions } from 'eslint-plugin-llm-optimized';
 
 // Method 2: From types subpath
-import type { ReactNoInlineFunctionsOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { ReactNoInlineFunctionsOptions } from 'eslint-plugin-llm-optimized/types';
 
 // Method 3: Import combined type for all rules
-import type { AllRulesOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { AllRulesOptions } from 'eslint-plugin-llm-optimized/types';
 ```
 
 ---
@@ -35,7 +35,7 @@ import type { AllRulesOptions } from '@forge-js/eslint-plugin-llm-optimized/type
 
 ```typescript
 // eslint.config.js (ESLint 9+)
-import llmOptimized from '@forge-js/eslint-plugin-llm-optimized';
+import llmOptimized from 'eslint-plugin-llm-optimized';
 
 export default [
   {
@@ -49,8 +49,8 @@ export default [
 
 ```typescript
 // eslint.config.ts
-import llmOptimized from '@forge-js/eslint-plugin-llm-optimized';
-import type { ReactNoInlineFunctionsOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import llmOptimized from 'eslint-plugin-llm-optimized';
+import type { ReactNoInlineFunctionsOptions } from 'eslint-plugin-llm-optimized/types';
 
 const inlineConfig: ReactNoInlineFunctionsOptions = {
   allowInEventHandlers: true,
@@ -60,10 +60,10 @@ const inlineConfig: ReactNoInlineFunctionsOptions = {
 export default [
   {
     plugins: {
-      '@forge-js/llm-optimized': llmOptimized,
+      'eslint-plugin-llm-optimized': llmOptimized,
     },
     rules: {
-      '@forge-js/llm-optimized/performance/react-no-inline-functions': [
+      'eslint-plugin-llm-optimized/performance/react-no-inline-functions': [
         'warn',
         inlineConfig,
       ],
@@ -76,28 +76,28 @@ export default [
 
 ```typescript
 // eslint.config.ts
-import llmOptimized from '@forge-js/eslint-plugin-llm-optimized';
+import llmOptimized from 'eslint-plugin-llm-optimized';
 import type {
   ReactNoInlineFunctionsOptions,
   NoCircularDependenciesOptions,
   NoConsoleLogOptions,
   CognitiveComplexityOptions,
-} from '@forge-js/eslint-plugin-llm-optimized/types';
+} from 'eslint-plugin-llm-optimized/types';
 
 export default [
   {
     plugins: {
-      '@forge-js/llm-optimized': llmOptimized,
+      'eslint-plugin-llm-optimized': llmOptimized,
     },
     rules: {
-      '@forge-js/llm-optimized/performance/react-no-inline-functions': [
+      'eslint-plugin-llm-optimized/performance/react-no-inline-functions': [
         'warn',
         {
           allowInEventHandlers: true,
           minArraySize: 20,
         } satisfies ReactNoInlineFunctionsOptions,
       ],
-      '@forge-js/llm-optimized/architecture/no-circular-dependencies': [
+      'eslint-plugin-llm-optimized/architecture/no-circular-dependencies': [
         'error',
         {
           maxDepth: 10,
@@ -105,7 +105,7 @@ export default [
           fixStrategy: 'auto',
         } satisfies NoCircularDependenciesOptions,
       ],
-      '@forge-js/llm-optimized/development/no-console-log': [
+      'eslint-plugin-llm-optimized/development/no-console-log': [
         'warn',
         {
           strategy: 'remove',
@@ -113,7 +113,7 @@ export default [
           autoDetectLogger: true,
         } satisfies NoConsoleLogOptions,
       ],
-      '@forge-js/llm-optimized/complexity/cognitive-complexity': [
+      'eslint-plugin-llm-optimized/complexity/cognitive-complexity': [
         'warn',
         {
           maxComplexity: 15,
@@ -129,8 +129,8 @@ export default [
 
 ```typescript
 // eslint.config.ts
-import llmOptimized from '@forge-js/eslint-plugin-llm-optimized';
-import type { AllRulesOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import llmOptimized from 'eslint-plugin-llm-optimized';
+import type { AllRulesOptions } from 'eslint-plugin-llm-optimized/types';
 
 // Define all rules configuration in one object
 const allRulesConfig: AllRulesOptions = {
@@ -154,7 +154,7 @@ const allRulesConfig: AllRulesOptions = {
 // Create rule configurations dynamically
 const ruleConfigs = Object.entries(allRulesConfig).reduce(
   (acc, [ruleName, config]) => {
-    const fullRuleName = `@forge-js/llm-optimized/${ruleName}`;
+    const fullRuleName = `eslint-plugin-llm-optimized/${ruleName}`;
     acc[fullRuleName] = ['warn', config];
     return acc;
   },
@@ -164,7 +164,7 @@ const ruleConfigs = Object.entries(allRulesConfig).reduce(
 export default [
   {
     plugins: {
-      '@forge-js/llm-optimized': llmOptimized,
+      'eslint-plugin-llm-optimized': llmOptimized,
     },
     rules: ruleConfigs,
   },
@@ -175,29 +175,29 @@ export default [
 
 ```typescript
 // eslint.config.ts
-import llmOptimized from '@forge-js/eslint-plugin-llm-optimized';
+import llmOptimized from 'eslint-plugin-llm-optimized';
 import type {
   NoSqlInjectionOptions,
   DatabaseInjectionOptions,
   DetectChildProcessOptions,
   NoUnsafeDynamicRequireOptions,
-} from '@forge-js/eslint-plugin-llm-optimized/types';
+} from 'eslint-plugin-llm-optimized/types';
 
 export default [
   {
     plugins: {
-      '@forge-js/llm-optimized': llmOptimized,
+      'eslint-plugin-llm-optimized': llmOptimized,
     },
     rules: {
       // Security rules - all errors
-      '@forge-js/llm-optimized/security/no-sql-injection': [
+      'eslint-plugin-llm-optimized/security/no-sql-injection': [
         'error',
         {
           allowDynamicTableNames: false,
           trustedFunctions: [],
         } satisfies NoSqlInjectionOptions,
       ],
-      '@forge-js/llm-optimized/security/database-injection': [
+      'eslint-plugin-llm-optimized/security/database-injection': [
         'error',
         {
           detectNoSQL: true,
@@ -205,14 +205,14 @@ export default [
           frameworkHints: true,
         } satisfies DatabaseInjectionOptions,
       ],
-      '@forge-js/llm-optimized/security/detect-child-process': [
+      'eslint-plugin-llm-optimized/security/detect-child-process': [
         'error',
         {
           allowLiteralStrings: false,
           allowLiteralSpawn: false,
         } satisfies DetectChildProcessOptions,
       ],
-      '@forge-js/llm-optimized/security/no-unsafe-dynamic-require': [
+      'eslint-plugin-llm-optimized/security/no-unsafe-dynamic-require': [
         'error',
         {
           allowDynamicImport: false,
@@ -227,8 +227,8 @@ export default [
 
 ```typescript
 // eslint.config.ts
-import llmOptimized from '@forge-js/eslint-plugin-llm-optimized';
-import type { NoConsoleLogOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import llmOptimized from 'eslint-plugin-llm-optimized';
+import type { NoConsoleLogOptions } from 'eslint-plugin-llm-optimized/types';
 
 // Development: allow console.log (warn only)
 const devConfig: NoConsoleLogOptions = {
@@ -249,10 +249,10 @@ const isDev = process.env.NODE_ENV === 'development';
 export default [
   {
     plugins: {
-      '@forge-js/llm-optimized': llmOptimized,
+      'eslint-plugin-llm-optimized': llmOptimized,
     },
     rules: {
-      '@forge-js/llm-optimized/development/no-console-log': [
+      'eslint-plugin-llm-optimized/development/no-console-log': [
         'warn',
         isDev ? devConfig : prodConfig,
       ],
@@ -270,8 +270,8 @@ export default [
 ```javascript
 // .eslintrc.js (ESLint 8)
 module.exports = {
-  plugins: ['@forge-js/llm-optimized'],
-  extends: ['plugin:@forge-js/llm-optimized/recommended'],
+  plugins: ['eslint-plugin-llm-optimized'],
+  extends: ['plugin:eslint-plugin-llm-optimized/recommended'],
 };
 ```
 
@@ -279,16 +279,16 @@ module.exports = {
 
 ```javascript
 // .eslintrc.js (ESLint 8)
-/** @type {import('@forge-js/eslint-plugin-llm-optimized/types').ReactNoInlineFunctionsOptions} */
+/** @type {import('eslint-plugin-llm-optimized/types').ReactNoInlineFunctionsOptions} */
 const inlineConfig = {
   allowInEventHandlers: true,
   minArraySize: 20,
 };
 
 module.exports = {
-  plugins: ['@forge-js/eslint-plugin-llm-optimized'],
+  plugins: ['eslint-plugin-llm-optimized'],
   rules: {
-    '@forge-js/eslint-plugin-llm-optimized/performance/react-no-inline-functions':
+    'eslint-plugin-llm-optimized/performance/react-no-inline-functions':
       ['warn', inlineConfig],
   },
 };
@@ -298,20 +298,20 @@ module.exports = {
 
 ```javascript
 // .eslintrc.js (ESLint 8)
-/** @type {import('@forge-js/eslint-plugin-llm-optimized/types').ReactNoInlineFunctionsOptions} */
+/** @type {import('eslint-plugin-llm-optimized/types').ReactNoInlineFunctionsOptions} */
 const inlineConfig = {
   allowInEventHandlers: true,
   minArraySize: 20,
 };
 
-/** @type {import('@forge-js/eslint-plugin-llm-optimized/types').NoCircularDependenciesOptions} */
+/** @type {import('eslint-plugin-llm-optimized/types').NoCircularDependenciesOptions} */
 const circularConfig = {
   maxDepth: 10,
   ignorePatterns: ['**/*.test.ts'],
   fixStrategy: 'auto',
 };
 
-/** @type {import('@forge-js/eslint-plugin-llm-optimized/types').NoConsoleLogOptions} */
+/** @type {import('eslint-plugin-llm-optimized/types').NoConsoleLogOptions} */
 const consoleConfig = {
   strategy: 'remove',
   ignorePaths: ['src/logger/**'],
@@ -319,13 +319,13 @@ const consoleConfig = {
 };
 
 module.exports = {
-  plugins: ['@forge-js/eslint-plugin-llm-optimized'],
+  plugins: ['eslint-plugin-llm-optimized'],
   rules: {
-    '@forge-js/eslint-plugin-llm-optimized/performance/react-no-inline-functions':
+    'eslint-plugin-llm-optimized/performance/react-no-inline-functions':
       ['warn', inlineConfig],
-    '@forge-js/eslint-plugin-llm-optimized/architecture/no-circular-dependencies':
+    'eslint-plugin-llm-optimized/architecture/no-circular-dependencies':
       ['error', circularConfig],
-    '@forge-js/eslint-plugin-llm-optimized/development/no-console-log': [
+    'eslint-plugin-llm-optimized/development/no-console-log': [
       'warn',
       consoleConfig,
     ],
@@ -337,13 +337,13 @@ module.exports = {
 
 ```javascript
 // .eslintrc.js (ESLint 8)
-/** @type {import('@forge-js/eslint-plugin-llm-optimized/types').NoSqlInjectionOptions} */
+/** @type {import('eslint-plugin-llm-optimized/types').NoSqlInjectionOptions} */
 const sqlInjectionConfig = {
   allowDynamicTableNames: false,
   trustedFunctions: [],
 };
 
-/** @type {import('@forge-js/eslint-plugin-llm-optimized/types').DatabaseInjectionOptions} */
+/** @type {import('eslint-plugin-llm-optimized/types').DatabaseInjectionOptions} */
 const dbInjectionConfig = {
   detectNoSQL: true,
   detectORMs: true,
@@ -351,14 +351,14 @@ const dbInjectionConfig = {
 };
 
 module.exports = {
-  plugins: ['@forge-js/eslint-plugin-llm-optimized'],
-  extends: ['plugin:@forge-js/eslint-plugin-llm-optimized/security'],
+  plugins: ['eslint-plugin-llm-optimized'],
+  extends: ['plugin:eslint-plugin-llm-optimized/security'],
   rules: {
-    '@forge-js/eslint-plugin-llm-optimized/security/no-sql-injection': [
+    'eslint-plugin-llm-optimized/security/no-sql-injection': [
       'error',
       sqlInjectionConfig,
     ],
-    '@forge-js/eslint-plugin-llm-optimized/security/database-injection': [
+    'eslint-plugin-llm-optimized/security/database-injection': [
       'error',
       dbInjectionConfig,
     ],
@@ -374,7 +374,7 @@ import type {
   ReactNoInlineFunctionsOptions,
   NoCircularDependenciesOptions,
   NoConsoleLogOptions,
-} from '@forge-js/eslint-plugin-llm-optimized/types';
+} from 'eslint-plugin-llm-optimized/types';
 
 const inlineConfig: ReactNoInlineFunctionsOptions = {
   allowInEventHandlers: true,
@@ -394,13 +394,13 @@ const consoleConfig: NoConsoleLogOptions = {
 };
 
 export default {
-  plugins: ['@forge-js/eslint-plugin-llm-optimized'],
+  plugins: ['eslint-plugin-llm-optimized'],
   rules: {
-    '@forge-js/eslint-plugin-llm-optimized/performance/react-no-inline-functions':
+    'eslint-plugin-llm-optimized/performance/react-no-inline-functions':
       ['warn', inlineConfig],
-    '@forge-js/eslint-plugin-llm-optimized/architecture/no-circular-dependencies':
+    'eslint-plugin-llm-optimized/architecture/no-circular-dependencies':
       ['error', circularConfig],
-    '@forge-js/eslint-plugin-llm-optimized/development/no-console-log': [
+    'eslint-plugin-llm-optimized/development/no-console-log': [
       'warn',
       consoleConfig,
     ],
@@ -415,7 +415,7 @@ export default {
 ### react-no-inline-functions
 
 ```typescript
-import type { ReactNoInlineFunctionsOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { ReactNoInlineFunctionsOptions } from 'eslint-plugin-llm-optimized/types';
 
 const config: ReactNoInlineFunctionsOptions = {
   allowInEventHandlers: false, // Strict: prevent inline functions everywhere
@@ -426,7 +426,7 @@ const config: ReactNoInlineFunctionsOptions = {
 export default [
   {
     rules: {
-      '@forge-js/llm-optimized/performance/react-no-inline-functions': [
+      'eslint-plugin-llm-optimized/performance/react-no-inline-functions': [
         'warn',
         config,
       ],
@@ -438,7 +438,7 @@ export default [
 ### no-circular-dependencies
 
 ```typescript
-import type { NoCircularDependenciesOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { NoCircularDependenciesOptions } from 'eslint-plugin-llm-optimized/types';
 
 const config: NoCircularDependenciesOptions = {
   maxDepth: 10,
@@ -455,7 +455,7 @@ const config: NoCircularDependenciesOptions = {
 export default [
   {
     rules: {
-      '@forge-js/llm-optimized/architecture/no-circular-dependencies': [
+      'eslint-plugin-llm-optimized/architecture/no-circular-dependencies': [
         'error',
         config,
       ],
@@ -467,7 +467,7 @@ export default [
 ### no-internal-modules
 
 ```typescript
-import type { NoInternalModulesOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { NoInternalModulesOptions } from 'eslint-plugin-llm-optimized/types';
 
 const config: NoInternalModulesOptions = {
   strategy: 'error',
@@ -481,7 +481,7 @@ const config: NoInternalModulesOptions = {
 export default [
   {
     rules: {
-      '@forge-js/llm-optimized/architecture/no-internal-modules': [
+      'eslint-plugin-llm-optimized/architecture/no-internal-modules': [
         'error',
         config,
       ],
@@ -493,7 +493,7 @@ export default [
 ### no-console-log
 
 ```typescript
-import type { NoConsoleLogOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { NoConsoleLogOptions } from 'eslint-plugin-llm-optimized/types';
 
 const config: NoConsoleLogOptions = {
   strategy: 'remove', // 'remove', 'convert', 'comment', 'warn'
@@ -508,7 +508,7 @@ const config: NoConsoleLogOptions = {
 export default [
   {
     rules: {
-      '@forge-js/llm-optimized/development/no-console-log': ['warn', config],
+      'eslint-plugin-llm-optimized/development/no-console-log': ['warn', config],
     },
   },
 ];
@@ -517,7 +517,7 @@ export default [
 ### cognitive-complexity
 
 ```typescript
-import type { CognitiveComplexityOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { CognitiveComplexityOptions } from 'eslint-plugin-llm-optimized/types';
 
 const config: CognitiveComplexityOptions = {
   maxComplexity: 15, // SonarQube default
@@ -528,7 +528,7 @@ const config: CognitiveComplexityOptions = {
 export default [
   {
     rules: {
-      '@forge-js/llm-optimized/complexity/cognitive-complexity': [
+      'eslint-plugin-llm-optimized/complexity/cognitive-complexity': [
         'warn',
         config,
       ],
@@ -540,7 +540,7 @@ export default [
 ### database-injection
 
 ```typescript
-import type { DatabaseInjectionOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { DatabaseInjectionOptions } from 'eslint-plugin-llm-optimized/types';
 
 const config: DatabaseInjectionOptions = {
   detectNoSQL: true,
@@ -553,7 +553,7 @@ const config: DatabaseInjectionOptions = {
 export default [
   {
     rules: {
-      '@forge-js/llm-optimized/security/database-injection': ['error', config],
+      'eslint-plugin-llm-optimized/security/database-injection': ['error', config],
     },
   },
 ];
@@ -562,7 +562,7 @@ export default [
 ### detect-child-process
 
 ```typescript
-import type { DetectChildProcessOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { DetectChildProcessOptions } from 'eslint-plugin-llm-optimized/types';
 
 const config: DetectChildProcessOptions = {
   allowLiteralStrings: false, // Strict: no literal strings allowed
@@ -574,7 +574,7 @@ const config: DetectChildProcessOptions = {
 export default [
   {
     rules: {
-      '@forge-js/llm-optimized/security/detect-child-process': [
+      'eslint-plugin-llm-optimized/security/detect-child-process': [
         'error',
         config,
       ],
@@ -586,7 +586,7 @@ export default [
 ### no-sql-injection
 
 ```typescript
-import type { NoSqlInjectionOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { NoSqlInjectionOptions } from 'eslint-plugin-llm-optimized/types';
 
 const config: NoSqlInjectionOptions = {
   allowDynamicTableNames: false,
@@ -597,7 +597,7 @@ const config: NoSqlInjectionOptions = {
 export default [
   {
     rules: {
-      '@forge-js/llm-optimized/security/no-sql-injection': ['error', config],
+      'eslint-plugin-llm-optimized/security/no-sql-injection': ['error', config],
     },
   },
 ];
@@ -606,7 +606,7 @@ export default [
 ### img-requires-alt
 
 ```typescript
-import type { ImgRequiresAltOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { ImgRequiresAltOptions } from 'eslint-plugin-llm-optimized/types';
 
 const config: ImgRequiresAltOptions = {
   allowAriaLabel: false,
@@ -618,7 +618,7 @@ export default [
   {
     files: ['**/*.tsx', '**/*.jsx'],
     rules: {
-      '@forge-js/llm-optimized/accessibility/img-requires-alt': [
+      'eslint-plugin-llm-optimized/accessibility/img-requires-alt': [
         'error',
         config,
       ],
@@ -630,7 +630,7 @@ export default [
 ### required-attributes
 
 ```typescript
-import type { RequiredAttributesOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { RequiredAttributesOptions } from 'eslint-plugin-llm-optimized/types';
 
 const config: RequiredAttributesOptions = {
   attributes: [
@@ -648,7 +648,7 @@ export default [
   {
     files: ['**/*.tsx'],
     rules: {
-      '@forge-js/llm-optimized/react/required-attributes': ['error', config],
+      'eslint-plugin-llm-optimized/react/required-attributes': ['error', config],
     },
   },
 ];
@@ -657,7 +657,7 @@ export default [
 ### detect-eval-with-expression
 
 ```typescript
-import type { DetectEvalWithExpressionOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { DetectEvalWithExpressionOptions } from 'eslint-plugin-llm-optimized/types';
 
 const config: DetectEvalWithExpressionOptions = {
   allowLiteralStrings: false,
@@ -668,7 +668,7 @@ const config: DetectEvalWithExpressionOptions = {
 export default [
   {
     rules: {
-      '@forge-js/llm-optimized/security/detect-eval-with-expression': [
+      'eslint-plugin-llm-optimized/security/detect-eval-with-expression': [
         'error',
         config,
       ],
@@ -680,7 +680,7 @@ export default [
 ### detect-non-literal-regexp
 
 ```typescript
-import type { DetectNonLiteralRegexpOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { DetectNonLiteralRegexpOptions } from 'eslint-plugin-llm-optimized/types';
 
 const config: DetectNonLiteralRegexpOptions = {
   allowLiterals: false,
@@ -692,7 +692,7 @@ const config: DetectNonLiteralRegexpOptions = {
 export default [
   {
     rules: {
-      '@forge-js/llm-optimized/security/detect-non-literal-regexp': [
+      'eslint-plugin-llm-optimized/security/detect-non-literal-regexp': [
         'error',
         config,
       ],
@@ -704,7 +704,7 @@ export default [
 ### detect-non-literal-fs-filename
 
 ```typescript
-import type { DetectNonLiteralFsFilenameOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { DetectNonLiteralFsFilenameOptions } from 'eslint-plugin-llm-optimized/types';
 
 const config: DetectNonLiteralFsFilenameOptions = {
   allowLiterals: false,
@@ -715,7 +715,7 @@ const config: DetectNonLiteralFsFilenameOptions = {
 export default [
   {
     rules: {
-      '@forge-js/llm-optimized/security/detect-non-literal-fs-filename': [
+      'eslint-plugin-llm-optimized/security/detect-non-literal-fs-filename': [
         'error',
         config,
       ],
@@ -727,7 +727,7 @@ export default [
 ### detect-object-injection
 
 ```typescript
-import type { DetectObjectInjectionOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { DetectObjectInjectionOptions } from 'eslint-plugin-llm-optimized/types';
 
 const config: DetectObjectInjectionOptions = {
   allowLiterals: false,
@@ -739,7 +739,7 @@ const config: DetectObjectInjectionOptions = {
 export default [
   {
     rules: {
-      '@forge-js/llm-optimized/security/detect-object-injection': [
+      'eslint-plugin-llm-optimized/security/detect-object-injection': [
         'error',
         config,
       ],
@@ -751,7 +751,7 @@ export default [
 ### react-class-to-hooks
 
 ```typescript
-import type { ReactClassToHooksOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { ReactClassToHooksOptions } from 'eslint-plugin-llm-optimized/types';
 
 const config: ReactClassToHooksOptions = {
   ignorePureRenderComponents: false,
@@ -763,7 +763,7 @@ export default [
   {
     files: ['**/*.tsx', '**/*.jsx'],
     rules: {
-      '@forge-js/llm-optimized/migration/react-class-to-hooks': [
+      'eslint-plugin-llm-optimized/migration/react-class-to-hooks': [
         'warn',
         config,
       ],
@@ -775,7 +775,7 @@ export default [
 ### no-deprecated-api
 
 ```typescript
-import type { NoDeprecatedApiOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { NoDeprecatedApiOptions } from 'eslint-plugin-llm-optimized/types';
 
 const config: NoDeprecatedApiOptions = {
   apis: [
@@ -795,7 +795,7 @@ const config: NoDeprecatedApiOptions = {
 export default [
   {
     rules: {
-      '@forge-js/llm-optimized/deprecation/no-deprecated-api': ['warn', config],
+      'eslint-plugin-llm-optimized/deprecation/no-deprecated-api': ['warn', config],
     },
   },
 ];
@@ -804,7 +804,7 @@ export default [
 ### enforce-naming
 
 ```typescript
-import type { EnforceNamingOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { EnforceNamingOptions } from 'eslint-plugin-llm-optimized/types';
 
 const config: EnforceNamingOptions = {
   domain: 'ecommerce',
@@ -823,7 +823,7 @@ const config: EnforceNamingOptions = {
 export default [
   {
     rules: {
-      '@forge-js/llm-optimized/domain/enforce-naming': ['warn', config],
+      'eslint-plugin-llm-optimized/domain/enforce-naming': ['warn', config],
     },
   },
 ];
@@ -832,7 +832,7 @@ export default [
 ### identical-functions
 
 ```typescript
-import type { IdenticalFunctionsOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { IdenticalFunctionsOptions } from 'eslint-plugin-llm-optimized/types';
 
 const config: IdenticalFunctionsOptions = {
   minLines: 3,
@@ -844,7 +844,7 @@ const config: IdenticalFunctionsOptions = {
 export default [
   {
     rules: {
-      '@forge-js/llm-optimized/duplication/identical-functions': [
+      'eslint-plugin-llm-optimized/duplication/identical-functions': [
         'warn',
         config,
       ],
@@ -856,7 +856,7 @@ export default [
 ### no-unsafe-dynamic-require
 
 ```typescript
-import type { NoUnsafeDynamicRequireOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { NoUnsafeDynamicRequireOptions } from 'eslint-plugin-llm-optimized/types';
 
 const config: NoUnsafeDynamicRequireOptions = {
   allowDynamicImport: false,
@@ -866,7 +866,7 @@ const config: NoUnsafeDynamicRequireOptions = {
 export default [
   {
     rules: {
-      '@forge-js/llm-optimized/security/no-unsafe-dynamic-require': [
+      'eslint-plugin-llm-optimized/security/no-unsafe-dynamic-require': [
         'error',
         config,
       ],
@@ -882,8 +882,8 @@ export default [
 ### Configuration Factory Function
 
 ```typescript
-import llmOptimized from '@forge-js/eslint-plugin-llm-optimized';
-import type { AllRulesOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import llmOptimized from 'eslint-plugin-llm-optimized';
+import type { AllRulesOptions } from 'eslint-plugin-llm-optimized/types';
 
 function createESLintConfig(
   env: 'development' | 'production',
@@ -909,13 +909,13 @@ const configs = createESLintConfig(process.env.NODE_ENV);
 export default [
   {
     plugins: {
-      '@forge-js/llm-optimized': llmOptimized,
+      'eslint-plugin-llm-optimized': llmOptimized,
     },
     rules: {
       // Map configuration object to ESLint rules
       ...Object.entries(configs).reduce((acc, [ruleName, config]) => {
         if (config) {
-          acc[`@forge-js/llm-optimized/${ruleName}`] = ['warn', config];
+          acc[`eslint-plugin-llm-optimized/${ruleName}`] = ['warn', config];
         }
         return acc;
       }, {}),
@@ -932,7 +932,7 @@ import type {
   NoCircularDependenciesOptions,
   CognitiveComplexityOptions,
   NoConsoleLogOptions,
-} from '@forge-js/eslint-plugin-llm-optimized/types';
+} from 'eslint-plugin-llm-optimized/types';
 
 /**
  * Team-wide ESLint standards
@@ -961,24 +961,24 @@ export const teamStandards = {
 };
 
 // Usage in project eslint.config.ts
-import llmOptimized from '@forge-js/eslint-plugin-llm-optimized';
+import llmOptimized from 'eslint-plugin-llm-optimized';
 import { teamStandards } from './team-eslint-config';
 
 export default [
   {
     plugins: {
-      '@forge-js/llm-optimized': llmOptimized,
+      'eslint-plugin-llm-optimized': llmOptimized,
     },
     rules: {
-      '@forge-js/llm-optimized/architecture/no-circular-dependencies': [
+      'eslint-plugin-llm-optimized/architecture/no-circular-dependencies': [
         'error',
         teamStandards.architecture['no-circular-dependencies'],
       ],
-      '@forge-js/llm-optimized/complexity/cognitive-complexity': [
+      'eslint-plugin-llm-optimized/complexity/cognitive-complexity': [
         'warn',
         teamStandards.quality['cognitive-complexity'],
       ],
-      '@forge-js/llm-optimized/development/no-console-log': [
+      'eslint-plugin-llm-optimized/development/no-console-log': [
         'warn',
         teamStandards.logging['no-console-log'],
       ],
@@ -990,8 +990,8 @@ export default [
 ### Preset Configurations
 
 ```typescript
-import llmOptimized from '@forge-js/eslint-plugin-llm-optimized';
-import type { AllRulesOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import llmOptimized from 'eslint-plugin-llm-optimized';
+import type { AllRulesOptions } from 'eslint-plugin-llm-optimized/types';
 
 // Security-first preset
 export const securityPreset: AllRulesOptions = {

@@ -149,7 +149,7 @@ function TagList() {
 ```javascript
 {
   rules: {
-    '@forge-js/no-adjacent-inline-elements': 'warn'
+    'eslint-plugin/no-adjacent-inline-elements': 'warn'
   }
 }
 ```

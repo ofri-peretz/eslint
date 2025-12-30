@@ -353,7 +353,7 @@ describe('resolver-detection', () => {
       };
       const { migrated, suggestions } = migrateFromEslintImport(oldConfig);
       const rules = migrated['rules'] as Record<string, unknown>;
-      expect(rules['@forge-js/llm-optimized/no-unresolved']).toBe('error');
+      expect(rules['eslint-plugin-llm-optimized/no-unresolved']).toBe('error');
       expect(suggestions.some((s) => s.includes('no-unresolved'))).toBe(true);
     });
 
@@ -365,7 +365,7 @@ describe('resolver-detection', () => {
       };
       const { migrated } = migrateFromEslintImport(oldConfig);
       const rules = migrated['rules'] as Record<string, unknown>;
-      expect(rules['@forge-js/llm-optimized/no-circular-dependencies']).toEqual(
+      expect(rules['eslint-plugin-llm-optimized/no-circular-dependencies']).toEqual(
         ['error', { maxDepth: 2 }],
       );
     });
@@ -383,15 +383,15 @@ describe('resolver-detection', () => {
       };
       const { migrated } = migrateFromEslintImport(oldConfig);
       const rules = migrated['rules'] as Record<string, unknown>;
-      expect(rules['@forge-js/llm-optimized/no-unresolved']).toBeDefined();
+      expect(rules['eslint-plugin-llm-optimized/no-unresolved']).toBeDefined();
       expect(
-        rules['@forge-js/llm-optimized/no-circular-dependencies'],
+        rules['eslint-plugin-llm-optimized/no-circular-dependencies'],
       ).toBeDefined();
-      expect(rules['@forge-js/llm-optimized/no-self-import']).toBeDefined();
-      expect(rules['@forge-js/llm-optimized/no-absolute-path']).toBeDefined();
-      expect(rules['@forge-js/llm-optimized/no-dynamic-require']).toBeDefined();
+      expect(rules['eslint-plugin-llm-optimized/no-self-import']).toBeDefined();
+      expect(rules['eslint-plugin-llm-optimized/no-absolute-path']).toBeDefined();
+      expect(rules['eslint-plugin-llm-optimized/no-dynamic-require']).toBeDefined();
       expect(
-        rules['@forge-js/llm-optimized/no-webpack-loader-syntax'],
+        rules['eslint-plugin-llm-optimized/no-webpack-loader-syntax'],
       ).toBeDefined();
     });
 
@@ -417,7 +417,7 @@ describe('resolver-detection', () => {
       const { migrated } = migrateFromEslintImport(oldConfig);
       const rules = migrated['rules'] as Record<string, unknown>;
       expect(rules['no-console']).toBe('error');
-      expect(rules['@forge-js/llm-optimized/no-unresolved']).toBe('error');
+      expect(rules['eslint-plugin-llm-optimized/no-unresolved']).toBe('error');
     });
 
     it('should handle empty config', () => {

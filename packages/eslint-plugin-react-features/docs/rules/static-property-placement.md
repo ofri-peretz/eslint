@@ -137,7 +137,7 @@ UserCard.propTypes = {
 ```javascript
 {
   rules: {
-    '@forge-js/static-property-placement': ['warn', {
+    'eslint-plugin/static-property-placement': ['warn', {
       propertyGroups: [
         {
           name: 'propTypes',
@@ -165,7 +165,7 @@ UserCard.propTypes = {
 ```javascript
 {
   rules: {
-    '@forge-js/static-property-placement': 'warn'
+    'eslint-plugin/static-property-placement': 'warn'
   }
 }
 ```

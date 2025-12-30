@@ -76,7 +76,7 @@ Files Coverage:
 
 ### Option 1: Codecov Dashboard
 
-Navigate to: `https://codecov.io/gh/YOUR_ORG/forge-js`
+Navigate to: `https://codecov.io/gh/ofri-peretz/eslint`
 
 Features:
 - 📈 Historical coverage graphs
@@ -105,7 +105,7 @@ Coverage appears in PR status checks:
 Add this markdown to your `README.md` to display coverage badge:
 
 ```markdown
-[![codecov](https://codecov.io/gh/YOUR_ORG/forge-js/graph/badge.svg)](https://codecov.io/gh/YOUR_ORG/forge-js)
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg)](https://codecov.io/gh/ofri-peretz/eslint)
 ```
 
 Replace `YOUR_ORG` with your GitHub organization name.
@@ -245,7 +245,7 @@ coverage: {
 ### Your Monorepo Structure
 
 ```
-forge-js (monorepo)
+eslint (monorepo)
 ├── packages/
 │   ├── eslint-plugin/
 │   │   └── coverage/coverage-final.json    ← Package 1

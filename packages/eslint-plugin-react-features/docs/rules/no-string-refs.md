@@ -78,7 +78,7 @@ function MyComponent() {
 ```javascript
 {
   rules: {
-    '@forge-js/no-string-refs': 'error'
+    'eslint-plugin/no-string-refs': 'error'
   }
 }
 ```

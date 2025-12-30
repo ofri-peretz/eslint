@@ -79,7 +79,7 @@ if (a) {
 ```javascript
 {
   rules: {
-    '@forge-js/no-lonely-if': 'warn'
+    'eslint-plugin/no-lonely-if': 'warn'
   }
 }
 ```

@@ -85,7 +85,7 @@ class Counter extends React.Component {
 ```javascript
 {
   rules: {
-    '@forge-js/prefer-stateless-function': 'warn'
+    'eslint-plugin/prefer-stateless-function': 'warn'
   }
 }
 ```

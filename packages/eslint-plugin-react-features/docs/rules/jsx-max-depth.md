@@ -109,7 +109,7 @@ function ShallowComponent() {
 ```javascript
 {
   rules: {
-    '@forge-js/jsx-max-depth': 'warn'
+    'eslint-plugin/jsx-max-depth': 'warn'
   }
 }
 ```
@@ -119,7 +119,7 @@ function ShallowComponent() {
 ```javascript
 {
   rules: {
-    '@forge-js/jsx-max-depth': ['error', { max: 3 }]
+    'eslint-plugin/jsx-max-depth': ['error', { max: 3 }]
   }
 }
 ```
@@ -129,7 +129,7 @@ function ShallowComponent() {
 ```javascript
 {
   rules: {
-    '@forge-js/jsx-max-depth': ['warn', { max: 7 }]
+    'eslint-plugin/jsx-max-depth': ['warn', { max: 7 }]
   }
 }
 ```

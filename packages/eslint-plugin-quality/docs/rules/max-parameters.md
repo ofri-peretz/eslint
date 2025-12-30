@@ -78,7 +78,7 @@ flowchart TD
 export default [
   {
     rules: {
-      '@forge-js/max-parameters': 'error',
+      'eslint-plugin/max-parameters': 'error',
     },
   },
 ];

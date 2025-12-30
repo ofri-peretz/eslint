@@ -58,7 +58,7 @@ Passing `children` as a prop instead of nesting is less readable and can cause i
 ```javascript
 {
   rules: {
-    '@forge-js/no-children-prop': 'warn'
+    'eslint-plugin/no-children-prop': 'warn'
   }
 }
 ```

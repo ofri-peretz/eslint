@@ -283,7 +283,7 @@ This plugin is optimized for ESLint's Model Context Protocol (MCP):
 
 ## Related Packages
 
-- **@forge-js/eslint-plugin-llm-optimized** - Full plugin with 144+ rules
+- **eslint-plugin-llm-optimized** - Full plugin with 144+ rules
 - **eslint-plugin-secure-coding** - Security-focused rules
 - **@interlace/eslint-devkit** - Build custom LLM-optimized rules
 

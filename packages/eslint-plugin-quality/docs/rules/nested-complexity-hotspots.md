@@ -78,7 +78,7 @@ flowchart TD
 export default [
   {
     rules: {
-      '@forge-js/nested-complexity-hotspots': 'error',
+      'eslint-plugin/nested-complexity-hotspots': 'error',
     },
   },
 ];

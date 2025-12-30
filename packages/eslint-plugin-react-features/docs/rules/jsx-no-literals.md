@@ -131,7 +131,7 @@ function Card() {
 ```javascript
 {
   rules: {
-    '@forge-js/jsx-no-literals': 'warn'
+    'eslint-plugin/jsx-no-literals': 'warn'
   }
 }
 ```
@@ -141,7 +141,7 @@ function Card() {
 ```javascript
 {
   rules: {
-    '@forge-js/jsx-no-literals': ['error', {
+    'eslint-plugin/jsx-no-literals': ['error', {
       noStrings: true,
       allowedStrings: ['©', '•', '|', '-', '→', '←'],
       ignoreProps: true
@@ -155,7 +155,7 @@ function Card() {
 ```javascript
 {
   rules: {
-    '@forge-js/jsx-no-literals': ['error', {
+    'eslint-plugin/jsx-no-literals': ['error', {
       noStrings: true,
       allowedStrings: [],
       ignoreProps: false
@@ -169,7 +169,7 @@ function Card() {
 ```javascript
 {
   rules: {
-    '@forge-js/jsx-no-literals': ['warn', {
+    'eslint-plugin/jsx-no-literals': ['warn', {
       noStrings: true,
       allowedStrings: [' ', '\n'],
       ignoreProps: true

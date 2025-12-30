@@ -153,7 +153,7 @@ This plugin runs **100% locally**. No data ever leaves your machine.
 
 ## 🔗 Related Plugins
 
-Part of the **Forge-JS ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
+Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
 | Plugin                                                                                               | Description                                                  | Rules |
 | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | :---: |

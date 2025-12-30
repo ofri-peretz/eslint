@@ -59,7 +59,7 @@ appRef.current?.doSomething();
 ```javascript
 {
   rules: {
-    '@forge-js/no-render-return-value': 'error'
+    'eslint-plugin/no-render-return-value': 'error'
   }
 }
 ```

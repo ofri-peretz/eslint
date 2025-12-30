@@ -59,7 +59,7 @@ export function Component() {
 ```javascript
 {
   rules: {
-    '@forge-js/react-in-jsx-scope': 'error'
+    'eslint-plugin/react-in-jsx-scope': 'error'
   }
 }
 ```
@@ -69,7 +69,7 @@ export function Component() {
 ```javascript
 {
   rules: {
-    '@forge-js/react-in-jsx-scope': 'off'
+    'eslint-plugin/react-in-jsx-scope': 'off'
   }
 }
 ```

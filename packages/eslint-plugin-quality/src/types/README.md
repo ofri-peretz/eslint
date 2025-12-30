@@ -1,6 +1,6 @@
 # ESLint Plugin Rule Options Types
 
-This directory contains TypeScript type definitions for all ESLint rule options exported by `@forge-js/eslint-plugin-llm-optimized`.
+This directory contains TypeScript type definitions for all ESLint rule options exported by `eslint-plugin-llm-optimized`.
 
 ## Overview
 
@@ -29,13 +29,13 @@ All rule Options interfaces are exported from the barrel file `index.ts` with a 
 ### Method 1: From Main Package (Recommended)
 
 ```typescript
-import type { ReactNoInlineFunctionsOptions } from '@forge-js/eslint-plugin-llm-optimized';
+import type { ReactNoInlineFunctionsOptions } from 'eslint-plugin-llm-optimized';
 ```
 
 ### Method 2: From Types Subpath
 
 ```typescript
-import type { ReactNoInlineFunctionsOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { ReactNoInlineFunctionsOptions } from 'eslint-plugin-llm-optimized/types';
 ```
 
 ## Available Types
@@ -92,7 +92,7 @@ For **comprehensive configuration examples** including:
 ### Quick Example
 
 ```typescript
-import type { ReactNoInlineFunctionsOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import type { ReactNoInlineFunctionsOptions } from 'eslint-plugin-llm-optimized/types';
 
 const config: ReactNoInlineFunctionsOptions = {
   allowInEventHandlers: true,
@@ -155,8 +155,8 @@ This approach:
 ### ESLint 9+ (Flat Config)
 
 ```typescript
-import llmOptimized from '@forge-js/eslint-plugin-llm-optimized';
-import type { ReactNoInlineFunctionsOptions } from '@forge-js/eslint-plugin-llm-optimized/types';
+import llmOptimized from 'eslint-plugin-llm-optimized';
+import type { ReactNoInlineFunctionsOptions } from 'eslint-plugin-llm-optimized/types';
 
 const inlineConfig: ReactNoInlineFunctionsOptions = {
   allowInEventHandlers: true,
@@ -166,10 +166,10 @@ const inlineConfig: ReactNoInlineFunctionsOptions = {
 export default [
   {
     plugins: {
-      '@forge-js/llm-optimized': llmOptimized,
+      'eslint-plugin-llm-optimized': llmOptimized,
     },
     rules: {
-      '@forge-js/llm-optimized/performance/react-no-inline-functions': [
+      'eslint-plugin-llm-optimized/performance/react-no-inline-functions': [
         'warn',
         inlineConfig,
       ],
@@ -182,10 +182,10 @@ export default [
 
 ```javascript
 module.exports = {
-  plugins: ['@forge-js/llm-optimized'],
-  extends: ['plugin:@forge-js/llm-optimized/recommended'],
+  plugins: ['eslint-plugin-llm-optimized'],
+  extends: ['plugin:eslint-plugin-llm-optimized/recommended'],
   rules: {
-    '@forge-js/llm-optimized/performance/react-no-inline-functions': [
+    'eslint-plugin-llm-optimized/performance/react-no-inline-functions': [
       'warn',
       {
         allowInEventHandlers: true,
@@ -205,7 +205,7 @@ module.exports = {
 import type {
   ReactNoInlineFunctionsOptions,
   NoCircularDependenciesOptions,
-} from '@forge-js/eslint-plugin-llm-optimized/types';
+} from 'eslint-plugin-llm-optimized/types';
 
 type RuleConfig = [string, object?];
 
@@ -215,7 +215,7 @@ const ruleName = (name: string, options?: object): RuleConfig => [
 ];
 
 export const reactInlineRule: RuleConfig = ruleName(
-  '@forge-js/llm-optimized/performance/react-no-inline-functions',
+  'eslint-plugin-llm-optimized/performance/react-no-inline-functions',
   {
     allowInEventHandlers: true,
     minArraySize: 20,

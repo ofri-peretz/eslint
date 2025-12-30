@@ -181,7 +181,7 @@ export const noUnresolved = createRule<RuleOptions, MessageIds>({
 
                 return fixer.insertTextBefore(
                   statement,
-                  '// eslint-disable-next-line @forge-js/llm-optimized/no-unresolved\n',
+                  '// eslint-disable-next-line eslint-plugin-llm-optimized/no-unresolved\n',
                 );
               },
             },

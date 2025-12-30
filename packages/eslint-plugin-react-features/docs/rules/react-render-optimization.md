@@ -78,7 +78,7 @@ flowchart TD
 export default [
   {
     rules: {
-      '@forge-js/react-render-optimization': 'error',
+      'eslint-plugin/react-render-optimization': 'error',
     },
   },
 ];

@@ -90,7 +90,7 @@ export function UserCard({ user }) {
 ```javascript
 {
   rules: {
-    '@forge-js/no-multi-comp': ['warn', {
+    'eslint-plugin/no-multi-comp': ['warn', {
       ignoreStateless: true  // Allow small helper components
     }]
   }
@@ -104,7 +104,7 @@ export function UserCard({ user }) {
 ```javascript
 {
   rules: {
-    '@forge-js/no-multi-comp': 'warn'
+    'eslint-plugin/no-multi-comp': 'warn'
   }
 }
 ```
@@ -114,7 +114,7 @@ export function UserCard({ user }) {
 ```javascript
 {
   rules: {
-    '@forge-js/no-multi-comp': 'error'
+    'eslint-plugin/no-multi-comp': 'error'
   }
 }
 ```

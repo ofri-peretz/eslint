@@ -54,7 +54,7 @@ for (const char of string) {
 ```javascript
 {
   rules: {
-    '@forge-js/prefer-code-point': 'warn'
+    'eslint-plugin/prefer-code-point': 'warn'
   }
 }
 ```

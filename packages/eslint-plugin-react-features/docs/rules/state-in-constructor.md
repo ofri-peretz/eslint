@@ -121,7 +121,7 @@ function Counter({ initialCount = 0 }) {
 ```javascript
 {
   rules: {
-    '@forge-js/state-in-constructor': 'warn'
+    'eslint-plugin/state-in-constructor': 'warn'
   }
 }
 ```
@@ -131,7 +131,7 @@ function Counter({ initialCount = 0 }) {
 ```javascript
 {
   rules: {
-    '@forge-js/state-in-constructor': 'off'
+    'eslint-plugin/state-in-constructor': 'off'
   }
 }
 ```

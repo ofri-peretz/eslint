@@ -78,7 +78,7 @@ flowchart TD
 export default [
   {
     rules: {
-      '@forge-js/no-external-api-calls-in-utils': 'error',
+      'eslint-plugin/no-external-api-calls-in-utils': 'error',
     },
   },
 ];

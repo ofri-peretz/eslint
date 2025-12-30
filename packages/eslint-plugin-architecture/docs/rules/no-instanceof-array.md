@@ -59,7 +59,7 @@ function isArray(val: unknown): val is unknown[] {
 ```javascript
 {
   rules: {
-    '@forge-js/no-instanceof-array': 'warn'
+    'eslint-plugin/no-instanceof-array': 'warn'
   }
 }
 ```

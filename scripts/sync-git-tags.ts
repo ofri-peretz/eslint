@@ -49,8 +49,8 @@ function getPackageInfo(projectPath: string): PackageInfo | null {
   }
 
   // Convert package name to tag format
-  // @forge-js/eslint-plugin-llm-optimized -> eslint-plugin-llm-optimized
-  // @forge-js/cli -> cli
+  // eslint-plugin-llm-optimized -> eslint-plugin-llm-optimized
+  // @eslint/cli -> cli
   const tagName = name.replace(/^@[^/]+\//, '');
 
   return {

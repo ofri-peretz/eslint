@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide explains how versioning, releasing, and publishing works in the forge-js monorepo using **Nx Release**.
+This guide explains how versioning, releasing, and publishing works in the eslint monorepo using **Nx Release**.
 
 ## 🎯 How Nx Determines What to Release
 
@@ -49,7 +49,7 @@ sequenceDiagram
     Nx->>Nx: Analyze conventional commits
     Note over Nx: feat: = MINOR bump
 
-    Nx->>Dev: Preview:<br/>@forge-js/eslint-plugin: 1.2.3 → 1.3.0<br/>@interlace/eslint-devkit: 1.0.1 → 1.0.2
+    Nx->>Dev: Preview:<br/>eslint-plugin-llm-optimized: 1.2.3 → 1.3.0<br/>@interlace/eslint-devkit: 1.0.1 → 1.0.2
 
     Dev->>Nx: pnpm nx release --skip-publish
     Nx->>Git: Update package.json files
@@ -64,7 +64,7 @@ sequenceDiagram
 
 | Scenario                                | What Gets Released                                   | Example                      |
 | --------------------------------------- | ---------------------------------------------------- | ---------------------------- |
-| Changed `packages/eslint-plugin/`       | `@forge-js/eslint-plugin` only                       | You edit a rule file         |
+| Changed `packages/eslint-plugin/`       | `eslint-plugin-llm-optimized` only                       | You edit a rule file         |
 | Changed `packages/eslint-plugin-utils/` | `@interlace/eslint-devkit` + dependent packages | You update type utils        |
 | Changed both packages                   | Both packages independently                          | You update multiple packages |
 | No changes                              | ❌ Nothing released                                  | Only docs or tests changed   |
@@ -162,7 +162,7 @@ After: { rules: { noConsole: true } }"
 pnpm nx release --dry-run
 
 # Output shows:
-# ✓ @forge-js/eslint-plugin: 1.2.3 → 1.3.0 (MINOR)
+# ✓ eslint-plugin-llm-optimized: 1.2.3 → 1.3.0 (MINOR)
 # ✓ @interlace/eslint-devkit: 1.0.1 → 1.0.2 (PATCH)
 
 # Step 2: Create version, changelog, commit, and tag
@@ -210,9 +210,9 @@ For beta, rc, or other dist tags:
 | Option       | Value                   | Result                                                   |
 | ------------ | ----------------------- | -------------------------------------------------------- |
 | **Dist tag** | `latest`                | Production release                                       |
-| **Dist tag** | `beta`                  | Beta testing: `pnpm add @forge-js/eslint-plugin@beta`    |
-| **Dist tag** | `rc`                    | Release candidate: `pnpm add @forge-js/eslint-plugin@rc` |
-| **Dist tag** | `next`                  | Next major: `pnpm add @forge-js/eslint-plugin@next`      |
+| **Dist tag** | `beta`                  | Beta testing: `pnpm add eslint-plugin-llm-optimized@beta`    |
+| **Dist tag** | `rc`                    | Release candidate: `pnpm add eslint-plugin-llm-optimized@rc` |
+| **Dist tag** | `next`                  | Next major: `pnpm add eslint-plugin-llm-optimized@next`      |
 | **Version**  | `auto`                  | Use conventional commits                                 |
 | **Version**  | `major`/`minor`/`patch` | Force specific bump                                      |
 | **Dry run**  | `true`                  | Preview only, don't publish                              |
@@ -223,10 +223,10 @@ For beta, rc, or other dist tags:
 
 ```bash
 # Preview
-pnpm nx release --projects=@forge-js/eslint-plugin --dry-run
+pnpm nx release --projects=eslint-plugin-llm-optimized --dry-run
 
 # Release
-pnpm nx release --projects=@forge-js/eslint-plugin --skip-publish
+pnpm nx release --projects=eslint-plugin-llm-optimized --skip-publish
 git push && git push --tags
 ```
 
@@ -234,10 +234,10 @@ git push && git push --tags
 
 ```bash
 # Preview
-pnpm nx release --projects=@forge-js/eslint-plugin,@forge-js/cli --dry-run
+pnpm nx release --projects=eslint-plugin-llm-optimized,@eslint/cli --dry-run
 
 # Release
-pnpm nx release --projects=@forge-js/eslint-plugin,@forge-js/cli --skip-publish
+pnpm nx release --projects=eslint-plugin-llm-optimized,@eslint/cli --skip-publish
 git push && git push --tags
 ```
 
@@ -254,7 +254,7 @@ git push && git push --tags
 
 ### **How Nx Handles Internal Dependencies**
 
-When `@forge-js/eslint-plugin` depends on `@interlace/eslint-devkit`:
+When `eslint-plugin-llm-optimized` depends on `@interlace/eslint-devkit`:
 
 ```mermaid
 %%{init: {
@@ -337,11 +337,11 @@ eslint-plugin-utils@1.0.2
 
 ### Features
 
-- add no-console-log rule ([abc1234](https://github.com/ofri-peretz/forge-js/commit/abc1234))
+- add no-console-log rule ([abc1234](https://github.com/ofri-peretz/eslint/commit/abc1234))
 
 ### Bug Fixes
 
-- handle null values in parser ([def5678](https://github.com/ofri-peretz/forge-js/commit/def5678))
+- handle null values in parser ([def5678](https://github.com/ofri-peretz/eslint/commit/def5678))
 ```
 
 ## 🚀 GitHub Actions Workflows
@@ -388,7 +388,7 @@ a1b2c3d fix: handle edge case in parser
 
 # Preview
 pnpm nx release --dry-run
-# Output: @forge-js/eslint-plugin: 1.2.3 → 1.2.4 (PATCH)
+# Output: eslint-plugin-llm-optimized: 1.2.3 → 1.2.4 (PATCH)
 
 # Release
 pnpm nx release --skip-publish
@@ -409,8 +409,8 @@ a1b2c3d feat: add type inference utilities
 pnpm nx release --dry-run
 # Output:
 #   @interlace/eslint-devkit: 1.0.1 → 1.1.0 (MINOR - feat)
-#   @forge-js/eslint-plugin: 1.2.3 → 1.2.4 (PATCH - dependency update)
-#   @forge-js/cli: 1.0.0 → 1.0.1 (PATCH - dependency update)
+#   eslint-plugin-llm-optimized: 1.2.3 → 1.2.4 (PATCH - dependency update)
+#   @eslint/cli: 1.0.0 → 1.0.1 (PATCH - dependency update)
 
 # Release
 pnpm nx release --skip-publish
@@ -429,7 +429,7 @@ a1b2c3d feat!: change rule configuration format
 
 # Preview
 pnpm nx release --dry-run
-# Output: @forge-js/eslint-plugin: 1.2.3 → 2.0.0 (MAJOR)
+# Output: eslint-plugin-llm-optimized: 1.2.3 → 2.0.0 (MAJOR)
 
 # Release
 pnpm nx release --skip-publish
@@ -452,7 +452,7 @@ pnpm nx release preminor --preid=beta --skip-publish
 git push && git push --tags
 
 # Users install with:
-pnpm add @forge-js/eslint-plugin@beta
+pnpm add eslint-plugin-llm-optimized@beta
 ```
 
 ## ⚠️ Important Notes
@@ -551,7 +551,7 @@ pnpm nx release patch --skip-publish
 **Solution:** Make a change or force release:
 
 ```bash
-pnpm nx release --projects=@forge-js/package-name --skip-publish
+pnpm nx release --projects=eslint-plugin-[name] --skip-publish
 ```
 
 ## 📊 Quick Reference
@@ -569,7 +569,7 @@ pnpm nx release --skip-publish
 pnpm nx release major|minor|patch --skip-publish
 
 # Release specific package
-pnpm nx release --projects=@forge-js/eslint-plugin --skip-publish
+pnpm nx release --projects=eslint-plugin-llm-optimized --skip-publish
 
 # Push and trigger publish
 git push && git push --tags

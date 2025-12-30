@@ -128,7 +128,7 @@ function ItemList({ items }) {
 ```javascript
 {
   rules: {
-    '@forge-js/jsx-key': 'error'
+    'eslint-plugin/jsx-key': 'error'
   }
 }
 ```
@@ -138,7 +138,7 @@ function ItemList({ items }) {
 ```javascript
 {
   rules: {
-    '@forge-js/jsx-key': ['error', {
+    'eslint-plugin/jsx-key': ['error', {
       warnUnstableKeys: false
     }]
   }
