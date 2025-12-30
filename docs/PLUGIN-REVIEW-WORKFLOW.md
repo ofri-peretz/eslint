@@ -10,10 +10,35 @@ This document provides a standardized workflow for reviewing ESLint security plu
 
 ## Available Demo Apps
 
-| Demo App                  | Plugin                             | Description                  |
-| ------------------------- | ---------------------------------- | ---------------------------- |
-| `vercel-ai-security-demo` | `eslint-plugin-vercel-ai-security` | Vercel AI SDK security rules |
-| `demo-secure-coding-app`  | `eslint-plugin-secure-coding`      | General secure coding rules  |
+See [playground/apps/](~/repos/ofriperetz.dev/playground/apps/) for the full list.
+
+### Core Security Plugins
+
+| Demo App                 | Plugin                        | Status    | Description                 |
+| ------------------------ | ----------------------------- | --------- | --------------------------- |
+| `demo-secure-coding-app` | `eslint-plugin-secure-coding` | ✅ Active | General secure coding rules |
+| `crypto-security-demo`   | `eslint-plugin-crypto`        | ✅ Active | Cryptographic security      |
+| `jwt-security-demo`      | `eslint-plugin-jwt`           | ✅ Active | JWT token handling          |
+
+### Framework-Specific Plugins
+
+| Demo App                | Plugin                           | Status    | Description          |
+| ----------------------- | -------------------------------- | --------- | -------------------- |
+| `express-security-demo` | `eslint-plugin-express-security` | ✅ Active | Express.js framework |
+| `nestjs-security-demo`  | `eslint-plugin-nestjs-security`  | ✅ Active | NestJS framework     |
+| `lambda-security-demo`  | `eslint-plugin-lambda-security`  | ✅ Active | AWS Lambda & Middy   |
+| `browser-security-demo` | `eslint-plugin-browser-security` | ✅ Active | Browser APIs & DOM   |
+
+### Database & AI Plugins
+
+| Demo App                  | Plugin                             | Status    | Description         |
+| ------------------------- | ---------------------------------- | --------- | ------------------- |
+| `pg-security-demo`        | `eslint-plugin-pg`                 | ✅ Active | PostgreSQL security |
+| `vercel-ai-security-demo` | `eslint-plugin-vercel-ai-security` | ✅ Active | Vercel AI SDK       |
+| `openai-security-demo`    | `eslint-plugin-openai-security`    | ✅ Active | OpenAI SDK          |
+| `anthropic-security-demo` | `eslint-plugin-anthropic-security` | ✅ Active | Anthropic SDK       |
+| `google-ai-security-demo` | `eslint-plugin-google-ai-security` | ✅ Active | Google AI SDK       |
+| `agentic-security-demo`   | `eslint-plugin-agentic-security`   | ✅ Active | Agentic patterns    |
 
 ---
 
@@ -42,12 +67,16 @@ Please run eslint rules @[demo-app-name] and provide me a comprehensive review a
 ### Check for Missing Examples
 
 ```bash
-# List all rules in the plugin
+# Option 1: Parse the built rules object (most reliable)
 cd ~/repos/ofriperetz.dev/eslint
-cat packages/eslint-plugin-vercel-ai-security/src/index.ts | grep -E "^\s+'[a-z-]+'" | wc -l
+nx build eslint-plugin-X
+node -e "console.log(Object.keys(require('./dist/packages/eslint-plugin-X').rules).length)"
 
-# List all example folders in playground
-ls ~/repos/ofriperetz.dev/playground/apps/vercel-ai-security-demo/src/examples/ | wc -l
+# Option 2: Count rule files in source
+ls packages/eslint-plugin-X/src/rules/*.ts | grep -v index | wc -l
+
+# Option 3: List all example folders in playground
+ls ~/repos/ofriperetz.dev/playground/apps/X-security-demo/src/examples/ | wc -l
 ```
 
 ### If Rules Are Missing Examples
@@ -82,6 +111,44 @@ async function goodExample() {
 
 ---
 
+## Pre-Review: CI/CD Verification
+
+> [!IMPORTANT]
+> Before manual review, verify all CI checks pass.
+
+```bash
+cd ~/repos/ofriperetz.dev/eslint
+
+# Run all quality gates for the plugin
+nx run eslint-plugin-X:build
+nx run eslint-plugin-X:test --coverage
+nx run eslint-plugin-X:lint
+
+# Verify coverage meets threshold (90%+ lines)
+nx run eslint-plugin-X:test --coverage 2>&1 | grep -E 'Lines|Branches|Functions'
+```
+
+See [CICD.md](./CICD.md) for pipeline details and [QUALITY_STANDARDS.md](./QUALITY_STANDARDS.md) for thresholds.
+
+---
+
+## Pre-Review: Version Verification
+
+Ensure the playground uses the expected plugin version:
+
+```bash
+# Check version in eslint repo
+cat ~/repos/ofriperetz.dev/eslint/packages/eslint-plugin-X/package.json | jq .version
+
+# Check version installed in playground
+cat ~/repos/ofriperetz.dev/playground/apps/X-demo/node_modules/eslint-plugin-X/package.json | jq .version
+
+# If using file: link, they should match. If using npm, check latest published:
+npm view eslint-plugin-X version
+```
+
+---
+
 ## Setup Instructions
 
 ### Step 1: Build the Plugin (in eslint repo)
@@ -90,10 +157,10 @@ async function goodExample() {
 cd ~/repos/ofriperetz.dev/eslint
 
 # Build the plugin (replace with target plugin)
-nx build eslint-plugin-vercel-ai-security
+nx build eslint-plugin-X
 
-# Or for secure-coding:
-nx build eslint-plugin-secure-coding
+# Build all plugins at once
+nx run-many -t build --projects='eslint-plugin-*'
 ```
 
 ### Step 2: Link/Install in Playground Demo App
@@ -194,10 +261,22 @@ pnpm eslint src/examples/*/valid.ts 2>&1 | grep "0 problems" || echo "Has warnin
 - [ ] No infinite loops or hangs
 - [ ] Works on large files (> 1000 lines)
 
-**Benchmark Command:**
+**Benchmark Commands:**
 
 ```bash
+# Basic timing
 time pnpm lint 2>&1 | tail -5
+
+# Memory profiling (macOS)
+NODE_OPTIONS="--max-old-space-size=512" /usr/bin/time -l pnpm lint 2>&1 | grep 'maximum resident set size'
+
+# Generate large test file for stress testing
+echo "// $(seq 1 1000 | xargs -I{} echo 'const x{} = {};')" > /tmp/large.ts
+time pnpm eslint /tmp/large.ts 2>&1
+
+# Chrome DevTools profiling
+node --inspect-brk ./node_modules/.bin/eslint src/
+# Open chrome://inspect and use Performance/Memory tabs
 ```
 
 **Acceptable Ranges:**
@@ -308,6 +387,25 @@ pnpm eslint --print-config src/index.ts
 
 ```bash
 # Check installed versions
-pnpm list eslint-plugin-vercel-ai-security
-npm view eslint-plugin-vercel-ai-security versions
+pnpm list eslint-plugin-X
+npm view eslint-plugin-X versions
 ```
+
+### Performance Issues
+
+```bash
+# Profile rule execution
+DEBUG=eslint:* pnpm lint 2>&1 | head -100
+
+# Identify slow rules
+pnpm eslint src/ --format json | jq '.[] | {filePath, messages: .messages | length}'
+```
+
+---
+
+## Related Documentation
+
+- [Quality Standards](./QUALITY_STANDARDS.md) - Detailed quality checklist and thresholds
+- [Coverage Limitations](./RULETESTER-COVERAGE-LIMITATIONS.md) - c8 ignore patterns and rationale
+- [CI/CD Pipeline](./CICD.md) - Automated quality gates and workflows
+- [Contributing Guide](./CONTRIBUTING.md) - Release process and versioning

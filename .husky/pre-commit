@@ -2,9 +2,8 @@
 # Ensure nvm-installed node/pnpm is in PATH
 export PATH="$HOME/.nvm/versions/node/v20.19.5/bin:$PATH"
 
-# Skip if no staged changes in packages (docs, configs don't need checks)
+# Skip silently if no staged changes in packages (docs, configs don't need checks)
 if ! git diff --cached --name-only | grep -q "^packages/"; then
-  echo "✅ No package changes detected, skipping checks"
   exit 0
 fi
 
