@@ -30,7 +30,7 @@ jobs:
 
         steps:
             - name: 📥 Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
               with:
                   fetch-depth: 0
 
@@ -40,7 +40,7 @@ jobs:
                   version: ${{ env.PNPM_VERSION }}
 
             - name: ⚙️ Setup Node.js
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version: ${{ env.NODE_VERSION }}
                   cache: "pnpm"
@@ -49,7 +49,7 @@ jobs:
               run: pnpm install --frozen-lockfile
 
             - name: 🗄️ Restore NX cache
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               with:
                   path: .nx/cache
                   key: nx-cache-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
@@ -58,7 +58,7 @@ jobs:
                       nx-cache-${{ runner.os }}-
 
             - name: 🗄️ Restore ESLint cache
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               with:
                   path: |
                       **/.eslintcache
