@@ -139,15 +139,9 @@ component_management:
       paths:
         - packages/eslint-devkit/**
 
-    - component_id: eslint_plugin
-      name: "eslint-plugin"
-      paths:
-        - packages/eslint-plugin/**
+    # NOTE: cli and eslint-plugin are infrastructure packages without tests
+    # They are excluded from coverage components
 
-    - component_id: cli
-      name: "cli"
-      paths:
-        - packages/cli/**
 
     # Other Plugins
     - component_id: react_features
@@ -210,7 +204,7 @@ component_management:
       paths:
         - packages/eslint-plugin-mcp-optimized/**
 
-# Ignore paths (these files don't contain runtime logic)
+# Ignore paths (these files don't contain runtime logic or lack tests)
 ignore:
   - "**/*.test.ts"
   - "**/*.spec.ts"
@@ -223,3 +217,6 @@ ignore:
   - "**/*.config.ts"
   - "**/*.config.mts"
   - "**/vitest.global-setup.ts"
+  # Infrastructure packages without tests
+  - "packages/cli/**"
+  - "packages/eslint-plugin/**"

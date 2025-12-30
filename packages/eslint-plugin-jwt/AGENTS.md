@@ -1,111 +1,68 @@
-# AGENTS.md - AI Assistant Guide for eslint-plugin-jwt
+# AGENTS.md
 
-> This document optimizes AI model interactions with eslint-plugin-jwt.
+> Context for AI coding agents working on eslint-plugin-jwt
 
-## Plugin Overview
-
-**eslint-plugin-jwt** is a comprehensive JWT security ESLint plugin with 13 rules covering algorithm attacks, replay prevention, and claim validation. It targets 6 major Node.js JWT libraries.
-
-## Quick Reference
-
-### Installation
+## Setup Commands
 
 ```bash
-npm install --save-dev eslint-plugin-jwt
+# Install dependencies (from monorepo root)
+pnpm install
+
+# Build this package
+nx build eslint-plugin-jwt
+
+# Run tests
+nx test eslint-plugin-jwt
+
+# Run tests with coverage
+nx test eslint-plugin-jwt --coverage
+
+# Lint this package
+nx lint eslint-plugin-jwt
 ```
 
-### Configuration
+## Code Style
 
-```javascript
-// eslint.config.js
-import jwt from 'eslint-plugin-jwt';
-export default [jwt.configs.recommended];
+- TypeScript strict mode with `@interlace/eslint-devkit` types
+- Use `AST_NODE_TYPES` constants, never string literals for node types
+- Use `formatLLMMessage()` for all rule error messages
+- Include CWE, CVSS, OWASP in every security message
+- Use `c8 ignore` comments with documented reasons for untestable code
+- Single-pass AST traversal patterns (O(n) complexity)
+
+## Testing Instructions
+
+- Tests use `@typescript-eslint/rule-tester` with Vitest
+- Each rule has `index.ts` (implementation) and `*.test.ts` (tests) in same directory
+- Run specific rule test: `nx test eslint-plugin-jwt --testPathPattern="no-algorithm-none"`
+- Coverage target: ≥90% lines, ≥95% functions
+- All tests must pass before committing
+
+## Project Structure
+
 ```
+src/
+├── index.ts          # Plugin entry, exports rules and configs
+└── rules/            # 13 rule directories
+    └── [rule-name]/
+        ├── index.ts       # Rule implementation
+        └── *.test.ts      # Rule tests
+docs/rules/           # Markdown documentation per rule
+```
+
+## Plugin Purpose
+
+Comprehensive JWT security ESLint plugin with **13 rules** covering algorithm attacks, replay prevention, and claim validation. Targets 6 major Node.js JWT libraries.
 
 ## Rule Categories
 
-### Critical (Algorithm Attacks)
+| Category               | Rules                                                                                                                                            | CWEs               |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| Algorithm Attacks      | `no-algorithm-none`, `no-algorithm-confusion`                                                                                                    | 347                |
+| Verification & Secrets | `require-algorithm-whitelist`, `no-decode-without-verify`, `no-weak-secret`, `no-hardcoded-secret`, `no-timestamp-manipulation`                  | 326, 345, 757, 798 |
+| Claims                 | `require-expiration`, `require-issued-at`, `require-issuer-validation`, `require-audience-validation`, `require-max-age`, `no-sensitive-payload` | 287, 294, 359, 613 |
 
-| Rule                     | Fix Pattern                                 |
-| ------------------------ | ------------------------------------------- |
-| `no-algorithm-none`      | Replace `['none']` with `['RS256']`         |
-| `no-algorithm-confusion` | Use RS256/ES256 with public keys, not HS256 |
-
-### High (Verification & Secrets)
-
-| Rule                          | Fix Pattern                                |
-| ----------------------------- | ------------------------------------------ |
-| `require-algorithm-whitelist` | Add `{ algorithms: ['RS256'] }` to verify  |
-| `no-decode-without-verify`    | Replace `jwt.decode()` with `jwt.verify()` |
-| `no-weak-secret`              | Use `process.env.JWT_SECRET` (32+ chars)   |
-| `no-hardcoded-secret`         | Move secret to environment variable        |
-| `no-timestamp-manipulation`   | Remove `noTimestamp: true` option          |
-
-### Medium (Claims)
-
-| Rule                          | Fix Pattern                                 |
-| ----------------------------- | ------------------------------------------- |
-| `require-expiration`          | Add `{ expiresIn: '1h' }` to sign           |
-| `require-issued-at`           | Keep default iat (don't disable)            |
-| `require-issuer-validation`   | Add `{ issuer: 'https://...' }` to verify   |
-| `require-audience-validation` | Add `{ audience: 'https://...' }` to verify |
-| `require-max-age`             | Add `{ maxAge: '1h' }` to verify            |
-| `no-sensitive-payload`        | Remove PII from token payload               |
-
-## Common Fix Patterns
-
-### Algorithm None Attack (CVE-2022-23540)
-
-```javascript
-// Before (vulnerable)
-jwt.verify(token, secret, { algorithms: ['none'] });
-
-// After (secure)
-jwt.verify(token, secret, { algorithms: ['RS256'] });
-```
-
-### Algorithm Confusion Attack
-
-```javascript
-// Before (vulnerable - symmetric with public key)
-jwt.verify(token, publicKey, { algorithms: ['HS256'] });
-
-// After (secure - asymmetric with public key)
-jwt.verify(token, publicKey, { algorithms: ['RS256'] });
-```
-
-### Hardcoded Secret
-
-```javascript
-// Before (vulnerable)
-jwt.sign(payload, 'my-secret-key');
-
-// After (secure)
-jwt.sign(payload, process.env.JWT_SECRET);
-```
-
-### Missing Expiration
-
-```javascript
-// Before (no expiration)
-jwt.sign({ sub: 'user' }, secret);
-
-// After (with expiration)
-jwt.sign({ sub: 'user' }, secret, { expiresIn: '1h' });
-```
-
-### Replay Attack Prevention (LightSEC 2025)
-
-```javascript
-// Before (vulnerable to replay)
-jwt.sign(payload, secret, { noTimestamp: true });
-
-// After (replay-resistant)
-jwt.sign(payload, secret); // iat auto-added
-jwt.verify(token, secret, { maxAge: '1h' }); // freshness check
-```
-
-## Library Detection Patterns
+## Library Detection
 
 The plugin detects these method calls:
 
@@ -113,27 +70,33 @@ The plugin detects these method calls:
 - **Verify**: `jwt.verify()`, `jwtVerify()`, `verifyJWT()`
 - **Decode**: `jwt.decode()`, `jwtDecode()`, `decodeJWT()`
 
-## CWE Mappings
+## Common Fix Patterns
 
-| CWE     | Rules                                                         |
-| ------- | ------------------------------------------------------------- |
-| CWE-287 | require-issuer-validation, require-audience-validation        |
-| CWE-294 | require-issued-at, no-timestamp-manipulation, require-max-age |
-| CWE-326 | no-weak-secret                                                |
-| CWE-345 | no-decode-without-verify                                      |
-| CWE-347 | no-algorithm-none, no-algorithm-confusion                     |
-| CWE-359 | no-sensitive-payload                                          |
-| CWE-613 | require-expiration                                            |
-| CWE-757 | require-algorithm-whitelist                                   |
-| CWE-798 | no-hardcoded-secret                                           |
+```typescript
+// Algorithm None Attack (CVE-2022-23540)
+// BAD: jwt.verify(token, secret, { algorithms: ['none'] })
+// GOOD: jwt.verify(token, secret, { algorithms: ['RS256'] })
 
-## For AI Assistants
+// Algorithm Confusion
+// BAD: jwt.verify(token, publicKey, { algorithms: ['HS256'] })
+// GOOD: jwt.verify(token, publicKey, { algorithms: ['RS256'] })
 
-When fixing JWT security issues:
+// Hardcoded Secret
+// BAD: jwt.sign(payload, 'my-secret-key')
+// GOOD: jwt.sign(payload, process.env.JWT_SECRET)
 
-1. Check which library is being used
-2. Apply the appropriate fix pattern
-3. Ensure all verify() calls have explicit algorithms
-4. Move secrets to environment variables
-5. Add expiration to all sign() calls
-6. Validate issuer and audience in verify()
+// Missing Expiration
+// BAD: jwt.sign({ sub: 'user' }, secret)
+// GOOD: jwt.sign({ sub: 'user' }, secret, { expiresIn: '1h' })
+
+// Replay Attack Prevention
+// BAD: jwt.sign(payload, secret, { noTimestamp: true })
+// GOOD: jwt.sign(payload, secret)
+// GOOD: jwt.verify(token, secret, { maxAge: '1h' })
+```
+
+## Security Considerations
+
+- CWE coverage: 287, 294, 326, 345, 347, 359, 613, 757, 798
+- Detects CVE-2022-23540 (Algorithm None attack)
+- Covers 6 major JWT libraries: jsonwebtoken, jose, jwt-decode, node-jose, jwt-simple, jsonwebtoken-esm
