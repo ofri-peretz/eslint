@@ -91,7 +91,15 @@ perf(import-next): cache module resolution
 
 ## Breaking Changes
 
-For breaking changes, add `BREAKING CHANGE:` in the footer:
+Two ways to indicate a breaking change:
+
+### 1. Exclamation mark after type/scope (preferred)
+
+```
+feat(eslint-plugin-secure-coding)!: remove deprecated rules
+```
+
+### 2. BREAKING CHANGE footer
 
 ```
 feat(api): change authentication flow
@@ -99,7 +107,16 @@ feat(api): change authentication flow
 BREAKING CHANGE: removed legacy token support
 ```
 
-This triggers a **major** version bump in Nx Release.
+Both trigger a **major** version bump in Nx Release.
+
+> ⚠️ **CRITICAL: Nx determines affected projects by FILES CHANGED, not commit scope!**
+>
+> A commit with `feat(pkg-a)!: breaking change` will only bump `pkg-a` to major if it actually modifies files in `packages/pkg-a/`.
+>
+> **For breaking change releases:**
+>
+> 1. The commit MUST modify a file in the target package, OR
+> 2. Use `gh workflow run release.yml -f package=<name> -f force-version=major`
 
 ## Multi-line Commits
 
@@ -127,8 +144,8 @@ If either fails, the commit is rejected with a helpful error message.
 
 The commit type determines the version bump in Nx Release (configured in `nx.json`):
 
-| Type                        | Version Bump |
-| --------------------------- | ------------ |
-| `feat`                      | **minor**    |
-| `fix`, `docs`, `perf`, etc. | **patch**    |
-| `BREAKING CHANGE:` footer   | **major**    |
+| Type                                  | Version Bump |
+| ------------------------------------- | ------------ |
+| `feat`                                | **minor**    |
+| `fix`, `docs`, `perf`, etc.           | **patch**    |
+| `feat!:` or `BREAKING CHANGE:` footer | **major**    |
