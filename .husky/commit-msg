@@ -51,10 +51,11 @@ if ! echo "$VALID_TYPES" | grep -qw "$TYPE"; then
   exit 1
 fi
 
-# 4. Check for colon after type
-if ! echo "$COMMIT_MSG" | head -1 | grep -q '^[a-z]*\(([^)]*)\)\?: '; then
+# 4. Check for colon after type (supports breaking change ! indicator)
+if ! echo "$COMMIT_MSG" | head -1 | grep -q '^[a-z]*\(([^)]*)\)\?!\?: '; then
   print_error "Missing colon and space after type"
   echo "Fix: Format should be 'type: subject' or 'type(scope): subject'"
+  echo "     For breaking changes: 'type(scope)!: subject'"
   echo "     Example: fix: resolve memory leak"
   echo ""
   exit 1
