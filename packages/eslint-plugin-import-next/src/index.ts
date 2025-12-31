@@ -80,6 +80,8 @@ import { noFullPackageImport } from './rules/no-full-package-import';
 // Enterprise Governance Rules (Phase 4)
 import { enforceTeamBoundaries } from './rules/enforce-team-boundaries';
 import { noLegacyImports } from './rules/no-legacy-imports';
+import { requireImportApproval } from './rules/require-import-approval';
+import { preferModernApi } from './rules/prefer-modern-api';
 
 /**
  * Collection of all ESLint rules provided by this plugin
@@ -155,6 +157,8 @@ export const rules = {
   // Enterprise Governance Rules (Phase 4)
   'enforce-team-boundaries': enforceTeamBoundaries,
   'no-legacy-imports': noLegacyImports,
+  'require-import-approval': requireImportApproval,
+  'prefer-modern-api': preferModernApi,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
