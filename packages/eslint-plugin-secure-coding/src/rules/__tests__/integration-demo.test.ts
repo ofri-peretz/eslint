@@ -10,12 +10,10 @@ import { noToctouVulnerability } from '../no-toctou-vulnerability';
 import { noRedosVulnerableRegex } from '../no-redos-vulnerable-regex';
 import { noBufferOverread } from '../no-buffer-overread';
 import { noInsecureComparison } from '../no-insecure-comparison';
-import { noUnsanitizedHtml } from '../no-unsanitized-html';
 import { noUnescapedUrlParameter } from '../no-unescaped-url-parameter';
 import { noImproperSanitization } from '../no-improper-sanitization';
 import { noImproperTypeValidation } from '../no-improper-type-validation';
 import { noPrivilegeEscalation } from '../no-privilege-escalation';
-import { noInsecureJwt } from '../no-insecure-jwt';
 
 // Configure RuleTester for Vitest
 RuleTester.afterAll = afterAll;
@@ -158,35 +156,7 @@ describe('Demo Gaps Reproduction', () => {
     });
   });
 
-  describe('no-unsanitized-html', () => {
-    ruleTester.run('demo-repro', noUnsanitizedHtml, {
-      valid: [],
-      invalid: [
-        {
-          code: `
-            export function insecure_noUnsanitizedHtml(container: HTMLElement, userContent: string) {
-              const userInput = userContent;
-              container.innerHTML = userInput;
-            }
-          `,
-          errors: [{ 
-            messageId: 'unsanitizedHtml',
-            suggestions: [
-              { 
-                messageId: 'useTextContent', 
-                output: `
-            export function insecure_noUnsanitizedHtml(container: HTMLElement, userContent: string) {
-              const userInput = userContent;
-              container.textContent = userInput;
-            }
-          `
-              }
-            ]
-          }]
-        }
-      ]
-    });
-  });
+
 
   describe('no-unescaped-url-parameter', () => {
     ruleTester.run('demo-repro', noUnescapedUrlParameter, {
@@ -261,30 +231,6 @@ describe('Demo Gaps Reproduction', () => {
     });
   });
 
-  describe('no-insecure-jwt', () => {
-    ruleTester.run('demo-repro', noInsecureJwt, {
-      valid: [],
-      invalid: [
-        {
-          code: `
-            declare const jwt: any;
-            export function insecure_noInsecureJwtEmpty(token: string) {
-              return jwt.verify(token, 'short', { algorithms: [] });
-            }
-          `,
-          errors: [{ messageId: 'insecureJwtAlgorithm' }]
-        },
-        {
-          code: `
-            declare const jwt: any;
-            export function insecure_noInsecureJwtNone(token: string) {
-              return jwt.verify(token, 'secret', { algorithms: ['none', 'HS256'] });
-            }
-          `,
-          errors: [{ messageId: 'insecureJwtAlgorithm' }]
-        }
-      ]
-    });
-  });
+
 
 });

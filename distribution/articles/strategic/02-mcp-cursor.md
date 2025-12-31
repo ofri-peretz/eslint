@@ -176,7 +176,15 @@ Let AI assistants fix your security issues. Automatically.
 
 📦 [npm: eslint-plugin-secure-coding](https://www.npmjs.com/package/eslint-plugin-secure-coding)
 📖 [ESLint MCP Documentation](https://eslint.org/docs/latest/use/mcp)
+
+{% cta https://github.com/ofri-peretz/eslint %}
+⭐ Star on GitHub
+{% endcta %}
 📖 [AGENTS.md Template](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/AGENTS.md)
+
+{% cta https://github.com/ofri-peretz/eslint %}
+⭐ Star on GitHub
+{% endcta %}
 
 ---
 

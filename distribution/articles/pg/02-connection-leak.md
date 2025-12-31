@@ -132,6 +132,10 @@ Don't wait for the 3 AM wake-up call.
 📦 [npm: eslint-plugin-pg](https://www.npmjs.com/package/eslint-plugin-pg)
 📖 [Rule docs: no-missing-client-release](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-missing-client-release.md)
 
+{% cta https://github.com/ofri-peretz/eslint %}
+⭐ Star on GitHub
+{% endcta %}
+
 ---
 
 🚀 **Follow me for more security articles & updates:**

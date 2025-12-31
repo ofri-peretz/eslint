@@ -138,6 +138,10 @@ Keep PostgreSQL in the database, not in your filesystem.
 📦 [npm: eslint-plugin-pg](https://www.npmjs.com/package/eslint-plugin-pg)
 📖 [Rule docs: no-unsafe-copy-from](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-unsafe-copy-from.md)
 
+{% cta https://github.com/ofri-peretz/eslint %}
+⭐ Star on GitHub
+{% endcta %}
+
 ---
 
 🚀 **Follow me for more security articles & updates:**

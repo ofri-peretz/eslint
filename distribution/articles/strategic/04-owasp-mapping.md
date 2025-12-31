@@ -123,6 +123,10 @@ Turn compliance questions into automated answers.
 📦 [npm: eslint-plugin-secure-coding](https://www.npmjs.com/package/eslint-plugin-secure-coding)
 📖 [OWASP Coverage Matrix](https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-secure-coding#owasp-coverage-matrix)
 
+{% cta https://github.com/ofri-peretz/eslint %}
+⭐ Star on GitHub
+{% endcta %}
+
 ---
 
 🚀 **Follow me for more security articles & updates:**

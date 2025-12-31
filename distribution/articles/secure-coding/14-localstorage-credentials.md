@@ -142,6 +142,10 @@ Don't let XSS turn into full account takeover.
 📦 [npm: eslint-plugin-secure-coding](https://www.npmjs.com/package/eslint-plugin-secure-coding)
 📖 [Rule docs: no-credentials-in-storage-api](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-credentials-in-storage-api.md)
 
+{% cta https://github.com/ofri-peretz/eslint %}
+⭐ Star on GitHub
+{% endcta %}
+
 ---
 
 🚀 **Follow me for more security articles & updates:**

@@ -15,8 +15,6 @@
 
 
 // Security rules - Injection
-import { noSqlInjection } from './rules/no-sql-injection';
-import { databaseInjection } from './rules/database-injection';
 import { detectEvalWithExpression } from './rules/detect-eval-with-expression';
 import { detectChildProcess } from './rules/detect-child-process';
 import { noUnsafeDynamicRequire } from './rules/no-unsafe-dynamic-require';
@@ -43,15 +41,10 @@ import { noUnsafeDeserialization } from './rules/no-unsafe-deserialization';
 
 // Security rules - Credentials & Crypto
 import { noHardcodedCredentials } from './rules/no-hardcoded-credentials';
-import { noWeakCrypto } from './rules/no-weak-crypto';
-import { noInsufficientRandom } from './rules/no-insufficient-random';
-import { noTimingAttack } from './rules/no-timing-attack';
 import { noInsecureComparison } from './rules/no-insecure-comparison';
-import { noInsecureJwt } from './rules/no-insecure-jwt';
 
 // Security rules - Input Validation & XSS
 import { noUnvalidatedUserInput } from './rules/no-unvalidated-user-input';
-import { noUnsanitizedHtml } from './rules/no-unsanitized-html';
 import { noUnescapedUrlParameter } from './rules/no-unescaped-url-parameter';
 import { noImproperSanitization } from './rules/no-improper-sanitization';
 import { noImproperTypeValidation } from './rules/no-improper-type-validation';
@@ -62,9 +55,7 @@ import { noPrivilegeEscalation } from './rules/no-privilege-escalation';
 import { noWeakPasswordRecovery } from './rules/no-weak-password-recovery';
 
 // Security rules - Session & Cookies
-import { noInsecureCookieSettings } from './rules/no-insecure-cookie-settings';
 import { noMissingCsrfProtection } from './rules/no-missing-csrf-protection';
-import { noDocumentCookie } from './rules/no-document-cookie';
 
 // Security rules - Network & Headers
 import { noMissingCorsCheck } from './rules/no-missing-cors-check';
@@ -86,12 +77,10 @@ import { noUncheckedLoopCondition } from './rules/no-unchecked-loop-condition';
 
 // Security rules - Platform Specific
 import { noElectronSecurityIssues } from './rules/no-electron-security-issues';
-import { noInsufficientPostmessageValidation } from './rules/no-insufficient-postmessage-validation';
 
 
 // OWASP Mobile Top 10 2023/2024 - Mobile Security Rules (40 rules)
 // M1: Improper Credential Usage (3 rules)
-import { noCredentialsInStorageApi } from './rules/no-credentials-in-storage-api';
 import { noCredentialsInQueryParams } from './rules/no-credentials-in-query-params';
 import { requireSecureCredentialStorage } from './rules/require-secure-credential-storage';
 
@@ -113,7 +102,6 @@ import { noUnvalidatedDeeplinks } from './rules/no-unvalidated-deeplinks';
 import { requireUrlValidation } from './rules/require-url-validation';
 import { noArbitraryFileAccess } from './rules/no-arbitrary-file-access';
 import { requireMimeTypeValidation } from './rules/require-mime-type-validation';
-import { noPostmessageOriginWildcard } from './rules/no-postmessage-origin-wildcard';
 import { requireCspHeaders } from './rules/require-csp-headers';
 
 // M5: Insecure Communication (7 rules)
@@ -142,7 +130,6 @@ import { requireSecureDefaults } from './rules/require-secure-defaults';
 import { noPermissiveCors } from './rules/no-permissive-cors';
 
 // M9: Insecure Data Storage (5 rules)
-import { noUnencryptedLocalStorage } from './rules/no-unencrypted-local-storage';
 import { noSensitiveDataInCache } from './rules/no-sensitive-data-in-cache';
 import { requireStorageEncryption } from './rules/require-storage-encryption';
 import { noDataInTempStorage } from './rules/no-data-in-temp-storage';
@@ -155,8 +142,6 @@ import { TSESLint } from '@interlace/eslint-devkit';
  */
 export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[]>> = {
   // Flat rule names (recommended usage)
-  'no-sql-injection': noSqlInjection,
-  'database-injection': databaseInjection,
   'detect-eval-with-expression': detectEvalWithExpression,
   'detect-child-process': detectChildProcess,
   'no-unsafe-dynamic-require': noUnsafeDynamicRequire,
@@ -175,22 +160,15 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'detect-object-injection': detectObjectInjection,
   'no-unsafe-deserialization': noUnsafeDeserialization,
   'no-hardcoded-credentials': noHardcodedCredentials,
-  'no-weak-crypto': noWeakCrypto,
-  'no-insufficient-random': noInsufficientRandom,
-  'no-timing-attack': noTimingAttack,
   'no-insecure-comparison': noInsecureComparison,
-  'no-insecure-jwt': noInsecureJwt,
   'no-unvalidated-user-input': noUnvalidatedUserInput,
-  'no-unsanitized-html': noUnsanitizedHtml,
   'no-unescaped-url-parameter': noUnescapedUrlParameter,
   'no-improper-sanitization': noImproperSanitization,
   'no-improper-type-validation': noImproperTypeValidation,
   'no-missing-authentication': noMissingAuthentication,
   'no-privilege-escalation': noPrivilegeEscalation,
   'no-weak-password-recovery': noWeakPasswordRecovery,
-  'no-insecure-cookie-settings': noInsecureCookieSettings,
   'no-missing-csrf-protection': noMissingCsrfProtection,
-  'no-document-cookie': noDocumentCookie,
   'no-missing-cors-check': noMissingCorsCheck,
   'no-missing-security-headers': noMissingSecurityHeaders,
   'no-insecure-redirects': noInsecureRedirects,
@@ -202,11 +180,9 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'no-unlimited-resource-allocation': noUnlimitedResourceAllocation,
   'no-unchecked-loop-condition': noUncheckedLoopCondition,
   'no-electron-security-issues': noElectronSecurityIssues,
-  'no-insufficient-postmessage-validation': noInsufficientPostmessageValidation,
 
   // OWASP Mobile Top 10 2023/2024 rules (40 rules)
   // M1: Improper Credential Usage (3 rules)
-  'no-credentials-in-storage-api': noCredentialsInStorageApi,
   'no-credentials-in-query-params': noCredentialsInQueryParams,
   'require-secure-credential-storage': requireSecureCredentialStorage,
 
@@ -228,7 +204,6 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'require-url-validation': requireUrlValidation,
   'no-arbitrary-file-access': noArbitraryFileAccess,
   'require-mime-type-validation': requireMimeTypeValidation,
-  'no-postmessage-origin-wildcard': noPostmessageOriginWildcard,
   'require-csp-headers': requireCspHeaders,
 
   // M5: Insecure Communication (7 rules)
@@ -257,7 +232,6 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'no-permissive-cors': noPermissiveCors,
 
   // M9: Insecure Data Storage (5 rules)
-  'no-unencrypted-local-storage': noUnencryptedLocalStorage,
   'no-sensitive-data-in-cache': noSensitiveDataInCache,
   'require-storage-encryption': requireStorageEncryption,
   'no-data-in-temp-storage': noDataInTempStorage,
@@ -280,8 +254,6 @@ export const plugin: TSESLint.FlatConfig.Plugin = {
  */
 const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // Critical - Injection vulnerabilities (OWASP A03)
-  'secure-coding/no-sql-injection': 'error',
-  'secure-coding/database-injection': 'error',
   'secure-coding/detect-eval-with-expression': 'error',
   'secure-coding/detect-child-process': 'error',
   'secure-coding/no-unsafe-dynamic-require': 'error',
@@ -310,15 +282,10 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
 
   // Critical - Cryptography (OWASP A02)
   'secure-coding/no-hardcoded-credentials': 'error',
-  'secure-coding/no-weak-crypto': 'error',
-  'secure-coding/no-insufficient-random': 'warn',
-  'secure-coding/no-timing-attack': 'error',
   'secure-coding/no-insecure-comparison': 'warn',
-  'secure-coding/no-insecure-jwt': 'error',
 
   // Critical - XSS vulnerabilities (OWASP A03)
   'secure-coding/no-unvalidated-user-input': 'warn',
-  'secure-coding/no-unsanitized-html': 'error',
   'secure-coding/no-unescaped-url-parameter': 'warn',
   'secure-coding/no-improper-sanitization': 'error',
   'secure-coding/no-improper-type-validation': 'warn',
@@ -329,9 +296,7 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'secure-coding/no-weak-password-recovery': 'error',
 
   // High - Session & Cookies
-  'secure-coding/no-insecure-cookie-settings': 'warn',
   'secure-coding/no-missing-csrf-protection': 'warn',
-  'secure-coding/no-document-cookie': 'warn',
 
   // High - Network & Headers (OWASP A05)
   'secure-coding/no-missing-cors-check': 'warn',
@@ -353,10 +318,8 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
 
   // Medium - Platform specific
   'secure-coding/no-electron-security-issues': 'error',
-  'secure-coding/no-insufficient-postmessage-validation': 'error',
 
   // Mobile & General Security (OWASP Mobile)
-  'secure-coding/no-credentials-in-storage-api': 'error',
   'secure-coding/no-credentials-in-query-params': 'error',
   'secure-coding/no-http-urls': 'error',
   'secure-coding/require-https-only': 'error',
@@ -365,7 +328,6 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'secure-coding/no-hardcoded-session-tokens': 'error',
   'secure-coding/detect-mixed-content': 'error',
   'secure-coding/no-unvalidated-deeplinks': 'error',
-  'secure-coding/no-postmessage-origin-wildcard': 'error',
   'secure-coding/no-insecure-websocket': 'error',
   'secure-coding/detect-suspicious-dependencies': 'warn',
 };
@@ -418,22 +380,16 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       
       // A02:2021 – Cryptographic Failures
       'secure-coding/no-hardcoded-credentials': 'error',
-      'secure-coding/no-weak-crypto': 'error',
-      'secure-coding/no-insufficient-random': 'error',
-      'secure-coding/no-insecure-jwt': 'error',
       'secure-coding/no-unencrypted-transmission': 'error',
       'secure-coding/no-sensitive-data-exposure': 'error',
       
       // A03:2021 – Injection
-      'secure-coding/no-sql-injection': 'error',
-      'secure-coding/database-injection': 'error',
       'secure-coding/detect-eval-with-expression': 'error',
       'secure-coding/detect-child-process': 'error',
       'secure-coding/no-graphql-injection': 'error',
       'secure-coding/no-xxe-injection': 'error',
       'secure-coding/no-xpath-injection': 'error',
       'secure-coding/no-ldap-injection': 'error',
-      'secure-coding/no-unsanitized-html': 'error',
       'secure-coding/no-unescaped-url-parameter': 'error',
       
       // A04:2021 – Insecure Design
@@ -443,12 +399,10 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       // A05:2021 – Security Misconfiguration
       'secure-coding/no-missing-security-headers': 'error',
       'secure-coding/no-missing-cors-check': 'error',
-      'secure-coding/no-insecure-cookie-settings': 'error',
       'secure-coding/no-clickjacking': 'error',
       'secure-coding/no-electron-security-issues': 'error',
       
       // A07:2021 – Identification and Authentication Failures
-      'secure-coding/no-timing-attack': 'error',
       'secure-coding/no-insecure-comparison': 'error',
       'secure-coding/no-missing-csrf-protection': 'error',
       
@@ -469,7 +423,6 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
     },
     rules: {
       // M1: Improper Credential Usage
-      'secure-coding/no-credentials-in-storage-api': 'error',
       'secure-coding/no-credentials-in-query-params': 'error',
       'secure-coding/require-secure-credential-storage': 'error',
       'secure-coding/no-hardcoded-credentials': 'error',
@@ -492,7 +445,6 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       'secure-coding/require-url-validation': 'error',
       'secure-coding/no-arbitrary-file-access': 'error',
       'secure-coding/require-mime-type-validation': 'error',
-      'secure-coding/no-postmessage-origin-wildcard': 'error',
       'secure-coding/require-csp-headers': 'error',
 
       // M5: Insecure Communication
@@ -521,7 +473,6 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       'secure-coding/no-permissive-cors': 'error',
 
       // M9: Insecure Data Storage
-      'secure-coding/no-unencrypted-local-storage': 'error',
       'secure-coding/no-sensitive-data-in-cache': 'error',
       'secure-coding/require-storage-encryption': 'error',
       'secure-coding/no-data-in-temp-storage': 'error',
@@ -540,8 +491,6 @@ export default plugin;
  */
 export type {
   // Injection
-  NoSqlInjectionOptions,
-  DatabaseInjectionOptions,
   DetectEvalWithExpressionOptions,
   DetectChildProcessOptions,
   NoUnsafeDynamicRequireOptions,
@@ -564,14 +513,9 @@ export type {
   NoUnsafeDeserializationOptions,
   // Credentials & Crypto
   NoHardcodedCredentialsOptions,
-  NoWeakCryptoOptions,
-  NoInsufficientRandomOptions,
-  NoTimingAttackOptions,
   NoInsecureComparisonOptions,
-  NoInsecureJwtOptions,
   // Input Validation & XSS
   NoUnvalidatedUserInputOptions,
-  NoUnsanitizedHtmlOptions,
   NoUnescapedUrlParameterOptions,
   NoImproperSanitizationOptions,
   NoImproperTypeValidationOptions,
@@ -580,9 +524,7 @@ export type {
   NoPrivilegeEscalationOptions,
   NoWeakPasswordRecoveryOptions,
   // Session & Cookies
-  NoInsecureCookieSettingsOptions,
   NoMissingCsrfProtectionOptions,
-  NoDocumentCookieOptions,
   // Network & Headers
   NoMissingCorsCheckOptions,
   NoMissingSecurityHeadersOptions,
@@ -599,7 +541,6 @@ export type {
   NoUncheckedLoopConditionOptions,
   // Platform Specific
   NoElectronSecurityIssuesOptions,
-  NoInsufficientPostmessageValidationOptions,
   // Combined type
   AllSecurityRulesOptions,
 } from './types/index';

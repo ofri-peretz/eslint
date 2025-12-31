@@ -124,6 +124,10 @@ Don't let attackers hijack your queries.
 📦 [npm: eslint-plugin-pg](https://www.npmjs.com/package/eslint-plugin-pg)
 📖 [Rule docs: no-unsafe-search-path](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-unsafe-search-path.md)
 
+{% cta https://github.com/ofri-peretz/eslint %}
+⭐ Star on GitHub
+{% endcta %}
+
 ---
 
 🚀 **Follow me for more security articles & updates:**

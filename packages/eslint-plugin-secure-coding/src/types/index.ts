@@ -5,18 +5,15 @@
  * 
  * Usage:
  * ```typescript
- * import type { NoSqlInjectionOptions } from 'eslint-plugin-secure-coding/types';
+ * import type { NoHardcodedCredentialsOptions } from 'eslint-plugin-secure-coding/types';
  * 
- * const config: NoSqlInjectionOptions = {
- *   allowDynamicTableNames: false,
- *   strategy: 'parameterize',
+ * const config: NoHardcodedCredentialsOptions = {
+ *   ignorePatterns: ['test/*'],
  * };
  * ```
  */
 
 // Injection Rules
-import type { Options as NoSqlInjectionOptions } from '../rules/no-sql-injection';
-import type { Options as DatabaseInjectionOptions } from '../rules/database-injection';
 import type { Options as DetectEvalWithExpressionOptions } from '../rules/detect-eval-with-expression';
 import type { Options as DetectChildProcessOptions } from '../rules/detect-child-process';
 import type { Options as NoUnsafeDynamicRequireOptions } from '../rules/no-unsafe-dynamic-require';
@@ -41,17 +38,12 @@ import type { Options as NoUnsafeRegexConstructionOptions } from '../rules/no-un
 import type { Options as DetectObjectInjectionOptions } from '../rules/detect-object-injection';
 import type { Options as NoUnsafeDeserializationOptions } from '../rules/no-unsafe-deserialization';
 
-// Credentials & Crypto Rules
+// Credentials Rules (crypto/timing/jwt moved to dedicated plugins)
 import type { Options as NoHardcodedCredentialsOptions } from '../rules/no-hardcoded-credentials';
-import type { Options as NoWeakCryptoOptions } from '../rules/no-weak-crypto';
-import type { Options as NoInsufficientRandomOptions } from '../rules/no-insufficient-random';
-import type { Options as NoTimingAttackOptions } from '../rules/no-timing-attack';
 import type { Options as NoInsecureComparisonOptions } from '../rules/no-insecure-comparison';
-import type { Options as NoInsecureJwtOptions } from '../rules/no-insecure-jwt';
 
-// Input Validation & XSS Rules
+// Input Validation & XSS Rules (unsanitized-html moved to browser-security)
 import type { Options as NoUnvalidatedUserInputOptions } from '../rules/no-unvalidated-user-input';
-import type { Options as NoUnsanitizedHtmlOptions } from '../rules/no-unsanitized-html';
 import type { Options as NoUnescapedUrlParameterOptions } from '../rules/no-unescaped-url-parameter';
 import type { Options as NoImproperSanitizationOptions } from '../rules/no-improper-sanitization';
 import type { Options as NoImproperTypeValidationOptions } from '../rules/no-improper-type-validation';
@@ -61,10 +53,8 @@ import type { Options as NoMissingAuthenticationOptions } from '../rules/no-miss
 import type { Options as NoPrivilegeEscalationOptions } from '../rules/no-privilege-escalation';
 import type { Options as NoWeakPasswordRecoveryOptions } from '../rules/no-weak-password-recovery';
 
-// Session & Cookies Rules
-import type { Options as NoInsecureCookieSettingsOptions } from '../rules/no-insecure-cookie-settings';
+// Session & Cookies Rules (cookie rules moved to browser-security)
 import type { Options as NoMissingCsrfProtectionOptions } from '../rules/no-missing-csrf-protection';
-import type { Options as NoDocumentCookieOptions } from '../rules/no-document-cookie';
 
 // Network & Headers Rules
 import type { Options as NoMissingCorsCheckOptions } from '../rules/no-missing-cors-check';
@@ -86,13 +76,10 @@ import type { Options as NoUncheckedLoopConditionOptions } from '../rules/no-unc
 
 // Platform Specific Rules
 import type { Options as NoElectronSecurityIssuesOptions } from '../rules/no-electron-security-issues';
-import type { Options as NoInsufficientPostmessageValidationOptions } from '../rules/no-insufficient-postmessage-validation';
 
 // Export all types with consistent naming
 export type {
   // Injection
-  NoSqlInjectionOptions,
-  DatabaseInjectionOptions,
   DetectEvalWithExpressionOptions,
   DetectChildProcessOptions,
   NoUnsafeDynamicRequireOptions,
@@ -113,16 +100,11 @@ export type {
   // Object & Prototype
   DetectObjectInjectionOptions,
   NoUnsafeDeserializationOptions,
-  // Credentials & Crypto
+  // Credentials
   NoHardcodedCredentialsOptions,
-  NoWeakCryptoOptions,
-  NoInsufficientRandomOptions,
-  NoTimingAttackOptions,
   NoInsecureComparisonOptions,
-  NoInsecureJwtOptions,
   // Input Validation & XSS
   NoUnvalidatedUserInputOptions,
-  NoUnsanitizedHtmlOptions,
   NoUnescapedUrlParameterOptions,
   NoImproperSanitizationOptions,
   NoImproperTypeValidationOptions,
@@ -131,9 +113,7 @@ export type {
   NoPrivilegeEscalationOptions,
   NoWeakPasswordRecoveryOptions,
   // Session & Cookies
-  NoInsecureCookieSettingsOptions,
   NoMissingCsrfProtectionOptions,
-  NoDocumentCookieOptions,
   // Network & Headers
   NoMissingCorsCheckOptions,
   NoMissingSecurityHeadersOptions,
@@ -150,7 +130,6 @@ export type {
   NoUncheckedLoopConditionOptions,
   // Platform Specific
   NoElectronSecurityIssuesOptions,
-  NoInsufficientPostmessageValidationOptions,
 };
 
 /**
@@ -160,10 +139,6 @@ export type {
  * @example
  * ```typescript
  * const config: AllSecurityRulesOptions = {
- *   'no-sql-injection': {
- *     allowDynamicTableNames: false,
- *     strategy: 'parameterize',
- *   },
  *   'no-hardcoded-credentials': {
  *     ignorePatterns: ['test/*'],
  *   },
@@ -172,8 +147,6 @@ export type {
  */
 export type AllSecurityRulesOptions = {
   // Injection
-  'no-sql-injection'?: NoSqlInjectionOptions;
-  'database-injection'?: DatabaseInjectionOptions;
   'detect-eval-with-expression'?: DetectEvalWithExpressionOptions;
   'detect-child-process'?: DetectChildProcessOptions;
   'no-unsafe-dynamic-require'?: NoUnsafeDynamicRequireOptions;
@@ -194,16 +167,11 @@ export type AllSecurityRulesOptions = {
   // Object & Prototype
   'detect-object-injection'?: DetectObjectInjectionOptions;
   'no-unsafe-deserialization'?: NoUnsafeDeserializationOptions;
-  // Credentials & Crypto
+  // Credentials
   'no-hardcoded-credentials'?: NoHardcodedCredentialsOptions;
-  'no-weak-crypto'?: NoWeakCryptoOptions;
-  'no-insufficient-random'?: NoInsufficientRandomOptions;
-  'no-timing-attack'?: NoTimingAttackOptions;
   'no-insecure-comparison'?: NoInsecureComparisonOptions;
-  'no-insecure-jwt'?: NoInsecureJwtOptions;
   // Input Validation & XSS
   'no-unvalidated-user-input'?: NoUnvalidatedUserInputOptions;
-  'no-unsanitized-html'?: NoUnsanitizedHtmlOptions;
   'no-unescaped-url-parameter'?: NoUnescapedUrlParameterOptions;
   'no-improper-sanitization'?: NoImproperSanitizationOptions;
   'no-improper-type-validation'?: NoImproperTypeValidationOptions;
@@ -212,9 +180,7 @@ export type AllSecurityRulesOptions = {
   'no-privilege-escalation'?: NoPrivilegeEscalationOptions;
   'no-weak-password-recovery'?: NoWeakPasswordRecoveryOptions;
   // Session & Cookies
-  'no-insecure-cookie-settings'?: NoInsecureCookieSettingsOptions;
   'no-missing-csrf-protection'?: NoMissingCsrfProtectionOptions;
-  'no-document-cookie'?: NoDocumentCookieOptions;
   // Network & Headers
   'no-missing-cors-check'?: NoMissingCorsCheckOptions;
   'no-missing-security-headers'?: NoMissingSecurityHeadersOptions;
@@ -231,5 +197,4 @@ export type AllSecurityRulesOptions = {
   'no-unchecked-loop-condition'?: NoUncheckedLoopConditionOptions;
   // Platform Specific
   'no-electron-security-issues'?: NoElectronSecurityIssuesOptions;
-  'no-insufficient-postmessage-validation'?: NoInsufficientPostmessageValidationOptions;
 };

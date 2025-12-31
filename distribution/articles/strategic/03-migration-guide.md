@@ -61,7 +61,7 @@ export default [secureCoding.configs.recommended];
 npx eslint .
 ```
 
-That's it. You now have 89 rules instead of 13.
+That's it. You now have 75 rules instead of 13.
 
 ## Rule Mapping
 
@@ -83,7 +83,7 @@ Most rules have direct equivalents:
 | Preset                | Use Case                                       |
 | --------------------- | ---------------------------------------------- |
 | `recommended`         | Drop-in replacement for `security/recommended` |
-| `strict`              | Maximum security (all 89 as errors)            |
+| `strict`              | Maximum security (all 75 as errors)            |
 | `owasp-top-10`        | Web application compliance                     |
 | `owasp-mobile-top-10` | Mobile apps (React Native, etc.)               |
 
@@ -141,6 +141,10 @@ export default [secureCoding.configs.recommended];
 
 📦 [npm: eslint-plugin-secure-coding](https://www.npmjs.com/package/eslint-plugin-secure-coding)
 📖 [Full rule list](https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-secure-coding/docs/rules)
+
+{% cta https://github.com/ofri-peretz/eslint %}
+⭐ Star on GitHub
+{% endcta %}
 
 ---
 

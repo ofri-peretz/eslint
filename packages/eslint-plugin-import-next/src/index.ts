@@ -70,6 +70,17 @@ import { noUnusedModules } from './rules/no-unused-modules';
 import { maxDependencies } from './rules/max-dependencies';
 import { preferNodeProtocol } from './rules/prefer-node-protocol';
 
+// Bundle Optimization Rules (Phase 2)
+import { noBarrelFile } from './rules/no-barrel-file';
+import { noBarrelImport } from './rules/no-barrel-import';
+import { preferTreeShakeableImports } from './rules/prefer-tree-shakeable-imports';
+import { preferDirectImport } from './rules/prefer-direct-import';
+import { noFullPackageImport } from './rules/no-full-package-import';
+
+// Enterprise Governance Rules (Phase 4)
+import { enforceTeamBoundaries } from './rules/enforce-team-boundaries';
+import { noLegacyImports } from './rules/no-legacy-imports';
+
 /**
  * Collection of all ESLint rules provided by this plugin
  * Full backwards compatibility with eslint-plugin-import
@@ -133,6 +144,17 @@ export const rules = {
   'no-unused-modules': noUnusedModules,
   'max-dependencies': maxDependencies,
   'prefer-node-protocol': preferNodeProtocol,
+
+  // Bundle Optimization Rules (Phase 2)
+  'no-barrel-file': noBarrelFile,
+  'no-barrel-import': noBarrelImport,
+  'prefer-tree-shakeable-imports': preferTreeShakeableImports,
+  'prefer-direct-import': preferDirectImport,
+  'no-full-package-import': noFullPackageImport,
+
+  // Enterprise Governance Rules (Phase 4)
+  'enforce-team-boundaries': enforceTeamBoundaries,
+  'no-legacy-imports': noLegacyImports,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -391,6 +413,83 @@ export const configs = {
       'import-next/no-named-as-default': 'warn',
       'import-next/no-named-as-default-member': 'warn',
       'import-next/no-duplicates': 'warn',
+    },
+  } satisfies TSESLint.FlatConfig.Config,
+
+  /**
+   * Performance optimization configuration (Phase 2)
+   *
+   * Detects import patterns that harm build performance and tree-shaking:
+   * - Barrel files that bloat bundles
+   * - Imports from barrel files
+   * - Non-tree-shakeable import patterns (namespace imports)
+   *
+   * Real-world impact:
+   * - Atlassian reduced Jira build times by 75%
+   * - Bundle size reductions of 50-85%
+   *
+   * @see https://marvinh.dev/blog/speeding-up-javascript-ecosystem-part-7/
+   */
+  performance: {
+    plugins: {
+      'import-next': plugin,
+    },
+    rules: {
+      // Bundle Optimization - Critical
+      'import-next/no-barrel-file': 'error',
+      'import-next/no-barrel-import': 'warn',
+      'import-next/prefer-tree-shakeable-imports': 'warn',
+      'import-next/prefer-direct-import': 'warn',
+      'import-next/no-full-package-import': 'warn',
+
+      // Dependency Boundaries - Impact on build graph
+      'import-next/no-cycle': 'error',
+    },
+  } satisfies TSESLint.FlatConfig.Config,
+
+  /**
+   * Enterprise governance configuration (Phase 4)
+   *
+   * Rules designed for large organizations (1000+ developers):
+   * - Team boundaries to prevent unauthorized cross-team imports
+   * - Legacy import detection for migration tracking
+   *
+   * Note: These rules require configuration. See documentation for examples.
+   *
+   * @example
+   * // eslint.config.js
+   * {
+   *   plugins: { 'import-next': importNext },
+   *   rules: {
+   *     'import-next/enforce-team-boundaries': ['error', {
+   *       teams: [
+   *         { team: 'platform', paths: ['src/platform/**'], allowedDependencies: ['shared'] },
+   *         { team: 'payments', paths: ['src/payments/**'], allowedDependencies: ['platform', 'shared'] },
+   *       ],
+   *     }],
+   *     'import-next/no-legacy-imports': ['warn', {
+   *       mappings: [
+   *         { deprecated: 'moment', replacement: 'date-fns', reason: 'moment is in maintenance mode' },
+   *       ],
+   *     }],
+   *   },
+   * }
+   */
+  enterprise: {
+    plugins: {
+      'import-next': plugin,
+    },
+    rules: {
+      // Team boundaries - requires configuration
+      'import-next/enforce-team-boundaries': 'off', // Disabled by default - requires teams config
+
+      // Legacy import tracking - requires configuration
+      'import-next/no-legacy-imports': 'off', // Disabled by default - requires mappings config
+
+      // Architecture boundaries
+      'import-next/no-cross-domain-imports': 'warn',
+      'import-next/enforce-dependency-direction': 'warn',
+      'import-next/no-internal-modules': 'warn',
     },
   } satisfies TSESLint.FlatConfig.Config,
 };

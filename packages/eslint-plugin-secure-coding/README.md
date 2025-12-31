@@ -18,7 +18,7 @@
 
 ## 💡 What you get
 
-- **Feature-based coverage:** 89 rules grouped by attack surface (injection, crypto, auth, cookies, headers, mobile security, resource limits, platform specifics).
+- **Feature-based coverage:** 75 rules grouped by attack surface (injection, crypto, auth, cookies, headers, mobile security, resource limits, platform specifics).
 - **LLM-optimized & MCP-ready:** Structured 2-line messages with CWE + OWASP + CVSS + concrete fixes so humans _and_ AI auto-fixers stay aligned.
 - **Standards aligned:** OWASP Top 10 Web + Mobile, CWE tagging, CVSS scoring in every finding for compliance mapping.
 - **Tiered presets:** `recommended`, `strict`, `owasp-top-10` for fast policy rollout.
@@ -283,7 +283,7 @@ npx eslint .
 
 ## 📚 Documentation
 
-- **[Rules Reference](./docs/RULES.md)** - Complete list of all 89 rules with configuration options
+- **[Rules Reference](./docs/RULES.md)** - Complete list of all 75 rules with configuration options
 
 ---
 

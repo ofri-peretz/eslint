@@ -1,6 +1,7 @@
 ---
 title: 'Hardcoded Secrets: The #1 Vulnerability AI Agents Can Auto-Fix'
-published: false
+published: true
+canonical_url: https://dev.to/ofri-peretz/hardcoded-secrets-the-1-vulnerability-ai-agents-can-auto-fix-47cg
 description: 'Learn why hardcoded credentials remain the most common security vulnerability and how ESLint can catch and fix them automatically.'
 tags: javascript, security, eslint, devops
 cover_image:
@@ -90,12 +91,16 @@ import secureCoding from 'eslint-plugin-secure-coding';
 export default [secureCoding.configs.recommended];
 ```
 
-**That's it.** One line of config. 89 security rules. Zero hardcoded secrets.
+**That's it.** One line of config. 75 security rules. Zero hardcoded secrets.
 
 ---
 
 📦 [npm: eslint-plugin-secure-coding](https://www.npmjs.com/package/eslint-plugin-secure-coding)
 📖 [Rule docs: no-hardcoded-credentials](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-hardcoded-credentials.md)
+
+{% cta https://github.com/ofri-peretz/eslint %}
+⭐ Star on GitHub
+{% endcta %}
 
 ---
 

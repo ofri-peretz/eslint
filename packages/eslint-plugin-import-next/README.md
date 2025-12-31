@@ -46,6 +46,24 @@ npm install --save-dev eslint-plugin-import-next
 
 ---
 
+## 🗣️ Community Pain Points: We Listen
+
+This plugin directly addresses the top complaints from the `eslint-plugin-import` community:
+
+| Pain Point                         | GitHub Issue                                                                                                                                   | Status        | Notes                                |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------ |
+| **`no-cycle` is extremely slow**   | [#1889](https://github.com/import-js/eslint-plugin-import/issues/1889), [#2388](https://github.com/import-js/eslint-plugin-import/issues/2388) | ✅ **Solved** | 100x faster with incremental caching |
+| **`namespace` rule performance**   | [#2340](https://github.com/import-js/eslint-plugin-import/issues/2340)                                                                         | ✅ **Solved** | Shared ExportsMap cache              |
+| **ESLint 9 flat config blocked**   | [#2556](https://github.com/import-js/eslint-plugin-import/issues/2556), [#2948](https://github.com/import-js/eslint-plugin-import/issues/2948) | ✅ **Solved** | First-class flat config              |
+| **`exports` field not supported**  | [#1810](https://github.com/import-js/eslint-plugin-import/issues/1810), [#2495](https://github.com/import-js/eslint-plugin-import/issues/2495) | 🟡 Phase 1    | Native exports field support         |
+| **No barrel file detection**       | [#2922](https://github.com/import-js/eslint-plugin-import/issues/2922)                                                                         | ✅ **Solved** | 5 bundle optimization rules          |
+| **`#imports` not recognized**      | [#1868](https://github.com/import-js/eslint-plugin-import/issues/1868)                                                                         | 🟡 Phase 1    | Subpath imports support              |
+| **Double-parsing with TypeScript** | [typescript-eslint docs](https://typescript-eslint.io/troubleshooting/performance-troubleshooting)                                             | ✅ **Solved** | Shared AST, no re-parsing            |
+
+> 📢 **Found an issue we haven't addressed?** [Open an issue](https://github.com/ofri-peretz/eslint/issues) - we prioritize real developer pain.
+
+---
+
 ## 🎯 The `no-cycle` Problem (Why This Plugin Exists)
 
 ### The `maxDepth` Limitation in `eslint-plugin-import`
@@ -192,13 +210,20 @@ Every rule from `eslint-plugin-import` is implemented with **the same name** and
 | `order`                           | Sort and group imports            | 💼  | 🔧  |     |
 | `prefer-default-export`           | Prefer default for single exports |     |     |     |
 
-### 🆕 Exclusive to `import-next` (3 rules)
+### 🆕 Exclusive to `import-next` (10 rules)
 
-| Rule                           | Description                                         |
-| ------------------------------ | --------------------------------------------------- |
-| `no-cross-domain-imports`      | Enforce clean architecture boundaries               |
-| `enforce-dependency-direction` | Enforce layered architecture (UI → Services → Data) |
-| `prefer-node-protocol`         | Prefer `node:fs` over `fs`                          |
+| Rule                            | Description                                         |
+| ------------------------------- | --------------------------------------------------- |
+| `no-cross-domain-imports`       | Enforce clean architecture boundaries               |
+| `enforce-dependency-direction`  | Enforce layered architecture (UI → Services → Data) |
+| `prefer-node-protocol`          | Prefer `node:fs` over `fs`                          |
+| `no-barrel-file`                | Detect barrel files that harm build performance     |
+| `no-barrel-import`              | Flag imports from barrel files                      |
+| `prefer-tree-shakeable-imports` | Enforce tree-shakeable import patterns              |
+| `prefer-direct-import`          | Suggest direct imports with autofix                 |
+| `no-full-package-import`        | Block full imports from large packages              |
+| `enforce-team-boundaries`       | Prevent unauthorized cross-team imports 🔴 NEW      |
+| `no-legacy-imports`             | Detect deprecated imports with autofix 🔴 NEW       |
 
 ---
 
@@ -236,17 +261,19 @@ export default [
 
 ## � Available Presets
 
-| Preset              | Description                                  |
-| ------------------- | -------------------------------------------- |
-| `recommended`       | Essential rules for most projects            |
-| `strict`            | All rules enabled as errors                  |
-| `typescript`        | Optimized for TypeScript projects            |
-| `module-resolution` | Focus on import resolution                   |
-| `import-style`      | Focus on import formatting                   |
-| `esm`               | Enforce ES Modules only                      |
-| `architecture`      | Clean architecture boundaries                |
-| `errors`            | Matches eslint-plugin-import errors preset   |
-| `warnings`          | Matches eslint-plugin-import warnings preset |
+| Preset              | Description                                     |
+| ------------------- | ----------------------------------------------- |
+| `recommended`       | Essential rules for most projects               |
+| `strict`            | All rules enabled as errors                     |
+| `typescript`        | Optimized for TypeScript projects               |
+| `module-resolution` | Focus on import resolution                      |
+| `import-style`      | Focus on import formatting                      |
+| `esm`               | Enforce ES Modules only                         |
+| `architecture`      | Clean architecture boundaries                   |
+| `performance`       | Bundle optimization (barrel detection)          |
+| `enterprise`        | Team boundaries & legacy import tracking 🔴 NEW |
+| `errors`            | Matches eslint-plugin-import errors preset      |
+| `warnings`          | Matches eslint-plugin-import warnings preset    |
 
 ---
 
