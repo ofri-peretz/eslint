@@ -9,10 +9,10 @@
 [![Dec 2025](https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white)](https://github.com/ofri-peretz/eslint)
 
 > **A complete security standard:** This plugin provides **full mitigation** for both **OWASP Top 10 Web (2021)** AND **OWASP Mobile Top 10 (2024)**.  
-> With **78 active rules** (+ 11 deprecated) mapped to CWE and CVSS, it transforms your linter into an enterprise-grade security auditor that AI assistants can understand and fix.
+> With **75 active rules** mapped to CWE and CVSS, it transforms your linter into an enterprise-grade security auditor that AI assistants can understand and fix.
 
 > [!NOTE]
-> **v3.0.0**: 11 rules have been deprecated in favor of dedicated plugins with better coverage. See [Related ESLint Plugins](#-related-eslint-plugins) for migration guidance.
+> **v3.0.0**: 14 legacy rules have been **removed** and migrated to dedicated plugins with better coverage. See [Related ESLint Plugins](#-related-eslint-plugins) for migration guidance.
 
 ---
 
@@ -89,9 +89,9 @@ src/components/Display.tsx
 
 ---
 
-## 🔐 78 Active Security Rules
+## 🔐 75 Active Security Rules
 
-💼 = Set in `recommended` | ⚠️ = Warns in `recommended` | 🔧 = Auto-fixable | 💡 = Suggestions | 🚫 = Deprecated (use dedicated plugin)
+💼 = Set in `recommended` | ⚠️ = Warns in `recommended` | 🔧 = Auto-fixable | 💡 = Suggestions
 
 ### Injection Prevention (11 rules)
 

@@ -153,34 +153,54 @@
     "conventionalCommits": {
       "types": {
         "feat": {
-          "semverBump": "minor"
+          "semverBump": "minor",
+          "changelog": {
+            "title": "Features"
+          }
         },
         "fix": {
-          "semverBump": "patch"
+          "semverBump": "patch",
+          "changelog": {
+            "title": "Bug Fixes"
+          }
         },
         "perf": {
-          "semverBump": "patch"
+          "semverBump": "patch",
+          "changelog": {
+            "title": "Performance"
+          }
         },
         "docs": {
-          "semverBump": "patch"
+          "semverBump": "patch",
+          "changelog": {
+            "title": "Documentation"
+          }
         },
         "refactor": {
-          "semverBump": "patch"
+          "semverBump": "patch",
+          "changelog": {
+            "title": "Refactoring"
+          }
         },
         "style": {
-          "semverBump": "patch"
+          "semverBump": "patch",
+          "changelog": false
         },
         "test": {
-          "semverBump": "patch"
+          "semverBump": "patch",
+          "changelog": false
         },
         "build": {
-          "semverBump": "patch"
+          "semverBump": "patch",
+          "changelog": false
         },
         "ci": {
-          "semverBump": "patch"
+          "semverBump": "patch",
+          "changelog": false
         },
         "chore": {
-          "semverBump": "patch"
+          "semverBump": "patch",
+          "changelog": false
         }
       }
     },
