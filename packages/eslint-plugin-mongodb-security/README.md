@@ -128,10 +128,15 @@ This plugin analyzes code that uses the following MongoDB/Mongoose libraries. **
 | ------------------------- | --------------------------------------------------------------- | ---------- | ---------------------------------- |
 | mongodb                   | ![npm](https://img.shields.io/npm/dw/mongodb)                   | ✅ Full    | Native MongoDB driver              |
 | mongoose                  | ![npm](https://img.shields.io/npm/dw/mongoose)                  | ✅ Full    | ODM with schema validation         |
-| mongodb-client-encryption | ![npm](https://img.shields.io/npm/dw/mongodb-client-encryption) | ✅ Full    | Client-side encryption             |
+| @nestjs/mongoose          | ![npm](https://img.shields.io/npm/dw/@nestjs/mongoose)          | ✅ Full    | NestJS integration for Mongoose    |
+| mongodb-client-encryption | ![npm](https://img.shields.io/npm/dw/mongodb-client-encryption) | ✅ Full    | Client-Side Field Level Encryption |
 | @typegoose/typegoose      | ![npm](https://img.shields.io/npm/dw/@typegoose/typegoose)      | ✅ Partial | TypeScript decorators for Mongoose |
 
 > **Note**: `mongodb` and `mongoose` are listed as optional peer dependencies (`peerDependenciesMeta.optional: true`). The plugin works regardless of which MongoDB library you use — rules detect patterns in your code, not the presence of specific packages.
+>
+> **Not covered**: `mongodb-core` (deprecated, merged into mongodb 4.x), `mongodb-memory-server` (testing utility).
+>
+> **NestJS users**: `@nestjs/mongoose` uses standard Mongoose under the hood — all rules apply. For comprehensive NestJS coverage, combine with [`eslint-plugin-nestjs-security`](https://npmjs.com/package/eslint-plugin-nestjs-security).
 
 ---
 
