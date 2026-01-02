@@ -1,10 +1,44 @@
+import { execSync } from 'child_process';
+
 /**
  * Commitlint Configuration
  * 
  * Scopes are optional, but if provided must match one of:
- * - Nx project names (for package-specific changes)
+ * - Nx project names (dynamically loaded from workspace)
  * - Special scopes: ci, deps, release, docs, workspace
  */
+
+// ═══════════════════════════════════════════════════════════════
+// Dynamically load Nx project names
+// ═══════════════════════════════════════════════════════════════
+function getNxProjectNames() {
+  try {
+    const output = execSync('pnpm nx show projects', { 
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'] // Suppress stderr
+    });
+    return output.trim().split('\n').filter(Boolean);
+  } catch (error) {
+    console.warn('⚠️ Could not load Nx projects for commitlint scope validation');
+    // Fallback to empty array - scopes will not be validated
+    return [];
+  }
+}
+
+const nxProjects = getNxProjectNames();
+
+// Special scopes for non-package changes
+const specialScopes = [
+  'ci',         // CI/CD workflows
+  'deps',       // Dependency updates
+  'release',    // Release-related changes
+  'docs',       // Documentation
+  'workspace',  // Workspace-wide changes
+];
+
+// Combine all valid scopes
+const validScopes = [...nxProjects, ...specialScopes];
+
 export default {
   extends: ['@commitlint/config-conventional'],
   rules: {
@@ -30,40 +64,7 @@ export default {
     'scope-enum': [
       2,
       'always',
-      [
-        // ═══════════════════════════════════════════════════════════════
-        // Nx Project Names (packages/)
-        // ═══════════════════════════════════════════════════════════════
-        'eslint-devkit',
-        'eslint-plugin-secure-coding',
-        'eslint-plugin-crypto',
-        'eslint-plugin-jwt',
-        'eslint-plugin-pg',
-        'eslint-plugin-express-security',
-        'eslint-plugin-nestjs-security',
-        'eslint-plugin-browser-security',
-        'eslint-plugin-lambda-security',
-        'eslint-plugin-vercel-ai-security',
-        'eslint-plugin-mongodb-security',
-        'eslint-plugin-architecture',
-        'eslint-plugin-quality',
-        'eslint-plugin-react-a11y',
-        'eslint-plugin-react-features',
-        'eslint-plugin-import-next',
-        'cli',
-        // Benchmarks
-        'eslint-plugin-pg-benchmark',
-        'eslint-security-benchmark',
-        // ═══════════════════════════════════════════════════════════════
-        // Special Scopes (for non-package changes)
-        // ═══════════════════════════════════════════════════════════════
-        'ci',         // CI/CD workflows
-        'deps',       // Dependency updates
-        'release',    // Release-related changes
-        'docs',       // Documentation
-        'workspace',  // Workspace-wide changes
-        'devkit',     // Shorthand for eslint-devkit
-      ]
+      validScopes
     ],
     // Scope is optional (empty scope allowed)
     'scope-empty': [0],
