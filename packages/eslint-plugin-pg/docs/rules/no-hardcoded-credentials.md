@@ -53,6 +53,55 @@ const client = new Client(config.database);
    Fix: Use environment variables: process.env.DATABASE_PASSWORD
 ```
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Template Literals with Credentials
+
+**Why**: The rule only checks `Literal` nodes, not template literals.
+
+```typescript
+// ❌ NOT DETECTED
+const client = new Client({
+  password: `supersecret123`, // Template literal, not string literal
+});
+```
+
+### Factory Functions
+
+**Why**: Credentials passed through function calls aren't traced.
+
+```typescript
+// ❌ NOT DETECTED
+function getConfig() {
+  return { password: 'hardcoded' };
+}
+const client = new Client(getConfig());
+```
+
+### Spread Operator
+
+**Why**: The rule iterates over properties, not spread sources.
+
+```typescript
+// ❌ NOT DETECTED
+const secrets = { password: 'hardcoded' };
+const client = new Client({ ...secrets });
+```
+
+### Variable References
+
+**Why**: Values stored in variables aren't traced to their literal origin.
+
+```typescript
+// ❌ NOT DETECTED
+const password = 'supersecret123';
+const client = new Client({ password });
+```
+
+> **Workaround**: Use secret scanning tools (e.g., gitleaks, truffleHog) in CI/CD.
+
 ## When Not To Use It
 
 - In test files with fixture data

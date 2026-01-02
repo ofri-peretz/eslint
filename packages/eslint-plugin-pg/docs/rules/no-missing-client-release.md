@@ -53,6 +53,66 @@ async function simpleQuery() {
    Fix: Add client.release() in a finally block
 ```
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Destructured Client
+
+**Why**: The rule tracks variable references by identifier, not destructured properties.
+
+```typescript
+// ❌ NOT DETECTED
+async function query() {
+  const { query, release } = await pool.connect();
+  await query('SELECT 1');
+  // Missing release() call - not detected!
+}
+```
+
+### Callback Pattern
+
+**Why**: The callback `done` parameter requires different tracking.
+
+```typescript
+// ❌ NOT DETECTED
+pool.connect((err, client, done) => {
+  if (err) return callback(err);
+  client.query('SELECT 1', (err, res) => {
+    // Missing done() call - not detected!
+    callback(err, res);
+  });
+});
+```
+
+### Client Passed to Functions
+
+**Why**: When the client is passed to another function, the rule can't track if that function releases it.
+
+```typescript
+// ❌ NOT DETECTED
+async function query() {
+  const client = await pool.connect();
+  await executeQueries(client); // Does this release? Rule can't tell
+}
+```
+
+### Thrown Exceptions Before Release
+
+**Why**: The rule checks for presence of `.release()` call, not control flow paths.
+
+```typescript
+// ❌ NOT DETECTED - release exists but may not execute
+async function query() {
+  const client = await pool.connect();
+  await client.query('SELECT 1');
+  throw new Error('Oops'); // Release never reached!
+  client.release();
+}
+```
+
+> **Workaround**: Always use try/finally pattern or `pool.query()` for simple queries.
+
 ## When Not To Use It
 
 - When using connection wrappers that handle release

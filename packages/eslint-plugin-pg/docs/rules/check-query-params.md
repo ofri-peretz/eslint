@@ -55,6 +55,46 @@ await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
 - Only checks static string literals
 - Cannot analyze dynamic query construction
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Dynamic Queries
+
+**Why**: The rule requires a string literal to count placeholders. Variables or function calls cannot be analyzed.
+
+```typescript
+// ❌ NOT DETECTED - query text is in a variable
+const sql = 'SELECT * FROM users WHERE id = $1 AND active = $2';
+await client.query(sql, [userId]); // Missing second param!
+```
+
+### Spread Operators
+
+**Why**: The rule checks `ArrayExpression` element count, not runtime array length.
+
+```typescript
+// ❌ NOT DETECTED - spread operator
+const params = [userId];
+await client.query('SELECT * FROM users WHERE id = $1 AND active = $2', [
+  ...params, // Might have wrong count
+]);
+```
+
+### Gap Detection
+
+**Why**: PostgreSQL allows gaps (e.g., `$1, $3` without `$2`), but the rule only checks max index.
+
+```typescript
+// ❌ NOT DETECTED - gap in parameters
+await client.query('SELECT * FROM users WHERE id = $1 AND name = $3', [
+  userId,
+  name, // Should be 3 elements, not 2
+]);
+```
+
+> **Workaround**: Use TypeScript with strict query typing (e.g., kysely, drizzle) for compile-time safety.
+
 ## When Not To Use It
 
 - When using query builders (Drizzle, Kysely) that handle parameters automatically

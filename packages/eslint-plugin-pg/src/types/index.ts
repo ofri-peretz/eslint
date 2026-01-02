@@ -18,7 +18,14 @@ export type ConnectOnceOptions = [];
 
 // Phase 2
 export type NoUnsafeSearchPathOptions = [];
-export type NoUnsafeCopyFromOptions = [];
+export type NoUnsafeCopyFromOptions = [
+  {
+    /** Allow hardcoded file paths (for admin/migration scripts). Default: false */
+    allowHardcodedPaths?: boolean;
+    /** List of allowed file path patterns (regex strings) */
+    allowedPaths?: string[];
+  }?,
+];
 export type PreventDoubleReleaseOptions = [];
 
 export interface AllPgRulesOptions {

@@ -1,6 +1,6 @@
 # prevent-double-release
 
-> **Keywords:** double release, connection pool, CWE-415, pg, node-postgres
+> **Keywords:** double release, connection pool, CWE-415, pg, node-postgres, pool corruption
 
 Prevents calling `client.release()` multiple times on the same client.
 
@@ -8,80 +8,215 @@ Prevents calling `client.release()` multiple times on the same client.
 
 ## Quick Summary
 
-| Aspect            | Details               |
-| ----------------- | --------------------- |
-| **CWE Reference** | CWE-415 (Double Free) |
-| **Severity**      | Medium (CVSS: 5.0)    |
-| **Category**      | Correctness           |
+| Aspect            | Details                   |
+| ----------------- | ------------------------- |
+| **CWE Reference** | CWE-415 (Double Free)     |
+| **Severity**      | HIGH (CVSS: 6.5)          |
+| **Category**      | Correctness / Reliability |
 
 ## Rule Details
 
-Releasing a client twice can cause pool corruption and unpredictable behavior.
+Releasing a PostgreSQL client twice corrupts the connection pool state:
+
+1. First call: Returns client to pool ✅
+2. Second call: Pool thinks it received a "new" client ❌
+3. Result: Pool tracks phantom connections, queries timeout, memory leaks
+
+### Detection Patterns (13 Cases)
+
+| #   | Pattern                     | Description                                |
+| --- | --------------------------- | ------------------------------------------ |
+| 1   | **Try + Catch**             | Release in try AND catch blocks            |
+| 2   | **Catch + Try**             | Reversed order detection                   |
+| 3   | **Switch Fallthrough**      | Missing break causes double release        |
+| 4   | **If without Else**         | If-release + sequential release            |
+| 5   | **Two If Statements**       | Sequential ifs without guards              |
+| 6   | **Same Block**              | Direct sequential releases                 |
+| 7   | **Catch + Finally**         | Release in catch AND finally               |
+| 8   | **Try + Finally**           | Release in try AND finally                 |
+| 9   | **Finally + After**         | Release in finally AND after try           |
+| 10  | **Try + After**             | Release in try AND after try statement     |
+| 11  | **If + Finally**            | If-release (no exit) + finally release     |
+| 12  | **Catch + After**           | Release in catch AND after try             |
+| 13  | **Expression + Sequential** | Ternary/short-circuit release + sequential |
 
 ### ❌ Incorrect
 
 ```typescript
+// Pattern: Catch + Finally
 async function query() {
   const client = await pool.connect();
   try {
-    await client.query('SELECT 1');
+    await client.query('SELECT ...');
+  } catch (e) {
+    client.release(); // Released on error
+    throw e;
   } finally {
-    client.release();
+    client.release(); // Released again! ❌
   }
-  client.release(); // Double release!
 }
 
-// In control flow
-async function process() {
+// Pattern: Try + Finally
+async function query() {
   const client = await pool.connect();
-  if (error) {
-    client.release();
-    return;
+  try {
+    client.release(); // Released in try
+  } finally {
+    client.release(); // Released again! ❌
   }
-  client.release();
-  client.release(); // Oops, called twice on success path
+}
+
+// Pattern: Switch Fallthrough
+async function query(type: string) {
+  const client = await pool.connect();
+  switch (type) {
+    case 'a':
+      client.release(); // Missing break!
+    case 'b':
+      client.release(); // Falls through ❌
+      break;
+  }
+}
+
+// Pattern: Expression + Sequential
+async function query() {
+  const client = await pool.connect();
+  condition ? client.release() : null;
+  client.release(); // ❌
+}
+
+// Pattern: Short-circuit
+async function query() {
+  const client = await pool.connect();
+  shouldRelease && client.release();
+  client.release(); // ❌
+}
+
+// Pattern: Destructured release
+async function query() {
+  const { release } = await pool.connect();
+  release();
+  release(); // ❌
 }
 ```
 
 ### ✅ Correct
 
 ```typescript
+// Best: Single release point in finally
 async function query() {
   const client = await pool.connect();
   try {
     await client.query('SELECT 1');
+  } catch (e) {
+    throw e; // Don't release here
   } finally {
-    client.release(); // Only once
+    client.release(); // Only release point ✅
   }
 }
 
-// Use released flag if needed
-async function processWithFlag() {
+// Guarded release pattern
+async function queryWithGuard() {
   const client = await pool.connect();
   let released = false;
-  try {
-    await client.query('SELECT 1');
-  } finally {
+
+  const safeRelease = () => {
     if (!released) {
-      client.release();
       released = true;
+      client.release();
     }
+  };
+
+  try {
+    return await client.query('SELECT 1');
+  } finally {
+    safeRelease();
   }
 }
+
+// Mutually exclusive branches (valid)
+async function query() {
+  const client = await pool.connect();
+  if (condition) {
+    client.release();
+  } else {
+    client.release();
+  }
+} // ✅ Only one path executes
 ```
 
 ## Error Message Format
 
 ```
-⚠️ CWE-415 | Client may be released multiple times | MEDIUM
-   Fix: Ensure client.release() is called exactly once
+📚 Client release() called multiple times on the same object. | HIGH
+   Fix: Ensure client.release() is called exactly once per acquisition, preferably in a finally block. | https://node-postgres.com/api/client#clientrelease
 ```
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static AST analysis limitations:
+
+### Loop Patterns
+
+**Why**: Static analysis cannot determine how many times a loop will execute at runtime. The loop might run 0, 1, or N times depending on runtime conditions.
+
+```typescript
+// ❌ NOT DETECTED
+async function loopRelease() {
+  const client = await pool.connect();
+  for (let i = 0; i < 1; i++) {
+    client.release();
+  }
+  client.release(); // Double release if loop executes!
+}
+```
+
+### Dynamic Dispatch
+
+**Why**: When `release()` is called through array methods or callbacks, the rule cannot track which client instance is being released because the reference is indirect.
+
+```typescript
+// ❌ NOT DETECTED
+const clients = [await pool.connect()];
+clients.forEach((c) => c.release());
+clients[0].release(); // Double release!
+```
+
+### Aliased Functions
+
+**Why**: When `release` is assigned to a variable or bound, the rule loses the connection between the function and the original client variable.
+
+```typescript
+// ❌ NOT DETECTED
+const client = await pool.connect();
+const rel = client.release.bind(client);
+rel();
+rel(); // Double release!
+```
+
+### Callback `done()` Pattern
+
+**Why**: The callback parameter tracking requires following the `done` identifier through the callback body, which has partial support.
+
+```typescript
+// ⚠️ PARTIALLY DETECTED
+pool.connect((err, client, done) => {
+  if (err) {
+    done();
+    return;
+  }
+  done(); // May not be detected in all cases
+});
+```
+
+> **Workaround**: For any of these patterns, use the **guarded release pattern** shown in the examples above.
 
 ## When Not To Use It
 
-- Generally, keep this rule enabled - double release is always a bug
-- If using a wrapper that tracks release state internally
+- Generally, keep this rule enabled — double release is always a bug
+- If using a wrapper library that tracks release state internally
 
 ## Related Rules
 
 - [no-missing-client-release](./no-missing-client-release.md) - Ensures release is called
+- [prefer-pool-query](./prefer-pool-query.md) - Use `pool.query()` for simple queries

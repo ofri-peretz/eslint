@@ -52,6 +52,56 @@ const result = await client.query({
    Fix: Use parameterized query: client.query('SELECT * FROM users WHERE id = $1', [userId])
 ```
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Tagged Template Literals (sql`...`)
+
+**Why**: Tagged templates like `sql` from libraries are function calls, not template literals.
+
+```typescript
+// ❌ NOT DETECTED - appears safe but may not be
+import { sql } from 'some-library';
+await client.query(sql`SELECT * FROM users WHERE id = ${userId}`);
+// If 'sql' doesn't properly escape, this is vulnerable!
+```
+
+### Dynamic Query Variables
+
+**Why**: When the query is stored in a variable, we can't analyze its construction.
+
+```typescript
+// ❌ NOT DETECTED
+const unsafeQuery = buildQuery(userInput); // May concatenate strings internally
+await client.query(unsafeQuery);
+```
+
+### Nested Function Calls
+
+**Why**: Queries passed through helper functions aren't traced.
+
+```typescript
+// ❌ NOT DETECTED
+function executeQuery(query: string) {
+  return client.query(query);
+}
+executeQuery(`SELECT * FROM users WHERE id = ${userId}`);
+```
+
+### Format Functions with User Input
+
+**Why**: The rule doesn't track data flow through `pg-format` or similar.
+
+```typescript
+// ❌ NOT DETECTED - but format() should handle escaping
+import format from 'pg-format';
+await client.query(format('SELECT * FROM %I.users', userSchema));
+// Safe if format() escapes, but rule can't verify
+```
+
+> **Workaround**: Always use parameterized queries `($1, $2)` directly in literals.
+
 ## When Not To Use It
 
 - When using a query builder (Drizzle, Kysely) that handles parameterization

@@ -65,6 +65,65 @@ await client.query('UPDATE users SET active = true WHERE id = ANY($1)', [
    Fix: Use bulk insert with unnest() or ANY() for updates
 ```
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Async Iterators
+
+**Why**: The rule doesn't traverse `for await...of` as a loop type.
+
+```typescript
+// ❌ NOT DETECTED
+async function* getUsers() {
+  yield* users;
+}
+for await (const user of getUsers()) {
+  await client.query('INSERT INTO users VALUES ($1)', [user.id]);
+}
+```
+
+### Recursive Functions
+
+**Why**: Recursion creates implicit loops that require call graph analysis.
+
+```typescript
+// ❌ NOT DETECTED
+async function insertUsers(users: User[], i = 0): Promise<void> {
+  if (i >= users.length) return;
+  await client.query('INSERT INTO users VALUES ($1)', [users[i].id]);
+  return insertUsers(users, i + 1); // Recursive N+1!
+}
+```
+
+### Promise.all with Mapping
+
+**Why**: The rule only detects direct `.map()` callbacks, not when wrapped in `Promise.all`.
+
+```typescript
+// ❌ NOT DETECTED - Array.from pattern
+const queries = Array.from(users, (u) =>
+  client.query('INSERT INTO users VALUES ($1)', [u.id]),
+);
+await Promise.all(queries);
+```
+
+### External Loop Functions
+
+**Why**: Queries called from a helper function inside a loop are not detected.
+
+```typescript
+// ❌ NOT DETECTED
+async function insertUser(user: User) {
+  await client.query('INSERT INTO users VALUES ($1)', [user.id]);
+}
+for (const user of users) {
+  await insertUser(user); // N+1 but rule can't see into helper
+}
+```
+
+> **Workaround**: Use `UNNEST()` for bulk inserts or `ANY()` for bulk updates.
+
 ## When Not To Use It
 
 - When processing results in a streaming fashion with backpressure

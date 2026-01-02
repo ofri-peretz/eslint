@@ -1,6 +1,6 @@
 ---
 title: 'The N+1 Insert Loop That Slowed Our API to a Crawl'
-published: false
+published: true
 description: "50ms per insert × 1000 rows = 50 seconds. Here's how to detect and fix N+1 loop patterns in PostgreSQL."
 tags: postgresql, performance, nodejs, eslint
 cover_image:
@@ -65,34 +65,57 @@ async function importUsers(users) {
 }
 ```
 
+## The Rule: `pg/no-batch-insert-loop`
+
+This pattern is detected by the `pg/no-batch-insert-loop` rule from `eslint-plugin-pg`.
+
 ## Let ESLint Catch This
 
 ```bash
 npm install --save-dev eslint-plugin-pg
 ```
 
+### Use Recommended Config (All Rules)
+
 ```javascript
 import pg from 'eslint-plugin-pg';
 export default [pg.configs.recommended];
 ```
 
-N+1 loops are detected:
+### Enable Only This Rule
+
+```javascript
+import pg from 'eslint-plugin-pg';
+
+export default [
+  {
+    plugins: { pg },
+    rules: {
+      'pg/no-batch-insert-loop': 'error',
+    },
+  },
+];
+```
+
+## What You'll See
+
+When N+1 loops are detected:
 
 ```bash
 src/import.ts
-  5:3  warning  N+1 query pattern: INSERT inside loop
-                Fix: Use bulk insert with VALUES list or unnest()
+  5:3  error  ⚡ CWE-1049 | Database query loop detected. | HIGH
+                 Fix: Batch queries using arrays and "UNNEST" or a single batched INSERT. | https://use-the-index-luke.com/sql/joins/nested-loops-join-n1-problem
 ```
 
-## Detection Pattern
+## Detection Patterns
 
-The rule catches:
+The `pg/no-batch-insert-loop` rule catches:
 
-- `query('INSERT...')` inside `for` loops
-- `query('INSERT...')` inside `forEach`
-- `query('INSERT...')` inside `map`
-- `query('UPDATE...')` inside loops
-- `query('DELETE...')` inside loops
+- `query('INSERT...')` inside `for`, `for...of`, `for...in` loops
+- `query('INSERT...')` inside `while` and `do...while` loops
+- `query('INSERT...')` inside `forEach`, `map`, `reduce`, `filter` callbacks
+- `query('UPDATE...')` inside any loop construct
+- `query('DELETE...')` inside any loop construct
 
 ## Other Bulk Patterns
 
@@ -133,7 +156,7 @@ Turn 50-second imports into 100ms operations.
 ---
 
 📦 [npm: eslint-plugin-pg](https://www.npmjs.com/package/eslint-plugin-pg)
-📖 [Rule docs: no-batch-insert-loop](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-batch-insert-loop.md)
+📖 [Rule docs: pg/no-batch-insert-loop](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-batch-insert-loop.md)
 
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub

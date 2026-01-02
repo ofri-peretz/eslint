@@ -34,7 +34,7 @@ Over time:
 ### Pattern 1: Error Handling + Finally
 
 ```javascript
-// ❌ Double release
+// ❌ Double release - DETECTED
 async function query() {
   const client = await pool.connect();
   try {
@@ -48,27 +48,50 @@ async function query() {
 }
 ```
 
-### Pattern 2: Early Return
+### Pattern 2: Try + Finally
 
 ```javascript
-// ❌ Double release
-async function query(shouldQuery) {
+// ❌ Double release - DETECTED
+async function query() {
   const client = await pool.connect();
-
-  if (!shouldQuery) {
-    client.release();
-    return null;
-  }
-
   try {
-    return await client.query('SELECT ...');
+    await client.query('SELECT 1');
+    client.release(); // Released in try
   } finally {
-    client.release(); // If shouldQuery was false, this is second release
+    client.release(); // Released again!
   }
 }
 ```
 
-### Pattern 3: Callback Hell
+### Pattern 3: Switch Fallthrough
+
+```javascript
+// ❌ Double release - DETECTED
+async function query(type) {
+  const client = await pool.connect();
+  switch (type) {
+    case 'a':
+      client.release();
+    // Missing break! Falls through...
+    case 'b':
+      client.release(); // Double release!
+      break;
+  }
+}
+```
+
+### Pattern 4: Ternary/Short-Circuit + Sequential
+
+```javascript
+// ❌ Double release - DETECTED
+async function query() {
+  const client = await pool.connect();
+  shouldRelease && client.release();
+  client.release(); // Double if shouldRelease was true!
+}
+```
+
+### Pattern 5: Callback Hell
 
 ```javascript
 // ❌ Double release in callbacks
@@ -85,7 +108,26 @@ pool.connect((err, client, done) => {
 });
 ```
 
-## The Correct Pattern
+## The Correct Patterns
+
+### Pattern A: Single Release in Finally (Recommended)
+
+```javascript
+// ✅ Best practice
+async function query() {
+  const client = await pool.connect();
+  try {
+    return await client.query('SELECT ...');
+  } catch (e) {
+    // Log but don't release here
+    throw e;
+  } finally {
+    client.release(); // Only release point
+  }
+}
+```
+
+### Pattern B: Guarded Release (Complex Control Flow)
 
 ```javascript
 // ✅ Track release state
@@ -108,19 +150,16 @@ async function query() {
 }
 ```
 
-Or better: only use `finally`:
+### Pattern C: Mutually Exclusive Branches (Valid)
 
 ```javascript
-// ✅ Single release point
+// ✅ Only one path executes
 async function query() {
   const client = await pool.connect();
-  try {
-    return await client.query('SELECT ...');
-  } catch (e) {
-    // Log but don't release here
-    throw e;
-  } finally {
-    client.release(); // Only release point
+  if (condition) {
+    client.release();
+  } else {
+    client.release();
   }
 }
 ```
@@ -140,18 +179,30 @@ Multiple release calls are detected:
 
 ```bash
 src/db.ts
-  18:5  warning  🔒 CWE-415 | Potential double client.release() detected
-                 Fix: Ensure client.release() is called exactly once, preferably in finally block
+  18:5  error  📚 Client release() called multiple times on the same object. | HIGH
+               Fix: Ensure client.release() is called exactly once per acquisition
 ```
 
-## Detection Logic
+## Detection Coverage (13 Patterns)
 
-The rule tracks:
+The rule detects all these scenarios:
 
-- All `pool.connect()` calls
-- All `.release()` calls on the resulting client
-- Multiple paths that could lead to release
-- Conditional releases without guards
+| Pattern                       | Detection          |
+| ----------------------------- | ------------------ |
+| Sequential in same block      | ✅                 |
+| Catch + Finally               | ✅                 |
+| Try + Finally                 | ✅                 |
+| Finally + After try           | ✅                 |
+| Try + After try               | ✅                 |
+| Catch + After try             | ✅                 |
+| Switch fallthrough            | ✅                 |
+| If without else + sequential  | ✅                 |
+| Two sequential if statements  | ✅                 |
+| Ternary + sequential          | ✅                 |
+| Short-circuit && + sequential | ✅                 |
+| Destructured `release()`      | ✅                 |
+| Mutually exclusive branches   | ✅ Allowed (no FP) |
+| Guarded with `!released`      | ✅ Allowed (no FP) |
 
 ## Quick Install
 
