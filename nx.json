@@ -143,11 +143,7 @@
       "eslint-plugin-import-next",
       "eslint-plugin-browser-security",
       "eslint-plugin-lambda-security",
-      "eslint-plugin-architecture",
-      "eslint-plugin-quality",
-      "eslint-plugin-react-a11y",
-      "eslint-plugin-react-features",
-      "cli"
+      "eslint-plugin-mongodb-security"
     ],
     "projectsRelationship": "independent",
     "conventionalCommits": {

@@ -1,0 +1,210 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# SDK Compatibility: Express Ecosystem
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# PURPOSE:
+# Proactively detect breaking changes in Express-related packages that could
+# affect eslint-plugin-express-security rules.
+#
+# MONITORED PACKAGES:
+# - express (core)
+# - helmet (security headers)
+# - cors (CORS middleware)
+# - express-rate-limit (rate limiting)
+#
+# SCHEDULE: Every Monday at 6 AM UTC
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: "SDK: Express Ecosystem"
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+
+  workflow_dispatch:
+    inputs:
+      create_issue:
+        description: "Create GitHub issue on failure"
+        type: boolean
+        default: true
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10.18.3"
+  PLUGIN_PATH: "packages/eslint-plugin-express-security"
+
+jobs:
+  compatibility:
+    name: Express Compatibility Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    outputs:
+      test_passed: ${{ steps.test.outputs.passed }}
+      versions: ${{ steps.versions.outputs.json }}
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🔍 Get version information
+        id: versions
+        run: |
+          EXPRESS_LATEST=$(npm view express version)
+          HELMET_LATEST=$(npm view helmet version)
+          CORS_LATEST=$(npm view cors version)
+          RATE_LIMIT_LATEST=$(npm view express-rate-limit version)
+
+          echo "📦 Package versions:"
+          echo "  express: $EXPRESS_LATEST"
+          echo "  helmet: $HELMET_LATEST"
+          echo "  cors: $CORS_LATEST"
+          echo "  express-rate-limit: $RATE_LIMIT_LATEST"
+
+          JSON="{\"express\":\"$EXPRESS_LATEST\",\"helmet\":\"$HELMET_LATEST\",\"cors\":\"$CORS_LATEST\",\"express-rate-limit\":\"$RATE_LIMIT_LATEST\"}"
+          echo "json=$JSON" >> $GITHUB_OUTPUT
+
+      - name: 🔄 Install latest Express packages
+        run: |
+          # Install at workspace root (proper monorepo pattern)
+          pnpm add express@latest helmet@latest cors@latest express-rate-limit@latest --save-dev -w
+          echo "✅ Installed latest versions"
+
+      - name: 🧪 Run Interface Compatibility Tests
+        id: test
+        continue-on-error: true
+        run: |
+          mkdir -p ${{ env.PLUGIN_PATH }}/.compatibility-results
+
+          set +e
+          pnpm vitest run \
+            --reporter=verbose \
+            --reporter=json \
+            --outputFile=${{ env.PLUGIN_PATH }}/.compatibility-results/test-results.json \
+            "${{ env.PLUGIN_PATH }}/src/__compatibility__/**/*.spec.ts" 2>&1 | tee ${{ env.PLUGIN_PATH }}/.compatibility-results/test-output.txt
+
+          TEST_EXIT_CODE=$?
+          set -e
+
+          if [ $TEST_EXIT_CODE -eq 0 ]; then
+            echo "passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "passed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📝 Generate Compatibility Report
+        if: steps.test.outputs.passed == 'false'
+        run: |
+          mkdir -p ${{ env.PLUGIN_PATH }}/.compatibility-results
+
+          cat << EOF > ${{ env.PLUGIN_PATH }}/.compatibility-results/BREAKING_CHANGE_REPORT.md
+          # 🚨 Express Ecosystem Breaking Change Report
+
+          ## Summary
+
+          The eslint-plugin-express-security interface compatibility tests have FAILED.
+
+          ## Packages Tested
+
+          | Package | Version |
+          |---------|---------|
+          | express | ${{ fromJSON(steps.versions.outputs.json).express }} |
+          | helmet | ${{ fromJSON(steps.versions.outputs.json).helmet }} |
+          | cors | ${{ fromJSON(steps.versions.outputs.json).cors }} |
+          | express-rate-limit | ${{ fromJSON(steps.versions.outputs.json)['express-rate-limit'] }} |
+
+          ## Affected Rules
+
+          | Package | Rules That May Need Updates |
+          |---------|---------------------------|
+          | express | cookie-security, no-exposed-stack-trace |
+          | helmet | require-helmet, helmet-configuration |
+          | cors | cors-configuration, no-wildcard-cors |
+          | express-rate-limit | require-rate-limiting |
+
+          EOF
+
+      - name: 📤 Upload Compatibility Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: express-compatibility-results
+          path: ${{ env.PLUGIN_PATH }}/.compatibility-results/
+          retention-days: 30
+
+      - name: 📊 Generate Workflow Summary
+        if: always()
+        run: |
+          echo "## 🔬 Express SDK Compatibility Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Version |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| express | ${{ fromJSON(steps.versions.outputs.json).express }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| helmet | ${{ fromJSON(steps.versions.outputs.json).helmet }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| cors | ${{ fromJSON(steps.versions.outputs.json).cors }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| express-rate-limit | ${{ fromJSON(steps.versions.outputs.json)['express-rate-limit'] }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.test.outputs.passed }}" == "true" ]; then
+            echo "**Status**: ✅ All compatible" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Status**: ❌ Breaking changes detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  create-issue:
+    name: Create Issue for Breaking Changes
+    needs: compatibility
+    runs-on: ubuntu-latest
+    if: needs.compatibility.outputs.test_passed == 'false' && (github.event.inputs.create_issue != 'false' || github.event_name == 'schedule')
+
+    steps:
+      - name: 📥 Download Compatibility Report
+        uses: actions/download-artifact@v4
+        with:
+          name: express-compatibility-results
+          path: report/
+
+      - name: 🚨 Create GitHub Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            let reportBody = '';
+            try {
+              reportBody = fs.readFileSync('report/BREAKING_CHANGE_REPORT.md', 'utf8');
+            } catch (e) {
+              reportBody = `## Express SDK Breaking Change\n\nSee workflow run for details.`;
+            }
+
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'sdk-compatibility,express',
+              per_page: 5
+            });
+
+            if (existingIssues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🚨 [SDK Compatibility] Express Ecosystem Breaking Changes',
+                body: reportBody,
+                labels: ['sdk-compatibility', 'express', 'maintenance', 'breaking-change']
+              });
+            }

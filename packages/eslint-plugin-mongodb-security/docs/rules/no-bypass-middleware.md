@@ -1,0 +1,79 @@
+# no-bypass-middleware
+
+> **Keywords:** CWE-284, middleware, hooks, Mongoose, pre, post, security
+
+Detects Mongoose operations that bypass middleware hooks (pre/post hooks).
+
+⚠️ This rule **warns** by default in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                           |
+| ----------------- | --------------------------------- |
+| **CWE Reference** | CWE-284 (Improper Access Control) |
+| **OWASP**         | A01:2021 - Broken Access Control  |
+| **Severity**      | Medium (CVSS: 5.3)                |
+| **Category**      | Security                          |
+
+## Rule Details
+
+Some Mongoose methods bypass middleware hooks, which may skip:
+
+- Password hashing
+- Audit logging
+- Access control checks
+- Data sanitization
+
+### Methods That Bypass Middleware
+
+| Method                      | Runs `save` Middleware? |
+| --------------------------- | ----------------------- |
+| `Model.updateOne()`         | ❌ No                   |
+| `Model.updateMany()`        | ❌ No                   |
+| `Model.findOneAndUpdate()`  | ❌ No                   |
+| `Model.findByIdAndUpdate()` | ❌ No                   |
+| `document.save()`           | ✅ Yes                  |
+
+### ❌ Incorrect
+
+```typescript
+// Bypasses pre('save') middleware - password won't be hashed!
+User.findByIdAndUpdate(id, { password: 'newpassword' });
+
+// Bypasses all document middleware
+User.updateMany({ role: 'user' }, { verified: true });
+```
+
+### ✅ Correct
+
+```typescript
+// Use findOne + save to trigger middleware
+const user = await User.findById(id);
+user.password = 'newpassword';
+await user.save(); // pre('save') runs, password gets hashed
+
+// Or use update hooks (if implemented)
+userSchema.pre('findOneAndUpdate', function () {
+  // Hash password here if modified
+});
+```
+
+## Known False Negatives
+
+### Dynamic Method Calls
+
+```typescript
+// ❌ NOT DETECTED
+const method = 'updateOne';
+Model[method]({ ... });
+```
+
+## When Not To Use It
+
+- When you've implemented `pre('updateOne')` and similar hooks
+- For operations that intentionally skip middleware
+
+## References
+
+- [Mongoose Middleware](https://mongoosejs.com/docs/middleware.html)
+- [CWE-284](https://cwe.mitre.org/data/definitions/284.html)

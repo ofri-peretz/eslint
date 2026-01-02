@@ -1,0 +1,83 @@
+# require-schema-validation
+
+> **Keywords:** CWE-20, input validation, Mongoose, schema, security
+
+Requires validation options on Mongoose schema fields to prevent invalid or malicious data.
+
+⚠️ This rule **warns** by default in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                            |
+| ----------------- | ---------------------------------- |
+| **CWE Reference** | CWE-20 (Improper Input Validation) |
+| **OWASP**         | A04:2021 - Insecure Design         |
+| **Severity**      | Medium (CVSS: 6.1)                 |
+| **Category**      | Security                           |
+
+## Rule Details
+
+Mongoose schemas without validation allow arbitrary data, potentially leading to:
+
+- Data corruption
+- Injection attacks
+- Business logic bypass
+
+### ❌ Incorrect
+
+```typescript
+// No validation - accepts any value
+const userSchema = new Schema({
+  email: String,
+  role: String,
+  age: Number,
+});
+```
+
+### ✅ Correct
+
+```typescript
+const userSchema = new Schema({
+  email: {
+    type: String,
+    required: true,
+    match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    maxlength: 255,
+  },
+  role: {
+    type: String,
+    enum: ['user', 'admin', 'moderator'],
+    default: 'user',
+  },
+  age: {
+    type: Number,
+    min: 0,
+    max: 150,
+    validate: {
+      validator: Number.isInteger,
+      message: 'Age must be an integer',
+    },
+  },
+});
+```
+
+## Known False Negatives
+
+### Dynamic Schema Creation
+
+```typescript
+// ❌ NOT DETECTED
+const fields = {};
+fields[fieldName] = String;
+const schema = new Schema(fields);
+```
+
+## When Not To Use It
+
+- For flexible schema designs (schemaless approach)
+- When validation is handled at application layer
+
+## References
+
+- [Mongoose Validation](https://mongoosejs.com/docs/validation.html)
+- [CWE-20](https://cwe.mitre.org/data/definitions/20.html)

@@ -492,6 +492,82 @@ An attacker discovers they can set `?tenant=evil_schema` and
 redirect queries to their malicious tables...
 ```
 
+### 7.7 Security References (Required for Deep-Dives)
+
+**All security-focused deep-dive articles MUST include a Security References section** linking to authoritative vulnerability databases. This adds credibility, enables further research, and improves AEO discoverability.
+
+#### Standard Format
+
+```markdown
+## Security References
+
+This vulnerability is well-documented in industry security standards:
+
+| Standard           | Reference                                                                 | Description                   |
+| ------------------ | ------------------------------------------------------------------------- | ----------------------------- |
+| **CWE-XX**         | [Vulnerability Name](https://cwe.mitre.org/data/definitions/XX.html)      | Brief description             |
+| **CVE-YYYY-XXXXX** | [Specific Vulnerability](https://nvd.nist.gov/vuln/detail/CVE-YYYY-XXXXX) | What product/version affected |
+| **OWASP**          | [Category Name](https://owasp.org/Top10/...)                              | OWASP Top 10 category         |
+```
+
+#### Security Standard Definitions
+
+| Standard                                       | What It Is                                                                                | Use When                                                   |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| **CWE** (Common Weakness Enumeration)          | Catalog of software/hardware weakness types. Each CWE describes a class of vulnerability. | Always include for the vulnerability class being discussed |
+| **CVE** (Common Vulnerabilities and Exposures) | Specific known vulnerability in a specific product/version. Has a unique ID.              | Include when referencing a known, documented exploit       |
+| **OWASP Top 10**                               | Industry consensus of the 10 most critical web application security risks                 | Include to map vulnerability to broader category           |
+| **CVSS** (Common Vulnerability Scoring System) | Numerical score (0-10) rating vulnerability severity                                      | Include for CVEs or to convey severity                     |
+
+#### Common CWEs for JavaScript/Node.js
+
+| CWE      | Name                            | Common In                   |
+| -------- | ------------------------------- | --------------------------- |
+| CWE-89   | SQL Injection                   | Database queries            |
+| CWE-79   | Cross-Site Scripting (XSS)      | DOM manipulation, innerHTML |
+| CWE-78   | OS Command Injection            | child_process, exec         |
+| CWE-22   | Path Traversal                  | File operations             |
+| CWE-73   | External Control of File Name   | User-controlled file paths  |
+| CWE-327  | Broken Cryptographic Algorithm  | MD5, SHA1 for passwords     |
+| CWE-330  | Insufficient Randomness         | Math.random() for security  |
+| CWE-614  | Sensitive Cookie Without Secure | Cookie configuration        |
+| CWE-798  | Hardcoded Credentials           | API keys, passwords in code |
+| CWE-400  | Resource Exhaustion (ReDoS)     | Regular expressions         |
+| CWE-1321 | Prototype Pollution             | Object manipulation         |
+| CWE-347  | JWT Verification Failures       | Token validation            |
+
+#### OWASP Top 10 2021 Quick Reference
+
+| Category | Name                      | Maps To                   |
+| -------- | ------------------------- | ------------------------- |
+| A01:2021 | Broken Access Control     | Authorization, IDOR, CORS |
+| A02:2021 | Cryptographic Failures    | Weak crypto, exposure     |
+| A03:2021 | Injection                 | SQL, NoSQL, Command, XSS  |
+| A04:2021 | Insecure Design           | Architecture flaws        |
+| A05:2021 | Security Misconfiguration | Headers, CORS, defaults   |
+| A06:2021 | Vulnerable Components     | Dependencies              |
+| A07:2021 | Auth Failures             | Sessions, passwords       |
+| A08:2021 | Data Integrity Failures   | Deserialization, CI/CD    |
+| A09:2021 | Logging Failures          | Monitoring, audit         |
+| A10:2021 | SSRF                      | Server-side requests      |
+
+#### Example: Complete Security References Section
+
+```markdown
+## Security References
+
+This vulnerability is well-documented in industry security standards:
+
+| Standard          | Reference                                                                       | Description                                                          |
+| ----------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| **CWE-73**        | [External Control of File Name](https://cwe.mitre.org/data/definitions/73.html) | Application allows external input to control file paths              |
+| **CWE-22**        | [Path Traversal](https://cwe.mitre.org/data/definitions/22.html)                | Improper limitation of pathname to restricted directory              |
+| **CVE-2019-9193** | [PostgreSQL COPY FROM PROGRAM](https://nvd.nist.gov/vuln/detail/CVE-2019-9193)  | Arbitrary code execution via COPY FROM PROGRAM (PostgreSQL 9.3-11.2) |
+| **OWASP**         | [A03:2021 Injection](https://owasp.org/Top10/A03_2021-Injection/)               | Injection attacks including file path manipulation                   |
+
+> ⚠️ **Note**: While PostgreSQL considers CVE-2019-9193 a "feature" for superusers, the underlying pattern of user-controlled file paths in application code remains a critical vulnerability.
+```
+
 ---
 
 ## 8. Article Checklist
@@ -536,6 +612,7 @@ redirect queries to their malicious tables...
 - [ ] Custom configuration section included
 - [ ] Strongly-typed options section included (TypeScript)
 - [ ] Real-world scenario (deep-dive articles)
+- [ ] Security References section with CWE/CVE/OWASP (security deep-dives)
 
 ## Engagement
 

@@ -1,0 +1,211 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# SDK Compatibility: NestJS Ecosystem
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# PURPOSE:
+# Proactively detect breaking changes in NestJS packages that could affect
+# eslint-plugin-nestjs-security rules.
+#
+# MONITORED PACKAGES:
+# - @nestjs/common
+# - @nestjs/throttler
+# - class-validator
+# - class-transformer
+#
+# SCHEDULE: Every Monday at 6 AM UTC
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: "SDK: NestJS Ecosystem"
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+
+  workflow_dispatch:
+    inputs:
+      create_issue:
+        description: "Create GitHub issue on failure"
+        type: boolean
+        default: true
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10.18.3"
+  PLUGIN_PATH: "packages/eslint-plugin-nestjs-security"
+
+jobs:
+  compatibility:
+    name: NestJS Compatibility Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    outputs:
+      test_passed: ${{ steps.test.outputs.passed }}
+      versions: ${{ steps.versions.outputs.json }}
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🔍 Get version information
+        id: versions
+        run: |
+          COMMON_LATEST=$(npm view @nestjs/common version)
+          THROTTLER_LATEST=$(npm view @nestjs/throttler version)
+          VALIDATOR_LATEST=$(npm view class-validator version)
+          TRANSFORMER_LATEST=$(npm view class-transformer version)
+
+          echo "📦 Package versions:"
+          echo "  @nestjs/common: $COMMON_LATEST"
+          echo "  @nestjs/throttler: $THROTTLER_LATEST"
+          echo "  class-validator: $VALIDATOR_LATEST"
+          echo "  class-transformer: $TRANSFORMER_LATEST"
+
+          JSON="{\"nestjs-common\":\"$COMMON_LATEST\",\"nestjs-throttler\":\"$THROTTLER_LATEST\",\"class-validator\":\"$VALIDATOR_LATEST\",\"class-transformer\":\"$TRANSFORMER_LATEST\"}"
+          echo "json=$JSON" >> $GITHUB_OUTPUT
+
+      - name: 🔄 Install latest NestJS packages
+        run: |
+          # Install at workspace root (proper monorepo pattern)
+          # Note: rxjs and reflect-metadata are required peerDeps for @nestjs/common
+          pnpm add @nestjs/common@latest @nestjs/throttler@latest class-validator@latest class-transformer@latest rxjs@latest reflect-metadata@latest --save-dev -w
+          echo "✅ Installed latest versions"
+
+      - name: 🧪 Run Interface Compatibility Tests
+        id: test
+        continue-on-error: true
+        run: |
+          mkdir -p ${{ env.PLUGIN_PATH }}/.compatibility-results
+
+          set +e
+          pnpm vitest run \
+            --reporter=verbose \
+            --reporter=json \
+            --outputFile=${{ env.PLUGIN_PATH }}/.compatibility-results/test-results.json \
+            "${{ env.PLUGIN_PATH }}/src/__compatibility__/**/*.spec.ts" 2>&1 | tee ${{ env.PLUGIN_PATH }}/.compatibility-results/test-output.txt
+
+          TEST_EXIT_CODE=$?
+          set -e
+
+          if [ $TEST_EXIT_CODE -eq 0 ]; then
+            echo "passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "passed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📝 Generate Compatibility Report
+        if: steps.test.outputs.passed == 'false'
+        run: |
+          mkdir -p ${{ env.PLUGIN_PATH }}/.compatibility-results
+
+          cat << EOF > ${{ env.PLUGIN_PATH }}/.compatibility-results/BREAKING_CHANGE_REPORT.md
+          # 🚨 NestJS Ecosystem Breaking Change Report
+
+          ## Summary
+
+          The eslint-plugin-nestjs-security interface compatibility tests have FAILED.
+
+          ## Packages Tested
+
+          | Package | Version |
+          |---------|---------|
+          | @nestjs/common | ${{ fromJSON(steps.versions.outputs.json)['nestjs-common'] }} |
+          | @nestjs/throttler | ${{ fromJSON(steps.versions.outputs.json)['nestjs-throttler'] }} |
+          | class-validator | ${{ fromJSON(steps.versions.outputs.json)['class-validator'] }} |
+          | class-transformer | ${{ fromJSON(steps.versions.outputs.json)['class-transformer'] }} |
+
+          ## Affected Rules
+
+          | Package | Rules That May Need Updates |
+          |---------|---------------------------|
+          | @nestjs/common | require-guards, require-validation-pipe |
+          | @nestjs/throttler | require-throttler |
+          | class-validator | require-dto-validation |
+          | class-transformer | require-exclude-decorator |
+
+          EOF
+
+      - name: 📤 Upload Compatibility Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nestjs-compatibility-results
+          path: ${{ env.PLUGIN_PATH }}/.compatibility-results/
+          retention-days: 30
+
+      - name: 📊 Generate Workflow Summary
+        if: always()
+        run: |
+          echo "## 🔬 NestJS SDK Compatibility Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Version |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| @nestjs/common | ${{ fromJSON(steps.versions.outputs.json)['nestjs-common'] }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| @nestjs/throttler | ${{ fromJSON(steps.versions.outputs.json)['nestjs-throttler'] }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| class-validator | ${{ fromJSON(steps.versions.outputs.json)['class-validator'] }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| class-transformer | ${{ fromJSON(steps.versions.outputs.json)['class-transformer'] }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.test.outputs.passed }}" == "true" ]; then
+            echo "**Status**: ✅ All compatible" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Status**: ❌ Breaking changes detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  create-issue:
+    name: Create Issue for Breaking Changes
+    needs: compatibility
+    runs-on: ubuntu-latest
+    if: needs.compatibility.outputs.test_passed == 'false' && (github.event.inputs.create_issue != 'false' || github.event_name == 'schedule')
+
+    steps:
+      - name: 📥 Download Compatibility Report
+        uses: actions/download-artifact@v4
+        with:
+          name: nestjs-compatibility-results
+          path: report/
+
+      - name: 🚨 Create GitHub Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            let reportBody = '';
+            try {
+              reportBody = fs.readFileSync('report/BREAKING_CHANGE_REPORT.md', 'utf8');
+            } catch (e) {
+              reportBody = `## NestJS SDK Breaking Change\n\nSee workflow run for details.`;
+            }
+
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'sdk-compatibility,nestjs',
+              per_page: 5
+            });
+
+            if (existingIssues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🚨 [SDK Compatibility] NestJS Ecosystem Breaking Changes',
+                body: reportBody,
+                labels: ['sdk-compatibility', 'nestjs', 'maintenance', 'breaking-change']
+              });
+            }

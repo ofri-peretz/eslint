@@ -1,0 +1,205 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# SDK Compatibility: Vercel AI SDK
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# PURPOSE:
+# Proactively detect breaking changes in the Vercel AI SDK that could affect
+# eslint-plugin-vercel-ai-security rules.
+#
+# MONITORED PACKAGES:
+# - ai (Vercel AI SDK)
+# - @ai-sdk/openai (OpenAI provider)
+#
+# SCHEDULE: Every Monday at 6 AM UTC
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: "SDK: Vercel AI"
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+
+  workflow_dispatch:
+    inputs:
+      create_issue:
+        description: "Create GitHub issue on failure"
+        type: boolean
+        default: true
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10.18.3"
+  PLUGIN_PATH: "packages/eslint-plugin-vercel-ai-security"
+  SDK_PACKAGE: "ai"
+
+jobs:
+  compatibility:
+    name: Vercel AI Compatibility Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    outputs:
+      test_passed: ${{ steps.test.outputs.passed }}
+      sdk_version: ${{ steps.versions.outputs.latest }}
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🔍 Get version information
+        id: versions
+        run: |
+          LATEST=$(npm view ${{ env.SDK_PACKAGE }} version)
+          echo "latest=$LATEST" >> $GITHUB_OUTPUT
+          echo "📦 Latest ai version: $LATEST"
+
+          OPENAI_LATEST=$(npm view @ai-sdk/openai version)
+          echo "openai_latest=$OPENAI_LATEST" >> $GITHUB_OUTPUT
+          echo "📦 Latest @ai-sdk/openai version: $OPENAI_LATEST"
+
+      - name: 🔄 Install latest AI SDK version
+        run: |
+          # Install at workspace root (proper monorepo pattern)
+          pnpm add ai@latest @ai-sdk/openai@latest --save-dev -w
+          echo "✅ Installed ai@${{ steps.versions.outputs.latest }}"
+
+      - name: 🧪 Run Interface Compatibility Tests
+        id: test
+        continue-on-error: true
+        run: |
+          mkdir -p ${{ env.PLUGIN_PATH }}/.compatibility-results
+
+          set +e
+          pnpm vitest run \
+            --reporter=verbose \
+            --reporter=json \
+            --outputFile=${{ env.PLUGIN_PATH }}/.compatibility-results/test-results.json \
+            "${{ env.PLUGIN_PATH }}/src/__compatibility__/**/*.spec.ts" 2>&1 | tee ${{ env.PLUGIN_PATH }}/.compatibility-results/test-output.txt
+
+          TEST_EXIT_CODE=$?
+          set -e
+
+          if [ $TEST_EXIT_CODE -eq 0 ]; then
+            echo "passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "passed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📝 Generate Compatibility Report
+        if: steps.test.outputs.passed == 'false'
+        run: |
+          mkdir -p ${{ env.PLUGIN_PATH }}/.compatibility-results
+
+          cat << EOF > ${{ env.PLUGIN_PATH }}/.compatibility-results/BREAKING_CHANGE_REPORT.md
+          # 🚨 Vercel AI SDK Breaking Change Report
+
+          ## Summary
+
+          The eslint-plugin-vercel-ai-security interface compatibility tests have FAILED.
+
+          ## Version Information
+
+          | Package | Version Tested |
+          |---------|----------------|
+          | ai | ${{ steps.versions.outputs.latest }} |
+          | @ai-sdk/openai | ${{ steps.versions.outputs.openai_latest }} |
+
+          ## Affected Rules
+
+          | Interface | Rules That May Need Updates |
+          |-----------|----------------------------|
+          | generateText() | require-system-prompt-validation, no-unsafe-tool-execution |
+          | streamText() | require-stream-error-handling, no-unbounded-generation |
+          | tools | require-tool-confirmation, no-dynamic-tool-names |
+          | CoreMessage | require-message-sanitization |
+
+          ## Required Actions
+
+          1. Review Vercel AI SDK changelog
+          2. Update compatibility tests
+          3. Review affected ESLint rules
+          4. Test with real-world examples
+
+          EOF
+
+      - name: 📤 Upload Compatibility Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vercel-ai-compatibility-results
+          path: ${{ env.PLUGIN_PATH }}/.compatibility-results/
+          retention-days: 30
+
+      - name: 📊 Generate Workflow Summary
+        if: always()
+        run: |
+          echo "## 🔬 Vercel AI SDK Compatibility Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **ai version** | ${{ steps.versions.outputs.latest }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **@ai-sdk/openai** | ${{ steps.versions.outputs.openai_latest }} |" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.test.outputs.passed }}" == "true" ]; then
+            echo "| **Status** | ✅ COMPATIBLE |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| **Status** | ❌ BREAKING CHANGES |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  create-issue:
+    name: Create Issue for Breaking Changes
+    needs: compatibility
+    runs-on: ubuntu-latest
+    if: needs.compatibility.outputs.test_passed == 'false' && (github.event.inputs.create_issue != 'false' || github.event_name == 'schedule')
+
+    steps:
+      - name: 📥 Download Compatibility Report
+        uses: actions/download-artifact@v4
+        with:
+          name: vercel-ai-compatibility-results
+          path: report/
+
+      - name: 🚨 Create GitHub Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            let reportBody = '';
+            try {
+              reportBody = fs.readFileSync('report/BREAKING_CHANGE_REPORT.md', 'utf8');
+            } catch (e) {
+              reportBody = `## Vercel AI SDK Breaking Change\n\nSee workflow run for details.`;
+            }
+
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'sdk-compatibility,vercel-ai',
+              per_page: 5
+            });
+
+            if (existingIssues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🚨 [SDK Compatibility] Vercel AI SDK Breaking Changes (v${{ needs.compatibility.outputs.sdk_version }})',
+                body: reportBody,
+                labels: ['sdk-compatibility', 'vercel-ai', 'maintenance', 'breaking-change']
+              });
+            }

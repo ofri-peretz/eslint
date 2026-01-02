@@ -1,0 +1,98 @@
+# no-operator-injection
+
+> **Keywords:** NoSQL injection, CWE-943, MongoDB, $ne, $gt, $or, operator injection, security
+
+Detects MongoDB operator injection attacks where user input is passed directly as query values, allowing attackers to inject operators like `$ne`, `$gt`, `$or` to bypass authentication or exfiltrate data.
+
+⚠️ This rule **errors** by default in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                                   |
+| ----------------- | ----------------------------------------- |
+| **CWE Reference** | CWE-943 (NoSQL Injection)                 |
+| **OWASP**         | A03:2021 - Injection                      |
+| **Severity**      | Critical (CVSS: 9.1)                      |
+| **Category**      | Security                                  |
+| **ESLint MCP**    | ✅ Optimized for AI assistant integration |
+
+## Rule Details
+
+This rule specifically targets operator injection - a subset of NoSQL injection where attackers submit objects with MongoDB operators instead of expected primitive values.
+
+### Attack Scenario
+
+```javascript
+// Expected: { username: "john", password: "secret123" }
+// Attacker sends: { username: "admin", password: { "$ne": "" } }
+
+// This query:
+db.users.findOne({ username: req.body.username, password: req.body.password });
+
+// Becomes:
+db.users.findOne({ username: 'admin', password: { $ne: '' } });
+// Matches admin user with ANY non-empty password - authentication bypass!
+```
+
+### ❌ Incorrect
+
+```typescript
+// User input passed directly - vulnerable to operator injection
+User.findOne({ email: req.body.email });
+User.findOne({ password: req.body.password });
+User.deleteMany({ userId: req.query.id });
+```
+
+### ✅ Correct
+
+```typescript
+// Force value comparison with $eq
+User.findOne({ email: { $eq: req.body.email } });
+
+// Cast to primitive type
+User.findOne({ email: String(req.body.email) });
+
+// Validate input is not an object
+if (typeof req.body.email !== 'string') throw new Error('Invalid input');
+User.findOne({ email: req.body.email });
+```
+
+## Known False Negatives
+
+### Object Spread
+
+```typescript
+// ❌ NOT DETECTED - spreads entire body into query
+User.findOne({ ...req.body });
+```
+
+### Dynamic Property Access
+
+```typescript
+// ❌ NOT DETECTED - dynamic key assignment
+const query = {};
+query[field] = value;
+```
+
+### Aggregation Pipelines
+
+```typescript
+// ❌ NOT DETECTED - complex pipeline structure
+User.aggregate([{ $match: req.body.filter }]);
+```
+
+## When Not To Use It
+
+- When using Mongoose schema with strict validation that rejects object values
+- When all input is validated through a strict JSON schema (e.g., Zod, Joi)
+- In test files with intentionally vulnerable patterns
+
+## Related Rules
+
+- [no-unsafe-query](./no-unsafe-query.md) - General unsafe query detection
+- [no-unsafe-where](./no-unsafe-where.md) - $where operator detection
+
+## References
+
+- [OWASP NoSQL Injection](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05.6-Testing_for_NoSQL_Injection)
+- [CWE-943: Improper Neutralization of Special Elements in Data Query Logic](https://cwe.mitre.org/data/definitions/943.html)

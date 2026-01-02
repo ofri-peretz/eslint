@@ -2,7 +2,7 @@
 
 > **Goal**: Publish **100 articles** across the Interlace ESLint ecosystem.
 > **Started**: December 31, 2025
-> **Current Count**: 25 / 100
+> **Current Count**: 27 / 100
 
 ---
 
@@ -10,8 +10,8 @@
 
 | Status              | Count | Percentage |
 | ------------------- | ----- | ---------- |
-| ✅ Published        | 25    | 25%        |
-| ⏳ Ready to Publish | 75    | 75%        |
+| ✅ Published        | 27    | 27%        |
+| ⏳ Ready to Publish | 73    | 73%        |
 | 🔮 Planned (Future) | ~15   | Bonus      |
 
 ---
@@ -89,18 +89,18 @@ _Publish all "Getting Started" guides first to establish the ecosystem foundatio
 
 ### 🐘 PostgreSQL Security (`pg`) — 10 articles
 
-| Queue # | File                        | Title                           | Status      |
-| ------- | --------------------------- | ------------------------------- | ----------- |
-| 12      | `pg/01-sql-injection.md`    | SQL Injection in node-postgres  | ✅          |
-| 13      | `pg/02-connection-leak.md`  | Detecting Connection Leaks      | ✅          |
-| 14      | `pg/03-transaction-race.md` | Transaction Race Conditions     | ✅          |
-| 15      | `pg/04-search-path.md`      | PostgreSQL Search Path Security | ⏳ **NEXT** |
-| 16      | `pg/05-n1-loop.md`          | N+1 Query Detection             | ⏳          |
-| 17      | `pg/06-copy-from.md`        | COPY FROM Security              | ⏳          |
-| 18      | `pg/07-double-release.md`   | Double Release Detection        | ⏳          |
-| 19      | `pg/08-connection-leaks.md` | Connection Leaks Deep Dive      | ⏳          |
-| 20      | `pg/09-transaction-race.md` | Transaction Race Deep Dive      | ⏳          |
-| 21      | `pg/10-n-plus-one.md`       | N+1 Queries Deep Dive           | ⏳          |
+| Queue # | File                        | Title                           | Status |
+| ------- | --------------------------- | ------------------------------- | ------ |
+| 12      | `pg/01-sql-injection.md`    | SQL Injection in node-postgres  | ✅     |
+| 13      | `pg/02-connection-leak.md`  | Detecting Connection Leaks      | ✅     |
+| 14      | `pg/03-transaction-race.md` | Transaction Race Conditions     | ✅     |
+| 15      | `pg/04-search-path.md`      | PostgreSQL Search Path Security | ✅     |
+| 16      | `pg/05-n1-loop.md`          | N+1 Query Detection             | ✅     |
+| 17      | `pg/06-copy-from.md`        | COPY FROM Security              | ✅     |
+| 18      | `pg/07-double-release.md`   | Double Release Detection        | ⏳     |
+| 19      | `pg/08-connection-leaks.md` | Connection Leaks Deep Dive      | ⏳     |
+| 20      | `pg/09-transaction-race.md` | Transaction Race Deep Dive      | ⏳     |
+| 21      | `pg/10-n-plus-one.md`       | N+1 Queries Deep Dive           | ⏳     |
 
 ### 🔐 Secure Coding (`secure-coding`) — 21 articles
 

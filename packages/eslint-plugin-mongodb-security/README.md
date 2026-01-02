@@ -122,12 +122,16 @@ export default [
 
 ## 📚 Supported Libraries
 
-| Library                   | npm                                                             | Detection  |
-| ------------------------- | --------------------------------------------------------------- | ---------- |
-| mongodb                   | ![npm](https://img.shields.io/npm/dw/mongodb)                   | ✅ Full    |
-| mongoose                  | ![npm](https://img.shields.io/npm/dw/mongoose)                  | ✅ Full    |
-| mongodb-client-encryption | ![npm](https://img.shields.io/npm/dw/mongodb-client-encryption) | ✅ Full    |
-| @typegoose/typegoose      | ![npm](https://img.shields.io/npm/dw/@typegoose/typegoose)      | ✅ Partial |
+This plugin analyzes code that uses the following MongoDB/Mongoose libraries. **Both are optional peer dependencies** — you only need to have installed the ones you're using:
+
+| Library                   | npm                                                             | Detection  | Notes                              |
+| ------------------------- | --------------------------------------------------------------- | ---------- | ---------------------------------- |
+| mongodb                   | ![npm](https://img.shields.io/npm/dw/mongodb)                   | ✅ Full    | Native MongoDB driver              |
+| mongoose                  | ![npm](https://img.shields.io/npm/dw/mongoose)                  | ✅ Full    | ODM with schema validation         |
+| mongodb-client-encryption | ![npm](https://img.shields.io/npm/dw/mongodb-client-encryption) | ✅ Full    | Client-side encryption             |
+| @typegoose/typegoose      | ![npm](https://img.shields.io/npm/dw/@typegoose/typegoose)      | ✅ Partial | TypeScript decorators for Mongoose |
+
+> **Note**: `mongodb` and `mongoose` are listed as optional peer dependencies (`peerDependenciesMeta.optional: true`). The plugin works regardless of which MongoDB library you use — rules detect patterns in your code, not the presence of specific packages.
 
 ---
 
@@ -215,8 +219,12 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                                 | [![npm](https://img.shields.io/npm/dm/eslint-plugin-pg.svg)](https://npmjs.com/package/eslint-plugin-pg)                                 | PostgreSQL/node-postgres security                | 13    |
 | [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                         | [![npm](https://img.shields.io/npm/dm/eslint-plugin-crypto.svg)](https://npmjs.com/package/eslint-plugin-crypto)                         | Cryptographic best practices                     | 24    |
 | [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               | [![npm](https://img.shields.io/npm/dm/eslint-plugin-jwt.svg)](https://npmjs.com/package/eslint-plugin-jwt)                               | JWT security (algorithm confusion, weak secrets) | 13    |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)     | [![npm](https://img.shields.io/npm/dm/eslint-plugin-express-security.svg)](https://npmjs.com/package/eslint-plugin-express-security)     | Express.js security                              | 9     |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)     | [![npm](https://img.shields.io/npm/dm/eslint-plugin-browser-security.svg)](https://npmjs.com/package/eslint-plugin-browser-security)     | Browser/DOM security (XSS, postMessage, CSP)     | 21    |
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![npm](https://img.shields.io/npm/dm/eslint-plugin-vercel-ai-security.svg)](https://npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security (OWASP LLM Top 10)        | 19    |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)     | [![npm](https://img.shields.io/npm/dm/eslint-plugin-express-security.svg)](https://npmjs.com/package/eslint-plugin-express-security)     | Express.js security                              | 9     |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)       | [![npm](https://img.shields.io/npm/dm/eslint-plugin-lambda-security.svg)](https://npmjs.com/package/eslint-plugin-lambda-security)       | AWS Lambda/Middy security                        | 13    |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)       | [![npm](https://img.shields.io/npm/dm/eslint-plugin-nestjs-security.svg)](https://npmjs.com/package/eslint-plugin-nestjs-security)       | NestJS security (guards, throttling)             | 5     |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)               | [![npm](https://img.shields.io/npm/dm/eslint-plugin-import-next.svg)](https://npmjs.com/package/eslint-plugin-import-next)               | High-performance import linting                  | 55    |
 
 ---
 

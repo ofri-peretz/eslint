@@ -1,0 +1,20 @@
+# Ignore test files
+*.spec.ts
+*.test.ts
+**/__tests__/**
+
+# Ignore source maps
+*.map
+
+# Ignore config files
+vitest.config.mts
+eslint.config.mjs
+tsconfig*.json
+project.json
+
+# Ignore dev folders
+coverage/
+test-results/
+node_modules/
+.analysis/
+benchmark/
