@@ -7,8 +7,6 @@ cover_image:
 canonical_url:
 ---
 
-# ReDoS: The Regex Attack Nobody Talks About
-
 Your regex looks fine. It passes all tests. It handles edge cases.
 
 Then one input brings your server to its knees.
@@ -157,4 +155,4 @@ Don't let a regex take down your production.
 ---
 
 🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

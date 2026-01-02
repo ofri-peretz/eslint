@@ -7,8 +7,6 @@ cover_image:
 series: Cryptography Security
 ---
 
-# Math.random() is Not Random: Cryptographic Security in JavaScript
-
 ```javascript
 const token = Math.random().toString(36).substring(2);
 ```
@@ -197,9 +195,6 @@ src/auth.ts
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-crypto %}
-📦 npm install eslint-plugin-crypto
-{% endcta %}
 
 ```javascript
 import cryptoPlugin from 'eslint-plugin-crypto';
@@ -219,4 +214,4 @@ export default [cryptoPlugin.configs.recommended];
 
 🚀 **grep -r "Math.random" in your codebase. How is it used?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

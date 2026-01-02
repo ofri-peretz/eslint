@@ -7,8 +7,6 @@ cover_image:
 series: Engineering Leadership
 ---
 
-# Stop Wasting My Time on "Syntax Security"
-
 There is nothing more demoralizing for a Senior Engineer than having their Pull Request rejected because of a minor syntax nitpick.
 
 And there is nothing more dangerous for a team than a Code Review that focuses _only_ on syntax nitpicks.
@@ -52,9 +50,6 @@ Trust the machine to catch the `CWE-89`. Trust your team to build the future.
 
 ---
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 Install eslint-plugin-secure-coding
-{% endcta %}
 
 ---
 
@@ -68,4 +63,4 @@ Trust the machine to catch the `CWE-89`. Trust your team to build the future.
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

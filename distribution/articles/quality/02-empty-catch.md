@@ -7,8 +7,6 @@ cover_image:
 series: Error Handling
 ---
 
-# Empty Catch Blocks: The Silent Bug Factory
-
 ```javascript
 try {
   await processPayment(order);
@@ -220,9 +218,6 @@ The comment forces you to explain **why**.
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-quality %}
-📦 npm install eslint-plugin-quality
-{% endcta %}
 
 ```javascript
 import qualityPlugin from 'eslint-plugin-quality';
@@ -242,4 +237,4 @@ export default [qualityPlugin.configs.recommended];
 
 🚀 **Search your code for 'catch' + empty braces. How many?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

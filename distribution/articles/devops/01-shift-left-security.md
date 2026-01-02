@@ -7,8 +7,6 @@ cover_image:
 series: DevSecOps
 ---
 
-# Shift-Left Security: Catching Vulnerabilities Before They Cost $4.5M
-
 The average data breach costs **$4.5 million** (IBM, 2024).
 
 **70% of vulnerabilities** are introduced during coding.
@@ -121,9 +119,6 @@ npx eslint .
 
 ---
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 Start Shifting Left Today
-{% endcta %}
 
 ---
 
@@ -133,4 +128,4 @@ npx eslint .
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

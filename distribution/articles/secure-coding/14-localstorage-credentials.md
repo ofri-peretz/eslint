@@ -7,8 +7,6 @@ cover_image:
 canonical_url:
 ---
 
-# Stop Storing Credentials in localStorage
-
 ```javascript
 localStorage.setItem('authToken', token);
 ```
@@ -149,4 +147,4 @@ Don't let XSS turn into full account takeover.
 ---
 
 🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

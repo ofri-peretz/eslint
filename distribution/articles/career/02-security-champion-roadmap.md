@@ -7,8 +7,6 @@ cover_image:
 series: Career Growth
 ---
 
-# From Developer to Security Champion: A 12-Week Roadmap
-
 Every team needs a Security Champion—someone who bridges the gap between development velocity and security requirements.
 
 Here's the 12-week roadmap I used to become that person.
@@ -168,9 +166,6 @@ Security Champions are rare and valuable:
 
 ---
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 Start Your Security Journey
-{% endcta %}
 
 ---
 
@@ -180,4 +175,4 @@ Security Champions are rare and valuable:
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

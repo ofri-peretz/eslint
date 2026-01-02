@@ -7,8 +7,6 @@ cover_image:
 series: Mobile Security
 ---
 
-# Your "Web" App has a Mobile Security Problem
-
 If you are building a React Native, Electron, or even a PWA-heavy application, you are likely treating it like a standard web app. You sanitize inputs, strict-type your props, and secure your headers.
 
 But you are missing an entire attack surface.
@@ -52,9 +50,6 @@ Modern security linting brings mobile-grade security compliance to your standard
 
 ---
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 npm install eslint-plugin-secure-coding
-{% endcta %}
 
 ---
 
@@ -68,4 +63,4 @@ Modern security linting brings mobile-grade security compliance to your standard
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

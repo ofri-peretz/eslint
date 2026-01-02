@@ -7,8 +7,6 @@ cover_image:
 series: Secure Coding
 ---
 
-# ReDoS: The Regex That Crashes Your Server
-
 ```javascript
 const emailRegex = /^([a-zA-Z0-9]+)+@/;
 ```
@@ -173,9 +171,6 @@ console.timeEnd('regex');
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 npm install eslint-plugin-secure-coding
-{% endcta %}
 
 ```javascript
 import secureCoding from 'eslint-plugin-secure-coding';
@@ -195,4 +190,4 @@ export default [secureCoding.configs.recommended];
 
 🚀 **Test your regexes with 30 repeated chars. Do they hang?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

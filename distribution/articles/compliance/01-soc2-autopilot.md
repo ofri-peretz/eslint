@@ -7,8 +7,6 @@ cover_image:
 series: Compliance Automation
 ---
 
-# SOC2 Compliance on Autopilot: How ESLint Generates Your Audit Evidence
-
 Every quarter, the same panic: "The auditors are coming. Where's our evidence?"
 
 You scramble to screenshot dashboards, export logs, and pray you haven't missed anything.
@@ -101,9 +99,6 @@ export default [
 
 ---
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 npm install eslint-plugin-secure-coding
-{% endcta %}
 
 ---
 
@@ -113,4 +108,4 @@ export default [
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

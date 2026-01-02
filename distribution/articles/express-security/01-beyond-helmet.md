@@ -7,8 +7,6 @@ cover_image:
 series: Express Security
 ---
 
-# Helmet is Not Enough: 7 Express Security Rules You're Missing
-
 You added Helmet to your Express app. Security checkbox: done. ✅
 
 **Right?**
@@ -185,9 +183,6 @@ src/app.ts
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-express-security %}
-📦 npm install eslint-plugin-express-security
-{% endcta %}
 
 ```javascript
 import expressSecurity from 'eslint-plugin-express-security';
@@ -207,4 +202,4 @@ export default [expressSecurity.configs.recommended];
 
 🚀 **Which of these gaps do you have? Run the linter and find out!**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

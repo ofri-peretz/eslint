@@ -7,8 +7,6 @@ cover_image:
 series: Compliance
 ---
 
-# SOC2 Compliance with ESLint: Automated Evidence Collection
-
 > "How do you ensure code security?"
 
 Every SOC2 audit asks this question. Here's how to answer with **automated evidence**.
@@ -194,9 +192,6 @@ export default [
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 npm install eslint-plugin-secure-coding
-{% endcta %}
 
 ```javascript
 import secureCoding from 'eslint-plugin-secure-coding';
@@ -216,4 +211,4 @@ export default [secureCoding.configs.strict];
 
 🚀 **Is your SOC2 evidence automated? Share your approach!**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

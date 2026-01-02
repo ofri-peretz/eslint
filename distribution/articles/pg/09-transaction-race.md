@@ -7,8 +7,6 @@ cover_image:
 series: PostgreSQL Security
 ---
 
-# Transactions on Pool: The Race Condition Bug in pg
-
 ```javascript
 await pool.query('BEGIN');
 await pool.query('UPDATE accounts SET balance = balance - 100');
@@ -177,9 +175,6 @@ await pool.query('INSERT INTO logs VALUES ($1)', [log]);
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-pg %}
-📦 npm install eslint-plugin-pg
-{% endcta %}
 
 ```javascript
 import pg from 'eslint-plugin-pg';
@@ -199,4 +194,4 @@ export default [pg.configs.recommended];
 
 🚀 **Search for pool.query('BEGIN'). Found any?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

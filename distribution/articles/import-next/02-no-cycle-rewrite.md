@@ -7,8 +7,6 @@ cover_image:
 series: ESLint Performance Revolution
 ---
 
-# The no-cycle Problem: Why Your CI is Slow and How to Fix It
-
 > "import/no-cycle takes 70% of our lint time" — GitHub Issue #2182
 
 If you're running `eslint-plugin-import` on a monorepo, you've felt this pain.
@@ -130,9 +128,6 @@ $ time npx eslint .
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-import-next %}
-📦 npm install eslint-plugin-import-next
-{% endcta %}
 
 ---
 
@@ -147,4 +142,4 @@ $ time npx eslint .
 
 🚀 **What's your current lint time? Share in the comments!**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

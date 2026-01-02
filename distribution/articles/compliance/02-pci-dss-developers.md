@@ -7,8 +7,6 @@ cover_image:
 series: Compliance Automation
 ---
 
-# PCI-DSS for Developers: The 7 Controls That Actually Affect Your Code
-
 PCI-DSS v4.0 has 300+ requirements. Most developers glaze over when compliance comes up.
 
 But **only 7 directly affect your code**. Master these, and you're 90% compliant.
@@ -105,9 +103,6 @@ npx eslint . --format json | jq '
 
 ---
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 npm install eslint-plugin-secure-coding
-{% endcta %}
 
 ---
 
@@ -117,4 +112,4 @@ npx eslint . --format json | jq '
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

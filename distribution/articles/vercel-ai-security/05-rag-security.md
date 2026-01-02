@@ -7,8 +7,6 @@ cover_image:
 series: Vercel AI Security
 ---
 
-# RAG Security: Validating Retrieved Content Before AI Consumption
-
 RAG (Retrieval-Augmented Generation) apps are everywhere:
 
 - Document Q&A
@@ -197,9 +195,6 @@ async function secureRAGQuery(userQuery: string) {
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-vercel-ai-security %}
-📦 npm install eslint-plugin-vercel-ai-security
-{% endcta %}
 
 ```javascript
 import vercelAI from 'eslint-plugin-vercel-ai-security';
@@ -219,4 +214,4 @@ export default [vercelAI.configs.recommended];
 
 🚀 **Building a RAG app? What's your content validation strategy?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

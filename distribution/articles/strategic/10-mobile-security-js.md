@@ -7,8 +7,6 @@ cover_image:
 series: Mobile Security
 ---
 
-# OWASP Mobile Top 10 in Pure JavaScript
-
 Mobile security rules are usually written for Swift and Kotlin. But what about React Native, Expo, Electron, Capacitor, or PWAs?
 
 You write JavaScript. You deserve JavaScript security rules.
@@ -85,9 +83,6 @@ Whether you're shipping to iOS, Android, web, or desktop—the same rules apply.
 
 ---
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 npm install eslint-plugin-secure-coding
-{% endcta %}
 
 ---
 
@@ -102,4 +97,4 @@ Whether you're shipping to iOS, Android, web, or desktop—the same rules apply.
 
 🚀 **Building cross-platform apps? What security challenges have you faced?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

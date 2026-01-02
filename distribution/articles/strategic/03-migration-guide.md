@@ -7,8 +7,6 @@ cover_image:
 canonical_url:
 ---
 
-# Migrating from eslint-plugin-security in 5 Minutes
-
 Using `eslint-plugin-security`? Here's a quick upgrade path to **6x more coverage**.
 
 ## The Numbers
@@ -149,4 +147,4 @@ export default [secureCoding.configs.recommended];
 ---
 
 🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

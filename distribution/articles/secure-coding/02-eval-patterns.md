@@ -7,8 +7,6 @@ cover_image:
 canonical_url:
 ---
 
-# 3 eval() Patterns That Still Ship to Production
-
 Everyone knows `eval()` is dangerous. Yet it keeps appearing in production code.
 
 Why? Because it doesn't always look like `eval()`.
@@ -118,4 +116,4 @@ The `detect-eval-with-expression` rule catches:
 ---
 
 🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

@@ -7,8 +7,6 @@ cover_image:
 canonical_url:
 ---
 
-# Command Injection in Node.js: Beyond child_process
-
 Everyone knows `exec()` is dangerous. So attackers find other ways in.
 
 ## The Obvious One
@@ -142,4 +140,4 @@ Don't let command injection hide behind library abstractions.
 ---
 
 🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

@@ -1,13 +1,11 @@
 ---
 title: 'Getting Started with eslint-plugin-crypto'
-published: false
+published: true
 description: 'Cryptography security in 60 seconds. 24 rules for weak algorithms, random generation, and key management.'
 tags: cryptography, security, nodejs, tutorial
 cover_image:
 series: Getting Started
 ---
-
-# Getting Started with eslint-plugin-crypto
 
 **24 cryptography rules. Weak algorithms. Secure random. Key management.**
 
@@ -120,4 +118,4 @@ npx eslint .
 
 🚀 **grep -r "md5" in your codebase!**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

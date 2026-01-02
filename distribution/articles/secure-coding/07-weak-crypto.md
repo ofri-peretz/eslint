@@ -7,8 +7,6 @@ cover_image:
 canonical_url:
 ---
 
-# Weak Crypto Still Ships in 2025
-
 MD5 was broken in 2004. SHA1 in 2017.
 
 It's 2025. They're still in your codebase.
@@ -125,4 +123,4 @@ Stop shipping broken crypto. Enforce modern algorithms.
 ---
 
 🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

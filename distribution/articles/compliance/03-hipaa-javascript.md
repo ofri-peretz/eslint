@@ -7,8 +7,6 @@ cover_image:
 series: Compliance Automation
 ---
 
-# HIPAA for JavaScript Developers: Protecting PHI in Your Code
-
 You're building a healthcare app. Congratulations—you're now subject to HIPAA.
 
 The good news: Only a subset of HIPAA affects your code directly.
@@ -122,9 +120,6 @@ src/patient/records.ts
 
 ---
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 npm install eslint-plugin-secure-coding
-{% endcta %}
 
 ---
 
@@ -134,4 +129,4 @@ src/patient/records.ts
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

@@ -7,8 +7,6 @@ cover_image:
 series: Security Patterns
 ---
 
-# The Hidden Security Risks in Your File Upload Handler
-
 File uploads are a goldmine for attackers. Every bug bounty hunter knows this. Every pen tester checks it first.
 
 And yet, most file upload handlers are written in 20 minutes without a second thought.
@@ -102,9 +100,6 @@ Run the linter. Check the output. Fix the issues before someone else finds them.
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 npm install eslint-plugin-secure-coding
-{% endcta %}
 
 ```javascript
 import secureCoding from 'eslint-plugin-secure-coding';
@@ -123,4 +118,4 @@ export default [secureCoding.configs.recommended];
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

@@ -7,8 +7,6 @@ cover_image:
 series: Security Fundamentals
 ---
 
-# Absolute Beginner Guide to JavaScript Security
-
 You've learned JavaScript. You can build apps. But are they secure?
 
 Here are the 5 vulnerabilities every JavaScript developer should understand—no prior security knowledge required.
@@ -163,9 +161,6 @@ Now you'll get warnings when you write vulnerable code!
 
 ---
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 Catch These Vulnerabilities Automatically
-{% endcta %}
 
 ---
 
@@ -175,4 +170,4 @@ Now you'll get warnings when you write vulnerable code!
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

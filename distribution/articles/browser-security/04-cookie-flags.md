@@ -7,8 +7,6 @@ cover_image:
 series: Browser Security
 ---
 
-# Cookie Security: The 4 Flags You Must Always Set
-
 ```javascript
 res.cookie('session', token);
 ```
@@ -209,9 +207,6 @@ res.cookie('csrf', csrfToken, {
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-browser-security %}
-📦 npm install eslint-plugin-browser-security
-{% endcta %}
 
 ```javascript
 import browserSecurity from 'eslint-plugin-browser-security';
@@ -231,4 +226,4 @@ export default [browserSecurity.configs.recommended];
 
 🚀 **Check your cookies in DevTools. Missing any flags?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

@@ -7,8 +7,6 @@ cover_image:
 canonical_url:
 ---
 
-# Math.random() is Not Random Enough
-
 ```javascript
 const token = Math.random().toString(36).slice(2);
 ```
@@ -145,4 +143,4 @@ Use real randomness for real security.
 ---
 
 🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

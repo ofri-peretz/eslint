@@ -7,8 +7,6 @@ cover_image:
 series: Browser Security
 ---
 
-# localStorage is Not for Secrets: Browser Storage Security
-
 ```javascript
 localStorage.setItem('auth_token', jwt);
 ```
@@ -178,9 +176,6 @@ src/auth.ts
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-browser-security %}
-📦 npm install eslint-plugin-browser-security
-{% endcta %}
 
 ```javascript
 import browserSecurity from 'eslint-plugin-browser-security';
@@ -200,4 +195,4 @@ export default [browserSecurity.configs.recommended];
 
 🚀 **Where do you store your auth tokens? Share your approach!**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

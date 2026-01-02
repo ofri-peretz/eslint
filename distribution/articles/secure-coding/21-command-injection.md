@@ -7,8 +7,6 @@ cover_image:
 series: Secure Coding
 ---
 
-# Command Injection: exec() with User Input
-
 ```javascript
 const { exec } = require('child_process');
 exec(`convert ${userFilename} output.png`);
@@ -87,9 +85,6 @@ export default [
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 npm install eslint-plugin-secure-coding
-{% endcta %}
 
 ---
 
@@ -103,4 +98,4 @@ export default [
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

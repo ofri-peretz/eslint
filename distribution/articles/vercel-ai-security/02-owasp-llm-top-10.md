@@ -1,13 +1,11 @@
 ---
 title: 'OWASP LLM Top 10: Complete ESLint Coverage for AI Apps'
-published: false
+published: true
 description: 'Map every OWASP LLM vulnerability to an ESLint rule. Automate AI security compliance with eslint-plugin-vercel-ai-security.'
 tags: ai, security, owasp, eslint
 cover_image:
 series: Vercel AI Security
 ---
-
-# OWASP LLM Top 10: Complete ESLint Coverage for AI Apps
 
 The OWASP LLM Top 10 defines the most critical vulnerabilities in AI applications.
 
@@ -222,9 +220,6 @@ console.log(`OWASP LLM findings: ${owaspFindings.length}`);
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-vercel-ai-security %}
-📦 npm install eslint-plugin-vercel-ai-security
-{% endcta %}
 
 ```javascript
 import vercelAI from 'eslint-plugin-vercel-ai-security';
@@ -244,4 +239,4 @@ export default [vercelAI.configs['owasp-llm-top-10']];
 
 🚀 **How are you addressing OWASP LLM in your AI apps?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

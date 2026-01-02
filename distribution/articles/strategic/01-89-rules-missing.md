@@ -7,8 +7,6 @@ cover_image:
 canonical_url:
 ---
 
-# 75+ Security Rules Your Linter is Missing
-
 If you're using `eslint-plugin-security`, you have 13 rules protecting your codebase.
 
 We built **75+ core rules** plus specialized plugins for JWT, Crypto, PostgreSQL, and Browser security.
@@ -160,4 +158,4 @@ export default [secureCoding.configs.recommended];
 ---
 
 🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

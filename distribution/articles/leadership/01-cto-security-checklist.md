@@ -7,8 +7,6 @@ cover_image:
 series: Engineering Leadership
 ---
 
-# The CTO Security Checklist: 15 Questions to Ask Your Engineering Team
-
 You're a CTO. You're responsible for security. But you're not writing code every day.
 
 How do you know if your team is building securely?
@@ -134,9 +132,6 @@ npm audit --audit-level=high
 
 ---
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 Start with Automated Security Linting
-{% endcta %}
 
 ---
 
@@ -146,4 +141,4 @@ npm audit --audit-level=high
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

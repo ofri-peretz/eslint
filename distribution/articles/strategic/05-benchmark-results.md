@@ -365,4 +365,4 @@ The benchmark code is open source: [benchmark on GitHub](https://github.com/ofri
 
 [eslint-plugin-secure-coding on npm](https://www.npmjs.com/package/eslint-plugin-secure-coding)
 
-[Ofri Peretz](https://www.linkedin.com/in/ofri-peretz/) | [GitHub](https://github.com/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

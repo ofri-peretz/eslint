@@ -1,13 +1,11 @@
 ---
 title: 'The JWT Algorithm "none" Attack: The Vulnerability in 1 Line of Code'
-published: false
+published: true
 description: 'One misconfiguration lets attackers forge any JWT. Here is the attack, the CVE, and the ESLint rule that catches it.'
 tags: security, jwt, nodejs, eslint
 cover_image:
 series: JWT Security
 ---
-
-# The JWT Algorithm "none" Attack: The Vulnerability in 1 Line of Code
 
 JWT authentication is everywhere. It's also one of the most misconfigured security mechanisms.
 
@@ -146,9 +144,6 @@ src/auth.ts
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-jwt %}
-📦 npm install eslint-plugin-jwt
-{% endcta %}
 
 ```javascript
 import jwtPlugin from 'eslint-plugin-jwt';
@@ -170,4 +165,4 @@ export default [jwtPlugin.configs.recommended];
 
 🚀 **Check your JWT config now. Is "none" in your algorithms?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

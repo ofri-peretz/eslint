@@ -7,8 +7,6 @@ cover_image:
 series: Browser Security
 ---
 
-# WebSocket Security: From wss:// to Origin Validation
-
 ```javascript
 const ws = new WebSocket('ws://api.example.com');
 ```
@@ -78,9 +76,6 @@ export default [
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-browser-security %}
-📦 npm install eslint-plugin-browser-security
-{% endcta %}
 
 ---
 
@@ -94,4 +89,4 @@ export default [
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

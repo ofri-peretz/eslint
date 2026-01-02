@@ -7,8 +7,6 @@ cover_image:
 series: Browser Security
 ---
 
-# postMessage Security: Why "\*" Origin is Dangerous
-
 ```javascript
 window.postMessage(sensitiveData, '*');
 ```
@@ -180,9 +178,6 @@ src/oauth.ts
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-browser-security %}
-📦 npm install eslint-plugin-browser-security
-{% endcta %}
 
 ```javascript
 import browserSecurity from 'eslint-plugin-browser-security';
@@ -202,4 +197,4 @@ export default [browserSecurity.configs.recommended];
 
 🚀 **Search your code for postMessage('\*'). Find any?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

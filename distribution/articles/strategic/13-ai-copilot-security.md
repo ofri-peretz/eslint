@@ -7,8 +7,6 @@ cover_image:
 series: AI-Native Development
 ---
 
-# Your AI Copilot is Writing Vulnerabilities. Here is How to Fix It.
-
 We are in the middle of a paradigm shift. GitHub Copilot, Cursor, and ChatGPT are writing a significant percentage of our production code. As an engineering leader, I love the velocity—but I am terrified by the **variance**.
 
 AI models are trained on the internet. And the internet is full of insecure code.
@@ -52,9 +50,6 @@ In the age of AI, **linting is your strongest line of defense**.
 
 ---
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 Install eslint-plugin-secure-coding
-{% endcta %}
 
 ---
 
@@ -68,4 +63,4 @@ In the age of AI, **linting is your strongest line of defense**.
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

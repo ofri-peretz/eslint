@@ -7,8 +7,6 @@ cover_image:
 series: Code Quality
 ---
 
-# Why We Stopped Using eslint-plugin-unicorn
-
 `eslint-plugin-unicorn` is popular. 100+ rules. Sindre's stamp of approval.
 
 **But half those rules are just opinions.**
@@ -194,9 +192,6 @@ export default [
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-quality %}
-📦 npm install eslint-plugin-quality
-{% endcta %}
 
 ```javascript
 import qualityPlugin from 'eslint-plugin-quality';
@@ -218,4 +213,4 @@ export default [qualityPlugin.configs.recommended];
 
 🚀 **What's your take: style rules or correctness rules?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

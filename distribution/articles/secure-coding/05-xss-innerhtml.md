@@ -7,8 +7,6 @@ cover_image:
 canonical_url:
 ---
 
-# XSS via innerHTML: The Classic That Won't Die
-
 Cross-Site Scripting has been a top vulnerability since 2003. Two decades later, `innerHTML` remains the #1 vector.
 
 ## The Problem
@@ -136,4 +134,4 @@ Stop XSS at the source. Before it reaches the browser.
 ---
 
 🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

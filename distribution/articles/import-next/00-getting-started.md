@@ -1,15 +1,15 @@
 ---
 title: 'Getting Started with eslint-plugin-import-next'
-published: false
+published: true
 description: 'Drop-in replacement for eslint-plugin-import. 100x faster, flat config native, plus bundle optimization rules.'
 tags: javascript, eslint, imports, tutorial
 cover_image:
 series: Getting Started
 ---
 
-# Getting Started with eslint-plugin-import-next
+**Up to 100x faster than eslint-plugin-import. Flat config native. Bundle optimization included.**
 
-**100x faster than eslint-plugin-import. Flat config native. Bundle optimization included.**
+> 🔄 **Drop-in replacement** — 100% compatible with all `eslint-plugin-import` rules, but faster, LLM-optimized error messages, and fewer false positives/negatives.
 
 ## Quick Install
 
@@ -34,14 +34,15 @@ npx eslint .
 
 ## Performance
 
-```
-┌─────────────────────────────────────────────────────┐
-│ Linting 10,000 files                                │
-├─────────────────────────────────────────────────────┤
-│ eslint-plugin-import:      45.0s  ███████████████████│
-│ eslint-plugin-import-next:  0.4s  ▏                  │
-└─────────────────────────────────────────────────────┘
-```
+| Benchmark            | Speedup            |
+| -------------------- | ------------------ |
+| Core Rules (9 rules) | **5.2x** faster    |
+| Recommended Preset   | **5.5x** faster    |
+| `no-cycle` Rule Only | **100x** faster 🔥 |
+
+_Tested on 5,000-10,000 files. [Full benchmark methodology →](https://github.com/ofri-peretz/eslint-benchmark-suite)_
+
+> 📊 **[See the full benchmark comparison →](/ofri-peretz/eslint-plugin-import-vs-import-next-100x-faster-benchmarks)**
 
 ## Available Presets
 
@@ -106,12 +107,10 @@ npx eslint .
 
 ---
 
+## Quick Install
+
 📦 [npm: eslint-plugin-import-next](https://www.npmjs.com/package/eslint-plugin-import-next)
 📖 [Migration Guide](https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-import-next#migration)
-
-{% cta https://github.com/ofri-peretz/eslint %}
-⭐ Star on GitHub
-{% endcta %}
 📖 [Performance Benchmarks](https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-import-next#benchmarks)
 
 {% cta https://github.com/ofri-peretz/eslint %}
@@ -120,6 +119,8 @@ npx eslint .
 
 ---
 
-🚀 **Tired of slow linting? Give it a try!**
+🚀 **Tired of slow linting? Share your experience in the comments!**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+For more updates, follow me on:
+
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

@@ -7,8 +7,6 @@ cover_image:
 canonical_url:
 ---
 
-# Zip Slip: The Archive Extraction Vulnerability
-
 You receive a zip file. You extract it. Your system is compromised.
 
 ## The Attack
@@ -133,4 +131,4 @@ Don't let a zip file escape your control.
 ---
 
 🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

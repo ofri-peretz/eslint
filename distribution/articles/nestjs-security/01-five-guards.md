@@ -7,8 +7,6 @@ cover_image:
 series: NestJS Security
 ---
 
-# NestJS Security: 5 Guards You Should Already Have
-
 NestJS has built-in security patterns. Guards, pipes, decorators.
 
 **Most apps don't use them correctly.**
@@ -219,9 +217,6 @@ async function bootstrap() {
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-nestjs-security %}
-📦 npm install eslint-plugin-nestjs-security
-{% endcta %}
 
 ```javascript
 import nestjsSecurity from 'eslint-plugin-nestjs-security';
@@ -241,4 +236,4 @@ export default [nestjsSecurity.configs.recommended];
 
 🚀 **How many of your NestJS controllers have guards?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

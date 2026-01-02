@@ -7,8 +7,6 @@ cover_image:
 series: Bundle Optimization
 ---
 
-# 5 Barrel File Anti-Patterns Killing Your Bundle Size
-
 Barrel files (`index.ts` re-exports) look clean:
 
 ```typescript
@@ -153,9 +151,6 @@ export default [
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-import-next %}
-📦 npm install eslint-plugin-import-next
-{% endcta %}
 
 ```javascript
 import importNext from 'eslint-plugin-import-next';
@@ -175,4 +170,4 @@ export default [importNext.configs.performance];
 
 🚀 **What's the biggest barrel file in your codebase? Drop a comment!**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

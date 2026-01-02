@@ -7,8 +7,6 @@ cover_image:
 series: Open Source
 ---
 
-# The Open Source Maintainer Security Playbook
-
 If you maintain an npm package with more than 1,000 weekly downloads, you're a target.
 
 Supply chain attacks increased **742%** from 2019 to 2023 (Sonatype). Here's how to protect your users.
@@ -179,9 +177,6 @@ git push --follow-tags
 
 ---
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 Also: Lint Your Package for Security
-{% endcta %}
 
 ---
 
@@ -191,4 +186,4 @@ git push --follow-tags
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

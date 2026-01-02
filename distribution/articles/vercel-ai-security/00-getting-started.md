@@ -1,13 +1,11 @@
 ---
 title: 'Getting Started with eslint-plugin-vercel-ai-security'
-published: false
+published: true
 description: 'AI application security in 60 seconds. 19 rules for prompt injection, data exfiltration, and agent safety.'
 tags: ai, security, vercel, tutorial
 cover_image:
 series: Getting Started
 ---
-
-# Getting Started with eslint-plugin-vercel-ai-security
 
 **19 AI security rules. Prompt injection. Agent safety. OWASP LLM coverage.**
 
@@ -159,12 +157,10 @@ npx eslint .
 
 ---
 
+## Quick Install
+
 📦 [npm: eslint-plugin-vercel-ai-security](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security)
 📖 [Full Rule List](https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-vercel-ai-security/docs/rules)
-
-{% cta https://github.com/ofri-peretz/eslint %}
-⭐ Star on GitHub
-{% endcta %}
 📖 [OWASP LLM Mapping](https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-vercel-ai-security#owasp-llm-top-10)
 
 {% cta https://github.com/ofri-peretz/eslint %}
@@ -173,6 +169,6 @@ npx eslint .
 
 ---
 
-🚀 **Building with Vercel AI SDK? Star the repo!**
+🚀 **Building with Vercel AI SDK? Let me know your experience in the comments!**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

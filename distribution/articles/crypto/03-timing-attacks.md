@@ -7,8 +7,6 @@ cover_image:
 series: Cryptography Security
 ---
 
-# Timing Attacks: Why String Comparison is Dangerous
-
 ```javascript
 if (userToken === expectedToken) {
   // Authorized
@@ -211,9 +209,6 @@ function safeCompare(a: string, b: string): boolean {
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-crypto %}
-📦 npm install eslint-plugin-crypto
-{% endcta %}
 
 ```javascript
 import cryptoPlugin from 'eslint-plugin-crypto';
@@ -233,4 +228,4 @@ export default [cryptoPlugin.configs.recommended];
 
 🚀 **How do you compare secrets in your code?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

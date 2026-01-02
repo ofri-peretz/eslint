@@ -1,13 +1,11 @@
 ---
 title: 'Getting Started with eslint-plugin-browser-security'
-published: false
+published: true
 description: 'Browser security in 60 seconds. 21 rules for XSS, storage, postMessage, and CSP.'
 tags: javascript, security, browser, tutorial
 cover_image:
 series: Getting Started
 ---
-
-# Getting Started with eslint-plugin-browser-security
 
 **21 browser security rules. XSS prevention. Storage safety. postMessage.**
 
@@ -37,7 +35,70 @@ export default [browserSecurity.configs.recommended];
 | CSP              | 2     | no-unsafe-inline-csp, no-unsafe-eval-csp             |
 | Other            | 3     | require-websocket-wss, require-blob-url-revocation   |
 
-## Quick Reference
+## Run ESLint
+
+```bash
+npx eslint .
+```
+
+You'll see output like:
+
+```bash
+src/components/preview.tsx
+  42:5  error  🔒 CWE-79 CVSS:6.1 | innerHTML is XSS vulnerable
+               Fix: Use textContent or sanitize with DOMPurify
+
+src/utils/storage.ts
+  18:3  error  🔒 CWE-922 | Storing JWT in localStorage is insecure
+               Fix: Use httpOnly cookies or sessionStorage with expiry
+
+src/messaging/iframe.ts
+  31:1  error  🔒 CWE-345 | postMessage with '*' origin is dangerous
+               Fix: Specify exact origin: postMessage(data, 'https://trusted.com')
+```
+
+## Quick Wins
+
+### XSS Prevention
+
+```javascript
+// ❌ Dangerous: XSS vulnerability
+element.innerHTML = userInput;
+
+// ✅ Safe: Use textContent
+element.textContent = userInput;
+
+// ✅ Safe: Sanitize HTML
+import DOMPurify from 'dompurify';
+element.innerHTML = DOMPurify.sanitize(userInput);
+```
+
+### Storage Security
+
+```javascript
+// ❌ Dangerous: JWT in localStorage
+localStorage.setItem('token', jwt);
+
+// ✅ Better: Use httpOnly cookies (server-side)
+// Or if you must use storage:
+sessionStorage.setItem('token', jwt); // Clears on tab close
+```
+
+### postMessage Security
+
+```javascript
+// ❌ Dangerous: Wildcard origin
+window.parent.postMessage(data, '*');
+
+// ✅ Safe: Explicit origin
+window.parent.postMessage(data, 'https://trusted-parent.com');
+
+// ✅ Safe: Origin validation in listener
+window.addEventListener('message', (event) => {
+  if (event.origin !== 'https://trusted-sender.com') return;
+  // Handle message
+});
+```
 
 ```bash
 # Install
@@ -64,4 +125,4 @@ npx eslint .
 
 🚀 **Building for browsers? Run the linter!**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

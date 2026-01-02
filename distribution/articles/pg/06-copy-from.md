@@ -2,12 +2,10 @@
 title: 'COPY FROM Exploits: When PostgreSQL Reads Your Filesystem'
 published: false
 description: "PostgreSQL's COPY FROM can read any file the database user can access. Here's how attackers exploit it."
-tags: postgresql, security, database, nodejs
+tags: postgresql, security, eslint, nodejs
 cover_image:
 canonical_url:
 ---
-
-# COPY FROM Exploits: When PostgreSQL Reads Your Filesystem
 
 PostgreSQL's `COPY FROM` is powerful. It can bulk load data from files.
 
@@ -145,4 +143,5 @@ Keep PostgreSQL in the database, not in your filesystem.
 ---
 
 🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+
+[GitHub](https://github.com/ofri-peretz) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofri-peretz)

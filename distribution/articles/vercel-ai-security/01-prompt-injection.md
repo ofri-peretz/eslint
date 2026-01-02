@@ -1,13 +1,11 @@
 ---
 title: '3 Lines of Code to Hack Your Vercel AI App (And 1 Line to Fix It)'
-published: false
+published: true
 description: 'Prompt injection is the #1 vulnerability in AI apps. Here is how attackers exploit it and how ESLint catches it.'
 tags: ai, security, vercel, eslint
 cover_image:
 series: Vercel AI Security
 ---
-
-# 3 Lines of Code to Hack Your Vercel AI App (And 1 Line to Fix It)
 
 You built an AI chatbot with Vercel AI SDK. It works. Users love it.
 
@@ -120,9 +118,6 @@ const { result } = await generateText({
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-vercel-ai-security %}
-📦 npm install eslint-plugin-vercel-ai-security
-{% endcta %}
 
 ```javascript
 import vercelAI from 'eslint-plugin-vercel-ai-security';
@@ -144,4 +139,4 @@ export default [vercelAI.configs.recommended];
 
 🚀 **Building with Vercel AI SDK? What's your security strategy?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

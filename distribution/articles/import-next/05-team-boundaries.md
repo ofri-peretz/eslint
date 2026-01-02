@@ -7,8 +7,6 @@ cover_image:
 series: Monorepo Governance
 ---
 
-# Enforcing Team Boundaries in a Monorepo with ESLint
-
 > "The payments team broke our build by importing our internal util"
 
 Sound familiar?
@@ -148,9 +146,6 @@ graph TD
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-import-next %}
-📦 npm install eslint-plugin-import-next
-{% endcta %}
 
 ```javascript
 import importNext from 'eslint-plugin-import-next';
@@ -181,4 +176,4 @@ export default [
 
 🚀 **How do you manage boundaries in your monorepo? Share your approach!**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

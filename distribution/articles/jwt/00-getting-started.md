@@ -1,13 +1,11 @@
 ---
 title: 'Getting Started with eslint-plugin-jwt'
-published: false
+published: true
 description: 'JWT security in 60 seconds. 13 rules for algorithm confusion, weak secrets, and missing validation.'
 tags: jwt, security, authentication, tutorial
 cover_image:
 series: Getting Started
 ---
-
-# Getting Started with eslint-plugin-jwt
 
 **13 JWT security rules. Algorithm attacks. Token validation. Secret management.**
 
@@ -46,21 +44,21 @@ src/verify.ts
 
 ## Rule Overview
 
-| Rule                          | CWE     | What it catches         |
-| ----------------------------- | ------- | ----------------------- |
-| `no-algorithm-none`           | CWE-347 | Algorithm 'none' bypass |
-| `no-algorithm-confusion`      | CWE-327 | RS256/HS256 confusion   |
-| `no-weak-secret`              | CWE-326 | Brute-forceable secrets |
-| `no-hardcoded-secret`         | CWE-798 | Secrets in source code  |
-| `no-sensitive-payload`        | CWE-312 | PII in token payload    |
-| `require-expiration`          | CWE-613 | Missing exp claim       |
-| `require-algorithm-whitelist` | CWE-327 | No explicit algorithms  |
-| `require-issuer-validation`   | CWE-345 | Missing iss check       |
-| `require-audience-validation` | CWE-345 | Missing aud check       |
-| `no-decode-without-verify`    | CWE-347 | jwt.decode() misuse     |
-| `require-issued-at`           | CWE-613 | Missing iat claim       |
-| `require-max-age`             | CWE-613 | No maxAge in verify     |
-| `no-timestamp-manipulation`   | CWE-345 | Clock skew exploits     |
+| Rule                                                                                                                                                  | CWE     | What it catches         |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ----------------------- |
+| [`no-algorithm-none`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/no-algorithm-none.md)                     | CWE-347 | Algorithm 'none' bypass |
+| [`no-algorithm-confusion`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/no-algorithm-confusion.md)           | CWE-327 | RS256/HS256 confusion   |
+| [`no-weak-secret`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/no-weak-secret.md)                           | CWE-326 | Brute-forceable secrets |
+| [`no-hardcoded-secret`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/no-hardcoded-secret.md)                 | CWE-798 | Secrets in source code  |
+| [`no-sensitive-payload`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/no-sensitive-payload.md)               | CWE-312 | PII in token payload    |
+| [`require-expiration`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/require-expiration.md)                   | CWE-613 | Missing exp claim       |
+| [`require-algorithm-whitelist`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/require-algorithm-whitelist.md) | CWE-327 | No explicit algorithms  |
+| [`require-issuer-validation`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/require-issuer-validation.md)     | CWE-345 | Missing iss check       |
+| [`require-audience-validation`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/require-audience-validation.md) | CWE-345 | Missing aud check       |
+| [`no-decode-without-verify`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/no-decode-without-verify.md)       | CWE-347 | jwt.decode() misuse     |
+| [`require-issued-at`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/require-issued-at.md)                     | CWE-613 | Missing iat claim       |
+| [`require-max-age`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/require-max-age.md)                         | CWE-613 | No maxAge in verify     |
+| [`no-timestamp-manipulation`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/no-timestamp-manipulation.md)     | CWE-345 | Clock skew exploits     |
 
 ## Quick Wins
 
@@ -155,4 +153,4 @@ npx eslint .
 
 🚀 **Got JWT? Run the linter!**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

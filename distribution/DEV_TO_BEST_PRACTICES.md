@@ -44,6 +44,40 @@ series: Series Name Here
 | `canonical_url` | Optional       | If cross-posting from your blog                                 |
 | `series`        | Optional       | Groups related articles together                                |
 
+### ⚠️ Title Duplication Rule
+
+**NEVER duplicate the title as an H1 heading after frontmatter.**
+
+Dev.to automatically renders the `title` property from frontmatter as the article's H1. Adding another H1 creates duplicate headings and hurts SEO.
+
+```markdown
+## ❌ WRONG - Duplicate title
+
+## title: 'SQL Injection in Node.js'
+
+# SQL Injection in Node.js <!-- REMOVE THIS -->
+
+Content here...
+```
+
+```markdown
+## ✅ CORRECT - Start with content or H2
+
+## title: 'SQL Injection in Node.js'
+
+SQL injection is the #1 vulnerability in web applications...
+
+## The Problem
+
+...
+```
+
+**Rule**: After frontmatter, start with either:
+
+1. A compelling hook paragraph (recommended)
+2. An H2 heading for your first section
+3. Never an H1 that repeats the title
+
 ### High-Performing Tags
 
 ```yaml
@@ -366,22 +400,101 @@ The same vulnerability appears in 80% of them."
 ---
 
 📦 [npm: eslint-plugin-pg](https://www.npmjs.com/package/eslint-plugin-pg)
-📖 [Documentation](https://github.com/user/repo/docs)
-⭐ [Star on GitHub](https://github.com/user/repo)
+📖 [Documentation](https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-pg)
+
+{% cta https://github.com/ofri-peretz/eslint %}
+⭐ Star on GitHub
+{% endcta %}
 
 ---
 
 🚀 **Follow for more security content:**
-[GitHub](https://github.com/user) | [LinkedIn](https://linkedin.com/in/user) | [Twitter](https://twitter.com/user)
 
----
-
-_What security patterns does your team struggle with? Drop a comment below!_
+[GitHub](https://github.com/ofri-peretz) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofri-peretz)
 ```
 
 ---
 
-## 7. Article Checklist
+## 7. Interlace Ecosystem Standards
+
+### 7.1 Required Tags
+
+**Every article MUST include `eslint` as one of the 4 tags.**
+
+```yaml
+# ✅ Correct
+tags: postgresql, security, eslint, nodejs
+
+# ❌ Wrong - missing eslint
+tags: postgresql, security, database, nodejs
+```
+
+### 7.2 Rule Tables with Links
+
+For getting-started articles, link each rule to its GitHub documentation:
+
+```markdown
+| Rule                                                                                                                           | CWE    | What it catches |
+| ------------------------------------------------------------------------------------------------------------------------------ | ------ | --------------- |
+| [`no-sql-injection`](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-sql-injection.md) | CWE-89 | SQL injection   |
+```
+
+### 7.3 Who Is This For Section
+
+Getting-started articles should include a "Who Is This For?" section with framework links:
+
+```markdown
+## Who Is This For?
+
+This plugin is for **Node.js teams** building applications with:
+
+| Framework                            | Description        |
+| ------------------------------------ | ------------------ |
+| [Express.js](https://expressjs.com/) | Web framework      |
+| [Fastify](https://fastify.dev/)      | Fast web framework |
+```
+
+### 7.4 Custom Configuration Section
+
+All getting-started articles should show how to customize rules:
+
+```javascript
+// eslint.config.js
+export default [
+  plugin.configs.recommended,
+  {
+    rules: {
+      'plugin/rule-name': ['error', { option: value }],
+    },
+  },
+];
+```
+
+### 7.5 Strongly-Typed Options Section
+
+Show TypeScript users how to get type safety:
+
+```typescript
+import plugin, { type RuleOptions } from 'eslint-plugin-xyz';
+
+const options: RuleOptions['rule-name'] = { ... };
+```
+
+### 7.6 Real-World Scenario (Recommended)
+
+For deep-dive articles, add a tangible scenario:
+
+```markdown
+## Real-World Scenario
+
+A SaaS app with 100 tenants uses dynamic schema switching.
+An attacker discovers they can set `?tenant=evil_schema` and
+redirect queries to their malicious tables...
+```
+
+---
+
+## 8. Article Checklist
 
 ### Pre-Publish Checklist
 
@@ -390,7 +503,7 @@ _What security patterns does your team struggle with? Drop a comment below!_
 
 - [ ] Title is 50-60 characters with primary keyword
 - [ ] Description is 120-160 characters with hook
-- [ ] 4 relevant tags selected
+- [ ] 4 relevant tags selected (MUST include `eslint`)
 - [ ] Cover image is 1000x420 pixels
 - [ ] Series name set (if applicable)
 
@@ -416,11 +529,19 @@ _What security patterns does your team struggle with? Drop a comment below!_
 - [ ] {% details %} for long code blocks
 - [ ] {% runkit %} for interactive demos (when applicable)
 
+## Interlace Standards
+
+- [ ] `eslint` tag included
+- [ ] Rule table has GitHub doc links (getting-started)
+- [ ] Custom configuration section included
+- [ ] Strongly-typed options section included (TypeScript)
+- [ ] Real-world scenario (deep-dive articles)
+
 ## Engagement
 
 - [ ] Strong opening hook (not "In this article...")
 - [ ] Visual break every 200-300 words
-- [ ] Footer with links and follow CTAs
+- [ ] Footer with X, GitHub, LinkedIn, Dev.to links
 - [ ] Closing question for comments
 ```
 
@@ -428,17 +549,18 @@ _What security patterns does your team struggle with? Drop a comment below!_
 
 ## 📊 Quick Reference Card
 
-| Element          | Target           | Purpose             |
-| ---------------- | ---------------- | ------------------- |
-| Title            | 50-60 chars      | SEO + Click-through |
-| Description      | 120-160 chars    | SERP snippet        |
-| Cover image      | 1000x420px       | Feed visibility     |
-| Tags             | 4 max            | Discoverability     |
-| First code block | Within 3 scrolls | Engagement          |
-| Tables           | 1+ per article   | AEO extraction      |
-| {% cta %}        | 1 per article    | Conversion          |
-| {% embed %}      | GitHub repo      | Social proof        |
-| Closing question | Last paragraph   | Comments            |
+| Element          | Target                | Purpose             |
+| ---------------- | --------------------- | ------------------- |
+| Title            | 50-60 chars           | SEO + Click-through |
+| Description      | 120-160 chars         | SERP snippet        |
+| Cover image      | 1000x420px            | Feed visibility     |
+| Tags             | 4 max (incl. eslint)  | Discoverability     |
+| First code block | Within 3 scrolls      | Engagement          |
+| Tables           | 1+ per article        | AEO extraction      |
+| {% cta %}        | 1 per article         | Conversion          |
+| {% embed %}      | GitHub repo           | Social proof        |
+| Footer links     | GitHub, X, LI, Dev.to | Follow growth       |
+| Closing question | Last paragraph        | Comments            |
 
 ---
 
@@ -451,4 +573,4 @@ _What security patterns does your team struggle with? Drop a comment below!_
 
 ---
 
-_Last updated: 2025-12-30_
+_Last updated: 2026-01-02_

@@ -1,13 +1,11 @@
 ---
 title: 'Getting Started with eslint-plugin-pg'
-published: false
+published: true
 description: 'PostgreSQL security and best practices in 60 seconds. 13 rules for SQL injection, connection leaks, and query optimization.'
 tags: postgresql, nodejs, database, tutorial
 cover_image:
 series: Getting Started
 ---
-
-# Getting Started with eslint-plugin-pg
 
 **13 PostgreSQL-specific rules. SQL injection, connection pools, transactions.**
 
@@ -181,4 +179,4 @@ npx eslint .
 
 🚀 **Using node-postgres? Drop a star on GitHub!**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

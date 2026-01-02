@@ -7,8 +7,6 @@ cover_image:
 canonical_url:
 ---
 
-# JWT Security Anti-Patterns
-
 JSON Web Tokens are everywhere. So are JWT vulnerabilities.
 
 ## Anti-Pattern 1: The 'none' Algorithm
@@ -157,4 +155,4 @@ Don't let JWT misconfigurations become your breach story.
 ---
 
 🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

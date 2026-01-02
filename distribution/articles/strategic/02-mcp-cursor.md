@@ -7,8 +7,6 @@ cover_image:
 canonical_url:
 ---
 
-# MCP + ESLint: Auto-Fixing Security Issues with Cursor
-
 What if your AI assistant could not just find security issues, but fix them automatically?
 
 With ESLint's Model Context Protocol (MCP), it can.
@@ -177,9 +175,6 @@ Let AI assistants fix your security issues. Automatically.
 📦 [npm: eslint-plugin-secure-coding](https://www.npmjs.com/package/eslint-plugin-secure-coding)
 📖 [ESLint MCP Documentation](https://eslint.org/docs/latest/use/mcp)
 
-{% cta https://github.com/ofri-peretz/eslint %}
-⭐ Star on GitHub
-{% endcta %}
 📖 [AGENTS.md Template](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/AGENTS.md)
 
 {% cta https://github.com/ofri-peretz/eslint %}
@@ -189,4 +184,4 @@ Let AI assistants fix your security issues. Automatically.
 ---
 
 🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

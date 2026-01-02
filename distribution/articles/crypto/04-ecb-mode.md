@@ -7,8 +7,6 @@ cover_image:
 series: Cryptography Security
 ---
 
-# ECB Mode: The Encryption Pattern That Reveals Your Data
-
 ```javascript
 const cipher = crypto.createCipheriv('aes-256-ecb', key, null);
 ```
@@ -173,9 +171,6 @@ src/encryption.ts
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-crypto %}
-📦 npm install eslint-plugin-crypto
-{% endcta %}
 
 ```javascript
 import cryptoPlugin from 'eslint-plugin-crypto';
@@ -195,4 +190,4 @@ export default [cryptoPlugin.configs.recommended];
 
 🚀 **Search your code for 'ecb'. Hopefully nothing!**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

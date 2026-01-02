@@ -7,8 +7,6 @@ cover_image:
 series: Browser Security
 ---
 
-# XSS in 2025: innerHTML is Still Your Enemy
-
 ```javascript
 element.innerHTML = userInput;
 ```
@@ -180,9 +178,6 @@ element.innerHTML = clean;
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-browser-security %}
-📦 npm install eslint-plugin-browser-security
-{% endcta %}
 
 ```javascript
 import browserSecurity from 'eslint-plugin-browser-security';
@@ -202,4 +197,4 @@ export default [browserSecurity.configs.recommended];
 
 🚀 **grep -r "innerHTML" in your codebase. What did you find?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

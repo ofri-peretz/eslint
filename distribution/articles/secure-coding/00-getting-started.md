@@ -1,13 +1,11 @@
 ---
 title: 'Getting Started with eslint-plugin-secure-coding'
-published: false
+published: true
 description: 'Install 75 security rules in 60 seconds. Full OWASP coverage, CWE mapping, and AI-ready error messages.'
 tags: security, eslint, javascript, tutorial
 cover_image:
 series: Getting Started
 ---
-
-# Getting Started with eslint-plugin-secure-coding
 
 **75 security rules. 60 seconds to install. Full OWASP coverage.**
 
@@ -39,9 +37,9 @@ src/auth.ts
   15:3  error  🔒 CWE-798 OWASP:A02 CVSS:7.5 | Hardcoded credential detected
                Fix: Use environment variable: process.env.DATABASE_PASSWORD
 
-src/api.ts
-  42:5  error  🔒 CWE-89 OWASP:A03 CVSS:9.8 | SQL Injection detected
-               Fix: Use parameterized query: client.query('...', [param])
+src/utils.ts
+  42:5  error  🔒 CWE-95 OWASP:A03 CVSS:9.8 | Dangerous eval() with expression
+               Fix: Replace eval() with safer alternatives like JSON.parse()
 ```
 
 ## Available Presets
@@ -62,15 +60,19 @@ secureCoding.configs['owasp-mobile-top-10'];
 
 ## Rule Overview
 
-| Category             | Rules | Examples                                 |
-| -------------------- | ----- | ---------------------------------------- |
-| Injection Prevention | 11    | SQL injection, eval, command injection   |
-| Cryptography         | 6     | Weak hashes, random, timing attacks      |
-| Authentication       | 3     | Hardcoded credentials, weak passwords    |
-| Session/Cookies      | 3     | Insecure cookies, session fixation       |
-| Data Exposure        | 5     | PII in logs, debug code, secrets         |
-| Input Validation     | 8     | XSS, path traversal, prototype pollution |
-| OWASP Mobile         | 30    | Insecure storage, certificate validation |
+| Category                | Rules  | Examples                                       |
+| ----------------------- | ------ | ---------------------------------------------- |
+| Injection Prevention    | 9      | eval(), child_process, GraphQL, XXE, XPath     |
+| Path & File Security    | 3      | zip-slip, TOCTOU, non-literal filenames        |
+| Regex Vulnerabilities   | 3      | ReDoS, unsafe regex construction               |
+| Prototype Pollution     | 2      | object injection, unsafe deserialization       |
+| Credentials & Secrets   | 2      | hardcoded credentials, insecure comparison     |
+| Input Validation        | 4      | unvalidated input, improper sanitization       |
+| Auth & Session          | 4      | missing auth, CSRF, privilege escalation       |
+| Network & Headers       | 5      | CORS, security headers, clickjacking           |
+| Data Exposure           | 2      | sensitive data, PII exposure                   |
+| Resource & DoS          | 3      | buffer overread, unlimited allocation          |
+| **OWASP Mobile Top 10** | **37** | insecure storage, certificate validation, HTTP |
 
 ## Customizing Rules
 
@@ -171,7 +173,7 @@ ESLint extension will show errors inline:
 AI assistants read the structured errors and can auto-fix:
 
 ```
-CWE-89 → Parameterized query fix
+CWE-95 → Safe JSON.parse() alternative
 CWE-798 → Environment variable fix
 ```
 
@@ -204,9 +206,6 @@ npx eslint . --fix
 📦 [npm: eslint-plugin-secure-coding](https://www.npmjs.com/package/eslint-plugin-secure-coding)
 📖 [Full Rule List](https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-secure-coding/docs/rules)
 
-{% cta https://github.com/ofri-peretz/eslint %}
-⭐ Star on GitHub
-{% endcta %}
 📖 [OWASP Coverage Matrix](https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-secure-coding#owasp-coverage-matrix)
 
 {% cta https://github.com/ofri-peretz/eslint %}
@@ -217,4 +216,4 @@ npx eslint . --fix
 
 🚀 **Questions? Open an issue on GitHub!**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

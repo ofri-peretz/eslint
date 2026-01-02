@@ -7,8 +7,6 @@ cover_image:
 series: Engineering Leadership
 ---
 
-# The Security Debt Problem: Why Your Backlog Has 500 Ignored Vulnerabilities
-
 You run `npm audit` and see 847 vulnerabilities. You run your security linter and see 312 warnings.
 
 You close the terminal. You ship the feature. You move on.
@@ -175,9 +173,6 @@ npx eslint . --format json | jq '[.[].messages[]] | length'
 
 ---
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 Stop Accumulating New Debt
-{% endcta %}
 
 ---
 
@@ -187,4 +182,4 @@ npx eslint . --format json | jq '[.[].messages[]] | length'
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

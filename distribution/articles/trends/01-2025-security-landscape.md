@@ -7,8 +7,6 @@ cover_image:
 series: Industry Trends
 ---
 
-# 2025 JavaScript Security Landscape: What Changed and What is Coming
-
 The JavaScript security landscape has shifted dramatically. Here's what's different in 2025 and what's coming next.
 
 ## The Big Shifts
@@ -156,9 +154,6 @@ async function deleteUser(id: string) { }
 
 ---
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 Start with Security Linting
-{% endcta %}
 
 ---
 
@@ -168,4 +163,4 @@ async function deleteUser(id: string) { }
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

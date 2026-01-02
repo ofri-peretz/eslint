@@ -7,8 +7,6 @@ cover_image:
 series: PostgreSQL Security
 ---
 
-# N+1 Queries: The Database Performance Silent Killer
-
 ```javascript
 const users = await pool.query('SELECT * FROM users LIMIT 100');
 
@@ -78,9 +76,6 @@ export default [
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-pg %}
-📦 npm install eslint-plugin-pg
-{% endcta %}
 
 ---
 
@@ -94,4 +89,4 @@ export default [
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

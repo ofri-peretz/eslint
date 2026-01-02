@@ -1,13 +1,11 @@
 ---
 title: 'The Connection Leak That Took Down Our Production Database'
-published: false
+published: true
 description: "A missing client.release() caused our PostgreSQL connections to exhaust. Here's how ESLint prevents this from ever happening again."
 tags: postgresql, nodejs, database, eslint
 cover_image:
 canonical_url:
 ---
-
-# The Connection Leak That Took Down Our Production Database
 
 It was 3 AM. PagerDuty woke me up. Our API was returning 500 errors.
 
@@ -139,4 +137,4 @@ Don't wait for the 3 AM wake-up call.
 ---
 
 🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

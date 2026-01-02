@@ -7,8 +7,6 @@ cover_image:
 canonical_url:
 ---
 
-# Debug Code That Made It to Production
-
 "I'll remove it before merging."
 
 Famous last words.
@@ -160,4 +158,4 @@ Catch it before your users do.
 ---
 
 🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

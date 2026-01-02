@@ -7,8 +7,6 @@ cover_image:
 series: ESLint Performance Revolution
 ---
 
-# ESLint Flat Config: Why eslint-plugin-import Broke (And What We Did)
-
 ESLint 9.0 shipped flat config as the default. It's cleaner, faster, and... **broke half the ecosystem**.
 
 The biggest casualty? `eslint-plugin-import`.
@@ -146,9 +144,6 @@ rules: {
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-import-next %}
-📦 npm install eslint-plugin-import-next
-{% endcta %}
 
 ---
 
@@ -163,4 +158,4 @@ rules: {
 
 🚀 **Had trouble migrating to flat config? Share your experience!**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

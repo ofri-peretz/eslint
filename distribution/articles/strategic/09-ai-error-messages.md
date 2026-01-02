@@ -7,8 +7,6 @@ cover_image:
 series: AI-Native Development
 ---
 
-# Designing Error Messages for AI Coding Assistants
-
 AI coding assistants like Cursor, Copilot, and Windsurf are changing how we write code. But most linter error messages were designed for humans, not machines.
 
 What happens when you optimize for both?
@@ -94,9 +92,6 @@ Structured error messages are table stakes. The question is: are your tools read
 
 ---
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 Install eslint-plugin-secure-coding
-{% endcta %}
 
 ---
 
@@ -110,4 +105,4 @@ Structured error messages are table stakes. The question is: are your tools read
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

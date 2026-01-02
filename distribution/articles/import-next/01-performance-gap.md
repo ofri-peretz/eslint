@@ -8,8 +8,6 @@ canonical_url: https://dev.to/ofri-peretz/why-eslint-plugin-import-takes-45-seco
 series: ESLint Performance Revolution
 ---
 
-# Why eslint-plugin-import Takes 45 Seconds (And How We Fixed It)
-
 Your CI is slow. Your pre-commit hooks timeout. Developers disable linting to ship faster.
 
 **The culprit?** `eslint-plugin-import`.
@@ -113,4 +111,4 @@ time npx eslint --no-cache . # With eslint-plugin-import-next
 🚀 **Is your CI slow? Drop a comment with your lint times!**
 
 _Follow for more performance deep-dives:_
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

@@ -7,8 +7,6 @@ cover_image:
 canonical_url:
 ---
 
-# Timing Attacks: The Side-Channel You're Ignoring
-
 ```javascript
 if (providedToken === storedToken) {
   grantAccess();
@@ -136,4 +134,4 @@ Equal time for equal security.
 ---
 
 🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

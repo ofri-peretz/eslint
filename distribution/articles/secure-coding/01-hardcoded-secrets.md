@@ -8,8 +8,6 @@ cover_image:
 canonical_url:
 ---
 
-# Hardcoded Secrets: The #1 Vulnerability AI Agents Can Auto-Fix
-
 Every week, secrets leak. API keys committed to GitHub. Database passwords in config files. AWS credentials in environment variable defaults.
 
 **The fix is trivial. The detection is not.**
@@ -105,4 +103,4 @@ export default [secureCoding.configs.recommended];
 ---
 
 🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

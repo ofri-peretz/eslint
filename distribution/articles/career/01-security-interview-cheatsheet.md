@@ -8,8 +8,6 @@ canonical_url: https://dev.to/ofri-peretz/the-security-engineer-interview-cheat-
 series: Career Growth
 ---
 
-# The Security Engineer Interview Cheat Sheet for JavaScript Developers
-
 As an Engineering Manager, I've interviewed 50+ full-stack and backend candidates. Security questions are part of almost every technical interview—even for roles that aren't explicitly "security." Here are the 15 concepts that separate the prepared from the panicked.
 
 ## The Fundamentals (Asked 90% of the time)
@@ -195,4 +193,4 @@ npm install --save-dev eslint-plugin-browser-security
 
 🚀 **What security questions have you been asked in interviews?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

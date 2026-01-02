@@ -7,8 +7,6 @@ cover_image:
 series: Cryptography Security
 ---
 
-# Stop Using MD5: A Complete Guide to Node.js Cryptography
-
 ```javascript
 const hash = crypto.createHash('md5').update(password).digest('hex');
 ```
@@ -175,9 +173,6 @@ src/auth.ts
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-crypto %}
-📦 npm install eslint-plugin-crypto
-{% endcta %}
 
 ```javascript
 import cryptoPlugin from 'eslint-plugin-crypto';
@@ -199,4 +194,4 @@ export default [cryptoPlugin.configs.recommended];
 
 🚀 **Search your codebase for 'md5' or 'sha1' right now. What did you find?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

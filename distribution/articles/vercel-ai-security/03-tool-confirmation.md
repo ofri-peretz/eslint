@@ -1,13 +1,11 @@
 ---
 title: 'AI Agent Security: Why Your AI Tool Needs a Confirmation Step'
-published: false
+published: true
 description: 'AI agents can execute arbitrary code. Here is why require-tool-confirmation is critical and how to implement it.'
 tags: ai, security, agents, eslint
 cover_image:
 series: Vercel AI Security
 ---
-
-# AI Agent Security: Why Your AI Tool Needs a Confirmation Step
 
 AI agents are powerful. They can:
 
@@ -185,9 +183,6 @@ async function requireUserConfirmation({
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-vercel-ai-security %}
-📦 npm install eslint-plugin-vercel-ai-security
-{% endcta %}
 
 ```javascript
 import vercelAI from 'eslint-plugin-vercel-ai-security';
@@ -207,4 +202,4 @@ export default [vercelAI.configs.recommended];
 
 🚀 **How do you handle confirmation in your AI agents?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

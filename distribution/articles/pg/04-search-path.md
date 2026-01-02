@@ -1,13 +1,11 @@
 ---
 title: "search_path Hijacking: The PostgreSQL Attack You've Never Heard Of"
-published: false
+published: true
 description: "A dynamic search_path lets attackers hijack your SQL queries. Here's how this obscure attack works and how to prevent it."
-tags: postgresql, security, database, nodejs
+tags: postgresql, security, eslint, nodejs
 cover_image:
 canonical_url:
 ---
-
-# search_path Hijacking: The PostgreSQL Attack You've Never Heard Of
 
 Most developers know about SQL injection. Few know about search_path hijacking.
 
@@ -131,4 +129,5 @@ Don't let attackers hijack your queries.
 ---
 
 🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+
+[GitHub](https://github.com/ofri-peretz) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofri-peretz)

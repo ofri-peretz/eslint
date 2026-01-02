@@ -7,8 +7,6 @@ cover_image:
 series: AWS Lambda Security
 ---
 
-# AWS Lambda Security: OWASP Serverless Top 10 in ESLint
-
 Lambda functions are stateless, ephemeral, and... uniquely vulnerable.
 
 Traditional security tools miss serverless-specific issues. Here's how ESLint catches them.
@@ -207,9 +205,6 @@ src/handlers/payment.ts
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-lambda-security %}
-📦 npm install eslint-plugin-lambda-security
-{% endcta %}
 
 ```javascript
 import lambdaSecurity from 'eslint-plugin-lambda-security';
@@ -229,4 +224,4 @@ export default [lambdaSecurity.configs.recommended];
 
 🚀 **How many of these issues are in your Lambda functions?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

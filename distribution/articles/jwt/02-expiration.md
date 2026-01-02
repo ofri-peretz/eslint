@@ -7,8 +7,6 @@ cover_image:
 series: JWT Security
 ---
 
-# JWT Expiration: Why Your Tokens Need to Die
-
 A JWT without expiration is valid **forever**.
 
 That means:
@@ -187,9 +185,6 @@ function verifyToken(token: string) {
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-jwt %}
-📦 npm install eslint-plugin-jwt
-{% endcta %}
 
 ```javascript
 import jwtPlugin from 'eslint-plugin-jwt';
@@ -209,4 +204,4 @@ export default [jwtPlugin.configs.recommended];
 
 🚀 **How long do your JWTs live? Share your token strategy!**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

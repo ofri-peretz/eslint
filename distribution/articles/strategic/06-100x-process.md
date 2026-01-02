@@ -7,8 +7,6 @@ cover_image:
 series: Engineering Leadership
 ---
 
-# The 100x Engineer is a Myth. The 100x Process is Real.
-
 We spend an inordinate amount of time trying to hire "10x engineers." We grind them on LeetCode, grill them on system design, and pray they have the innate discipline to never make a mistake.
 
 But as an Engineering Manager scaling teams across the US and EU, I've learned a hard truth: **You cannot hire your way out of complexity.**
@@ -59,9 +57,6 @@ True engineering velocity doesn't come from faster typing. It comes from the con
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 Install eslint-plugin-secure-coding
-{% endcta %}
 
 ```javascript
 import secureCoding from 'eslint-plugin-secure-coding';
@@ -80,4 +75,4 @@ export default [secureCoding.configs.recommended];
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

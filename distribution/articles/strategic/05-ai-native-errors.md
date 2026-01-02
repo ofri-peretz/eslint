@@ -7,8 +7,6 @@ cover_image:
 series: AI-Native Development
 ---
 
-# AI-Native ESLint: Why Error Messages Need CWE, OWASP, and CVSS
-
 **Legacy ESLint error:**
 
 ```
@@ -172,9 +170,6 @@ import vercelAI from 'eslint-plugin-vercel-ai-security';
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 npm install eslint-plugin-secure-coding
-{% endcta %}
 
 ```javascript
 import secureCoding from 'eslint-plugin-secure-coding';
@@ -196,4 +191,4 @@ export default [secureCoding.configs.recommended];
 
 🚀 **Are your ESLint errors AI-readable?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

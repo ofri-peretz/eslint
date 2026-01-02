@@ -7,8 +7,6 @@ cover_image:
 series: Vercel AI Security
 ---
 
-# AI Token Limits: Preventing Cost and DoS Attacks
-
 ```javascript
 const { text } = await generateText({
   model: openai('gpt-4'),
@@ -79,9 +77,6 @@ export default [
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-vercel-ai-security %}
-📦 npm install eslint-plugin-vercel-ai-security
-{% endcta %}
 
 ---
 
@@ -95,4 +90,4 @@ export default [
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

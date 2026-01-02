@@ -7,8 +7,6 @@ cover_image:
 series: Engineering Leadership
 ---
 
-# Why Senior Engineers Still Write Insecure Code (And How to Stop It)
-
 I've seen it happen in almost every team I've managed.
 
 A Principal Engineer, someone with 10+ years of experience, pushes a feature. It's architecturally brilliant, scalable, and clean. And hidden deep in a utility function, there's a regex that is vulnerable to ReDoS.
@@ -53,9 +51,6 @@ Security is important. Too important to rely on your memory.
 
 ---
 
-{% cta https://npmjs.com/package/eslint-plugin-secure-coding %}
-📦 Install eslint-plugin-secure-coding
-{% endcta %}
 
 ---
 
@@ -69,4 +64,4 @@ Security is important. Too important to rely on your memory.
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

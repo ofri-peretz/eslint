@@ -7,8 +7,6 @@ cover_image:
 series: Cryptography Security
 ---
 
-# Static IV: Why Your Encryption is Predictable
-
 ```javascript
 const iv = Buffer.from('1234567890123456'); // Static!
 const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
@@ -92,9 +90,6 @@ export default [
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-crypto %}
-📦 npm install eslint-plugin-crypto
-{% endcta %}
 
 ---
 
@@ -108,4 +103,4 @@ export default [
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

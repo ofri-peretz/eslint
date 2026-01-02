@@ -1,13 +1,11 @@
 ---
 title: 'SQL Injection in node-postgres: The Pattern Everyone Gets Wrong'
-published: false
+published: true
 description: 'Even experienced developers make this mistake with pg. Learn the correct pattern and how ESLint catches it before production.'
 tags: postgresql, nodejs, security, eslint
 cover_image:
 canonical_url:
 ---
-
-# SQL Injection in node-postgres: The Pattern Everyone Gets Wrong
 
 I've reviewed hundreds of Node.js + PostgreSQL codebases. The same vulnerability appears in 80% of them.
 
@@ -139,4 +137,4 @@ export default [pg.configs.recommended];
 ---
 
 🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

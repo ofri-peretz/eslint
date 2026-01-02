@@ -7,8 +7,6 @@ cover_image:
 canonical_url:
 ---
 
-# The N+1 Insert Loop That Slowed Our API to a Crawl
-
 Our CSV import endpoint was timing out. 30 seconds wasn't enough.
 
 ## The Problem
@@ -143,5 +141,6 @@ Turn 50-second imports into 100ms operations.
 
 ---
 
-🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+🚀 **Follow me for more performance articles & updates:**
+
+[GitHub](https://github.com/ofri-peretz) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofri-peretz)

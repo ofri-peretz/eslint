@@ -1,13 +1,11 @@
 ---
 title: 'The 30-Minute Security Audit: Onboarding a New Codebase'
-published: false
+published: true
 description: 'How to assess a new codebase in under 30 minutes using automated security linting. Perfect for acquisitions, new hires, or CTOs inheriting legacy code.'
 tags: security, javascript, tutorial, devsecops
 cover_image: https://dev-to-uploads.s3.amazonaws.com/uploads/articles/wm4j62nzhhf6uwy1z89f.png
 series: Security Workflows
 ---
-
-# The 30-Minute Security Audit: Onboarding a New Codebase
 
 You just inherited a codebase. Maybe it's an acquisition. Maybe a departing senior engineer. Maybe you're the new CTO and nobody can explain why there's a `utils/legacy_auth.js` file with 3,000 lines.
 
@@ -116,4 +114,4 @@ The structured error messages are designed for AI coding assistants. Once you've
 
 🚀 **What's the worst thing you've found inheriting a codebase? Share your horror stories!**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

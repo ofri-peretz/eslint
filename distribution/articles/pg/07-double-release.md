@@ -7,8 +7,6 @@ cover_image:
 canonical_url:
 ---
 
-# Double Release: The Silent PostgreSQL Pool Killer
-
 ```javascript
 client.release();
 // ... later in error handling ...
@@ -180,4 +178,5 @@ Release once. Release correctly. Release in finally.
 ---
 
 🚀 **Follow me for more security articles & updates:**
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://www.linkedin.com/in/ofri-peretz/)
+
+[GitHub](https://github.com/ofri-peretz) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofri-peretz)

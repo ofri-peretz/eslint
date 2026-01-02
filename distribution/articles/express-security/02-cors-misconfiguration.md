@@ -7,8 +7,6 @@ cover_image:
 series: Express Security
 ---
 
-# CORS Misconfiguration: The Credentials + Wildcard Trap
-
 ```javascript
 app.use(
   cors({
@@ -224,9 +222,6 @@ app.use(cors(corsOptions));
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-express-security %}
-📦 npm install eslint-plugin-express-security
-{% endcta %}
 
 ```javascript
 import expressSecurity from 'eslint-plugin-express-security';
@@ -246,4 +241,4 @@ export default [expressSecurity.configs.recommended];
 
 🚀 **Check your CORS config. Is it wildcard + credentials?**
 
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)

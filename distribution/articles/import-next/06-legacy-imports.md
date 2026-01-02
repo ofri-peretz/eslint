@@ -7,8 +7,6 @@ cover_image:
 series: Monorepo Governance
 ---
 
-# Legacy Import Warnings: Helping Teams Migrate Gradually
-
 > "Don't import from @company/legacy-utils. Use @company/utils instead."
 
 How do you enforce this without breaking everyone?
@@ -112,9 +110,6 @@ export default [
 
 ## Quick Install
 
-{% cta https://npmjs.com/package/eslint-plugin-import-next %}
-📦 npm install eslint-plugin-import-next
-{% endcta %}
 
 ---
 
@@ -128,4 +123,4 @@ export default [
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
 {% endcta %}
-[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)
+[GitHub](https://github.com/interlace-collie) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofriperetz)
