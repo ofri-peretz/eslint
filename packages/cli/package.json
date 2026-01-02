@@ -1,5 +1,5 @@
 {
-  "name": "@eslint/cli",
+  "name": "@interlace/cli",
   "version": "2.6.0",
   "description": "CLI tool for managing releases in the eslint monorepo",
   "type": "commonjs",
