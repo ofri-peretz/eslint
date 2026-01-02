@@ -75,12 +75,12 @@ Examples:
 
 ## 📚 Documentation
 
-| Document                                               | Description                                         |
-| ------------------------------------------------------ | --------------------------------------------------- |
-| **This file**                                          | Overview, workflows, configuration                  |
-| [**Failure Scenarios**](./docs/FAILURE_SCENARIOS.md)   | All 16 failure scenarios (R01-R16), recovery matrix |
-| [**Nx Release Guide**](./docs/NX_RELEASE_GUIDE.md)     | Conventional commits, versioning, changelogs        |
-| [**NPM Authentication**](./docs/NPM_AUTHENTICATION.md) | Trusted Publishers, tokens, error diagnostics       |
+| Document                                               | Description                                                |
+| ------------------------------------------------------ | ---------------------------------------------------------- |
+| **This file**                                          | Overview, workflows, configuration                         |
+| [**Failure Scenarios**](./docs/FAILURE_SCENARIOS.md)   | All 17 failure scenarios (R01-R16 + R02b), recovery matrix |
+| [**Nx Release Guide**](./docs/NX_RELEASE_GUIDE.md)     | Conventional commits, versioning, changelogs               |
+| [**NPM Authentication**](./docs/NPM_AUTHENTICATION.md) | Trusted Publishers, tokens, error diagnostics              |
 
 ---
 

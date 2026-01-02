@@ -121,21 +121,61 @@ Every possible failure scenario is named, documented, and mapped to the code tha
 ### R02: Already Released
 
 **Category:** Tag Reconciliation  
-**When:** Package was already successfully released
+**When:** Package was already successfully released AND version-specifier is `auto`
 
-| Aspect          | Value                           |
-| --------------- | ------------------------------- |
-| **Git Tag**     | ✅ Exists                       |
-| **NPM Version** | ✅ Exists                       |
-| **Resolution**  | Skip this package automatically |
-| **Outcome**     | ⏭️ Skipped                      |
+| Aspect                | Value                           |
+| --------------------- | ------------------------------- |
+| **Git Tag**           | ✅ Exists                       |
+| **NPM Version**       | ✅ Exists                       |
+| **Version Specifier** | `auto` (default)                |
+| **Resolution**        | Skip this package automatically |
+| **Outcome**           | ⏭️ Skipped                      |
 
 ```bash
-# Detection logic
-if [ "$TAG_EXISTS" = "true" ] && [ "$NPM_EXISTS" = "true" ]; then
+# Detection logic - only skip if version-specifier is auto
+if [ "$TAG_EXISTS" = "true" ] && [ "$NPM_EXISTS" = "true" ] && [ "$VERSION_SPEC" = "auto" ]; then
   echo "✅ Already released - skipping"
   continue
 fi
+```
+
+> **Note:** If you explicitly select `minor`, `patch`, or `major` as version-specifier, the workflow will proceed with a version bump even if the current version is released. See R02b below.
+
+---
+
+### R02b: Explicit Version Bump Override
+
+**Category:** Tag Reconciliation  
+**When:** Package's current version is released, but user explicitly requests a version bump
+
+| Aspect                | Value                                     |
+| --------------------- | ----------------------------------------- |
+| **Git Tag**           | ✅ Exists                                 |
+| **NPM Version**       | ✅ Exists                                 |
+| **Version Specifier** | `minor`, `patch`, or `major` (explicit)   |
+| **Resolution**        | Proceed with version bump (override skip) |
+| **Outcome**           | ✅ Released (new version)                 |
+
+```mermaid
+flowchart TD
+    A[Package detected as affected] --> B{Current version released?}
+    B -->|Yes| C{Version specifier?}
+    C -->|auto| D[⏭️ Skip R02]
+    C -->|minor/patch/major| E[📦 Bump version R02b]
+    B -->|No| F[📦 Normal release R01]
+```
+
+**Use Case:** When you have unreleased commits but the current package.json version already exists on npm. This happens when:
+
+1. Previous release succeeded but package.json wasn't updated
+2. You want to force a new release with specific version bump
+
+**Example:**
+
+```bash
+# Current version 1.1.3 is on npm, but you have feat commits since then
+gh workflow run release.yml -f package=eslint-plugin-pg -f version-specifier=minor
+# Result: Releases 1.2.0 instead of skipping
 ```
 
 ---
@@ -380,21 +420,22 @@ See [NPM Authentication Guide](./NPM_AUTHENTICATION.md#first-release-flow) for s
 
 ## 🔄 Recovery Matrix
 
-| If you see...                                    | Scenario | Action                                        |
-| ------------------------------------------------ | -------- | --------------------------------------------- |
-| "Already released - skipping"                    | R02      | None needed                                   |
-| "Orphaned tag detected - cleaning up"            | R03      | Automatic                                     |
-| "NPM ahead of git"                               | R04      | Automatic                                     |
-| "Version already on npm"                         | R05      | None needed                                   |
-| "No conventional commits, falling back to patch" | R06      | Automatic                                     |
-| "Failed to pull latest changes"                  | R07      | Pull locally, resolve, re-run                 |
-| Workflow queued                                  | R08      | Wait                                          |
-| "Skipping - dependency failed"                   | R09      | Fix dependency first                          |
-| Test/Build failed                                | R10-R11  | Fix locally, re-run                           |
-| 401/403 auth error                               | R12      | See [NPM Auth Guide](./NPM_AUTHENTICATION.md) |
-| NPM publish failed (network)                     | R13      | Re-run workflow                               |
-| Workflow timed out/cancelled                     | R14-R15  | Re-run workflow                               |
-| "First release detected"                         | R16      | Automatic, then configure Trusted Publishers  |
+| If you see...                                    | Scenario | Action                                         |
+| ------------------------------------------------ | -------- | ---------------------------------------------- |
+| "Already released - skipping"                    | R02      | None needed (use explicit version to override) |
+| "Explicit version bump requested"                | R02b     | Automatic - proceeds with bump                 |
+| "Orphaned tag detected - cleaning up"            | R03      | Automatic                                      |
+| "NPM ahead of git"                               | R04      | Automatic                                      |
+| "Version already on npm"                         | R05      | None needed                                    |
+| "No conventional commits, falling back to patch" | R06      | Automatic                                      |
+| "Failed to pull latest changes"                  | R07      | Pull locally, resolve, re-run                  |
+| Workflow queued                                  | R08      | Wait                                           |
+| "Skipping - dependency failed"                   | R09      | Fix dependency first                           |
+| Test/Build failed                                | R10-R11  | Fix locally, re-run                            |
+| 401/403 auth error                               | R12      | See [NPM Auth Guide](./NPM_AUTHENTICATION.md)  |
+| NPM publish failed (network)                     | R13      | Re-run workflow                                |
+| Workflow timed out/cancelled                     | R14-R15  | Re-run workflow                                |
+| "First release detected"                         | R16      | Automatic, then configure Trusted Publishers   |
 
 ---
 
