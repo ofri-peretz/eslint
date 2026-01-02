@@ -46,6 +46,58 @@ jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
 
 Never disable this rule. Algorithm confusion is a critical vulnerability.
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Key Source Detection Limits
+
+**Why**: The rule uses heuristics (variable names, function patterns) to identify public keys. Novel naming conventions are missed.
+
+```typescript
+// ❌ NOT DETECTED - Unusual variable name
+const asymKey = fs.readFileSync('public.pem'); // Not recognized as public key
+jwt.verify(token, asymKey, { algorithms: ['HS256'] });
+```
+
+**Mitigation**: Use consistent naming (`publicKey`, `rsaPublic`). Document key types in comments.
+
+### Dynamic Algorithm Selection
+
+**Why**: Algorithm computed at runtime cannot be statically verified against key type.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic algorithm
+const algo = getUserPreferredAlgorithm(); // Could return 'HS256'
+jwt.verify(token, publicKey, { algorithms: [algo] });
+```
+
+**Mitigation**: Use TypeScript literal types for algorithms. Validate algorithm-key pairs at runtime.
+
+### Cross-Module Key Passing
+
+**Why**: Keys imported from other modules cannot be classified.
+
+```typescript
+// ❌ NOT DETECTED - Key from another module
+import { verificationKey } from './keys';
+jwt.verify(token, verificationKey, { algorithms: ['HS256'] }); // Is it public or secret?
+```
+
+**Mitigation**: Apply rule across all modules. Use type annotations for key types.
+
+### Key From Configuration Object
+
+**Why**: Properties of configuration objects are not analyzed for key type.
+
+```typescript
+// ❌ NOT DETECTED - Key in config
+const config = loadConfig();
+jwt.verify(token, config.key, { algorithms: ['HS256'] }); // Key type unknown
+```
+
+**Mitigation**: Validate key-algorithm pairs at runtime. Use separate config fields for asymmetric vs symmetric keys.
+
 ## Further Reading
 
 - [PortSwigger - Algorithm Confusion](https://portswigger.net/web-security/jwt/algorithm-confusion)

@@ -28,6 +28,58 @@ jwt.verify(token, secret, {
 });
 ```
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Options from Variable
+
+**Why**: Variable contents are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Options from variable
+const opts = { issuer: 'auth.example.com' }; // Missing audience
+jwt.verify(token, secret, opts);
+```
+
+**Mitigation**: Use inline options. Create TypeScript types requiring `audience`.
+
+### Spread Options
+
+**Why**: Spread properties hide the actual options at lint time.
+
+```typescript
+// ❌ NOT DETECTED - audience may be missing in base
+const baseOpts = getVerifyOptions(); // No audience
+jwt.verify(token, secret, { ...baseOpts });
+```
+
+**Mitigation**: Always specify audience explicitly. Avoid spreading untrusted options.
+
+### Runtime Audience Configuration
+
+**Why**: Audience from runtime config is not visible.
+
+```typescript
+// ❌ NOT DETECTED - Audience from config
+jwt.verify(token, secret, { audience: config.audience }); // Might be undefined
+```
+
+**Mitigation**: Validate config at startup. Use required fields in TypeScript config types.
+
+### Wrapper Function
+
+**Why**: Options passed through wrappers are not traced.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper hides options
+function verifyToken(token: string) {
+  return jwt.verify(token, secret, { algorithms: ['RS256'] }); // No audience
+}
+```
+
+**Mitigation**: Apply this rule to all modules including utilities.
+
 ## Further Reading
 
 - [RFC 8725 - JWT Best Practices](https://tools.ietf.org/html/rfc8725)

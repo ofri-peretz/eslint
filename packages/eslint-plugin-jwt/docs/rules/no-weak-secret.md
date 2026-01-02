@@ -19,7 +19,7 @@ jwt.sign(payload, 'secret');
 jwt.sign(payload, 'password');
 jwt.sign(payload, 'changeme');
 
-// Short secrets (< 32 characters)
+// Short secrets (<32 characters)
 jwt.sign(payload, 'shortkey');
 ```
 
@@ -49,6 +49,71 @@ jwt.sign(payload, crypto.randomBytes(32).toString('hex'));
 | Option            | Type    | Default | Description                   |
 | ----------------- | ------- | ------- | ----------------------------- |
 | `minSecretLength` | integer | 32      | Minimum secret length (chars) |
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Variable References
+
+**Why**: Only literal string secrets are analyzed for length/weakness.
+
+```typescript
+// ❌ NOT DETECTED - Secret from variable
+const weakSecret = 'abc';
+jwt.sign(payload, weakSecret); // Variable not analyzed
+```
+
+**Mitigation**: Use environment variables. Apply TypeScript branded types for validated secrets.
+
+### Concatenated Secrets
+
+**Why**: String operations are not evaluated statically.
+
+```typescript
+// ❌ NOT DETECTED - Concatenated weak parts
+const part1 = 'short';
+const part2 = 'key';
+jwt.sign(payload, part1 + part2); // Still weak, but not detected
+```
+
+**Mitigation**: Use single, long secret strings. Avoid dynamic secret construction.
+
+### Encoded Weak Secrets
+
+**Why**: Base64/hex encoding can hide a weak underlying secret.
+
+```typescript
+// ❌ NOT DETECTED - Encoded but short underlying value
+const encoded = Buffer.from('weak').toString('base64'); // 'd2Vhaw=='
+jwt.sign(payload, encoded); // String is long enough but entropy is low
+```
+
+**Mitigation**: Validate secret entropy at runtime. Use cryptographically random secrets.
+
+### Environment Variable Values
+
+**Why**: The rule trusts environment variables but cannot verify their actual values.
+
+```typescript
+// ❌ NOT DETECTED - Weak secret in env var
+// .env: JWT_SECRET=password
+jwt.sign(payload, process.env.JWT_SECRET); // Trusts the env var
+```
+
+**Mitigation**: Use secret rotation policies. Validate secret strength at application startup.
+
+### Secrets from Configuration Files
+
+**Why**: Values loaded from config files are treated as safe.
+
+```typescript
+// ❌ NOT DETECTED - Weak secret in config
+import { JWT_SECRET } from './config'; // Config contains 'weak123'
+jwt.sign(payload, JWT_SECRET);
+```
+
+**Mitigation**: Apply secret validation at config load time. Use environment variables for secrets.
 
 ## Further Reading
 

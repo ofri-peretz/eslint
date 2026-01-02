@@ -38,6 +38,58 @@ From LightSEC 2025 research:
 3. Tokens are stored for later use
 4. Years later, the tokens become valid and can impersonate the device
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Options Object from Variable
+
+**Why**: Variable contents are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Options from variable
+const opts = { noTimestamp: true };
+jwt.sign(payload, secret, opts); // Variable not analyzed
+```
+
+**Mitigation**: Use inline options objects. Use TypeScript to forbid `noTimestamp: true`.
+
+### Spread Options Object
+
+**Why**: Spread properties are not visible at lint time.
+
+```typescript
+// ❌ NOT DETECTED - noTimestamp in spread
+const baseOpts = { noTimestamp: true };
+jwt.sign(payload, secret, { ...baseOpts, expiresIn: '1h' });
+```
+
+**Mitigation**: Avoid spreading sign options. Build options explicitly.
+
+### Dynamic Boolean Values
+
+**Why**: Boolean computed at runtime is not evaluated.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic boolean
+const disableTimestamp = getConfig().disableIat; // Returns true
+jwt.sign(payload, secret, { noTimestamp: disableTimestamp });
+```
+
+**Mitigation**: Use TypeScript literal types. Validate config at startup.
+
+### Cross-Module Options
+
+**Why**: Options imported from other modules are not traced.
+
+```typescript
+// ❌ NOT DETECTED - Options from import
+import { JWT_OPTIONS } from './config'; // { noTimestamp: true }
+jwt.sign(payload, secret, JWT_OPTIONS);
+```
+
+**Mitigation**: Apply this rule to all modules including config files.
+
 ## Further Reading
 
 - [LightSEC 2025 - "Back to the Future" Attack](https://securitypattern.com/post/jwt-back-to-the-future)

@@ -28,6 +28,57 @@ jwt.verify(token, secret, {
 });
 ```
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Options from Variable
+
+**Why**: Variable contents are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Options from variable
+const opts = { algorithms: ['RS256'] }; // Missing issuer
+jwt.verify(token, secret, opts);
+```
+
+**Mitigation**: Use inline options. Create TypeScript types requiring `issuer`.
+
+### Spread Options
+
+**Why**: Spread properties hide the actual options at lint time.
+
+```typescript
+// ❌ NOT DETECTED - issuer may be missing in base
+const baseOpts = getVerifyOptions(); // No issuer
+jwt.verify(token, secret, { ...baseOpts });
+```
+
+**Mitigation**: Always specify issuer explicitly. Avoid spreading untrusted options.
+
+### Runtime Issuer Configuration
+
+**Why**: Issuer from runtime config is not visible.
+
+```typescript
+// ❌ NOT DETECTED - Issuer from config
+jwt.verify(token, secret, { issuer: config.issuer }); // Might be undefined
+```
+
+**Mitigation**: Validate config at startup. Use required fields in TypeScript config types.
+
+### Multi-Tenant Issuer Lists
+
+**Why**: Complex issuer validation logic is not understood.
+
+```typescript
+// ❌ NOT DETECTED (may be incorrectly flagged) - Dynamic issuer list
+const issuers = getTenantIssuers();
+jwt.verify(token, secret, { issuer: issuers });
+```
+
+**Mitigation**: Use `trustedAnnotations` for complex validation patterns.
+
 ## Further Reading
 
 - [RFC 8725 - JWT Best Practices](https://tools.ietf.org/html/rfc8725)
