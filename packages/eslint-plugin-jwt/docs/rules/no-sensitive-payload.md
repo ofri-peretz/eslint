@@ -46,6 +46,81 @@ jwt.sign({ userId: 'abc123', permissions: ['read'] }, secret);
 }
 ```
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Computed Property Names
+
+**Why**: The rule checks literal property names; computed properties are not resolved.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic property name
+const field = 'password';
+jwt.sign({ [field]: 'secret123' }, secret); // Property name unknown
+```
+
+**Mitigation**: Avoid computed property names in JWT payloads. Use TypeScript interfaces.
+
+### Spread Operator with Sensitive Data
+
+**Why**: Spread objects hide their properties at lint time.
+
+```typescript
+// ❌ NOT DETECTED - Sensitive data in spread object
+const user = { name: 'John', ssn: '123-45-6789' };
+jwt.sign({ ...user, role: 'admin' }, secret); // SSN hidden in spread
+```
+
+**Mitigation**: Explicitly pick/omit fields before signing. Use `pick()` utilities.
+
+### Nested Sensitive Data
+
+**Why**: The rule checks top-level properties by default.
+
+```typescript
+// ❌ NOT DETECTED - Sensitive data in nested object
+jwt.sign(
+  {
+    sub: '123',
+    profile: { email: 'user@example.com' }, // Nested - not detected
+  },
+  secret,
+);
+```
+
+**Mitigation**: Configure `checkNestedProperties: true` if available. Flatten sensitive checks in code review.
+
+### Obfuscated Field Names
+
+**Why**: Field name patterns don't match intentionally obfuscated names.
+
+```typescript
+// ❌ NOT DETECTED - Obfuscated field name
+jwt.sign(
+  {
+    sub: '123',
+    e: 'user@example.com', // 'e' for email - not in pattern
+    p: '555-1234', // 'p' for phone - not in pattern
+  },
+  secret,
+);
+```
+
+**Mitigation**: Use `additionalSensitiveFields` to add custom patterns.
+
+### Variable Payload Reference
+
+**Why**: Variable contents are not tracked.
+
+```typescript
+// ❌ NOT DETECTED - Payload from variable
+const payload = { ssn: '123-45-6789' };
+jwt.sign(payload, secret); // Variable not analyzed
+```
+
+**Mitigation**: Use inline objects. Apply TypeScript types that exclude sensitive fields.
+
 ## Further Reading
 
 - [RFC 8725 - JWT Best Practices](https://tools.ietf.org/html/rfc8725)

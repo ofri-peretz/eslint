@@ -63,6 +63,62 @@ jwt.verify(token, secret, { algorithms: ['HS256'] });
 
 Never disable this rule in production code. You may use `allowInTests: true` for security testing.
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Dynamic Algorithm Configuration
+
+**Why**: The rule checks for literal `'none'` strings, not dynamically constructed values.
+
+```typescript
+// ❌ NOT DETECTED - Variable contains 'none'
+const algo = getAlgorithmFromConfig(); // Returns 'none'
+jwt.verify(token, secret, { algorithm: algo });
+```
+
+**Mitigation**: Use TypeScript strict typing for algorithm options. Implement runtime validation.
+
+### Spread Operator Options
+
+**Why**: Spread objects are not statically analyzable.
+
+```typescript
+// ❌ NOT DETECTED - Algorithm in spread object
+const maliciousOptions = { algorithm: 'none' };
+jwt.verify(token, secret, { ...maliciousOptions });
+```
+
+**Mitigation**: Avoid spreading untrusted option objects. Validate options at runtime.
+
+### External Configuration Files
+
+**Why**: ESLint cannot trace values from JSON/YAML config files.
+
+```typescript
+// ❌ NOT DETECTED - Algorithm from config file
+// config.json: { "jwt": { "algorithm": "none" } }
+import config from './config.json';
+jwt.verify(token, secret, { algorithm: config.jwt.algorithm });
+```
+
+**Mitigation**: Validate configuration at application startup. Use schema validation for config files.
+
+### Library Wrapper Defaults
+
+**Why**: Default options set inside wrapper functions are not visible.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper function with unsafe defaults
+function verifyToken(token: string) {
+  // 'none' hardcoded in wrapper
+  return jwt.verify(token, secret, { algorithms: ['none', 'HS256'] });
+}
+verifyToken(userToken); // Looks safe, but isn't
+```
+
+**Mitigation**: Apply this rule to all files including utility modules.
+
 ## Further Reading
 
 - [CVE-2022-23540](https://nvd.nist.gov/vuln/detail/CVE-2022-23540)

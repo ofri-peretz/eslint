@@ -39,6 +39,73 @@ jwt.verify(token, secret, { algorithm: 'RS256' });
 }
 ```
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Options Object from Variable
+
+**Why**: Variable contents are not tracked; only inline objects are checked.
+
+```typescript
+// ❌ NOT DETECTED - Options from variable
+const options = { complete: true }; // Missing algorithms
+jwt.verify(token, secret, options); // Variable not analyzed
+```
+
+**Mitigation**: Use inline options objects. Create TypeScript types requiring `algorithms`.
+
+### Wrapper Function Options
+
+**Why**: Options passed through wrapper functions are not visible.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper hides options
+function verifyToken(token: string, opts = {}) {
+  return jwt.verify(token, secret, opts); // opts may lack algorithms
+}
+verifyToken(userToken); // Looks safe
+```
+
+**Mitigation**: Apply this rule to all modules. Add algorithms in wrappers.
+
+### Spread Options Object
+
+**Why**: Spread objects hide their properties at lint time.
+
+```typescript
+// ❌ NOT DETECTED - algorithms hidden in spread
+const baseOpts = { algorithms: ['RS256'] };
+const maliciousOpts = { algorithms: [] }; // Overrides!
+jwt.verify(token, secret, { ...baseOpts, ...maliciousOpts });
+```
+
+**Mitigation**: Avoid spreading untrusted options. List algorithms explicitly.
+
+### Dynamic Options Construction
+
+**Why**: Options built at runtime cannot be analyzed statically.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic options building
+const options = getVerifyOptions(); // May or may not have algorithms
+jwt.verify(token, secret, options);
+```
+
+**Mitigation**: Use TypeScript interfaces requiring `algorithms` property.
+
+### Library Defaults
+
+**Why**: Some JWT libraries have secure defaults that aren't visible to the rule.
+
+```typescript
+// ⚠️ FALSE POSITIVE RISK - Some libraries default to safe algorithms
+import { verify } from 'secure-jwt-lib';
+verify(token, key); // Library may have secure defaults
+```
+
+**Mitigation**: Use `trustedAnnotations` to mark verified patterns.
+
 ## Further Reading
 
 - [RFC 8725 - JWT Best Practices](https://tools.ietf.org/html/rfc8725)

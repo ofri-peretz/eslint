@@ -50,6 +50,61 @@ const { payload } = await jwtVerify(token, key);
 
 Use `@decoded-header-only` annotation when inspecting token headers before verification routing.
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Manual Base64 Decoding
+
+**Why**: The rule tracks `jwt.decode()` and `jwt-decode` imports, not raw Base64 parsing.
+
+```typescript
+// ❌ NOT DETECTED - Direct base64 decode of JWT payload
+const [header, payload, signature] = token.split('.');
+const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString());
+// ^^ Attacker bypasses decode detection entirely
+```
+
+**Mitigation**: Code review for manual JWT parsing. Consider using `no-restricted-syntax` to ban base64 decode patterns.
+
+### Aliased Decode Function
+
+**Why**: The rule matches specific function names; renamed imports are not tracked.
+
+```typescript
+// ❌ NOT DETECTED - Aliased import
+import { decode as parseToken } from 'jsonwebtoken';
+const payload = parseToken(token); // 'parseToken' not recognized
+```
+
+**Mitigation**: Use consistent import naming. Add custom matchers via configuration.
+
+### Dynamic Method Access
+
+**Why**: Computed property access cannot be resolved statically.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic method call
+const method = 'decode';
+jwt[method](token); // Method name unknown at lint time
+```
+
+**Mitigation**: Avoid dynamic property access on security-sensitive APIs.
+
+### Verified-Then-Decoded Pattern
+
+**Why**: The rule cannot track control flow to determine if verify was called first.
+
+```typescript
+// ❌ FALSE POSITIVE RISK - May flag despite prior verification
+async function getPayload(token: string) {
+  await jwt.verify(token, secret); // Verification here...
+  return jwt.decode(token); // ...but decode flagged anyway
+}
+```
+
+**Mitigation**: Use `@verified-separately` annotation for legitimate patterns.
+
 ## Further Reading
 
 - [OWASP JWT Testing Guide](https://owasp.org/www-project-web-security-testing-guide/)

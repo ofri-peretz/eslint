@@ -323,23 +323,38 @@ jobs:
                 # Get current version
                 CURRENT_VER=$(node -p "require('./packages/$pkg/package.json').version" 2>/dev/null || echo "N/A")
                 
+                # Resolve NPM name
+                case "$pkg" in
+                  eslint-devkit) NPM_NAME="@interlace/eslint-devkit" ;;
+                  cli) NPM_NAME="@interlace/cli" ;;
+                  *) NPM_NAME="$pkg" ;;
+                esac
+                
+                # Check if this is a first-time release
+                IS_FIRST_RELEASE=false
+                NPM_CHECK=$(npm view "$NPM_NAME" version 2>&1) || true
+                if echo "$NPM_CHECK" | grep -qiE "(404|not found|no such package)"; then
+                  IS_FIRST_RELEASE=true
+                fi
+                
                 # Find last tag for this package
                 LAST_TAG=$(git tag --list "${pkg}@*" --sort=-version:refname 2>/dev/null | head -1 || echo "")
                 
                 # Count commits since last tag for this package
                 if [ -n "$LAST_TAG" ]; then
                   COMMIT_COUNT=$(git log --oneline "$LAST_TAG..HEAD" -- "packages/$pkg/" 2>/dev/null | wc -l | tr -d ' ')
-                  # Get the most recent commit type
-                  LAST_COMMIT=$(git log --oneline "$LAST_TAG..HEAD" -- "packages/$pkg/" 2>/dev/null | head -1 || echo "none")
+                elif [ "$IS_FIRST_RELEASE" = "true" ]; then
+                  COMMIT_COUNT="🆕 First Release"
                 else
                   COMMIT_COUNT="(no tag)"
-                  LAST_COMMIT="N/A"
                 fi
                 
                 # Determine bump type
-                if [ "$VERSION_SPEC" = "auto" ]; then
+                if [ "$IS_FIRST_RELEASE" = "true" ]; then
+                  BUMP="🆕 initial"
+                elif [ "$VERSION_SPEC" = "auto" ]; then
                   # Check if there's a feat commit (minor) or just fix (patch)
-                  if git log --oneline "$LAST_TAG..HEAD" -- "packages/$pkg/" 2>/dev/null | grep -qE "^[a-f0-9]+ feat"; then
+                  if [ -n "$LAST_TAG" ] && git log --oneline "$LAST_TAG..HEAD" -- "packages/$pkg/" 2>/dev/null | grep -qE "^[a-f0-9]+ feat"; then
                     BUMP="minor ⬆️"
                   else
                     BUMP="patch 🔧"
@@ -348,7 +363,7 @@ jobs:
                   BUMP="$VERSION_SPEC 📦"
                 fi
                 
-                echo "| \`$pkg\` | \`$CURRENT_VER\` | $BUMP | $COMMIT_COUNT commits |" >> $GITHUB_STEP_SUMMARY
+                echo "| \`$pkg\` | \`$CURRENT_VER\` | $BUMP | $COMMIT_COUNT |" >> $GITHUB_STEP_SUMMARY
               fi
             done
             

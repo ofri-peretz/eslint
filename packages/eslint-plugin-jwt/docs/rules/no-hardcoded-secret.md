@@ -35,6 +35,73 @@ jwt.sign(payload, config.jwtSecret);
 jwt.sign(payload, getSecretFromVault());
 ```
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Dynamic Secret Construction
+
+**Why**: The rule checks for literal strings but cannot evaluate runtime string operations.
+
+```typescript
+// ❌ NOT DETECTED - String built at runtime
+const prefix = 'secret';
+const suffix = '-key-123';
+jwt.sign(payload, prefix + suffix); // Concatenation not statically resolved
+```
+
+**Mitigation**: Use ESLint's `prefer-template` and code review. Consider runtime secret detection.
+
+### Encoded/Obfuscated Secrets
+
+**Why**: The rule matches plain text literals, not decoded values.
+
+```typescript
+// ❌ NOT DETECTED - Base64 encoded secret
+const secret = Buffer.from('c2VjcmV0LWtleQ==', 'base64').toString();
+jwt.sign(payload, secret);
+```
+
+**Mitigation**: Use pre-commit hooks that scan for base64-encoded secrets. Consider tools like `git-secrets`.
+
+### Cross-Module Secret Passing
+
+**Why**: ESLint analyzes one file at a time; imported values cannot be traced.
+
+```typescript
+// ❌ NOT DETECTED - Secret imported from another file
+// secrets.ts: export const JWT_SECRET = 'hardcoded-secret';
+import { JWT_SECRET } from './secrets';
+jwt.sign(payload, JWT_SECRET); // Value unknown at lint time
+```
+
+**Mitigation**: Apply the rule to all files. Use secret scanning tools across the entire repository.
+
+### Object Property Secrets
+
+**Why**: When identifier references are treated as safe (could be config), deeply nested literals are missed.
+
+```typescript
+// ❌ NOT DETECTED - Nested in object created elsewhere
+const config = createConfig(); // Returns { secret: 'hardcoded' }
+jwt.sign(payload, config.secret); // Member expression treated as safe
+```
+
+**Mitigation**: Enable `strictMode: true` option to treat all non-env sources as suspicious.
+
+### Variable Re-assignment
+
+**Why**: The rule checks the immediate argument, not variable history.
+
+```typescript
+// ❌ NOT DETECTED - Indirect reference
+let key = 'my-secret-key';
+const actualKey = key;
+jwt.sign(payload, actualKey); // Identifier treated as safe
+```
+
+**Mitigation**: Use const bindings and avoid variable reassignment for secrets.
+
 ## Further Reading
 
 - [CWE-798: Hardcoded Credentials](https://cwe.mitre.org/data/definitions/798.html)
