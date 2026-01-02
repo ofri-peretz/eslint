@@ -36,11 +36,16 @@ Must be one of the following **lowercase** types:
 | `chore`    | Other changes that don't modify src or test files       |
 | `revert`   | Reverts a previous commit                               |
 
-### 2. Scope (OPTIONAL)
+### 2. Scope (OPTIONAL but validated)
 
-- Wrap in parentheses: `feat(crypto): ...`
-- Use package name or component: `crypto`, `jwt`, `express-security`, `ci`
+- Wrap in parentheses: `feat(eslint-plugin-pg): ...`
+- **MUST match Nx project name** exactly (if provided)
+- Valid package scopes: `eslint-devkit`, `eslint-plugin-pg`, `eslint-plugin-jwt`, `eslint-plugin-crypto`, etc.
+- Special scopes: `ci`, `deps`, `release`, `docs`, `workspace`
 - Can be omitted for workspace-wide changes: `chore: update dependencies`
+
+> ⚠️ **CRITICAL**: Use the **full project name** (e.g., `eslint-plugin-pg`), not abbreviations like `pg`.
+> Nx Release matches commits by scope to determine version bumps.
 
 ### 3. Subject (REQUIRED)
 
