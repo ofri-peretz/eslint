@@ -803,6 +803,12 @@ jobs:
               if [ "$IS_FIRST_RELEASE" = "true" ]; then
                 PUBLISH_CMD="$PUBLISH_CMD --first-release"
                 echo "📦 Command: $PUBLISH_CMD"
+                echo "⚠️ First release: Disabling provenance (OIDC can't create new packages)"
+                echo "   └─ Using NPM_TOKEN for authentication instead"
+                # CRITICAL: Disable provenance for first releases
+                # OIDC provenance requires the package to already exist on npm
+                # First releases MUST use NPM_TOKEN (classic auth)
+                export NPM_CONFIG_PROVENANCE=false
               fi
               
               # ────────────────────────────────────────────────────────────
