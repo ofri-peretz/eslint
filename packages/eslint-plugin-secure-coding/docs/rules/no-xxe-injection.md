@@ -105,6 +105,44 @@ const data = JSON.parse(userInput);
    Fix: Remove SYSTEM/PUBLIC entity declarations or use safe XML parser | https://owasp.org/...
 ```
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Query from Variable
+
+**Why**: Query strings from variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Query from variable
+const query = `SELECT * FROM users WHERE id = ${userId}`;
+db.execute(query);
+```
+
+**Mitigation**: Always use parameterized queries.
+
+### Custom Query Builders
+
+**Why**: Custom ORM/query builders not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom builder
+customQuery.where(userInput).execute();
+```
+
+**Mitigation**: Review all query builder patterns.
+
+### Template Engines
+
+**Why**: Template-based queries not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Template
+executeTemplate('query.sql', { userId });
+```
+
+**Mitigation**: Validate all template variables.
+
 ## Further Reading
 
 - **[OWASP XXE Prevention](https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html)** - Prevention cheat sheet

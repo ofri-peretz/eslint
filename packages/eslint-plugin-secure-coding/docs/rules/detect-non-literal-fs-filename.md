@@ -285,6 +285,45 @@ for (const attack of attacks) {
 - [`detect-object-injection`](./detect-object-injection.md) - Prevents prototype pollution
 - [`detect-non-literal-regexp`](./detect-non-literal-regexp.md) - Prevents ReDoS attacks
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Path from Variable
+
+**Why**: Path strings from variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Path from variable
+const filePath = userInput;
+fs.readFile(filePath);
+```
+
+**Mitigation**: Validate and sanitize all paths.
+
+### Indirect Path Construction
+
+**Why**: Complex path building not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Indirect
+const path = buildPath(base, userInput);
+fs.readFile(path);
+```
+
+**Mitigation**: Use path whitelisting.
+
+### Custom FS Wrappers
+
+**Why**: FS wrappers not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper
+fileManager.read(userPath);
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
 ## Further Reading
 
 - **[OWASP Path Traversal](https://owasp.org/www-community/attacks/Path_Traversal)** - Path traversal attack guide

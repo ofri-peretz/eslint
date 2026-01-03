@@ -125,6 +125,44 @@ if (result.success) {
    Fix: Use value != null && typeof value === 'object' | https://cwe.mitre.org/...
 ```
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Values from Variables
+
+**Why**: Values stored in variables are not traced.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const value = userInput;
+dangerousOperation(value);
+```
+
+**Mitigation**: Validate all user inputs.
+
+### Wrapper Functions
+
+**Why**: Custom wrappers not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper
+myWrapper(userInput); // Uses dangerous API internally
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
+### Dynamic Invocation
+
+**Why**: Dynamic calls not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic
+obj[method](userInput);
+```
+
+**Mitigation**: Avoid dynamic method invocation.
+
 ## Further Reading
 
 - **[CWE-1287](https://cwe.mitre.org/data/definitions/1287.html)** - Improper validation of specified type

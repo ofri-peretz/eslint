@@ -77,6 +77,44 @@ Without scanning, this gets embedded in RAG context and executed by LLM.
 3. **Allowlist**: Only allow known-safe document types
 4. **Sandboxing**: Process external content in isolated environment
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Query from Variable
+
+**Why**: Query strings from variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Query from variable
+const query = `SELECT * FROM users WHERE id = ${userId}`;
+db.execute(query);
+```
+
+**Mitigation**: Always use parameterized queries.
+
+### Custom Query Builders
+
+**Why**: Custom ORM/query builders not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom builder
+customQuery.where(userInput).execute();
+```
+
+**Mitigation**: Review all query builder patterns.
+
+### Template Engines
+
+**Why**: Template-based queries not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Template
+executeTemplate('query.sql', { userId });
+```
+
+**Mitigation**: Validate all template variables.
+
 ## Further Reading
 
 - [OWASP LLM01](https://owasp.org/www-project-top-10-for-large-language-model-applications/)

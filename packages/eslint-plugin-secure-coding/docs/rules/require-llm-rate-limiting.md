@@ -296,6 +296,45 @@ async function checkRateLimit(user, action) {
 - If you have alternative DoS protection
 - Development/testing environments (use low limits)
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Prompt from Variable
+
+**Why**: Prompt content from variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Prompt from variable
+const prompt = buildPrompt(userInput);
+await generateText({ prompt });
+```
+
+**Mitigation**: Validate all prompt components.
+
+### Nested Context
+
+**Why**: Deep nesting obscures injection.
+
+```typescript
+// ❌ NOT DETECTED - Nested
+const messages = [{ role: 'user', content: userInput }];
+await chat({ messages });
+```
+
+**Mitigation**: Validate at all levels.
+
+### Custom AI Wrappers
+
+**Why**: Custom AI clients not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom wrapper
+myAI.complete(userPrompt);
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
 ## Further Reading
 
 - [OWASP LLM10: Unbounded Consumption](https://owasp.org/www-project-top-10-for-large-language-model-applications/)

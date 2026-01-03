@@ -225,6 +225,44 @@ const maliciousInputs = [
 - [`detect-non-literal-fs-filename`](./detect-non-literal-fs-filename.md) - Prevents path traversal
 - [`detect-object-injection`](./detect-object-injection.md) - Prevents prototype pollution
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Values from Variables
+
+**Why**: Values stored in variables are not traced.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const value = userInput;
+dangerousOperation(value);
+```
+
+**Mitigation**: Validate all user inputs.
+
+### Wrapper Functions
+
+**Why**: Custom wrappers not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper
+myWrapper(userInput); // Uses dangerous API internally
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
+### Dynamic Invocation
+
+**Why**: Dynamic calls not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic
+obj[method](userInput);
+```
+
+**Mitigation**: Avoid dynamic method invocation.
+
 ## Further Reading
 
 - **[OWASP ReDoS Attacks](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)** - ReDoS attack guide

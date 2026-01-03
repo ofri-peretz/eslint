@@ -34,3 +34,42 @@ This rule has no options.
 ## When Not To Use It
 
 TODO: Add when not to use.
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Algorithm from Variable
+
+**Why**: Algorithm names from variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Algorithm from variable
+const algo = config.hashAlgorithm; // May be weak
+crypto.createHash(algo);
+```
+
+**Mitigation**: Hardcode secure algorithms.
+
+### Third-party Crypto Libraries
+
+**Why**: Non-standard crypto APIs not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Third-party
+customCrypto.encrypt(data, key);
+```
+
+**Mitigation**: Review all crypto implementations.
+
+### Configuration-based Security
+
+**Why**: Config-driven security not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Config-based
+const options = getSecurityOptions(); // May be weak
+```
+
+**Mitigation**: Validate security configurations.
+

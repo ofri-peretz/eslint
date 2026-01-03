@@ -28,6 +28,45 @@ This rule security rule for mobile applications.
 
 This rule should be enabled for all mobile and web applications to ensure security best practices.
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Prompt from Variable
+
+**Why**: Prompt content from variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Prompt from variable
+const prompt = buildPrompt(userInput);
+await generateText({ prompt });
+```
+
+**Mitigation**: Validate all prompt components.
+
+### Nested Context
+
+**Why**: Deep nesting obscures injection.
+
+```typescript
+// ❌ NOT DETECTED - Nested
+const messages = [{ role: 'user', content: userInput }];
+await chat({ messages });
+```
+
+**Mitigation**: Validate at all levels.
+
+### Custom AI Wrappers
+
+**Why**: Custom AI clients not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom wrapper
+myAI.complete(userPrompt);
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
 ## Further Reading
 
 - [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)

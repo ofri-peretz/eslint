@@ -129,6 +129,44 @@ The rule provides guidance:
 - **"Remove Sensitive Data"**: Advises removing the variable from the log.
 - **"Mask Data"**: Suggests replacing the value with `***` or a hash.
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Values from Variables
+
+**Why**: Values stored in variables are not traced.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const value = userInput;
+dangerousOperation(value);
+```
+
+**Mitigation**: Validate all user inputs.
+
+### Wrapper Functions
+
+**Why**: Custom wrappers not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper
+myWrapper(userInput); // Uses dangerous API internally
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
+### Dynamic Invocation
+
+**Why**: Dynamic calls not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic
+obj[method](userInput);
+```
+
+**Mitigation**: Avoid dynamic method invocation.
+
 ## Further Reading
 
 - [OWASP: Insertion of Sensitive Information into Log File](https://owasp.org/www-community/vulnerabilities/Insertion_of_Sensitive_Information_into_Log_File)

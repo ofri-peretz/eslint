@@ -34,3 +34,41 @@ This rule has no options.
 ## When Not To Use It
 
 TODO: Add when not to use.
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Credentials from Config
+
+**Why**: Config values not traced.
+
+```typescript
+// ❌ NOT DETECTED - From config
+const password = config.dbPassword;
+```
+
+**Mitigation**: Use proper secrets management.
+
+### Environment Variables
+
+**Why**: Env var content not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Env var
+const secret = process.env.API_KEY;
+```
+
+**Mitigation**: Never hardcode or expose secrets.
+
+### Dynamic Credential Access
+
+**Why**: Dynamic property access not traced.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic
+const cred = credentials[type];
+```
+
+**Mitigation**: Audit all credential access patterns.
+

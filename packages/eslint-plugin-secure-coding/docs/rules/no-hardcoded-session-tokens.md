@@ -28,6 +28,45 @@ This rule security rule for mobile applications.
 
 This rule should be enabled for all mobile and web applications to ensure security best practices.
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Cookie from Variable
+
+**Why**: Cookie strings from variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Cookie from variable
+const cookie = buildCookie(name, value);
+res.setHeader('Set-Cookie', cookie);
+```
+
+**Mitigation**: Use secure cookie libraries.
+
+### Framework Abstractions
+
+**Why**: Framework cookie APIs not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Framework
+app.use(session({ cookie: opts }));
+```
+
+**Mitigation**: Review framework configurations.
+
+### Dynamic Cookie Attributes
+
+**Why**: Dynamic attributes not evaluated.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic
+const attrs = getAttributes();
+res.cookie('name', 'value', attrs);
+```
+
+**Mitigation**: Ensure secure defaults.
+
 ## Further Reading
 
 - [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)

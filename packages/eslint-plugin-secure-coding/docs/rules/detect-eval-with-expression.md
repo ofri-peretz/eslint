@@ -259,6 +259,44 @@ eval(mathExpr) → Safe math functions
 - [`detect-object-injection`](./detect-object-injection.md) - Prevents prototype pollution
 - [`detect-non-literal-regexp`](./detect-non-literal-regexp.md) - Prevents ReDoS attacks
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Aliased Functions
+
+**Why**: Aliased dangerous functions not traced.
+
+```typescript
+// ❌ NOT DETECTED - Aliased function
+const execute = eval;
+execute(userInput);
+```
+
+**Mitigation**: Never alias dangerous functions.
+
+### Dynamic Invocation
+
+**Why**: Dynamic method calls not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic call
+window['eval'](userInput);
+```
+
+**Mitigation**: Avoid dynamic method access.
+
+### Wrapper Functions
+
+**Why**: Wrappers not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper
+myEval(userInput); // Uses eval internally
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
 ## Further Reading
 
 - **[OWASP Code Injection Prevention](https://owasp.org/www-community/attacks/Code_Injection)** - Code injection attack guide

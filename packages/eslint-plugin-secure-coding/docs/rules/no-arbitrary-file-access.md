@@ -28,6 +28,45 @@ This rule security rule for mobile applications.
 
 This rule should be enabled for all mobile and web applications to ensure security best practices.
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Path from Variable
+
+**Why**: Path strings from variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Path from variable
+const filePath = userInput;
+fs.readFile(filePath);
+```
+
+**Mitigation**: Validate and sanitize all paths.
+
+### Indirect Path Construction
+
+**Why**: Complex path building not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Indirect
+const path = buildPath(base, userInput);
+fs.readFile(path);
+```
+
+**Mitigation**: Use path whitelisting.
+
+### Custom FS Wrappers
+
+**Why**: FS wrappers not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper
+fileManager.read(userPath);
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
 ## Further Reading
 
 - [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
