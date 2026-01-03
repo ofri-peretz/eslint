@@ -83,6 +83,56 @@ Insufficient logging makes it impossible to:
 - [`require-error-handling`](./require-error-handling.md) - Handle errors
 - [`require-tool-confirmation`](./require-tool-confirmation.md) - Log destructive operations
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Logging in Wrapper Function
+
+**Why**: Logging in called functions is not visible.
+
+```typescript
+// ❌ NOT DETECTED - Logging in wrapper
+await myGenerateText(prompt); // Wrapper has logging
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
+### Custom Logger Methods
+
+**Why**: Non-standard logger methods may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom logger
+myLogger.audit('AI call', { prompt }); // Not in default patterns
+await generateText({ prompt });
+```
+
+**Mitigation**: Configure rule for custom logger method names.
+
+### Centralized Logging Middleware
+
+**Why**: Framework-level logging is not linked.
+
+```typescript
+// ❌ NOT DETECTED (correctly) - Middleware logs all AI calls
+app.use(aiAuditMiddleware);
+```
+
+**Mitigation**: Document centralized logging. Consider rule exception.
+
+### Async Logging
+
+**Why**: Logging scheduled for later may not be detected.
+
+```typescript
+// ❌ NOT DETECTED - Deferred logging
+const result = await generateText({ prompt });
+queueAuditLog({ prompt, result }); // Async logging
+```
+
+**Mitigation**: Use synchronous logging before AI calls.
+
 ## 📚 References
 
 - [OWASP ASI10: Logging & Monitoring](https://owasp.org)

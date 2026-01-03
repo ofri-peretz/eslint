@@ -78,6 +78,57 @@ Passing AI output to dangerous functions enables:
 - [`require-validated-prompt`](./require-validated-prompt.md) - Validate input prompts
 - [`require-output-filtering`](./require-output-filtering.md) - Filter tool output
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### AI Output Stored in Variable
+
+**Why**: Assignment to dangerous functions from variables is not traced.
+
+```typescript
+// ❌ NOT DETECTED - Output stored first
+const aiOutput = (await generateText({ prompt })).text;
+// Later in code...
+eval(aiOutput); // Not linked to AI output
+```
+
+**Mitigation**: Never use eval or similar with any external data.
+
+### Custom Dangerous Functions
+
+**Why**: Non-standard execution functions may not be detected.
+
+```typescript
+// ❌ NOT DETECTED - Custom exec wrapper
+executeCode(result.text); // Custom function, not in dangerousFunctions
+```
+
+**Mitigation**: Configure `dangerousFunctions` with custom names.
+
+### Dynamic Function Invocation
+
+**Why**: Dynamic property access is not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic invocation
+const method = 'eval';
+window[method](result.text); // Dynamic access
+```
+
+**Mitigation**: Avoid dynamic function invocation.
+
+### Framework Rendering
+
+**Why**: Framework-specific unsafe patterns may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - React dangerouslySetInnerHTML
+<div dangerouslySetInnerHTML={{ __html: result.text }} />
+```
+
+**Mitigation**: Use framework-specific security rules.
+
 ## 📚 References
 
 - [OWASP LLM05: Improper Output Handling](https://owasp.org/www-project-top-10-for-large-language-model-applications/)

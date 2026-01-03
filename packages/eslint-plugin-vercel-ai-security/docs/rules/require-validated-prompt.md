@@ -101,6 +101,71 @@ Prompt injection is the #1 security risk for LLM applications according to OWASP
 - [`no-sensitive-in-prompt`](./no-sensitive-in-prompt.md) - Prevent sensitive data in prompts
 - [`no-dynamic-system-prompt`](./no-dynamic-system-prompt.md) - Prevent dynamic system prompts
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Custom Variable Names
+
+**Why**: Only configured pattern names trigger detection.
+
+```typescript
+// ❌ NOT DETECTED - Custom variable name
+const clientQuestion = getClientQuestion(); // Not in userInputPatterns
+await generateText({ prompt: clientQuestion });
+```
+
+**Mitigation**: Configure `userInputPatterns` with custom names.
+
+### Validated but Incorrectly
+
+**Why**: Validation function quality is not assessed.
+
+```typescript
+// ❌ NOT DETECTED - Weak validation
+function validate(input) {
+  return input;
+} // Just returns input!
+await generateText({ prompt: validate(userInput) });
+```
+
+**Mitigation**: Review validation functions. Use proper sanitization.
+
+### Input from External Module
+
+**Why**: Imported values are not traced.
+
+```typescript
+// ❌ NOT DETECTED - Input from module
+import { getUserPrompt } from './user-input';
+await generateText({ prompt: getUserPrompt() }); // May be unvalidated
+```
+
+**Mitigation**: Apply rule to input modules.
+
+### Nested Object Properties
+
+**Why**: Deep property access may not match patterns.
+
+```typescript
+// ❌ NOT DETECTED - Nested user input
+await generateText({ prompt: req.body.chat.message.text });
+```
+
+**Mitigation**: Configure patterns for nested structures.
+
+### Dynamic Prompt Construction
+
+**Why**: Runtime-built prompts are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic construction
+const parts = [userInput, context];
+await generateText({ prompt: parts.join(' ') });
+```
+
+**Mitigation**: Validate all parts before joining.
+
 ## 📚 References
 
 - [OWASP LLM01: Prompt Injection](https://owasp.org/www-project-top-10-for-large-language-model-applications/)

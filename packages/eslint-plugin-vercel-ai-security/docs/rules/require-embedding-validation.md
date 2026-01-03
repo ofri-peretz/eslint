@@ -63,6 +63,45 @@ Unvalidated embeddings can:
 - **Enable jailbreaks** - Crafted embeddings bypass safety
 - **Leak information** - Embedding inversion attacks
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Validation in Embedding Function
+
+**Why**: Validation inside called functions is not visible.
+
+```typescript
+// ❌ NOT DETECTED - Validation in embed function
+await vectorStore.upsert({
+  embedding: await safeEmbed(text), // Validates internally
+});
+```
+
+**Mitigation**: Document validation. Apply rule to embedding functions.
+
+### Custom Vector Store Methods
+
+**Why**: Non-standard methods may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom store method
+await myVectorDb.add(embedding); // Not in default patterns
+```
+
+**Mitigation**: Configure `embeddingPatterns` with custom method names.
+
+### Batch Embedding Operations
+
+**Why**: Batch operations may obscure individual validations.
+
+```typescript
+// ❌ NOT DETECTED - Batch operation
+await vectorStore.batchUpsert(embeddings); // Are all validated?
+```
+
+**Mitigation**: Validate before batching. Review batch implementations.
+
 ## 📚 References
 
 - [OWASP LLM08: Vector & Embedding Weaknesses](https://owasp.org/www-project-top-10-for-large-language-model-applications/)

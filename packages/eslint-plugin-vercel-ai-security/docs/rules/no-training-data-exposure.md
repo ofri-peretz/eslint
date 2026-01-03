@@ -64,6 +64,43 @@ Exposing user data to training can:
 - **Compliance violations** - GDPR, CCPA violations
 - **IP leakage** - Proprietary information exposed
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Environment-Based Training Flags
+
+**Why**: Environment variables are not resolved.
+
+```typescript
+// ❌ NOT DETECTED - Training from env
+const options = { training: process.env.ENABLE_TRAINING };
+```
+
+**Mitigation**: Hardcode `training: false`. Never use env for training flags.
+
+### Training Endpoints in Config
+
+**Why**: Endpoints from config files are not visible.
+
+```typescript
+// ❌ NOT DETECTED - Endpoint from config
+fetch(config.apiEndpoint); // May be fine-tune endpoint
+```
+
+**Mitigation**: Review API configurations for training endpoints.
+
+### Implicit Training via SDK Options
+
+**Why**: Hidden SDK options enabling training may not be detected.
+
+```typescript
+// ❌ NOT DETECTED - SDK defaults to training
+const client = new AIClient(); // training: true by default
+```
+
+**Mitigation**: Explicitly set training: false in all SDK configs.
+
 ## 📚 References
 
 - [OWASP LLM03: Training Data Poisoning](https://owasp.org/www-project-top-10-for-large-language-model-applications/)

@@ -81,6 +81,60 @@ Poisoned RAG content can:
 - [`require-validated-prompt`](./require-validated-prompt.md) - Validate user prompts
 - [`no-dynamic-system-prompt`](./no-dynamic-system-prompt.md) - Static system prompts
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Validation in Retrieval Function
+
+**Why**: Validation inside retrieval functions is not visible.
+
+```typescript
+// ❌ NOT DETECTED - Validation in retrieve
+await generateText({
+  prompt: await safeRetrieve(query), // Validates internally
+});
+```
+
+**Mitigation**: Document validation. Apply rule to retrieval functions.
+
+### Custom RAG Patterns
+
+**Why**: Non-standard retrieval methods may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom retrieval
+const context = await myDocumentFetcher.get(query);
+await generateText({ prompt: `Context: ${context}` });
+```
+
+**Mitigation**: Configure `ragPatterns` with custom method names.
+
+### Template Builders
+
+**Why**: Template functions may hide RAG content.
+
+```typescript
+// ❌ NOT DETECTED - Template obscures RAG
+const prompt = buildRAGPrompt(docs); // Validation inside?
+await generateText({ prompt });
+```
+
+**Mitigation**: Apply validation to template inputs.
+
+### Streamed RAG Content
+
+**Why**: Streaming retrieval may not be detected.
+
+```typescript
+// ❌ NOT DETECTED - Streaming RAG
+for await (const doc of streamDocuments(query)) {
+  // Each doc needs validation
+}
+```
+
+**Mitigation**: Validate each streamed chunk.
+
 ## 📚 References
 
 - [OWASP ASI07: Poisoned RAG Pipeline](https://owasp.org)

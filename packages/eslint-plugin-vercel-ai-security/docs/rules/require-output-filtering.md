@@ -91,6 +91,68 @@ Unfiltered tool output can expose:
 - [`no-sensitive-in-prompt`](./no-sensitive-in-prompt.md) - Prevent sensitive input
 - [`require-tool-schema`](./require-tool-schema.md) - Validate tool inputs
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Filtering in Separate Function
+
+**Why**: Filtering in called functions is not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Filtering in getData
+const tools = {
+  getUser: {
+    execute: async ({ id }) => getUserSafe(id), // Filters internally
+  },
+};
+```
+
+**Mitigation**: Document filtering. Apply rule to data access functions.
+
+### Custom Data Source Methods
+
+**Why**: Non-standard data methods may not be detected.
+
+```typescript
+// ❌ NOT DETECTED - Custom method name
+const tools = {
+  data: {
+    execute: async () => myCustomDb.retrieve(id), // Not in patterns
+  },
+};
+```
+
+**Mitigation**: Configure `dataSourcePatterns` with custom method names.
+
+### Chained Method Filtering
+
+**Why**: Method chaining may hide filtering status.
+
+```typescript
+// ❌ NOT DETECTED - Filter in chain
+const tools = {
+  search: {
+    execute: async () => db.query(sql).sanitize().toJSON(),
+  },
+};
+```
+
+**Mitigation**: Use explicit filter function calls.
+
+### Dynamic Tool Execution
+
+**Why**: Dynamic execute functions are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic execute
+const tools = {
+  [name]: { execute: handlers[name] }, // Handler may not filter
+};
+```
+
+**Mitigation**: Review all dynamic handlers for filtering.
+
 ## 📚 References
 
 - [OWASP ASI04: Data Exfiltration](https://owasp.org)

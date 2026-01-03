@@ -81,6 +81,58 @@ Unbounded tool loops can cause:
 - [`require-max-tokens`](./require-max-tokens.md) - Limit token consumption
 - [`require-tool-confirmation`](./require-tool-confirmation.md) - Require confirmation
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Options from Variable
+
+**Why**: Options stored in variables are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Options from variable
+const opts = { model: openai('gpt-4'), tools, prompt: 'Hello' }; // No maxSteps
+await generateText(opts);
+```
+
+**Mitigation**: Use inline options. Always specify maxSteps with tools.
+
+### Tools from Variable
+
+**Why**: Tools added from variables may not trigger detection.
+
+```typescript
+// ❌ NOT DETECTED - Tools from variable
+const tools = getToolset();
+await generateText({ ..., tools }); // Has tools, needs maxSteps
+```
+
+**Mitigation**: Always set maxSteps when using tools.
+
+### Conditional Tool Usage
+
+**Why**: Conditionally added tools may not be detected.
+
+```typescript
+// ❌ NOT DETECTED - Conditional tools
+const options = { model, prompt };
+if (useTools) options.tools = toolset; // maxSteps also needed!
+await generateText(options);
+```
+
+**Mitigation**: Set maxSteps whenever tools may be used.
+
+### Wrapper Functions
+
+**Why**: Custom wrappers may hide tool usage.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper with tools
+await myAgentGenerate(prompt); // Wrapper adds tools internally
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
 ## 📚 References
 
 - [OWASP LLM10: Unbounded Consumption](https://owasp.org/www-project-top-10-for-large-language-model-applications/)

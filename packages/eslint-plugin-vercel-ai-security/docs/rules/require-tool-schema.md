@@ -78,6 +78,63 @@ Without input validation, AI agents can:
 - [`require-tool-confirmation`](./require-tool-confirmation.md) - Require confirmation for destructive tools
 - [`require-output-filtering`](./require-output-filtering.md) - Filter tool output
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Schema from Variable
+
+**Why**: Schema stored in variables is not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Schema from variable
+const schema = z.object({ location: z.string() });
+const tools = { weather: { inputSchema: schema, execute: fn } };
+```
+
+**Mitigation**: Define schemas inline in tool definitions.
+
+### Dynamic Tool Definitions
+
+**Why**: Dynamically created tools are not checked.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic tool creation
+const tools = createTools(toolConfigs); // May not have schemas
+```
+
+**Mitigation**: Apply rule to tool factory functions.
+
+### Weak Schema Validation
+
+**Why**: Schema quality is not assessed.
+
+```typescript
+// ❌ NOT DETECTED - Overly permissive schema
+const tools = {
+  execute: {
+    inputSchema: z.object({}).passthrough(), // Allows any extra fields!
+    execute: fn,
+  },
+};
+```
+
+**Mitigation**: Use strict schemas. Avoid `.passthrough()`.
+
+### Tool Helper Wrappers
+
+**Why**: Custom tool helpers may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom helper
+const weatherTool = createTool({
+  name: 'weather',
+  handler: getWeather, // No schema visible
+});
+```
+
+**Mitigation**: Configure `schemaPropertyNames` for custom helpers.
+
 ## 📚 References
 
 - [OWASP ASI02: Tool Misuse & Exploitation](https://owasp.org)

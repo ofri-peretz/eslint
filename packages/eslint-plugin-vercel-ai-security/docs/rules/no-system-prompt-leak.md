@@ -81,6 +81,61 @@ Exposing system prompts allows attackers to:
 
 - [`no-dynamic-system-prompt`](./no-dynamic-system-prompt.md) - Prevent dynamic system prompts
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Custom Field Names
+
+**Why**: Only configured pattern names are checked.
+
+```typescript
+// ❌ NOT DETECTED - Custom field name
+return Response.json({
+  aiConfig: SYSTEM_PROMPT, // Not in default patterns
+  response: result.text,
+});
+```
+
+**Mitigation**: Configure `systemPromptPatterns` with custom field names.
+
+### Nested Object Access
+
+**Why**: Deep property access may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - Nested exposure
+return Response.json({
+  config: { prompt: systemPrompt }, // Nested
+});
+```
+
+**Mitigation**: Review response structure. Avoid nesting sensitive data.
+
+### Spread Operator
+
+**Why**: Spread may include system prompt unknowingly.
+
+```typescript
+// ❌ NOT DETECTED - System prompt in spread
+const config = { systemPrompt: '...', other: 'data' };
+return Response.json({ ...config }); // Exposes systemPrompt!
+```
+
+**Mitigation**: Never spread objects containing system prompts.
+
+### Serialized/Transformed Data
+
+**Why**: Transformed data is not traced.
+
+```typescript
+// ❌ NOT DETECTED - Serialized before return
+const data = JSON.stringify({ systemPrompt, result });
+return Response.json({ payload: data });
+```
+
+**Mitigation**: Never serialize system prompts.
+
 ## 📚 References
 
 - [OWASP LLM07: System Prompt Leakage](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
