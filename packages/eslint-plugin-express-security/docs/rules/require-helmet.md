@@ -71,6 +71,75 @@ app.listen(3000);
 
 Never disable this rule in production. Security headers are a fundamental protection layer.
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### App Instance from Variable
+
+**Why**: Express app stored in variable may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - App from factory function
+const app = createExpressApp();
+// Helmet might be applied in createExpressApp, or not
+```
+
+**Mitigation**: Apply rule to factory modules. Document helmet usage centrally.
+
+### Conditional Middleware
+
+**Why**: Middleware applied inside conditions is not tracked.
+
+```typescript
+// ❌ NOT DETECTED - Conditional helmet
+if (process.env.NODE_ENV === 'production') {
+  app.use(helmet());
+}
+// Development may run without headers
+```
+
+**Mitigation**: Always apply helmet unconditionally. Use environment-specific configuration inside helmet options.
+
+### Framework Wrappers
+
+**Why**: Higher-level frameworks may include helmet internally.
+
+```typescript
+// ❌ FALSE POSITIVE RISK - Framework includes helmet
+import { createServer } from '@my-company/express-framework';
+const app = createServer(); // May include helmet
+```
+
+**Mitigation**: Configure `alternativeMiddleware` option. Add framework-specific patterns.
+
+### Late Middleware Application
+
+**Why**: Helmet applied after route definitions is less effective.
+
+```typescript
+// ❌ NOT DETECTED - Helmet AFTER routes
+app.get('/api', handler);
+app.use(helmet()); // Security headers won't apply to /api
+```
+
+**Mitigation**: Ensure helmet is among the first middleware. Review middleware order in code review.
+
+### Custom Security Headers
+
+**Why**: Manual header setting without helmet is not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Manual headers instead of helmet
+app.use((req, res, next) => {
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  next();
+});
+```
+
+**Mitigation**: Use helmet for comprehensive coverage. Configure `alternativeMiddleware` for known patterns.
+
 ## Further Reading
 
 - [Helmet.js Documentation](https://helmetjs.github.io/)

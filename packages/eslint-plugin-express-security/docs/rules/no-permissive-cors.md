@@ -232,6 +232,79 @@ app.use(cors({ origin: allowedOrigins }));
 - [`no-cors-credentials-wildcard`](./no-cors-credentials-wildcard.md) - Credentials with wildcard origin
 - [`require-helmet`](./require-helmet.md) - Security headers
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Options from Variable
+
+**Why**: CORS options stored in variables are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Options from variable
+const corsOptions = { origin: '*' };
+app.use(cors(corsOptions));
+```
+
+**Mitigation**: Use inline CORS options. Validate config at startup.
+
+### Dynamic Origin Validation Flaws
+
+**Why**: The logic inside origin validation functions is not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Flawed validation
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      // Bug: Substring match allows evil.example.com
+      if (origin?.includes('example.com')) {
+        cb(null, true);
+      }
+    },
+  }),
+);
+```
+
+**Mitigation**: Use exact match with allowlist. Implement thorough URL validation.
+
+### Spread Configuration
+
+**Why**: Spread objects hide their configuration.
+
+```typescript
+// ❌ NOT DETECTED - Origin in spread
+const base = { origin: '*' };
+app.use(cors({ ...base }));
+```
+
+**Mitigation**: Avoid spreading CORS options. Define inline.
+
+### Framework CORS Wrappers
+
+**Why**: Framework-specific CORS middleware is not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom CORS middleware
+import { setCors } from '@my-framework/middleware';
+app.use(setCors({ allowAll: true })); // Permissive!
+```
+
+**Mitigation**: Apply rule patterns to framework wrappers. Review framework docs.
+
+### Late Configuration Change
+
+**Why**: Configuration modified after initial setup is not tracked.
+
+```typescript
+// ❌ NOT DETECTED - Options modified later
+const opts = { origin: ['https://safe.com'] };
+if (process.env.DEV) opts.origin = '*'; // Dangerous override!
+app.use(cors(opts));
+```
+
+**Mitigation**: Use immutable configuration. Validate at startup.
+
 ## Resources
 
 - [CWE-942: Permissive Cross-domain Policy](https://cwe.mitre.org/data/definitions/942.html)

@@ -799,6 +799,7 @@ jobs:
               # STEP 2: Build publish command with appropriate flags
               # ────────────────────────────────────────────────────────────
               PUBLISH_CMD="pnpm nx release publish --projects=$PACKAGE --tag $DIST_TAG"
+              PUBLISH_ENV_PREFIX=""
               
               if [ "$IS_FIRST_RELEASE" = "true" ]; then
                 PUBLISH_CMD="$PUBLISH_CMD --first-release"
@@ -808,13 +809,23 @@ jobs:
                 # CRITICAL: Disable provenance for first releases
                 # OIDC provenance requires the package to already exist on npm
                 # First releases MUST use NPM_TOKEN (classic auth)
-                export NPM_CONFIG_PROVENANCE=false
+                # Use env prefix to ensure it propagates to pnpm subprocess
+                PUBLISH_ENV_PREFIX="NPM_CONFIG_PROVENANCE=false"
               fi
               
               # ────────────────────────────────────────────────────────────
               # STEP 3: Execute publish with comprehensive error handling
               # ────────────────────────────────────────────────────────────
-              PUBLISH_OUTPUT=$($PUBLISH_CMD 2>&1) || {
+              PUBLISH_FAILED=false
+              if [ -n "$PUBLISH_ENV_PREFIX" ]; then
+                # First release: use env prefix to disable provenance
+                PUBLISH_OUTPUT=$(env $PUBLISH_ENV_PREFIX $PUBLISH_CMD 2>&1) || PUBLISH_FAILED=true
+              else
+                # Regular release: use default env (provenance enabled)
+                PUBLISH_OUTPUT=$($PUBLISH_CMD 2>&1) || PUBLISH_FAILED=true
+              fi
+              
+              if [ "$PUBLISH_FAILED" = "true" ]; then
                 PUBLISH_EXIT=$?
                 echo "$PUBLISH_OUTPUT"
                 echo ""
@@ -854,6 +865,15 @@ jobs:
                   continue
                 fi
                 
+                # ERROR: 404 on first release - NPM_TOKEN may be missing or invalid
+                if echo "$PUBLISH_OUTPUT" | grep -qiE "(404|not found)" && [ "$IS_FIRST_RELEASE" = "true" ]; then
+                  echo "❌ NPM 404 on First Release: Cannot create package $NPM_NAME"
+                  echo "   └─ Cause: NPM_TOKEN secret may be missing, invalid, or lacks publish scope"
+                  echo "   └─ Fix: Verify NPM_TOKEN secret in GitHub repo settings has 'automation' or 'publish' scope"
+                  FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+                  continue
+                fi
+                
                 # ERROR: Network/Registry issues
                 if echo "$PUBLISH_OUTPUT" | grep -qiE "(ECONNREFUSED|ETIMEDOUT|ENOTFOUND|network|registry)"; then
                   echo "❌ NPM Network Error: Cannot reach registry for $NPM_NAME"
@@ -867,7 +887,7 @@ jobs:
                 echo "   └─ Fix: Try 'pnpm nx release publish --projects=$PACKAGE --dry-run' locally"
                 FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
                 continue
-              }
+              fi
               
               echo "$PUBLISH_OUTPUT"
               echo "✅ Published $NPM_NAME@$NEW_VERSION"
