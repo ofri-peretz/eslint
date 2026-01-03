@@ -65,3 +65,69 @@ class CreateUserDto {
 
 - For internal DTOs that don't accept external input
 - For DTOs used only in tests
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Inherited Properties
+
+**Why**: Validators on parent class properties are not visible.
+
+```typescript
+// ❌ NOT DETECTED - Validation on parent
+class BaseDto {
+  @IsString()
+  name: string;
+}
+class CreateUserDto extends BaseDto {
+  email: string; // Only this is checked
+}
+```
+
+**Mitigation**: Add validators on subclass or use composition.
+
+### Index Signatures
+
+**Why**: Dynamic properties are not validated.
+
+```typescript
+// ❌ NOT DETECTED - Index signature
+class ConfigDto {
+  @IsString()
+  name: string;
+
+  [key: string]: any; // Arbitrary properties accepted!
+}
+```
+
+**Mitigation**: Avoid index signatures in DTOs. Use strict typing.
+
+### Nested Objects Without @ValidateNested
+
+**Why**: Nested validation requires explicit decorator.
+
+```typescript
+// ❌ NOT DETECTED - Nested object not validated
+class OrderDto {
+  @IsString()
+  orderId: string;
+
+  items: OrderItemDto[]; // Items not validated!
+}
+```
+
+**Mitigation**: Use @ValidateNested() and @Type() for nested objects.
+
+### Optional Fields Without @IsOptional
+
+**Why**: Optional TypeScript properties may still require validation.
+
+```typescript
+// ❌ NOT DETECTED - Optional but no IsOptional
+class UpdateUserDto {
+  name?: string; // TypeScript optional, but validation unclear
+}
+```
+
+**Mitigation**: Explicitly add @IsOptional() on optional fields.

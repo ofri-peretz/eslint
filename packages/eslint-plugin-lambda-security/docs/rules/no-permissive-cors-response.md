@@ -168,6 +168,64 @@ headers: {
 
 - [`no-permissive-cors-middy`](./no-permissive-cors-middy.md) - CORS in Middy middleware
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Headers from Variable
+
+**Why**: Headers stored in variables are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Headers from variable
+const headers = { 'Access-Control-Allow-Origin': '*' };
+return { statusCode: 200, headers, body: '...' };
+```
+
+**Mitigation**: Use inline headers. Validate config at startup.
+
+### Headers from Spread
+
+**Why**: Spread hides actual header values.
+
+```typescript
+// ❌ NOT DETECTED - Headers spread
+const baseHeaders = getBaseHeaders(); // May include origin: '*'
+return { statusCode: 200, headers: { ...baseHeaders }, body: '...' };
+```
+
+**Mitigation**: Explicitly define CORS headers inline.
+
+### Response Factory Functions
+
+**Why**: Response helpers are not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Response factory
+function createResponse(body) {
+  return {
+    statusCode: 200,
+    headers: { 'Access-Control-Allow-Origin': '*' }, // Hidden
+    body: JSON.stringify(body),
+  };
+}
+export const handler = async () => createResponse({ data: 'test' });
+```
+
+**Mitigation**: Apply rule to response helper modules.
+
+### API Gateway Configuration
+
+**Why**: CORS configured at API Gateway level is not visible.
+
+```typescript
+// ❌ NOT DETECTED (correctly) - API Gateway handles CORS
+// serverless.yml or SAM template has CORS: '*'
+return { statusCode: 200, body: '...' };
+```
+
+**Mitigation**: Review API Gateway CORS configuration separately.
+
 ## Resources
 
 - [CWE-942: Permissive Cross-domain Policy](https://cwe.mitre.org/data/definitions/942.html)

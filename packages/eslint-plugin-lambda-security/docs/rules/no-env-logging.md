@@ -108,6 +108,57 @@ if (process.env.NODE_ENV === 'development') {
 - [`no-secrets-in-env`](./no-secrets-in-env.md) - Secrets in environment definitions
 - [`no-hardcoded-credentials-sdk`](./no-hardcoded-credentials-sdk.md) - Hardcoded credentials
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Indirect process.env Access
+
+**Why**: Environment accessed through variables is not tracked.
+
+```typescript
+// ❌ NOT DETECTED - Indirect access
+const env = process.env;
+console.log(env); // Logs all env vars
+```
+
+**Mitigation**: Avoid storing process.env in variables.
+
+### Custom Logger Methods
+
+**Why**: Non-standard logger methods may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom logger
+customLogger.trace({ env: process.env });
+```
+
+**Mitigation**: Configure rule for custom logger method names.
+
+### Spread into Log Object
+
+**Why**: Spread operator hides the source.
+
+```typescript
+// ❌ NOT DETECTED - Spread env vars
+console.log({ ...process.env, timestamp: Date.now() });
+```
+
+**Mitigation**: Never spread process.env into objects.
+
+### Serialization Before Logging
+
+**Why**: Pre-serialized data is not traced.
+
+```typescript
+// ❌ NOT DETECTED - Serialized before log
+const data = JSON.stringify(process.env);
+// Later...
+console.log(data); // Logs all secrets!
+```
+
+**Mitigation**: Never serialize full process.env.
+
 ## Resources
 
 - [CWE-532: Insertion of Sensitive Information into Log File](https://cwe.mitre.org/data/definitions/532.html)

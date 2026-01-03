@@ -72,3 +72,57 @@ new ValidationPipe({
 ## When Not To Use It
 
 - If you have `app.useGlobalPipes(new ValidationPipe())` in `main.ts`, set `assumeGlobalPipes: true`
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Global Pipe in Separate File
+
+**Why**: Global pipes in main.ts are not linked to controller files.
+
+```typescript
+// ❌ NOT DETECTED - Global pipe exists but not visible
+// main.ts: app.useGlobalPipes(new ValidationPipe())
+// controller.ts: No @UsePipes needed, but rule flags it
+```
+
+**Mitigation**: Set `assumeGlobalPipes: true` in rule options.
+
+### Conditional Pipe Application
+
+**Why**: Pipes applied conditionally are not tracked.
+
+```typescript
+// ❌ NOT DETECTED - Conditional validation
+if (process.env.NODE_ENV === 'production') {
+  app.useGlobalPipes(new ValidationPipe());
+}
+```
+
+**Mitigation**: Always apply validation unconditionally.
+
+### Custom Validation Decorators
+
+**Why**: Custom decorators wrapping validation are not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom decorator includes validation
+@CustomValidated() // Internally uses ValidationPipe
+class MyController {}
+```
+
+**Mitigation**: Document custom decorators. Use standard @UsePipes.
+
+### Module-Level Providers
+
+**Why**: Validation pipes as providers are not detected.
+
+```typescript
+// ❌ NOT DETECTED - Pipe as module provider
+@Module({
+  providers: [{ provide: APP_PIPE, useClass: ValidationPipe }]
+})
+```
+
+**Mitigation**: Configure assumeGlobalPipes for modules with APP_PIPE provider.

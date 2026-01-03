@@ -94,6 +94,59 @@ export const handler = middy(baseHandler).use(
 
 - [`no-permissive-cors-response`](./no-permissive-cors-response.md) - CORS in direct responses
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Options from Variable
+
+**Why**: CORS options stored in variables are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Options from variable
+const corsOptions = { origin: '*' };
+export const handler = middy(baseHandler).use(cors(corsOptions));
+```
+
+**Mitigation**: Use inline CORS options. Validate config at startup.
+
+### Dynamic Origin Validation Flaws
+
+**Why**: The logic inside origin validation functions is not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Flawed validation
+cors({
+  origin: (incomingOrigin) => incomingOrigin, // Always returns origin!
+});
+```
+
+**Mitigation**: Use exact match with allowlist. Test validation logic.
+
+### Spread Configuration
+
+**Why**: Spread objects hide their configuration.
+
+```typescript
+// ❌ NOT DETECTED - Origin in spread
+const base = { origin: '*' };
+export const handler = middy(baseHandler).use(cors({ ...base }));
+```
+
+**Mitigation**: Avoid spreading CORS options. Define inline.
+
+### Middleware Chain Variables
+
+**Why**: Middleware stored in variables may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - Middleware from variable
+const corsMiddleware = cors({ origin: '*' });
+export const handler = middy(baseHandler).use(corsMiddleware);
+```
+
+**Mitigation**: Use inline middleware configuration.
+
 ## Resources
 
 - [CWE-942: Permissive Cross-domain Policy](https://cwe.mitre.org/data/definitions/942.html)

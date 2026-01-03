@@ -184,6 +184,65 @@ async function getCredentials() {
 - [`no-secrets-in-env`](./no-secrets-in-env.md) - Detects secrets in environment variable definitions
 - [`no-env-logging`](./no-env-logging.md) - Detects logging of environment variables
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Credentials from Variable
+
+**Why**: Credential objects stored in variables are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Credentials from variable
+const creds = {
+  accessKeyId: 'AKIAIOSFODNN7EXAMPLE',
+  secretAccessKey: 'wJalrXUtnFEMI/K7MDENG...',
+};
+const client = new S3Client({ credentials: creds });
+```
+
+**Mitigation**: Use credential providers. Never store credentials in variables.
+
+### Credentials from Import
+
+**Why**: Credentials imported from other modules are not visible.
+
+```typescript
+// ❌ NOT DETECTED - Credentials from import
+import { awsCredentials } from './config';
+const client = new S3Client({ credentials: awsCredentials });
+```
+
+**Mitigation**: Apply rule to config modules. Use credential providers.
+
+### Base64/Encoded Credentials
+
+**Why**: Encoded credentials are not decoded.
+
+```typescript
+// ❌ NOT DETECTED - Encoded credentials
+const key = Buffer.from('QUtJQUlP...', 'base64').toString();
+const client = new S3Client({
+  credentials: { accessKeyId: key, secretAccessKey: '...' },
+});
+```
+
+**Mitigation**: Never encode credentials as an obfuscation technique.
+
+### Third-Party AWS Wrappers
+
+**Why**: Only official AWS SDK patterns are recognized.
+
+```typescript
+// ❌ NOT DETECTED - Third-party wrapper
+import { createS3Client } from 'my-aws-helper';
+const client = createS3Client({
+  accessKeyId: 'AKIA...',
+});
+```
+
+**Mitigation**: Configure rule for third-party library patterns.
+
 ## Resources
 
 - [CWE-798: Use of Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html)

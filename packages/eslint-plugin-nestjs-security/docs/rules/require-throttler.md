@@ -64,3 +64,56 @@ export class AppModule {}
 
 - If you have `ThrottlerModule.forRoot()` in `app.module.ts`, set `assumeGlobalThrottler: true`
 - For endpoints that intentionally skip throttling, use `@SkipThrottle()` decorator
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Global Throttler Module
+
+**Why**: ThrottlerModule.forRoot in app.module is not linked to controllers.
+
+```typescript
+// ❌ NOT DETECTED - Global throttler exists
+// app.module.ts: imports: [ThrottlerModule.forRoot(...)]
+// controller.ts: Already throttled globally, but flagged
+```
+
+**Mitigation**: Set `assumeGlobalThrottler: true` in rule options.
+
+### Custom Rate Limiting
+
+**Why**: Custom rate limiting implementations are not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom rate limiter
+@UseInterceptors(CustomRateLimiter)
+class AuthController {}
+```
+
+**Mitigation**: Configure rule to recognize custom rate limiting decorators.
+
+### Infrastructure Rate Limiting
+
+**Why**: Reverse proxy or API gateway limits are not visible.
+
+```typescript
+// ❌ NOT DETECTED (correctly) - Kong/Nginx handles limits
+@Controller('auth')
+class AuthController {}
+```
+
+**Mitigation**: Document infrastructure rate limits. Add inline comment.
+
+### Dynamic Throttle Configuration
+
+**Why**: Throttle options from variables are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic throttle config
+const throttleConfig = getThrottleConfig();
+@Throttle(throttleConfig) // May be undefined
+class Controller {}
+```
+
+**Mitigation**: Use inline throttle configuration.

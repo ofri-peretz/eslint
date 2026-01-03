@@ -116,6 +116,66 @@ environment: {
 - [`no-hardcoded-credentials-sdk`](./no-hardcoded-credentials-sdk.md) - AWS SDK credentials
 - [`no-env-logging`](./no-env-logging.md) - Logging environment variables
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Secrets from Variables
+
+**Why**: Values stored in variables are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Secret from variable
+const dbPassword = 'super_secret_password';
+new lambda.Function(this, 'Handler', {
+  environment: { DATABASE_PASSWORD: dbPassword },
+});
+```
+
+**Mitigation**: Use Secrets Manager references. Never store secrets in variables.
+
+### Secrets from External Files
+
+**Why**: Values imported from config files are not visible.
+
+```typescript
+// ❌ NOT DETECTED - Secret from config
+import { secrets } from './secrets.json';
+environment: {
+  API_KEY: secrets.apiKey;
+}
+```
+
+**Mitigation**: Apply rule to config files. Use Secrets Manager.
+
+### Construct Props Spreading
+
+**Why**: Spread operator hides actual values.
+
+```typescript
+// ❌ NOT DETECTED - Environment from spread
+const envVars = getEnvironmentConfig();
+new lambda.Function(this, 'Handler', {
+  environment: { ...envVars }, // May contain secrets
+});
+```
+
+**Mitigation**: Explicitly define environment variables.
+
+### SSM Parameter Values
+
+**Why**: Parameter values resolved at deploy time are not checked.
+
+```typescript
+// ❌ NOT DETECTED - SSM value at deploy time
+const param = ssm.StringParameter.valueForStringParameter(this, '/prod/secret');
+environment: {
+  SECRET: param;
+} // Value is secret at deploy
+```
+
+**Mitigation**: Use dynamic SSM resolution at runtime instead.
+
 ## Resources
 
 - [CWE-798: Use of Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html)

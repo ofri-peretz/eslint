@@ -70,3 +70,67 @@ class UsersController {
 
 - For internal DTOs not used in API responses
 - For DTOs that are explicitly mapped before sending to clients
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Dynamic Field Names
+
+**Why**: Computed property names are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic field names
+const sensitiveField = 'password';
+class User {
+  [sensitiveField]: string; // Not recognized as password
+}
+```
+
+**Mitigation**: Use explicit field names. Avoid computed properties for sensitive data.
+
+### Custom Serializers
+
+**Why**: Custom toJSON or serialize methods are not checked.
+
+```typescript
+// ❌ NOT DETECTED - Password exposed in custom serializer
+class User {
+  @Exclude()
+  password: string;
+
+  toJSON() {
+    return { ...this, password: this.password }; // Oops!
+  }
+}
+```
+
+**Mitigation**: Review custom serializers. Use class-transformer consistently.
+
+### Non-Standard Field Names
+
+**Why**: Only predefined sensitive field names are detected.
+
+```typescript
+// ❌ NOT DETECTED - Custom sensitive field name
+class User {
+  mySecretCode: string; // Not in default list
+}
+```
+
+**Mitigation**: Configure custom sensitive field patterns in rule options.
+
+### Response Object Construction
+
+**Why**: Manual response object building bypasses detection.
+
+```typescript
+// ❌ NOT DETECTED - Manual response construction
+@Get(':id')
+async findOne(@Param('id') id: string) {
+  const user = await this.userService.findOne(id);
+  return { ...user, password: user.password }; // Exposed!
+}
+```
+
+**Mitigation**: Always use serialization interceptors. Use DTOs for responses.

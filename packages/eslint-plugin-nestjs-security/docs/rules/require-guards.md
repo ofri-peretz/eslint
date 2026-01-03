@@ -76,3 +76,61 @@ class UsersController {
 
 - If you have `app.useGlobalGuards()` in `main.ts`, set `assumeGlobalGuards: true`
 - For intentionally public endpoints, use `@Public()` decorator
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Global Guards in Separate Module
+
+**Why**: Global guards in main.ts or module providers are not linked.
+
+```typescript
+// ❌ NOT DETECTED - Global guard exists elsewhere
+// main.ts: app.useGlobalGuards(new AuthGuard())
+// controller.ts: No @UseGuards needed, but flagged
+```
+
+**Mitigation**: Set `assumeGlobalGuards: true` in rule options.
+
+### Custom Authorization Decorators
+
+**Why**: Custom decorators wrapping guards are not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom auth decorator
+@CustomAuth('admin') // Internally applies AuthGuard
+class AdminController {}
+```
+
+**Mitigation**: Add custom decorator to recognized skip decorators list.
+
+### Guard Applied via Inheritance
+
+**Why**: Guards on parent controller are not visible.
+
+```typescript
+// ❌ NOT DETECTED - Guard on parent
+@UseGuards(AuthGuard)
+class BaseController {}
+
+class UsersController extends BaseController {
+  @Get()
+  findAll() {} // Protected by inheritance, but not detected
+}
+```
+
+**Mitigation**: Apply guards explicitly on each controller.
+
+### Module-Level Guard Providers
+
+**Why**: Guards registered as APP_GUARD providers are not detected.
+
+```typescript
+// ❌ NOT DETECTED - APP_GUARD provider
+@Module({
+  providers: [{ provide: APP_GUARD, useClass: AuthGuard }]
+})
+```
+
+**Mitigation**: Set assumeGlobalGuards for modules with APP_GUARD.
