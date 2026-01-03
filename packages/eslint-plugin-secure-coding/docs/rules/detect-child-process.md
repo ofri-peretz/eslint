@@ -333,6 +333,56 @@ for (const attempt of injectionAttempts) {
 - [`detect-object-injection`](./detect-object-injection.md) - Prevents prototype pollution
 - [`detect-non-literal-regexp`](./detect-non-literal-regexp.md) - Prevents ReDoS attacks
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Command from Variable
+
+**Why**: Command strings stored in variables are not traced.
+
+```typescript
+// ❌ NOT DETECTED - Command from variable
+const cmd = `git clone ${userInput}`;
+exec(cmd);
+```
+
+**Mitigation**: Build commands only with validated, literal parts.
+
+### Aliased child_process
+
+**Why**: Aliased imports not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Aliased import
+const cp = require('child_process');
+cp.exec(userCommand);
+```
+
+**Mitigation**: Use standard import names. Apply rule to wrappers.
+
+### Wrapper Functions
+
+**Why**: Custom wrappers around exec not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper function
+runCommand(userInput); // Uses exec internally
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
+### Environment Variable Injection
+
+**Why**: env options with user data not checked.
+
+```typescript
+// ❌ NOT DETECTED - Env injection
+execFile('cmd', [], { env: { PATH: userInput } });
+```
+
+**Mitigation**: Validate all environment variable values.
+
 ## Further Reading
 
 - **[OWASP Command Injection](https://owasp.org/www-community/attacks/Command_Injection)** - Command injection attack guide

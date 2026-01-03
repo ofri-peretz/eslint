@@ -152,6 +152,49 @@ However, **always sanitize file content** before rendering as HTML.
 - [`browser-security/no-innerhtml`](./no-innerhtml.md) - General innerHTML prevention
 - [`browser-security/no-postmessage-innerhtml`](./no-postmessage-innerhtml.md) - postMessage XSS prevention
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Result Stored in Variable
+
+**Why**: File data stored in variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Stored first
+reader.onload = (e) => {
+  const content = e.target.result;
+  element.innerHTML = content; // From variable
+};
+```
+
+**Mitigation**: Always sanitize before any innerHTML assignment.
+
+### Custom Sanitizer
+
+**Why**: Non-standard sanitizer names may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom sanitizer
+element.innerHTML = myCustomSanitizer(e.target.result);
+```
+
+**Mitigation**: Configure trusted sanitizer names.
+
+### Async Handler
+
+**Why**: Async processing may break detection.
+
+```typescript
+// ❌ NOT DETECTED - Async handler
+reader.onload = async (e) => {
+  await delay(100);
+  element.innerHTML = e.target.result;
+};
+```
+
+**Mitigation**: Sanitize in all async paths.
+
 ## OWASP Mapping
 
 | Category          | ID                   |

@@ -120,6 +120,46 @@ The only acceptable scenario is in development tools or REPLs where code executi
 - [`browser-security/no-websocket-innerhtml`](./no-websocket-innerhtml.md) - XSS prevention
 - [`browser-security/require-websocket-wss`](./require-websocket-wss.md) - Require encrypted connections
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Data Stored in Variable
+
+**Why**: Event data stored in variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Data stored first
+ws.onmessage = (event) => {
+  const code = event.data;
+  setTimeout(() => eval(code), 100);
+};
+```
+
+**Mitigation**: Never use eval with external data.
+
+### Handler in Separate Function
+
+**Why**: Handler function internals not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - External handler
+ws.onmessage = handleMessage; // May use eval internally
+```
+
+**Mitigation**: Apply rule to handler implementations.
+
+### Indirect WebSocket Access
+
+**Why**: WebSocket passed through may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - Indirect access
+setupHandler(ws, (data) => eval(data.code));
+```
+
+**Mitigation**: Review all WebSocket handler patterns.
+
 ## OWASP Mapping
 
 | Category          | ID                   |

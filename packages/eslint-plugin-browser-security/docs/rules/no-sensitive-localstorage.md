@@ -187,6 +187,55 @@ function getToken() {
 - [`no-innerhtml`](./no-innerhtml.md) - Prevent XSS that could access localStorage
 - [`require-postmessage-origin-check`](./require-postmessage-origin-check.md) - Cross-origin security
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Dynamic Key Names
+
+**Why**: Computed key names are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic key
+const key = 'accessToken';
+localStorage.setItem(key, value);
+```
+
+**Mitigation**: Use consistent naming. Configure sensitiveKeys pattern.
+
+### Nested Sensitive Data
+
+**Why**: Sensitive data inside objects may not be detected.
+
+```typescript
+// ❌ NOT DETECTED - Nested sensitive data
+localStorage.setItem('user', JSON.stringify({ token: jwt }));
+```
+
+**Mitigation**: Never store objects containing tokens.
+
+### Wrapper Functions
+
+**Why**: Custom storage wrappers are not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper function
+storageHelper.save('token', jwt); // Uses localStorage internally
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
+### IndexedDB
+
+**Why**: Different API not covered by this rule.
+
+```typescript
+// ❌ NOT DETECTED - IndexedDB
+db.put({ token: jwt });
+```
+
+**Mitigation**: Use no-sensitive-indexeddb rule.
+
 ## Resources
 
 - [CWE-922: Insecure Storage of Sensitive Information](https://cwe.mitre.org/data/definitions/922.html)

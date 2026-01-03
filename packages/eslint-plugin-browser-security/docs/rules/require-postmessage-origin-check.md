@@ -161,6 +161,58 @@ window.addEventListener('message', (event) => {
 - [`no-innerhtml`](./no-innerhtml.md) - XSS prevention
 - [`no-sensitive-localstorage`](./no-sensitive-localstorage.md) - Storage security
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Handler in Separate Function
+
+**Why**: Origin check in called function not visible.
+
+```typescript
+// ❌ NOT DETECTED - Check in handler
+window.addEventListener('message', handleMessage); // validates internally
+```
+
+**Mitigation**: Apply rule to handler implementations.
+
+### Dynamic Event Registration
+
+**Why**: Events registered dynamically may not be detected.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic registration
+const eventType = 'message';
+window.addEventListener(eventType, handler);
+```
+
+**Mitigation**: Use static event registration.
+
+### Weak Origin Checks
+
+**Why**: Check quality not assessed.
+
+```typescript
+// ❌ NOT DETECTED - Weak check
+if (event.origin.includes('trusted')) {
+  // Insecure!
+  processAction(event.data);
+}
+```
+
+**Mitigation**: Use exact origin comparison.
+
+### Library Abstractions
+
+**Why**: Third-party message handlers not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Library abstraction
+messageLib.onMessage((data) => process(data)); // No origin check visible
+```
+
+**Mitigation**: Review library security. Configure message handlers.
+
 ## Resources
 
 - [CWE-346: Origin Validation Error](https://cwe.mitre.org/data/definitions/346.html)

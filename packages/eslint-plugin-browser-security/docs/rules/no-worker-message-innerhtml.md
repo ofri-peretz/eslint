@@ -104,6 +104,46 @@ Workers process data in the background, often from external sources like APIs or
 2. **File processing**: Sanitize file contents
 3. **Third-party integrations**: Never trust external data
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Event Data Stored in Variable
+
+**Why**: Data stored in variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Data stored first
+worker.onmessage = (e) => {
+  const html = e.data;
+  element.innerHTML = html;
+};
+```
+
+**Mitigation**: Always sanitize before any assignment.
+
+### Handler in External Function
+
+**Why**: External handlers not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - External handler
+worker.onmessage = processWorkerMessage;
+```
+
+**Mitigation**: Apply rule to handler implementations.
+
+### Custom Sanitizer
+
+**Why**: Non-standard sanitizers may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom sanitizer
+element.innerHTML = mySanitize(e.data);
+```
+
+**Mitigation**: Configure trusted sanitizer names.
+
 ## 📚 Related Resources
 
 - [MDN: Web Workers](https://developer.mozilla.org/en-US/docs/Web/API/Worker)

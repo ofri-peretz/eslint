@@ -84,6 +84,44 @@ const csp = "script-src 'self' 'wasm-unsafe-eval'";
 2. **Template engines**: Use precompiled templates
 3. **Third-party libraries**: Consider alternatives or sandbox them
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### CSP from Variable
+
+**Why**: CSP strings from variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - CSP from variable
+const cspValue = `script-src 'unsafe-eval'`;
+res.setHeader('Content-Security-Policy', cspValue);
+```
+
+**Mitigation**: Use inline CSP strings in setHeader calls.
+
+### CSP from Configuration
+
+**Why**: Config values not visible.
+
+```typescript
+// ❌ NOT DETECTED - From config
+res.setHeader('Content-Security-Policy', config.csp);
+```
+
+**Mitigation**: Validate CSP config values.
+
+### Framework Middleware
+
+**Why**: CSP middleware configurations not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Helmet config
+helmet.contentSecurityPolicy({ directives: { scriptSrc: ["'unsafe-eval'"] } });
+```
+
+**Mitigation**: Review framework CSP configurations.
+
 ## 📚 Related Resources
 
 - [MDN: Content-Security-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP)

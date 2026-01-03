@@ -125,6 +125,55 @@ const result = parser.evaluate(expression);
 
 - [`no-innerhtml`](./no-innerhtml.md) - XSS via innerHTML
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Aliased eval
+
+**Why**: eval assigned to a variable is not traced.
+
+```typescript
+// ❌ NOT DETECTED - Aliased eval
+const execute = eval;
+execute(userInput);
+```
+
+**Mitigation**: Never alias eval. Use strict mode.
+
+### Indirect eval via window
+
+**Why**: Window property access may not be detected.
+
+```typescript
+// ❌ NOT DETECTED - Indirect via window
+window['eval'](userInput);
+```
+
+**Mitigation**: Avoid dynamic eval invocation.
+
+### Dynamic import()
+
+**Why**: Dynamic import with user input is different but still dangerous.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic import
+import(userControlledPath);
+```
+
+**Mitigation**: Validate import paths. Use allowlist.
+
+### Web Workers
+
+**Why**: eval in Worker context may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - Worker eval
+new Worker(`data:,${userCode}`);
+```
+
+**Mitigation**: Review Worker creation patterns.
+
 ## Resources
 
 - [CWE-94: Code Injection](https://cwe.mitre.org/data/definitions/94.html)

@@ -161,6 +161,55 @@ class TokenService {
 - [Auth0: Token Storage](https://auth0.com/docs/secure/security-guidance/data-security/token-storage)
 - [`browser-security/no-sensitive-localstorage`](./no-sensitive-localstorage.md) - General sensitive data detection
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### JWT Value from Variable
+
+**Why**: Token values from variables are not traced.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const value = response.jwt;
+localStorage.setItem('data', value);
+```
+
+**Mitigation**: Never store JWTs in localStorage.
+
+### Custom Storage Wrappers
+
+**Why**: Storage wrappers not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom wrapper
+myStorage.save('token', jwt); // Uses localStorage internally
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
+### Obfuscated Key Names
+
+**Why**: Key patterns may not match.
+
+```typescript
+// ❌ NOT DETECTED - Obfuscated key
+localStorage.setItem('_t', jwt); // Not in key patterns
+```
+
+**Mitigation**: Configure additional key patterns.
+
+### Encrypted Tokens
+
+**Why**: Encrypted JWTs don't match pattern.
+
+```typescript
+// ❌ NOT DETECTED - Encrypted
+localStorage.setItem('data', encrypt(jwt)); // Pattern broken
+```
+
+**Mitigation**: Still avoid localStorage for auth data.
+
 ## OWASP Mapping
 
 | Category          | ID                                |

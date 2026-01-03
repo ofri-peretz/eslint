@@ -120,6 +120,46 @@ However, **always sanitize postMessage data** before rendering as HTML.
 - [`browser-security/no-postmessage-wildcard-origin`](./no-postmessage-wildcard-origin.md) - Prevent wildcard targetOrigin
 - [`browser-security/no-innerhtml`](./no-innerhtml.md) - General innerHTML prevention
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Event Data Stored in Variable
+
+**Why**: Data stored in variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Data stored first
+window.addEventListener('message', (event) => {
+  const html = event.data;
+  element.innerHTML = html;
+});
+```
+
+**Mitigation**: Sanitize before any variable assignment.
+
+### Separate Handler Function
+
+**Why**: Handler internals not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - External handler
+window.addEventListener('message', handlePostMessage);
+```
+
+**Mitigation**: Apply rule to handler implementations.
+
+### Custom Sanitizer
+
+**Why**: Non-standard sanitizers may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom sanitizer
+element.innerHTML = mySanitizeFunc(event.data);
+```
+
+**Mitigation**: Configure trusted sanitizer names.
+
 ## OWASP Mapping
 
 | Category          | ID                   |

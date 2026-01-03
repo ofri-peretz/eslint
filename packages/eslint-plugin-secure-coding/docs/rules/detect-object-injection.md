@@ -294,6 +294,55 @@ for (const prop of pollutionAttempts) {
 - [`no-unsafe-dynamic-require`](./no-unsafe-dynamic-require.md) - Prevents unsafe module loading
 - [`detect-non-literal-regexp`](./detect-non-literal-regexp.md) - Prevents ReDoS attacks
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Property from Variable
+
+**Why**: Property names stored in variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Property from variable
+const prop = userInput;
+obj[prop] = value;
+```
+
+**Mitigation**: Validate keys before any bracket access.
+
+### Nested Object Access
+
+**Why**: Deep property chains not fully analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Nested access
+obj.nested[userKey] = value;
+```
+
+**Mitigation**: Apply whitelisting to all levels.
+
+### Object.assign with Spread
+
+**Why**: Spread of user objects may pollute.
+
+```typescript
+// ❌ NOT DETECTED - Object spread
+const result = { ...userObject }; // May contain __proto__
+```
+
+**Mitigation**: Use safe merge utilities.
+
+### JSON.parse Pollution
+
+**Why**: Parsed JSON can introduce prototype keys.
+
+```typescript
+// ❌ NOT DETECTED - JSON pollution
+const obj = JSON.parse(userJson); // May have __proto__
+```
+
+**Mitigation**: Use JSON.parse with reviver. Filter keys.
+
 ## Further Reading
 
 - **[Prototype Pollution Attacks](https://portswigger.net/web-security/prototype-pollution)** - Prototype pollution guide

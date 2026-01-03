@@ -53,6 +53,35 @@ navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
 }
 ```
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### URL from Configuration
+
+**Why**: Config values not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - From config
+navigator.serviceWorker.register(config.serviceWorkerUrl);
+```
+
+**Mitigation**: Hardcode service worker URLs.
+
+### Aliased Register Function
+
+**Why**: Aliased functions not traced.
+
+```typescript
+// ❌ NOT DETECTED - Aliased
+const registerSW = navigator.serviceWorker.register.bind(
+  navigator.serviceWorker,
+);
+registerSW(dynamicUrl);
+```
+
+**Mitigation**: Avoid aliasing register function.
+
 ## 📚 Related Resources
 
 - [MDN: Service Worker API](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API)

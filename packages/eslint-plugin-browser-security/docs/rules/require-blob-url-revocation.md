@@ -61,6 +61,45 @@ useEffect(() => {
 }
 ```
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### URL Stored Globally
+
+**Why**: Global scope tracking not performed.
+
+```typescript
+// ❌ NOT DETECTED - Global storage
+window.blobUrl = URL.createObjectURL(blob);
+// Revocation may happen elsewhere
+```
+
+**Mitigation**: Track blob URLs explicitly. Use cleanup utilities.
+
+### Revocation in Different File
+
+**Why**: Cross-file analysis not performed.
+
+```typescript
+// ❌ NOT DETECTED - Create in one file, revoke in another
+export const url = URL.createObjectURL(blob);
+// blobManager.js: revokeAll()
+```
+
+**Mitigation**: Keep creation and revocation in same scope.
+
+### Framework Lifecycle
+
+**Why**: Framework cleanup hooks not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Angular OnDestroy
+ngOnDestroy() { URL.revokeObjectURL(this.url); }
+```
+
+**Mitigation**: Framework-specific linting. Code review.
+
 ## 📚 Related Resources
 
 - [MDN: URL.createObjectURL()](https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL)

@@ -106,6 +106,44 @@ However, **always use `wss://` in production**. The performance overhead of TLS 
 - [MDN: WebSocket API](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
 - [CVE-2024-37890: WebSocket DoS Vulnerability](https://nvd.nist.gov/vuln/detail/CVE-2024-37890)
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### URL from Variable
+
+**Why**: URLs from variables not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - URL from variable
+const url = 'ws://insecure.com';
+const ws = new WebSocket(url);
+```
+
+**Mitigation**: Validate URLs before WebSocket creation.
+
+### Dynamic URL Construction
+
+**Why**: Computed URLs not traced.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic URL
+const ws = new WebSocket(getWebSocketUrl()); // May return ws://
+```
+
+**Mitigation**: Ensure URL builders always return wss://.
+
+### Configuration-Based URLs
+
+**Why**: Config values not visible.
+
+```typescript
+// ❌ NOT DETECTED - From config
+const ws = new WebSocket(config.wsEndpoint);
+```
+
+**Mitigation**: Validate config URLs at startup.
+
 ## OWASP Mapping
 
 | Category          | ID                                |

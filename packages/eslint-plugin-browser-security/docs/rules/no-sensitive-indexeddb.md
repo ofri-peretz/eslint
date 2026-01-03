@@ -54,6 +54,44 @@ store.add({ theme: 'dark', language: 'en' });
 }
 ```
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Dynamic Store Names
+
+**Why**: Computed names not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic name
+const name = 'passwords';
+db.createObjectStore(name);
+```
+
+**Mitigation**: Use static store names. Avoid sensitive naming.
+
+### Nested Sensitive Data
+
+**Why**: Deep object properties not traced.
+
+```typescript
+// ❌ NOT DETECTED - Nested data
+store.put({ user: { password: pwd } });
+```
+
+**Mitigation**: Never store sensitive data in IndexedDB.
+
+### Library Wrappers
+
+**Why**: IndexedDB wrappers not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Dexie wrapper
+db.secrets.add({ apiKey: key });
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
 ## 📚 Related Resources
 
 - [MDN: IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API)

@@ -164,6 +164,59 @@ function createComment(user, text) {
 - [`no-eval`](./no-eval.md) - Detects dangerous eval usage
 - [`no-sensitive-localstorage`](./no-sensitive-localstorage.md) - Detects sensitive data in localStorage
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Content from Variable
+
+**Why**: Content assigned to variables is not traced.
+
+```typescript
+// ❌ NOT DETECTED - Content from variable
+const html = userInput;
+element.innerHTML = html;
+```
+
+**Mitigation**: Always sanitize before assignment to any variable.
+
+### Custom Sanitizer Not Recognized
+
+**Why**: Non-standard sanitizer names may not be detected.
+
+```typescript
+// ❌ NOT DETECTED - Custom sanitizer
+element.innerHTML = myCustomEscape(userInput);
+```
+
+**Mitigation**: Configure `trustedSanitizers` with custom function names.
+
+### Framework Bindings
+
+**Why**: Framework-specific binding may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - jQuery html()
+$element.html(userInput);
+
+// ❌ NOT DETECTED - Angular [innerHTML]
+<div [innerHTML]="userContent"></div>
+```
+
+**Mitigation**: Use framework-specific security rules.
+
+### Dynamic Property Assignment
+
+**Why**: Dynamic property access is not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic property
+const prop = 'innerHTML';
+element[prop] = userInput;
+```
+
+**Mitigation**: Avoid dynamic property assignment for DOM manipulation.
+
 ## Resources
 
 - [CWE-79: Cross-site Scripting](https://cwe.mitre.org/data/definitions/79.html)

@@ -59,6 +59,45 @@ res.cookie('name', 'value', {
 }
 ```
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Cookie String from Variable
+
+**Why**: Cookie values from variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Cookie from variable
+const cookie = 'name=value'; // Missing attrs
+document.cookie = cookie;
+```
+
+**Mitigation**: Build cookie strings with attributes inline.
+
+### Cookie Library Wrappers
+
+**Why**: Library methods not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Library wrapper
+Cookies.set('name', 'value'); // May not set Secure
+```
+
+**Mitigation**: Review cookie library configurations.
+
+### Conditional Attributes
+
+**Why**: Dynamic conditions not evaluated.
+
+```typescript
+// ❌ NOT DETECTED - Conditional attributes
+const attrs = isDev ? '' : '; Secure';
+document.cookie = 'name=value' + attrs;
+```
+
+**Mitigation**: Always use secure attributes in production.
+
 ## 📚 Related Resources
 
 - [MDN: Set-Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie)

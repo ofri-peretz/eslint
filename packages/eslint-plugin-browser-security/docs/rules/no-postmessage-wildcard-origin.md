@@ -99,6 +99,45 @@ However, it's generally recommended to **always specify the exact target origin*
 - [MDN: postMessage Security Concerns](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage#security_concerns)
 - [`browser-security/require-postmessage-origin-check`](./require-postmessage-origin-check.md) - Validates origin on message receipt
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Origin from Variable
+
+**Why**: Origin stored in variables is not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Origin from variable
+const origin = '*';
+window.postMessage(data, origin);
+```
+
+**Mitigation**: Never assign '\*' to origin variables.
+
+### Dynamic Origin Construction
+
+**Why**: Computed origins are not traced.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic construction
+const target = getTargetOrigin(); // May return '*'
+iframe.contentWindow.postMessage(data, target);
+```
+
+**Mitigation**: Validate origin before postMessage.
+
+### Wrapper Functions
+
+**Why**: Custom postMessage wrappers not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper function
+sendMessage(data, '*'); // Uses postMessage internally
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
 ## OWASP Mapping
 
 | Category          | ID                               |

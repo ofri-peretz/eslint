@@ -62,6 +62,45 @@ document.cookie = 'locale=en-US';
 }
 ```
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Token Value from Variable
+
+**Why**: Token patterns in variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Token from variable
+const value = jwt;
+document.cookie = 'data=' + value;
+```
+
+**Mitigation**: Never set auth cookies client-side.
+
+### Dynamic Cookie Names
+
+**Why**: Computed cookie names not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic name
+const key = 'authToken';
+document.cookie = `${key}=${value}`;
+```
+
+**Mitigation**: Set auth cookies server-side with HttpOnly.
+
+### Cookie Library Wrappers
+
+**Why**: Library methods not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Library wrapper
+Cookies.set('token', jwt); // Uses document.cookie internally
+```
+
+**Mitigation**: Apply rule to library implementations.
+
 ## 📚 Related Resources
 
 - [MDN: HTTP Cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies)

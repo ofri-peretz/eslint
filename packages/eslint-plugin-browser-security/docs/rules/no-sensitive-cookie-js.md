@@ -171,6 +171,45 @@ login(@Res() res: Response) {
 - [MDN: Cookie Security](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#security)
 - [OWASP: Session Management Cheat Sheet](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/06-Session_Management_Testing/02-Testing_for_Cookies_Attributes)
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Dynamic Cookie Name
+
+**Why**: Computed names not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic name
+const name = 'authToken';
+document.cookie = `${name}=${value}`;
+```
+
+**Mitigation**: Never set auth cookies client-side.
+
+### Cookie Values from Variables
+
+**Why**: Value patterns in variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const data = jwt;
+document.cookie = 'data=' + data;
+```
+
+**Mitigation**: Set auth cookies server-side.
+
+### Cookie Library Wrappers
+
+**Why**: Library methods not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Library wrapper
+js - cookie.set('token', jwt);
+```
+
+**Mitigation**: Apply rule to library implementations.
+
 ## OWASP Mapping
 
 | Category          | ID                                |

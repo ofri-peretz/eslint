@@ -54,6 +54,45 @@ sessionStorage.setItem('searchQuery', query);
 }
 ```
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Dynamic Key Names
+
+**Why**: Computed key names not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic key
+const key = 'accessToken';
+sessionStorage.setItem(key, value);
+```
+
+**Mitigation**: Configure additional key patterns.
+
+### Values from Variables
+
+**Why**: Sensitive values in variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const data = jwt;
+sessionStorage.setItem('data', data);
+```
+
+**Mitigation**: Never store tokens in sessionStorage.
+
+### Wrapper Functions
+
+**Why**: Storage wrappers not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom wrapper
+sessionManager.save('token', jwt);
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
 ## 📚 Related Resources
 
 - [MDN: sessionStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage)
