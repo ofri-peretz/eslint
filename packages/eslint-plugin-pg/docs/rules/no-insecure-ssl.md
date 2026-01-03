@@ -67,6 +67,61 @@ const client = new Client({
 - In development environments with self-signed certificates (use environment variables instead)
 - Never disable in production
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Options from Variable
+
+**Why**: Variable contents are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - SSL options from variable
+const sslOpts = { rejectUnauthorized: false };
+const client = new Client({ ssl: sslOpts });
+```
+
+**Mitigation**: Use inline SSL configuration. Create TypeScript types forbidding `rejectUnauthorized: false`.
+
+### Environment Variable Controlling SSL
+
+**Why**: Environment variable values are not known at lint time.
+
+```typescript
+// ❌ NOT DETECTED - SSL disabled based on env var
+const ssl =
+  process.env.NODE_ENV === 'development'
+    ? { rejectUnauthorized: false } // Might leak to production!
+    : true;
+const client = new Client({ ssl });
+```
+
+**Mitigation**: Never conditionally disable SSL. Use separate connection configs per environment.
+
+### Configuration Object from File
+
+**Why**: Values imported from config files are not traced.
+
+```typescript
+// ❌ NOT DETECTED - Config from file
+import dbConfig from './database.json';
+const client = new Client(dbConfig); // May have rejectUnauthorized: false
+```
+
+**Mitigation**: Apply rule to config files. Use schema validation for database configs.
+
+### Spread Operator
+
+**Why**: Spread objects hide their properties at lint time.
+
+```typescript
+// ❌ NOT DETECTED - rejectUnauthorized in spread
+const baseConfig = getDbConfig();
+const client = new Client({ ...baseConfig }); // May include insecure SSL
+```
+
+**Mitigation**: Explicitly set SSL options. Validate config at runtime.
+
 ## Related Rules
 
 - [no-hardcoded-credentials](./no-hardcoded-credentials.md) - Prevents hardcoded passwords

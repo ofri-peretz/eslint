@@ -54,6 +54,60 @@ try {
 
 - Never disable this rule - transactions on pool are always incorrect
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Aliased Pool Reference
+
+**Why**: The rule tracks `pool.query()` patterns; renamed references are missed.
+
+```typescript
+// ❌ NOT DETECTED - Aliased pool
+const db = pool;
+await db.query('BEGIN'); // 'db' not recognized as pool
+```
+
+**Mitigation**: Use consistent naming for database pools. Add custom pool identifiers via configuration.
+
+### Dynamic Query String
+
+**Why**: Transaction commands in variables are not detected.
+
+```typescript
+// ❌ NOT DETECTED - Query from variable
+const cmd = 'BEGIN';
+await pool.query(cmd);
+```
+
+**Mitigation**: Use literal query strings for transaction commands.
+
+### Wrapped Pool Methods
+
+**Why**: Wrapper functions hide pool access.
+
+```typescript
+// ❌ NOT DETECTED - Transaction in wrapper
+async function runQuery(sql: string) {
+  return pool.query(sql);
+}
+await runQuery('BEGIN'); // Wrapper not traced
+```
+
+**Mitigation**: Apply rule to all modules. Use dedicated transaction wrappers that enforce client pattern.
+
+### Transaction Commands in Template Literals
+
+**Why**: Complex template literals may hide transaction keywords.
+
+```typescript
+// ❌ NOT DETECTED - Hidden in template
+const action = 'BEGIN';
+await pool.query(`${action}`);
+```
+
+**Mitigation**: Use explicit transaction management patterns. Create utility functions that enforce correct usage.
+
 ## Related Rules
 
 - [no-missing-client-release](./no-missing-client-release.md) - Ensures client release

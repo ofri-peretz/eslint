@@ -138,6 +138,58 @@ export default [
 - [no-unsafe-query](./no-unsafe-query.md) - SQL injection prevention
 - [no-unsafe-search-path](./no-unsafe-search-path.md) - Search path injection
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Query from Variable
+
+**Why**: Query strings in variables are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Query stored in variable
+const copyQuery = `COPY users FROM '${userPath}'`;
+await client.query(copyQuery);
+```
+
+**Mitigation**: Use inline query strings. Prefer COPY FROM STDIN pattern.
+
+### Wrapped Query Methods
+
+**Why**: Wrapper functions hide query contents.
+
+```typescript
+// ❌ NOT DETECTED - Wrapped query execution
+async function executeQuery(sql: string) {
+  return client.query(sql);
+}
+await executeQuery(`COPY data FROM '${path}'`);
+```
+
+**Mitigation**: Apply rule to all modules. Use dedicated import utilities.
+
+### ORM Raw Query Methods
+
+**Why**: ORM-specific query methods may not be tracked.
+
+```typescript
+// ❌ NOT DETECTED - ORM raw query
+await sequelize.query(`COPY users FROM '${path}'`, { raw: true });
+```
+
+**Mitigation**: Apply rule to ORM raw query patterns. Configure additional query method names.
+
+### COPY FROM PROGRAM
+
+**Why**: Rule focuses on file paths; PROGRAM variant has different syntax.
+
+```typescript
+// ❌ NOT DETECTED - COPY FROM PROGRAM is equally dangerous
+await client.query(`COPY users FROM PROGRAM '${cmd}'`);
+```
+
+**Mitigation**: Add custom rule for COPY FROM PROGRAM detection. Security review for all COPY commands.
+
 ## References
 
 - [CWE-73: External Control of File Name or Path](https://cwe.mitre.org/data/definitions/73.html)

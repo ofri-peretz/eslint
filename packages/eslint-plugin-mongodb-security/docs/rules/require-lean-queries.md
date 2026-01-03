@@ -55,6 +55,67 @@ await user.save();
 - When virtuals or instance methods are required
 - For small result sets where overhead is negligible
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Query in Variable
+
+**Why**: Query chains stored in variables are not fully traced.
+
+```typescript
+// ❌ NOT DETECTED - Query stored in variable
+let query = User.find({ active: true });
+if (needsVirtuals) {
+  // Intentionally not using lean
+} else {
+  query = query.lean();
+}
+const users = await query;
+```
+
+**Mitigation**: Use explicit lean() in all execution paths or disable rule selectively.
+
+### Abstracted Query Methods
+
+**Why**: Custom query wrappers are not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom query method
+async function findActiveUsers() {
+  return User.find({ active: true }); // Missing lean
+}
+const users = await findActiveUsers();
+```
+
+**Mitigation**: Apply rule to all modules. Add lean() in wrapper functions.
+
+### Intentional Save After Query
+
+**Why**: The rule cannot determine if document modification is intended.
+
+```typescript
+// ❌ FALSE POSITIVE RISK - Document will be saved
+const user = await User.findById(id); // Flagged, but needs to be full doc
+user.lastLogin = new Date();
+await user.save();
+```
+
+**Mitigation**: Disable rule for files with write operations. Add eslint-disable comments.
+
+### Aggregation Pipeline
+
+**Why**: Aggregation already returns plain objects; lean() is not applicable.
+
+```typescript
+// ❌ NOT DETECTED (correctly) - Aggregation returns plain objects
+const stats = await User.aggregate([
+  { $group: { _id: null, count: { $sum: 1 } } },
+]);
+```
+
+**Mitigation**: Not applicable - aggregation is already "lean".
+
 ## References
 
 - [Mongoose Lean Queries](https://mongoosejs.com/docs/tutorials/lean.html)

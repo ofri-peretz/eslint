@@ -61,6 +61,62 @@ mongoose.connect(uri, {
 - Development environments with passwordless local MongoDB
 - When using MongoDB Atlas with default secure configuration
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Connection String with Auth
+
+**Why**: URI parsing is not performed; only options object is checked.
+
+```typescript
+// ❌ NOT DETECTED - Auth mechanism in URI
+mongoose.connect('mongodb://host/db?authMechanism=SCRAM-SHA-1'); // Weak mechanism in URI
+```
+
+**Mitigation**: Use options object for auth mechanism. Validate URIs at startup.
+
+### Options from Variable
+
+**Why**: Variable contents are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Options from variable
+const opts = { user: 'admin', pass: 'secret' }; // Missing authMechanism
+mongoose.connect(uri, opts);
+```
+
+**Mitigation**: Use inline options. Define typed connection config.
+
+### Environment-Based Options
+
+**Why**: Environment values are not known at lint time.
+
+```typescript
+// ❌ NOT DETECTED - Options depend on environment
+const opts = process.env.USE_X509
+  ? { authMechanism: 'MONGODB-X509' }
+  : { user: 'admin', pass: 'secret' }; // Fallback has no mechanism!
+mongoose.connect(uri, opts);
+```
+
+**Mitigation**: Always include authMechanism in all branches.
+
+### Native Driver Direct Use
+
+**Why**: Only Mongoose patterns are recognized by default.
+
+```typescript
+// ❌ NOT DETECTED - Native driver
+import { MongoClient } from 'mongodb';
+const client = new MongoClient(uri, {
+  auth: { username: 'admin', password: 'secret' },
+});
+// Missing authMechanism on native driver
+```
+
+**Mitigation**: Configure rule to recognize MongoClient patterns.
+
 ## References
 
 - [MongoDB Authentication Mechanisms](https://www.mongodb.com/docs/manual/core/authentication/)

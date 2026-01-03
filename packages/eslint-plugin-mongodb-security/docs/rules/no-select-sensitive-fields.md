@@ -72,6 +72,59 @@ const userSchema = new Schema({
 - In authentication flows where password comparison is needed
 - When schema already has `select: false` on all sensitive fields
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Schema-Level `select: false`
+
+**Why**: Schema definitions in other files are not visible.
+
+```typescript
+// ❌ NOT DETECTED - Schema has select: false (safe but not known)
+// userSchema.ts: password: { type: String, select: false }
+const user = await User.findById(id); // Password already excluded
+```
+
+**Mitigation**: This is a false positive risk. Use schema-level exclusion as primary defense.
+
+### Variable Field Selection
+
+**Why**: Select arguments from variables are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Fields from variable
+const fields = '+password';
+const user = await User.findById(id).select(fields);
+```
+
+**Mitigation**: Use inline select strings. Define field lists as constants.
+
+### Aggregation Pipeline
+
+**Why**: Aggregation $project stages are not checked.
+
+```typescript
+// ❌ NOT DETECTED - Sensitive field in aggregation
+const users = await User.aggregate([
+  { $match: { active: true } },
+  { $project: { password: 1 } }, // Includes password!
+]);
+```
+
+**Mitigation**: Review aggregation pipelines. Use $unset for sensitive fields.
+
+### Lean Queries
+
+**Why**: Lean queries bypass middleware that might filter fields.
+
+```typescript
+// ❌ NOT DETECTED - Lean returns raw document
+const user = await User.findById(id).lean(); // Includes all fields
+```
+
+**Mitigation**: Always use .select() with .lean(). Define projection inline.
+
 ## References
 
 - [Mongoose Field Selection](<https://mongoosejs.com/docs/api/query.html#Query.prototype.select()>)

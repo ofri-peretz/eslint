@@ -71,6 +71,61 @@ if (process.env.DEBUG) {
 - In development-only codebases
 - When debug logging is properly secured
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Debug Flag from Variable
+
+**Why**: Variable contents are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Debug setting from variable
+const debugEnabled = true;
+mongoose.set('debug', debugEnabled);
+```
+
+**Mitigation**: Use inline boolean with environment check.
+
+### Configuration Object
+
+**Why**: Config properties are not traced.
+
+```typescript
+// ❌ NOT DETECTED - Debug in config object
+const mongoConfig = { debug: true };
+mongoose.set('debug', mongoConfig.debug);
+```
+
+**Mitigation**: Validate config at startup. Use environment-based config loading.
+
+### Conditional in Outer Scope
+
+**Why**: Control flow across scopes is not tracked.
+
+```typescript
+// ❌ NOT DETECTED - Condition in outer function
+function configureMongoose() {
+  if (process.env.DEBUG) {
+    enableDebug(); // Calls mongoose.set('debug', true) internally
+  }
+}
+```
+
+**Mitigation**: Apply rule to all modules. Use centralized configuration.
+
+### Dynamic Setting Names
+
+**Why**: Setting name computed at runtime is not understood.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic setting name
+const setting = 'debug';
+mongoose.set(setting, true);
+```
+
+**Mitigation**: Use explicit 'debug' string. Add runtime environment check.
+
 ## References
 
 - [Mongoose Debug](<https://mongoosejs.com/docs/api/mongoose.html#Mongoose.prototype.set()>)

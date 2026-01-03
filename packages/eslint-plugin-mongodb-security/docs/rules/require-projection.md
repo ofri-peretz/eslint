@@ -53,6 +53,63 @@ const user = await User.findById(id).select('-password -internalNotes');
 - When using lean() with full document transformation
 - Development/debugging scenarios
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Query Method on Variable
+
+**Why**: Model stored in variable is not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Model from variable
+const Model = getModelForType(type);
+const docs = await Model.find({ active: true }); // Missing projection
+```
+
+**Mitigation**: Use explicit model references. Add projection in dynamic queries.
+
+### Projection in Second Argument
+
+**Why**: May not recognize all projection argument formats.
+
+```typescript
+// ⚠️ MAY NOT DETECT - Object projection format
+const users = await User.find({}, { name: 1, email: 1 }); // Should be recognized
+```
+
+**Mitigation**: Use .select() chain which is more clearly detected.
+
+### Query Builder Pattern
+
+**Why**: Complex query building hides projection status.
+
+```typescript
+// ❌ NOT DETECTED - Query built conditionally
+function buildQuery(filters: any) {
+  let q = User.find(filters);
+  // Projection may or may not be added based on logic
+  if (filters.minimal) {
+    q = q.select('name email');
+  }
+  return q;
+}
+```
+
+**Mitigation**: Always add projection at query definition. Use centralized query builders.
+
+### Native Driver Methods
+
+**Why**: Only Mongoose patterns are recognized.
+
+```typescript
+// ❌ NOT DETECTED - Native driver
+import { MongoClient } from 'mongodb';
+const users = await db.collection('users').find({}).toArray(); // Missing projection
+```
+
+**Mitigation**: Configure rule for native driver patterns if available.
+
 ## References
 
 - [MongoDB Projections](https://www.mongodb.com/docs/manual/tutorial/project-fields-from-query-results/)

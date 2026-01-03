@@ -77,6 +77,84 @@ async function transferFunds(from: string, to: string, amount: number) {
 - When you need session variables or prepared statements
 - When connection reuse is critical for performance
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Multiple Queries Across Functions
+
+**Why**: Control flow across functions is not tracked.
+
+```typescript
+// ❌ FALSE POSITIVE RISK - May flag valid multi-query pattern
+async function processUser(id: string) {
+  const client = await pool.connect();
+  try {
+    const user = await getUser(client, id); // First query
+    await updateLastSeen(client, id); // Second query - justified connect!
+    return user;
+  } finally {
+    client.release();
+  }
+}
+```
+
+**Mitigation**: Use inline queries or disable rule locally with comment.
+
+### Session State Requirements
+
+**Why**: Session-level needs like prepared statements are not detected.
+
+```typescript
+// ❌ FALSE POSITIVE RISK - Session state needed
+async function batchInsert(items: Item[]) {
+  const client = await pool.connect();
+  try {
+    await client.query('PREPARE insert_item AS INSERT INTO items VALUES ($1)');
+    for (const item of items) {
+      await client.query('EXECUTE insert_item($1)', [item]); // Legit connect use
+    }
+  } finally {
+    client.release();
+  }
+}
+```
+
+**Mitigation**: Disable rule for files with session-stateful patterns.
+
+### Aliased Pool
+
+**Why**: Renamed pool references are not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Aliased pool
+const db = pool;
+const client = await db.connect();
+// ... single query pattern not flagged
+```
+
+**Mitigation**: Use consistent naming for database pools.
+
+### Complex Control Flow
+
+**Why**: Loops or conditionals may hide multi-query patterns.
+
+```typescript
+// ❌ FALSE POSITIVE RISK - Loop may execute multiple queries
+async function process(ids: string[]) {
+  const client = await pool.connect();
+  try {
+    for (const id of ids) {
+      await client.query('SELECT * FROM users WHERE id = $1', [id]);
+    }
+  } finally {
+    client.release();
+  }
+}
+```
+
+**Mitigation**: Use `// eslint-disable-next-line` for legitimate patterns.
+
 ## Related Rules
 
 - [no-missing-client-release](./no-missing-client-release.md) - Connection management
