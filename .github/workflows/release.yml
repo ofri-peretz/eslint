@@ -868,8 +868,26 @@ jobs:
                 # ERROR: 404 on first release - NPM_TOKEN may be missing or invalid
                 if echo "$PUBLISH_OUTPUT" | grep -qiE "(404|not found)" && [ "$IS_FIRST_RELEASE" = "true" ]; then
                   echo "❌ NPM 404 on First Release: Cannot create package $NPM_NAME"
-                  echo "   └─ Cause: NPM_TOKEN secret may be missing, invalid, or lacks publish scope"
-                  echo "   └─ Fix: Verify NPM_TOKEN secret in GitHub repo settings has 'automation' or 'publish' scope"
+                  echo ""
+                  echo "   OIDC Trusted Publishers cannot create new packages on npm."
+                  echo "   The package must be published once before OIDC can be used."
+                  echo ""
+                  echo "   ═══════════════════════════════════════════════════════════"
+                  echo "   SOLUTION OPTIONS:"
+                  echo "   ═══════════════════════════════════════════════════════════"
+                  echo ""
+                  echo "   OPTION 1: Update NPM_TOKEN secret (recommended for CI)"
+                  echo "   - Go to npmjs.com → Access Tokens → Generate New Token"
+                  echo "   - Choose 'Automation' type with publish permissions"
+                  echo "   - Update the NPM_TOKEN secret in GitHub repo settings"
+                  echo "   - Re-run this workflow"
+                  echo ""
+                  echo "   OPTION 2: Local first publish (one-time manual)"
+                  echo "   - Run locally: npm login"
+                  echo "   - Run: ./scripts/first-release.sh $PACKAGE"
+                  echo "   - Then configure Trusted Publishers at npmjs.com"
+                  echo ""
+                  echo "   ═══════════════════════════════════════════════════════════"
                   FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
                   continue
                 fi
