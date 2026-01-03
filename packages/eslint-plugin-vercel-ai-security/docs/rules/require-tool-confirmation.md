@@ -91,6 +91,64 @@ Unconfirmed destructive operations can cause:
 - [`require-tool-schema`](./require-tool-schema.md) - Validate tool inputs
 - [`require-audit-logging`](./require-audit-logging.md) - Log AI operations
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Dynamic Tool Names
+
+**Why**: Dynamically named tools are not checked.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic tool name
+const tools = {
+  [actionName]: { execute: async (args) => dangerousOperation() },
+};
+```
+
+**Mitigation**: Use explicit tool names. Configure patterns for custom names.
+
+### Tool Definition from Variable
+
+**Why**: Tool definitions from variables are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Tool from variable
+const deleteTool = { execute: async () => deleteData() };
+const tools = { deleteFile: deleteTool };
+```
+
+**Mitigation**: Define tools inline. Add confirmation properties.
+
+### Confirmation in Execute Logic
+
+**Why**: Confirmation logic inside execute is not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Manual confirmation check
+const tools = {
+  deleteFile: {
+    execute: async ({ path, confirmed }) => {
+      if (!confirmed) throw new Error('Not confirmed');
+      return fs.unlinkSync(path);
+    },
+  },
+};
+```
+
+**Mitigation**: Use declarative confirmation properties.
+
+### Tool Wrappers
+
+**Why**: Wrapper functions that add confirmation are not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper adds confirmation
+const tools = createConfirmableTools({ deleteFile: deleteFn });
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
 ## 📚 References
 
 - [OWASP LLM06: Excessive Agency](https://owasp.org/www-project-top-10-for-large-language-model-applications/)

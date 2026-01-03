@@ -83,6 +83,59 @@ Hardcoded API keys can be:
 
 - [`no-sensitive-in-prompt`](./no-sensitive-in-prompt.md) - Prevent sensitive data in prompts
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Keys from Variables
+
+**Why**: Keys stored in variables are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Key from variable
+const apiKey = 'sk-proj-abc123xyz789...';
+const openai = createOpenAI({ apiKey });
+```
+
+**Mitigation**: Use environment variables directly. Never store keys in variables.
+
+### Encoded/Obfuscated Keys
+
+**Why**: Base64 or other encoded keys are not decoded.
+
+```typescript
+// ❌ NOT DETECTED - Encoded key
+const key = Buffer.from('c2stcHJvai1hYmM...', 'base64').toString();
+const openai = createOpenAI({ apiKey: key });
+```
+
+**Mitigation**: Never obfuscate keys. Use proper secrets management.
+
+### Keys from Config Files
+
+**Why**: Keys imported from config files are not visible.
+
+```typescript
+// ❌ NOT DETECTED - Key from import
+import { apiKeys } from './config';
+const openai = createOpenAI({ apiKey: apiKeys.openai });
+```
+
+**Mitigation**: Apply rule to config files. Use environment variables.
+
+### Template Literal Construction
+
+**Why**: Keys built from parts may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - Constructed key
+const openai = createOpenAI({
+  apiKey: `sk-${projectId}-${keyPart}`,
+});
+```
+
+**Mitigation**: Never construct keys dynamically.
+
 ## 📚 References
 
 - [OWASP ASI03: Identity & Privilege Abuse](https://owasp.org)

@@ -86,6 +86,61 @@ Unhandled AI errors can cause:
 - [`require-audit-logging`](./require-audit-logging.md) - Log AI operations
 - [`require-abort-signal`](./require-abort-signal.md) - Enable cancellation
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Try-Catch in Caller
+
+**Why**: Error handling in calling function is not tracked.
+
+```typescript
+// ❌ NOT DETECTED - Try-catch in caller
+async function handler() {
+  return aiService.generate('Hello'); // aiService has try-catch
+}
+```
+
+**Mitigation**: Add error handling at AI call site for clarity.
+
+### Global Error Handlers
+
+**Why**: Express/framework error middleware is not visible.
+
+```typescript
+// ❌ NOT DETECTED (correctly) - Express error handler
+app.use(errorHandler); // Catches all errors
+async function handler() {
+  return await generateText({ prompt: 'Hello' });
+}
+```
+
+**Mitigation**: Use local error handling for graceful degradation.
+
+### Wrapper with Built-in Error Handling
+
+**Why**: Custom wrappers with internal error handling are not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper has error handling
+const result = await safeGenerateText({ prompt: 'Hello' });
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
+### Promise.catch()
+
+**Why**: Promise chain error handling may not be recognized.
+
+```typescript
+// ⚠️ MAY NOT DETECT - Promise catch
+generateText({ prompt: 'Hello' })
+  .then((r) => r.text)
+  .catch(handleError);
+```
+
+**Mitigation**: Use async/await with try-catch for clarity.
+
 ## 📚 References
 
 - [OWASP ASI08: Cascading Failures](https://owasp.org)

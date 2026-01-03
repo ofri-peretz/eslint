@@ -72,6 +72,59 @@ Unbounded token consumption can cause:
 - [`require-max-steps`](./require-max-steps.md) - Limit multi-step tool calling
 - [`require-abort-signal`](./require-abort-signal.md) - Enable cancellation
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Options from Variable
+
+**Why**: Options stored in variables are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Options from variable
+const options = { model: openai('gpt-4'), prompt: 'Hello' }; // Missing maxTokens
+await generateText(options);
+```
+
+**Mitigation**: Use inline options. Always specify maxTokens explicitly.
+
+### Spread Configuration
+
+**Why**: Spread may hide that maxTokens is missing.
+
+```typescript
+// ❌ NOT DETECTED - maxTokens may not be in base
+const base = getModelConfig();
+await generateText({ ...base, prompt: 'Hello' }); // maxTokens?
+```
+
+**Mitigation**: Always set maxTokens explicitly. Don't rely on spread configs.
+
+### Wrapper Functions
+
+**Why**: Custom wrapper functions are not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper hides missing maxTokens
+const result = await myGenerateText('Hello'); // Wrapper may not set limit
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
+### Model Default Limits
+
+**Why**: Model-specific defaults are not considered.
+
+```typescript
+// ⚠️ MAY FLAG - Model has reasonable default
+await generateText({
+  model: openai('gpt-4-turbo'), // Has 4096 default
+  prompt: 'Hello',
+});
+```
+
+**Mitigation**: Explicitly set maxTokens for clarity.
+
 ## 📚 References
 
 - [OWASP LLM10: Unbounded Consumption](https://owasp.org/www-project-top-10-for-large-language-model-applications/)

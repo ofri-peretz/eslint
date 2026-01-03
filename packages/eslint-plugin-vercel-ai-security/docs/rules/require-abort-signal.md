@@ -74,6 +74,47 @@ Without abort signals:
 - [`require-max-tokens`](./require-max-tokens.md) - Limit token consumption
 - [`require-error-handling`](./require-error-handling.md) - Handle errors
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Signal from Variable
+
+**Why**: Signal stored in variables is not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Signal from variable
+const options = { signal: controller.signal };
+await streamText({ model: openai('gpt-4'), ...options });
+```
+
+**Mitigation**: Use inline signal property.
+
+### Framework-Provided Signal
+
+**Why**: Framework signals are not visible.
+
+```typescript
+// ❌ NOT DETECTED (correctly) - Next.js handles signals
+export async function GET(req: Request) {
+  // req.signal provided by Next.js
+  return streamText({ ..., abortSignal: req.signal });
+}
+```
+
+**Mitigation**: Document framework signal handling.
+
+### Wrapper Functions
+
+**Why**: Custom wrappers may include signal internally.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper adds signal
+await myStreamText(prompt); // Wrapper adds signal internally
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
 ## 📚 References
 
 - [OWASP LLM10: Unbounded Consumption](https://owasp.org/www-project-top-10-for-large-language-model-applications/)

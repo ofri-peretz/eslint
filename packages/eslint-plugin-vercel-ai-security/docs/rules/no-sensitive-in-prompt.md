@@ -85,6 +85,62 @@ Sending sensitive data to LLMs can result in:
 - [`no-hardcoded-api-keys`](./no-hardcoded-api-keys.md) - Prevent hardcoded credentials
 - [`require-output-filtering`](./require-output-filtering.md) - Filter sensitive tool output
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Variable Names Not Matching Patterns
+
+**Why**: Only configured sensitive patterns are checked.
+
+```typescript
+// ❌ NOT DETECTED - Custom field name
+await generateText({
+  prompt: `Process data: ${mySecretField}`, // Not in sensitivePatterns
+});
+```
+
+**Mitigation**: Configure `sensitivePatterns` with custom field names.
+
+### Dynamic Prompt Construction
+
+**Why**: Prompts built at runtime are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic prompt
+const fields = [userPassword, apiKey];
+const prompt = fields.join(', ');
+await generateText({ prompt });
+```
+
+**Mitigation**: Never concatenate sensitive data into prompts.
+
+### Nested Object Properties
+
+**Why**: Deep property access may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - Nested property
+await generateText({
+  prompt: `Reset with: ${user.credentials.password}`,
+});
+```
+
+**Mitigation**: Configure patterns to match nested sensitive fields.
+
+### Encrypted/Transformed Data
+
+**Why**: Transformed data appears safe but may be sensitive.
+
+```typescript
+// ❌ NOT DETECTED - Encrypted but still sensitive
+await generateText({
+  prompt: `Decrypt this: ${encryptedPassword}`,
+});
+```
+
+**Mitigation**: Never send any form of credentials to LLMs.
+
 ## 📚 References
 
 - [OWASP LLM02: Sensitive Information Disclosure](https://owasp.org/www-project-top-10-for-large-language-model-applications/)

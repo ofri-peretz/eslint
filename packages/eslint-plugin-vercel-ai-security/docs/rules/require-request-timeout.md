@@ -69,6 +69,58 @@ Missing timeouts can cause:
 - **Cost explosion** - Long-running requests accumulate costs
 - **Poor UX** - Users wait forever
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Options from Variable
+
+**Why**: Options stored in variables are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Options from variable
+const opts = { model: openai('gpt-4'), prompt: 'Hello' }; // No timeout
+await generateText(opts);
+```
+
+**Mitigation**: Use inline options. Always specify timeout.
+
+### Wrapper Functions
+
+**Why**: Custom wrappers may include timeout internally.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper adds timeout
+await myGenerateText(prompt); // Wrapper sets timeout
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
+### External Timeout Management
+
+**Why**: Timeout managed outside the call is not visible.
+
+```typescript
+// ❌ NOT DETECTED - Promise.race timeout
+await Promise.race([
+  generateText({ ... }),
+  timeout(30000)
+]);
+```
+
+**Mitigation**: Use built-in timeout/abort signal properties.
+
+### Framework-Level Timeouts
+
+**Why**: Framework request timeouts are not linked.
+
+```typescript
+// ❌ NOT DETECTED (correctly) - Express timeout middleware
+app.use(timeout(30000));
+```
+
+**Mitigation**: Document framework timeout handling.
+
 ## 📚 References
 
 - [OWASP LLM04: Model Denial of Service](https://owasp.org/www-project-top-10-for-large-language-model-applications/)

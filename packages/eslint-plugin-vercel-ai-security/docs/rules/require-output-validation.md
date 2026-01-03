@@ -59,6 +59,57 @@ Unvalidated AI output can:
 - **Damage reputation** - Incorrect information attributed to your brand
 - **Violate regulations** - False claims in regulated industries
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Validation in Separate Module
+
+**Why**: Validation logic in other files is not linked.
+
+```typescript
+// ❌ NOT DETECTED - Validation elsewhere
+import { processOutput } from './output-handler'; // Has validation
+display(processOutput(result.text));
+```
+
+**Mitigation**: Document validation requirements. Review output handlers.
+
+### Custom Display Functions
+
+**Why**: Non-standard display functions may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom display function
+customRenderer.showContent(result.text); // Not in displayPatterns
+```
+
+**Mitigation**: Configure `displayPatterns` with custom function names.
+
+### Implicit Validation
+
+**Why**: Validation logic that doesn't match pattern is not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom validation
+display(checkContent(result.text)); // checkContent not in validatorFunctions
+```
+
+**Mitigation**: Configure `validatorFunctions` with custom names.
+
+### Streaming Output
+
+**Why**: Streamed content is displayed incrementally.
+
+```typescript
+// ❌ NOT DETECTED - Streaming without validation
+for await (const chunk of streamText({ ... })) {
+  display(chunk.text); // Each chunk unvalidated
+}
+```
+
+**Mitigation**: Validate streamed content before display.
+
 ## 📚 References
 
 - [OWASP LLM09: Misinformation](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
