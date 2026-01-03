@@ -74,6 +74,65 @@ Disable for:
 - Webhook endpoints that use signature verification
 - Public APIs without session-based authentication
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### CSRF Middleware in External Router
+
+**Why**: Middleware applied in other modules is not tracked.
+
+```typescript
+// ❌ NOT DETECTED - CSRF in external router file
+// routes.ts applies csrf, but main.ts doesn't see it
+import { router } from './routes';
+app.use(router);
+```
+
+**Mitigation**: Apply CSRF globally in main file. Document middleware location.
+
+### Custom CSRF Implementation
+
+**Why**: Custom CSRF token validation is not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom CSRF check
+app.post('/transfer', (req, res) => {
+  if (req.headers['x-csrf-token'] !== req.session.csrf) {
+    return res.status(403).send('Invalid CSRF');
+  }
+  // ... handle request
+});
+```
+
+**Mitigation**: Configure rule to recognize custom middleware names.
+
+### Framework CSRF Abstraction
+
+**Why**: Framework-specific CSRF is not detected.
+
+```typescript
+// ❌ NOT DETECTED - Next.js API routes
+export async function POST(req) {
+  // Next.js has different CSRF handling
+}
+```
+
+**Mitigation**: Use framework-specific linting. Configure ignorePatterns.
+
+### Token-Based API with Session Fallback
+
+**Why**: Rule can't determine if endpoint uses session or JWT.
+
+```typescript
+// ❌ FALSE POSITIVE RISK - JWT API doesn't need CSRF
+app.post('/api/data', jwtAuth, (req, res) => {
+  // Safe: JWT auth, not session-based
+});
+```
+
+**Mitigation**: Use ignorePatterns for API routes. Document auth strategy.
+
 ## Further Reading
 
 - [OWASP CSRF Prevention](https://owasp.org/www-community/attacks/csrf)

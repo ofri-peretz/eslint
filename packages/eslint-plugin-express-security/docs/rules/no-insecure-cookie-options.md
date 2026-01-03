@@ -81,6 +81,62 @@ res.cookie('session', token, {
 
 Never disable for session cookies or cookies containing sensitive data.
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Cookie Options from Variable
+
+**Why**: Options stored in variables are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Options from variable
+const cookieOpts = { httpOnly: false };
+res.cookie('session', token, cookieOpts);
+```
+
+**Mitigation**: Use inline cookie options. Create typed secure defaults.
+
+### Response Object Aliased
+
+**Why**: Renamed response object is not tracked.
+
+```typescript
+// ❌ NOT DETECTED - Aliased response
+function setCookie(response, name, value) {
+  response.cookie(name, value); // No flags!
+}
+```
+
+**Mitigation**: Add types requiring secure options. Use wrapper with defaults.
+
+### Cookie Through Session Middleware
+
+**Why**: Session middleware cookie configuration is not checked.
+
+```typescript
+// ❌ NOT DETECTED - Session middleware config
+app.use(
+  session({
+    cookie: { httpOnly: false }, // Insecure!
+  }),
+);
+```
+
+**Mitigation**: Configure session middleware explicitly. Review middleware docs.
+
+### Framework Cookie Helpers
+
+**Why**: Framework-specific cookie methods are not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Next.js cookie API
+import { cookies } from 'next/headers';
+cookies().set('session', token); // Flags not checked
+```
+
+**Mitigation**: Platform-specific linting. Review framework security docs.
+
 ## Further Reading
 
 - [OWASP Secure Cookie Attribute](https://owasp.org/www-community/controls/SecureCookieAttribute)

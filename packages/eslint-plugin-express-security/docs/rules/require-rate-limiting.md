@@ -81,6 +81,59 @@ app.post('/login', loginLimiter, (req, res) => {
 - Internal microservices behind a load balancer with rate limiting
 - Development environments (use `allowInTests`)
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Rate Limiter in External Module
+
+**Why**: Middleware applied in other modules is not tracked.
+
+```typescript
+// ❌ NOT DETECTED - Limiter in security.ts
+import { setupSecurity } from './security'; // Applies rate limiting
+setupSecurity(app);
+```
+
+**Mitigation**: Apply rate limiting in main file. Document middleware location.
+
+### Reverse Proxy Rate Limiting
+
+**Why**: Infrastructure-level rate limiting is not visible to ESLint.
+
+```typescript
+// ❌ NOT DETECTED (correctly) - Rate limiting in Nginx/Cloudflare
+app.post('/api', handler); // Nginx handles rate limiting
+```
+
+**Mitigation**: Document infrastructure rate limits. Add inline comment.
+
+### Custom Rate Limiting Implementation
+
+**Why**: Custom rate limiting logic is not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom rate limiting
+const rateLimits = new Map();
+app.use((req, res, next) => {
+  // Custom rate limiting logic
+});
+```
+
+**Mitigation**: Use standard middleware. Configure rule to recognize custom names.
+
+### Per-Route vs Global
+
+**Why**: Route-level limiters may miss some endpoints.
+
+```typescript
+// ❌ NOT DETECTED - Some routes may be unprotected
+app.use('/api', rateLimiter);
+app.get('/public/data', handler); // No limiter!
+```
+
+**Mitigation**: Apply rate limiting globally. Review all routes.
+
 ## Further Reading
 
 - [express-rate-limit](https://www.npmjs.com/package/express-rate-limit)

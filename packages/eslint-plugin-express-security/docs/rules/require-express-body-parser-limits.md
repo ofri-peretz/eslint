@@ -67,6 +67,57 @@ app.use(bodyParser.urlencoded({ limit: '1mb', extended: true }));
 
 Never disable in production. Always set appropriate request size limits.
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Options from Variable
+
+**Why**: Parser options stored in variables are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Options from variable
+const jsonOpts = {}; // Missing limit!
+app.use(express.json(jsonOpts));
+```
+
+**Mitigation**: Use inline options. Create typed secure defaults.
+
+### Spread Configuration
+
+**Why**: Spread hides actual configuration.
+
+```typescript
+// ❌ NOT DETECTED - Limit may be in spread or not
+const base = getParserConfig(); // May not have limit
+app.use(express.json({ ...base }));
+```
+
+**Mitigation**: Explicitly set limit. Don't rely on spread configs.
+
+### Custom Parser Middleware
+
+**Why**: Non-standard parser middleware is not checked.
+
+```typescript
+// ❌ NOT DETECTED - Custom parser
+import { customParser } from '@company/parsers';
+app.use(customParser.json()); // Limits?
+```
+
+**Mitigation**: Apply rule patterns to custom parsers.
+
+### Reverse Proxy Limits
+
+**Why**: Infrastructure-level limits are not visible.
+
+```typescript
+// ❌ NOT DETECTED (correctly) - Nginx handles limits
+app.use(express.json()); // Nginx limits request size
+```
+
+**Mitigation**: Document infrastructure limits. Add code comment.
+
 ## Further Reading
 
 - [CVE-2024-45590](https://nvd.nist.gov/vuln/detail/CVE-2024-45590)

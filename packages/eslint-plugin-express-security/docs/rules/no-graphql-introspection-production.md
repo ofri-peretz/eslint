@@ -72,6 +72,60 @@ const server = new ApolloServer({
 - Development environments where introspection aids debugging
 - Internal APIs not exposed to the public
 
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Options from Variable
+
+**Why**: Server options stored in variables are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Options from variable
+const serverOpts = { introspection: true };
+const server = new ApolloServer(serverOpts);
+```
+
+**Mitigation**: Use inline options. Validate config at startup.
+
+### Environment Check in Variable
+
+**Why**: Environment conditional stored in variable is not traced.
+
+```typescript
+// ❌ NOT DETECTED - Condition in variable
+const enableIntrospection = process.env.NODE_ENV !== 'production';
+// Later...
+const server = new ApolloServer({ introspection: enableIntrospection });
+```
+
+**Mitigation**: Use inline environment check.
+
+### Non-Apollo GraphQL Servers
+
+**Why**: Only Apollo Server patterns are detected by default.
+
+```typescript
+// ❌ NOT DETECTED - Other GraphQL servers
+import { GraphQLServer } from 'graphql-yoga';
+const server = new GraphQLServer({ schema, introspection: true });
+```
+
+**Mitigation**: Configure rule for other GraphQL server libraries.
+
+### Gateway/Federation Configuration
+
+**Why**: Introspection in gateway configs is different.
+
+```typescript
+// ❌ NOT DETECTED - Apollo Gateway
+const gateway = new ApolloGateway({
+  introspectionHeaders: { ... } // May enable introspection indirectly
+});
+```
+
+**Mitigation**: Review gateway security docs. Test introspection manually.
+
 ## Further Reading
 
 - [Apollo Server Introspection](https://www.apollographql.com/docs/apollo-server/api/apollo-server/#introspection)
