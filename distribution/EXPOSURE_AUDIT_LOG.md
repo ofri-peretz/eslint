@@ -108,12 +108,22 @@ Using the model from `EXPOSURE_IMPACT_REVIEW.md`:
 - **26% of 101 articles published** — foundation phase complete
 - **Weekend downloads (100-200/day)** suggest real organic adoption starting
 
+### 🔗 Ecosystem PR Campaign (Jan 2, 2026)
+
+| Target             | PR                                                               | Status    | Notes                           |
+| ------------------ | ---------------------------------------------------------------- | --------- | ------------------------------- |
+| **awesome-eslint** | [#253](https://github.com/dustinspecker/awesome-eslint/pull/253) | ✅ Open   | Awaiting review                 |
+| **node-postgres**  | [#3575](https://github.com/brianc/node-postgres/pull/3575)       | ❌ Closed | Rejected as "AI-generated spam" |
+
+**Strategy Docs:** See `distribution/AI_DISCOVERY_STRATEGY.md` for full PR execution log.
+
 ### 📝 Notes for Next Review
 
 - Watch for AI agent discovery (expect 2-4 weeks after article indexing)
 - Track star:download ratio (currently 0:7,223, target 1:2,000 in 3 months)
 - Monitor if @ThePracticalDev shares again (algorithm boost)
 - Next milestone: 50 articles published
+- **Follow up on awesome-eslint PR #253 status**
 
 ---
 

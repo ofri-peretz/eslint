@@ -272,10 +272,185 @@ _Publish all "Getting Started" guides first to establish the ecosystem foundatio
 
 1. **Pick the next article** from the queue (lowest available #)
 2. **Review the article** using `ARTICLE_CHECKLIST.md` standards
-3. **Publish to Dev.to**
-4. **Update this file**: Move article to "COMPLETED" section with date
-5. **Cross-link**: Add links from new article to 2+ existing articles
-6. **Distribute**: Follow post-publish checklist in `ARTICLE_CHECKLIST.md`
+3. **Add UTM links** (see UTM section below)
+4. **Publish to Dev.to**
+5. **Update this file**: Move article to "COMPLETED" section with date
+6. **Cross-link**: Add links from new article to 2+ existing articles
+7. **Distribute**: Follow post-publish checklist in `ARTICLE_CHECKLIST.md`
+
+---
+
+## 🔗 UTM Tracking for Articles
+
+> **Reference**: See `/Users/ofri/repos/ofriperetz.dev/blog/UTM_TRACKING.md` for the complete tracking guide.
+
+**Every article** MUST include UTM-tracked links pointing to ofriperetz.dev.
+
+### Required CTAs per Article (4 Placements)
+
+| Placement          | CTA Text          | UTM Link Template                                                                                         |
+| ------------------ | ----------------- | --------------------------------------------------------------------------------------------------------- |
+| **Article Footer** | Portfolio/About   | `https://ofriperetz.dev?utm_source=devto&utm_medium=article&utm_campaign=ARTICLE-SLUG`                    |
+| **Inline (body)**  | Contextual links  | `https://ofriperetz.dev?utm_source=devto&utm_medium=article&utm_campaign=ARTICLE-SLUG&utm_content=inline` |
+| **Projects CTA**   | View all projects | `https://ofriperetz.dev/projects?utm_source=devto&utm_medium=article&utm_campaign=ARTICLE-SLUG`           |
+| **Stats CTA**      | View live metrics | `https://ofriperetz.dev/stats?utm_source=devto&utm_medium=article&utm_campaign=ARTICLE-SLUG`              |
+
+### Pre-Generated Campaign Slugs by Article
+
+Use these exact `utm_campaign` values (copy-paste ready):
+
+#### PostgreSQL (pg)
+
+| Article                         | Campaign Slug         |
+| ------------------------------- | --------------------- |
+| SQL Injection in node-postgres  | `pg-sql-injection`    |
+| Detecting Connection Leaks      | `pg-connection-leak`  |
+| Transaction Race Conditions     | `pg-transaction-race` |
+| PostgreSQL Search Path Security | `pg-search-path`      |
+| N+1 Query Detection             | `pg-n1-loop`          |
+| COPY FROM Security              | `pg-copy-from`        |
+| Double Release Detection        | `pg-double-release`   |
+
+#### Secure Coding
+
+| Article                      | Campaign Slug                       |
+| ---------------------------- | ----------------------------------- |
+| Getting Started              | `secure-coding-intro`               |
+| Detecting Hardcoded Secrets  | `secure-coding-hardcoded-secrets`   |
+| Dangerous eval() Patterns    | `secure-coding-eval`                |
+| ReDoS Attack Prevention      | `secure-coding-redos`               |
+| Prototype Pollution          | `secure-coding-prototype-pollution` |
+| XSS via innerHTML            | `secure-coding-xss-innerhtml`       |
+| Command Injection Prevention | `secure-coding-command-injection`   |
+| Path Traversal Prevention    | `secure-coding-path-traversal`      |
+
+#### Vercel AI Security
+
+| Article                     | Campaign Slug                 |
+| --------------------------- | ----------------------------- |
+| Getting Started             | `vercel-ai-intro`             |
+| Prompt Injection Prevention | `vercel-ai-prompt-injection`  |
+| OWASP LLM Top 10 Coverage   | `vercel-ai-owasp-llm`         |
+| Tool Confirmation Security  | `vercel-ai-tool-confirmation` |
+| System Prompt Leakage       | `vercel-ai-system-prompt`     |
+| RAG Security Patterns       | `vercel-ai-rag`               |
+
+#### Import Next
+
+| Article               | Campaign Slug             |
+| --------------------- | ------------------------- |
+| Getting Started       | `import-next-intro`       |
+| Performance Gap       | `import-next-performance` |
+| Benchmark Showdown    | `import-next-benchmark`   |
+| No-Cycle Algorithm    | `import-next-no-cycle`    |
+| Flat Config Migration | `import-next-flat-config` |
+
+#### Crypto
+
+| Article                     | Campaign Slug           |
+| --------------------------- | ----------------------- |
+| Getting Started             | `crypto-intro`          |
+| Stop Using MD5              | `crypto-md5`            |
+| Math.random() is Not Secure | `crypto-math-random`    |
+| Timing Attack Prevention    | `crypto-timing-attacks` |
+
+#### JWT
+
+| Article                    | Campaign Slug           |
+| -------------------------- | ----------------------- |
+| Getting Started            | `jwt-intro`             |
+| Algorithm None Attack      | `jwt-algorithm-none`    |
+| JWT Expiration Enforcement | `jwt-expiration`        |
+| Hardcoded JWT Secrets      | `jwt-hardcoded-secrets` |
+
+#### Browser Security
+
+| Article                  | Campaign Slug           |
+| ------------------------ | ----------------------- |
+| Getting Started          | `browser-intro`         |
+| innerHTML XSS Prevention | `browser-innerhtml-xss` |
+| LocalStorage Secrets     | `browser-localstorage`  |
+| postMessage Origin       | `browser-postmessage`   |
+
+#### Express Security
+
+| Article               | Campaign Slug           |
+| --------------------- | ----------------------- |
+| Getting Started       | `express-intro`         |
+| Beyond Helmet.js      | `express-beyond-helmet` |
+| CORS Misconfiguration | `express-cors`          |
+
+#### Lambda Security
+
+| Article                 | Campaign Slug             |
+| ----------------------- | ------------------------- |
+| Getting Started         | `lambda-intro`            |
+| OWASP Serverless Top 10 | `lambda-owasp-serverless` |
+
+#### NestJS Security
+
+| Article                  | Campaign Slug        |
+| ------------------------ | -------------------- |
+| Getting Started          | `nestjs-intro`       |
+| The Five Security Guards | `nestjs-five-guards` |
+
+#### Strategic
+
+| Article                  | Campaign Slug             |
+| ------------------------ | ------------------------- |
+| 89 Rules Missing         | `strategic-89-rules`      |
+| OWASP Mapping            | `strategic-owasp-mapping` |
+| 30-Minute Security Audit | `strategic-30min-audit`   |
+| SOC2 Compliance          | `strategic-soc2`          |
+| AI-Native Error Messages | `strategic-ai-errors`     |
+
+#### Career
+
+| Article                       | Campaign Slug      |
+| ----------------------------- | ------------------ |
+| Security Interview Cheatsheet | `career-interview` |
+| Security Champion Roadmap     | `career-champion`  |
+
+### Sample Article Footer (Copy-Paste)
+
+```markdown
+---
+
+## 📊 About the Author
+
+I'm Ofri Peretz, Engineering Leader building AI-native developer tools.
+
+- 🔗 [View my portfolio & live metrics](https://ofriperetz.dev?utm_source=devto&utm_medium=article&utm_campaign=ARTICLE-SLUG)
+- 📦 [npm: @interlace ecosystem](https://npmjs.com/~ofriperetz)
+- 🐙 [GitHub: Interlace ESLint](https://github.com/ofri-peretz/eslint)
+
+{% user ofri-peretz %}
+```
+
+### Sample Inline CTA (For Article Body)
+
+```markdown
+Want to see how the Interlace ESLint ecosystem catches these vulnerabilities in real-time?
+Check out my [live impact dashboard](https://ofriperetz.dev/stats?utm_source=devto&utm_medium=article&utm_campaign=ARTICLE-SLUG&utm_content=inline).
+```
+
+### Quick Copy Generator
+
+Replace `SLUG` with your campaign slug from the table above:
+
+```
+# Footer portfolio link
+https://ofriperetz.dev?utm_source=devto&utm_medium=article&utm_campaign=SLUG
+
+# Footer projects link
+https://ofriperetz.dev/projects?utm_source=devto&utm_medium=article&utm_campaign=SLUG
+
+# Footer stats link
+https://ofriperetz.dev/stats?utm_source=devto&utm_medium=article&utm_campaign=SLUG
+
+# Inline content link
+https://ofriperetz.dev?utm_source=devto&utm_medium=article&utm_campaign=SLUG&utm_content=inline
+```
 
 ---
 
