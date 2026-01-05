@@ -1,0 +1,165 @@
+---
+title: no-directive-injection
+description: Detects directive injection vulnerabilities in template systems. This rule is part of eslint-plugin-secure-coding.
+---
+
+# no-directive-injection
+
+> **Keywords:** directive injection, CWE-94, template injection, Angular, Vue, React, SSTI, XSS
+
+Detects directive injection vulnerabilities in template systems. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
+
+💼 This rule is set to **error** in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                                                                                    |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-94](https://cwe.mitre.org/data/definitions/94.html) (Code Injection), [CWE-96](https://cwe.mitre.org/data/definitions/96.html) (SSTI) |
+| **Severity**      | High (CVSS 8.8)                                                                                                                            |
+| **Auto-Fix**      | 💡 Suggestions available                                                                                                                   |
+| **Category**      | Injection Prevention                                                                                                                       |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Directive injection (specifically in frameworks like Angular or Vue) occurs when user-controlled attributes can modify the structure or behavior of the DOM in unexpected ways, potentially leading to Client-Side Template Injection (CSTI) or XSS.
+
+**Risk:** Attackers can inject malicious directives to execute arbitrary JavaScript code within the victim's session, bypass framework security controls, or manipulate the application's view and logic.
+
+## Rule Details
+
+Directive injection occurs when user input is used to inject malicious directives into template systems (Angular, Vue, React, etc.). Attackers can:
+
+- Execute arbitrary JavaScript code
+- Manipulate the DOM and steal user data
+- Perform cross-site scripting (XSS) attacks
+- Bypass Content Security Policy (CSP)
+
+### Why This Matters
+
+| Issue                 | Impact                      | Solution                 |
+| --------------------- | --------------------------- | ------------------------ |
+| 💻 **Code Execution** | Full application compromise | Use static directives    |
+| 🎭 **XSS**            | User session hijacking      | Sanitize template input  |
+| 🔓 **CSP Bypass**     | Security control evasion    | Validate directive names |
+
+## Examples
+
+### ❌ Incorrect
+
+```typescript
+// Dynamic directive name from user input
+const directive = userInput;
+<div {...{[directive]: value}} />
+
+// Template injection in Angular
+const template = `<div ${userControlledDirective}>Content</div>`;
+this.compile(template);
+
+// dangerouslySetInnerHTML with user content
+<div dangerouslySetInnerHTML={{__html: userHtml}} />
+
+// Vue v-html with untrusted content
+<div v-html="userContent"></div>
+```
+
+### ✅ Correct
+
+```typescript
+// Use hardcoded directive names
+<div onClick={handleClick} />
+
+// Sanitize HTML before rendering
+import DOMPurify from 'dompurify';
+<div dangerouslySetInnerHTML={{__html: DOMPurify.sanitize(userHtml)}} />
+
+// Use trusted templates only
+const template = trustedTemplates[templateId];
+this.compile(template);
+
+// Validate directive names against whitelist
+const allowedDirectives = ['onClick', 'onChange', 'onSubmit'];
+if (allowedDirectives.includes(directive)) {
+  <div {...{[directive]: value}} />
+}
+```
+
+## Configuration
+
+```javascript
+{
+  rules: {
+    'secure-coding/no-directive-injection': ['error', {
+      trustedDirectives: ['onClick', 'onChange', 'onSubmit'],
+      frameworks: ['react', 'angular', 'vue'],
+      allowDynamicInComponents: false
+    }]
+  }
+}
+```
+
+## Options
+
+| Option                     | Type       | Default                       | Description                               |
+| -------------------------- | ---------- | ----------------------------- | ----------------------------------------- |
+| `trustedDirectives`        | `string[]` | `[]`                          | Allowed directive names                   |
+| `userInputVariables`       | `string[]` | `['req', 'request', 'input']` | User input variable patterns              |
+| `frameworks`               | `string[]` | `['react', 'angular', 'vue']` | Frameworks to check                       |
+| `allowDynamicInComponents` | `boolean`  | `false`                       | Allow dynamic directives in safe contexts |
+
+## Error Message Format
+
+```
+🔒 CWE-94 OWASP:A03-Injection CVSS:8.8 | Directive Injection detected | HIGH [SOC2,PCI-DSS]
+   Fix: Use hardcoded directive names or validate against whitelist | https://cwe.mitre.org/...
+```
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Query from Variable
+
+**Why**: Query strings from variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Query from variable
+const query = `SELECT * FROM users WHERE id = ${userId}`;
+db.execute(query);
+```
+
+**Mitigation**: Always use parameterized queries.
+
+### Custom Query Builders
+
+**Why**: Custom ORM/query builders not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom builder
+customQuery.where(userInput).execute();
+```
+
+**Mitigation**: Review all query builder patterns.
+
+### Template Engines
+
+**Why**: Template-based queries not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Template
+executeTemplate('query.sql', { userId });
+```
+
+**Mitigation**: Validate all template variables.
+
+## Further Reading
+
+- **[Angular Security](https://angular.io/guide/security)** - Angular security best practices
+- **[React XSS Prevention](https://reactjs.org/docs/introducing-jsx.html#jsx-prevents-injection-attacks)** - React security
+- **[CWE-94](https://cwe.mitre.org/data/definitions/94.html)** - Code injection documentation
+- **[OWASP Injection](https://owasp.org/www-project-top-ten/2017/A1_2017-Injection)** - OWASP Top 10 Injection
+
+## Related Rules
+
+- [`no-unsanitized-html`](./no-unsanitized-html.md) - XSS via innerHTML
+- [`detect-eval-with-expression`](./detect-eval-with-expression.md) - Code injection via eval

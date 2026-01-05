@@ -1,0 +1,235 @@
+---
+title: Getting Started
+description: ESLint rules for the AI era — LLM-optimized security with CWE, OWASP, and CVSS metadata
+---
+
+# ESLint Plugins for the AI Era
+
+<div className="flex items-center gap-3 mb-6">
+  <img src="/eslint-logo.svg" alt="ESLint Logo" className="size-12" />
+  <div>
+    <span className="text-2xl font-bold block">Interlace ESLint</span>
+    <span className="text-fd-muted-foreground">
+      Security-first ESLint plugins with LLM-optimized error messages
+    </span>
+  </div>
+</div>
+
+<Callout type="info">
+  **The first ESLint ecosystem designed for AI pair programming.** Every error
+  message is structured for GitHub Copilot, Cursor, Claude, and ChatGPT to
+  understand and fix automatically.
+</Callout>
+
+---
+
+## Why Traditional ESLint Falls Short in AI-Assisted Development
+
+When you use AI assistants like **GitHub Copilot** or **Cursor**, traditional ESLint error messages create friction:
+
+```
+❌ Traditional ESLint Message (hard for AI to fix):
+"Unexpected string concatenation" (no-template-curly-in-string)
+```
+
+AI assistants often:
+
+- Don't understand the **security context**
+- Can't determine **severity** or **priority**
+- Generate **incomplete fixes** without knowing the vulnerability type
+- Miss **compliance requirements** (SOC2, GDPR, PCI-DSS)
+
+---
+
+## How Interlace ESLint Changes the Game
+
+Every rule produces a **structured 2-line format** optimized for AI understanding:
+
+```
+✅ Interlace ESLint Message (AI-optimized):
+🔒 CWE-89 OWASP:A03-Injection CVSS:9.8 | SQL injection via string concatenation | CRITICAL
+   Fix: Use parameterized query: client.query('SELECT * FROM users WHERE id = $1', [userId])
+```
+
+**Line 1 (Security Context):**
+
+- **CWE ID** — Weakness classification
+- **OWASP Category** — Top 10 mapping
+- **CVSS Score** — Severity (0-10)
+- **Description** — Clear problem statement
+- **Severity Level** — CRITICAL/HIGH/MEDIUM/LOW
+
+**Line 2 (Actionable Fix):**
+
+- **Concrete solution** with code example
+- **No vague suggestions** — precise remediation
+
+---
+
+<ComparisonSection />
+
+---
+
+## Ecosystem at a Glance
+
+<div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-8">
+  <div className="stat-card text-center">
+    <div className="stat-value">216+</div>
+    <div className="stat-label">Security Rules</div>
+  </div>
+  <div className="stat-card text-center">
+    <div className="stat-value">11</div>
+    <div className="stat-label">ESLint Plugins</div>
+  </div>
+  <div className="stat-card text-center">
+    <div className="stat-value">100%</div>
+    <div className="stat-label">OWASP Coverage</div>
+  </div>
+  <div className="stat-card text-center">
+    <div className="stat-value">90%+</div>
+    <div className="stat-label">Test Coverage</div>
+  </div>
+</div>
+
+---
+
+## Benchmark: Performance Comparison
+
+Our plugins are optimized for speed without sacrificing detection accuracy:
+
+| Metric                          | Interlace ESLint | eslint-plugin-security | eslint-plugin-sonarjs |
+| ------------------------------- | ---------------- | ---------------------- | --------------------- |
+| **Rules**                       | 216+             | 17                     | 32                    |
+| **Avg. lint time (1000 files)** | ~2.1s            | ~1.8s                  | ~2.4s                 |
+| **LLM-optimized messages**      | ✅ Yes           | ❌ No                  | ❌ No                 |
+| **CWE mapping**                 | ✅ All rules     | ❌ None                | ⚠️ Partial            |
+| **OWASP Top 10 coverage**       | ✅ 100%          | ⚠️ ~40%                | ⚠️ ~25%               |
+| **CVSS scoring**                | ✅ All rules     | ❌ None                | ❌ None               |
+| **Compliance tags**             | ✅ SOC2, PCI     | ❌ None                | ❌ None               |
+
+<Callout type="info">
+  **📊 Want to learn how we measure these benchmarks?** Read our [ESLint
+  Benchmark Suite series on Dev.to](https://dev.to/ofri-peretz/series) for
+  in-depth methodology, reproducible test cases, and performance optimization
+  techniques.
+</Callout>
+
+---
+
+## Quick Install
+
+<Tabs items={['npm', 'pnpm', 'yarn']}>
+  <Tab value="npm">
+    ```bash npm install --save-dev eslint-plugin-secure-coding ```
+  </Tab>
+  <Tab value="pnpm">```bash pnpm add -D eslint-plugin-secure-coding ```</Tab>
+  <Tab value="yarn">```bash yarn add -D eslint-plugin-secure-coding ```</Tab>
+</Tabs>
+
+## Configuration
+
+```js title="eslint.config.js"
+import secureCoding from 'eslint-plugin-secure-coding';
+
+export default [secureCoding.configs.recommended];
+```
+
+---
+
+## Security Plugins
+
+<Cards>
+  <Card
+    title="secure-coding (75 rules)"
+    description="Core OWASP Top 10 Web + Mobile coverage"
+    href="/docs/secure-coding"
+  />
+  <Card
+    title="pg (13 rules)"
+    description="PostgreSQL SQL injection prevention"
+    href="/docs/pg"
+  />
+  <Card
+    title="jwt (13 rules)"
+    description="JWT security best practices"
+    href="/docs/jwt"
+  />
+  <Card
+    title="crypto (24 rules)"
+    description="Cryptographic security"
+    href="/docs/crypto"
+  />
+  <Card
+    title="browser-security (21 rules)"
+    description="XSS and client-side security"
+    href="/docs/browser-security"
+  />
+  <Card
+    title="mongodb-security (16 rules)"
+    description="NoSQL injection prevention"
+    href="/docs/mongodb-security"
+  />
+  <Card
+    title="vercel-ai-security (19 rules)"
+    description="AI/LLM security for Vercel AI SDK"
+    href="/docs/vercel-ai-security"
+  />
+</Cards>
+
+## Framework Plugins
+
+<Cards>
+  <Card
+    title="express-security (9 rules)"
+    description="Express.js middleware security"
+    href="/docs/express-security"
+  />
+  <Card
+    title="nestjs-security (5 rules)"
+    description="NestJS guards and validation"
+    href="/docs/nestjs-security"
+  />
+  <Card
+    title="lambda-security (5 rules)"
+    description="AWS Lambda security"
+    href="/docs/lambda-security"
+  />
+</Cards>
+
+## Architecture Plugins
+
+<Cards>
+  <Card
+    title="import-next (56 rules)"
+    description="Import analysis and architecture"
+    href="/docs/import-next"
+  />
+</Cards>
+
+---
+
+## Links
+
+<Cards>
+  <Card
+    title="GitHub"
+    description="Source code, issues, and contributions"
+    href="https://github.com/ofri-peretz/eslint"
+  />
+  <Card
+    title="npm Packages"
+    description="All published packages"
+    href="https://www.npmjs.com/~ofri-peretz"
+  />
+  <Card
+    title="Codecov"
+    description="Test coverage reports"
+    href="https://app.codecov.io/gh/ofri-peretz/eslint"
+  />
+</Cards>
+
+---
+
+## Related Articles
+
+<RelatedArticles plugin="secure-coding" limit={6} />

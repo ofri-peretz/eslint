@@ -1,0 +1,18 @@
+{
+  "title": "Rules",
+  "pages": [
+    "check-query-params",
+    "no-batch-insert-loop",
+    "no-floating-query",
+    "no-hardcoded-credentials",
+    "no-insecure-ssl",
+    "no-missing-client-release",
+    "no-select-all",
+    "no-transaction-on-pool",
+    "no-unsafe-copy-from",
+    "no-unsafe-query",
+    "no-unsafe-search-path",
+    "prefer-pool-query",
+    "prevent-double-release"
+  ]
+}

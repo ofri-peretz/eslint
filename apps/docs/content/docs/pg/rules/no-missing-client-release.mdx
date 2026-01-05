@@ -1,0 +1,128 @@
+---
+title: no-missing-client-release
+description: Ensures acquired pool clients are released back to the pool.
+---
+
+# no-missing-client-release
+
+> **Keywords:** connection leak, resource management, CWE-772, pg, node-postgres, pool
+
+Ensures acquired pool clients are released back to the pool.
+
+⚠️ This rule **errors** by default in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                               |
+| ----------------- | ------------------------------------- |
+| **CWE Reference** | CWE-772 (Missing Release of Resource) |
+| **Severity**      | High (CVSS: 7.5)                      |
+| **Category**      | Resource Management                   |
+
+## Rule Details
+
+Failing to release clients causes connection pool exhaustion, leading to application hangs.
+
+### ❌ Incorrect
+
+```typescript
+async function query() {
+  const client = await pool.connect();
+  await client.query('SELECT 1');
+  // Missing client.release() - connection leak!
+}
+```
+
+### ✅ Correct
+
+```typescript
+async function query() {
+  const client = await pool.connect();
+  try {
+    await client.query('SELECT 1');
+  } finally {
+    client.release();
+  }
+}
+
+// Using pool.query() directly (auto-releases)
+async function simpleQuery() {
+  await pool.query('SELECT 1');
+}
+```
+
+## Error Message Format
+
+```
+⚠️ CWE-772 | Pool client acquired but never released | HIGH
+   Fix: Add client.release() in a finally block
+```
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Destructured Client
+
+**Why**: The rule tracks variable references by identifier, not destructured properties.
+
+```typescript
+// ❌ NOT DETECTED
+async function query() {
+  const { query, release } = await pool.connect();
+  await query('SELECT 1');
+  // Missing release() call - not detected!
+}
+```
+
+### Callback Pattern
+
+**Why**: The callback `done` parameter requires different tracking.
+
+```typescript
+// ❌ NOT DETECTED
+pool.connect((err, client, done) => {
+  if (err) return callback(err);
+  client.query('SELECT 1', (err, res) => {
+    // Missing done() call - not detected!
+    callback(err, res);
+  });
+});
+```
+
+### Client Passed to Functions
+
+**Why**: When the client is passed to another function, the rule can't track if that function releases it.
+
+```typescript
+// ❌ NOT DETECTED
+async function query() {
+  const client = await pool.connect();
+  await executeQueries(client); // Does this release? Rule can't tell
+}
+```
+
+### Thrown Exceptions Before Release
+
+**Why**: The rule checks for presence of `.release()` call, not control flow paths.
+
+```typescript
+// ❌ NOT DETECTED - release exists but may not execute
+async function query() {
+  const client = await pool.connect();
+  await client.query('SELECT 1');
+  throw new Error('Oops'); // Release never reached!
+  client.release();
+}
+```
+
+> **Workaround**: Always use try/finally pattern or `pool.query()` for simple queries.
+
+## When Not To Use It
+
+- When using connection wrappers that handle release
+
+## Related Rules
+
+- [prevent-double-release](./prevent-double-release.md) - Prevents releasing twice
+- [prefer-pool-query](./prefer-pool-query.md) - Suggests simpler pattern

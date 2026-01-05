@@ -1,0 +1,66 @@
+---
+title: no-deprecated
+description: "💼 This rule is enabled in the following configs: recommended, typescript."
+---
+
+# no-deprecated
+
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
+
+{/*  end auto-generated rule header  */}
+
+Forbid imported names marked with @deprecated documentation tag
+
+## Rule Details
+
+This rule aims to prevent issues related to deprecated.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "allow": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "List of deprecated items that are allowed (for migration periods)"
+      },
+      "deprecationMarkers": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": [
+          "@deprecated"
+        ],
+        "description": "Custom deprecation markers to look for in comments"
+      },
+      "checkJSDoc": {
+        "type": "boolean",
+        "default": true,
+        "description": "Check for @deprecated in JSDoc comments"
+      },
+      "checkDecorators": {
+        "type": "boolean",
+        "default": true,
+        "description": "Check for @deprecated decorator in TypeScript"
+      }
+    },
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-deprecated.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-deprecated.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A09:2021 - Security Logging and Monitoring Failures

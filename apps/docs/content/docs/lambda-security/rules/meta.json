@@ -1,0 +1,10 @@
+{
+  "title": "Rules",
+  "pages": [
+    "no-env-logging",
+    "no-hardcoded-credentials-sdk",
+    "no-permissive-cors-middy",
+    "no-permissive-cors-response",
+    "no-secrets-in-env"
+  ]
+}

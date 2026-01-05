@@ -1,0 +1,133 @@
+---
+title: no-missing-validation-pipe
+description: Require ValidationPipe for DTO input parameters
+---
+
+# no-missing-validation-pipe
+
+> Require ValidationPipe for DTO input parameters
+
+## Rule Details
+
+This rule detects NestJS route handlers that accept DTO parameters without ValidationPipe, which can lead to injection attacks through unvalidated input.
+
+## OWASP Mapping
+
+- **OWASP Top 10 2021**: A03:2021 - Injection
+- **CWE**: CWE-20 - Improper Input Validation
+- **CVSS**: 8.6 (High)
+
+## ❌ Incorrect
+
+```typescript
+@Controller('users')
+class UsersController {
+  @Post()
+  create(@Body() dto: CreateUserDto) {
+    // No validation - malicious input can pass through!
+  }
+}
+```
+
+## ✅ Correct
+
+```typescript
+import { UsePipes, ValidationPipe } from '@nestjs/common';
+
+// Class-level validation
+@Controller('users')
+@UsePipes(new ValidationPipe())
+class UsersController {
+  @Post()
+  create(@Body() dto: CreateUserDto) {}
+}
+
+// Or in main.ts (global)
+app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }),
+);
+```
+
+## Options
+
+```typescript
+{
+  // Skip rule in test files (default: true)
+  allowInTests?: boolean;
+
+  // Skip if global pipes configured in main.ts (default: false)
+  assumeGlobalPipes?: boolean;
+}
+```
+
+## Recommended ValidationPipe Options
+
+```typescript
+new ValidationPipe({
+  whitelist: true, // Strip non-decorated properties
+  forbidNonWhitelisted: true, // Throw on extra properties
+  transform: true, // Auto-transform to DTO types
+});
+```
+
+## When Not To Use It
+
+- If you have `app.useGlobalPipes(new ValidationPipe())` in `main.ts`, set `assumeGlobalPipes: true`
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Global Pipe in Separate File
+
+**Why**: Global pipes in main.ts are not linked to controller files.
+
+```typescript
+// ❌ NOT DETECTED - Global pipe exists but not visible
+// main.ts: app.useGlobalPipes(new ValidationPipe())
+// controller.ts: No @UsePipes needed, but rule flags it
+```
+
+**Mitigation**: Set `assumeGlobalPipes: true` in rule options.
+
+### Conditional Pipe Application
+
+**Why**: Pipes applied conditionally are not tracked.
+
+```typescript
+// ❌ NOT DETECTED - Conditional validation
+if (process.env.NODE_ENV === 'production') {
+  app.useGlobalPipes(new ValidationPipe());
+}
+```
+
+**Mitigation**: Always apply validation unconditionally.
+
+### Custom Validation Decorators
+
+**Why**: Custom decorators wrapping validation are not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom decorator includes validation
+@CustomValidated() // Internally uses ValidationPipe
+class MyController {}
+```
+
+**Mitigation**: Document custom decorators. Use standard @UsePipes.
+
+### Module-Level Providers
+
+**Why**: Validation pipes as providers are not detected.
+
+```typescript
+// ❌ NOT DETECTED - Pipe as module provider
+@Module({
+  providers: [{ provide: APP_PIPE, useClass: ValidationPipe }]
+})
+```
+
+**Mitigation**: Configure assumeGlobalPipes for modules with APP_PIPE provider.

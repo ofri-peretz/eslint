@@ -1,0 +1,21 @@
+{
+  "title": "Rules",
+  "pages": [
+    "no-bypass-middleware",
+    "no-debug-mode-production",
+    "no-hardcoded-connection-string",
+    "no-hardcoded-credentials",
+    "no-operator-injection",
+    "no-select-sensitive-fields",
+    "no-unbounded-find",
+    "no-unsafe-populate",
+    "no-unsafe-query",
+    "no-unsafe-regex-query",
+    "no-unsafe-where",
+    "require-auth-mechanism",
+    "require-lean-queries",
+    "require-projection",
+    "require-schema-validation",
+    "require-tls-connection"
+  ]
+}

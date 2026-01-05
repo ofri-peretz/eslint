@@ -1,0 +1,121 @@
+---
+title: require-projection
+description: Requires field projection on queries to minimize data exposure.
+---
+
+# require-projection
+
+> **Keywords:** CWE-200, projection, field selection, MongoDB, information exposure
+
+Requires field projection on queries to minimize data exposure.
+
+⚠️ This rule is **off** by default in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                          |
+| ----------------- | -------------------------------- |
+| **CWE Reference** | CWE-200 (Information Exposure)   |
+| **OWASP**         | A01:2021 - Broken Access Control |
+| **Severity**      | Low (CVSS: 3.7)                  |
+| **Category**      | Security / Performance           |
+
+## Rule Details
+
+Queries without projection:
+
+- Return more data than needed
+- Increase network bandwidth
+- May expose sensitive fields
+- Reduce performance (more data to transfer)
+
+### ❌ Incorrect
+
+```typescript
+// Returns all fields - may include sensitive data
+const users = await User.find({ active: true });
+
+// All fields returned, including large embedded documents
+const post = await Post.findById(id);
+```
+
+### ✅ Correct
+
+```typescript
+// Explicit projection - only needed fields
+const users = await User.find({ active: true }, 'name email avatar');
+
+// Using .select()
+const users = await User.find({ active: true }).select('name email');
+
+// Exclusion projection
+const user = await User.findById(id).select('-password -internalNotes');
+```
+
+## When Not To Use It
+
+- For admin interfaces that need full document access
+- When using lean() with full document transformation
+- Development/debugging scenarios
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Query Method on Variable
+
+**Why**: Model stored in variable is not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Model from variable
+const Model = getModelForType(type);
+const docs = await Model.find({ active: true }); // Missing projection
+```
+
+**Mitigation**: Use explicit model references. Add projection in dynamic queries.
+
+### Projection in Second Argument
+
+**Why**: May not recognize all projection argument formats.
+
+```typescript
+// ⚠️ MAY NOT DETECT - Object projection format
+const users = await User.find({}, { name: 1, email: 1 }); // Should be recognized
+```
+
+**Mitigation**: Use .select() chain which is more clearly detected.
+
+### Query Builder Pattern
+
+**Why**: Complex query building hides projection status.
+
+```typescript
+// ❌ NOT DETECTED - Query built conditionally
+function buildQuery(filters: any) {
+  let q = User.find(filters);
+  // Projection may or may not be added based on logic
+  if (filters.minimal) {
+    q = q.select('name email');
+  }
+  return q;
+}
+```
+
+**Mitigation**: Always add projection at query definition. Use centralized query builders.
+
+### Native Driver Methods
+
+**Why**: Only Mongoose patterns are recognized.
+
+```typescript
+// ❌ NOT DETECTED - Native driver
+import { MongoClient } from 'mongodb';
+const users = await db.collection('users').find({}).toArray(); // Missing projection
+```
+
+**Mitigation**: Configure rule for native driver patterns if available.
+
+## References
+
+- [MongoDB Projections](https://www.mongodb.com/docs/manual/tutorial/project-fields-from-query-results/)
+- [CWE-200](https://cwe.mitre.org/data/definitions/200.html)

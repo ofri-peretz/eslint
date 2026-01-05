@@ -1,0 +1,7 @@
+{
+  "title": "nestjs-security",
+  "pages": [
+    "index",
+    "rules"
+  ]
+}

@@ -1,0 +1,49 @@
+---
+title: no-relative-parent-imports
+description: "💼 This rule is enabled in the following configs: recommended, typescript."
+---
+
+# no-relative-parent-imports
+
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
+
+{/*  end auto-generated rule header  */}
+
+Prevents ../ imports
+
+## Rule Details
+
+This rule aims to prevent issues related to relative-parent-imports.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "commonjs": {
+        "type": "boolean",
+        "default": true,
+        "description": "Check CommonJS require() calls."
+      },
+      "amd": {
+        "type": "boolean",
+        "default": false,
+        "description": "Check AMD define/require calls."
+      }
+    },
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-relative-parent-imports.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-relative-parent-imports.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

@@ -1,0 +1,58 @@
+---
+title: no-unresolved
+description: "💼 This rule is enabled in the following configs: recommended, typescript."
+---
+
+# no-unresolved
+
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
+
+{/*  end auto-generated rule header  */}
+
+Ensures imports point to resolvable modules
+
+## Rule Details
+
+This rule aims to prevent issues related to unresolved.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "extensions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "File extensions to consider when resolving imports."
+      },
+      "ignore": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Modules/patterns to ignore during resolution."
+      },
+      "allowUnresolved": {
+        "type": "boolean",
+        "default": false,
+        "description": "Allow unresolved imports in certain contexts."
+      }
+    },
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-unresolved.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-unresolved.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A03:2021 - Injection

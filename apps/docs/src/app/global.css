@@ -1,0 +1,246 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+
+/* 
+ * Interlace ESLint Theme
+ * Purple/indigo with refined aesthetics
+ */
+
+:root {
+  --fd-primary: 263 80% 45%;
+  --fd-primary-foreground: 0 0% 100%;
+  --fd-background: 0 0% 100%;
+  --fd-foreground: 0 0% 9%;
+  --fd-accent: 270 50% 97%;
+  --fd-accent-foreground: 263 80% 30%;
+  --fd-card: 0 0% 100%;
+  --fd-card-foreground: 0 0% 9%;
+  --fd-border: 0 0% 88%;
+  --fd-muted: 0 0% 96%;
+  --fd-muted-foreground: 0 0% 40%;
+}
+
+.dark {
+  --fd-primary: 270 70% 70%;
+  --fd-primary-foreground: 0 0% 9%;
+  --fd-background: 222 20% 11%;
+  --fd-foreground: 0 0% 93%;
+  --fd-accent: 263 40% 16%;
+  --fd-accent-foreground: 270 70% 80%;
+  --fd-card: 222 18% 14%;
+  --fd-card-foreground: 0 0% 93%;
+  --fd-border: 222 15% 22%;
+  --fd-muted: 222 18% 17%;
+  --fd-muted-foreground: 0 0% 58%;
+}
+
+/* Headings - always visible */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: hsl(var(--fd-foreground)) !important;
+}
+
+/* Links */
+a {
+  text-decoration: none !important;
+}
+
+article a:not([class]) {
+  color: hsl(var(--fd-primary));
+  font-weight: 500;
+}
+
+/* 
+ * Sidebar - better group styling
+ */
+nav [data-separator] {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: hsl(var(--fd-muted-foreground));
+  padding: 1rem 0 0.5rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid hsl(var(--fd-border));
+}
+
+nav [data-separator]:first-child {
+  margin-top: 0;
+  border-top: none;
+  padding-top: 0;
+}
+
+/* Active nav item */
+[data-active='true'] {
+  color: hsl(var(--fd-primary)) !important;
+  font-weight: 600;
+  background: hsl(var(--fd-accent));
+  border-radius: 0.375rem;
+}
+
+/* 
+ * Code blocks - full width, clean styling
+ */
+[data-rehype-pretty-code-figure],
+figure[data-rehype-pretty-code-figure] {
+  position: relative;
+  margin: 0;
+  width: 100%;
+}
+
+pre {
+  position: relative;
+  border-radius: 0.75rem !important;
+  margin: 0.75rem 0 !important;
+  padding: 1rem !important;
+  border: 1px solid hsl(var(--fd-border)) !important;
+  background: hsl(var(--fd-muted)) !important;
+  width: 100% !important;
+  overflow-x: auto;
+}
+
+.dark pre {
+  background: hsl(222 18% 13%) !important;
+  border-color: hsl(222 15% 25%) !important;
+}
+
+pre code {
+  font-size: 0.875rem !important;
+  line-height: 1.6 !important;
+  font-family:
+    'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', monospace !important;
+  color: hsl(var(--fd-foreground)) !important;
+}
+
+/* Copy button - nicer styling */
+[data-rehype-pretty-code-figure] button,
+pre button {
+  position: absolute !important;
+  top: 0.75rem !important;
+  right: 0.75rem !important;
+  padding: 0.5rem !important;
+  border-radius: 0.5rem !important;
+  background: hsl(var(--fd-card)) !important;
+  border: 1px solid hsl(var(--fd-border)) !important;
+  color: hsl(var(--fd-muted-foreground)) !important;
+  opacity: 0;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.dark [data-rehype-pretty-code-figure] button,
+.dark pre button {
+  background: hsl(222 18% 18%) !important;
+  border-color: hsl(222 15% 28%) !important;
+}
+
+[data-rehype-pretty-code-figure]:hover button,
+pre:hover button {
+  opacity: 1;
+}
+
+[data-rehype-pretty-code-figure] button:hover,
+pre button:hover {
+  background: hsl(var(--fd-accent)) !important;
+  color: hsl(var(--fd-foreground)) !important;
+  border-color: hsl(var(--fd-primary) / 0.3) !important;
+}
+
+/* Inline code */
+:not(pre) > code {
+  background: hsl(var(--fd-accent));
+  color: hsl(var(--fd-accent-foreground));
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+
+/* 
+ * Callouts - aligned icon
+ */
+.fd-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  padding: 0.875rem 1rem;
+  border-radius: 0.75rem;
+  border-left: 3px solid;
+}
+
+.fd-callout > svg {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+/* 
+ * Reduce excessive spacing
+ */
+article > * + * {
+  margin-top: 1rem;
+}
+
+article h2 {
+  margin-top: 1.5rem !important;
+}
+article h3 {
+  margin-top: 1.25rem !important;
+}
+article p {
+  margin: 0.5rem 0 !important;
+}
+article ul,
+article ol {
+  margin: 0.5rem 0 !important;
+}
+article hr {
+  margin: 1.25rem 0 !important;
+}
+
+/* Tables */
+table {
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid hsl(var(--fd-border));
+  margin: 0.75rem 0;
+  width: 100%;
+}
+
+table th {
+  background: hsl(var(--fd-accent));
+  font-weight: 600;
+  padding: 0.625rem 0.75rem;
+  text-align: left;
+}
+
+table td {
+  padding: 0.5rem 0.75rem;
+}
+
+/* Cards hover */
+.fd-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px hsl(var(--fd-primary) / 0.12);
+  border-color: hsl(var(--fd-primary) / 0.4);
+}
+
+/* Badges inline */
+p > a > img {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

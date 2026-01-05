@@ -1,0 +1,166 @@
+---
+title: no-zip-slip
+description: Detects zip slip/archive extraction vulnerabilities. This rule is part of eslint-plugin-secure-coding.
+---
+
+# no-zip-slip
+
+> **Keywords:** zip slip, CWE-22, path traversal, archive extraction, tar, security
+
+Detects zip slip/archive extraction vulnerabilities. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
+
+💼 This rule is set to **error** in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                   |
+| ----------------- | ------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) (Path Traversal) |
+| **Severity**      | High (CVSS 8.1)                                                           |
+| **Auto-Fix**      | 💡 Suggestions available                                                  |
+| **Category**      | Path & File Security                                                      |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Zip Slip is a form of directory traversal vulnerability that occurs during archive extraction. It allows an attacker to create files outside of the intended extraction directory by including directory traversal characters (e.g., `../`) in the filenames within the archive.
+
+**Risk:** An attacker can overwrite critical system files, configuration files, or application source code. This can lead to Remote Code Execution (RCE) if they overwrite an executable or a file that the application loads.
+
+## Rule Details
+
+Zip slip vulnerabilities occur when extracting archives without properly validating file paths. Attackers can include files with path traversal sequences like `../` to write files outside the intended extraction directory, potentially:
+
+- Overwrite critical system files
+- Plant backdoors or web shells
+- Replace application binaries
+- Modify configuration files
+
+### Why This Matters
+
+| Issue                   | Impact                | Solution                      |
+| ----------------------- | --------------------- | ----------------------------- |
+| 📂 **File Overwrite**   | System compromise     | Validate extraction paths     |
+| 🚪 **Backdoor**         | Persistent access     | Use safe extraction libraries |
+| ⚙️ **Config Tampering** | Application hijacking | Sandbox extraction directory  |
+
+## Examples
+
+### ❌ Incorrect
+
+```typescript
+// Extracting without path validation
+const zip = new AdmZip(uploadedFile);
+zip.extractAllTo(targetDir); // Vulnerable!
+
+// Using entry path directly
+for (const entry of archive.entries()) {
+  const outputPath = path.join(targetDir, entry.name);
+  fs.writeFileSync(outputPath, entry.getData()); // Vulnerable!
+}
+
+// tar extraction without validation
+tar.extract({ file: uploadedTar, cwd: targetDir });
+```
+
+### ✅ Correct
+
+```typescript
+// Validate path before extraction
+for (const entry of archive.entries()) {
+  const targetPath = path.join(targetDir, entry.name);
+  const realTarget = path.normalize(targetPath);
+
+  // Ensure path stays within target directory
+  if (!realTarget.startsWith(path.resolve(targetDir) + path.sep)) {
+    throw new Error('Path traversal detected');
+  }
+
+  fs.writeFileSync(realTarget, entry.getData());
+}
+
+// Use safe extraction libraries
+import { extractSafe } from 'safe-archive';
+await extractSafe(uploadedFile, targetDir);
+
+// Or use library with built-in protection
+const zip = new AdmZip(uploadedFile);
+zip.extractAllTo(targetDir, true, true); // With overwrite protection
+```
+
+## Configuration
+
+```javascript
+{
+  rules: {
+    'secure-coding/no-zip-slip': ['error', {
+      archiveFunctions: ['extract', 'extractAll', 'extractAllTo', 'unzip'],
+      pathValidationFunctions: ['validatePath', 'isWithinDirectory'],
+      safeLibraries: ['safe-archive', 'secure-unzip']
+    }]
+  }
+}
+```
+
+## Options
+
+| Option                    | Type       | Default                     | Description                           |
+| ------------------------- | ---------- | --------------------------- | ------------------------------------- |
+| `archiveFunctions`        | `string[]` | `['extract', 'extractAll']` | Archive extraction functions to check |
+| `pathValidationFunctions` | `string[]` | `['validatePath']`          | Path validation functions             |
+| `safeLibraries`           | `string[]` | `[]`                        | Libraries with safe extraction        |
+
+## Error Message Format
+
+```
+🔒 CWE-22 OWASP:A01-Broken-Access CVSS:8.1 | Zip Slip Vulnerability | HIGH [SOC2,PCI-DSS]
+   Fix: Use safe extraction libraries or validate all paths | https://snyk.io/research/zip-slip-vulnerability
+```
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Values from Variables
+
+**Why**: Values stored in variables are not traced.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const value = userInput;
+dangerousOperation(value);
+```
+
+**Mitigation**: Validate all user inputs.
+
+### Wrapper Functions
+
+**Why**: Custom wrappers not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper
+myWrapper(userInput); // Uses dangerous API internally
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
+### Dynamic Invocation
+
+**Why**: Dynamic calls not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic
+obj[method](userInput);
+```
+
+**Mitigation**: Avoid dynamic method invocation.
+
+## Further Reading
+
+- **[Snyk Zip Slip Research](https://snyk.io/research/zip-slip-vulnerability)** - Original research
+- **[CWE-22](https://cwe.mitre.org/data/definitions/22.html)** - Path traversal documentation
+- **[OWASP Path Traversal](https://owasp.org/www-community/attacks/Path_Traversal)** - Attack techniques
+
+## Related Rules
+
+- [`detect-non-literal-fs-filename`](./detect-non-literal-fs-filename.md) - Path traversal in fs operations
+- [`no-toctou-vulnerability`](./no-toctou-vulnerability.md) - Race condition vulnerabilities

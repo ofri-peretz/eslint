@@ -1,0 +1,96 @@
+---
+title: require-human-approval-for-critical-actions
+description: Require human confirmation before destructive or financial LLM actions.
+---
+
+# require-human-approval-for-critical-actions
+
+Require human confirmation before destructive or financial LLM actions.
+
+**OWASP LLM Top 10 2025**: LLM06 - Excessive Agency  
+**CWE**: [CWE-284](https://cwe.mitre.org/data/definitions/284.html)  
+**Severity**: 🔴 Critical
+
+## Rule Details
+
+Requires explicit human approval for critical actions (delete, transfer, payment, destroy).
+
+### ❌ Incorrect
+
+```typescript
+await deleteUser(userId);
+await transferMoney(amount);
+await processPayment(card);
+```
+
+### ✅ Correct
+
+```typescript
+if (await confirmed(user, 'delete')) {
+  await deleteResource(id);
+}
+
+const approved = await requireApproval(user, action);
+if (approved) {
+  await transferFunds(amount);
+}
+```
+
+## Options
+
+```json
+{
+  "secure-coding/require-human-approval-for-critical-actions": [
+    "error",
+    {
+      "criticalActions": ["delete", "transfer", "payment", "destroy"]
+    }
+  ]
+}
+```
+
+## Best Practices
+
+Implement 2FA for critical actions. Log all approval requests and decisions.
+
+## Version
+
+Introduced in v2.3.0
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Values from Variables
+
+**Why**: Values stored in variables are not traced.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const value = userInput;
+dangerousOperation(value);
+```
+
+**Mitigation**: Validate all user inputs.
+
+### Wrapper Functions
+
+**Why**: Custom wrappers not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper
+myWrapper(userInput); // Uses dangerous API internally
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
+### Dynamic Invocation
+
+**Why**: Dynamic calls not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic
+obj[method](userInput);
+```
+
+**Mitigation**: Avoid dynamic method invocation.

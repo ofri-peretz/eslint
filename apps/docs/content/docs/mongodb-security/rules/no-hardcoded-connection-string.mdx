@@ -1,0 +1,121 @@
+---
+title: no-hardcoded-connection-string
+description: Detects hardcoded MongoDB connection strings containing credentials in source code.
+---
+
+# no-hardcoded-connection-string
+
+> **Keywords:** CWE-798, hardcoded credentials, MongoDB, connection string, secrets, security
+
+Detects hardcoded MongoDB connection strings containing credentials in source code.
+
+⚠️ This rule **errors** by default in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                                   |
+| ----------------- | ----------------------------------------- |
+| **CWE Reference** | CWE-798 (Hardcoded Credentials)           |
+| **OWASP**         | A07:2021 - Identification/Auth Failures   |
+| **Severity**      | High (CVSS: 7.5)                          |
+| **Category**      | Security                                  |
+| **ESLint MCP**    | ✅ Optimized for AI assistant integration |
+
+## Rule Details
+
+MongoDB connection strings often contain credentials in the format:
+
+```
+mongodb://username:password@host:port/database
+```
+
+Hardcoding these in source code risks credential exposure through:
+
+- Source control (GitHub, GitLab, Bitbucket)
+- Client-side bundles
+- Log files and error messages
+- Code sharing/review
+
+### ❌ Incorrect
+
+```typescript
+// Hardcoded connection string with credentials
+const uri = 'mongodb://admin:secret123@localhost:27017/mydb';
+mongoose.connect(uri);
+
+// Even without explicit credentials - may default to weak auth
+const uri = 'mongodb://localhost:27017/mydb';
+
+// MongoDB+SRV format with credentials
+const uri = 'mongodb+srv://admin:p@ssword@cluster.mongodb.net/db';
+```
+
+### ✅ Correct
+
+```typescript
+// Use environment variables
+const uri = process.env.MONGODB_URI;
+mongoose.connect(uri);
+
+// Use config module
+import { config } from './config';
+mongoose.connect(config.database.uri);
+
+// Use secret manager
+const uri = await secretManager.getSecret('mongodb-uri');
+mongoose.connect(uri);
+```
+
+## Known False Positives
+
+### Test Connection Strings
+
+```typescript
+// FP: Intentional in test files
+const testUri = 'mongodb://test:test@localhost:27017/testdb';
+```
+
+**Workaround**: Use `allowInTests: true` option.
+
+### Documentation/Comments
+
+```typescript
+// FP: Example in comment
+// Connect using: mongodb://user:pass@host/db
+```
+
+**Workaround**: Rule should not flag strings in comments (not implemented).
+
+## Known False Negatives
+
+### Template Literal with Partial Credentials
+
+```typescript
+// ❌ NOT DETECTED - credentials assembled at runtime
+const uri = `mongodb://${process.env.USER}:hardcoded123@localhost/db`;
+```
+
+### Configuration Object
+
+```typescript
+// ❌ NOT DETECTED - credentials in separate options
+mongoose.connect('mongodb://localhost/db', {
+  user: 'admin',
+  pass: 'hardcoded', // This should be flagged by no-hardcoded-credentials
+});
+```
+
+## When Not To Use It
+
+- In local development with truly local-only databases
+- In test files connecting to test containers
+
+## Related Rules
+
+- [no-hardcoded-credentials](./no-hardcoded-credentials.md) - Detects hardcoded usernames/passwords
+
+## References
+
+- [CWE-798: Use of Hardcoded Credentials](https://cwe.mitre.org/data/definitions/798.html)
+- [OWASP Secrets Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html)
+- [MongoDB Connection String URI Format](https://www.mongodb.com/docs/manual/reference/connection-string/)

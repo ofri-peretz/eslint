@@ -1,0 +1,23 @@
+{
+    "title": "Documentation",
+    "pages": [
+        "---Guide---",
+        "index",
+        "examples",
+        "benchmarks",
+        "---ESLint Plugins (Security)---",
+        "secure-coding",
+        "pg",
+        "jwt",
+        "crypto",
+        "browser-security",
+        "mongodb-security",
+        "vercel-ai-security",
+        "---ESLint Plugins (Frameworks)---",
+        "express-security",
+        "nestjs-security",
+        "lambda-security",
+        "---ESLint Plugins (Architecture)---",
+        "import-next"
+    ]
+}

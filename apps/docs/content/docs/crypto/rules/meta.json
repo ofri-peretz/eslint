@@ -1,0 +1,29 @@
+{
+  "title": "Rules",
+  "pages": [
+    "no-cryptojs",
+    "no-cryptojs-weak-random",
+    "no-deprecated-cipher-method",
+    "no-ecb-mode",
+    "no-hardcoded-crypto-key",
+    "no-insecure-key-derivation",
+    "no-insecure-rsa-padding",
+    "no-key-reuse",
+    "no-math-random-crypto",
+    "no-numeric-only-tokens",
+    "no-predictable-salt",
+    "no-self-signed-certs",
+    "no-sha1-hash",
+    "no-static-iv",
+    "no-timing-unsafe-compare",
+    "no-weak-cipher-algorithm",
+    "no-weak-hash-algorithm",
+    "no-web-crypto-export",
+    "prefer-native-crypto",
+    "require-authenticated-encryption",
+    "require-key-length",
+    "require-random-iv",
+    "require-secure-pbkdf2-digest",
+    "require-sufficient-length"
+  ]
+}

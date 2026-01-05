@@ -1,0 +1,147 @@
+---
+title: "`no-system-prompt-leak`"
+description: Prevents system prompts from being exposed in API responses or client code.
+---
+
+# `no-system-prompt-leak`
+
+> Prevents system prompts from being exposed in API responses or client code.
+
+## 📊 Rule Details
+
+| Property           | Value                                                                                                       |
+| ------------------ | ----------------------------------------------------------------------------------------------------------- |
+| **Type**           | problem                                                                                                     |
+| **Severity**       | 🔴 HIGH                                                                                                     |
+| **OWASP LLM**      | [LLM07: System Prompt Leakage](https://owasp.org/www-project-top-10-for-large-language-model-applications/) |
+| **CWE**            | [CWE-200: Information Exposure](https://cwe.mitre.org/data/definitions/200.html)                            |
+| **CVSS**           | 7.5                                                                                                         |
+| **Config Default** | `error` (recommended, strict)                                                                               |
+
+## 🔍 What This Rule Detects
+
+This rule identifies code patterns where system prompts or AI instructions are returned in API responses, logged, or otherwise exposed to clients. System prompts often contain sensitive business logic and instructions that should remain server-side only.
+
+## ❌ Incorrect Code
+
+```typescript
+// System prompt in API response
+return Response.json({
+  systemPrompt: SYSTEM_PROMPT,
+  response: result.text,
+});
+
+// System prompt returned directly
+export function getConfig() {
+  return systemPrompt;
+}
+
+// System message exposed
+res.json({
+  systemMessage: config.systemMessage,
+  data: result,
+});
+
+// Instructions exposed
+return {
+  instructions: AI_INSTRUCTIONS,
+  output: response,
+};
+```
+
+## ✅ Correct Code
+
+```typescript
+// Only response returned
+return Response.json({
+  response: result.text,
+});
+
+// No system prompt in public API
+export function getResponse() {
+  return { data: result.text };
+}
+
+// System prompt kept server-side
+const systemPrompt = getSystemPrompt(); // Used internally
+return res.json({ output: await generateWithPrompt(systemPrompt) });
+```
+
+## ⚙️ Options
+
+| Option                 | Type       | Default                                                                                              | Description                                 |
+| ---------------------- | ---------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `systemPromptPatterns` | `string[]` | `['systemPrompt', 'system_prompt', 'SYSTEM_PROMPT', 'systemMessage', 'instructions', 'agentPrompt']` | Variable patterns suggesting system prompts |
+
+## 🛡️ Why This Matters
+
+Exposing system prompts allows attackers to:
+
+- **Understand AI behavior** - Learn how to manipulate responses
+- **Craft targeted attacks** - Design prompts that bypass safety measures
+- **Extract business logic** - Understand proprietary AI configurations
+- **Find vulnerabilities** - Identify weaknesses in prompt engineering
+
+## 🔗 Related Rules
+
+- [`no-dynamic-system-prompt`](./no-dynamic-system-prompt.md) - Prevent dynamic system prompts
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Custom Field Names
+
+**Why**: Only configured pattern names are checked.
+
+```typescript
+// ❌ NOT DETECTED - Custom field name
+return Response.json({
+  aiConfig: SYSTEM_PROMPT, // Not in default patterns
+  response: result.text,
+});
+```
+
+**Mitigation**: Configure `systemPromptPatterns` with custom field names.
+
+### Nested Object Access
+
+**Why**: Deep property access may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - Nested exposure
+return Response.json({
+  config: { prompt: systemPrompt }, // Nested
+});
+```
+
+**Mitigation**: Review response structure. Avoid nesting sensitive data.
+
+### Spread Operator
+
+**Why**: Spread may include system prompt unknowingly.
+
+```typescript
+// ❌ NOT DETECTED - System prompt in spread
+const config = { systemPrompt: '...', other: 'data' };
+return Response.json({ ...config }); // Exposes systemPrompt!
+```
+
+**Mitigation**: Never spread objects containing system prompts.
+
+### Serialized/Transformed Data
+
+**Why**: Transformed data is not traced.
+
+```typescript
+// ❌ NOT DETECTED - Serialized before return
+const data = JSON.stringify({ systemPrompt, result });
+return Response.json({ payload: data });
+```
+
+**Mitigation**: Never serialize system prompts.
+
+## 📚 References
+
+- [OWASP LLM07: System Prompt Leakage](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
+- [CWE-200: Information Exposure](https://cwe.mitre.org/data/definitions/200.html)

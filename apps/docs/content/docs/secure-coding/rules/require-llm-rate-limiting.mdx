@@ -1,0 +1,360 @@
+---
+title: require-llm-rate-limiting
+description: Enforce rate limiting for LLM API calls to prevent unbounded consumption and DoS.
+---
+
+# require-llm-rate-limiting
+
+Enforce rate limiting for LLM API calls to prevent unbounded consumption and DoS.
+
+**OWASP LLM Top 10 2025**: LLM10 - Unbounded Consumption  
+**CWE**: [CWE-770](https://cwe.mitre.org/data/definitions/770.html)  
+**Severity**: 🔴 Critical
+
+## Rule Details
+
+This rule enforces rate limiting on LLM API calls to prevent:
+
+- **Denial of Service (DoS)** - Excessive API usage
+- **Cost explosions** - Unlimited token consumption
+- **Resource exhaustion** - Server overload
+- **Abuse** - API key theft or sharing
+
+### ❌ Incorrect
+
+```typescript
+// No rate limiting
+async function handleRequest(prompt) {
+  return await llm.complete(prompt);
+}
+
+// OpenAI without limit
+async function chat(messages) {
+  return await openai.chat.completions.create({ messages });
+}
+
+// Loop without rate limit
+async function process(prompts) {
+  const results = [];
+  for (const prompt of prompts) {
+    results.push(await llm.complete(prompt));
+  }
+  return results;
+}
+```
+
+### ✅ Correct
+
+```typescript
+// Rate limiter before LLM call
+async function handleRequest(userId, prompt) {
+  await rateLimiter.checkLimit(userId);
+  return await llm.complete(prompt);
+}
+
+// checkQuota pattern
+async function processRequest(user, query) {
+  await checkQuota(user.id);
+  const result = await llm.chat(query);
+  return result;
+}
+
+// Rate limit decorator
+/**
+ * @RateLimit(100, '1h')
+ */
+async function generateResponse(prompt) {
+  return await llm.complete(prompt);
+}
+
+// Throttle annotation
+/**
+ * @Throttle(10, '1m')
+ */
+async function chatCompletion(messages) {
+  return await openai.chat.completions.create({ messages });
+}
+
+// Quota manager
+async function processPrompt(userId, prompt) {
+  await quotaManager.consumeQuota(userId, estimatedTokens);
+  return await llm.complete(prompt);
+}
+
+// Redis rate limiter
+const limiter = new RateLimiter({
+  redis: redisClient,
+  keyPrefix: 'llm-rate-limit',
+  points: 100, // Number of requests
+  duration: 3600, // Per hour
+});
+
+async function handleLLMRequest(userId, prompt) {
+  try {
+    await limiter.consume(userId);
+    return await llm.complete(prompt);
+  } catch (rejRes) {
+    throw new Error(
+      `Rate limit exceeded. Try again in ${rejRes.msBeforeNext}ms`,
+    );
+  }
+}
+```
+
+## Options
+
+```json
+{
+  "secure-coding/require-llm-rate-limiting": [
+    "error",
+    {
+      "llmApiPatterns": ["customLLM.*"],
+      "rateLimiterPatterns": ["checkLimit", "rateLimit", "myLimiter"]
+    }
+  ]
+}
+```
+
+### `llmApiPatterns`
+
+LLM API patterns to check. Default:
+
+- `llm.complete`, `llm.chat`, `llm.generate`
+- `openai.chat`, `openai.complete`
+- `anthropic.complete`, `claude.complete`
+- `chatCompletion`, `textCompletion`
+
+### `rateLimiterPatterns`
+
+Rate limiter function/method names. Default:
+
+- `rateLimiter`, `checkLimit`, `rateLimit`
+- `throttle`, `checkQuota`, `consumeQuota`
+
+## Why This Matters
+
+### Without Rate Limiting
+
+```typescript
+// Attacker makes 10,000 requests/second
+for (let i = 0; i < 10000; i++) {
+  fetch('/api/chat', {
+    method: 'POST',
+    body: JSON.stringify({ prompt: 'x'.repeat(4000) }),
+  });
+}
+
+// Result:
+// - $50,000+ API bill (GPT-4 at 5M tokens)
+// - Server crash from load
+// - API key rate limit ban
+// - Service unavailable for legitimate users
+```
+
+### With Rate Limiting
+
+```typescript
+// 100 requests per hour per user
+await rateLimiter.checkLimit(userId);
+
+// After 100 requests:
+// ❌ Error: Rate limit exceeded
+//    Try again in 3540 seconds
+```
+
+## Implementation Patterns
+
+### 1. express-rate-limit
+
+```typescript
+import rateLimit from 'express-rate-limit';
+
+const llmLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each user to 100 requests per window
+  message: 'Too many LLM requests, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.user.id,
+});
+
+app.post('/api/chat', llmLimiter, async (req, res) => {
+  const result = await llm.complete(req.body.prompt);
+  res.json(result);
+});
+```
+
+### 2. rate-limiter-flexible (Redis)
+
+```typescript
+import { RateLimiterRedis } from 'rate-limiter-flexible';
+import Redis from 'ioredis';
+
+const redisClient = new Redis({ enableOfflineQueue: false });
+
+const rateLimiter = new RateLimiterRedis({
+  storeClient: redisClient,
+  keyPrefix: 'llm',
+  points: 100, // Number of points (requests)
+  duration: 3600, // Per hour
+  blockDuration: 3600, // Block for 1 hour after limit
+});
+
+async function handleLLM(userId, prompt) {
+  try {
+    await rateLimiter.consume(userId, 1);
+    return await llm.complete(prompt);
+  } catch (rejRes) {
+    if (rejRes instanceof Error) {
+      throw rejRes;
+    } else {
+      throw new Error(
+        `Rate limit exceeded. Retry after ${rejRes.msBeforeNext}ms`,
+      );
+    }
+  }
+}
+```
+
+### 3. Token-Based Budgets
+
+```typescript
+interface TokenBudget {
+  userId: string;
+  dailyLimit: number;
+  consumed: number;
+  resetAt: Date;
+}
+
+async function checkTokenBudget(userId: string, estimatedTokens: number) {
+  const budget = await TokenBudget.findOne({ userId });
+
+  if (new Date() > budget.resetAt) {
+    // Reset daily budget
+    budget.consumed = 0;
+    budget.resetAt = addDays(new Date(), 1);
+  }
+
+  if (budget.consumed + estimatedTokens > budget.dailyLimit) {
+    throw new Error(`Daily token budget exceeded. Resets at ${budget.resetAt}`);
+  }
+
+  budget.consumed += estimatedTokens;
+  await budget.save();
+}
+
+async function processLLM(userId, prompt) {
+  const estimatedTokens = estimateTokens(prompt);
+  await checkTokenBudget(userId, estimatedTokens);
+
+  const result = await llm.complete(prompt);
+
+  // Track actual usage
+  const actualTokens = result.usage.total_tokens;
+  await updateTokenUsage(userId, actualTokens - estimatedTokens);
+
+  return result;
+}
+```
+
+### 4. Tiered Limits
+
+```typescript
+const RATE_LIMITS = {
+  free: { requests: 10, windowMs: 3600000 }, // 10/hour
+  basic: { requests: 100, windowMs: 3600000 }, // 100/hour
+  premium: { requests: 1000, windowMs: 3600000 }, // 1000/hour
+  enterprise: { requests: 10000, windowMs: 3600000 }, // 10000/hour
+};
+
+async function checkRateLimit(user, action) {
+  const limit = RATE_LIMITS[user.tier];
+  const key = `${user.id}:${action}`;
+
+  const current = await redis.incr(key);
+  if (current === 1) {
+    await redis.expire(key, limit.windowMs / 1000);
+  }
+
+  if (current > limit.requests) {
+    const ttl = await redis.ttl(key);
+    throw new Error(
+      `Rate limit exceeded. Resets in ${ttl}s. Upgrade for higher limits.`,
+    );
+  }
+}
+```
+
+## Best Practices
+
+1. **Per-user limits** - Not global limits
+2. **Token budgets** - Not just request counts
+3. **Cost tracking** - Monitor actual API costs
+4. **Tiered limits** - Different limits per plan
+5. **Graceful errors** - Tell user when to retry
+6. **Monitoring** - Alert on unusual patterns
+7. **Disable on abuse** - Auto-suspend problematic users
+
+## When Not To Use It
+
+- Internal tools with trusted users only
+- If you have alternative DoS protection
+- Development/testing environments (use low limits)
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Prompt from Variable
+
+**Why**: Prompt content from variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Prompt from variable
+const prompt = buildPrompt(userInput);
+await generateText({ prompt });
+```
+
+**Mitigation**: Validate all prompt components.
+
+### Nested Context
+
+**Why**: Deep nesting obscures injection.
+
+```typescript
+// ❌ NOT DETECTED - Nested
+const messages = [{ role: 'user', content: userInput }];
+await chat({ messages });
+```
+
+**Mitigation**: Validate at all levels.
+
+### Custom AI Wrappers
+
+**Why**: Custom AI clients not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom wrapper
+myAI.complete(userPrompt);
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
+## Further Reading
+
+- [OWASP LLM10: Unbounded Consumption](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
+- [express-rate-limit](https://www.npmjs.com/package/express-rate-limit)
+- [rate-limiter-flexible](https://www.npmjs.com/package/rate-limiter-flexible)
+- [OpenAI Rate Limits](https://platform.openai.com/docs/guides/rate-limits)
+
+## Compatibility
+
+- ✅ ESLint 8.x
+- ✅ ESLint 9.x
+- ✅ TypeScript
+- ✅ JavaScript (ES6+)
+- ✅ Node.js (Express, Fastify, NestJS)
+
+## Version
+
+This rule was introduced in `eslint-plugin-secure-coding` v2.3.0 (OWASP LLM 2025 support).

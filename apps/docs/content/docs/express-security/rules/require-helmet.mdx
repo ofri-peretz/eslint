@@ -1,0 +1,152 @@
+---
+title: require-helmet
+description: Require helmet middleware for security headers in Express.js applications
+---
+
+# require-helmet
+
+> Require helmet middleware for security headers in Express.js applications
+
+**Severity:** 🔴 High  
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
+
+## Rule Details
+
+This rule detects Express.js applications that are missing the helmet middleware. Helmet sets various HTTP headers to help protect your app from well-known web vulnerabilities.
+
+Missing security headers can expose your application to:
+
+- Clickjacking attacks (X-Frame-Options)
+- XSS attacks (X-XSS-Protection, Content-Security-Policy)
+- MIME-type sniffing attacks (X-Content-Type-Options)
+- Man-in-the-middle attacks (Strict-Transport-Security)
+
+## Examples
+
+### ❌ Incorrect
+
+```javascript
+import express from 'express';
+const app = express();
+
+// Missing helmet middleware - VULNERABLE
+app.get('/', (req, res) => res.send('Hello'));
+
+app.listen(3000);
+```
+
+### ✅ Correct
+
+```javascript
+import express from 'express';
+import helmet from 'helmet';
+
+const app = express();
+
+// Helmet adds security headers
+app.use(helmet());
+
+app.get('/', (req, res) => res.send('Hello'));
+
+app.listen(3000);
+```
+
+## Options
+
+| Option                  | Type       | Default | Description                                             |
+| ----------------------- | ---------- | ------- | ------------------------------------------------------- |
+| `allowInTests`          | `boolean`  | `false` | Allow missing helmet in test files                      |
+| `alternativeMiddleware` | `string[]` | `[]`    | Alternative security headers middleware names to accept |
+
+```json
+{
+  "rules": {
+    "express-security/require-helmet": [
+      "error",
+      {
+        "allowInTests": true,
+        "alternativeMiddleware": ["securityHeaders"]
+      }
+    ]
+  }
+}
+```
+
+## When Not To Use It
+
+Never disable this rule in production. Security headers are a fundamental protection layer.
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### App Instance from Variable
+
+**Why**: Express app stored in variable may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - App from factory function
+const app = createExpressApp();
+// Helmet might be applied in createExpressApp, or not
+```
+
+**Mitigation**: Apply rule to factory modules. Document helmet usage centrally.
+
+### Conditional Middleware
+
+**Why**: Middleware applied inside conditions is not tracked.
+
+```typescript
+// ❌ NOT DETECTED - Conditional helmet
+if (process.env.NODE_ENV === 'production') {
+  app.use(helmet());
+}
+// Development may run without headers
+```
+
+**Mitigation**: Always apply helmet unconditionally. Use environment-specific configuration inside helmet options.
+
+### Framework Wrappers
+
+**Why**: Higher-level frameworks may include helmet internally.
+
+```typescript
+// ❌ FALSE POSITIVE RISK - Framework includes helmet
+import { createServer } from '@my-company/express-framework';
+const app = createServer(); // May include helmet
+```
+
+**Mitigation**: Configure `alternativeMiddleware` option. Add framework-specific patterns.
+
+### Late Middleware Application
+
+**Why**: Helmet applied after route definitions is less effective.
+
+```typescript
+// ❌ NOT DETECTED - Helmet AFTER routes
+app.get('/api', handler);
+app.use(helmet()); // Security headers won't apply to /api
+```
+
+**Mitigation**: Ensure helmet is among the first middleware. Review middleware order in code review.
+
+### Custom Security Headers
+
+**Why**: Manual header setting without helmet is not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Manual headers instead of helmet
+app.use((req, res, next) => {
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  next();
+});
+```
+
+**Mitigation**: Use helmet for comprehensive coverage. Configure `alternativeMiddleware` for known patterns.
+
+## Further Reading
+
+- [Helmet.js Documentation](https://helmetjs.github.io/)
+- [OWASP Secure Headers Project](https://owasp.org/www-project-secure-headers/)
+- [MDN: HTTP Headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers)

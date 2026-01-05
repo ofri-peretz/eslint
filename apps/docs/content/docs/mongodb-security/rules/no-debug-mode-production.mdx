@@ -1,0 +1,137 @@
+---
+title: no-debug-mode-production
+description: Detects Mongoose debug mode that could expose sensitive query information in production.
+---
+
+# no-debug-mode-production
+
+> **Keywords:** CWE-489, debug, Mongoose, logging, production, security
+
+Detects Mongoose debug mode that could expose sensitive query information in production.
+
+⚠️ This rule **errors** by default in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                              |
+| ----------------- | ------------------------------------ |
+| **CWE Reference** | CWE-489 (Active Debug Code)          |
+| **OWASP**         | A05:2021 - Security Misconfiguration |
+| **Severity**      | Low (CVSS: 3.1)                      |
+| **Category**      | Security                             |
+
+## Rule Details
+
+Mongoose debug mode logs all queries to console, including:
+
+- Query parameters (potentially containing PII)
+- Collection names
+- Update operations
+- Aggregation pipelines
+
+### ❌ Incorrect
+
+```typescript
+// Debug mode unconditionally enabled
+mongoose.set('debug', true);
+
+// Debug callback in production
+mongoose.set('debug', (collectionName, method, query) => {
+  console.log(collectionName, method, query);
+});
+```
+
+### ✅ Correct
+
+```typescript
+// Conditional on environment
+mongoose.set('debug', process.env.NODE_ENV !== 'production');
+
+// Development-only debug
+if (process.env.NODE_ENV === 'development') {
+  mongoose.set('debug', true);
+}
+
+// Use proper logging framework
+mongoose.set('debug', (collectionName, method, query) => {
+  if (process.env.NODE_ENV !== 'production') {
+    logger.debug({ collectionName, method, query });
+  }
+});
+```
+
+## Known False Positives
+
+### Already Conditional
+
+```typescript
+// FP: Already wrapped in environment check
+if (process.env.DEBUG) {
+  mongoose.set('debug', true); // Safe but may flag
+}
+```
+
+## When Not To Use It
+
+- In development-only codebases
+- When debug logging is properly secured
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Debug Flag from Variable
+
+**Why**: Variable contents are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Debug setting from variable
+const debugEnabled = true;
+mongoose.set('debug', debugEnabled);
+```
+
+**Mitigation**: Use inline boolean with environment check.
+
+### Configuration Object
+
+**Why**: Config properties are not traced.
+
+```typescript
+// ❌ NOT DETECTED - Debug in config object
+const mongoConfig = { debug: true };
+mongoose.set('debug', mongoConfig.debug);
+```
+
+**Mitigation**: Validate config at startup. Use environment-based config loading.
+
+### Conditional in Outer Scope
+
+**Why**: Control flow across scopes is not tracked.
+
+```typescript
+// ❌ NOT DETECTED - Condition in outer function
+function configureMongoose() {
+  if (process.env.DEBUG) {
+    enableDebug(); // Calls mongoose.set('debug', true) internally
+  }
+}
+```
+
+**Mitigation**: Apply rule to all modules. Use centralized configuration.
+
+### Dynamic Setting Names
+
+**Why**: Setting name computed at runtime is not understood.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic setting name
+const setting = 'debug';
+mongoose.set(setting, true);
+```
+
+**Mitigation**: Use explicit 'debug' string. Add runtime environment check.
+
+## References
+
+- [Mongoose Debug](<https://mongoosejs.com/docs/api/mongoose.html#Mongoose.prototype.set()>)
+- [CWE-489](https://cwe.mitre.org/data/definitions/489.html)

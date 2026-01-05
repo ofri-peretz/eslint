@@ -1,0 +1,45 @@
+---
+title: eslint-plugin-jwt
+description: JWT security rules for jsonwebtoken, jose, and jwt-decode
+---
+
+# eslint-plugin-jwt
+
+[![npm version](https://img.shields.io/npm/v/eslint-plugin-jwt.svg)](https://www.npmjs.com/package/eslint-plugin-jwt) [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-jwt.svg)](https://www.npmjs.com/package/eslint-plugin-jwt) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=jwt)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=jwt)
+
+<Callout type="info">
+  **13 specialized rules** — LLM-optimized error messages with CWE, OWASP, and CVSS metadata.
+</Callout>
+
+## Installation
+
+```bash
+npm install --save-dev eslint-plugin-jwt
+```
+
+## Configuration
+
+```js title="eslint.config.js"
+import jwt from 'eslint-plugin-jwt';
+
+export default [jwt.configs.recommended];
+```
+
+## Available Presets
+
+| Preset | Description |
+|--------|-------------|
+| `recommended` | Balanced security for most projects |
+| `strict` | Maximum enforcement (all rules as errors) |
+
+## Rules
+
+Browse all 13 rules in the sidebar, or see the [Rules section](/docs/jwt/rules).
+
+<Cards>
+  <Card title="Browse All Rules" href="/docs/jwt/rules" />
+</Cards>
+
+## Related Articles
+
+<RelatedArticles plugin="jwt" limit={3} />

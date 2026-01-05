@@ -1,0 +1,10 @@
+{
+  "title": "Rules",
+  "pages": [
+    "no-exposed-private-fields",
+    "no-missing-validation-pipe",
+    "require-class-validator",
+    "require-guards",
+    "require-throttler"
+  ]
+}

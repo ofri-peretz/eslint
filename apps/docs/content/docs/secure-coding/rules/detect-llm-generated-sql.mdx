@@ -1,0 +1,91 @@
+---
+title: detect-llm-generated-sql
+description: Detect dangerous LLM-to-SQL patterns.
+---
+
+# detect-llm-generated-sql
+
+Detect dangerous LLM-to-SQL patterns.
+
+**OWASP LLM Top 10 2025**: LLM05 - Improper Output Handling  
+**CWE**: [CWE-89](https://cwe.mitre.org/data/definitions/89.html)  
+**Severity**: 🔴 Critical
+
+## Rule Details
+
+Identifies LLM-generated SQL being executed directly without validation.
+
+### ❌ Incorrect
+
+```typescript
+await db.query(llmSQL);
+await db.execute(llmQuery);
+await db.raw(generatedSQL);
+```
+
+### ✅ Correct
+
+```typescript
+// Use ORM
+const users = await User.findAll();
+
+// Validate SQL
+const validated = validateSQL(llmQuery, allowedTables);
+await db.query(validated);
+```
+
+## Options
+
+```json
+{
+  "secure-coding/detect-llm-generated-sql": ["error"]
+}
+```
+
+## Best Practices
+
+1. **Use ORM** (Prisma, TypeORM, Sequelize)
+2. **Validate SQL structure** against allowlist
+3. **Parse and analyze** SQL AST before execution
+
+## Version
+
+Introduced in v2.3.0
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Query from Variable
+
+**Why**: Query strings from variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Query from variable
+const query = `SELECT * FROM users WHERE id = ${userId}`;
+db.execute(query);
+```
+
+**Mitigation**: Always use parameterized queries.
+
+### Custom Query Builders
+
+**Why**: Custom ORM/query builders not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom builder
+customQuery.where(userInput).execute();
+```
+
+**Mitigation**: Review all query builder patterns.
+
+### Template Engines
+
+**Why**: Template-based queries not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Template
+executeTemplate('query.sql', { userId });
+```
+
+**Mitigation**: Validate all template variables.

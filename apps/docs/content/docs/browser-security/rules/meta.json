@@ -1,0 +1,26 @@
+{
+  "title": "Rules",
+  "pages": [
+    "no-cookie-auth-tokens",
+    "no-dynamic-service-worker-url",
+    "no-eval",
+    "no-filereader-innerhtml",
+    "no-innerhtml",
+    "no-jwt-in-storage",
+    "no-postmessage-innerhtml",
+    "no-postmessage-wildcard-origin",
+    "no-sensitive-cookie-js",
+    "no-sensitive-indexeddb",
+    "no-sensitive-localstorage",
+    "no-sensitive-sessionstorage",
+    "no-unsafe-eval-csp",
+    "no-unsafe-inline-csp",
+    "no-websocket-eval",
+    "no-websocket-innerhtml",
+    "no-worker-message-innerhtml",
+    "require-blob-url-revocation",
+    "require-cookie-secure-attrs",
+    "require-postmessage-origin-check",
+    "require-websocket-wss"
+  ]
+}

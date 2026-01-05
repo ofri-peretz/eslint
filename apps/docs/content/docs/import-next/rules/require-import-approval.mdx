@@ -1,0 +1,92 @@
+---
+title: require-import-approval
+description: "💼 This rule is enabled in the following configs: recommended, typescript."
+---
+
+# require-import-approval
+
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
+
+{/*  end auto-generated rule header  */}
+
+Enforce explicit approval for high-risk package imports
+
+## Rule Details
+
+This rule aims to prevent issues related to require-import-approval.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "packages": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "package": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "approved",
+                "pending",
+                "blocked"
+              ]
+            },
+            "reason": {
+              "type": "string"
+            },
+            "alternative": {
+              "type": "string"
+            },
+            "approvedBy": {
+              "type": "string"
+            },
+            "approvedDate": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "package",
+            "status"
+          ]
+        }
+      },
+      "defaultPolicy": {
+        "type": "string",
+        "enum": [
+          "allow",
+          "deny"
+        ],
+        "default": "allow"
+      },
+      "ignorePatterns": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": []
+      }
+    },
+    "required": [
+      "packages"
+    ],
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/require-import-approval.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/require-import-approval.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

@@ -1,0 +1,90 @@
+---
+title: no-unsafe-regex-query
+description: Detects user input in MongoDB $regex operators that could cause ReDoS (Regular Expression Denial of Service) or information disclosure.
+---
+
+# no-unsafe-regex-query
+
+> **Keywords:** ReDoS, CWE-400, MongoDB, $regex, regular expression, denial of service
+
+Detects user input in MongoDB `$regex` operators that could cause ReDoS (Regular Expression Denial of Service) or information disclosure.
+
+⚠️ This rule **errors** by default in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                       |
+| ----------------- | ----------------------------- |
+| **CWE Reference** | CWE-400 (Resource Exhaustion) |
+| **OWASP**         | A03:2021 - Injection          |
+| **Severity**      | High (CVSS: 7.5)              |
+| **Category**      | Security                      |
+
+## Rule Details
+
+User input in `$regex` operators is dangerous because:
+
+1. **ReDoS attacks**: Crafted regex patterns can cause exponential backtracking
+2. **Information disclosure**: Regex can be used to probe for data patterns
+3. **Injection**: Special regex characters can alter query behavior
+
+### Attack Example
+
+```javascript
+// Attacker sends: "(a+)+$"
+// This causes exponential backtracking on strings like "aaaaaaaaaa!"
+db.users.find({ email: { $regex: userInput } });
+```
+
+### ❌ Incorrect
+
+```typescript
+// User input directly in $regex
+User.find({ name: { $regex: req.query.search } });
+
+// User input as regex pattern
+User.find({ email: { $regex: new RegExp(userInput) } });
+
+// User input with $options
+User.find({ name: { $regex: req.body.pattern, $options: 'i' } });
+```
+
+### ✅ Correct
+
+```typescript
+// Escape special regex characters
+import escapeRegex from 'escape-string-regexp';
+User.find({ name: { $regex: escapeRegex(req.query.search), $options: 'i' } });
+
+// Use $text search instead (indexed, safer)
+User.find({ $text: { $search: req.query.search } });
+
+// Anchor and limit pattern
+const safePattern = `^${escapeRegex(req.query.search).slice(0, 50)}`;
+User.find({ name: { $regex: safePattern } });
+
+// Use MongoDB text index
+db.users.createIndex({ name: 'text' });
+User.find({ $text: { $search: userInput } });
+```
+
+## Known False Negatives
+
+### Sanitized Input
+
+```typescript
+// ❌ NOT DETECTED - but may still be vulnerable
+const sanitized = userInput.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+User.find({ name: { $regex: sanitized } });
+```
+
+## When Not To Use It
+
+- When using escape-string-regexp or similar libraries consistently
+- When regex patterns are from trusted source (internal config)
+
+## References
+
+- [OWASP ReDoS Attack](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)
+- [CWE-400: Resource Exhaustion](https://cwe.mitre.org/data/definitions/400.html)
+- [MongoDB $regex Performance](https://www.mongodb.com/docs/manual/reference/operator/query/regex/#index-use)

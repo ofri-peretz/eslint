@@ -1,0 +1,14 @@
+{
+  "title": "Rules",
+  "pages": [
+    "no-cors-credentials-wildcard",
+    "no-express-unsafe-regex-route",
+    "no-graphql-introspection-production",
+    "no-insecure-cookie-options",
+    "no-permissive-cors",
+    "require-csrf-protection",
+    "require-express-body-parser-limits",
+    "require-helmet",
+    "require-rate-limiting"
+  ]
+}

@@ -1,0 +1,45 @@
+---
+title: eslint-plugin-crypto
+description: Cryptographic security rules for Node.js crypto and Web Crypto API
+---
+
+# eslint-plugin-crypto
+
+[![npm version](https://img.shields.io/npm/v/eslint-plugin-crypto.svg)](https://www.npmjs.com/package/eslint-plugin-crypto) [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-crypto.svg)](https://www.npmjs.com/package/eslint-plugin-crypto) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=crypto)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=crypto)
+
+<Callout type="info">
+  **24 specialized rules** — LLM-optimized error messages with CWE, OWASP, and CVSS metadata.
+</Callout>
+
+## Installation
+
+```bash
+npm install --save-dev eslint-plugin-crypto
+```
+
+## Configuration
+
+```js title="eslint.config.js"
+import crypto from 'eslint-plugin-crypto';
+
+export default [crypto.configs.recommended];
+```
+
+## Available Presets
+
+| Preset | Description |
+|--------|-------------|
+| `recommended` | Balanced security for most projects |
+| `strict` | Maximum enforcement (all rules as errors) |
+
+## Rules
+
+Browse all 24 rules in the sidebar, or see the [Rules section](/docs/crypto/rules).
+
+<Cards>
+  <Card title="Browse All Rules" href="/docs/crypto/rules" />
+</Cards>
+
+## Related Articles
+
+<RelatedArticles plugin="crypto" limit={3} />

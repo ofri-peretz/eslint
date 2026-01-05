@@ -1,0 +1,79 @@
+---
+title: no-hardcoded-crypto-key
+description: "## Description"
+---
+
+# no-hardcoded-crypto-key
+
+## Description
+
+TODO: Add description for this rule.
+
+## OWASP Mapping
+
+- **OWASP Top 10**: A02:2021 - Cryptographic Failures
+- **CWE**: CWE-327 - Use of a Broken or Risky Cryptographic Algorithm
+
+## Rule Details
+
+TODO: Add rule details.
+
+## Examples
+
+### ❌ Incorrect
+
+```javascript
+// TODO: Add incorrect example
+```
+
+### ✅ Correct
+
+```javascript
+// TODO: Add correct example
+```
+
+## Options
+
+This rule has no options.
+
+## When Not To Use It
+
+TODO: Add when not to use.
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Algorithm from Variable
+
+**Why**: Algorithm names from variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Algorithm from variable
+const algo = config.hashAlgorithm; // May be weak
+crypto.createHash(algo);
+```
+
+**Mitigation**: Hardcode secure algorithms.
+
+### Third-party Crypto Libraries
+
+**Why**: Non-standard crypto APIs not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Third-party
+customCrypto.encrypt(data, key);
+```
+
+**Mitigation**: Review all crypto implementations.
+
+### Configuration-based Security
+
+**Why**: Config-driven security not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Config-based
+const options = getSecurityOptions(); // May be weak
+```
+
+**Mitigation**: Validate security configurations.
