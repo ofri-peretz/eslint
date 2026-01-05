@@ -78,7 +78,7 @@ Examples:
 | Document                                               | Description                                                |
 | ------------------------------------------------------ | ---------------------------------------------------------- |
 | **This file**                                          | Overview, workflows, configuration                         |
-| [**Failure Scenarios**](./docs/FAILURE_SCENARIOS.md)   | All 18 failure scenarios (R01-R17 + R02b), recovery matrix |
+| [**Failure Scenarios**](./docs/FAILURE_SCENARIOS.md)   | All 23 failure scenarios (R01-R22 + R02b), recovery matrix |
 | [**Nx Release Guide**](./docs/NX_RELEASE_GUIDE.md)     | Conventional commits, versioning, changelogs               |
 | [**NPM Authentication**](./docs/NPM_AUTHENTICATION.md) | Trusted Publishers, tokens, error diagnostics              |
 

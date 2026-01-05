@@ -102,6 +102,11 @@ Every possible failure scenario is named, documented, and mapped to the code tha
 | R15 | [Manual Cancellation](#r15-manual-cancellation)             | ⚠️ May need R03      | **Mitigated** |
 | R16 | [First Release](#r16-first-release)                         | ✅ Auto-detect       | None          |
 | R17 | [Workflow Expression Limit](#r17-workflow-expression-limit) | ✅ Mitigated         | None          |
+| R18 | [Package.json Invalid](#r18-packagejson-invalid)            | ✅ Fail fast         | None          |
+| R19 | [Git Rebase Conflict](#r19-git-rebase-conflict)             | ✅ Auto-abort        | Low           |
+| R20 | [Token Expiration](#r20-token-expiration)                   | ✅ Weekly monitoring | Low           |
+| R21 | [OIDC Fallback](#r21-oidc-fallback)                         | ✅ Auto-fallback     | None          |
+| R22 | [Rate Limiting](#r22-rate-limiting)                         | ✅ Actionable error  | Low           |
 
 ---
 
@@ -490,6 +495,131 @@ HTTP 422: Invalid Argument - failed to parse workflow:
 
 ---
 
+### R18: Package.json Invalid
+
+**Category:** Validation  
+**When:** Package directory or package.json is missing/malformed
+
+| Aspect         | Value                                         |
+| -------------- | --------------------------------------------- |
+| **Detection**  | `package.json` file not found or invalid JSON |
+| **Resolution** | Fail fast with actionable error               |
+| **Outcome**    | ❌ Failed (package skipped, others continue)  |
+
+```bash
+# Detection logic
+PACKAGE_JSON="./packages/$PACKAGE/package.json"
+if [ ! -f "$PACKAGE_JSON" ]; then
+  echo "❌ FAILED: $PACKAGE - package.json not found"
+  continue
+fi
+
+NPM_NAME=$(node -p "require('$PACKAGE_JSON').name") || {
+  echo "❌ FAILED: $PACKAGE - Could not read 'name' from package.json"
+  continue
+}
+```
+
+---
+
+### R19: Git Rebase Conflict
+
+**Category:** Git Operations  
+**When:** `git pull --rebase` encounters merge conflicts
+
+| Aspect         | Value                                            |
+| -------------- | ------------------------------------------------ |
+| **Detection**  | `git pull --rebase origin main` returns non-zero |
+| **Resolution** | Auto-abort rebase, fail package, continue others |
+| **Outcome**    | ❌ Failed (clean git state preserved)            |
+
+```bash
+# Cleanup logic - abort any in-progress rebase
+git rebase --abort 2>/dev/null || true
+
+if ! git pull --rebase origin main; then
+  git rebase --abort 2>/dev/null || true  # Ensure clean state
+  echo "❌ FAILED: Git rebase conflict"
+  continue
+fi
+```
+
+**Why:** Without abort, a failed rebase leaves git in a broken state. This would cause all subsequent package releases to fail.
+
+---
+
+### R20: Token Expiration
+
+**Category:** Monitoring  
+**When:** NPM_TOKEN expires (90-day max for Granular Access Tokens)
+
+| Aspect         | Value                                              |
+| -------------- | -------------------------------------------------- |
+| **Detection**  | Weekly `npm-token-health.yml` workflow             |
+| **Prevention** | Automated GitHub Issue created 7+ days before fail |
+| **Outcome**    | ⚠️ Warning (action required before next release)   |
+
+```yaml
+# .github/workflows/npm-token-health.yml
+on:
+  schedule:
+    - cron: '0 9 * * 1' # Every Monday 9am UTC
+```
+
+**Features:**
+
+- Validates NPM_TOKEN with `npm whoami`
+- Creates GitHub Issue if token is invalid/missing
+- Provides step-by-step resolution instructions
+
+---
+
+### R21: OIDC Fallback
+
+**Category:** Authentication  
+**When:** OIDC/Trusted Publishers not configured for existing package
+
+| Aspect         | Value                                        |
+| -------------- | -------------------------------------------- |
+| **Detection**  | OIDC publish returns 401 Unauthorized        |
+| **Resolution** | Automatic fallback to NPM_TOKEN if available |
+| **Outcome**    | ✅ Released (with warning to configure OIDC) |
+
+```bash
+# Fallback logic
+if [ "$PUBLISH_FAILED" = "true" ] && echo "$PUBLISH_OUTPUT" | grep -qiE "401"; then
+  echo "⚠️ OIDC failed, falling back to NPM_TOKEN..."
+  if [ -n "${NPM_TOKEN:-}" ]; then
+    # Use direct npm publish with token
+    ...
+  fi
+fi
+```
+
+**Use Case:** When you forget to configure Trusted Publishers after first release.
+
+---
+
+### R22: Rate Limiting
+
+**Category:** NPM Registry  
+**When:** npm returns 429 Too Many Requests
+
+| Aspect         | Value                                         |
+| -------------- | --------------------------------------------- |
+| **Detection**  | Publish output contains `429` or `rate limit` |
+| **Resolution** | Actionable error message, wait and retry      |
+| **Outcome**    | ❌ Failed (re-run after 15-60 minutes)        |
+
+```bash
+if echo "$PUBLISH_OUTPUT" | grep -qiE "(429|too many requests|rate limit)"; then
+  echo "❌ NPM Rate Limited: Wait 15-60 minutes and re-run"
+  continue
+fi
+```
+
+---
+
 ## 🔄 Recovery Matrix
 
 | If you see...                                    | Scenario | Action                                         |
@@ -509,6 +639,11 @@ HTTP 422: Invalid Argument - failed to parse workflow:
 | Workflow timed out/cancelled                     | R14-R15  | Re-run workflow                                |
 | "First release detected"                         | R16      | Automatic, then configure Trusted Publishers   |
 | "Exceeded max expression length 21000"           | R17      | Already mitigated (external script)            |
+| "package.json not found"                         | R18      | Create package.json in package directory       |
+| "Git rebase conflict"                            | R19      | Pull locally, resolve conflicts, re-run        |
+| GitHub Issue: "NPM_TOKEN Expired"                | R20      | Generate new token, update secret              |
+| "OIDC failed, falling back to NPM_TOKEN"         | R21      | Automatic (configure OIDC for future)          |
+| "NPM Rate Limited"                               | R22      | Wait 15-60 minutes, re-run                     |
 
 ---
 
@@ -522,7 +657,11 @@ HTTP 422: Invalid Argument - failed to parse workflow:
 | No conventional commits     | Fallback to patch        | R06      |
 | Concurrent releases         | Queue, don't cancel      | R08      |
 | Dependency failed           | Skip dependents          | R09      |
-| Auth token expired          | Fail fast                | R12      |
+| Auth token expired          | Fail fast + monitoring   | R12, R20 |
+| Package.json missing        | Fail fast with guidance  | R18      |
+| Rebase conflicts            | Auto-abort, clean state  | R19      |
+| OIDC not configured         | Fallback to NPM_TOKEN    | R21      |
+| npm rate limiting           | Actionable error         | R22      |
 
 **Key Guarantee:** Any failure that creates partial state (R03, R13, R14, R15) is automatically handled on re-run.
 

@@ -71,18 +71,33 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
     continue
   fi
   
-  # Resolve npm package name
-  case "$PACKAGE" in
-    eslint-devkit)
-      NPM_NAME="@interlace/eslint-devkit"
-      ;;
-    cli)
-      NPM_NAME="@interlace/cli"
-      ;;
-    *)
-      NPM_NAME="$PACKAGE"
-      ;;
-  esac
+  # ──────────────────────────────────────────────────────────────
+  # R18: Validate package.json exists and is readable
+  # ──────────────────────────────────────────────────────────────
+  PACKAGE_JSON="./packages/$PACKAGE/package.json"
+  if [ ! -f "$PACKAGE_JSON" ]; then
+    echo "❌ FAILED: $PACKAGE"
+    echo "   └─ package.json not found at: $PACKAGE_JSON"
+    echo "   └─ Check if package directory exists"
+    FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+    continue
+  fi
+  
+  # Dynamic npm name resolution from package.json (more robust than hardcoded mapping)
+  NPM_NAME=$(node -p "require('$PACKAGE_JSON').name" 2>/dev/null) || {
+    echo "❌ FAILED: $PACKAGE"
+    echo "   └─ Could not read 'name' from package.json"
+    echo "   └─ Ensure package.json is valid JSON"
+    FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+    continue
+  }
+  
+  if [ -z "$NPM_NAME" ]; then
+    echo "❌ FAILED: $PACKAGE"
+    echo "   └─ 'name' field is empty in package.json"
+    FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+    continue
+  fi
   
   echo "🎯 Target project: $PACKAGE"
   echo "📛 NPM name: $NPM_NAME"
@@ -264,7 +279,12 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
     echo "📤 Pushing changes to git..."
     
     # Pull latest to avoid push conflicts
+    # R19: Abort any in-progress rebase before attempting new one
+    git rebase --abort 2>/dev/null || true
+    
     if ! git pull --rebase origin main; then
+      # R19: Clean up failed rebase to prevent broken git state
+      git rebase --abort 2>/dev/null || true
       echo "❌ FAILED: $PACKAGE"
       echo "   └─ Stage: Git pull --rebase"
       echo "   └─ Cause: Merge conflict or upstream changes"
@@ -376,11 +396,43 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
       # ════════════════════════════════════════════════════════════
       # EXISTING PACKAGE: Use OIDC via pnpm nx release publish
       # Trusted Publishers provides passwordless, provenance-signed releases
+      # R21: Falls back to NPM_TOKEN if OIDC fails with 401
       # ════════════════════════════════════════════════════════════
       
       echo "📦 Publishing via OIDC (Trusted Publishers)..."
       PUBLISH_CMD="pnpm nx release publish --projects=$PACKAGE --tag $DIST_TAG"
       PUBLISH_OUTPUT=$($PUBLISH_CMD 2>&1) || PUBLISH_FAILED=true
+      
+      # R21: OIDC Fallback - If OIDC fails with 401, try NPM_TOKEN
+      if [ "$PUBLISH_FAILED" = "true" ] && echo "$PUBLISH_OUTPUT" | grep -qiE "(401|unauthorized|ENEEDAUTH)"; then
+        echo "⚠️ OIDC auth failed, attempting NPM_TOKEN fallback..."
+        
+        if [ -n "${NPM_TOKEN:-}" ]; then
+          # Use same direct npm publish logic as first release
+          DIST_DIR="dist/packages/$PACKAGE"
+          if [ -d "$DIST_DIR" ]; then
+            echo "📝 Configuring npm for token-based authentication..."
+            echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > "$DIST_DIR/.npmrc"
+            
+            echo "📦 Publishing $NPM_NAME@$NEW_VERSION via npm publish (fallback)..."
+            PUBLISH_OUTPUT=$(cd "$DIST_DIR" && npm publish --access public --tag "$DIST_TAG" 2>&1) || PUBLISH_FAILED=true
+            
+            # Check if fallback succeeded
+            if [ "$PUBLISH_FAILED" = "false" ] || ! echo "$PUBLISH_OUTPUT" | grep -qiE "(error|401|403|404)"; then
+              PUBLISH_FAILED=false
+              echo "✅ NPM_TOKEN fallback succeeded"
+              echo "⚠️ Consider configuring Trusted Publishers for this package"
+            fi
+            
+            rm -f "$DIST_DIR/.npmrc"
+          else
+            echo "   └─ Cannot fallback: dist directory not found"
+          fi
+        else
+          echo "   └─ Cannot fallback: NPM_TOKEN not configured"
+          echo "   └─ Fix: Configure Trusted Publishers at npmjs.com OR add NPM_TOKEN"
+        fi
+      fi
     fi
     
     # ────────────────────────────────────────────────────────────
@@ -431,6 +483,15 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
       if echo "$PUBLISH_OUTPUT" | grep -qiE "(ECONNREFUSED|ETIMEDOUT|ENOTFOUND|network|registry)"; then
         echo "❌ NPM Network Error: Cannot reach registry for $NPM_NAME"
         echo "   └─ Fix: Wait and re-run. Check https://status.npmjs.org/"
+        FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+        continue
+      fi
+      
+      # R22: Rate limiting detection
+      if echo "$PUBLISH_OUTPUT" | grep -qiE "(429|too many requests|rate limit|ETOOMANYREQ)"; then
+        echo "❌ NPM Rate Limited: Too many requests for $NPM_NAME"
+        echo "   └─ Fix: Wait 15-60 minutes and re-run"
+        echo "   └─ Check: https://status.npmjs.org/"
         FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
         continue
       fi

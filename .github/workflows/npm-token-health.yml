@@ -1,0 +1,211 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: NPM Token Health Check
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# NPM TOKEN HEALTH MONITORING (R20)
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Monitors NPM_TOKEN validity and creates GitHub Issues before expiration.
+# Runs weekly on Monday at 9am UTC.
+#
+# Why: npm Granular Access Tokens expire after 90 days max.
+# Without monitoring, first-release packages will fail silently.
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+on:
+    schedule:
+        # Every Monday at 9:00 AM UTC
+        - cron: "0 9 * * 1"
+    workflow_dispatch:
+        inputs:
+            create-issue:
+                description: "Create GitHub issue if token is invalid/missing"
+                required: false
+                type: boolean
+                default: true
+
+jobs:
+    check-npm-token:
+        name: 🔍 NPM Token Health Check
+        runs-on: ubuntu-latest
+        steps:
+            - name: 📥 Checkout repository
+              uses: actions/checkout@v4
+
+            - name: ⚙️ Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "22"
+                  registry-url: "https://registry.npmjs.org/"
+
+            - name: 🔍 Check NPM Token Status
+              id: token-check
+              env:
+                  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+              run: |
+                  echo "🔍 Checking NPM_TOKEN health..."
+                  echo ""
+
+                  TOKEN_STATUS="unknown"
+                  TOKEN_USER=""
+                  TOKEN_MESSAGE=""
+
+                  # Check if token is configured
+                  if [ -z "$NPM_TOKEN" ]; then
+                    echo "❌ NPM_TOKEN is NOT configured in repository secrets"
+                    TOKEN_STATUS="missing"
+                    TOKEN_MESSAGE="NPM_TOKEN secret is not set. First-release packages will fail."
+                  else
+                    echo "✅ NPM_TOKEN is configured"
+                    
+                    # Validate token with npm whoami
+                    AUTH_OUTPUT=$(npm whoami --registry=https://registry.npmjs.org/ 2>&1) || true
+                    
+                    # Extract just the username (filter out warnings)
+                    AUTH_USER=$(echo "$AUTH_OUTPUT" | grep -v "^npm " | grep -v "^$" | tail -1)
+                    
+                    if echo "$AUTH_OUTPUT" | grep -qiE "(401|unauthorized|ENEEDAUTH)"; then
+                      echo "❌ NPM_TOKEN is INVALID or EXPIRED"
+                      echo "   └─ npm whoami returned: $AUTH_OUTPUT"
+                      TOKEN_STATUS="invalid"
+                      TOKEN_MESSAGE="NPM_TOKEN has expired or is invalid. Generate a new token at npmjs.com."
+                    elif [ -n "$AUTH_USER" ] && ! echo "$AUTH_USER" | grep -qiE "error"; then
+                      echo "✅ NPM_TOKEN is VALID"
+                      echo "   └─ Authenticated as: $AUTH_USER"
+                      TOKEN_STATUS="valid"
+                      TOKEN_USER="$AUTH_USER"
+                      TOKEN_MESSAGE="Token is valid and authenticates as $AUTH_USER"
+                    else
+                      echo "⚠️ NPM_TOKEN status UNKNOWN"
+                      echo "   └─ npm whoami returned: $AUTH_OUTPUT"
+                      TOKEN_STATUS="unknown"
+                      TOKEN_MESSAGE="Could not determine token validity. Output: $AUTH_OUTPUT"
+                    fi
+                  fi
+
+                  echo ""
+                  echo "═══════════════════════════════════════════════════════════════"
+                  echo "📊 TOKEN HEALTH SUMMARY"
+                  echo "═══════════════════════════════════════════════════════════════"
+                  echo "Status: $TOKEN_STATUS"
+                  echo "User: $TOKEN_USER"
+                  echo "Message: $TOKEN_MESSAGE"
+
+                  # Output for next steps
+                  echo "status=$TOKEN_STATUS" >> $GITHUB_OUTPUT
+                  echo "user=$TOKEN_USER" >> $GITHUB_OUTPUT
+                  echo "message=$TOKEN_MESSAGE" >> $GITHUB_OUTPUT
+
+            - name: 📝 Create Issue if Token Invalid
+              if: |
+                  (steps.token-check.outputs.status == 'invalid' || steps.token-check.outputs.status == 'missing') &&
+                  (inputs.create-issue != false)
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const status = '${{ steps.token-check.outputs.status }}';
+                      const message = '${{ steps.token-check.outputs.message }}';
+
+                      // Check if an open issue already exists
+                      const { data: existingIssues } = await github.rest.issues.listForRepo({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        state: 'open',
+                        labels: 'ci/cd,npm-token'
+                      });
+
+                      if (existingIssues.length > 0) {
+                        console.log('Issue already exists, adding comment...');
+                        await github.rest.issues.createComment({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          issue_number: existingIssues[0].number,
+                          body: `## 🔄 Weekly Health Check Update\n\n**Status:** ${status}\n**Message:** ${message}\n\nThis issue was updated by the automated NPM Token Health Check workflow.`
+                        });
+                        return;
+                      }
+
+                      // Create new issue
+                      const title = status === 'missing' 
+                        ? '🚨 NPM_TOKEN Secret Missing'
+                        : '🚨 NPM_TOKEN Expired or Invalid';
+
+                      const body = `## NPM Token Health Check Failed
+
+                      **Status:** \`${status}\`
+                      **Message:** ${message}
+
+                      ### Impact
+                      - First-time package releases will **FAIL**
+                      - Existing packages using Trusted Publishers are unaffected
+
+                      ### Resolution Steps
+
+                      1. Go to [npmjs.com](https://www.npmjs.com) → Avatar → **Access Tokens**
+                      2. Click **"Generate New Token"** → Select **"Granular Access Token"**
+                      3. Configure:
+                         - **Name:** \`github-release-ci\`
+                         - **Expiration:** 90 days (max)
+                         - **Packages:** Read and write for all packages
+                      4. Copy the token
+                      5. Go to [Repository Secrets](https://github.com/${context.repo.owner}/${context.repo.repo}/settings/secrets/actions)
+                      6. Update **NPM_TOKEN** with the new value
+
+                      ### After Resolution
+                      - Close this issue
+                      - Optionally re-run the [NPM Token Health Check](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/workflows/npm-token-health.yml) workflow to verify
+
+                      ---
+                      *This issue was automatically created by the NPM Token Health Check workflow.*
+                      `;
+
+                      await github.rest.issues.create({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        title: title,
+                        body: body,
+                        labels: ['ci/cd', 'npm-token', 'automated']
+                      });
+
+                      console.log('Created new issue for NPM token problem');
+
+            - name: 📊 Summary
+              if: always()
+              run: |
+                  echo "## 🔍 NPM Token Health Check" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+
+                  STATUS="${{ steps.token-check.outputs.status }}"
+                  USER="${{ steps.token-check.outputs.user }}"
+                  MESSAGE="${{ steps.token-check.outputs.message }}"
+
+                  case "$STATUS" in
+                    valid)
+                      echo "✅ **Token Status:** Valid" >> $GITHUB_STEP_SUMMARY
+                      echo "" >> $GITHUB_STEP_SUMMARY
+                      echo "Authenticated as: \`$USER\`" >> $GITHUB_STEP_SUMMARY
+                      ;;
+                    invalid)
+                      echo "❌ **Token Status:** Invalid/Expired" >> $GITHUB_STEP_SUMMARY
+                      echo "" >> $GITHUB_STEP_SUMMARY
+                      echo "$MESSAGE" >> $GITHUB_STEP_SUMMARY
+                      echo "" >> $GITHUB_STEP_SUMMARY
+                      echo "### Action Required" >> $GITHUB_STEP_SUMMARY
+                      echo "Generate a new token at [npmjs.com](https://www.npmjs.com/settings/~/tokens)" >> $GITHUB_STEP_SUMMARY
+                      ;;
+                    missing)
+                      echo "❌ **Token Status:** Not Configured" >> $GITHUB_STEP_SUMMARY
+                      echo "" >> $GITHUB_STEP_SUMMARY
+                      echo "$MESSAGE" >> $GITHUB_STEP_SUMMARY
+                      echo "" >> $GITHUB_STEP_SUMMARY
+                      echo "### Action Required" >> $GITHUB_STEP_SUMMARY
+                      echo "Add NPM_TOKEN to [repository secrets](https://github.com/${{ github.repository }}/settings/secrets/actions)" >> $GITHUB_STEP_SUMMARY
+                      ;;
+                    *)
+                      echo "⚠️ **Token Status:** Unknown" >> $GITHUB_STEP_SUMMARY
+                      echo "" >> $GITHUB_STEP_SUMMARY
+                      echo "$MESSAGE" >> $GITHUB_STEP_SUMMARY
+                      ;;
+                  esac
