@@ -158,6 +158,7 @@ The release logic is extracted to `.github/scripts/release-packages.sh` to avoid
 - Uses OIDC/Trusted Publishers for existing packages
 - Auto-cleans orphaned git tags
 - Validates `NPM_TOKEN` before first-release publishes
+- **Creates GitHub Releases** with changelog for successfully published packages
 
 ---
 
