@@ -40,7 +40,11 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "dist/types/**/*.ts",
-    "dist/dev/types/**/*.ts"
+    "dist/dev/types/**/*.ts",
+    "../../dist/apps/docs/types/**/*.ts",
+    "../../dist/apps/docs/dev/types/**/*.ts",
+    "/Users/ofri/repos/ofriperetz.dev/eslint/dist/apps/docs/types/**/*.ts",
+    "/Users/ofri/repos/ofriperetz.dev/eslint/dist/apps/docs/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

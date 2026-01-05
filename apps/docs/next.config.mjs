@@ -5,8 +5,6 @@ const withMDX = createMDX();
 /** @type {import('next').NextConfig} */
 const config = {
   reactStrictMode: true,
-  distDir: 'dist',
-  // Output static files for low-bandwidth hosting
   output: 'standalone',
 };
 

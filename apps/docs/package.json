@@ -23,6 +23,7 @@
     "recharts": "^3.6.0"
   },
   "devDependencies": {
+    "@nx/devkit": "^22.3.3",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/mdx": "^2.0.13",
     "@types/node": "^24.10.2",

@@ -1,0 +1,27 @@
+# Ignore everything from parent directories
+../
+../../
+
+# Node modules at root
+/node_modules
+../../node_modules
+
+# All packages (not needed for docs deployment)
+../../packages
+
+# Other apps
+../
+
+# Build caches
+.nx
+*.log
+*.tsbuildinfo
+
+# Test files
+**/*.spec.ts
+**/*.test.ts
+__tests__
+
+# Development files
+.env.local
+.env.development
