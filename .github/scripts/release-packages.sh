@@ -314,35 +314,78 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
     fi
     
     # ────────────────────────────────────────────────────────────
-    # STEP 2: Build publish command with appropriate flags
-    # ────────────────────────────────────────────────────────────
-    PUBLISH_CMD="pnpm nx release publish --projects=$PACKAGE --tag $DIST_TAG"
-    PUBLISH_ENV_PREFIX=""
-    
-    if [ "$IS_FIRST_RELEASE" = "true" ]; then
-      PUBLISH_CMD="$PUBLISH_CMD --first-release"
-      echo "📦 Command: $PUBLISH_CMD"
-      echo "⚠️ First release: Disabling provenance (OIDC can't create new packages)"
-      echo "   └─ Using NPM_TOKEN for authentication instead"
-      # CRITICAL: Disable provenance for first releases
-      # OIDC provenance requires the package to already exist on npm
-      # First releases MUST use NPM_TOKEN (classic auth)
-      # Use env prefix to ensure it propagates to pnpm subprocess
-      PUBLISH_ENV_PREFIX="NPM_CONFIG_PROVENANCE=false"
-    fi
-    
-    # ────────────────────────────────────────────────────────────
-    # STEP 3: Execute publish with comprehensive error handling
+    # STEP 2: Publish based on release type
     # ────────────────────────────────────────────────────────────
     PUBLISH_FAILED=false
-    if [ -n "$PUBLISH_ENV_PREFIX" ]; then
-      # First release: use env prefix to disable provenance
-      PUBLISH_OUTPUT=$(env $PUBLISH_ENV_PREFIX $PUBLISH_CMD 2>&1) || PUBLISH_FAILED=true
+    PUBLISH_OUTPUT=""
+    
+    if [ "$IS_FIRST_RELEASE" = "true" ]; then
+      # ════════════════════════════════════════════════════════════
+      # FIRST RELEASE: Use direct npm publish with token auth
+      # OIDC Trusted Publishers CANNOT create new packages on npm.
+      # We must use NPM_TOKEN with direct npm publish.
+      # ════════════════════════════════════════════════════════════
+      
+      echo "🆕 First release mode - using direct npm publish with NPM_TOKEN"
+      
+      # Validate NPM_TOKEN is available
+      if [ -z "${NPM_TOKEN:-}" ]; then
+        echo "❌ FAILED: $PACKAGE"
+        echo "   └─ First release requires NPM_TOKEN secret"
+        echo "   └─ Fix: Add NPM_TOKEN to GitHub repo secrets"
+        echo "   └─ Go to: npmjs.com → Access Tokens → Generate Automation Token"
+        FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+        continue
+      fi
+      
+      # Validate token is valid
+      echo "🔍 Validating NPM_TOKEN..."
+      TOKEN_CHECK=$(npm whoami --registry=https://registry.npmjs.org/ 2>&1) || true
+      if echo "$TOKEN_CHECK" | grep -qiE "(401|error|unauthorized|ENEEDAUTH)"; then
+        echo "❌ FAILED: $PACKAGE"
+        echo "   └─ NPM_TOKEN is invalid or expired"
+        echo "   └─ Fix: Generate new token at npmjs.com → Access Tokens"
+        echo "   └─ Token check returned: $TOKEN_CHECK"
+        FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+        continue
+      fi
+      echo "   ✅ Token valid - authenticated as: $TOKEN_CHECK"
+      
+      # Configure explicit token-based auth (override OIDC)
+      DIST_DIR="dist/packages/$PACKAGE"
+      if [ ! -d "$DIST_DIR" ]; then
+        echo "❌ FAILED: $PACKAGE"
+        echo "   └─ Dist directory not found: $DIST_DIR"
+        echo "   └─ Build may have failed"
+        FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+        continue
+      fi
+      
+      # Create local .npmrc in dist directory for token auth
+      echo "📝 Configuring npm for token-based authentication..."
+      echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > "$DIST_DIR/.npmrc"
+      
+      # Execute direct npm publish
+      echo "📦 Publishing $NPM_NAME@$NEW_VERSION via npm publish..."
+      PUBLISH_OUTPUT=$(cd "$DIST_DIR" && npm publish --access public --tag "$DIST_TAG" 2>&1) || PUBLISH_FAILED=true
+      
+      # Clean up .npmrc
+      rm -f "$DIST_DIR/.npmrc"
+      
     else
-      # Regular release: use default env (provenance enabled)
+      # ════════════════════════════════════════════════════════════
+      # EXISTING PACKAGE: Use OIDC via pnpm nx release publish
+      # Trusted Publishers provides passwordless, provenance-signed releases
+      # ════════════════════════════════════════════════════════════
+      
+      echo "📦 Publishing via OIDC (Trusted Publishers)..."
+      PUBLISH_CMD="pnpm nx release publish --projects=$PACKAGE --tag $DIST_TAG"
       PUBLISH_OUTPUT=$($PUBLISH_CMD 2>&1) || PUBLISH_FAILED=true
     fi
     
+    # ────────────────────────────────────────────────────────────
+    # STEP 3: Handle publish result with comprehensive error diagnosis
+    # ────────────────────────────────────────────────────────────
     if [ "$PUBLISH_FAILED" = "true" ]; then
       PUBLISH_EXIT=$?
       echo "$PUBLISH_OUTPUT"
@@ -375,37 +418,11 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
         continue
       fi
       
-      # ERROR: 404 Not Found (for updates to non-existent package)
-      if echo "$PUBLISH_OUTPUT" | grep -qiE "(404|not found)" && [ "$IS_FIRST_RELEASE" = "false" ]; then
-        echo "❌ NPM 404: Package $NPM_NAME not found - may be first release"
-        echo "   └─ Fix: Re-run workflow - it should detect --first-release"
-        FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
-        continue
-      fi
-      
-      # ERROR: 404 on first release - NPM_TOKEN may be missing or invalid
-      if echo "$PUBLISH_OUTPUT" | grep -qiE "(404|not found)" && [ "$IS_FIRST_RELEASE" = "true" ]; then
-        echo "❌ NPM 404 on First Release: Cannot create package $NPM_NAME"
-        echo ""
-        echo "   OIDC Trusted Publishers cannot create new packages on npm."
-        echo "   The package must be published once before OIDC can be used."
-        echo ""
-        echo "   ═══════════════════════════════════════════════════════════"
-        echo "   SOLUTION OPTIONS:"
-        echo "   ═══════════════════════════════════════════════════════════"
-        echo ""
-        echo "   OPTION 1: Update NPM_TOKEN secret (recommended for CI)"
-        echo "   - Go to npmjs.com → Access Tokens → Generate New Token"
-        echo "   - Choose 'Automation' type with publish permissions"
-        echo "   - Update the NPM_TOKEN secret in GitHub repo settings"
-        echo "   - Re-run this workflow"
-        echo ""
-        echo "   OPTION 2: Local first publish (one-time manual)"
-        echo "   - Run locally: npm login"
-        echo "   - Run: ./scripts/first-release.sh $PACKAGE"
-        echo "   - Then configure Trusted Publishers at npmjs.com"
-        echo ""
-        echo "   ═══════════════════════════════════════════════════════════"
+      # ERROR: 404 Not Found
+      if echo "$PUBLISH_OUTPUT" | grep -qiE "(404|not found)"; then
+        echo "❌ NPM 404: Package $NPM_NAME not found or registry error"
+        echo "   └─ For first releases: Ensure NPM_TOKEN is valid"
+        echo "   └─ For existing packages: Check registry status"
         FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
         continue
       fi
@@ -430,7 +447,11 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
     
     # First-release post-publish guidance
     if [ "$IS_FIRST_RELEASE" = "true" ]; then
-      echo "🎉 First release success! Configure Trusted Publishers: npmjs.com → $NPM_NAME → Settings → Publishing access → Add GitHub Actions (repo: ofri-peretz/eslint, workflow: release.yml)"
+      echo ""
+      echo "🎉 First release success!"
+      echo "   └─ Next step: Configure Trusted Publishers for future releases"
+      echo "   └─ Go to: npmjs.com → $NPM_NAME → Settings → Publishing access"
+      echo "   └─ Add: GitHub Actions (repo: ofri-peretz/eslint, workflow: release.yml)"
     fi
     
     RELEASED_PACKAGES="$RELEASED_PACKAGES $PACKAGE@$NEW_VERSION"

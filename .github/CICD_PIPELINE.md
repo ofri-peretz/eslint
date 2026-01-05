@@ -1,7 +1,7 @@
 # CI/CD Pipeline Architecture
 
 **Status**: ✅ Production Ready  
-**Last Verified**: 2025-12-30
+**Last Verified**: 2026-01-05
 
 ---
 
@@ -78,7 +78,7 @@ Examples:
 | Document                                               | Description                                                |
 | ------------------------------------------------------ | ---------------------------------------------------------- |
 | **This file**                                          | Overview, workflows, configuration                         |
-| [**Failure Scenarios**](./docs/FAILURE_SCENARIOS.md)   | All 17 failure scenarios (R01-R16 + R02b), recovery matrix |
+| [**Failure Scenarios**](./docs/FAILURE_SCENARIOS.md)   | All 18 failure scenarios (R01-R17 + R02b), recovery matrix |
 | [**Nx Release Guide**](./docs/NX_RELEASE_GUIDE.md)     | Conventional commits, versioning, changelogs               |
 | [**NPM Authentication**](./docs/NPM_AUTHENTICATION.md) | Trusted Publishers, tokens, error diagnostics              |
 
@@ -142,6 +142,22 @@ flowchart TB
 | `lint-pr.yml` | PR opened/sync  | ESLint with Reviewdog                      | ✅ Yes       |
 | `ci-pr.yml`   | PR opened/sync  | Test + Build + Typecheck + Release dry-run | ✅ Yes       |
 | `release.yml` | Manual dispatch | Publish to NPM                             | N/A (manual) |
+
+### External Release Script
+
+The release logic is extracted to `.github/scripts/release-packages.sh` to avoid GitHub Actions' 21KB expression limit (see [R17](./docs/FAILURE_SCENARIOS.md#r17-workflow-expression-limit)).
+
+| File                                  | Purpose                                                                           |
+| ------------------------------------- | --------------------------------------------------------------------------------- |
+| `.github/scripts/release-packages.sh` | Sequential release loop with tag reconciliation, version bumping, and npm publish |
+
+**Key Features:**
+
+- Processes packages in Nx dependency order
+- Handles first releases with direct `npm publish` + NPM_TOKEN
+- Uses OIDC/Trusted Publishers for existing packages
+- Auto-cleans orphaned git tags
+- Validates `NPM_TOKEN` before first-release publishes
 
 ---
 

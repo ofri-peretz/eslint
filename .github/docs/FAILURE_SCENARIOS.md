@@ -415,6 +415,34 @@ See [NPM Authentication Guide](./NPM_AUTHENTICATION.md) for fix instructions.
 | **Resolution** | Auto-detect and use `--first-release` flag |
 | **Next Step**  | Configure Trusted Publishers after success |
 
+**Outcome:** ✅ Auto-handled (requires valid NPM_TOKEN)
+
+**Why First Releases Are Different:**
+OIDC Trusted Publishers **cannot** create new packages on npm. The package must exist before OIDC can be used.
+
+**How the Pipeline Handles It:**
+
+```bash
+# The pipeline automatically:
+1. Detects first release (npm view returns 404)
+2. Validates NPM_TOKEN is available and valid
+3. Uses direct `npm publish` with token auth (not OIDC)
+4. Provides guidance to configure Trusted Publishers after success
+```
+
+**Requirements for Success:**
+
+- `NPM_TOKEN` secret must be set in GitHub repo settings
+- Token must be an "Automation" type token with publish permissions
+- Token must be valid (not expired)
+
+**Post-Success Configuration:**
+
+After first release succeeds, configure Trusted Publishers for future releases:
+
+1. Go to [npmjs.com](https://npmjs.com) → Package → Settings → Publishing access
+2. Add GitHub Actions: `ofri-peretz/eslint`, workflow: `release.yml`
+
 See [NPM Authentication Guide](./NPM_AUTHENTICATION.md#first-release-flow) for setup.
 
 ---

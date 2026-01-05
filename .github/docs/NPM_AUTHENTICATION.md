@@ -108,29 +108,71 @@ flowchart TD
 
 ## First Release Flow
 
-The workflow automatically detects first releases:
+The workflow automatically detects and handles first releases using **direct npm publish**:
 
 ```mermaid
 flowchart LR
     A[New Package] --> B{Exists on npm?}
-    B -->|No / 404| C[Use NPM_TOKEN + --first-release]
-    B -->|Yes| D[Use Trusted Publishers / OIDC]
-    C --> E[✅ Published]
-    D --> E
-    E --> F[Configure Trusted Publishers]
-    F --> G[Future releases: No token needed!]
+    B -->|No / 404| C[Validate NPM_TOKEN]
+    C -->|Valid| D[Direct npm publish]
+    C -->|Invalid| E[❌ Fail with guidance]
+    B -->|Yes| F[OIDC / Trusted Publishers]
+    D --> G[✅ Published]
+    F --> G
+    G --> H[Configure Trusted Publishers]
+    H --> I[Future: No token needed!]
 ```
 
-### Detection Logic
+### Why First Releases Are Different
+
+**OIDC Trusted Publishers cannot create new packages on npm.** The package must already exist before OIDC can be used. Therefore, first releases require a valid `NPM_TOKEN`.
+
+### How the Pipeline Handles It
 
 ```bash
-# Check if package exists
-PACKAGE_EXISTS=$(npm view "$NPM_NAME" name 2>&1) || true
+# 1. Detect first release
+npm view "$NPM_NAME" name  # Returns 404 for new packages
 
-if echo "$PACKAGE_EXISTS" | grep -qiE "(404|not found)"; then
-  IS_FIRST_RELEASE=true
-  pnpm nx release publish --projects=$PACKAGE --first-release
-fi
+# 2. Validate NPM_TOKEN is available and valid
+npm whoami --registry=https://registry.npmjs.org/
+# ✅ Token valid - authenticated as: your-npm-username
+
+# 3. Configure token auth in dist directory
+echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > dist/packages/$PACKAGE/.npmrc
+
+# 4. Publish directly with npm (not pnpm/nx)
+cd dist/packages/$PACKAGE
+npm publish --access public --tag latest
+
+# 5. Clean up .npmrc
+rm -f .npmrc
+```
+
+### Key Behaviors
+
+| Aspect               | First Release          | Existing Package                |
+| -------------------- | ---------------------- | ------------------------------- |
+| **Detection**        | `npm view` returns 404 | `npm view` returns package info |
+| **Auth Method**      | NPM_TOKEN (Granular)   | OIDC (Trusted Publishers)       |
+| **Publish Command**  | Direct `npm publish`   | `pnpm nx release publish`       |
+| **Provenance**       | Not available          | ✅ Enabled                      |
+| **Token Validation** | ✅ Pre-flight check    | Not needed                      |
+
+### Pre-Flight Token Validation
+
+Before attempting first publish, the pipeline validates the token:
+
+```bash
+🔍 Validating NPM_TOKEN...
+   ✅ Token valid - authenticated as: ofri-peretz
+```
+
+If the token is invalid:
+
+```bash
+❌ FAILED: eslint-plugin-mongodb-security
+   └─ NPM_TOKEN is invalid or expired
+   └─ Fix: Generate new token at npmjs.com → Access Tokens
 ```
 
 ### Post-First-Release Guidance
@@ -138,22 +180,10 @@ fi
 After a successful first release, you'll see:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│ 🎉 FIRST RELEASE SUCCESSFUL!                                    │
-├─────────────────────────────────────────────────────────────────┤
-│ 📦 Package: eslint-plugin-xyz@1.0.0                             │
-│                                                                 │
-│ 📋 NEXT STEP - Configure Trusted Publishers:                   │
-│    1. Go to: npmjs.com → 'eslint-plugin-xyz' → Settings        │
-│    2. Click: 'Publishing access' → 'Add trusted publisher'     │
-│    3. Select: GitHub Actions                                   │
-│    4. Enter:                                                   │
-│       • Repository: ofri-peretz/eslint                         │
-│       • Workflow: .github/workflows/release.yml                │
-│       • Environment: production                                │
-│                                                                 │
-│ 💡 After setup, future releases won't need NPM_TOKEN!          │
-└─────────────────────────────────────────────────────────────────┘
+🎉 First release success!
+   └─ Next step: Configure Trusted Publishers for future releases
+   └─ Go to: npmjs.com → eslint-plugin-xyz → Settings → Publishing access
+   └─ Add: GitHub Actions (repo: ofri-peretz/eslint, workflow: release.yml)
 ```
 
 ---
