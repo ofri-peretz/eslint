@@ -457,16 +457,20 @@ jobs:
             HAS_TOKEN=true
             echo "✅ NPM_TOKEN is configured (will be used for any first-release packages)"
             
-            # Try to verify token validity
-            AUTH_USER=$(npm whoami --registry=https://registry.npmjs.org/ 2>&1) || {
+          # Try to verify token validity (filter out npm warnings)
+            AUTH_OUTPUT=$(npm whoami --registry=https://registry.npmjs.org/ 2>&1) || true
+            # Extract just the username (last line that's a valid username, not a warning)
+            AUTH_USER=$(echo "$AUTH_OUTPUT" | grep -v "^npm " | grep -v "^$" | tail -1)
+            
+            if [ -n "$AUTH_USER" ] && ! echo "$AUTH_USER" | grep -qiE "(error|unauthorized|401)"; then
+              echo "✅ NPM_TOKEN verified - authenticated as: $AUTH_USER"
+              # Sanitize output for GitHub Actions (only alphanumeric and hyphens)
+              SAFE_USER=$(echo "$AUTH_USER" | tr -cd '[:alnum:]-_')
+              echo "npm-user=$SAFE_USER" >> $GITHUB_OUTPUT
+            else
               echo "⚠️ NPM_TOKEN may be invalid (npm whoami failed)"
               echo "   └─ This is OK if all packages use Trusted Publishers"
               echo "   └─ First-release packages will fail without a valid token"
-            }
-            
-            if [ -n "$AUTH_USER" ] && ! echo "$AUTH_USER" | grep -qi "error"; then
-              echo "✅ NPM_TOKEN verified - authenticated as: $AUTH_USER"
-              echo "npm-user=$AUTH_USER" >> $GITHUB_OUTPUT
             fi
           else
             echo "ℹ️ No NPM_TOKEN configured"
