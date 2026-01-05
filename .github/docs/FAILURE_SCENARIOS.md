@@ -83,24 +83,25 @@ Every possible failure scenario is named, documented, and mapped to the code tha
 
 ### 📋 Release Scenario Master List
 
-| ID  | Scenario                                                | Auto-Recovery?       | Deadlock Risk |
-| --- | ------------------------------------------------------- | -------------------- | ------------- |
-| R01 | [Clean State](#r01-clean-state)                         | N/A                  | None          |
-| R02 | [Already Released](#r02-already-released)               | ✅ Auto-skip         | None          |
-| R03 | [Orphaned Tag](#r03-orphaned-tag)                       | ✅ Auto-cleanup      | **Mitigated** |
-| R04 | [NPM Ahead](#r04-npm-ahead)                             | ✅ Auto-bump         | None          |
-| R05 | [Publish Conflict (403)](#r05-publish-conflict-403)     | ✅ Treat as skip     | None          |
-| R06 | [No Conventional Commits](#r06-no-conventional-commits) | ✅ Fallback to patch | None          |
-| R07 | [Git Push Conflict](#r07-git-push-conflict)             | ⚠️ Requires rebase   | Low           |
-| R08 | [Concurrent Release](#r08-concurrent-release)           | ✅ Queued            | None          |
-| R09 | [Dependency Failed](#r09-dependency-failed)             | ✅ Skip dependents   | None          |
-| R10 | [Test Failure](#r10-test-failure)                       | ⚠️ Manual retry      | Low           |
-| R11 | [Build Failure](#r11-build-failure)                     | ⚠️ Manual retry      | Low           |
-| R12 | [NPM Auth Failure](#r12-npm-auth-failure)               | ❌ Requires fix      | **High**      |
-| R13 | [Network Failure](#r13-network-failure)                 | ⚠️ May need R03      | **Mitigated** |
-| R14 | [Workflow Timeout](#r14-workflow-timeout)               | ⚠️ May need R03      | **Mitigated** |
-| R15 | [Manual Cancellation](#r15-manual-cancellation)         | ⚠️ May need R03      | **Mitigated** |
-| R16 | [First Release](#r16-first-release)                     | ✅ Auto-detect       | None          |
+| ID  | Scenario                                                    | Auto-Recovery?       | Deadlock Risk |
+| --- | ----------------------------------------------------------- | -------------------- | ------------- |
+| R01 | [Clean State](#r01-clean-state)                             | N/A                  | None          |
+| R02 | [Already Released](#r02-already-released)                   | ✅ Auto-skip         | None          |
+| R03 | [Orphaned Tag](#r03-orphaned-tag)                           | ✅ Auto-cleanup      | **Mitigated** |
+| R04 | [NPM Ahead](#r04-npm-ahead)                                 | ✅ Auto-bump         | None          |
+| R05 | [Publish Conflict (403)](#r05-publish-conflict-403)         | ✅ Treat as skip     | None          |
+| R06 | [No Conventional Commits](#r06-no-conventional-commits)     | ✅ Fallback to patch | None          |
+| R07 | [Git Push Conflict](#r07-git-push-conflict)                 | ⚠️ Requires rebase   | Low           |
+| R08 | [Concurrent Release](#r08-concurrent-release)               | ✅ Queued            | None          |
+| R09 | [Dependency Failed](#r09-dependency-failed)                 | ✅ Skip dependents   | None          |
+| R10 | [Test Failure](#r10-test-failure)                           | ⚠️ Manual retry      | Low           |
+| R11 | [Build Failure](#r11-build-failure)                         | ⚠️ Manual retry      | Low           |
+| R12 | [NPM Auth Failure](#r12-npm-auth-failure)                   | ❌ Requires fix      | **High**      |
+| R13 | [Network Failure](#r13-network-failure)                     | ⚠️ May need R03      | **Mitigated** |
+| R14 | [Workflow Timeout](#r14-workflow-timeout)                   | ⚠️ May need R03      | **Mitigated** |
+| R15 | [Manual Cancellation](#r15-manual-cancellation)             | ⚠️ May need R03      | **Mitigated** |
+| R16 | [First Release](#r16-first-release)                         | ✅ Auto-detect       | None          |
+| R17 | [Workflow Expression Limit](#r17-workflow-expression-limit) | ✅ Mitigated         | None          |
 
 ---
 
@@ -418,6 +419,49 @@ See [NPM Authentication Guide](./NPM_AUTHENTICATION.md#first-release-flow) for s
 
 ---
 
+### R17: Workflow Expression Limit
+
+**Category:** Infrastructure  
+**When:** GitHub Actions workflow `run:` block exceeds 21,000 characters
+
+| Aspect         | Value                                                                             |
+| -------------- | --------------------------------------------------------------------------------- |
+| **Detection**  | HTTP 422: "Exceeded max expression length 21000" when triggering workflow via CLI |
+| **Symptom**    | `gh workflow run` fails, GitHub UI shows parsing error                            |
+| **Resolution** | Release logic extracted to `.github/scripts/release-packages.sh`                  |
+| **Outcome**    | ✅ Mitigated (permanent fix)                                                      |
+
+```bash
+# This error appears when workflow file is too large:
+HTTP 422: Invalid Argument - failed to parse workflow:
+(Line: 500, Col: 14): Exceeded max expression length 21000
+```
+
+**Root Cause:** GitHub Actions limits inline shell scripts to ~21KB. Our release loop grew to ~25KB with comprehensive error handling and actionable diagnostics.
+
+**Solution:** The release logic was extracted to an external bash script:
+
+```yaml
+# Before (inline - exceeded limit)
+- name: Release
+  run: |
+    # ~25KB of shell script
+
+# After (external script - no limit)
+- name: Release
+  run: .github/scripts/release-packages.sh
+  env:
+    PACKAGES: ${{ needs.detect-affected.outputs.packages }}
+    # ... other env vars
+```
+
+**Files:**
+
+- `.github/scripts/release-packages.sh` - Contains the full release logic
+- `.github/workflows/release.yml` - Calls the external script
+
+---
+
 ## 🔄 Recovery Matrix
 
 | If you see...                                    | Scenario | Action                                         |
@@ -436,6 +480,7 @@ See [NPM Authentication Guide](./NPM_AUTHENTICATION.md#first-release-flow) for s
 | NPM publish failed (network)                     | R13      | Re-run workflow                                |
 | Workflow timed out/cancelled                     | R14-R15  | Re-run workflow                                |
 | "First release detected"                         | R16      | Automatic, then configure Trusted Publishers   |
+| "Exceeded max expression length 21000"           | R17      | Already mitigated (external script)            |
 
 ---
 
