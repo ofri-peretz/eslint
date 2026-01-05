@@ -506,6 +506,64 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
     echo "$PUBLISH_OUTPUT"
     echo "✅ Published $NPM_NAME@$NEW_VERSION"
     
+    # ──────────────────────────────────────────────────────────────
+    # CREATE GITHUB RELEASE (only for successfully published packages)
+    # ──────────────────────────────────────────────────────────────
+    echo ""
+    echo "📝 Creating GitHub Release..."
+    
+    RELEASE_TAG="${PACKAGE}@${NEW_VERSION}"
+    
+    # Generate changelog for this release
+    CHANGELOG=""
+    LAST_RELEASE_TAG=$(git tag --list "${PACKAGE}@*" --sort=-version:refname 2>/dev/null | grep -v "^$RELEASE_TAG$" | head -1 || echo "")
+    
+    if [ -n "$LAST_RELEASE_TAG" ]; then
+      # Get commits since last release for this package
+      COMMITS=$(git log --oneline "$LAST_RELEASE_TAG..HEAD" -- "packages/$PACKAGE/" 2>/dev/null | head -20 || echo "")
+      if [ -n "$COMMITS" ]; then
+        CHANGELOG="## What's Changed
+
+$COMMITS
+"
+      fi
+    else
+      # First release - no previous tag
+      CHANGELOG="## 🎉 Initial Release
+
+This is the first release of \`$NPM_NAME\`.
+"
+    fi
+    
+    # Build release body
+    RELEASE_BODY="# $NPM_NAME v$NEW_VERSION
+
+📦 **NPM:** [\`npm install $NPM_NAME@$NEW_VERSION\`](https://www.npmjs.com/package/$NPM_NAME/v/$NEW_VERSION)
+
+$CHANGELOG
+---
+
+*Released via [GitHub Actions](https://github.com/ofri-peretz/eslint/actions/workflows/release.yml)*"
+    
+    # Create GitHub Release using gh CLI
+    if command -v gh &> /dev/null && [ -n "${GITHUB_TOKEN:-}" ]; then
+      # Check if release already exists
+      if gh release view "$RELEASE_TAG" &>/dev/null; then
+        echo "   ⚠️ GitHub Release $RELEASE_TAG already exists, skipping"
+      else
+        if gh release create "$RELEASE_TAG" \
+          --title "$NPM_NAME@$NEW_VERSION" \
+          --notes "$RELEASE_BODY" \
+          --target main; then
+          echo "   ✅ GitHub Release created: $RELEASE_TAG"
+        else
+          echo "   ⚠️ Failed to create GitHub Release (non-blocking)"
+        fi
+      fi
+    else
+      echo "   ⚠️ GitHub CLI not available or GITHUB_TOKEN not set, skipping GitHub Release"
+    fi
+    
     # First-release post-publish guidance
     if [ "$IS_FIRST_RELEASE" = "true" ]; then
       echo ""

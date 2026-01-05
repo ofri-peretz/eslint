@@ -107,6 +107,7 @@ Every possible failure scenario is named, documented, and mapped to the code tha
 | R20 | [Token Expiration](#r20-token-expiration)                   | ✅ Weekly monitoring | Low           |
 | R21 | [OIDC Fallback](#r21-oidc-fallback)                         | ✅ Auto-fallback     | None          |
 | R22 | [Rate Limiting](#r22-rate-limiting)                         | ✅ Actionable error  | Low           |
+| R23 | [GitHub Release](#r23-github-release)                       | ✅ Auto-create       | None          |
 
 ---
 
@@ -617,6 +618,42 @@ if echo "$PUBLISH_OUTPUT" | grep -qiE "(429|too many requests|rate limit)"; then
   continue
 fi
 ```
+
+---
+
+### R23: GitHub Release
+
+**Category:** Post-Publish  
+**When:** Package successfully published to npm
+
+| Aspect         | Value                                       |
+| -------------- | ------------------------------------------- |
+| **Trigger**    | Successful npm publish (true positive only) |
+| **Content**    | Package name, version, changelog, npm link  |
+| **Resolution** | Auto-create, skip if already exists         |
+| **Outcome**    | ✅ GitHub Release created                   |
+
+```bash
+# Only runs after successful publish
+RELEASE_TAG="${PACKAGE}@${NEW_VERSION}"
+
+# Get commits since last release
+COMMITS=$(git log --oneline "$LAST_RELEASE_TAG..HEAD" -- "packages/$PACKAGE/")
+
+# Create release via gh CLI
+gh release create "$RELEASE_TAG" \
+  --title "$NPM_NAME@$NEW_VERSION" \
+  --notes "$RELEASE_BODY" \
+  --target main
+```
+
+**Features:**
+
+- Only creates releases for packages that were **actually published** (not skipped/failed)
+- Includes changelog with commits since last release
+- Links to npm package page
+- Skips if release already exists (idempotent)
+- Non-blocking: Release failure doesn't fail the publish
 
 ---
 
