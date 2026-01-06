@@ -1,7 +1,7 @@
 # ESLint Docs App - Deployment Status
 
-> **Last Updated:** January 5, 2026 @ 01:31 CST
-> **Session Status:** Paused - Continue later this week
+> **Last Updated:** January 6, 2026 @ 00:00 CST
+> **Session Status:** Rate-limited - Use Vercel Dashboard or wait 24 hours
 
 ---
 
@@ -12,157 +12,114 @@
 - [x] Fumadocs site with Next.js 16 + Turbopack
 - [x] 11 plugin documentation pages with badges
 - [x] 272 individual rule documentation pages synced
-- [x] Interactive BenchmarkCharts component with:
-  - Animated stat counters
-  - Radar chart with functional plugin toggles (5 plugins)
-  - Bar chart for rule count comparison
-  - Performance comparison bars
-  - Feature matrix table
-- [x] ComparisonSection with scroll animations
-- [x] Examples page with LLM-optimized message demos
-- [x] Mobile responsive design (no overflow)
+- [x] Interactive BenchmarkCharts component with functional plugin toggles
+- [x] Mobile responsive design
 - [x] AI compliance files (llms.txt, ai.txt, security.txt)
-- [x] ESLint branding (logo, favicon, Space Grotesk font)
-
-### Blog (ofriperetz.dev)
-
-- [x] Committed and pushed AI compliance files
-- [x] Auto-deploying via Vercel
+- [x] Nx project configuration with build/dev/deploy targets
+- [x] Local build working: `nx build docs`
+- [x] Standalone output configured with `outputFileTracingRoot`
 
 ---
 
-## 🔄 In Progress - Blocking Issue
+## 🚫 Current Blocker: Vercel Rate Limit
 
-### Nx Build → dist/ Output
+**Error:** `Too many requests - try again in 24 hours (more than 5000, code: "api-upload-free")`
 
-**Current Problem:** The build succeeds with `pnpm build` but we need proper Nx integration with output to `dist/apps/docs/`.
+This is from multiple upload attempts during debugging. Two solutions:
 
-**Attempted Solutions:**
+### Option A: Wait 24 Hours
 
-1. ❌ `@nx/devkit` workspaceRoot in next.config.mjs → Package not found at runtime
-2. ❌ Node.js `path.resolve(__dirname, '../..')` → Build succeeds but output doesn't go to dist/
-3. ❌ `@nx/next:build` executor → Causes Next.js 16 prerender error:
-   ```
-   Error [InvariantError]: Invariant: Expected workUnitAsyncStorage to have a store.
-   This is a bug in Next.js.
-   ```
+After the rate limit resets, run:
 
-**Current Configuration:**
+```bash
+nx deploy docs
+```
+
+### Option B: Use Vercel Dashboard (Recommended)
+
+This bypasses CLI rate limits entirely:
+
+1. Go to: https://vercel.com/new
+2. Import `ofri-peretz/eslint` from GitHub
+3. Configure:
+   - **Root Directory:** `apps/docs`
+   - **Framework:** Next.js
+   - **Build Command:** `pnpm build`
+   - **Output Directory:** `.next`
+   - **Install Command:** `pnpm install`
+4. Deploy
+
+This sets up **automatic deployments** on every push to main!
+
+---
+
+## 📁 Project Configuration
+
+### apps/docs/project.json
 
 ```json
-// apps/docs/project.json
 {
   "targets": {
     "build": {
-      "executor": "nx:run-commands",
-      "outputs": ["{workspaceRoot}/dist/apps/docs"],
-      "options": {
-        "commands": [
-          "next build",
-          "mkdir -p {workspaceRoot}/dist/apps/docs && cp -r .next/* {workspaceRoot}/dist/apps/docs/"
-        ],
-        "cwd": "{projectRoot}",
-        "parallel": false
-      }
-    }
+      "command": "next build",
+      "outputs": ["{projectRoot}/.next"]
+    },
+    "vercel-build": {
+      "command": "npx vercel build --prod",
+      "dependsOn": ["build"]
+    },
+    "deploy": {
+      "command": "npx vercel deploy --prebuilt --prod --yes",
+      "dependsOn": ["vercel-build"]
+    },
+    "dev": { "command": "next dev" },
+    "start": { "command": "node .next/standalone/server.js" }
   }
 }
 ```
 
+### apps/docs/next.config.mjs
+
 ```javascript
-// apps/docs/next.config.mjs
-import { createMDX } from 'fumadocs-mdx/next';
-
-const withMDX = createMDX();
-
 const config = {
   reactStrictMode: true,
   output: 'standalone',
+  outputFileTracingRoot: monorepoRoot, // Required for monorepo
 };
-
-export default withMDX(config);
 ```
 
 ---
 
-## 🛠 Next Steps to Resolve
+## 🎯 Nx Commands
 
-### Option A: Fix Nx Integration
-
-1. Test the current `nx:run-commands` config with copy command
-2. Verify `{workspaceRoot}` interpolation works in the commands array
-3. If not, use absolute paths or shell script
-
-### Option B: Simplified Approach
-
-1. Keep build output in `.next/` (default location)
-2. Update `project.json` outputs to `["{projectRoot}/.next"]`
-3. Deploy directly from `.next/standalone/`
-
-### Option C: @nx/next Executor Fix
-
-1. Investigate the Next.js 16 + @nx/next compatibility issue
-2. May need to upgrade @nx/next or await fix
+| Command          | Description              |
+| ---------------- | ------------------------ |
+| `nx build docs`  | Build Next.js app        |
+| `nx dev docs`    | Start dev server         |
+| `nx deploy docs` | Build + deploy to Vercel |
+| `nx start docs`  | Start standalone server  |
 
 ---
 
-## 📁 Key Files
+## 📊 Build Output
 
-| File                                           | Purpose                  |
-| ---------------------------------------------- | ------------------------ |
-| `apps/docs/project.json`                       | Nx project configuration |
-| `apps/docs/next.config.mjs`                    | Next.js configuration    |
-| `apps/docs/TODO.md`                            | Feature roadmap          |
-| `apps/docs/src/components/BenchmarkCharts.tsx` | Interactive charts       |
-| `apps/docs/src/app/global.css`                 | Theme styling            |
-
----
-
-## 🚀 Deployment Checklist (Once Build Works)
-
-```bash
-# 1. Build with Nx
-nx build docs
-
-# 2. Verify output
-ls -la dist/apps/docs/standalone/
-
-# 3. Deploy to Vercel from dist
-cd dist/apps/docs && npx vercel --prod --scope ofri-peretz
-
-# 4. Commit and push
-git add -A && git commit -m "feat(docs): fix nx build output" && git push
+```
+✓ 583 static pages generated
+├── /docs (272 rule pages)
+├── /docs/benchmarks
+├── /docs/examples
+├── /llms.txt, /ai.txt, /robots.txt
+└── /sitemap.xml
 ```
 
----
-
-## 📝 Dependencies Added
-
-- `@nx/next@^22.3.3` - Nx Next.js executor (may have compatibility issues with Next.js 16)
-- `@nx/devkit@^22.3.3` - Nx devkit for workspace utilities
+Build size: ~341MB standalone output
 
 ---
 
-## ⚠️ Known Issues
+## ✅ After Deployment
 
-1. **Nx Lockfile Parsing Bug** - Intermittent "Cannot read properties of undefined (reading 'forEach')" error. Fix: Regenerate lockfile with `rm pnpm-lock.yaml && pnpm install`.
+Once deployed, update this file with:
 
-2. **Flaky Tests** - `eslint-plugin-import-next:test` and `eslint-plugin-mongodb-security:test` marked as flaky by Nx.
-
-3. **Next.js 16 Prerender Bug** - `@nx/next:build` executor causes `InvariantError: Expected workUnitAsyncStorage` during static page generation.
-
-4. **Tailwind v4 Lint Warnings** - `bg-gradient-to-br` can be `bg-linear-to-br` (cosmetic, not blocking).
-
----
-
-## 💡 Alternative: Vercel GitHub Integration
-
-If CLI deployment continues to be problematic, connect via Vercel Dashboard:
-
-1. Import `ofri-peretz/eslint` from GitHub
-2. Set root directory: `apps/docs`
-3. Framework: Next.js
-4. Build command: `pnpm build`
-5. Output: `.next`
-
-This bypasses the Nx → dist complexity entirely.
+- Production URL
+- Custom domain (if configured)
+- Remove rate limit section

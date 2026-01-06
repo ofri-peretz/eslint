@@ -31,6 +31,19 @@
                 "cwd": "{projectRoot}"
             }
         },
+        "vercel-build": {
+            "executor": "nx:run-commands",
+            "dependsOn": [
+                "build"
+            ],
+            "outputs": [
+                "{projectRoot}/.vercel/output"
+            ],
+            "options": {
+                "command": "npx vercel build --prod",
+                "cwd": "{projectRoot}"
+            }
+        },
         "dev": {
             "executor": "nx:run-commands",
             "options": {
@@ -58,10 +71,10 @@
         "deploy": {
             "executor": "nx:run-commands",
             "dependsOn": [
-                "build"
+                "vercel-build"
             ],
             "options": {
-                "command": "npx vercel --prod --yes --scope ofri-peretz",
+                "command": "npx vercel deploy --prebuilt --prod --yes",
                 "cwd": "{projectRoot}"
             }
         }
