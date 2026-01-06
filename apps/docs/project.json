@@ -24,15 +24,11 @@
         "build": {
             "executor": "nx:run-commands",
             "outputs": [
-                "{workspaceRoot}/dist/apps/docs"
+                "{projectRoot}/.next"
             ],
             "options": {
-                "commands": [
-                    "next build",
-                    "mkdir -p {workspaceRoot}/dist/apps/docs && cp -r .next/* {workspaceRoot}/dist/apps/docs/"
-                ],
-                "cwd": "{projectRoot}",
-                "parallel": false
+                "command": "next build",
+                "cwd": "{projectRoot}"
             }
         },
         "dev": {
@@ -55,8 +51,18 @@
                 "build"
             ],
             "options": {
-                "command": "node {workspaceRoot}/dist/apps/docs/standalone/server.js",
-                "cwd": "{workspaceRoot}"
+                "command": "node .next/standalone/server.js",
+                "cwd": "{projectRoot}"
+            }
+        },
+        "deploy": {
+            "executor": "nx:run-commands",
+            "dependsOn": [
+                "build"
+            ],
+            "options": {
+                "command": "npx vercel --prod --yes --scope ofri-peretz",
+                "cwd": "{projectRoot}"
             }
         }
     }
