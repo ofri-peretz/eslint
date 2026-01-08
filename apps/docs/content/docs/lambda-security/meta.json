@@ -1,7 +1,4 @@
 {
-  "title": "lambda-security",
-  "pages": [
-    "index",
-    "rules"
-  ]
+  "title": "AWS Lambda",
+  "pages": ["index", "rules"]
 }

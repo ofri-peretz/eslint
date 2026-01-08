@@ -3,7 +3,8 @@ title: no-exposed-sensitive-data
 description: "Detects exposure of sensitive data (SSN, credit card numbers, passwords, API keys) in logs or output. This rule is part of eslint-plugin-secure-coding and provi"
 ---
 
-# no-exposed-sensitive-data
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** sensitive data, CWE-200, security, ESLint rule, PII, SSN, credit card, password, API key, data exposure, logging, LLM-optimized, code security
 
@@ -134,7 +135,12 @@ The rule provides guidance:
 - **"Remove Sensitive Data"**: Advises removing the variable from the log.
 - **"Mask Data"**: Suggests replacing the value with `***` or a hash.
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

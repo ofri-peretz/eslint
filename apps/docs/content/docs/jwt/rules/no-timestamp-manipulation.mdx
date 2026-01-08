@@ -3,7 +3,8 @@ title: no-timestamp-manipulation
 description: Prevent disabling automatic timestamp generation which enables replay attacks
 ---
 
-# no-timestamp-manipulation
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Prevent disabling automatic timestamp generation which enables replay attacks
 
@@ -43,7 +44,12 @@ From LightSEC 2025 research:
 3. Tokens are stored for later use
 4. Years later, the tokens become valid and can impersonate the device
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

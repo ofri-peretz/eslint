@@ -3,7 +3,8 @@ title: no-missing-security-headers
 description: "ESLint Rule: no-missing-security-headers. This rule is part of eslint-plugin-secure-coding."
 ---
 
-# no-missing-security-headers
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** no missing security headers, security, ESLint rule, JavaScript, TypeScript, CWE-693
 
@@ -106,7 +107,12 @@ export default [
 
 - [`rule-name`](./rule-name.md) - Description
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

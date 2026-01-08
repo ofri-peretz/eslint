@@ -3,7 +3,8 @@ title: no-unlimited-resource-allocation
 description: Detects unlimited resource allocation that could cause DoS. This rule is part of eslint-plugin-secure-coding.
 ---
 
-# no-unlimited-resource-allocation
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** resource allocation, CWE-770, DoS, memory exhaustion, security, rate limiting
 
@@ -123,7 +124,12 @@ const results = await Promise.all(urls.map((url) => limit(() => fetch(url))));
    Fix: Add size limits and validate user input before allocation | https://cwe.mitre.org/...
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

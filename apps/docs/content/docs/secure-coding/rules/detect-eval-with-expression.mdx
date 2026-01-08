@@ -3,7 +3,8 @@ title: detect-eval-with-expression
 description: Detects eval(variable) which can allow an attacker to run arbitrary code inside your process. This rule is part of eslint-plugin-secure-coding and provides LLM-
 ---
 
-# detect-eval-with-expression
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** eval, code injection, CWE-95, security, ESLint rule, remote code execution, RCE, arbitrary code execution, Function constructor, auto-fix, LLM-optimized, code security
 
@@ -264,7 +265,12 @@ eval(mathExpr) → Safe math functions
 - [`detect-object-injection`](./detect-object-injection.md) - Prevents prototype pollution
 - [`detect-non-literal-regexp`](./detect-non-literal-regexp.md) - Prevents ReDoS attacks
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

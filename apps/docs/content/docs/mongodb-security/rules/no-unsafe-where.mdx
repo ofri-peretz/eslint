@@ -3,7 +3,8 @@ title: no-unsafe-where
 description: "Prevents use of the dangerous $where operator which executes JavaScript on the MongoDB server, enabling Remote Code Execution (RCE)."
 ---
 
-# no-unsafe-where
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** NoSQL injection, CWE-943, MongoDB, $where, RCE, CVE-2025-23061, CVE-2024-53900, Mongoose
 
@@ -68,7 +69,12 @@ User.aggregate([
 ]);
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 ### Dynamic Query Construction
 

@@ -1,9 +1,10 @@
 ---
-title: "`require-audit-logging`"
+title: "require-audit-logging"
 description: Suggests audit logging for AI SDK operations.
 ---
 
-# `require-audit-logging`
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Suggests audit logging for AI SDK operations.
 
@@ -88,7 +89,12 @@ Insufficient logging makes it impossible to:
 - [`require-error-handling`](./require-error-handling.md) - Handle errors
 - [`require-tool-confirmation`](./require-tool-confirmation.md) - Log destructive operations
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

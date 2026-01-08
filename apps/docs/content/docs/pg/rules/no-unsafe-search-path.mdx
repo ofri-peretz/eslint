@@ -3,7 +3,8 @@ title: no-unsafe-search-path
 description: Prevents dynamic SET search_path queries that could enable schema hijacking.
 ---
 
-# no-unsafe-search-path
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** search_path, schema hijacking, CWE-426, pg, node-postgres, security
 
@@ -63,7 +64,12 @@ await client.query('SET search_path = $1', [safeSchema]);
 - For multi-tenant apps where schema is validated from a trusted source
 - In admin tools where schema input is fully controlled
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

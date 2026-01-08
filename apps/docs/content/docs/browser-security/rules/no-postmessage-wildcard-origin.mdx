@@ -3,7 +3,8 @@ title: browser-security/no-postmessage-wildcard-origin
 description: "🔒 Disallow using wildcard (*) as targetOrigin in postMessage calls"
 ---
 
-# browser-security/no-postmessage-wildcard-origin
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > 🔒 Disallow using wildcard (\*) as targetOrigin in postMessage calls
 
@@ -104,7 +105,12 @@ However, it's generally recommended to **always specify the exact target origin*
 - [MDN: postMessage Security Concerns](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage#security_concerns)
 - [`browser-security/require-postmessage-origin-check`](./require-postmessage-origin-check.md) - Validates origin on message receipt
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

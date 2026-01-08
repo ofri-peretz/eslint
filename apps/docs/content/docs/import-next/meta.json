@@ -1,7 +1,4 @@
 {
-  "title": "import-next",
-  "pages": [
-    "index",
-    "rules"
-  ]
+  "title": "Import Next",
+  "pages": ["index", "rules"]
 }

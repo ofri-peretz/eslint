@@ -1,86 +1,164 @@
 ---
 title: no-client-side-auth-logic
-description: Security rule for mobile applications
+description: Detects authentication logic in client-side code that can be easily bypassed.
 ---
 
-# no-client-side-auth-logic
 
-> Security rule for mobile applications
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
+
+> **Keywords:** client-side auth, CWE-602, localStorage auth, security bypass, authentication, JavaScript security
+
+Detects authentication logic in client-side code that can be easily bypassed.
+
+⚠️ This rule **errors** by default in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-602](https://cwe.mitre.org/data/definitions/602.html) (Client-Side Enforcement of Server-Side Security) |
+| **OWASP**         | [A01:2021 Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)                    |
+| **Severity**      | Critical                                                                                                     |
+| **Category**      | Security                                                                                                     |
 
 ## Rule Details
 
-This rule security rule for mobile applications.
+Authentication and authorization checks in client-side JavaScript can be trivially bypassed using browser developer tools. This rule detects common patterns like:
 
-**OWASP Mobile Top 10:** Mobile  
-**CWE:** [CWE-000](https://cwe.mitre.org/data/definitions/000.html)  
-**Severity:** error
+- Role/permission checks using localStorage
+- Password comparisons in client code
+- Authentication state checks without server validation
+
+**All authentication must be enforced server-side.**
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```javascript
-// Insecure pattern
+// Role check from localStorage - EASILY BYPASSED
+if (localStorage.getItem('isAdmin')) {
+  showAdminPanel();
+}
+
+// Authentication check from localStorage
+if (localStorage.getItem('authenticated')) {
+  allowAccess();
+}
+
+// Password comparison in client code
+if (userInput.password === storedPassword) {
+  loginUser();
+}
+
+// Token validation client-side only
+if (user.token === validToken) {
+  grantAccess();
+}
 ```
 
 ### ✅ Correct
 
 ```javascript
-// Secure pattern
+// Server-side authentication
+async function checkAuth() {
+  const response = await fetch('/api/auth/verify', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    throw new Error('Unauthorized');
+  }
+  return response.json();
+}
+
+// Server validates and returns permissions
+const { isAdmin, permissions } = await checkAuth();
+if (isAdmin) {
+  showAdminPanel(); // Server already validated
+}
+
+// localStorage only for UI hints, not security
+const cachedRole = localStorage.getItem('role');
+// But always verify with server before sensitive operations
+await verifyPermission('admin:read');
 ```
 
-## When Not To Use It
+## Error Message Format
 
-This rule should be enabled for all mobile and web applications to ensure security best practices.
+When triggered, this rule produces:
+
+```
+🔒 CWE-602 | Client-Side Auth Logic | CRITICAL
+   Fix: Move authentication checks to the server | https://cwe.mitre.org/data/definitions/602.html
+```
+
+
+<WhenNotToUse />
 
 ## Known False Negatives
 
+<FalseNegativeCTA />
+
 The following patterns are **not detected** due to static analysis limitations:
 
-### Credentials from Config
+### Custom Storage Wrappers
 
-**Why**: Config values not traced.
-
-```typescript
-// ❌ NOT DETECTED - From config
-const password = config.dbPassword;
-```
-
-**Mitigation**: Use proper secrets management.
-
-### Environment Variables
-
-**Why**: Env var content not analyzed.
+**Why**: Wrappers around localStorage not traced.
 
 ```typescript
-// ❌ NOT DETECTED - Env var
-const secret = process.env.API_KEY;
+// ❌ NOT DETECTED - Custom wrapper
+const isAdmin = authStorage.get('isAdmin');
+if (isAdmin) {
+}
 ```
 
-**Mitigation**: Never hardcode or expose secrets.
+**Mitigation**: Apply rule to wrapper implementations.
 
-### Dynamic Credential Access
+### State Management Stores
 
-**Why**: Dynamic property access not traced.
+**Why**: Redux/Vuex/Zustand stores not analyzed.
 
 ```typescript
-// ❌ NOT DETECTED - Dynamic
-const cred = credentials[type];
+// ❌ NOT DETECTED - State store
+const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+if (isAuthenticated) {
+} // Client-side only check
 ```
 
-**Mitigation**: Audit all credential access patterns.
+**Mitigation**: Ensure all state store values are server-validated.
+
+### Obfuscated Checks
+
+**Why**: Indirect property access not detected.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic key
+const key = 'is' + 'Admin';
+if (localStorage.getItem(key)) {
+}
+```
+
+**Mitigation**: Avoid dynamic key construction.
+
+## When Not To Use It
+
+- When the client-side check is purely for UX (hiding UI elements)
+- In test files mocking authentication flows
+- When server-side validation is verified to exist for all protected operations
 
 ## Further Reading
 
-- [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
-- [CWE-000 Details](https://cwe.mitre.org/data/definitions/000.html)
+- [OWASP Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
+- [CWE-602: Client-Side Enforcement](https://cwe.mitre.org/data/definitions/602.html)
+- [Auth0 Security Best Practices](https://auth0.com/docs/secure/security-guidance)
 
 ## Related Rules
 
-- See other mobile security rules in this plugin
+- [detect-weak-password-validation](./detect-weak-password-validation.md)
+- [no-hardcoded-credentials](../pg/no-hardcoded-credentials.md)
 
 ---
 
-**Category:** Mobile Security  
+**Category:** Security  
 **Type:** Problem  
 **Recommended:** Yes

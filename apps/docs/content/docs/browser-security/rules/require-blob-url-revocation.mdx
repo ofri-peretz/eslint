@@ -3,7 +3,8 @@ title: require-blob-url-revocation
 description: Require revoking Blob URLs after use to prevent memory leaks.
 ---
 
-# require-blob-url-revocation
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 Require revoking Blob URLs after use to prevent memory leaks.
 
@@ -66,7 +67,12 @@ useEffect(() => {
 }
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

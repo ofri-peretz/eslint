@@ -3,7 +3,8 @@ title: no-missing-cors-check
 description: "Detects missing CORS validation (wildcard CORS, missing origin check) that can allow unauthorized cross-origin requests. This rule is part of eslint-plugin-secu"
 ---
 
-# no-missing-cors-check
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** CORS, cross-origin resource sharing, CWE-346, security, ESLint rule, origin validation, wildcard CORS, Access-Control-Allow-Origin, auto-fix, LLM-optimized, code security
 
@@ -298,7 +299,12 @@ app.use(
 );
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

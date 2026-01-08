@@ -3,7 +3,8 @@ title: no-dynamic-system-prompts
 description: Prevent runtime modification of system prompts without validation.
 ---
 
-# no-dynamic-system-prompts
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 Prevent runtime modification of system prompts without validation.
 
@@ -176,7 +177,12 @@ const systemPrompt = SYSTEM_PROMPTS_BY_ROLE[user.tier];
 - If your application requires dynamic system prompts (use validation)
 - If you don't use LLM APIs
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

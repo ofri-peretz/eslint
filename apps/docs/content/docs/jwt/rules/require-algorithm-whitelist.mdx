@@ -3,7 +3,8 @@ title: require-algorithm-whitelist
 description: Require explicit algorithm specification in JWT verify operations
 ---
 
-# require-algorithm-whitelist
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Require explicit algorithm specification in JWT verify operations
 
@@ -44,7 +45,12 @@ jwt.verify(token, secret, { algorithm: 'RS256' });
 }
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

@@ -3,7 +3,8 @@ title: detect-object-injection
 description: "Detects variable[key] as a left- or right-hand assignment operand (prototype pollution). This rule is part of eslint-plugin-secure-coding and provides LLM-optim"
 ---
 
-# detect-object-injection
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** prototype pollution, CWE-915, security, ESLint rule, object injection, bracket notation, property injection, auto-fix, LLM-optimized, code security
 
@@ -299,7 +300,12 @@ for (const prop of pollutionAttempts) {
 - [`no-unsafe-dynamic-require`](./no-unsafe-dynamic-require.md) - Prevents unsafe module loading
 - [`detect-non-literal-regexp`](./detect-non-literal-regexp.md) - Prevents ReDoS attacks
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

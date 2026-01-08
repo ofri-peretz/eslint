@@ -3,7 +3,8 @@ title: require-guards
 description: "Require @UseGuards decorator on controllers or route handlers"
 ---
 
-# require-guards
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Require @UseGuards decorator on controllers or route handlers
 
@@ -82,7 +83,12 @@ class UsersController {
 - If you have `app.useGlobalGuards()` in `main.ts`, set `assumeGlobalGuards: true`
 - For intentionally public endpoints, use `@Public()` decorator
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

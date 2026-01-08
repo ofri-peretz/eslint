@@ -3,7 +3,8 @@ title: browser-security/no-websocket-innerhtml
 description: 🔒 Disallow using innerHTML with WebSocket message data
 ---
 
-# browser-security/no-websocket-innerhtml
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > 🔒 Disallow using innerHTML with WebSocket message data
 
@@ -140,7 +141,12 @@ However, **always sanitize WebSocket data** before rendering as HTML.
 - [`browser-security/require-websocket-wss`](./require-websocket-wss.md) - Require secure wss:// connections
 - [`browser-security/no-innerhtml`](./no-innerhtml.md) - General innerHTML prevention
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

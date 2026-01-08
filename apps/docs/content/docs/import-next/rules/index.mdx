@@ -1,0 +1,34 @@
+---
+title: Rules
+description: All import-next rules for import analysis and architecture enforcement
+---
+
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
+
+# import-next Rules
+
+Browse all **56 rules** for import analysis and architecture enforcement.
+
+<Cards>
+  <Card title="no-cycle" description="Prevent circular dependencies between modules" href="./no-cycle" />
+  <Card title="no-barrel-import" description="Disallow importing from barrel files" href="./no-barrel-import" />
+  <Card title="order" description="Enforce a consistent import order" href="./order" />
+</Cards>
+
+## All Rules
+
+See the sidebar for the complete list of rules, or browse them below.
+
+<WhenNotToUse />
+
+## Known False Negatives
+
+<FalseNegativeCTA />
+
+This rule uses pattern-based detection. The following may not be caught:
+
+- **Dynamic patterns** - Runtime-generated code or values
+- **Indirect references** - Values passed through multiple variables or functions
+- **External data** - Data from APIs, databases, or user input
+

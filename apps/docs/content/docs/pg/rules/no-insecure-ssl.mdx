@@ -3,7 +3,8 @@ title: no-insecure-ssl
 description: Prevents disabling SSL certificate validation in PostgreSQL connections.
 ---
 
-# no-insecure-ssl
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** SSL, TLS, CWE-295, pg, node-postgres, security, certificate validation
 
@@ -72,7 +73,12 @@ const client = new Client({
 - In development environments with self-signed certificates (use environment variables instead)
 - Never disable in production
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

@@ -3,7 +3,8 @@ title: require-auth-mechanism
 description: Requires explicit authentication mechanism specification for MongoDB connections.
 ---
 
-# require-auth-mechanism
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** CWE-287, authentication, SCRAM-SHA-256, MongoDB, security
 
@@ -66,7 +67,12 @@ mongoose.connect(uri, {
 - Development environments with passwordless local MongoDB
 - When using MongoDB Atlas with default secure configuration
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

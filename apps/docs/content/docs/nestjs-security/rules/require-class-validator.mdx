@@ -3,7 +3,8 @@ title: require-class-validator
 description: Require class-validator decorators on DTO properties
 ---
 
-# require-class-validator
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Require class-validator decorators on DTO properties
 
@@ -71,7 +72,12 @@ class CreateUserDto {
 - For internal DTOs that don't accept external input
 - For DTOs used only in tests
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

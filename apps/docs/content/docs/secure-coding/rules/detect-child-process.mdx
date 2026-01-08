@@ -3,7 +3,8 @@ title: detect-child-process
 description: "Detects instances of child_process & non-literal exec() calls that may allow command injection. This rule is part of eslint-plugin-secure-coding and provides LL"
 ---
 
-# detect-child-process
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** command injection, CWE-78, security, ESLint rule, child_process, exec, spawn, OS command injection, shell injection, auto-fix, LLM-optimized, code security
 
@@ -70,30 +71,22 @@ flowchart TD
 The rule provides **LLM-optimized error messages** with command injection prevention guidance:
 
 ```
-🚨 Security: Command Injection Risk | exec(`git clone ${repoUrl}`) | src/deploy.ts:89
-📊 Risk Level: CRITICAL (CWE-78: OS Command Injection)
-🔍 Issue: Command injection vulnerability in exec call
-💡 Safe Alternatives: execFile, spawn
-🔧 Refactoring Steps:
-   1. Replace exec() with execFile() or spawn()
-   2. Split command and arguments into separate array elements
-   3. Use {shell: false} option to prevent shell interpretation
-   4. Validate and sanitize all user inputs
-   5. Consider using execa library for better security
-⏱️  Estimated effort: 15-25 minutes
-🔗 Security Impact: Prevents arbitrary command execution on server
+⚠️ CWE-78 OWASP:A03-Injection CVSS:9.8 | Command injection detected | CRITICAL [SOC2,PCI-DSS]
+   Fix: Use execFile/spawn with {shell: false} and array args | https://owasp.org/www-community/attacks/Command_Injection
 ```
 
 ### Message Components
 
-| Component             | Purpose                | Example                          |
-| --------------------- | ---------------------- | -------------------------------- |
-| **Risk Level**        | Security severity      | `CRITICAL`                       |
-| **CWE Reference**     | Vulnerability type     | `CWE-78: OS Command Injection`   |
-| **Issue Description** | Specific vulnerability | `Command injection in exec call` |
-| **Safe Alternatives** | Recommended methods    | `execFile, spawn`                |
-| **Refactoring Steps** | Step-by-step fixes     | Numbered implementation guide    |
-| **Time Estimate**     | Effort assessment      | `15-25 minutes`                  |
+| Component        | Purpose                     | Example                              |
+| ---------------- | --------------------------- | ------------------------------------ |
+| **CWE**          | Vulnerability identifier    | `CWE-78`                             |
+| **OWASP**        | OWASP Top 10 category       | `OWASP:A03-Injection`                |
+| **CVSS**         | Severity score              | `CVSS:9.8`                           |
+| **Description**  | Issue summary               | `Command injection detected`         |
+| **Severity**     | Risk level                  | `CRITICAL`                           |
+| **Compliance**   | Affected frameworks         | `[SOC2,PCI-DSS]`                     |
+| **Fix**          | Recommended remediation     | `Use execFile/spawn with {shell: false}` |
+| **Documentation**| Link to detailed guidance   | OWASP attack guide URL               |
 
 This format is optimized for:
 
@@ -338,7 +331,12 @@ for (const attempt of injectionAttempts) {
 - [`detect-object-injection`](./detect-object-injection.md) - Prevents prototype pollution
 - [`detect-non-literal-regexp`](./detect-non-literal-regexp.md) - Prevents ReDoS attacks
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 
@@ -387,6 +385,10 @@ execFile('cmd', [], { env: { PATH: userInput } });
 ```
 
 **Mitigation**: Validate all environment variable values.
+
+<Callout type="info">
+  **📚 Learn more about static analysis limitations**: These patterns escape detection because ESLint analyzes code without executing it. See [Static Analysis Limitations](/docs/concepts/static-analysis) to understand what all security rules can and cannot detect—and how to layer your defenses.
+</Callout>
 
 ## Further Reading
 

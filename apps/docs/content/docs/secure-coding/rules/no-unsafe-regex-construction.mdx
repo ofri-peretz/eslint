@@ -3,7 +3,8 @@ title: no-unsafe-regex-construction
 description: "ESLint Rule: no-unsafe-regex-construction with LLM-optimized suggestions and auto-fix capabilities. This rule is part of eslint-plugin-secure-coding."
 ---
 
-# no-unsafe-regex-construction
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** no unsafe regex construction, security, ESLint rule, JavaScript, TypeScript, CWE-400, CWE-185, ReDoS, injection
 
@@ -126,7 +127,12 @@ The rule provides guidance on how to fix detected patterns:
 - **"Escape User Input"**: Suggests using a library like `escape-string-regexp` to neutralize special characters.
 - **"Use Literal"**: Suggests converting `new RegExp("constant")` to `/constant/` if possible.
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

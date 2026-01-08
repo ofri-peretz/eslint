@@ -1,9 +1,10 @@
 ---
-title: "`require-max-tokens`"
+title: "require-max-tokens"
 description: Ensures all AI calls have token limits to prevent resource exhaustion.
 ---
 
-# `require-max-tokens`
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Ensures all AI calls have token limits to prevent resource exhaustion.
 
@@ -77,7 +78,12 @@ Unbounded token consumption can cause:
 - [`require-max-steps`](./require-max-steps.md) - Limit multi-step tool calling
 - [`require-abort-signal`](./require-abort-signal.md) - Enable cancellation
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

@@ -3,7 +3,8 @@ title: require-projection
 description: Requires field projection on queries to minimize data exposure.
 ---
 
-# require-projection
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** CWE-200, projection, field selection, MongoDB, information exposure
 
@@ -58,7 +59,12 @@ const user = await User.findById(id).select('-password -internalNotes');
 - When using lean() with full document transformation
 - Development/debugging scenarios
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

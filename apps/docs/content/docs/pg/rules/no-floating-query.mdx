@@ -3,7 +3,8 @@ title: no-floating-query
 description: Ensures query promises are awaited or handled.
 ---
 
-# no-floating-query
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** unhandled promise, CWE-252, pg, node-postgres, async
 
@@ -56,7 +57,12 @@ await promise;
    Fix: Add await, .then()/.catch(), or assign to a variable
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

@@ -1,5 +1,4 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
-import { Github, Package } from 'lucide-react';
 import Image from 'next/image';
 
 export function baseOptions(): BaseLayoutProps {
@@ -18,32 +17,7 @@ export function baseOptions(): BaseLayoutProps {
         </div>
       ),
     },
-    links: [
-      {
-        text: 'Docs',
-        url: '/docs',
-        active: 'nested-url',
-      },
-      {
-        text: 'Benchmarks',
-        url: '/docs/benchmarks',
-        active: 'nested-url',
-      },
-      {
-        icon: <Package className="size-4" />,
-        text: 'npm',
-        url: 'https://www.npmjs.com/~ofri-peretz',
-        external: true,
-      },
-      {
-        icon: <Github className="size-4" />,
-        text: 'GitHub',
-        url: 'https://github.com/ofri-peretz/eslint',
-        external: true,
-      },
-    ],
+    links: [],
     githubUrl: 'https://github.com/ofri-peretz/eslint',
   };
 }
-
-

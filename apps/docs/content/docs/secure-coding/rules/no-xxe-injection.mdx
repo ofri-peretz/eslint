@@ -3,7 +3,8 @@ title: no-xxe-injection
 description: Detects XML External Entity (XXE) injection vulnerabilities. This rule is part of eslint-plugin-secure-coding.
 ---
 
-# no-xxe-injection
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** XXE, XML External Entity, CWE-611, SSRF, file disclosure, security, XML parsing
 
@@ -110,7 +111,12 @@ const data = JSON.parse(userInput);
    Fix: Remove SYSTEM/PUBLIC entity declarations or use safe XML parser | https://owasp.org/...
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

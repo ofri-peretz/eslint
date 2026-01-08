@@ -3,7 +3,8 @@ title: require-input-sanitization-for-llm
 description: Enforce input sanitization before LLM API calls.
 ---
 
-# require-input-sanitization-for-llm
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 Enforce input sanitization before LLM API calls.
 
@@ -49,7 +50,12 @@ await llm.chat(validated);
 
 Introduced in v2.3.0
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

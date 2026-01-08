@@ -3,7 +3,8 @@ title: no-select-all
 description: "Discourages SELECT * in favor of explicit column lists."
 ---
 
-# no-select-all
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** SELECT \*, performance, quality, pg, node-postgres
 
@@ -55,7 +56,12 @@ await pool.query('SELECT COUNT(*) FROM users');
 - In development/debugging scripts
 - When schema is stable and all columns are needed
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

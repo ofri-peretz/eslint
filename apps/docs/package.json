@@ -11,16 +11,21 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "acorn": "^8.15.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "fumadocs-core": "16.4.3",
     "fumadocs-mdx": "14.2.4",
     "fumadocs-ui": "16.4.3",
     "lucide-react": "^0.562.0",
     "mermaid": "^11.12.2",
+    "motion": "^12.24.7",
     "next": "16.1.1",
     "next-themes": "^0.4.6",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "recharts": "^3.6.0"
+    "recharts": "^3.6.0",
+    "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
     "@nx/devkit": "^22.3.3",
@@ -33,6 +38,7 @@
     "eslint-config-next": "16.1.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
+    "tw-animate-css": "^1.4.0",
     "typescript": "^5.9.3"
   }
 }

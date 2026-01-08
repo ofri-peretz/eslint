@@ -3,7 +3,8 @@ title: no-innerhtml
 description: Detects dangerous innerHTML/outerHTML assignments that can lead to Cross-Site Scripting (XSS). This rule is part of eslint-plugin-frontend-security.
 ---
 
-# no-innerhtml
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** XSS, innerHTML, outerHTML, CWE-79, security, DOM manipulation, sanitization, DOMPurify
 
@@ -169,7 +170,12 @@ function createComment(user, text) {
 - [`no-eval`](./no-eval.md) - Detects dangerous eval usage
 - [`no-sensitive-localstorage`](./no-sensitive-localstorage.md) - Detects sensitive data in localStorage
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

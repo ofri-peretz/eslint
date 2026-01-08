@@ -3,7 +3,8 @@ title: no-unsafe-query
 description: Prevents NoSQL injection by detecting direct use of user input in MongoDB query objects.
 ---
 
-# no-unsafe-query
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** NoSQL injection, CWE-943, MongoDB, Mongoose, operator injection, query manipulation, security
 
@@ -118,7 +119,12 @@ User.find({ email: safeEmail }); // ← May flag
 
 **Workaround**: Always use `{ $eq: value }` pattern.
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

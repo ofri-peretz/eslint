@@ -3,7 +3,8 @@ title: detect-rag-injection-risks
 description: Detect RAG/document inputs reaching LLM without content scanning.
 ---
 
-# detect-rag-injection-risks
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 Detect RAG/document inputs reaching LLM without content scanning.
 
@@ -52,7 +53,12 @@ await embeddings.create(clean);
 
 Introduced in v2.3.0
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

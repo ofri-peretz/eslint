@@ -1,7 +1,4 @@
 {
-  "title": "nestjs-security",
-  "pages": [
-    "index",
-    "rules"
-  ]
+  "title": "NestJS",
+  "pages": ["index", "rules"]
 }

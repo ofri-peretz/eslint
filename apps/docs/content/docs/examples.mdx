@@ -3,121 +3,191 @@ title: Examples & Showcases
 description: Real-world examples demonstrating Interlace ESLint's LLM-optimized messages
 ---
 
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+
 # Examples & Showcases
 
-See how Interlace ESLint's error messages are optimized for AI assistants to understand and fix automatically.
+<Callout type="info">
+  **AI-First Design**: Every Interlace error message includes CWE, OWASP, and CVSS metadata so AI assistants can understand and fix issues automatically.
+</Callout>
 
-## SQL Injection Detection
+See the difference between traditional ESLint messages and Interlace's LLM-optimized approach.
 
-### Traditional ESLint Message
+## Interactive Comparisons
 
-```
-❌ Possible SQL injection detected (security/detect-sql-injection)
-```
-
-**AI assistant sees:** Vague warning, no context about what's wrong or how to fix it.
-
-### Interlace ESLint Message
-
-```
-✅ CWE-89 OWASP:A03-Injection CVSS:9.8 | SQL injection via string concatenation | CRITICAL
-   Fix: Use parameterized query: client.query('SELECT * FROM users WHERE id = $1', [userId])
-```
-
-**AI assistant sees:**
-
-- **CWE-89** → Knows this is SQL Injection
-- **CVSS:9.8** → Understands this is critical priority
-- **Exact fix code** → Can apply the remediation automatically
+<Tabs items={["SQL Injection", "JWT Security", "XSS Prevention", "AI/LLM Security", "Performance"]}>
+  <Tab value="SQL Injection">
+    <div className="mt-6 grid lg:grid-cols-2 gap-6">
+      <div className="rounded-xl border border-red-500/30 bg-[#1a1a1a] overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-red-500/20 bg-red-500/5">
+          <span className="text-red-400 text-sm">❌</span>
+          <span className="font-semibold text-red-400 text-sm">Traditional ESLint</span>
+        </div>
+        <pre className="p-4 font-mono text-[13px] leading-relaxed overflow-x-auto">
+<code><span className="text-red-400">error</span>  Possible SQL injection detected  <span className="text-fd-muted-foreground">security/detect-sql-injection</span></code>
+        </pre>
+        <div className="px-4 py-3 border-t border-fd-border text-xs text-fd-muted-foreground space-y-1">
+          <div>❌ No context about severity</div>
+          <div>❌ No fix suggestion</div>
+          <div>❌ AI has to guess the solution</div>
+        </div>
+      </div>
+      <div className="rounded-xl border border-emerald-500/30 bg-[#1a1a1a] overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-emerald-500/20 bg-emerald-500/5">
+          <span className="text-emerald-400 text-sm">✅</span>
+          <span className="font-semibold text-emerald-400 text-sm">Interlace ESLint</span>
+        </div>
+        <pre className="p-4 font-mono text-[13px] leading-relaxed overflow-x-auto">
+<code>🔒 <a href="https://cwe.mitre.org/data/definitions/89.html" target="_blank" className="text-yellow-400 hover:underline">CWE-89</a> <a href="https://owasp.org/Top10/A03_2021-Injection/" target="_blank" className="text-cyan-400 hover:underline">OWASP:A03-Injection</a> <a href="https://nvd.nist.gov/vuln-metrics/cvss" target="_blank" className="text-orange-400 hover:underline">CVSS:9.8</a> | SQL Injection | <span className="text-red-400 font-bold">CRITICAL</span> <span className="text-fd-muted-foreground">[SOC2,PCI-DSS]</span>
+   Fix: <span className="text-purple-400">db.query("SELECT * FROM users WHERE id = $1", [userId])</span> | <span className="text-blue-400">docs</span></code>
+        </pre>
+        <div className="px-4 py-3 border-t border-fd-border text-xs text-fd-muted-foreground space-y-1">
+          <div className="text-emerald-400">✅ CVSS 9.8 = Critical priority</div>
+          <div className="text-emerald-400">✅ Exact fix code provided</div>
+          <div className="text-emerald-400">✅ AI applies fix automatically</div>
+        </div>
+      </div>
+    </div>
+  </Tab>
+  
+  <Tab value="JWT Security">
+    <div className="mt-6 grid lg:grid-cols-2 gap-4">
+      <div className="p-4 rounded-xl border-2 border-red-500/30 bg-red-500/5">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="size-6 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 text-sm">❌</span>
+          <span className="font-semibold text-red-400">Traditional ESLint</span>
+        </div>
+        <div className="bg-fd-background rounded-lg p-3 font-mono text-xs border border-fd-border">
+          <span className="text-red-400">error</span> JWT should be verified
+          <br />
+          <span className="text-fd-muted-foreground">(no-jwt-without-verify)</span>
+        </div>
+      </div>
+      <div className="p-4 rounded-xl border-2 border-emerald-500/30 bg-emerald-500/5">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="size-6 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-sm">✅</span>
+          <span className="font-semibold text-emerald-400">Interlace ESLint</span>
+        </div>
+        <div className="bg-fd-background rounded-lg p-3 font-mono text-xs border border-fd-border">
+          <span className="text-red-400">error</span> <span className="text-yellow-400">🔒 CWE-327</span> <span className="text-cyan-400">OWASP:A02</span> <span className="text-orange-400">CVSS:8.1</span>
+          <br />
+          <span className="text-fd-foreground">│ JWT algorithm confusion vulnerability │</span> <span className="text-orange-400 font-bold">HIGH</span>
+          <br />
+          <span className="text-purple-400">💡 Fix: jwt.verify(token, secret, {'{'} algorithms: ['HS256'] {'}'})</span>
+        </div>
+      </div>
+    </div>
+  </Tab>
+  
+  <Tab value="XSS Prevention">
+    <div className="mt-6 grid lg:grid-cols-2 gap-4">
+      <div className="p-4 rounded-xl border-2 border-red-500/30 bg-red-500/5">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="size-6 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 text-sm">❌</span>
+          <span className="font-semibold text-red-400">Traditional ESLint</span>
+        </div>
+        <div className="bg-fd-background rounded-lg p-3 font-mono text-xs border border-fd-border">
+          <span className="text-red-400">error</span> Detected potential XSS vulnerability
+          <br />
+          <span className="text-fd-muted-foreground">(security/detect-non-literal-innerHTML)</span>
+        </div>
+      </div>
+      <div className="p-4 rounded-xl border-2 border-emerald-500/30 bg-emerald-500/5">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="size-6 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-sm">✅</span>
+          <span className="font-semibold text-emerald-400">Interlace ESLint</span>
+        </div>
+        <div className="bg-fd-background rounded-lg p-3 font-mono text-xs border border-fd-border">
+          <span className="text-red-400">error</span> <span className="text-yellow-400">🔒 CWE-79</span> <span className="text-cyan-400">OWASP:A07</span> <span className="text-orange-400">CVSS:6.1</span>
+          <br />
+          <span className="text-fd-foreground">│ Cross-site scripting via innerHTML │</span> <span className="text-yellow-400 font-bold">MEDIUM</span>
+          <br />
+          <span className="text-purple-400">💡 Fix: Use textContent or DOMPurify.sanitize(userInput)</span>
+        </div>
+      </div>
+    </div>
+  </Tab>
+  
+  <Tab value="AI/LLM Security">
+    <div className="mt-6">
+      <Callout type="warn">
+        Traditional ESLint has **no rules** for AI/LLM security. Interlace is the first to cover these emerging attack vectors.
+      </Callout>
+      <div className="mt-4 p-4 rounded-xl border-2 border-emerald-500/30 bg-emerald-500/5">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="size-6 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-sm">✅</span>
+          <span className="font-semibold text-emerald-400">Interlace ESLint (First of its kind!)</span>
+        </div>
+        <div className="bg-fd-background rounded-lg p-3 font-mono text-xs border border-fd-border">
+          <span className="text-red-400">error</span> <span className="text-yellow-400">🔒 CWE-77</span> <span className="text-cyan-400">OWASP:LLM01</span> <span className="text-orange-400">CVSS:8.0</span>
+          <br />
+          <span className="text-fd-foreground">│ Potential prompt injection via user input │</span> <span className="text-orange-400 font-bold">HIGH</span>
+          <br />
+          <span className="text-purple-400">💡 Fix: Validate and sanitize input before including in prompts</span>
+        </div>
+      </div>
+    </div>
+  </Tab>
+  
+  <Tab value="Performance">
+    <div className="mt-6 grid lg:grid-cols-2 gap-4">
+      <div className="p-4 rounded-xl border-2 border-red-500/30 bg-red-500/5">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="size-6 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 text-sm">🐢</span>
+          <span className="font-semibold text-red-400">eslint-plugin-import</span>
+        </div>
+        <div className="text-3xl font-bold text-red-400 mb-2">45+ seconds</div>
+        <div className="bg-fd-background rounded-lg p-3 font-mono text-xs border border-fd-border">
+          <span className="text-red-400">error</span> Dependency cycle detected
+          <br />
+          <span className="text-fd-muted-foreground">./moduleA → ./moduleB → ./moduleA</span>
+        </div>
+      </div>
+      <div className="p-4 rounded-xl border-2 border-emerald-500/30 bg-emerald-500/5">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="size-6 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-sm">⚡</span>
+          <span className="font-semibold text-emerald-400">eslint-plugin-import-next</span>
+        </div>
+        <div className="text-3xl font-bold text-emerald-400 mb-2">0.45 seconds</div>
+        <div className="bg-fd-background rounded-lg p-3 font-mono text-xs border border-fd-border">
+          <span className="text-red-400">error</span> <span className="text-cyan-400">PERF</span> Import cycle detected
+          <br />
+          <span className="text-purple-400">💡 Fix: Extract shared logic to break the cycle</span>
+        </div>
+        <p className="mt-2 text-sm text-emerald-400 font-semibold">100x faster 🚀</p>
+      </div>
+    </div>
+  </Tab>
+</Tabs>
 
 ---
 
-## JWT Algorithm Confusion
+## At a Glance: The Interlace Difference
 
-### Traditional Error
-
-```
-❌ JWT should be verified (no-jwt-without-verify)
-```
-
-### Interlace ESLint Message
-
-```
-✅ CWE-327 OWASP:A02-Crypto CVSS:8.1 | JWT algorithm confusion vulnerability | HIGH
-   Fix: Always specify algorithm explicitly: jwt.verify(token, secret, { algorithms: ['HS256'] })
-```
-
-**Why this matters:** AI assistants can now apply the exact fix pattern instead of guessing.
-
----
-
-## XSS via innerHTML
-
-### Traditional Error
-
-```
-❌ Detected potential XSS vulnerability (security/detect-non-literal-innerHTML)
-```
-
-### Interlace ESLint Message
-
-```
-✅ CWE-79 OWASP:A07-XSS CVSS:6.1 | Cross-site scripting via innerHTML | MEDIUM
-   Fix: Use textContent instead, or sanitize with DOMPurify: DOMPurify.sanitize(userInput)
-```
+<div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 my-8">
+  <div className="p-4 rounded-xl border border-fd-border bg-gradient-to-br from-violet-500/5 to-purple-500/10 text-center">
+    <div className="text-3xl font-bold text-violet-400">216+</div>
+    <div className="text-sm text-fd-muted-foreground">Security Rules</div>
+  </div>
+  <div className="p-4 rounded-xl border border-fd-border bg-gradient-to-br from-emerald-500/5 to-green-500/10 text-center">
+    <div className="text-3xl font-bold text-emerald-400">~90%</div>
+    <div className="text-sm text-fd-muted-foreground">AI Fix Rate</div>
+  </div>
+  <div className="p-4 rounded-xl border border-fd-border bg-gradient-to-br from-cyan-500/5 to-blue-500/10 text-center">
+    <div className="text-3xl font-bold text-cyan-400">100%</div>
+    <div className="text-sm text-fd-muted-foreground">OWASP Coverage</div>
+  </div>
+  <div className="p-4 rounded-xl border border-fd-border bg-gradient-to-br from-orange-500/5 to-amber-500/10 text-center">
+    <div className="text-3xl font-bold text-orange-400">100x</div>
+    <div className="text-sm text-fd-muted-foreground">Faster Imports</div>
+  </div>
+</div>
 
 ---
 
-## Prompt Injection (AI Security)
-
-### No existing rule!
-
-Traditional ESLint has **no rules** for AI security.
-
-### Interlace ESLint Message
-
-```
-✅ CWE-77 OWASP:LLM01 CVSS:8.0 | Potential prompt injection via user input | HIGH
-   Fix: Validate and sanitize user input before including in prompts. Use structured tool outputs.
-```
-
----
-
-## COPY FROM File Read (PostgreSQL)
-
-### No existing rule!
-
-Traditional ESLint has **no rules** for PostgreSQL-specific vulnerabilities.
-
-### Interlace ESLint Message
-
-```
-✅ CWE-22 OWASP:A01-Access CVSS:7.5 | Arbitrary file read via COPY FROM | HIGH
-   Fix: Never use user input in COPY FROM paths. Use COPY FROM PROGRAM with validated inputs only.
-```
-
----
-
-## Import Cycle Detection
-
-### Traditional Error (takes 45+ seconds)
-
-```
-❌ Dependency cycle detected: ./moduleA -> ./moduleB -> ./moduleA (import/no-cycle)
-```
-
-### Interlace ESLint Message (takes 0.45 seconds)
-
-```
-✅ PERF OWASP:N/A | Import cycle detected - impacts bundle size and cold start | MEDIUM
-   Fix: Extract shared logic to a new module, or use dynamic imports to break the cycle.
-```
-
-**Performance:** 100x faster detection with the same accuracy.
-
----
-
-## Side-by-Side Comparison
+## Message Format Comparison
 
 | Aspect             | Traditional  | Interlace           |
 | ------------------ | ------------ | ------------------- |
@@ -130,23 +200,44 @@ Traditional ESLint has **no rules** for PostgreSQL-specific vulnerabilities.
 
 ---
 
-## Try It Yourself
+## Get Started in 30 Seconds
 
-Install any Interlace plugin and see the difference:
+<Steps>
+  <Step>
+    ### Install
+    ```bash
+    npm install --save-dev eslint-plugin-secure-coding
+    ```
+  </Step>
+  <Step>
+    ### Configure
+    ```js title="eslint.config.js"
+    import secureCoding from 'eslint-plugin-secure-coding';
+    
+    export default [
+      secureCoding.configs.recommended,
+    ];
+    ```
+  </Step>
+  <Step>
+    ### Run
+    ```bash
+    npx eslint .
+    ```
+  </Step>
+</Steps>
 
-```bash
-npm install --save-dev eslint-plugin-secure-coding
-```
-
-<Cards>
-  <Card
-    title="Get Started"
-    description="Install and configure your first plugin"
-    href="/docs"
-  />
-  <Card
-    title="View All Plugins"
-    description="Browse the full ecosystem"
-    href="/docs#security-plugins"
-  />
-</Cards>
+<div className="grid sm:grid-cols-3 gap-4 not-prose">
+  <a href="/docs" className="block p-4 rounded-xl border border-fd-border bg-fd-card hover:border-purple-500/50 hover:shadow-lg transition-all group">
+    <div className="font-semibold text-fd-foreground group-hover:text-purple-400 transition-colors">Full Installation Guide</div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Detailed setup for all plugins</div>
+  </a>
+  <a href="/docs/benchmarks" className="block p-4 rounded-xl border border-fd-border bg-fd-card hover:border-purple-500/50 hover:shadow-lg transition-all group">
+    <div className="font-semibold text-fd-foreground group-hover:text-purple-400 transition-colors">View Benchmarks</div>
+    <div className="text-sm text-fd-muted-foreground mt-1">Performance comparisons</div>
+  </a>
+  <a href="/docs#security-plugins" className="block p-4 rounded-xl border border-fd-border bg-fd-card hover:border-purple-500/50 hover:shadow-lg transition-all group">
+    <div className="font-semibold text-fd-foreground group-hover:text-purple-400 transition-colors">Browse All Plugins</div>
+    <div className="text-sm text-fd-muted-foreground mt-1">11 specialized security plugins</div>
+  </a>
+</div>

@@ -3,7 +3,8 @@ title: no-missing-validation-pipe
 description: Require ValidationPipe for DTO input parameters
 ---
 
-# no-missing-validation-pipe
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Require ValidationPipe for DTO input parameters
 
@@ -78,7 +79,12 @@ new ValidationPipe({
 
 - If you have `app.useGlobalPipes(new ValidationPipe())` in `main.ts`, set `assumeGlobalPipes: true`
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

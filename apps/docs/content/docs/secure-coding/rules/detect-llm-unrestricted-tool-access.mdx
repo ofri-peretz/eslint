@@ -3,7 +3,8 @@ title: detect-llm-unrestricted-tool-access
 description: Detect LLM agents with access to all tools without restrictions.
 ---
 
-# detect-llm-unrestricted-tool-access
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 Detect LLM agents with access to all tools without restrictions.
 
@@ -51,7 +52,12 @@ Define specific tool allowlists per agent role. Implement tool namespacing.
 
 Introduced in v2.3.0
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

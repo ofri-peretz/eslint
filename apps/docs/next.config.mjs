@@ -12,6 +12,9 @@ const withMDX = createMDX();
 const config = {
   reactStrictMode: true,
   output: 'standalone',
+  swcMinify: true,
+  poweredByHeader: false,
+  compress: true,
 
   // Required for monorepo standalone output tracing
   outputFileTracingRoot: monorepoRoot,

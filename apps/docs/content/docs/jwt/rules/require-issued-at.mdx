@@ -3,7 +3,8 @@ title: require-issued-at
 description: Require iat (issued at) claim for token freshness validation
 ---
 
-# require-issued-at
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Require iat (issued at) claim for token freshness validation
 
@@ -33,7 +34,12 @@ jwt.sign(payload, secret);
 jwt.sign({ sub: 'user', iat: Math.floor(Date.now() / 1000) }, secret);
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

@@ -20,19 +20,91 @@ export interface DevToArticle {
 }
 
 // Plugin to Dev.to tag mapping for filtering relevant articles
-const PLUGIN_TAG_MAPPING: Record<string, string[]> = {
-  'secure-coding': ['eslint', 'security', 'owasp', 'javascript', 'typescript'],
-  'pg': ['postgresql', 'sql', 'database', 'security', 'nodejs'],
-  'jwt': ['jwt', 'authentication', 'security', 'nodejs'],
-  'crypto': ['crypto', 'cryptography', 'security', 'encryption'],
-  'express-security': ['express', 'security', 'nodejs', 'cors', 'helmet'],
-  'nestjs-security': ['nestjs', 'security', 'typescript'],
-  'lambda-security': ['aws', 'lambda', 'serverless', 'security'],
-  'browser-security': ['browser', 'xss', 'security', 'javascript'],
-  'mongodb-security': ['mongodb', 'nosql', 'database', 'security'],
-  'vercel-ai-security': ['ai', 'llm', 'vercel', 'security', 'openai'],
-  'import-next': ['eslint', 'imports', 'modules', 'architecture'],
+// primaryTags: MUST match at least one (plugin-specific identifiers)
+// secondaryTags: used for relevance scoring (common tags)
+interface TagMapping {
+  primaryTags: string[]; // At least one must match
+  secondaryTags: string[]; // Optional, for relevance scoring
+}
+
+const PLUGIN_TAG_MAPPING: Record<string, TagMapping> = {
+  'secure-coding': {
+    primaryTags: ['owasp', 'secure-coding', 'cwe'],
+    secondaryTags: ['eslint', 'security', 'javascript', 'typescript'],
+  },
+  pg: {
+    primaryTags: ['postgres', 'postgresql', 'pg'],
+    secondaryTags: ['sql', 'database', 'security'],
+  },
+  jwt: {
+    primaryTags: ['jwt', 'jsonwebtoken', 'jose'],
+    secondaryTags: ['authentication', 'security', 'token'],
+  },
+  crypto: {
+    primaryTags: ['crypto', 'cryptography', 'encryption'],
+    secondaryTags: ['security', 'hashing'],
+  },
+  'express-security': {
+    primaryTags: ['express'],
+    secondaryTags: ['security', 'nodejs', 'cors', 'helmet', 'middleware'],
+  },
+  'nestjs-security': {
+    primaryTags: ['nestjs', 'nest'],
+    secondaryTags: ['security', 'typescript', 'decorators'],
+  },
+  'lambda-security': {
+    primaryTags: ['lambda', 'aws-lambda', 'serverless'],
+    secondaryTags: ['aws', 'security', 'cloud'],
+  },
+  'browser-security': {
+    primaryTags: ['xss', 'browser', 'dom', 'postmessage'],
+    secondaryTags: ['security', 'javascript', 'webapi'],
+  },
+  'mongodb-security': {
+    primaryTags: ['mongodb', 'mongo', 'nosql'],
+    secondaryTags: ['database', 'security', 'injection'],
+  },
+  'vercel-ai-security': {
+    primaryTags: ['ai', 'llm', 'vercel-ai', 'openai', 'genai', 'gpt'],
+    secondaryTags: ['security', 'prompt', 'injection'],
+  },
+  'import-next': {
+    primaryTags: ['import', 'imports', 'modules', 'esm'],
+    secondaryTags: ['eslint', 'architecture', 'bundling'],
+  },
 };
+
+// Calculate relevance score for an article based on tag matching
+function calculateRelevanceScore(
+  article: DevToArticle,
+  mapping: TagMapping
+): number {
+  const articleTags = article.tag_list.map((t) => t.toLowerCase());
+  const titleLower = article.title.toLowerCase();
+
+  let score = 0;
+
+  // Primary tag matches (high weight)
+  for (const primaryTag of mapping.primaryTags) {
+    const tagLower = primaryTag.toLowerCase();
+    if (articleTags.some((t) => t.includes(tagLower) || tagLower.includes(t))) {
+      score += 10;
+    }
+    if (titleLower.includes(tagLower)) {
+      score += 5; // Title match bonus
+    }
+  }
+
+  // Secondary tag matches (lower weight)
+  for (const secondaryTag of mapping.secondaryTags) {
+    const tagLower = secondaryTag.toLowerCase();
+    if (articleTags.some((t) => t.includes(tagLower))) {
+      score += 2;
+    }
+  }
+
+  return score;
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -54,18 +126,20 @@ export async function GET(request: Request) {
 
     let articles: DevToArticle[] = await response.json();
 
-    // Filter by plugin-relevant tags if plugin is specified
+    // Filter and sort by plugin-relevant tags if plugin is specified
     if (plugin && PLUGIN_TAG_MAPPING[plugin]) {
-      const relevantTags = PLUGIN_TAG_MAPPING[plugin];
-      articles = articles.filter((article) =>
-        article.tag_list.some((tag) =>
-          relevantTags.some(
-            (relevantTag) =>
-              tag.toLowerCase().includes(relevantTag.toLowerCase()) ||
-              article.title.toLowerCase().includes(relevantTag.toLowerCase())
-          )
-        )
-      );
+      const mapping = PLUGIN_TAG_MAPPING[plugin];
+
+      // Score and filter articles - require at least one primary tag match
+      const scoredArticles = articles
+        .map((article) => ({
+          article,
+          score: calculateRelevanceScore(article, mapping),
+        }))
+        .filter(({ score }) => score >= 10) // Must have at least one primary tag match (score 10+)
+        .sort((a, b) => b.score - a.score); // Sort by relevance
+
+      articles = scoredArticles.map(({ article }) => article);
     }
 
     // Limit results

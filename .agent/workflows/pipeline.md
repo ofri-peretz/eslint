@@ -100,11 +100,35 @@ These shortcuts bypass the full pipeline:
 | Command                  | Description                       |
 | ------------------------ | --------------------------------- |
 | `/pipeline orchestrate:` | End-to-end flow (design→execute)  |
+| `/pipeline qa-stress:`   | FP/FN/Performance stress testing  |
 | `/pipeline eslint:`      | ESLint dev agent directly         |
 | `/pipeline security:`    | Security research agent           |
 | `/pipeline release:`     | Package release flow              |
 | `/pipeline article:`     | Content writing agent             |
 | `/pipeline distribute:`  | Marketing & distribution strategy |
+
+---
+
+## QA Stress Test Pipeline
+
+Comprehensive stress testing for plugin quality across three dimensions:
+
+| Dimension        | Purpose                                      | Target               |
+| ---------------- | -------------------------------------------- | -------------------- |
+| **FP Audit**     | Find legitimate patterns incorrectly flagged | Zero false positives |
+| **FN Discovery** | Identify undetected vulnerable patterns      | All gaps documented  |
+| **Performance**  | Rule execution time and memory usage         | < 100ms per 500 LOC  |
+
+### Usage
+
+```
+/pipeline qa-stress: Run full QA for eslint-plugin-pg
+/pipeline qa-stress: FP audit for eslint-plugin-jwt
+/pipeline qa-stress: FN discovery for eslint-plugin-crypto
+/pipeline qa-stress: Performance benchmark eslint-plugin-secure-coding
+```
+
+**See**: [qa-stress-test-pipeline.md](file:///Users/ofri/repos/ofriperetz.dev/eslint/.agent/orchestrators/qa-stress-test-pipeline.md)
 
 ---
 

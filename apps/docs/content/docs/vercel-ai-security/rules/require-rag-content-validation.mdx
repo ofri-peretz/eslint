@@ -1,9 +1,10 @@
 ---
-title: "`require-rag-content-validation`"
+title: "require-rag-content-validation"
 description: Requires validation of RAG content before including in AI prompts.
 ---
 
-# `require-rag-content-validation`
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Requires validation of RAG content before including in AI prompts.
 
@@ -86,7 +87,12 @@ Poisoned RAG content can:
 - [`require-validated-prompt`](./require-validated-prompt.md) - Validate user prompts
 - [`no-dynamic-system-prompt`](./no-dynamic-system-prompt.md) - Static system prompts
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

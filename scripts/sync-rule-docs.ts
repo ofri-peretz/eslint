@@ -126,12 +126,11 @@ function convertToMdx(doc: RuleDoc): string {
   const title = doc.title || doc.name;
   
   // Build MDX file with properly escaped YAML
+  // Note: Fumadocs renders the frontmatter title automatically, so we don't add an H1
   return `---
 title: ${escapeYamlString(title)}
 description: ${escapeYamlString(description)}
 ---
-
-# ${title}
 
 ${content.trim()}
 `;

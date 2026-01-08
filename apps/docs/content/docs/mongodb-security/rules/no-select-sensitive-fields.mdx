@@ -3,7 +3,8 @@ title: no-select-sensitive-fields
 description: "Detects queries that may return sensitive fields like passwords, tokens, or API keys."
 ---
 
-# no-select-sensitive-fields
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** CWE-200, information exposure, password, Mongoose, security
 
@@ -77,7 +78,12 @@ const userSchema = new Schema({
 - In authentication flows where password comparison is needed
 - When schema already has `select: false` on all sensitive fields
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

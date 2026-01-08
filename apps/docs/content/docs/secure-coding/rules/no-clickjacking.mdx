@@ -3,7 +3,8 @@ title: no-clickjacking
 description: Detects clickjacking vulnerabilities and missing frame protections. This rule is part of eslint-plugin-secure-coding.
 ---
 
-# no-clickjacking
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** clickjacking, CWE-1021, iframe, X-Frame-Options, CSP, UI redressing
 
@@ -122,7 +123,12 @@ app.use(helmet.frameguard({ action: 'deny' }));
    Fix: Add X-Frame-Options: DENY or CSP frame-ancestors | https://cheatsheetseries.owasp.org/...
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

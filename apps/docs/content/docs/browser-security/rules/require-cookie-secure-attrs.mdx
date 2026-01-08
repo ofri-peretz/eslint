@@ -3,7 +3,8 @@ title: require-cookie-secure-attrs
 description: Require Secure and SameSite attributes on cookies.
 ---
 
-# require-cookie-secure-attrs
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 Require Secure and SameSite attributes on cookies.
 
@@ -64,7 +65,12 @@ res.cookie('name', 'value', {
 }
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

@@ -3,7 +3,8 @@ title: no-missing-authentication
 description: Detects missing authentication checks in route handlers. This rule is part of eslint-plugin-secure-coding and provides LLM-optimized error messages that AI assi
 ---
 
-# no-missing-authentication
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** missing authentication, CWE-287, security, ESLint rule, authentication middleware, route handlers, Express, Fastify, API security, access control, LLM-optimized, code security
 
@@ -141,7 +142,12 @@ app.get('/api/public', (req, res) => {
 4. **Token validation**: Verify JWT/session tokens on all protected endpoints
 5. **Role-based access**: Combine with role checks for fine-grained control
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

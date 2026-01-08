@@ -3,7 +3,8 @@ title: no-unbounded-find
 description: Requires limit() on find queries to prevent resource exhaustion from unbounded result sets.
 ---
 
-# no-unbounded-find
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** CWE-400, resource exhaustion, limit, MongoDB, DoS, security
 
@@ -54,7 +55,12 @@ const users = await User.find()
 const user = await User.findOne({ email });
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 ### Limit in Options Object
 

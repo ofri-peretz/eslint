@@ -3,7 +3,8 @@ title: no-unsafe-populate
 description: Detects user-controlled populate() paths that could lead to data exposure or injection.
 ---
 
-# no-unsafe-populate
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** CWE-943, populate, Mongoose, injection, CVE-2025-23061, security
 
@@ -63,7 +64,12 @@ User.findById(id).populate({
 });
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 ### Spread Operator
 

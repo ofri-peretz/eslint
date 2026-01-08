@@ -3,7 +3,8 @@ title: require-schema-validation
 description: Requires validation options on Mongoose schema fields to prevent invalid or malicious data.
 ---
 
-# require-schema-validation
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** CWE-20, input validation, Mongoose, schema, security
 
@@ -66,7 +67,12 @@ const userSchema = new Schema({
 });
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 ### Dynamic Schema Creation
 

@@ -3,7 +3,8 @@ title: no-hardcoded-connection-string
 description: Detects hardcoded MongoDB connection strings containing credentials in source code.
 ---
 
-# no-hardcoded-connection-string
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** CWE-798, hardcoded credentials, MongoDB, connection string, secrets, security
 
@@ -86,7 +87,12 @@ const testUri = 'mongodb://test:test@localhost:27017/testdb';
 
 **Workaround**: Rule should not flag strings in comments (not implemented).
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 ### Template Literal with Partial Credentials
 

@@ -3,7 +3,8 @@ title: no-unsafe-eval-csp
 description: "Disallow 'unsafe-eval' in Content Security Policy directives."
 ---
 
-# no-unsafe-eval-csp
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 Disallow 'unsafe-eval' in Content Security Policy directives.
 
@@ -89,7 +90,12 @@ const csp = "script-src 'self' 'wasm-unsafe-eval'";
 2. **Template engines**: Use precompiled templates
 3. **Third-party libraries**: Consider alternatives or sandbox them
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

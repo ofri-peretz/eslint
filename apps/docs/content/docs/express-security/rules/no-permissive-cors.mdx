@@ -3,7 +3,8 @@ title: no-permissive-cors
 description: Detects overly permissive CORS configurations in Express.js applications. This rule is part of eslint-plugin-express-security and provides LLM-optimized error m
 ---
 
-# no-permissive-cors
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** CORS, cross-origin resource sharing, CWE-942, security, ESLint rule, origin validation, wildcard CORS, Access-Control-Allow-Origin, auto-fix, LLM-optimized
 
@@ -237,7 +238,12 @@ app.use(cors({ origin: allowedOrigins }));
 - [`no-cors-credentials-wildcard`](./no-cors-credentials-wildcard.md) - Credentials with wildcard origin
 - [`require-helmet`](./require-helmet.md) - Security headers
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

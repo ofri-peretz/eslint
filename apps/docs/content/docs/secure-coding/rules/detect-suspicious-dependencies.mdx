@@ -3,7 +3,8 @@ title: detect-suspicious-dependencies
 description: Detect typosquatting attacks in npm package imports
 ---
 
-# detect-suspicious-dependencies
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Detect typosquatting attacks in npm package imports
 
@@ -72,7 +73,12 @@ If a package name is within 2 edits of a popular package name, it's flagged as s
 }
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

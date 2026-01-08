@@ -12,6 +12,9 @@
   "bugs": {
     "url": "https://github.com/ofri-peretz/eslint/issues"
   },
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "prepare": "husky",
@@ -70,7 +73,7 @@
   ],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.18.3",
+  "packageManager": "pnpm@9.15.4",
   "devDependencies": {
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",

@@ -3,7 +3,8 @@ title: no-graphql-introspection-production
 description: Disallow GraphQL introspection in production environments
 ---
 
-# no-graphql-introspection-production
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Disallow GraphQL introspection in production environments
 
@@ -77,7 +78,12 @@ const server = new ApolloServer({
 - Development environments where introspection aids debugging
 - Internal APIs not exposed to the public
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

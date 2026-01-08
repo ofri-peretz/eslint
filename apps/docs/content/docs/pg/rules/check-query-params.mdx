@@ -3,7 +3,8 @@ title: check-query-params
 description: Ensures the number of placeholders in SQL queries matches the provided parameters.
 ---
 
-# check-query-params
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** query parameters, CWE-89, pg, node-postgres, quality, parameterized queries
 
@@ -60,7 +61,12 @@ await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
 - Only checks static string literals
 - Cannot analyze dynamic query construction
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

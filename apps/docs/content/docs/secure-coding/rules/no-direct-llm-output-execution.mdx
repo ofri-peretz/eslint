@@ -3,7 +3,8 @@ title: no-direct-llm-output-execution
 description: Prevent direct execution of LLM-generated code without validation and sandboxing.
 ---
 
-# no-direct-llm-output-execution
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 Prevent direct execution of LLM-generated code without validation and sandboxing.
 
@@ -257,7 +258,12 @@ if (dangerousPatterns.length > 0) {
 - If you never execute code from LLMs (unlikely)
 - If you have custom sandboxing validated as safe
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

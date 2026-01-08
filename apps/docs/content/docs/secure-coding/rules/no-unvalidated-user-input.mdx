@@ -3,7 +3,8 @@ title: no-unvalidated-user-input
 description: "Detects unvalidated user input usage (req.body, req.query, etc.) in Express, Fastify, and Next.js applications. This rule is part of eslint-plugin-secure-coding"
 ---
 
-# no-unvalidated-user-input
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** input validation, CWE-20, security, ESLint rule, user input, req.body, req.query, validation library, Zod, Joi, Yup, class-validator, OWASP, input security, auto-fix, LLM-optimized, code security
 
@@ -249,7 +250,12 @@ app.post('/api/users', async (req, res) => {
 });
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

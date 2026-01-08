@@ -3,7 +3,8 @@ title: browser-security/no-postmessage-innerhtml
 description: 🔒 Disallow using innerHTML with postMessage data
 ---
 
-# browser-security/no-postmessage-innerhtml
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > 🔒 Disallow using innerHTML with postMessage data
 
@@ -125,7 +126,12 @@ However, **always sanitize postMessage data** before rendering as HTML.
 - [`browser-security/no-postmessage-wildcard-origin`](./no-postmessage-wildcard-origin.md) - Prevent wildcard targetOrigin
 - [`browser-security/no-innerhtml`](./no-innerhtml.md) - General innerHTML prevention
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

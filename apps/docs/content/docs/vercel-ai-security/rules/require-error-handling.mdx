@@ -1,9 +1,10 @@
 ---
-title: "`require-error-handling`"
+title: "require-error-handling"
 description: Ensures AI SDK calls are wrapped in try-catch to prevent cascading failures.
 ---
 
-# `require-error-handling`
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Ensures AI SDK calls are wrapped in try-catch to prevent cascading failures.
 
@@ -91,7 +92,12 @@ Unhandled AI errors can cause:
 - [`require-audit-logging`](./require-audit-logging.md) - Log AI operations
 - [`require-abort-signal`](./require-abort-signal.md) - Enable cancellation
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

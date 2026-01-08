@@ -3,8 +3,10 @@
     "pages": [
         "---Guide---",
         "index",
+        "guide/getting-started",
         "examples",
         "benchmarks",
+        "concepts",
         "---ESLint Plugins (Security)---",
         "secure-coding",
         "pg",

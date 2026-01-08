@@ -3,7 +3,8 @@ title: no-unsafe-prompt-concatenation
 description: Prevent prompt injection via direct string concatenation of user input into LLM prompts.
 ---
 
-# no-unsafe-prompt-concatenation
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 Prevent prompt injection via direct string concatenation of user input into LLM prompts.
 
@@ -105,7 +106,12 @@ If `true`, disables all false positive detection. Default: `false`
 
 If you're not using LLM/AI APIs in your codebase, you can disable this rule.
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

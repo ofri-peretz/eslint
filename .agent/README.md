@@ -102,40 +102,45 @@ Run tasks with parallel optimization.
 ```
 .agent/
 ├── workflows/
-│   └── pipeline.md           # Entry point (/pipeline)
+│   └── pipeline.md               # Entry point (/pipeline)
 ├── agents/
-│   ├── architect.md          # System design
-│   ├── eslint.md             # ESLint development
-│   ├── security.md           # Security research
-│   ├── performance.md        # Optimization
-│   └── content.md            # Article writing
+│   ├── architect.md              # System design
+│   ├── eslint.md                 # ESLint development
+│   ├── security.md               # Security research
+│   ├── performance.md            # Optimization
+│   ├── content.md                # Article writing
+│   ├── documentation-ux-expert.md    # Low-cognitive-load docs
+│   └── accessibility-expert.md   # WCAG AAA compliance
 ├── skills/
 │   ├── rule-implementation.md
-│   └── benchmark.md
+│   ├── benchmark.md
+│   └── docs-ux-patterns.md       # High-engagement doc patterns
 ├── orchestrators/
-│   ├── design-pipeline.md    # 8-agent review
-│   ├── breakdown-pipeline.md # Task decomposition
-│   ├── execute-pipeline.md   # Parallel execution
-│   ├── release-pipeline.md   # npm publishing
-│   └── new-rule-pipeline.md  # Rule creation flow
-├── REFERENCES.md             # Industry framework links
-└── README.md                 # This file
+│   ├── design-pipeline.md        # 8-agent review
+│   ├── breakdown-pipeline.md     # Task decomposition
+│   ├── execute-pipeline.md       # Parallel execution
+│   ├── release-pipeline.md       # npm publishing
+│   └── new-rule-pipeline.md      # Rule creation flow
+├── REFERENCES.md                 # Industry framework links
+└── README.md                     # This file
 ```
 
 ---
 
 ## Design Pipeline Specialists
 
-| Agent             | Reviews For                            |
-| ----------------- | -------------------------------------- |
-| **Architect**     | System design, components, APIs        |
-| **Security**      | Auth, OWASP, data protection           |
-| **Cost**          | Infrastructure, scaling costs          |
-| **Patterns**      | Design patterns, maintainability       |
-| **Testing**       | Test strategy, coverage                |
-| **UX**            | User flows, error handling             |
-| **Performance**   | Algorithms, caching, queries           |
-| **Tech-Specific** | Domain expertise (ESLint, React, etc.) |
+| Agent             | Reviews For                               |
+| ----------------- | ----------------------------------------- |
+| **Architect**     | System design, components, APIs           |
+| **Security**      | Auth, OWASP, data protection              |
+| **Cost**          | Infrastructure, scaling costs             |
+| **Patterns**      | Design patterns, maintainability          |
+| **Testing**       | Test strategy, coverage                   |
+| **UX**            | User flows, error handling                |
+| **Performance**   | Algorithms, caching, queries              |
+| **Tech-Specific** | Domain expertise (ESLint, React, etc.)    |
+| **Documentation** | Low-cognitive-load, "Fix It Now" patterns |
+| **Accessibility** | WCAG AAA, contrast, theme compatibility   |
 
 ---
 

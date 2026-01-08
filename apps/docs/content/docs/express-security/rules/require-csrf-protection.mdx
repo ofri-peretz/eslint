@@ -3,7 +3,8 @@ title: require-csrf-protection
 description: Require CSRF protection middleware for state-changing HTTP methods
 ---
 
-# require-csrf-protection
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Require CSRF protection middleware for state-changing HTTP methods
 
@@ -79,7 +80,12 @@ Disable for:
 - Webhook endpoints that use signature verification
 - Public APIs without session-based authentication
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

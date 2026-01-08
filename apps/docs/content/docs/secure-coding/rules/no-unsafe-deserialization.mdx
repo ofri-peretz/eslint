@@ -3,7 +3,8 @@ title: no-unsafe-deserialization
 description: Detects unsafe deserialization of untrusted data. This rule is part of eslint-plugin-secure-coding.
 ---
 
-# no-unsafe-deserialization
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** unsafe deserialization, CWE-502, RCE, code execution, YAML, pickle, security
 
@@ -114,7 +115,12 @@ const obj = safeDeserialize(userInput);
    Fix: Use JSON.parse() or safe deserialization libraries | https://cwe.mitre.org/...
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

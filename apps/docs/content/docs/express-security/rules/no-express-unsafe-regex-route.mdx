@@ -3,7 +3,8 @@ title: no-express-unsafe-regex-route
 description: Disallow vulnerable regular expressions in route definitions
 ---
 
-# no-express-unsafe-regex-route
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Disallow vulnerable regular expressions in route definitions
 
@@ -69,7 +70,12 @@ app.get(/^\/api\/\w+$/, handler);
 
 Never disable this rule. ReDoS can completely freeze your server.
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

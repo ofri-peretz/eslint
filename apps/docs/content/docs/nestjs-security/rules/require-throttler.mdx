@@ -3,7 +3,8 @@ title: require-throttler
 description: "Require ThrottlerGuard or @Throttle decorator for rate limiting"
 ---
 
-# require-throttler
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Require ThrottlerGuard or @Throttle decorator for rate limiting
 
@@ -70,7 +71,12 @@ export class AppModule {}
 - If you have `ThrottlerModule.forRoot()` in `app.module.ts`, set `assumeGlobalThrottler: true`
 - For endpoints that intentionally skip throttling, use `@SkipThrottle()` decorator
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

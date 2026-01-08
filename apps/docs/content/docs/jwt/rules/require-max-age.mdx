@@ -3,7 +3,8 @@ title: require-max-age
 description: Require maxAge option in verify operations to enforce token freshness
 ---
 
-# require-max-age
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Require maxAge option in verify operations to enforce token freshness
 
@@ -33,7 +34,12 @@ jwt.verify(token, secret, {
 });
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

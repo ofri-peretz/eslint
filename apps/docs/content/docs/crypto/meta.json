@@ -1,7 +1,4 @@
 {
-  "title": "crypto",
-  "pages": [
-    "index",
-    "rules"
-  ]
+  "title": "Cryptography",
+  "pages": ["index", "rules"]
 }

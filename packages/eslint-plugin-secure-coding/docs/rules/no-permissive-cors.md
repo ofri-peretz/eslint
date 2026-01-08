@@ -7,7 +7,7 @@
 This rule security rule for mobile applications.
 
 **OWASP Mobile Top 10:** Mobile  
-**CWE:** [CWE-000](https://cwe.mitre.org/data/definitions/000.html)  
+**CWE:** [CWE-942](https://cwe.mitre.org/data/definitions/000.html)  
 **Severity:** error
 
 ## Examples
@@ -69,7 +69,7 @@ obj[method](userInput);
 ## Further Reading
 
 - [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
-- [CWE-000 Details](https://cwe.mitre.org/data/definitions/000.html)
+- [CWE-942 Details](https://cwe.mitre.org/data/definitions/000.html)
 
 ## Related Rules
 

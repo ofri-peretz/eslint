@@ -1,9 +1,10 @@
 ---
-title: "`require-max-steps`"
+title: "require-max-steps"
 description: Prevents infinite tool calling loops in multi-step agents.
 ---
 
-# `require-max-steps`
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Prevents infinite tool calling loops in multi-step agents.
 
@@ -86,7 +87,12 @@ Unbounded tool loops can cause:
 - [`require-max-tokens`](./require-max-tokens.md) - Limit token consumption
 - [`require-tool-confirmation`](./require-tool-confirmation.md) - Require confirmation
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

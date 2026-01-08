@@ -3,7 +3,8 @@ title: no-dynamic-service-worker-url
 description: Prevent dynamic URLs in service worker registration.
 ---
 
-# no-dynamic-service-worker-url
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 Prevent dynamic URLs in service worker registration.
 
@@ -58,7 +59,12 @@ navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
 }
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

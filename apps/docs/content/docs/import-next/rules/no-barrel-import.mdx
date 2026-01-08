@@ -3,7 +3,8 @@ title: no-barrel-import
 description: "💼 This rule is enabled in the following configs: recommended, typescript."
 ---
 
-# no-barrel-import
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 💼 This rule is enabled in the following configs: `recommended`, `typescript`.
 💡 This rule is automatically fixable by the `--fix` CLI option.
@@ -14,9 +15,38 @@ Disallow imports from barrel files to improve build performance and tree-shaking
 
 ## Rule Details
 
-This rule aims to prevent issues related to barrel-import.
+Barrel files (index.js/ts) that re-export from multiple modules can significantly impact build performance and prevent effective tree-shaking. This rule detects imports from known barrel patterns and suggests direct imports instead.
 
 ## Options
+
+| Option              | Type       | Default | Description                                               |
+| ------------------- | ---------- | ------- | --------------------------------------------------------- |
+| `knownBarrels`      | `string[]` | `[]`    | Regex patterns for paths known to be barrels              |
+| `ignoreNodeModules` | `boolean`  | `true`  | Ignore imports from node_modules                          |
+| `ignoredPackages`   | `string[]` | `[]`    | Packages to ignore (those with good tree-shaking support) |
+
+### Configuration Example
+
+```javascript
+// eslint.config.js
+export default [
+  {
+    rules: {
+      'import-next/no-barrel-import': [
+        'error',
+        {
+          knownBarrels: ['/components/index', '/utils/index'],
+          ignoreNodeModules: true,
+          ignoredPackages: ['lodash-es', 'date-fns'],
+        },
+      ],
+    },
+  },
+];
+```
+
+<details>
+<summary>JSON Schema</summary>
 
 ```json
 [
@@ -25,9 +55,7 @@ This rule aims to prevent issues related to barrel-import.
     "properties": {
       "knownBarrels": {
         "type": "array",
-        "items": {
-          "type": "string"
-        },
+        "items": { "type": "string" },
         "default": [],
         "description": "Regex patterns for paths known to be barrels"
       },
@@ -38,9 +66,7 @@ This rule aims to prevent issues related to barrel-import.
       },
       "ignoredPackages": {
         "type": "array",
-        "items": {
-          "type": "string"
-        },
+        "items": { "type": "string" },
         "default": [],
         "description": "Packages to ignore (good tree-shaking support)"
       }
@@ -50,11 +76,27 @@ This rule aims to prevent issues related to barrel-import.
 ]
 ```
 
+</details>
+
 ## Implementation
 
-- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-barrel-import.ts)
-- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-barrel-import.test.ts)
+- [Source Code](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/src/rules/no-barrel-import.ts)
+- [Test Cases](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/src/tests/no-barrel-import.test.ts)
 
-## OWASP Foundation
+## Related
 
-- **Category**: A00:2021 - General Security
+- **Category**: Build Performance
+- **Impact**: Reduces bundle size and improves cold start times
+
+<WhenNotToUse />
+
+## Known False Negatives
+
+<FalseNegativeCTA />
+
+This rule uses pattern-based detection. The following may not be caught:
+
+- **Dynamic patterns** - Runtime-generated code or values
+- **Indirect references** - Values passed through multiple variables or functions
+- **External data** - Data from APIs, databases, or user input
+

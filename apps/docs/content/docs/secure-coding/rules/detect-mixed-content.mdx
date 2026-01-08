@@ -1,87 +1,136 @@
 ---
 title: detect-mixed-content
-description: Security rule for mobile applications
+description: "Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulnerabilities."
 ---
 
-# detect-mixed-content
 
-> Security rule for mobile applications
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
+
+> **Keywords:** mixed content, HTTPS, HTTP, CWE-311, insecure resource, TLS, web security
+
+Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulnerabilities.
+
+⚠️ This rule **errors** by default in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                                           |
+| ----------------- | ------------------------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-311](https://cwe.mitre.org/data/definitions/311.html) (Missing Encryption of Sensitive Data) |
+| **OWASP Mobile**  | [M5: Insecure Communication](https://owasp.org/www-project-mobile-top-10/)                        |
+| **Severity**      | Medium                                                                                            |
+| **Category**      | Security                                                                                          |
 
 ## Rule Details
 
-This rule security rule for mobile applications.
+Mixed content occurs when HTTPS pages load resources over HTTP. This weakens the security of the entire page, as attackers can intercept or modify the insecure resources through man-in-the-middle attacks.
 
-**OWASP Mobile Top 10:** Mobile  
-**CWE:** [CWE-000](https://cwe.mitre.org/data/definitions/000.html)  
-**Severity:** error
+This rule detects any string literal starting with `http://`.
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```javascript
-// Insecure pattern
+// Loading resources over HTTP
+const imageUrl = 'http://example.com/logo.png';
+const apiEndpoint = 'http://api.example.com/data';
+
+// External script over HTTP
+<script src="http://example.com/tracking.js"></script>;
+
+// Fetching data without TLS
+fetch('http://api.example.com/users');
 ```
 
 ### ✅ Correct
 
 ```javascript
-// Secure pattern
+// All resources over HTTPS
+const imageUrl = 'https://example.com/logo.png';
+const apiEndpoint = 'https://api.example.com/data';
+
+// External script over HTTPS
+<script src="https://example.com/tracking.js"></script>;
+
+// Secure fetch
+fetch('https://api.example.com/users');
+
+// Protocol-relative URLs (inherits page protocol)
+const cdnUrl = '//cdn.example.com/asset.js';
 ```
 
-## When Not To Use It
+## Error Message Format
 
-This rule should be enabled for all mobile and web applications to ensure security best practices.
+When triggered, this rule produces:
+
+```
+🔒 CWE-311 | Detect HTTP resources in HTTPS pages detected - Literal containing http:// in HTTPS context | MEDIUM
+   Fix: Review and apply secure practices | https://cwe.mitre.org/data/definitions/311.html
+```
+
+
+<WhenNotToUse />
 
 ## Known False Negatives
 
+<FalseNegativeCTA />
+
 The following patterns are **not detected** due to static analysis limitations:
 
-### Values from Variables
+### URL from Variables
 
-**Why**: Values stored in variables are not traced.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = userInput;
-dangerousOperation(value);
-```
-
-**Mitigation**: Validate all user inputs.
-
-### Wrapper Functions
-
-**Why**: Custom wrappers not recognized.
+**Why**: URLs constructed dynamically cannot be traced.
 
 ```typescript
-// ❌ NOT DETECTED - Wrapper
-myWrapper(userInput); // Uses dangerous API internally
+// ❌ NOT DETECTED - Dynamic URL
+const protocol = isDevMode ? 'http' : 'https';
+const url = `${protocol}://api.example.com`;
 ```
 
-**Mitigation**: Apply rule to wrapper implementations.
+**Mitigation**: Always use HTTPS in production, configure via environment.
 
-### Dynamic Invocation
+### Template Literals with Variables
 
-**Why**: Dynamic calls not analyzed.
+**Why**: Only static string literals are checked.
 
 ```typescript
-// ❌ NOT DETECTED - Dynamic
-obj[method](userInput);
+// ❌ NOT DETECTED - Template with variable protocol
+const baseUrl = `${config.protocol}://api.example.com`;
 ```
 
-**Mitigation**: Avoid dynamic method invocation.
+**Mitigation**: Validate URLs at runtime before use.
+
+### URLs in JSON/Config Files
+
+**Why**: Rule only checks JavaScript/TypeScript files.
+
+```json
+// ❌ NOT DETECTED - JSON config
+{ "apiUrl": "http://api.example.com" }
+```
+
+**Mitigation**: Use separate config validation or JSON schema.
+
+## When Not To Use It
+
+- In local development environments accessing `localhost` or `127.0.0.1`
+- When explicitly documenting insecure URLs in comments
+- In test fixtures testing HTTP behavior
 
 ## Further Reading
 
-- [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
-- [CWE-000 Details](https://cwe.mitre.org/data/definitions/000.html)
+- [OWASP Mixed Content](https://owasp.org/www-community/vulnerabilities/Insecure_Transport)
+- [MDN Mixed Content](https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content)
+- [CWE-311: Missing Encryption](https://cwe.mitre.org/data/definitions/311.html)
 
 ## Related Rules
 
-- See other mobile security rules in this plugin
+- [no-disabled-certificate-validation](./no-disabled-certificate-validation.md)
+- [no-insecure-ssl](../pg/no-insecure-ssl.md) (in eslint-plugin-pg)
 
 ---
 
-**Category:** Mobile Security  
+**Category:** Security  
 **Type:** Problem  
 **Recommended:** Yes

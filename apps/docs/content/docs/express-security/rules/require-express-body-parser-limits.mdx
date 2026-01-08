@@ -3,7 +3,8 @@ title: require-express-body-parser-limits
 description: Require size limits on body parser middleware to prevent DoS attacks
 ---
 
-# require-express-body-parser-limits
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Require size limits on body parser middleware to prevent DoS attacks
 
@@ -72,7 +73,12 @@ app.use(bodyParser.urlencoded({ limit: '1mb', extended: true }));
 
 Never disable in production. Always set appropriate request size limits.
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

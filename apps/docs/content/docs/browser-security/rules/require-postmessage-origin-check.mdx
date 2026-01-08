@@ -3,7 +3,8 @@ title: require-postmessage-origin-check
 description: Detects postMessage event handlers without origin validation. This rule is part of eslint-plugin-browser-security.
 ---
 
-# require-postmessage-origin-check
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** postMessage, cross-origin, CWE-346, security, iframe, message validation
 
@@ -166,7 +167,12 @@ window.addEventListener('message', (event) => {
 - [`no-innerhtml`](./no-innerhtml.md) - XSS prevention
 - [`no-sensitive-localstorage`](./no-sensitive-localstorage.md) - Storage security
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

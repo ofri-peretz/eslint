@@ -3,7 +3,8 @@ title: browser-security/no-jwt-in-storage
 description: 🔒 Disallow storing JWT tokens in localStorage or sessionStorage
 ---
 
-# browser-security/no-jwt-in-storage
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > 🔒 Disallow storing JWT tokens in localStorage or sessionStorage
 
@@ -166,7 +167,12 @@ class TokenService {
 - [Auth0: Token Storage](https://auth0.com/docs/secure/security-guidance/data-security/token-storage)
 - [`browser-security/no-sensitive-localstorage`](./no-sensitive-localstorage.md) - General sensitive data detection
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

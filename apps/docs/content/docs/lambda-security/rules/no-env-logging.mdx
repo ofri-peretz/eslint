@@ -3,7 +3,8 @@ title: no-env-logging
 description: Detects logging of environment variables which may contain secrets. This rule is part of eslint-plugin-lambda-security.
 ---
 
-# no-env-logging
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** environment variables, logging, Lambda, CWE-532, security, sensitive data exposure
 
@@ -113,7 +114,12 @@ if (process.env.NODE_ENV === 'development') {
 - [`no-secrets-in-env`](./no-secrets-in-env.md) - Secrets in environment definitions
 - [`no-hardcoded-credentials-sdk`](./no-hardcoded-credentials-sdk.md) - Hardcoded credentials
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

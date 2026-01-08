@@ -3,7 +3,8 @@ title: browser-security/no-websocket-eval
 description: 🔒 Disallow using eval() or Function() with WebSocket message data
 ---
 
-# browser-security/no-websocket-eval
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > 🔒 Disallow using eval() or Function() with WebSocket message data
 
@@ -125,7 +126,12 @@ The only acceptable scenario is in development tools or REPLs where code executi
 - [`browser-security/no-websocket-innerhtml`](./no-websocket-innerhtml.md) - XSS prevention
 - [`browser-security/require-websocket-wss`](./require-websocket-wss.md) - Require encrypted connections
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

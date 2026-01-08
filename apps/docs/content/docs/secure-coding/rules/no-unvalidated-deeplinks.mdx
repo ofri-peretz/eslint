@@ -3,7 +3,7 @@ title: no-unvalidated-deeplinks
 description: Security rule for mobile applications
 ---
 
-# no-unvalidated-deeplinks
+import { FalseNegativeCTA, WhenNotToUse } from '@/components/RuleComponents';
 
 > Security rule for mobile applications
 
@@ -11,8 +11,8 @@ description: Security rule for mobile applications
 
 This rule security rule for mobile applications.
 
-**OWASP Mobile Top 10:** Mobile  
-**CWE:** [CWE-000](https://cwe.mitre.org/data/definitions/000.html)  
+**OWASP Mobile Top 10:** M4 (Insufficient Input/Output Validation)  
+**CWE:** [CWE-939](https://cwe.mitre.org/data/definitions/939.html)  
 **Severity:** error
 
 ## Examples
@@ -33,7 +33,11 @@ This rule security rule for mobile applications.
 
 This rule should be enabled for all mobile and web applications to ensure security best practices.
 
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 
@@ -74,7 +78,7 @@ obj[method](userInput);
 ## Further Reading
 
 - [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
-- [CWE-000 Details](https://cwe.mitre.org/data/definitions/000.html)
+- [CWE-939 Details](https://cwe.mitre.org/data/definitions/939.html)
 
 ## Related Rules
 

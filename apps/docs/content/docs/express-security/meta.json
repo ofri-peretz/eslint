@@ -1,7 +1,4 @@
 {
-  "title": "express-security",
-  "pages": [
-    "index",
-    "rules"
-  ]
+  "title": "Express",
+  "pages": ["index", "rules"]
 }

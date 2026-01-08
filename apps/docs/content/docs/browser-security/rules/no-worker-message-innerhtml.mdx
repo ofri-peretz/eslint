@@ -3,7 +3,8 @@ title: no-worker-message-innerhtml
 description: Disallow using innerHTML with Web Worker message data.
 ---
 
-# no-worker-message-innerhtml
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 Disallow using innerHTML with Web Worker message data.
 
@@ -109,7 +110,12 @@ Workers process data in the background, often from external sources like APIs or
 2. **File processing**: Sanitize file contents
 3. **Third-party integrations**: Never trust external data
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

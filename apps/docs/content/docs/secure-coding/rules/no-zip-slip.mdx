@@ -3,7 +3,8 @@ title: no-zip-slip
 description: Detects zip slip/archive extraction vulnerabilities. This rule is part of eslint-plugin-secure-coding.
 ---
 
-# no-zip-slip
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** zip slip, CWE-22, path traversal, archive extraction, tar, security
 
@@ -116,7 +117,12 @@ zip.extractAllTo(targetDir, true, true); // With overwrite protection
    Fix: Use safe extraction libraries or validate all paths | https://snyk.io/research/zip-slip-vulnerability
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

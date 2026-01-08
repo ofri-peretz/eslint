@@ -1,9 +1,10 @@
 ---
-title: "`require-embedding-validation`"
+title: "require-embedding-validation"
 description: Requires validation of embeddings before storage or similarity search.
 ---
 
-# `require-embedding-validation`
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Requires validation of embeddings before storage or similarity search.
 
@@ -68,7 +69,12 @@ Unvalidated embeddings can:
 - **Enable jailbreaks** - Crafted embeddings bypass safety
 - **Leak information** - Embedding inversion attacks
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

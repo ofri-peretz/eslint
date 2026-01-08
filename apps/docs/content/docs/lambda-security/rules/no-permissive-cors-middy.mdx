@@ -3,7 +3,8 @@ title: no-permissive-cors-middy
 description: Detects permissive CORS configurations in Middy middleware. This rule is part of eslint-plugin-lambda-security.
 ---
 
-# no-permissive-cors-middy
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** CORS, Middy, Lambda middleware, CWE-942, security, wildcard origin
 
@@ -99,7 +100,12 @@ export const handler = middy(baseHandler).use(
 
 - [`no-permissive-cors-response`](./no-permissive-cors-response.md) - CORS in direct responses
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

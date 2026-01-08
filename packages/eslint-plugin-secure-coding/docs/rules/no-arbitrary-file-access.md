@@ -1,83 +1,141 @@
 # no-arbitrary-file-access
 
-> Security rule for mobile applications
+> **Keywords:** path traversal, CWE-22, file access, LFI, directory traversal, fs, readFile, security
+
+Prevents file system access with unsanitized user input to protect against path traversal attacks.
+
+⚠️ This rule **errors** by default in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                                    |
+| ----------------- | ------------------------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) (Improper Limitation of Pathname) |
+| **OWASP**         | [A01:2021 Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)  |
+| **Severity**      | High                                                                                       |
+| **Category**      | Security                                                                                   |
 
 ## Rule Details
 
-This rule security rule for mobile applications.
+Path traversal vulnerabilities allow attackers to access files outside the intended directory using sequences like `../`. This rule detects `fs.*` calls where the path comes from user input.
 
-**OWASP Mobile Top 10:** Mobile  
-**CWE:** [CWE-000](https://cwe.mitre.org/data/definitions/000.html)  
-**Severity:** error
+**Smart Detection:** This rule recognizes safe patterns including:
+
+- `path.basename()` sanitization
+- `path.join()` with validated base directories
+- `startsWith()` validation guards
 
 ## Examples
 
 ### ❌ Incorrect
 
-```javascript
-// Insecure pattern
+```typescript
+// Direct user input to fs - DANGEROUS
+app.get('/file', (req, res) => {
+  const content = fs.readFileSync(req.query.filename); // Path traversal!
+  res.send(content);
+});
+
+// User input from params
+fs.readFile(req.params.path, callback);
+
+// Unsanitized body input
+fs.writeFileSync(req.body.filePath, data);
 ```
 
 ### ✅ Correct
 
-```javascript
-// Secure pattern
+```typescript
+// Using path.basename() to strip directory components
+const safeName = path.basename(req.query.filename);
+const fullPath = path.join(UPLOAD_DIR, safeName);
+fs.readFileSync(fullPath);
+
+// Validation with startsWith() guard
+const filePath = path.resolve(UPLOAD_DIR, req.query.filename);
+if (!filePath.startsWith(UPLOAD_DIR)) {
+  throw new Error('Invalid path');
+}
+fs.readFileSync(filePath);
+
+// Literal paths are always safe
+fs.readFileSync('./config/app.json');
+
+// Using allowlisted filenames
+const ALLOWED_FILES = ['readme.txt', 'license.txt'];
+if (ALLOWED_FILES.includes(req.query.file)) {
+  fs.readFileSync(path.join(PUBLIC_DIR, req.query.file));
+}
 ```
 
-## When Not To Use It
+## Error Message Format
 
-This rule should be enabled for all mobile and web applications to ensure security best practices.
+When triggered, this rule produces:
+
+```
+🔒 CWE-22 | Arbitrary File Access | HIGH
+   Fix: Validate and sanitize file paths, use allowlists | https://cwe.mitre.org/data/definitions/22.html
+```
 
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Path from Variable
+### Indirect User Input
 
-**Why**: Path strings from variables not traced.
+**Why**: Data flow through multiple variables not traced.
 
 ```typescript
-// ❌ NOT DETECTED - Path from variable
-const filePath = userInput;
-fs.readFile(filePath);
+// ❌ NOT DETECTED - Indirect flow
+const userPath = getPathFromRequest(req);
+fs.readFileSync(userPath);
 ```
 
-**Mitigation**: Validate and sanitize all paths.
+**Mitigation**: Apply validation at the source.
 
-### Indirect Path Construction
+### Custom File Wrappers
 
-**Why**: Complex path building not analyzed.
-
-```typescript
-// ❌ NOT DETECTED - Indirect
-const path = buildPath(base, userInput);
-fs.readFile(path);
-```
-
-**Mitigation**: Use path whitelisting.
-
-### Custom FS Wrappers
-
-**Why**: FS wrappers not recognized.
+**Why**: Wrapper functions around fs not analyzed.
 
 ```typescript
-// ❌ NOT DETECTED - Wrapper
-fileManager.read(userPath);
+// ❌ NOT DETECTED - Custom wrapper
+function readUserFile(path) {
+  return fs.readFileSync(path); // Called with user input elsewhere
+}
 ```
 
 **Mitigation**: Apply rule to wrapper implementations.
 
+### Template Literals
+
+**Why**: Complex template construction not fully traced.
+
+```typescript
+// ❌ NOT DETECTED - Template literal
+fs.readFileSync(`./uploads/${userId}/${req.query.file}`);
+```
+
+**Mitigation**: Use path.join() with basename().
+
+## When Not To Use It
+
+- In CLI tools where file paths come from command-line arguments (trusted)
+- In build scripts processing known file trees
+- When using a file access abstraction layer with built-in validation
+
 ## Further Reading
 
-- [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
-- [CWE-000 Details](https://cwe.mitre.org/data/definitions/000.html)
+- [OWASP Path Traversal](https://owasp.org/www-community/attacks/Path_Traversal)
+- [CWE-22: Path Traversal](https://cwe.mitre.org/data/definitions/22.html)
+- [Node.js fs Security](https://nodejs.org/api/fs.html#file-system-flags)
 
 ## Related Rules
 
-- See other mobile security rules in this plugin
+- [detect-non-literal-fs-filename](./detect-non-literal-fs-filename.md)
+- [no-unsafe-copy-from](../pg/no-unsafe-copy-from.md) (in eslint-plugin-pg)
 
 ---
 
-**Category:** Mobile Security  
+**Category:** Security  
 **Type:** Problem  
 **Recommended:** Yes

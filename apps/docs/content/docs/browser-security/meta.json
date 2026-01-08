@@ -1,7 +1,4 @@
 {
-  "title": "browser-security",
-  "pages": [
-    "index",
-    "rules"
-  ]
+  "title": "Browser Security",
+  "pages": ["index", "rules"]
 }

@@ -1,81 +1,138 @@
 # detect-weak-password-validation
 
-> Security rule for mobile applications
+> **Keywords:** password policy, weak password, CWE-521, authentication, password length, security
+
+Detects weak password length requirements (less than 8 characters) in validation code.
+
+⚠️ This rule **errors** by default in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                                                                             |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-521](https://cwe.mitre.org/data/definitions/521.html) (Weak Password Requirements)                                             |
+| **OWASP**         | [A07:2021 Identification and Authentication Failures](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/) |
+| **Severity**      | Critical                                                                                                                            |
+| **Category**      | Security                                                                                                                            |
 
 ## Rule Details
 
-This rule security rule for mobile applications.
+Weak password requirements allow attackers to easily brute-force or guess user credentials. This rule detects password length checks that are too permissive (less than 8 characters).
 
-**OWASP Mobile Top 10:** Mobile  
-**CWE:** [CWE-000](https://cwe.mitre.org/data/definitions/000.html)  
-**Severity:** error
+Modern security standards recommend minimum 12 characters with complexity requirements.
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```javascript
-// Insecure pattern
+// Too short - easily brute-forced
+if (password.length >= 4) {
+  return true;
+}
+
+// Still too weak
+if (pwd.length > 5) {
+  acceptPassword();
+}
+
+// Exact match is weak
+if (pass.length === 6) {
+  // Accept password
+}
 ```
 
 ### ✅ Correct
 
 ```javascript
-// Secure pattern
+// NIST minimum recommendation
+if (password.length >= 8) {
+  return validateComplexity(password);
+}
+
+// Better - 12+ characters
+if (password.length >= 12) {
+  return true;
+}
+
+// Best - use a password validation library
+import { zxcvbn } from 'zxcvbn';
+const result = zxcvbn(password);
+if (result.score >= 3) {
+  return true;
+}
 ```
 
-## When Not To Use It
+## Error Message Format
 
-This rule should be enabled for all mobile and web applications to ensure security best practices.
+When triggered, this rule produces:
+
+```
+🔒 CWE-521 | Weak Password Validation | CRITICAL
+   Fix: Require at least 12 characters with complexity requirements | https://cwe.mitre.org/data/definitions/521.html
+```
 
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Credentials from Config
+### Configuration-Based Length
 
-**Why**: Config values not traced.
-
-```typescript
-// ❌ NOT DETECTED - From config
-const password = config.dbPassword;
-```
-
-**Mitigation**: Use proper secrets management.
-
-### Environment Variables
-
-**Why**: Env var content not analyzed.
+**Why**: Length values from configuration are not traced.
 
 ```typescript
-// ❌ NOT DETECTED - Env var
-const secret = process.env.API_KEY;
+// ❌ NOT DETECTED - Config value
+const minLength = config.passwordMinLength; // Could be 4!
+if (password.length >= minLength) {
+}
 ```
 
-**Mitigation**: Never hardcode or expose secrets.
+**Mitigation**: Audit configuration files separately.
 
-### Dynamic Credential Access
+### Validation in External Functions
 
-**Why**: Dynamic property access not traced.
+**Why**: Password validation in helper functions not analyzed.
 
 ```typescript
-// ❌ NOT DETECTED - Dynamic
-const cred = credentials[type];
+// ❌ NOT DETECTED - External validator
+validatePassword(password); // May have weak internal checks
 ```
 
-**Mitigation**: Audit all credential access patterns.
+**Mitigation**: Apply rule to all password validation code.
+
+### Non-Standard Variable Names
+
+**Why**: Only detects variables containing "password", "pwd", or "pass".
+
+```typescript
+// ❌ NOT DETECTED - Non-standard naming
+if (userCredential.length >= 4) {
+}
+if (secretInput.length >= 4) {
+}
+```
+
+**Mitigation**: Use consistent naming conventions.
+
+## When Not To Use It
+
+- When using a dedicated password validation library (zxcvbn, password-validator)
+- In test files mocking password validation
+- When the length check is combined with other complexity requirements
 
 ## Further Reading
 
-- [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
-- [CWE-000 Details](https://cwe.mitre.org/data/definitions/000.html)
+- [NIST Password Guidelines](https://pages.nist.gov/800-63-3/sp800-63b.html)
+- [OWASP Password Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
+- [CWE-521: Weak Password Requirements](https://cwe.mitre.org/data/definitions/521.html)
 
 ## Related Rules
 
-- See other mobile security rules in this plugin
+- [no-hardcoded-credentials](./no-hardcoded-credentials.md) (in eslint-plugin-pg)
+- [no-client-side-auth-logic](./no-client-side-auth-logic.md)
 
 ---
 
-**Category:** Mobile Security  
+**Category:** Security  
 **Type:** Problem  
 **Recommended:** Yes

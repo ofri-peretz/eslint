@@ -3,7 +3,8 @@ title: require-tls-connection
 description: Requires TLS/SSL encryption for MongoDB connections in production environments.
 ---
 
-# require-tls-connection
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** CWE-295, TLS, SSL, encryption, MongoDB, MitM, security
 
@@ -72,7 +73,12 @@ mongoose.connect('mongodb://localhost:27017/devdb');
 
 **Workaround**: Use `allowInTests: true` or configure environment-specific rules.
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 ### Dynamic Configuration
 

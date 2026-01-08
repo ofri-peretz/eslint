@@ -3,7 +3,8 @@ title: no-transaction-on-pool
 description: Prevents running transaction commands directly on pool (must use dedicated client).
 ---
 
-# no-transaction-on-pool
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** transactions, race condition, CWE-362, pg, node-postgres, pool
 
@@ -59,7 +60,12 @@ try {
 
 - Never disable this rule - transactions on pool are always incorrect
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

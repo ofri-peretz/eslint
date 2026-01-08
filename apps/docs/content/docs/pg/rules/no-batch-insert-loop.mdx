@@ -3,7 +3,8 @@ title: no-batch-insert-loop
 description: Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern).
 ---
 
-# no-batch-insert-loop
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** N+1 queries, performance, CWE-400, pg, node-postgres, bulk operations
 
@@ -70,7 +71,12 @@ await client.query('UPDATE users SET active = true WHERE id = ANY($1)', [
    Fix: Use bulk insert with unnest() or ANY() for updates
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

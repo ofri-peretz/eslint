@@ -3,7 +3,8 @@ title: no-unencrypted-transmission
 description: "Detects unencrypted data transmission (HTTP vs HTTPS, plain text protocols). This rule is part of eslint-plugin-secure-coding and provides LLM-optimized error m"
 ---
 
-# no-unencrypted-transmission
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** unencrypted, CWE-319, security, ESLint rule, HTTP, HTTPS, encryption, TLS, SSL, data transmission, LLM-optimized, code security
 
@@ -187,7 +188,12 @@ fetch('https://api.example.com/data');
 4. **Environment variables**: Store URLs in environment variables
 5. **Test exceptions**: Use `allowInTests: true` for localhost in tests
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

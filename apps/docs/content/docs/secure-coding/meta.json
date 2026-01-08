@@ -1,7 +1,4 @@
 {
-  "title": "secure-coding",
-  "pages": [
-    "index",
-    "rules"
-  ]
+  "title": "Secure Coding",
+  "pages": ["index", "rules"]
 }

@@ -1,82 +1,140 @@
 # no-debug-code-in-production
 
-> Security rule for mobile applications
+> **Keywords:** console.log, DEBUG, **DEV**, CWE-489, leftover debug, production security
+
+Detects debug code that should not be present in production builds.
+
+⚠️ This rule **errors** by default in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                        |
+| ----------------- | ------------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-489](https://cwe.mitre.org/data/definitions/489.html) (Active Debug Code) |
+| **OWASP Mobile**  | [M7: Client Code Quality](https://owasp.org/www-project-mobile-top-10/)        |
+| **Severity**      | High                                                                           |
+| **Category**      | Security                                                                       |
 
 ## Rule Details
 
-This rule security rule for mobile applications.
+Debug code left in production can expose sensitive information, internal system details, or create attack vectors. This rule detects:
 
-**OWASP Mobile Top 10:** Mobile  
-**CWE:** [CWE-000](https://cwe.mitre.org/data/definitions/000.html)  
-**Severity:** error
+- `console.log()` statements
+- `DEBUG` identifiers
+- `__DEV__` React Native development flags
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```javascript
-// Insecure pattern
+// Console logging in production code
+function processPayment(card) {
+  console.log('Processing card:', card.number); // Exposes PII!
+  return chargeCard(card);
+}
+
+// Debug flags left in code
+if (DEBUG) {
+  showInternalState();
+}
+
+// React Native dev flag
+if (__DEV__) {
+  enableDevTools();
+}
 ```
 
 ### ✅ Correct
 
 ```javascript
-// Secure pattern
+// Use proper logging service
+import { logger } from './logger';
+
+function processPayment(card) {
+  logger.info('Processing payment', { cardLast4: card.number.slice(-4) });
+  return chargeCard(card);
+}
+
+// Remove debug blocks entirely for production
+// Or use build-time dead code elimination
+
+// Conditional logging based on environment
+if (process.env.NODE_ENV !== 'production') {
+  console.log('Development only log');
+}
 ```
 
-## When Not To Use It
+## Error Message Format
 
-This rule should be enabled for all mobile and web applications to ensure security best practices.
+When triggered, this rule produces:
+
+```
+🔒 CWE-489 | Debug Code in Production detected - DEBUG, __DEV__, console | HIGH
+   Fix: Review and apply secure practices | https://cwe.mitre.org/data/definitions/489.html
+```
 
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Values from Variables
+### Aliased Console
 
-**Why**: Values stored in variables are not traced.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = userInput;
-dangerousOperation(value);
-```
-
-**Mitigation**: Validate all user inputs.
-
-### Wrapper Functions
-
-**Why**: Custom wrappers not recognized.
+**Why**: Aliased console object not traced.
 
 ```typescript
-// ❌ NOT DETECTED - Wrapper
-myWrapper(userInput); // Uses dangerous API internally
+// ❌ NOT DETECTED - Aliased console
+const log = console.log;
+log('debug info');
 ```
 
-**Mitigation**: Apply rule to wrapper implementations.
+**Mitigation**: Avoid aliasing console methods.
 
-### Dynamic Invocation
+### Custom Debug Functions
 
-**Why**: Dynamic calls not analyzed.
+**Why**: Custom logging functions not recognized.
 
 ```typescript
-// ❌ NOT DETECTED - Dynamic
-obj[method](userInput);
+// ❌ NOT DETECTED - Custom debug function
+function debug(msg) {
+  console.log(msg);
+}
+debug('internal state');
 ```
 
-**Mitigation**: Avoid dynamic method invocation.
+**Mitigation**: Apply rule to debug function definitions.
+
+### Dynamic Method Names
+
+**Why**: Dynamic property access not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic method
+const method = 'log';
+console[method]('debug');
+```
+
+**Mitigation**: Avoid dynamic console access.
+
+## When Not To Use It
+
+- In development-only configuration files
+- In CLI tools where console output is expected
+- When using a logging library that conditionally strips debug logs
 
 ## Further Reading
 
-- [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
-- [CWE-000 Details](https://cwe.mitre.org/data/definitions/000.html)
+- [OWASP Mobile Top 10 - M7](https://owasp.org/www-project-mobile-top-10/)
+- [CWE-489: Active Debug Code](https://cwe.mitre.org/data/definitions/489.html)
+- [ESLint no-console rule](https://eslint.org/docs/rules/no-console)
 
 ## Related Rules
 
-- See other mobile security rules in this plugin
+- [no-exposed-debug-endpoints](./no-exposed-debug-endpoints.md)
+- [detect-mixed-content](./detect-mixed-content.md)
 
 ---
 
-**Category:** Mobile Security  
+**Category:** Security  
 **Type:** Problem  
 **Recommended:** Yes

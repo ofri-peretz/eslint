@@ -1,7 +1,4 @@
 {
-  "title": "pg",
-  "pages": [
-    "index",
-    "rules"
-  ]
+  "title": "PostgreSQL",
+  "pages": ["index", "rules"]
 }

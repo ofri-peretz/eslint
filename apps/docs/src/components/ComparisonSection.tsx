@@ -55,15 +55,15 @@ export function ComparisonSection() {
         <div
           className={`
             relative overflow-hidden rounded-2xl
-            bg-gradient-to-br from-red-950/50 to-red-900/30
-            border border-red-500/30
+            bg-red-50 dark:bg-red-950/30
+            border border-red-200 dark:border-red-500/30
             p-8
             transform transition-all duration-700 ease-out
             ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'}
           `}
         >
           {/* Animated glow effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 to-transparent opacity-50" />
+          <div className="absolute inset-0 bg-linear-to-r from-red-500/5 to-transparent dark:from-red-500/10 opacity-50" />
           
           {/* Badge */}
           <div className="absolute -top-px left-8">
@@ -71,13 +71,13 @@ export function ComparisonSection() {
               <div className="px-4 py-1.5 bg-red-500 text-white text-xs font-bold rounded-b-lg shadow-lg shadow-red-500/25">
                 BEFORE
               </div>
-              <div className="absolute inset-0 bg-red-500 blur-md opacity-50 -z-10" />
+              <div className="absolute inset-0 bg-red-500 blur-md opacity-20 dark:opacity-50 -z-10" />
             </div>
           </div>
           
           {/* Content */}
           <div className="relative mt-4">
-            <h3 className="text-xl font-bold text-red-400 mb-6 flex items-center gap-3">
+            <h3 className="text-xl font-bold text-red-600 dark:text-red-400 mb-6 flex items-center gap-3">
               <span className="text-3xl">❌</span>
               Traditional ESLint
             </h3>
@@ -87,17 +87,17 @@ export function ComparisonSection() {
                 <li
                   key={index}
                   className={`
-                    flex items-start gap-3 text-gray-300
+                    flex items-start gap-3 text-fd-muted-foreground dark:text-gray-300
                     transform transition-all duration-500
                     ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}
                   `}
                   style={{ transitionDelay: `${index * 100 + 200}ms` }}
                 >
-                  <span className="text-red-500 text-lg mt-0.5 flex-shrink-0">✗</span>
+                  <span className="text-red-500 text-lg mt-0.5 shrink-0">✗</span>
                   <span>
                     {item.highlight ? (
                       <>
-                        <span className="font-bold text-red-400">{item.highlight}</span>{' '}
+                        <span className="font-bold text-red-600 dark:text-red-400">{item.highlight}</span>{' '}
                         {item.text}
                       </>
                     ) : (
@@ -114,8 +114,8 @@ export function ComparisonSection() {
         <div
           className={`
             relative overflow-hidden rounded-2xl
-            bg-gradient-to-br from-emerald-950/50 to-emerald-900/30
-            border border-emerald-500/30
+            bg-emerald-50 dark:bg-emerald-950/30
+            border border-emerald-200 dark:border-emerald-500/30
             p-8
             transform transition-all duration-700 ease-out
             ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'}
@@ -123,13 +123,13 @@ export function ComparisonSection() {
           style={{ transitionDelay: '100ms' }}
         >
           {/* Animated glow effect */}
-          <div className="absolute inset-0 bg-gradient-to-l from-emerald-500/10 to-transparent opacity-50" />
+          <div className="absolute inset-0 bg-linear-to-l from-emerald-500/5 to-transparent dark:from-emerald-500/10 opacity-50" />
           
           {/* Shimmer effect */}
           <div 
             className={`
               absolute inset-0 
-              bg-gradient-to-r from-transparent via-emerald-400/10 to-transparent
+              bg-linear-to-r from-transparent via-emerald-400/10 dark:via-emerald-400/5 to-transparent
               transform -skew-x-12
               transition-transform duration-1000 ease-out
               ${isVisible ? 'translate-x-full' : '-translate-x-full'}
@@ -143,13 +143,13 @@ export function ComparisonSection() {
               <div className="px-4 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-b-lg shadow-lg shadow-emerald-500/25">
                 AFTER
               </div>
-              <div className="absolute inset-0 bg-emerald-500 blur-md opacity-50 -z-10" />
+              <div className="absolute inset-0 bg-emerald-500 blur-md opacity-20 dark:opacity-50 -z-10" />
             </div>
           </div>
           
           {/* Content */}
           <div className="relative mt-4">
-            <h3 className="text-xl font-bold text-emerald-400 mb-6 flex items-center gap-3">
+            <h3 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mb-6 flex items-center gap-3">
               <span className="text-3xl">✅</span>
               Interlace ESLint
             </h3>
@@ -159,17 +159,17 @@ export function ComparisonSection() {
                 <li
                   key={index}
                   className={`
-                    flex items-start gap-3 text-gray-300
+                    flex items-start gap-3 text-fd-muted-foreground dark:text-gray-300
                     transform transition-all duration-500
                     ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'}
                   `}
                   style={{ transitionDelay: `${index * 100 + 300}ms` }}
                 >
-                  <span className="text-emerald-500 text-lg mt-0.5 flex-shrink-0">✓</span>
+                  <span className="text-emerald-500 text-lg mt-0.5 shrink-0">✓</span>
                   <span>
                     {item.highlight ? (
                       <>
-                        <span className="font-bold text-emerald-400">{item.highlight}</span>{' '}
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">{item.highlight}</span>{' '}
                         {item.text}
                       </>
                     ) : (
@@ -183,7 +183,7 @@ export function ComparisonSection() {
           
           {/* Recommended badge */}
           <div className="absolute top-4 right-4">
-            <div className="px-3 py-1 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-xs font-semibold rounded-full">
+            <div className="px-3 py-1 bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/20 dark:border-emerald-500/40 text-emerald-600 dark:text-emerald-400 text-xs font-semibold rounded-full">
               ✨ Recommended
             </div>
           </div>

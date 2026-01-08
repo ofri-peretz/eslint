@@ -1,5 +1,5 @@
 ---
-title: eslint-plugin-crypto
+title: Overview
 description: Cryptographic security rules for Node.js crypto and Web Crypto API
 ---
 
@@ -8,16 +8,44 @@ description: Cryptographic security rules for Node.js crypto and Web Crypto API
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-crypto.svg)](https://www.npmjs.com/package/eslint-plugin-crypto) [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-crypto.svg)](https://www.npmjs.com/package/eslint-plugin-crypto) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=crypto)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=crypto)
 
 <Callout type="info">
-  **24 specialized rules** — LLM-optimized error messages with CWE, OWASP, and CVSS metadata.
+  **24 specialized rules** — LLM-optimized error messages with CWE, OWASP, and
+  CVSS metadata.
 </Callout>
 
-## Installation
+## When to Use
+
+This plugin is designed for **any JavaScript/TypeScript application** using cryptographic operations:
+
+| Environment              | Examples                                         |
+| ------------------------ | ------------------------------------------------ |
+| **Node.js Backend**      | Express, Fastify, NestJS, Koa                    |
+| **Browser Applications** | Web Crypto API usage                             |
+| **Serverless**           | AWS Lambda, Vercel Functions, Cloudflare Workers |
+| **CLI Tools**            | Node.js scripts, build tools                     |
+
+### Target Vulnerabilities
+
+| Category                    | Threats                              |
+| --------------------------- | ------------------------------------ |
+| **Weak Algorithms**         | MD5, SHA1, DES, RC4                  |
+| **Insecure Key Management** | Hardcoded keys, weak key lengths     |
+| **IV/Nonce Misuse**         | Static IVs, predictable salts        |
+| **Mode of Operation**       | ECB mode, unauthenticated encryption |
+
+<Callout type="tip">
+  **Covers both Node.js and browser** — Works with `crypto`, `node:crypto`, and
+  Web Crypto API patterns.
+</Callout>
+
+## Getting Started
+
+### 1. Install
 
 ```bash
 npm install --save-dev eslint-plugin-crypto
 ```
 
-## Configuration
+### 2. Configure
 
 ```js title="eslint.config.js"
 import crypto from 'eslint-plugin-crypto';
@@ -25,19 +53,29 @@ import crypto from 'eslint-plugin-crypto';
 export default [crypto.configs.recommended];
 ```
 
+### 3. Run
+
+```bash
+npx eslint .
+```
+
 ## Available Presets
 
-| Preset | Description |
-|--------|-------------|
-| `recommended` | Balanced security for most projects |
-| `strict` | Maximum enforcement (all rules as errors) |
+| Preset        | Description                               |
+| ------------- | ----------------------------------------- |
+| `recommended` | Balanced security for most projects       |
+| `strict`      | Maximum enforcement (all rules as errors) |
 
 ## Rules
 
 Browse all 24 rules in the sidebar, or see the [Rules section](/docs/crypto/rules).
 
 <Cards>
-  <Card title="Browse All Rules" href="/docs/crypto/rules" />
+  <Card
+    title="📚 Browse All Rules"
+    description="View all rules with examples and configurations"
+    href="/docs/crypto/rules"
+  />
 </Cards>
 
 ## Related Articles

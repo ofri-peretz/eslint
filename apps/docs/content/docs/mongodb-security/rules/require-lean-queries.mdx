@@ -3,7 +3,8 @@ title: require-lean-queries
 description: Suggests using .lean() for read-only Mongoose queries to reduce memory usage.
 ---
 
-# require-lean-queries
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** CWE-400, lean, performance, Mongoose, memory
 
@@ -60,7 +61,12 @@ await user.save();
 - When virtuals or instance methods are required
 - For small result sets where overhead is negligible
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

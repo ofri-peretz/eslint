@@ -3,7 +3,7 @@ title: require-storage-encryption
 description: Security rule for mobile applications
 ---
 
-# require-storage-encryption
+import { FalseNegativeCTA, WhenNotToUse } from '@/components/RuleComponents';
 
 > Security rule for mobile applications
 
@@ -11,8 +11,8 @@ description: Security rule for mobile applications
 
 This rule security rule for mobile applications.
 
-**OWASP Mobile Top 10:** Mobile  
-**CWE:** [CWE-000](https://cwe.mitre.org/data/definitions/000.html)  
+**OWASP Mobile Top 10:** M9 (Insecure Data Storage)  
+**CWE:** [CWE-311](https://cwe.mitre.org/data/definitions/311.html)  
 **Severity:** error
 
 ## Examples
@@ -33,7 +33,11 @@ This rule security rule for mobile applications.
 
 This rule should be enabled for all mobile and web applications to ensure security best practices.
 
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 
@@ -75,7 +79,7 @@ myAI.complete(userPrompt);
 ## Further Reading
 
 - [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
-- [CWE-000 Details](https://cwe.mitre.org/data/definitions/000.html)
+- [CWE-311 Details](https://cwe.mitre.org/data/definitions/311.html)
 
 ## Related Rules
 

@@ -3,7 +3,8 @@ title: no-electron-security-issues
 description: Detects Electron security vulnerabilities and insecure configurations. This rule is part of eslint-plugin-secure-coding.
 ---
 
-# no-electron-security-issues
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** Electron, CWE-16, nodeIntegration, contextIsolation, desktop security
 
@@ -141,7 +142,12 @@ ipcMain.handle('safe-channel', async (event, arg) => {
    Fix: Set nodeIntegration: false and use secure preload scripts | https://electronjs.org/docs/tutorial/security
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

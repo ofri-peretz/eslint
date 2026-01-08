@@ -3,7 +3,8 @@ title: detect-non-literal-fs-filename
 description: "Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system. This rule is part of eslint-plugin-secure-co"
 ---
 
-# detect-non-literal-fs-filename
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** path traversal, CWE-22, security, ESLint rule, file system, fs module, directory traversal, file access, auto-fix, LLM-optimized, code security
 
@@ -290,7 +291,12 @@ for (const attack of attacks) {
 - [`detect-object-injection`](./detect-object-injection.md) - Prevents prototype pollution
 - [`detect-non-literal-regexp`](./detect-non-literal-regexp.md) - Prevents ReDoS attacks
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

@@ -3,7 +3,8 @@ title: no-missing-csrf-protection
 description: Detects missing CSRF token validation in POST/PUT/DELETE requests. This rule is part of eslint-plugin-secure-coding and provides LLM-optimized error messages th
 ---
 
-# no-missing-csrf-protection
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** CSRF, CWE-352, security, ESLint rule, CSRF protection, token validation, middleware, Express, Fastify, LLM-optimized, code security
 
@@ -165,7 +166,12 @@ app.get('/api/users', (req, res) => {
 4. **Token validation**: Validate CSRF tokens on every protected request
 5. **GET requests**: Don't require CSRF (idempotent operations)
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

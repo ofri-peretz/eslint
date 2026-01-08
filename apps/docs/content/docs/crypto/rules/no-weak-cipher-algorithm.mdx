@@ -3,7 +3,8 @@ title: no-weak-cipher-algorithm
 description: "## Description"
 ---
 
-# no-weak-cipher-algorithm
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 ## Description
 
@@ -40,7 +41,12 @@ This rule has no options.
 
 TODO: Add when not to use.
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

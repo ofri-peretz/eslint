@@ -1,7 +1,4 @@
 {
-  "title": "vercel-ai-security",
-  "pages": [
-    "index",
-    "rules"
-  ]
+  "title": "Vercel AI",
+  "pages": ["index", "rules"]
 }

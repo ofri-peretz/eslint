@@ -3,7 +3,8 @@ title: no-unsafe-copy-from
 description: Prevents COPY FROM with file paths (should use STDIN for safe client-side data loading).
 ---
 
-# no-unsafe-copy-from
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** COPY FROM, file access, CWE-73, pg, node-postgres, security, path injection
 
@@ -143,7 +144,12 @@ export default [
 - [no-unsafe-query](./no-unsafe-query.md) - SQL injection prevention
 - [no-unsafe-search-path](./no-unsafe-search-path.md) - Search path injection
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

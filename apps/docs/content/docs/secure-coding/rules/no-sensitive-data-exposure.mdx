@@ -3,7 +3,8 @@ title: no-sensitive-data-exposure
 description: "ESLint Rule: no-sensitive-data-exposure. This rule is part of eslint-plugin-secure-coding."
 ---
 
-# no-sensitive-data-exposure
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** no sensitive data exposure, security, ESLint rule, JavaScript, TypeScript, CWE-532
 
@@ -106,7 +107,12 @@ export default [
 
 - [`rule-name`](./rule-name.md) - Description
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

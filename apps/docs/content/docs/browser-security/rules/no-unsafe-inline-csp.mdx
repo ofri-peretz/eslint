@@ -3,7 +3,8 @@ title: no-unsafe-inline-csp
 description: "Disallow 'unsafe-inline' in Content Security Policy directives."
 ---
 
-# no-unsafe-inline-csp
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 Disallow 'unsafe-inline' in Content Security Policy directives.
 
@@ -89,7 +90,12 @@ CSP is one of the most effective defenses against XSS attacks. Using `'unsafe-in
 2. **Hashes**: Calculate SHA hashes of allowed inline scripts
 3. **External scripts**: Move inline scripts to external files
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

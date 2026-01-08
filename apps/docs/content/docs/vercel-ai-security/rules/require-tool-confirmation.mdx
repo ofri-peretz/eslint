@@ -1,9 +1,10 @@
 ---
-title: "`require-tool-confirmation`"
+title: "require-tool-confirmation"
 description: Requires human confirmation for destructive tool operations.
 ---
 
-# `require-tool-confirmation`
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Requires human confirmation for destructive tool operations.
 
@@ -96,7 +97,12 @@ Unconfirmed destructive operations can cause:
 - [`require-tool-schema`](./require-tool-schema.md) - Validate tool inputs
 - [`require-audit-logging`](./require-audit-logging.md) - Log AI operations
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

@@ -3,7 +3,8 @@ title: no-insecure-redirects
 description: "ESLint Rule: no-insecure-redirects. This rule is part of eslint-plugin-secure-coding."
 ---
 
-# no-insecure-redirects
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** no insecure redirects, security, ESLint rule, JavaScript, TypeScript, CWE-601
 
@@ -106,7 +107,12 @@ export default [
 
 - [`rule-name`](./rule-name.md) - Description
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

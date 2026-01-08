@@ -138,98 +138,101 @@ export default [secureCoding.configs.recommended];
 
 ## Security Plugins
 
-<Cards>
-  <Card
-    title="secure-coding (75 rules)"
+<PluginCards>
+  <PluginCard
+    title="secure-coding"
+    rules={75}
     description="Core OWASP Top 10 Web + Mobile coverage"
     href="/docs/secure-coding"
+    category="security"
   />
-  <Card
-    title="pg (13 rules)"
+  <PluginCard
+    title="pg"
+    rules={13}
     description="PostgreSQL SQL injection prevention"
     href="/docs/pg"
+    category="security"
   />
-  <Card
-    title="jwt (13 rules)"
+  <PluginCard
+    title="jwt"
+    rules={13}
     description="JWT security best practices"
     href="/docs/jwt"
+    category="security"
   />
-  <Card
-    title="crypto (24 rules)"
+  <PluginCard
+    title="crypto"
+    rules={24}
     description="Cryptographic security"
     href="/docs/crypto"
+    category="security"
   />
-  <Card
-    title="browser-security (21 rules)"
+  <PluginCard
+    title="browser-security"
+    rules={21}
     description="XSS and client-side security"
     href="/docs/browser-security"
+    category="security"
   />
-  <Card
-    title="mongodb-security (16 rules)"
+  <PluginCard
+    title="mongodb-security"
+    rules={16}
     description="NoSQL injection prevention"
     href="/docs/mongodb-security"
+    category="security"
   />
-  <Card
-    title="vercel-ai-security (19 rules)"
+  <PluginCard
+    title="vercel-ai-security"
+    rules={19}
     description="AI/LLM security for Vercel AI SDK"
     href="/docs/vercel-ai-security"
+    icon="🤖"
+    category="security"
   />
-</Cards>
+</PluginCards>
 
 ## Framework Plugins
 
-<Cards>
-  <Card
-    title="express-security (9 rules)"
+<PluginCards>
+  <PluginCard
+    title="express-security"
+    rules={9}
     description="Express.js middleware security"
     href="/docs/express-security"
+    category="framework"
   />
-  <Card
-    title="nestjs-security (5 rules)"
+  <PluginCard
+    title="nestjs-security"
+    rules={5}
     description="NestJS guards and validation"
     href="/docs/nestjs-security"
+    category="framework"
   />
-  <Card
-    title="lambda-security (5 rules)"
+  <PluginCard
+    title="lambda-security"
+    rules={5}
     description="AWS Lambda security"
     href="/docs/lambda-security"
+    icon="☁️"
+    category="framework"
   />
-</Cards>
+</PluginCards>
 
 ## Architecture Plugins
 
-<Cards>
-  <Card
-    title="import-next (56 rules)"
-    description="Import analysis and architecture"
+<PluginCards>
+  <PluginCard
+    title="import-next"
+    rules={56}
+    description="Import analysis and architecture enforcement"
     href="/docs/import-next"
+    category="architecture"
   />
-</Cards>
-
----
-
-## Links
-
-<Cards>
-  <Card
-    title="GitHub"
-    description="Source code, issues, and contributions"
-    href="https://github.com/ofri-peretz/eslint"
-  />
-  <Card
-    title="npm Packages"
-    description="All published packages"
-    href="https://www.npmjs.com/~ofri-peretz"
-  />
-  <Card
-    title="Codecov"
-    description="Test coverage reports"
-    href="https://app.codecov.io/gh/ofri-peretz/eslint"
-  />
-</Cards>
+</PluginCards>
 
 ---
 
 ## Related Articles
 
 <RelatedArticles plugin="secure-coding" limit={6} />
+

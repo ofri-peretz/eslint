@@ -3,7 +3,8 @@ title: no-unescaped-url-parameter
 description: Detects unescaped URL parameters that can lead to Cross-Site Scripting (XSS) or open redirect vulnerabilities. This rule is part of eslint-plugin-secure-coding
 ---
 
-# no-unescaped-url-parameter
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** URL encoding, CWE-79, security, ESLint rule, URL parameters, encodeURIComponent, URLSearchParams, XSS, open redirect, auto-fix, LLM-optimized, code security
 
@@ -221,7 +222,12 @@ url.searchParams.set('page', '1');
 const finalUrl = url.toString(); // Automatically encoded
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

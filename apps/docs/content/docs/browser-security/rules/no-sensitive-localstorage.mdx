@@ -3,7 +3,8 @@ title: no-sensitive-localstorage
 description: "Detects storage of sensitive data (tokens, passwords, PII) in localStorage. This rule is part of eslint-plugin-browser-security."
 ---
 
-# no-sensitive-localstorage
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** localStorage, sessionStorage, tokens, CWE-922, security, XSS, sensitive data
 
@@ -192,7 +193,12 @@ function getToken() {
 - [`no-innerhtml`](./no-innerhtml.md) - Prevent XSS that could access localStorage
 - [`require-postmessage-origin-check`](./require-postmessage-origin-check.md) - Cross-origin security
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

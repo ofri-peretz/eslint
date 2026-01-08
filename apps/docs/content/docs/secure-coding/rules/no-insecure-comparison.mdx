@@ -3,7 +3,8 @@ title: no-insecure-comparison
 description: "Detects insecure comparison operators (==, !=) that can lead to type coercion vulnerabilities. This rule is part of eslint-plugin-secure-coding and provides LLM"
 ---
 
-# no-insecure-comparison
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** insecure comparison, CWE-697, security, ESLint rule, loose equality, type coercion, == vs ===, strict equality, JavaScript security, auto-fix, LLM-optimized, code security
 
@@ -126,7 +127,12 @@ const result = a === b ? 1 : 0; // ✅ Type and value match
 3. **Type safety**: Strict equality prevents accidental type coercion bugs
 4. **Consistency**: Use strict equality throughout the codebase
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

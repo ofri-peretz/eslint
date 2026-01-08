@@ -3,7 +3,8 @@ title: browser-security/no-sensitive-cookie-js
 description: "🔒 Disallow storing sensitive data (tokens, passwords) in cookies via JavaScript"
 ---
 
-# browser-security/no-sensitive-cookie-js
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > 🔒 Disallow storing sensitive data (tokens, passwords) in cookies via JavaScript
 
@@ -176,7 +177,12 @@ login(@Res() res: Response) {
 - [MDN: Cookie Security](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#security)
 - [OWASP: Session Management Cheat Sheet](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/06-Session_Management_Testing/02-Testing_for_Cookies_Attributes)
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

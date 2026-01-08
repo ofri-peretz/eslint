@@ -1,9 +1,10 @@
 ---
-title: "`no-hardcoded-api-keys`"
+title: "no-hardcoded-api-keys"
 description: Detects hardcoded API keys and secrets in AI SDK configuration.
 ---
 
-# `no-hardcoded-api-keys`
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Detects hardcoded API keys and secrets in AI SDK configuration.
 
@@ -88,7 +89,12 @@ Hardcoded API keys can be:
 
 - [`no-sensitive-in-prompt`](./no-sensitive-in-prompt.md) - Prevent sensitive data in prompts
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

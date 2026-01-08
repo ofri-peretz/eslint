@@ -3,7 +3,8 @@ title: require-audience-validation
 description: Require audience (aud) claim validation in JWT verify operations
 ---
 
-# require-audience-validation
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Require audience (aud) claim validation in JWT verify operations
 
@@ -33,7 +34,12 @@ jwt.verify(token, secret, {
 });
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

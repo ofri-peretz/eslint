@@ -3,7 +3,8 @@ title: no-unsafe-regex-query
 description: Detects user input in MongoDB $regex operators that could cause ReDoS (Regular Expression Denial of Service) or information disclosure.
 ---
 
-# no-unsafe-regex-query
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** ReDoS, CWE-400, MongoDB, $regex, regular expression, denial of service
 
@@ -68,7 +69,12 @@ db.users.createIndex({ name: 'text' });
 User.find({ $text: { $search: userInput } });
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 ### Sanitized Input
 

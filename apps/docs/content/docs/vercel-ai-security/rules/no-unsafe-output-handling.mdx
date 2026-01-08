@@ -1,9 +1,10 @@
 ---
-title: "`no-unsafe-output-handling`"
+title: "no-unsafe-output-handling"
 description: "Prevents using AI-generated content in dangerous operations like eval, SQL, or innerHTML."
 ---
 
-# `no-unsafe-output-handling`
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Prevents using AI-generated content in dangerous operations like eval, SQL, or innerHTML.
 
@@ -83,7 +84,12 @@ Passing AI output to dangerous functions enables:
 - [`require-validated-prompt`](./require-validated-prompt.md) - Validate input prompts
 - [`require-output-filtering`](./require-output-filtering.md) - Filter tool output
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

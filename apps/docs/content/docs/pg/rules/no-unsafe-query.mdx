@@ -3,7 +3,8 @@ title: no-unsafe-query
 description: Prevents SQL injection by detecting string concatenation or template literals with variables in client.query() calls.
 ---
 
-# no-unsafe-query
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** SQL injection, CWE-89, pg, node-postgres, security, parameterized queries, prepared statements
 
@@ -57,7 +58,12 @@ const result = await client.query({
    Fix: Use parameterized query: client.query('SELECT * FROM users WHERE id = $1', [userId])
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

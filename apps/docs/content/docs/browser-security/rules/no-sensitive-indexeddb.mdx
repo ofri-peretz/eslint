@@ -3,7 +3,8 @@ title: no-sensitive-indexeddb
 description: Prevent storing sensitive data in IndexedDB.
 ---
 
-# no-sensitive-indexeddb
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 Prevent storing sensitive data in IndexedDB.
 
@@ -59,7 +60,12 @@ store.add({ theme: 'dark', language: 'en' });
 }
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 

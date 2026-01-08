@@ -3,7 +3,8 @@ title: no-ldap-injection
 description: Detects LDAP injection vulnerabilities. This rule is part of eslint-plugin-secure-coding.
 ---
 
-# no-ldap-injection
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > **Keywords:** LDAP injection, CWE-90, directory service, authentication bypass, security, Active Directory
 
@@ -108,7 +109,12 @@ if (isValidUsername(username)) {
    Fix: Use ldap.escape.filterValue() to escape user input | https://ldap.com/ldap-filters/
 ```
 
+
+<WhenNotToUse />
+
 ## Known False Negatives
+
+<FalseNegativeCTA />
 
 The following patterns are **not detected** due to static analysis limitations:
 
