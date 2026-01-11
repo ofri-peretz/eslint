@@ -76,7 +76,7 @@ describe('sync-readme-rules', () => {
         `;
         const rules = parseRulesTable(markdown);
         expect(rules).toHaveLength(1);
-        expect(rules[0].cid).toBeUndefined(); // Checking object structure
+        expect(rules[0].name).toBe('rule-1'); // Checking object structure
     });
   });
 

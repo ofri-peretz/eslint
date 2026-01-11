@@ -71,6 +71,13 @@
                 "cwd": "{projectRoot}"
             }
         },
+        "typecheck": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "tsc --noEmit",
+                "cwd": "{projectRoot}"
+            }
+        },
         "start": {
             "executor": "nx:run-commands",
             "dependsOn": [

@@ -7,11 +7,11 @@ import path from 'path';
 // Mock fs and path
 vi.mock('fs');
 vi.mock('path', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal() as typeof path;
   return {
     ...actual,
-    join: (...args) => args.join('/'),
-    dirname: (p) => p.substring(0, p.lastIndexOf('/'))
+    join: (...args: string[]) => args.join('/'),
+    dirname: (p: string) => p.substring(0, p.lastIndexOf('/'))
   };
 });
 
