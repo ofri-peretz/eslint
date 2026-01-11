@@ -55,5 +55,14 @@ The error `ERR_INVALID_THIS` when fetching packages with `pnpm` typically indica
 
 ### Plan
 
-- Commit and push to trigger redeploy (Attempt 3).
-- Monitor Vercel logs.
+### Actions Taken (Round 4)
+
+- **Error Analysis**: Deployment failed with `ERR_PNPM_OUTDATED_LOCKFILE`.
+  - **Cause**: Added `next` dependency in Round 3 but didn't commit the updated `pnpm-lock.yaml`. Vercel's default `pnpm install` includes `--frozen-lockfile`, which fails if the lockfile is out of sync.
+- **Fix**: Ran `pnpm install` locally to regenerate `pnpm-lock.yaml`.
+- **Next Step**: Commit and push `pnpm-lock.yaml` (Attempt 4).
+
+### Project Naming (User Request)
+
+- **User Request**: Rename Vercel project from `eslint` to `eslint-interlace-tools-docs` to reflect monorepo structure.
+- **Plan**: Stabilize the deployment first (get a green build), then address project renaming/aliasing.
