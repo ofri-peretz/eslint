@@ -104,26 +104,6 @@ This plugin runs **100% locally**. No data ever leaves your machine.
 
 ---
 
-## 📚 Documentation
----
-
-## 🔗 Related Plugins
-Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
-
-| Plugin                                                                                               | Downloads | Description |
-| :--------------------------------------------------------------------------------------------------- | :-------: | :---------- |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)           |           |             |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               |           |             |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                         |           |             |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)     |           |             |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)       |           |             |
-| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)       |           |             |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)     |           |             |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) |           |             |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)               |           |             |
-
----
-
 ## Rules
 
 **Legend**
@@ -138,21 +118,21 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 
 | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [Plugin](https://eslint.interlace.tools/docs/pg/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
 | [Rule](https://eslint.interlace.tools/docs/pg/rules/Rule) |  |  |  | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| [no-unsafe-query](./docs/rules/no-unsafe-query.md) | CWE-89 | A03:2025 |  | Security | 💼 |  |  | 💡 |  |
-| [no-insecure-ssl](./docs/rules/no-insecure-ssl.md) | CWE-295 | A05:2025 |  | Security | 💼 |  |  | 💡 |  |
-| [no-hardcoded-credentials](./docs/rules/no-hardcoded-credentials.md) | CWE-798 | A05:2025 |  | Security | 💼 |  |  | 💡 |  |
-| [no-unsafe-search-path](./docs/rules/no-unsafe-search-path.md) | CWE-426 | A01:2025 |  | Security | 💼 |  |  | 💡 |  |
-| [no-unsafe-copy-from](./docs/rules/no-unsafe-copy-from.md) | CWE-22 | A03:2025 |  | Security | 💼 |  |  | 💡 |  |
-| [no-transaction-on-pool](./docs/rules/no-transaction-on-pool.md) | CWE-362 | A04:2025 |  | Security | 💼 |  |  | 💡 |  |
-| [no-missing-client-release](./docs/rules/no-missing-client-release.md) | CWE-772 | A09:2025 |  | Resource Management | 💼 |  |  | 💡 |  |
-| [prevent-double-release](./docs/rules/prevent-double-release.md) | CWE-415 | A04:2025 |  | Resource Management | 💼 |  |  | 💡 |  |
-| [no-floating-query](./docs/rules/no-floating-query.md) | CWE-252 | A06:2025 |  | Resource Management | 💼 |  |  | 💡 |  |
-| [check-query-params](./docs/rules/check-query-params.md) | CWE-20 | A06:2025 |  | Quality & Performance | 💼 |  |  | 💡 |  |
-| [no-select-all](./docs/rules/no-select-all.md) | CWE-400 | A04:2025 |  | Quality & Performance |  |  |  | 💡 |  |
-| [prefer-pool-query](./docs/rules/prefer-pool-query.md) | CWE-404 | A04:2025 |  | Quality & Performance |  |  |  | 💡 |  |
-| [no-batch-insert-loop](./docs/rules/no-batch-insert-loop.md) | CWE-400 | A04:2025 |  | Quality & Performance | 💼 |  |  | 💡 |  |
+| [no-unsafe-query](https://eslint.interlace.tools/docs/pg/rules/no-unsafe-query) | CWE-89 | A03:2025 |  | [no-unsafe-query](./docs/rules/no-unsafe-query.md) | 💼 |  |  | 💡 |  |
+| [no-insecure-ssl](https://eslint.interlace.tools/docs/pg/rules/no-insecure-ssl) | CWE-295 | A05:2025 |  | [no-insecure-ssl](./docs/rules/no-insecure-ssl.md) | 💼 |  |  | 💡 |  |
+| [no-hardcoded-credentials](https://eslint.interlace.tools/docs/pg/rules/no-hardcoded-credentials) | CWE-798 | A05:2025 |  | [no-hardcoded-credentials](./docs/rules/no-hardcoded-credentials.md) | 💼 |  |  | 💡 |  |
+| [no-unsafe-search-path](https://eslint.interlace.tools/docs/pg/rules/no-unsafe-search-path) | CWE-426 | A01:2025 |  | [no-unsafe-search-path](./docs/rules/no-unsafe-search-path.md) | 💼 |  |  | 💡 |  |
+| [no-unsafe-copy-from](https://eslint.interlace.tools/docs/pg/rules/no-unsafe-copy-from) | CWE-22 | A03:2025 |  | [no-unsafe-copy-from](./docs/rules/no-unsafe-copy-from.md) | 💼 |  |  | 💡 |  |
+| [no-transaction-on-pool](https://eslint.interlace.tools/docs/pg/rules/no-transaction-on-pool) | CWE-362 | A04:2025 |  | [no-transaction-on-pool](./docs/rules/no-transaction-on-pool.md) | 💼 |  |  | 💡 |  |
+| [no-missing-client-release](https://eslint.interlace.tools/docs/pg/rules/no-missing-client-release) | CWE-772 | A09:2025 |  | [no-missing-client-release](./docs/rules/no-missing-client-release.md) | 💼 |  |  | 💡 |  |
+| [prevent-double-release](https://eslint.interlace.tools/docs/pg/rules/prevent-double-release) | CWE-415 | A04:2025 |  | [prevent-double-release](./docs/rules/prevent-double-release.md) | 💼 |  |  | 💡 |  |
+| [no-floating-query](https://eslint.interlace.tools/docs/pg/rules/no-floating-query) | CWE-252 | A06:2025 |  | [no-floating-query](./docs/rules/no-floating-query.md) | 💼 |  |  | 💡 |  |
+| [check-query-params](https://eslint.interlace.tools/docs/pg/rules/check-query-params) | CWE-20 | A06:2025 |  | [check-query-params](./docs/rules/check-query-params.md) | 💼 |  |  | 💡 |  |
+| [no-select-all](https://eslint.interlace.tools/docs/pg/rules/no-select-all) | CWE-400 | A04:2025 |  | [no-select-all](./docs/rules/no-select-all.md) |  |  |  | 💡 |  |
+| [prefer-pool-query](https://eslint.interlace.tools/docs/pg/rules/prefer-pool-query) | CWE-404 | A04:2025 |  | [prefer-pool-query](./docs/rules/prefer-pool-query.md) |  |  |  | 💡 |  |
+| [no-batch-insert-loop](https://eslint.interlace.tools/docs/pg/rules/no-batch-insert-loop) | CWE-400 | A04:2025 |  | [no-batch-insert-loop](./docs/rules/no-batch-insert-loop.md) | 💼 |  |  | 💡 |  |
+| [Plugin](https://eslint.interlace.tools/docs/pg/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins
 

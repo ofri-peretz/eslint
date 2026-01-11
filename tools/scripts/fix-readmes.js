@@ -127,9 +127,8 @@ packages.forEach(pkg => {
              processedRules.add(rawRuleName);
              
              // Normalize Row Data
-             let rule = cells.find(c => c.includes(rawRuleName)) || `[${rawRuleName}](${docUrl}/rules/${rawRuleName})`;
-             // Ensure link
-             if (!rule.includes('](')) rule = `[${rawRuleName}](${docUrl}/rules/${rawRuleName})`;
+             // Enforce absolute documentation link
+             const rule = `[${rawRuleName}](${docUrl}/rules/${rawRuleName})`;
 
              let cwe = cells.find(c => c.includes('CWE-')) || '';
              let owasp = cells.find(c => c.includes(':202')) || ''; // 2021 or 2025

@@ -317,3 +317,11 @@ npm install eslint-plugin-PLUGIN --save-dev
 ```
 
 This ensures zero deviation in onboarding experience across the ecosystem.
+
+## 2026-01-11 - Rules Table Links Standardization
+
+I have verified that the `fix-readmes.js` script enforces absolute URLs for all rule links in the "Rules" table, pointing directly to the official documentation website:
+
+`[rule-name](https://eslint.interlace.tools/docs/PLUGIN/rules/rule-name)`
+
+This replaces all relative links (e.g., `./docs/rules/...`) ensuring a consistent navigation experience from NPM/GitHub to the documentation site.

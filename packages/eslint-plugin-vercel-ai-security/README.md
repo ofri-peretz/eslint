@@ -113,25 +113,25 @@ TypeScript/JavaScript are memory-safe languages. Memory corruption vulnerabiliti
 | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
 | [ESLint](https://eslint.interlace.tools/docs/vercel-ai-security/rules/ESLint) |  |  |  | ^8.0.0 \ |  |  |  |  |  |
-| [require-validated-prompt](./docs/rules/require-validated-prompt.md) | CWE-74 |  | 9.0 | 🛡️ OWASP LLM Top 10 2025 | 💼 |  |  |  |  |
-| [no-sensitive-in-prompt](./docs/rules/no-sensitive-in-prompt.md) | CWE-200 |  | 8.0 | 🛡️ OWASP LLM Top 10 2025 | 💼 |  |  |  |  |
-| [no-training-data-exposure](./docs/rules/no-training-data-exposure.md) | CWE-359 |  | 7.0 | 🛡️ OWASP LLM Top 10 2025 |  | ⚠️ |  |  |  |
-| [require-request-timeout](./docs/rules/require-request-timeout.md) | CWE-400 |  | 5.0 | 🛡️ OWASP LLM Top 10 2025 |  | ⚠️ |  |  |  |
-| [no-unsafe-output-handling](./docs/rules/no-unsafe-output-handling.md) | CWE-94 |  | 9.8 | 🛡️ OWASP LLM Top 10 2025 | 💼 |  |  |  |  |
-| [require-tool-confirmation](./docs/rules/require-tool-confirmation.md) | CWE-862 |  | 7.0 | 🛡️ OWASP LLM Top 10 2025 | 💼 |  |  |  |  |
-| [no-system-prompt-leak](./docs/rules/no-system-prompt-leak.md) | CWE-200 |  | 7.5 | 🛡️ OWASP LLM Top 10 2025 | 💼 |  |  |  |  |
-| [require-embedding-validation](./docs/rules/require-embedding-validation.md) | CWE-20 |  | 5.5 | 🛡️ OWASP LLM Top 10 2025 |  |  |  | 💡 |  |
-| [require-output-validation](./docs/rules/require-output-validation.md) | CWE-707 |  | 5.0 | 🛡️ OWASP LLM Top 10 2025 |  |  |  | 💡 |  |
-| [require-max-tokens](./docs/rules/require-max-tokens.md) | CWE-770 |  | 6.5 | 🛡️ OWASP LLM Top 10 2025 |  | ⚠️ |  |  |  |
-| [require-max-steps](./docs/rules/require-max-steps.md) | CWE-834 |  | 6.5 | 🛡️ OWASP LLM Top 10 2025 |  | ⚠️ |  |  |  |
-| [require-abort-signal](./docs/rules/require-abort-signal.md) | CWE-404 |  | 4.0 | 🛡️ OWASP LLM Top 10 2025 |  |  |  | 💡 |  |
-| [no-dynamic-system-prompt](./docs/rules/no-dynamic-system-prompt.md) | CWE-74 |  | 8.0 | 🤖 OWASP Agentic Top 10 2026 | 💼 |  |  |  |  |
-| [require-tool-schema](./docs/rules/require-tool-schema.md) | CWE-20 |  | 7.5 | 🤖 OWASP Agentic Top 10 2026 |  | ⚠️ |  |  |  |
-| [no-hardcoded-api-keys](./docs/rules/no-hardcoded-api-keys.md) | CWE-798 |  | 8.5 | 🤖 OWASP Agentic Top 10 2026 | 💼 |  |  |  |  |
-| [require-output-filtering](./docs/rules/require-output-filtering.md) | CWE-200 |  | 6.5 | 🤖 OWASP Agentic Top 10 2026 |  | ⚠️ |  |  |  |
-| [require-rag-content-validation](./docs/rules/require-rag-content-validation.md) | CWE-74 |  | 6.0 | 🤖 OWASP Agentic Top 10 2026 |  | ⚠️ |  |  |  |
-| [require-error-handling](./docs/rules/require-error-handling.md) | CWE-755 |  | 5.0 | 🤖 OWASP Agentic Top 10 2026 |  |  |  | 💡 |  |
-| [require-audit-logging](./docs/rules/require-audit-logging.md) | CWE-778 |  | 4.0 | 🤖 OWASP Agentic Top 10 2026 |  |  |  | 💡 |  |
+| [require-validated-prompt](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-validated-prompt) | CWE-74 |  | 9.0 | [require-validated-prompt](./docs/rules/require-validated-prompt.md) | 💼 |  |  |  |  |
+| [no-sensitive-in-prompt](https://eslint.interlace.tools/docs/vercel-ai-security/rules/no-sensitive-in-prompt) | CWE-200 |  | 8.0 | [no-sensitive-in-prompt](./docs/rules/no-sensitive-in-prompt.md) | 💼 |  |  |  |  |
+| [no-training-data-exposure](https://eslint.interlace.tools/docs/vercel-ai-security/rules/no-training-data-exposure) | CWE-359 |  | 7.0 | [no-training-data-exposure](./docs/rules/no-training-data-exposure.md) |  | ⚠️ |  |  |  |
+| [require-request-timeout](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-request-timeout) | CWE-400 |  | 5.0 | [require-request-timeout](./docs/rules/require-request-timeout.md) |  | ⚠️ |  |  |  |
+| [no-unsafe-output-handling](https://eslint.interlace.tools/docs/vercel-ai-security/rules/no-unsafe-output-handling) | CWE-94 |  | 9.8 | [no-unsafe-output-handling](./docs/rules/no-unsafe-output-handling.md) | 💼 |  |  |  |  |
+| [require-tool-confirmation](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-tool-confirmation) | CWE-862 |  | 7.0 | [require-tool-confirmation](./docs/rules/require-tool-confirmation.md) | 💼 |  |  |  |  |
+| [no-system-prompt-leak](https://eslint.interlace.tools/docs/vercel-ai-security/rules/no-system-prompt-leak) | CWE-200 |  | 7.5 | [no-system-prompt-leak](./docs/rules/no-system-prompt-leak.md) | 💼 |  |  |  |  |
+| [require-embedding-validation](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-embedding-validation) | CWE-20 |  | 5.5 | [require-embedding-validation](./docs/rules/require-embedding-validation.md) |  |  |  | 💡 |  |
+| [require-output-validation](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-output-validation) | CWE-707 |  | 5.0 | [require-output-validation](./docs/rules/require-output-validation.md) |  |  |  | 💡 |  |
+| [require-max-tokens](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-max-tokens) | CWE-770 |  | 6.5 | [require-max-tokens](./docs/rules/require-max-tokens.md) |  | ⚠️ |  |  |  |
+| [require-max-steps](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-max-steps) | CWE-834 |  | 6.5 | [require-max-steps](./docs/rules/require-max-steps.md) |  | ⚠️ |  |  |  |
+| [require-abort-signal](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-abort-signal) | CWE-404 |  | 4.0 | [require-abort-signal](./docs/rules/require-abort-signal.md) |  |  |  | 💡 |  |
+| [no-dynamic-system-prompt](https://eslint.interlace.tools/docs/vercel-ai-security/rules/no-dynamic-system-prompt) | CWE-74 |  | 8.0 | [no-dynamic-system-prompt](./docs/rules/no-dynamic-system-prompt.md) | 💼 |  |  |  |  |
+| [require-tool-schema](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-tool-schema) | CWE-20 |  | 7.5 | [require-tool-schema](./docs/rules/require-tool-schema.md) |  | ⚠️ |  |  |  |
+| [no-hardcoded-api-keys](https://eslint.interlace.tools/docs/vercel-ai-security/rules/no-hardcoded-api-keys) | CWE-798 |  | 8.5 | [no-hardcoded-api-keys](./docs/rules/no-hardcoded-api-keys.md) | 💼 |  |  |  |  |
+| [require-output-filtering](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-output-filtering) | CWE-200 |  | 6.5 | [require-output-filtering](./docs/rules/require-output-filtering.md) |  | ⚠️ |  |  |  |
+| [require-rag-content-validation](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-rag-content-validation) | CWE-74 |  | 6.0 | [require-rag-content-validation](./docs/rules/require-rag-content-validation.md) |  | ⚠️ |  |  |  |
+| [require-error-handling](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-error-handling) | CWE-755 |  | 5.0 | [require-error-handling](./docs/rules/require-error-handling.md) |  |  |  | 💡 |  |
+| [require-audit-logging](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-audit-logging) | CWE-778 |  | 4.0 | [require-audit-logging](./docs/rules/require-audit-logging.md) |  |  |  | 💡 |  |
 | [Plugin](https://eslint.interlace.tools/docs/vercel-ai-security/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins

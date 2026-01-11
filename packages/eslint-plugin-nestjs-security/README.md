@@ -186,11 +186,11 @@ This plugin runs **100% locally**. No data ever leaves your machine.
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
 | [Approach](https://eslint.interlace.tools/docs/nestjs-security/rules/Approach) |  |  |  | ESLint Can See? |  |  |  |  |  |
 | [Rule](https://eslint.interlace.tools/docs/nestjs-security/rules/Rule) |  |  |  | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| [require-guards](#require-guards) | CWE-284 |  | 9.8 | Authorization & Access Control | 💼 |  |  | 💡 |  |
-| [no-exposed-private-fields](#no-exposed-private-fields) | CWE-200 |  | 7.5 | Authorization & Access Control | 💼 |  |  | 💡 |  |
-| [no-missing-validation-pipe](#no-missing-validation-pipe) | CWE-20 |  | 8.6 | Input Validation | 💼 |  |  | 💡 |  |
-| [require-class-validator](#require-class-validator) | CWE-20 |  | 7.5 | Input Validation |  | ⚠️ |  | 💡 |  |
-| [require-throttler](#require-throttler) | CWE-770 |  | 7.5 | Rate Limiting & DoS |  | ⚠️ |  | 💡 |  |
+| [require-guards](https://eslint.interlace.tools/docs/nestjs-security/rules/require-guards) | CWE-284 |  | 9.8 | [require-guards](#require-guards) | 💼 |  |  | 💡 |  |
+| [no-exposed-private-fields](https://eslint.interlace.tools/docs/nestjs-security/rules/no-exposed-private-fields) | CWE-200 |  | 7.5 | [no-exposed-private-fields](#no-exposed-private-fields) | 💼 |  |  | 💡 |  |
+| [no-missing-validation-pipe](https://eslint.interlace.tools/docs/nestjs-security/rules/no-missing-validation-pipe) | CWE-20 |  | 8.6 | [no-missing-validation-pipe](#no-missing-validation-pipe) | 💼 |  |  | 💡 |  |
+| [require-class-validator](https://eslint.interlace.tools/docs/nestjs-security/rules/require-class-validator) | CWE-20 |  | 7.5 | [require-class-validator](#require-class-validator) |  | ⚠️ |  | 💡 |  |
+| [require-throttler](https://eslint.interlace.tools/docs/nestjs-security/rules/require-throttler) | CWE-770 |  | 7.5 | [require-throttler](#require-throttler) |  | ⚠️ |  | 💡 |  |
 | [Plugin](https://eslint.interlace.tools/docs/nestjs-security/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins

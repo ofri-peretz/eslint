@@ -134,19 +134,19 @@ Every rule uses `formatLLMMessage` for structured output:
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
 | [OWASP](https://eslint.interlace.tools/docs/jwt/rules/OWASP) |  |  |  | OWASP Category |  |  |  |  |  |
 | [Library](https://eslint.interlace.tools/docs/jwt/rules/Library) |  |  |  | Detection |  |  |  |  |  |
-| [no-algorithm-none](docs/rules/no-algorithm-none.md) | CWE-347 | A02:2025 | 9.8 | Prevent `alg:"none"` attack (CVE-2022-23540) | 💼 |  |  | 💡 |  |
-| [no-algorithm-confusion](docs/rules/no-algorithm-confusion.md) | CWE-347 | A02:2025 | 9.8 | Prevent RS256→HS256 key confusion | 💼 |  |  | 💡 |  |
-| [require-algorithm-whitelist](docs/rules/require-algorithm-whitelist.md) | CWE-757 | A02:2025 | 7.5 | Require explicit algorithm specification | 💼 |  |  | 💡 |  |
-| [no-decode-without-verify](docs/rules/no-decode-without-verify.md) | CWE-345 | A08:2025 | 7.5 | Prevent trusting decoded payloads | 💼 |  |  | 💡 |  |
-| [no-weak-secret](docs/rules/no-weak-secret.md) | CWE-326 | A02:2025 | 7.5 | Require 256-bit minimum secrets | 💼 |  |  | 💡 |  |
-| [no-hardcoded-secret](docs/rules/no-hardcoded-secret.md) | CWE-798 | A05:2025 | 7.9 | Prevent secrets in source code | 💼 |  |  | 💡 |  |
-| [no-timestamp-manipulation](docs/rules/no-timestamp-manipulation.md) | CWE-294 | A05:2025 | 7.5 | Prevent disabling automatic `iat` | 💼 |  |  | 💡 |  |
-| [require-expiration](docs/rules/require-expiration.md) | CWE-613 | A04:2025 | 5.3 | Require `exp` claim or `expiresIn` | 💼 |  |  | 💡 |  |
-| [require-issued-at](docs/rules/require-issued-at.md) | CWE-294 | A04:2025 | 5.3 | Require `iat` claim for freshness | 💼 |  |  | 💡 |  |
-| [require-issuer-validation](docs/rules/require-issuer-validation.md) | CWE-287 | A07:2025 | 5.3 | Require issuer validation | 💼 |  |  | 💡 |  |
-| [require-audience-validation](docs/rules/require-audience-validation.md) | CWE-287 | A07:2025 | 5.3 | Require audience validation | 💼 |  |  | 💡 |  |
-| [require-max-age](docs/rules/require-max-age.md) | CWE-294 | A04:2025 | 5.3 | Require maxAge for replay prevention | 💼 |  |  | 💡 |  |
-| [no-sensitive-payload](docs/rules/no-sensitive-payload.md) | CWE-359 | A01:2025 | 5.3 | Prevent PII in token payload | 💼 |  |  | 💡 |  |
+| [no-algorithm-none](https://eslint.interlace.tools/docs/jwt/rules/no-algorithm-none) | CWE-347 | A02:2025 | 9.8 | [no-algorithm-none](docs/rules/no-algorithm-none.md) | 💼 |  |  | 💡 |  |
+| [no-algorithm-confusion](https://eslint.interlace.tools/docs/jwt/rules/no-algorithm-confusion) | CWE-347 | A02:2025 | 9.8 | [no-algorithm-confusion](docs/rules/no-algorithm-confusion.md) | 💼 |  |  | 💡 |  |
+| [require-algorithm-whitelist](https://eslint.interlace.tools/docs/jwt/rules/require-algorithm-whitelist) | CWE-757 | A02:2025 | 7.5 | [require-algorithm-whitelist](docs/rules/require-algorithm-whitelist.md) | 💼 |  |  | 💡 |  |
+| [no-decode-without-verify](https://eslint.interlace.tools/docs/jwt/rules/no-decode-without-verify) | CWE-345 | A08:2025 | 7.5 | [no-decode-without-verify](docs/rules/no-decode-without-verify.md) | 💼 |  |  | 💡 |  |
+| [no-weak-secret](https://eslint.interlace.tools/docs/jwt/rules/no-weak-secret) | CWE-326 | A02:2025 | 7.5 | [no-weak-secret](docs/rules/no-weak-secret.md) | 💼 |  |  | 💡 |  |
+| [no-hardcoded-secret](https://eslint.interlace.tools/docs/jwt/rules/no-hardcoded-secret) | CWE-798 | A05:2025 | 7.9 | [no-hardcoded-secret](docs/rules/no-hardcoded-secret.md) | 💼 |  |  | 💡 |  |
+| [no-timestamp-manipulation](https://eslint.interlace.tools/docs/jwt/rules/no-timestamp-manipulation) | CWE-294 | A05:2025 | 7.5 | [no-timestamp-manipulation](docs/rules/no-timestamp-manipulation.md) | 💼 |  |  | 💡 |  |
+| [require-expiration](https://eslint.interlace.tools/docs/jwt/rules/require-expiration) | CWE-613 | A04:2025 | 5.3 | [require-expiration](docs/rules/require-expiration.md) | 💼 |  |  | 💡 |  |
+| [require-issued-at](https://eslint.interlace.tools/docs/jwt/rules/require-issued-at) | CWE-294 | A04:2025 | 5.3 | [require-issued-at](docs/rules/require-issued-at.md) | 💼 |  |  | 💡 |  |
+| [require-issuer-validation](https://eslint.interlace.tools/docs/jwt/rules/require-issuer-validation) | CWE-287 | A07:2025 | 5.3 | [require-issuer-validation](docs/rules/require-issuer-validation.md) | 💼 |  |  | 💡 |  |
+| [require-audience-validation](https://eslint.interlace.tools/docs/jwt/rules/require-audience-validation) | CWE-287 | A07:2025 | 5.3 | [require-audience-validation](docs/rules/require-audience-validation.md) | 💼 |  |  | 💡 |  |
+| [require-max-age](https://eslint.interlace.tools/docs/jwt/rules/require-max-age) | CWE-294 | A04:2025 | 5.3 | [require-max-age](docs/rules/require-max-age.md) | 💼 |  |  | 💡 |  |
+| [no-sensitive-payload](https://eslint.interlace.tools/docs/jwt/rules/no-sensitive-payload) | CWE-359 | A01:2025 | 5.3 | [no-sensitive-payload](docs/rules/no-sensitive-payload.md) | 💼 |  |  | 💡 |  |
 | [Plugin](https://eslint.interlace.tools/docs/jwt/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins

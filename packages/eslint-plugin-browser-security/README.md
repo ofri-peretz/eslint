@@ -151,27 +151,27 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
 | [Rule](https://eslint.interlace.tools/docs/browser-security/rules/Rule) |  |  |  | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | [Plugin](https://eslint.interlace.tools/docs/browser-security/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
-| [no-eval](./docs/rules/no-eval.md) | CWE-95 | A03:2025 | 9.8 | XSS Prevention |  | ⚠️ |  | 💡 | 🚫 |
-| [no-innerhtml](./docs/rules/no-innerhtml.md) | CWE-79 | A03:2025 | 6.1 | XSS Prevention |  | ⚠️ |  | 💡 |  |
-| [require-postmessage-origin-check](./docs/rules/require-postmessage-origin-check.md) | CWE-346 | A01:2025 | 8.8 | postMessage Security |  | ⚠️ |  |  |  |
-| [no-postmessage-wildcard-origin](./docs/rules/no-postmessage-wildcard-origin.md) | CWE-346 | A01:2025 | 8.8 | postMessage Security |  | ⚠️ |  |  |  |
-| [no-postmessage-innerhtml](./docs/rules/no-postmessage-innerhtml.md) | CWE-79 | A03:2025 | 6.1 | postMessage Security |  | ⚠️ |  |  |  |
-| [no-sensitive-localstorage](./docs/rules/no-sensitive-localstorage.md) | CWE-922 | A02:2025 | 7.5 | Storage Security | 💼 | ⚠️ |  | 💡 |  |
-| [no-sensitive-sessionstorage](./docs/rules/no-sensitive-sessionstorage.md) | CWE-922 | A02:2025 | 7.5 | Storage Security | 💼 | ⚠️ |  | 💡 |  |
-| [no-sensitive-indexeddb](./docs/rules/no-sensitive-indexeddb.md) | CWE-922 | A02:2025 | 7.5 | Storage Security | 💼 | ⚠️ |  | 💡 |  |
-| [no-jwt-in-storage](./docs/rules/no-jwt-in-storage.md) | CWE-922 | A02:2025 | 7.5 | Storage Security | 💼 | ⚠️ |  | 💡 |  |
-| [no-sensitive-cookie-js](./docs/rules/no-sensitive-cookie-js.md) | CWE-1004 | A02:2025 | 5.3 | Cookie Security | 💼 | ⚠️ |  | 💡 |  |
-| [no-cookie-auth-tokens](./docs/rules/no-cookie-auth-tokens.md) | CWE-1004 | A02:2025 | 5.3 | Cookie Security | 💼 | ⚠️ |  | 💡 |  |
-| [require-cookie-secure-attrs](./docs/rules/require-cookie-secure-attrs.md) | CWE-614 | A05:2025 | 5.3 | Cookie Security |  | ⚠️ |  |  | 🚫 |
-| [require-websocket-wss](./docs/rules/require-websocket-wss.md) | CWE-319 | A02:2025 | 7.5 | WebSocket Security | 💼 | ⚠️ |  | 💡 | 🚫 |
-| [no-websocket-innerhtml](./docs/rules/no-websocket-innerhtml.md) | CWE-79 | A03:2025 | 6.1 | WebSocket Security | 💼 | ⚠️ |  | 💡 |  |
-| [no-websocket-eval](./docs/rules/no-websocket-eval.md) | CWE-95 | A03:2025 | 9.8 | WebSocket Security | 💼 | ⚠️ |  | 💡 |  |
-| [no-filereader-innerhtml](./docs/rules/no-filereader-innerhtml.md) | CWE-79 | A03:2025 | 6.1 | File API & Workers | 💼 | ⚠️ |  | 💡 |  |
-| [require-blob-url-revocation](./docs/rules/require-blob-url-revocation.md) | CWE-401 | A04:2025 | 5.3 | File API & Workers |  | ⚠️ |  | 💡 |  |
-| [no-dynamic-service-worker-url](./docs/rules/no-dynamic-service-worker-url.md) | CWE-829 | A08:2025 | 7.5 | File API & Workers | 💼 | ⚠️ |  | 💡 |  |
-| [no-worker-message-innerhtml](./docs/rules/no-worker-message-innerhtml.md) | CWE-79 | A03:2025 | 6.1 | File API & Workers | 💼 | ⚠️ |  |  |  |
-| [no-unsafe-inline-csp](./docs/rules/no-unsafe-inline-csp.md) | CWE-79 | A03:2025 | 6.1 | CSP Security | 💼 | ⚠️ |  | 💡 |  |
-| [no-unsafe-eval-csp](./docs/rules/no-unsafe-eval-csp.md) | CWE-95 | A03:2025 | 9.8 | CSP Security | 💼 | ⚠️ |  | 💡 |  |
+| [no-eval](https://eslint.interlace.tools/docs/browser-security/rules/no-eval) | CWE-95 | A03:2025 | 9.8 | [no-eval](./docs/rules/no-eval.md) |  | ⚠️ |  | 💡 | 🚫 |
+| [no-innerhtml](https://eslint.interlace.tools/docs/browser-security/rules/no-innerhtml) | CWE-79 | A03:2025 | 6.1 | [no-innerhtml](./docs/rules/no-innerhtml.md) |  | ⚠️ |  | 💡 |  |
+| [require-postmessage-origin-check](https://eslint.interlace.tools/docs/browser-security/rules/require-postmessage-origin-check) | CWE-346 | A01:2025 | 8.8 | [require-postmessage-origin-check](./docs/rules/require-postmessage-origin-check.md) |  | ⚠️ |  |  |  |
+| [no-postmessage-wildcard-origin](https://eslint.interlace.tools/docs/browser-security/rules/no-postmessage-wildcard-origin) | CWE-346 | A01:2025 | 8.8 | [no-postmessage-wildcard-origin](./docs/rules/no-postmessage-wildcard-origin.md) |  | ⚠️ |  |  |  |
+| [no-postmessage-innerhtml](https://eslint.interlace.tools/docs/browser-security/rules/no-postmessage-innerhtml) | CWE-79 | A03:2025 | 6.1 | [no-postmessage-innerhtml](./docs/rules/no-postmessage-innerhtml.md) |  | ⚠️ |  |  |  |
+| [no-sensitive-localstorage](https://eslint.interlace.tools/docs/browser-security/rules/no-sensitive-localstorage) | CWE-922 | A02:2025 | 7.5 | [no-sensitive-localstorage](./docs/rules/no-sensitive-localstorage.md) | 💼 | ⚠️ |  | 💡 |  |
+| [no-sensitive-sessionstorage](https://eslint.interlace.tools/docs/browser-security/rules/no-sensitive-sessionstorage) | CWE-922 | A02:2025 | 7.5 | [no-sensitive-sessionstorage](./docs/rules/no-sensitive-sessionstorage.md) | 💼 | ⚠️ |  | 💡 |  |
+| [no-sensitive-indexeddb](https://eslint.interlace.tools/docs/browser-security/rules/no-sensitive-indexeddb) | CWE-922 | A02:2025 | 7.5 | [no-sensitive-indexeddb](./docs/rules/no-sensitive-indexeddb.md) | 💼 | ⚠️ |  | 💡 |  |
+| [no-jwt-in-storage](https://eslint.interlace.tools/docs/browser-security/rules/no-jwt-in-storage) | CWE-922 | A02:2025 | 7.5 | [no-jwt-in-storage](./docs/rules/no-jwt-in-storage.md) | 💼 | ⚠️ |  | 💡 |  |
+| [no-sensitive-cookie-js](https://eslint.interlace.tools/docs/browser-security/rules/no-sensitive-cookie-js) | CWE-1004 | A02:2025 | 5.3 | [no-sensitive-cookie-js](./docs/rules/no-sensitive-cookie-js.md) | 💼 | ⚠️ |  | 💡 |  |
+| [no-cookie-auth-tokens](https://eslint.interlace.tools/docs/browser-security/rules/no-cookie-auth-tokens) | CWE-1004 | A02:2025 | 5.3 | [no-cookie-auth-tokens](./docs/rules/no-cookie-auth-tokens.md) | 💼 | ⚠️ |  | 💡 |  |
+| [require-cookie-secure-attrs](https://eslint.interlace.tools/docs/browser-security/rules/require-cookie-secure-attrs) | CWE-614 | A05:2025 | 5.3 | [require-cookie-secure-attrs](./docs/rules/require-cookie-secure-attrs.md) |  | ⚠️ |  |  | 🚫 |
+| [require-websocket-wss](https://eslint.interlace.tools/docs/browser-security/rules/require-websocket-wss) | CWE-319 | A02:2025 | 7.5 | [require-websocket-wss](./docs/rules/require-websocket-wss.md) | 💼 | ⚠️ |  | 💡 | 🚫 |
+| [no-websocket-innerhtml](https://eslint.interlace.tools/docs/browser-security/rules/no-websocket-innerhtml) | CWE-79 | A03:2025 | 6.1 | [no-websocket-innerhtml](./docs/rules/no-websocket-innerhtml.md) | 💼 | ⚠️ |  | 💡 |  |
+| [no-websocket-eval](https://eslint.interlace.tools/docs/browser-security/rules/no-websocket-eval) | CWE-95 | A03:2025 | 9.8 | [no-websocket-eval](./docs/rules/no-websocket-eval.md) | 💼 | ⚠️ |  | 💡 |  |
+| [no-filereader-innerhtml](https://eslint.interlace.tools/docs/browser-security/rules/no-filereader-innerhtml) | CWE-79 | A03:2025 | 6.1 | [no-filereader-innerhtml](./docs/rules/no-filereader-innerhtml.md) | 💼 | ⚠️ |  | 💡 |  |
+| [require-blob-url-revocation](https://eslint.interlace.tools/docs/browser-security/rules/require-blob-url-revocation) | CWE-401 | A04:2025 | 5.3 | [require-blob-url-revocation](./docs/rules/require-blob-url-revocation.md) |  | ⚠️ |  | 💡 |  |
+| [no-dynamic-service-worker-url](https://eslint.interlace.tools/docs/browser-security/rules/no-dynamic-service-worker-url) | CWE-829 | A08:2025 | 7.5 | [no-dynamic-service-worker-url](./docs/rules/no-dynamic-service-worker-url.md) | 💼 | ⚠️ |  | 💡 |  |
+| [no-worker-message-innerhtml](https://eslint.interlace.tools/docs/browser-security/rules/no-worker-message-innerhtml) | CWE-79 | A03:2025 | 6.1 | [no-worker-message-innerhtml](./docs/rules/no-worker-message-innerhtml.md) | 💼 | ⚠️ |  |  |  |
+| [no-unsafe-inline-csp](https://eslint.interlace.tools/docs/browser-security/rules/no-unsafe-inline-csp) | CWE-79 | A03:2025 | 6.1 | [no-unsafe-inline-csp](./docs/rules/no-unsafe-inline-csp.md) | 💼 | ⚠️ |  | 💡 |  |
+| [no-unsafe-eval-csp](https://eslint.interlace.tools/docs/browser-security/rules/no-unsafe-eval-csp) | CWE-95 | A03:2025 | 9.8 | [no-unsafe-eval-csp](./docs/rules/no-unsafe-eval-csp.md) | 💼 | ⚠️ |  | 💡 |  |
 
 ## 🔗 Related ESLint Plugins
 

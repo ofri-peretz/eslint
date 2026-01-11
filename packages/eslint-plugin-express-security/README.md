@@ -110,15 +110,15 @@ This plugin runs **100% locally**. No data ever leaves your machine.
 
 | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [require-helmet](#require-helmet) | CWE-693 |  | 7.1 | Headers & CORS | 💼 |  |  |  |  |
-| [no-permissive-cors](#no-permissive-cors) | CWE-942 |  | 9.1 | Headers & CORS | 💼 |  |  |  |  |
-| [no-cors-credentials-wildcard](#no-cors-credentials-wildcard) | CWE-942 |  | 9.1 | Headers & CORS | 💼 |  |  |  |  |
-| [require-express-body-parser-limits](#require-express-body-parser-limits) | CWE-770 |  | 7.5 | Headers & CORS |  | ⚠️ |  |  |  |
-| [require-csrf-protection](#require-csrf-protection) | CWE-352 |  | 8.8 | CSRF & Cookies |  | ⚠️ |  |  |  |
-| [no-insecure-cookie-options](#no-insecure-cookie-options) | CWE-614 |  | 5.3 | CSRF & Cookies | 💼 |  |  |  |  |
-| [require-rate-limiting](#require-rate-limiting) | CWE-770 |  | 7.5 | Rate Limiting & DoS |  | ⚠️ |  |  |  |
-| [no-express-unsafe-regex-route](#no-express-unsafe-regex-route) | CWE-1333 |  | 7.5 | Rate Limiting & DoS | 💼 |  |  |  |  |
-| [no-graphql-introspection-production](#no-graphql-introspection-production) | CWE-200 |  | 5.3 | GraphQL |  | ⚠️ |  |  |  |
+| [require-helmet](https://eslint.interlace.tools/docs/express-security/rules/require-helmet) | CWE-693 |  | 7.1 | [require-helmet](#require-helmet) | 💼 |  |  |  |  |
+| [no-permissive-cors](https://eslint.interlace.tools/docs/express-security/rules/no-permissive-cors) | CWE-942 |  | 9.1 | [no-permissive-cors](#no-permissive-cors) | 💼 |  |  |  |  |
+| [no-cors-credentials-wildcard](https://eslint.interlace.tools/docs/express-security/rules/no-cors-credentials-wildcard) | CWE-942 |  | 9.1 | [no-cors-credentials-wildcard](#no-cors-credentials-wildcard) | 💼 |  |  |  |  |
+| [require-express-body-parser-limits](https://eslint.interlace.tools/docs/express-security/rules/require-express-body-parser-limits) | CWE-770 |  | 7.5 | [require-express-body-parser-limits](#require-express-body-parser-limits) |  | ⚠️ |  |  |  |
+| [require-csrf-protection](https://eslint.interlace.tools/docs/express-security/rules/require-csrf-protection) | CWE-352 |  | 8.8 | [require-csrf-protection](#require-csrf-protection) |  | ⚠️ |  |  |  |
+| [no-insecure-cookie-options](https://eslint.interlace.tools/docs/express-security/rules/no-insecure-cookie-options) | CWE-614 |  | 5.3 | [no-insecure-cookie-options](#no-insecure-cookie-options) | 💼 |  |  |  |  |
+| [require-rate-limiting](https://eslint.interlace.tools/docs/express-security/rules/require-rate-limiting) | CWE-770 |  | 7.5 | [require-rate-limiting](#require-rate-limiting) |  | ⚠️ |  |  |  |
+| [no-express-unsafe-regex-route](https://eslint.interlace.tools/docs/express-security/rules/no-express-unsafe-regex-route) | CWE-1333 |  | 7.5 | [no-express-unsafe-regex-route](#no-express-unsafe-regex-route) | 💼 |  |  |  |  |
+| [no-graphql-introspection-production](https://eslint.interlace.tools/docs/express-security/rules/no-graphql-introspection-production) | CWE-200 |  | 5.3 | [no-graphql-introspection-production](#no-graphql-introspection-production) |  | ⚠️ |  |  |  |
 | [Plugin](https://eslint.interlace.tools/docs/express-security/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins

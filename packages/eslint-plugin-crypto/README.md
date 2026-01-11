@@ -137,30 +137,30 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [no-weak-hash-algorithm](docs/rules/no-weak-hash-algorithm.md) | CWE-327 | A02:2025 | 7.5 | Disallow MD5, SHA1, MD4 | 💼 |  |  | 💡 |  |
-| [no-weak-cipher-algorithm](docs/rules/no-weak-cipher-algorithm.md) | CWE-327 | A02:2025 | 7.5 | Disallow DES, 3DES, RC4 | 💼 |  |  | 💡 |  |
-| [no-deprecated-cipher-method](docs/rules/no-deprecated-cipher-method.md) | CWE-327 | A02:2025 | 5.0 | Disallow createCipher() | 💼 |  |  | 💡 |  |
-| [no-static-iv](docs/rules/no-static-iv.md) | CWE-329 | A02:2025 | 7.5 | Disallow hardcoded IVs | 💼 |  |  | 💡 |  |
-| [no-ecb-mode](docs/rules/no-ecb-mode.md) | CWE-327 | A02:2025 | 7.5 | Disallow ECB encryption | 💼 |  |  | 💡 |  |
-| [no-insecure-key-derivation](docs/rules/no-insecure-key-derivation.md) | CWE-916 | A02:2025 | 7.5 | Require PBKDF2 ≥100k iterations | 💼 |  |  | 💡 |  |
-| [no-hardcoded-crypto-key](docs/rules/no-hardcoded-crypto-key.md) | CWE-321 | A02:2025 | 9.8 | Disallow hardcoded keys | 💼 |  |  | 💡 |  |
-| [require-random-iv](docs/rules/require-random-iv.md) | CWE-329 | A02:2025 | 7.5 | Require IV from randomBytes() | 💼 |  |  | 💡 |  |
-| [no-insecure-rsa-padding](docs/rules/no-insecure-rsa-padding.md) | CWE-327 | A02:2025 | 7.4 | Marvin Attack (CVE-2023-46809) | 💼 |  |  | 💡 |  |
-| [no-cryptojs-weak-random](docs/rules/no-cryptojs-weak-random.md) | CWE-338 | A02:2025 | 5.3 | Weak PRNG in crypto-js (CVE-2020-36732) | 💼 |  |  | 💡 |  |
-| [require-secure-pbkdf2-digest](docs/rules/require-secure-pbkdf2-digest.md) | CWE-916 | A02:2025 | 9.1 | Weak PBKDF2 defaults (CVE-2023-46233) | 💼 |  |  | 💡 |  |
-| [no-math-random-crypto](docs/rules/no-math-random-crypto.md) | CWE-338 | A07:2025 | 5.3 | Disallow Math.random() for crypto | 💼 |  |  | 💡 |  |
-| [no-predictable-salt](docs/rules/no-predictable-salt.md) | CWE-331 | A07:2025 | 7.5 | Disallow empty/hardcoded salts | 💼 |  |  | 💡 |  |
-| [require-authenticated-encryption](docs/rules/require-authenticated-encryption.md) | CWE-327 | A04:2025 | 6.5 | Require GCM instead of CBC | 💼 |  |  | 💡 |  |
-| [no-key-reuse](docs/rules/no-key-reuse.md) | CWE-323 | A02:2025 | 7.5 | Warn on key reuse | 💼 |  |  | 💡 |  |
-| [no-self-signed-certs](docs/rules/no-self-signed-certs.md) | CWE-295 | A05:2025 | 7.5 | Disallow rejectUnauthorized: false | 💼 |  |  | 💡 |  |
-| [no-timing-unsafe-compare](docs/rules/no-timing-unsafe-compare.md) | CWE-208 | A02:2025 | 5.9 | Require timingSafeEqual() | 💼 |  |  | 💡 |  |
-| [require-key-length](docs/rules/require-key-length.md) | CWE-326 | A02:2025 | 7.5 | Require AES-256 | 💼 |  |  | 💡 |  |
-| [no-web-crypto-export](docs/rules/no-web-crypto-export.md) | CWE-321 | A02:2025 | 5.0 | Warn on key export | 💼 |  |  | 💡 |  |
-| [no-sha1-hash](docs/rules/no-sha1-hash.md) | CWE-327 | A02:2025 | 7.5 | Disallow sha1() (crypto-hash) | 💼 |  |  | 💡 |  |
-| [require-sufficient-length](docs/rules/require-sufficient-length.md) | CWE-326 | A02:2025 | 7.5 | Require min 32 chars (crypto-random-string) | 💼 |  |  | 💡 |  |
-| [no-numeric-only-tokens](docs/rules/no-numeric-only-tokens.md) | CWE-330 | A07:2025 | 5.3 | Warn on numeric-only (crypto-random-string) | 💼 |  |  | 💡 |  |
-| [no-cryptojs](docs/rules/no-cryptojs.md) | CWE-327 | A02:2025 | 5.0 | Warn on deprecated crypto-js |  |  |  | 💡 |  |
-| [prefer-native-crypto](docs/rules/prefer-native-crypto.md) | CWE-327 | A05:2025 | 5.0 | Prefer native crypto |  |  |  | 💡 |  |
+| [no-weak-hash-algorithm](https://eslint.interlace.tools/docs/crypto/rules/no-weak-hash-algorithm) | CWE-327 | A02:2025 | 7.5 | [no-weak-hash-algorithm](docs/rules/no-weak-hash-algorithm.md) | 💼 |  |  | 💡 |  |
+| [no-weak-cipher-algorithm](https://eslint.interlace.tools/docs/crypto/rules/no-weak-cipher-algorithm) | CWE-327 | A02:2025 | 7.5 | [no-weak-cipher-algorithm](docs/rules/no-weak-cipher-algorithm.md) | 💼 |  |  | 💡 |  |
+| [no-deprecated-cipher-method](https://eslint.interlace.tools/docs/crypto/rules/no-deprecated-cipher-method) | CWE-327 | A02:2025 | 5.0 | [no-deprecated-cipher-method](docs/rules/no-deprecated-cipher-method.md) | 💼 |  |  | 💡 |  |
+| [no-static-iv](https://eslint.interlace.tools/docs/crypto/rules/no-static-iv) | CWE-329 | A02:2025 | 7.5 | [no-static-iv](docs/rules/no-static-iv.md) | 💼 |  |  | 💡 |  |
+| [no-ecb-mode](https://eslint.interlace.tools/docs/crypto/rules/no-ecb-mode) | CWE-327 | A02:2025 | 7.5 | [no-ecb-mode](docs/rules/no-ecb-mode.md) | 💼 |  |  | 💡 |  |
+| [no-insecure-key-derivation](https://eslint.interlace.tools/docs/crypto/rules/no-insecure-key-derivation) | CWE-916 | A02:2025 | 7.5 | [no-insecure-key-derivation](docs/rules/no-insecure-key-derivation.md) | 💼 |  |  | 💡 |  |
+| [no-hardcoded-crypto-key](https://eslint.interlace.tools/docs/crypto/rules/no-hardcoded-crypto-key) | CWE-321 | A02:2025 | 9.8 | [no-hardcoded-crypto-key](docs/rules/no-hardcoded-crypto-key.md) | 💼 |  |  | 💡 |  |
+| [require-random-iv](https://eslint.interlace.tools/docs/crypto/rules/require-random-iv) | CWE-329 | A02:2025 | 7.5 | [require-random-iv](docs/rules/require-random-iv.md) | 💼 |  |  | 💡 |  |
+| [no-insecure-rsa-padding](https://eslint.interlace.tools/docs/crypto/rules/no-insecure-rsa-padding) | CWE-327 | A02:2025 | 7.4 | [no-insecure-rsa-padding](docs/rules/no-insecure-rsa-padding.md) | 💼 |  |  | 💡 |  |
+| [no-cryptojs-weak-random](https://eslint.interlace.tools/docs/crypto/rules/no-cryptojs-weak-random) | CWE-338 | A02:2025 | 5.3 | [no-cryptojs-weak-random](docs/rules/no-cryptojs-weak-random.md) | 💼 |  |  | 💡 |  |
+| [require-secure-pbkdf2-digest](https://eslint.interlace.tools/docs/crypto/rules/require-secure-pbkdf2-digest) | CWE-916 | A02:2025 | 9.1 | [require-secure-pbkdf2-digest](docs/rules/require-secure-pbkdf2-digest.md) | 💼 |  |  | 💡 |  |
+| [no-math-random-crypto](https://eslint.interlace.tools/docs/crypto/rules/no-math-random-crypto) | CWE-338 | A07:2025 | 5.3 | [no-math-random-crypto](docs/rules/no-math-random-crypto.md) | 💼 |  |  | 💡 |  |
+| [no-predictable-salt](https://eslint.interlace.tools/docs/crypto/rules/no-predictable-salt) | CWE-331 | A07:2025 | 7.5 | [no-predictable-salt](docs/rules/no-predictable-salt.md) | 💼 |  |  | 💡 |  |
+| [require-authenticated-encryption](https://eslint.interlace.tools/docs/crypto/rules/require-authenticated-encryption) | CWE-327 | A04:2025 | 6.5 | [require-authenticated-encryption](docs/rules/require-authenticated-encryption.md) | 💼 |  |  | 💡 |  |
+| [no-key-reuse](https://eslint.interlace.tools/docs/crypto/rules/no-key-reuse) | CWE-323 | A02:2025 | 7.5 | [no-key-reuse](docs/rules/no-key-reuse.md) | 💼 |  |  | 💡 |  |
+| [no-self-signed-certs](https://eslint.interlace.tools/docs/crypto/rules/no-self-signed-certs) | CWE-295 | A05:2025 | 7.5 | [no-self-signed-certs](docs/rules/no-self-signed-certs.md) | 💼 |  |  | 💡 |  |
+| [no-timing-unsafe-compare](https://eslint.interlace.tools/docs/crypto/rules/no-timing-unsafe-compare) | CWE-208 | A02:2025 | 5.9 | [no-timing-unsafe-compare](docs/rules/no-timing-unsafe-compare.md) | 💼 |  |  | 💡 |  |
+| [require-key-length](https://eslint.interlace.tools/docs/crypto/rules/require-key-length) | CWE-326 | A02:2025 | 7.5 | [require-key-length](docs/rules/require-key-length.md) | 💼 |  |  | 💡 |  |
+| [no-web-crypto-export](https://eslint.interlace.tools/docs/crypto/rules/no-web-crypto-export) | CWE-321 | A02:2025 | 5.0 | [no-web-crypto-export](docs/rules/no-web-crypto-export.md) | 💼 |  |  | 💡 |  |
+| [no-sha1-hash](https://eslint.interlace.tools/docs/crypto/rules/no-sha1-hash) | CWE-327 | A02:2025 | 7.5 | [no-sha1-hash](docs/rules/no-sha1-hash.md) | 💼 |  |  | 💡 |  |
+| [require-sufficient-length](https://eslint.interlace.tools/docs/crypto/rules/require-sufficient-length) | CWE-326 | A02:2025 | 7.5 | [require-sufficient-length](docs/rules/require-sufficient-length.md) | 💼 |  |  | 💡 |  |
+| [no-numeric-only-tokens](https://eslint.interlace.tools/docs/crypto/rules/no-numeric-only-tokens) | CWE-330 | A07:2025 | 5.3 | [no-numeric-only-tokens](docs/rules/no-numeric-only-tokens.md) | 💼 |  |  | 💡 |  |
+| [no-cryptojs](https://eslint.interlace.tools/docs/crypto/rules/no-cryptojs) | CWE-327 | A02:2025 | 5.0 | [no-cryptojs](docs/rules/no-cryptojs.md) |  |  |  | 💡 |  |
+| [prefer-native-crypto](https://eslint.interlace.tools/docs/crypto/rules/prefer-native-crypto) | CWE-327 | A05:2025 | 5.0 | [prefer-native-crypto](docs/rules/prefer-native-crypto.md) |  |  |  | 💡 |  |
 | [Plugin](https://eslint.interlace.tools/docs/crypto/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins
