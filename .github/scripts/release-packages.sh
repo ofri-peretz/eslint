@@ -127,11 +127,7 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
   
   # Decision matrix for deadlock prevention
   # If version-specifier is explicit (not auto), always bump even if current version is released
-  if [ "$TAG_EXISTS" = "true" ] && [ "$NPM_EXISTS" = "true" ] && [ "$VERSION_SPEC" = "auto" ]; then
-    echo "✅ Already released - skipping (current version $CURRENT_VERSION exists on both git and npm)"
-    SKIPPED_PACKAGES="$SKIPPED_PACKAGES $PACKAGE"
-    continue
-  elif [ "$TAG_EXISTS" = "true" ] && [ "$NPM_EXISTS" = "true" ]; then
+  if [ "$TAG_EXISTS" = "true" ] && [ "$NPM_EXISTS" = "true" ]; then
     echo "📦 Current version $CURRENT_VERSION exists, but explicit version bump requested ($VERSION_SPEC) - will bump"
   elif [ "$TAG_EXISTS" = "true" ] && [ "$NPM_EXISTS" = "false" ]; then
     echo "⚠️ Orphaned tag detected - cleaning up..."
