@@ -7,6 +7,7 @@
 <p align="center">
   Security rules for PostgreSQL interaction in Node.js.
 </p>
+
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-pg.svg)](https://www.npmjs.com/package/eslint-plugin-pg)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-pg.svg)](https://www.npmjs.com/package/eslint-plugin-pg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -26,6 +27,21 @@
 ## Philosophy
  
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-pg --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Security rules for PostgreSQL interaction in Node.js.
+</p>
+## Description
 
 ## Getting Started
 
@@ -141,20 +157,20 @@ src/db.ts
 ## Rules
 | Rule | Tag | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :--- | :---: | :---: | :---: | :--- | :-: | :-: | :-: | :-: | :-: |
-|  Rule                                                                    | General |  Tag      |    CWE    |   OWASP   |   CVSS    |  Description  |           💼            |    ⚠️     |     🔧     |                        💡                         |  🚫   |
-|  [no-unsafe-query](./docs/rules/no-unsafe-query.md)                      | General |  General  |  General  |  General  |  General  |  General      |        Security         |  CWE-89   |  A03:2021  |  Prevents SQL injection via string interpolation  |  💼   |  💡   |
-|  [no-insecure-ssl](./docs/rules/no-insecure-ssl.md)                      | General |  General  |  General  |  General  |  General  |  General      |        Security         |  CWE-295  |  A05:2021  |   Prevents disabling SSL certificate validation   |  💼   |  💡   |
-|  [no-hardcoded-credentials](./docs/rules/no-hardcoded-credentials.md)    | General |  General  |  General  |  General  |  General  |  General      |        Security         |  CWE-798  |  A05:2021  |      Prevents hardcoded passwords in config       |  💼   |  💡   |
-|  [no-unsafe-search-path](./docs/rules/no-unsafe-search-path.md)          | General |  General  |  General  |  General  |  General  |  General      |        Security         |  CWE-426  |  A01:2021  |      Prevents dynamic search_path hijacking       |  💼   |  💡   |
-|  [no-unsafe-copy-from](./docs/rules/no-unsafe-copy-from.md)              | General |  General  |  General  |  General  |  General  |  General      |        Security         |  CWE-22   |  A03:2021  |       Prevents COPY FROM file path exposure       |  💼   |  💡   |
-|  [no-transaction-on-pool](./docs/rules/no-transaction-on-pool.md)        | General |  General  |  General  |  General  |  General  |  General      |        Security         |  CWE-362  |  A04:2021  |       Prevents transaction commands on pool       |  💼   |  💡   |
-|  [no-missing-client-release](./docs/rules/no-missing-client-release.md)  | General |  General  |  General  |  General  |  General  |  General      |   Resource Management   |  CWE-772  |  A09:2021  |         Ensures pool clients are released         |  💼   |  💡   |
-|  [prevent-double-release](./docs/rules/prevent-double-release.md)        | General |  General  |  General  |  General  |  General  |  General      |   Resource Management   |  CWE-415  |  A04:2021  |         Prevents double client.release()          |  💼   |  💡   |
-|  [no-floating-query](./docs/rules/no-floating-query.md)                  | General |  General  |  General  |  General  |  General  |  General      |   Resource Management   |  CWE-252  |  A06:2021  |        Ensures query promises are handled         |  💼   |  💡   |
-|  [check-query-params](./docs/rules/check-query-params.md)                | General |  General  |  General  |  General  |  General  |  General      |  Quality & Performance  |  CWE-20   |  A06:2021  |  Validates parameter count matches placeholders   |  💼   |  💡   |
-|  [no-select-all](./docs/rules/no-select-all.md)                          | General |  General  |  General  |  General  |  General  |  General      |  Quality & Performance  |  CWE-400  |  A04:2021  |               Discourages SELECT \*               |  💡   |
-|  [prefer-pool-query](./docs/rules/prefer-pool-query.md)                  | General |  General  |  General  |  General  |  General  |  General      |  Quality & Performance  |  CWE-404  |  A04:2021  |     Suggests pool.query() for simple queries      |  💡   |
-|  [no-batch-insert-loop](./docs/rules/no-batch-insert-loop.md)            | General |  General  |  General  |  General  |  General  |  General      |  Quality & Performance  |  CWE-400  |  A04:2021  |           Prevents N+1 mutation queries           |  💼   |  💡   |
+|   Rule                                                                     | General |  General  |   Tag       |     CWE     |    OWASP    |    CVSS     |   Description   |            💼             |     ⚠️      |      🔧      |                         💡                          |   🚫    |
+|   [no-unsafe-query](./docs/rules/no-unsafe-query.md)                       | General |  General  |   General   |   General   |   General   |   General   |   General       |         Security          |   CWE-89    |   A03:2021   |   Prevents SQL injection via string interpolation   |   💼    |   💡    |
+|   [no-insecure-ssl](./docs/rules/no-insecure-ssl.md)                       | General |  General  |   General   |   General   |   General   |   General   |   General       |         Security          |   CWE-295   |   A05:2021   |    Prevents disabling SSL certificate validation    |   💼    |   💡    |
+|   [no-hardcoded-credentials](./docs/rules/no-hardcoded-credentials.md)     | General |  General  |   General   |   General   |   General   |   General   |   General       |         Security          |   CWE-798   |   A05:2021   |       Prevents hardcoded passwords in config        |   💼    |   💡    |
+|   [no-unsafe-search-path](./docs/rules/no-unsafe-search-path.md)           | General |  General  |   General   |   General   |   General   |   General   |   General       |         Security          |   CWE-426   |   A01:2021   |       Prevents dynamic search_path hijacking        |   💼    |   💡    |
+|   [no-unsafe-copy-from](./docs/rules/no-unsafe-copy-from.md)               | General |  General  |   General   |   General   |   General   |   General   |   General       |         Security          |   CWE-22    |   A03:2021   |        Prevents COPY FROM file path exposure        |   💼    |   💡    |
+|   [no-transaction-on-pool](./docs/rules/no-transaction-on-pool.md)         | General |  General  |   General   |   General   |   General   |   General   |   General       |         Security          |   CWE-362   |   A04:2021   |        Prevents transaction commands on pool        |   💼    |   💡    |
+|   [no-missing-client-release](./docs/rules/no-missing-client-release.md)   | General |  General  |   General   |   General   |   General   |   General   |   General       |    Resource Management    |   CWE-772   |   A09:2021   |          Ensures pool clients are released          |   💼    |   💡    |
+|   [prevent-double-release](./docs/rules/prevent-double-release.md)         | General |  General  |   General   |   General   |   General   |   General   |   General       |    Resource Management    |   CWE-415   |   A04:2021   |          Prevents double client.release()           |   💼    |   💡    |
+|   [no-floating-query](./docs/rules/no-floating-query.md)                   | General |  General  |   General   |   General   |   General   |   General   |   General       |    Resource Management    |   CWE-252   |   A06:2021   |         Ensures query promises are handled          |   💼    |   💡    |
+|   [check-query-params](./docs/rules/check-query-params.md)                 | General |  General  |   General   |   General   |   General   |   General   |   General       |   Quality & Performance   |   CWE-20    |   A06:2021   |   Validates parameter count matches placeholders    |   💼    |   💡    |
+|   [no-select-all](./docs/rules/no-select-all.md)                           | General |  General  |   General   |   General   |   General   |   General   |   General       |   Quality & Performance   |   CWE-400   |   A04:2021   |                Discourages SELECT \*                |   💡    |
+|   [prefer-pool-query](./docs/rules/prefer-pool-query.md)                   | General |  General  |   General   |   General   |   General   |   General   |   General       |   Quality & Performance   |   CWE-404   |   A04:2021   |      Suggests pool.query() for simple queries       |   💡    |
+|   [no-batch-insert-loop](./docs/rules/no-batch-insert-loop.md)             | General |  General  |   General   |   General   |   General   |   General   |   General       |   Quality & Performance   |   CWE-400   |   A04:2021   |            Prevents N+1 mutation queries            |   💼    |   💡    |
 
 ## 🚀 Quick Start
 

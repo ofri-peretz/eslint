@@ -7,6 +7,7 @@
 <p align="center">
   Code quality and maintainability standards.
 </p>
+
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-quality.svg)](https://www.npmjs.com/package/eslint-plugin-quality)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-quality.svg)](https://www.npmjs.com/package/eslint-plugin-quality)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -25,6 +26,21 @@
 ## Philosophy
  
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-quality --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Code quality and maintainability standards.
+</p>
+## Description
 
 ## Getting Started
 
@@ -149,11 +165,11 @@ export default [quality.configs.recommended];
 ## Rules
 | Rule | Tag | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :--- | :---: | :---: | :---: | :--- | :-: | :-: | :-: | :-: | :-: |
-|  Rule                      | General |  Tag      |    CWE    |   OWASP   |   CVSS    |  Description  |    💼     |     ⚠️     |                 🔧                  |  💡   |  🚫   |
-|  `no-console-log`          | General |  General  |  General  |  General  |  General  |  General      |  General  |  CWE-1078  |  Prevent console.log in production  |  ⚠️   |  🔧   |
-|  `cognitive-complexity`    | General |  General  |  General  |  General  |  General  |  General      |  General  |  CWE-1121  |      Limit function complexity      |  💼   |  💡   |
-|  `require-error-handling`  | General |  General  |  General  |  General  |  General  |  General      |  General  |  CWE-754   |    Ensure proper error handling     |  ⚠️   |
-|  `no-magic-numbers`        | General |  General  |  General  |  General  |  General  |  General      |  General  |  CWE-1078  |       Require named constants       |  ⚠️   |  💡   |
+|   Rule                       | General |  General  |   Tag       |     CWE     |    OWASP    |    CVSS     |   Description   |     💼      |      ⚠️      |                  🔧                   |   💡    |   🚫    |
+|   `no-console-log`           | General |  General  |   General   |   General   |   General   |   General   |   General       |   General   |   CWE-1078   |   Prevent console.log in production   |   ⚠️    |   🔧    |
+|   `cognitive-complexity`     | General |  General  |   General   |   General   |   General   |   General   |   General       |   General   |   CWE-1121   |       Limit function complexity       |   💼    |   💡    |
+|   `require-error-handling`   | General |  General  |   General   |   General   |   General   |   General   |   General       |   General   |   CWE-754    |     Ensure proper error handling      |   ⚠️    |
+|   `no-magic-numbers`         | General |  General  |   General   |   General   |   General   |   General   |   General       |   General   |   CWE-1078   |        Require named constants        |   ⚠️    |   💡    |
 
 ## 🔗 Related ESLint Plugins
 

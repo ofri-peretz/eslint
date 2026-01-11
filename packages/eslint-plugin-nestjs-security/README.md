@@ -7,6 +7,7 @@
 <p align="center">
   Security rules tailored for NestJS applications.
 </p>
+
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-nestjs-security.svg)](https://www.npmjs.com/package/eslint-plugin-nestjs-security)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-nestjs-security.svg)](https://www.npmjs.com/package/eslint-plugin-nestjs-security)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -23,6 +24,21 @@
 ## Philosophy
  
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-nestjs-security --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Security rules tailored for NestJS applications.
+</p>
+## Description
 
 ## Getting Started
 
@@ -120,12 +136,12 @@ npm install eslint-plugin-nestjs-security --save-dev
 ## Rules
 | Rule | Tag | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :--- | :---: | :---: | :---: | :--- | :-: | :-: | :-: | :-: | :-: |
-|  Rule                                                       | General |  Tag      |    CWE    |   OWASP   |   CVSS    |  Description  |                💼                |    ⚠️     |  🔧   |  💡   |                    🚫                     |
-|  [require-guards](#require-guards)                          | General |  General  |  General  |  General  |  General  |  General      |  Authorization & Access Control  |  CWE-284  |  A01  |  9.8  |     Require @UseGuards on controllers     |  💼   |  💡   |
-|  [no-exposed-private-fields](#no-exposed-private-fields)    | General |  General  |  General  |  General  |  General  |  General      |  Authorization & Access Control  |  CWE-200  |  A01  |  7.5  |  Detect exposed sensitive fields in DTOs  |  💼   |  💡   |
-|  [no-missing-validation-pipe](#no-missing-validation-pipe)  | General |  General  |  General  |  General  |  General  |  General      |         Input Validation         |  CWE-20   |  A03  |  8.6  |      Require ValidationPipe for DTOs      |  💼   |  💡   |
-|  [require-class-validator](#require-class-validator)        | General |  General  |  General  |  General  |  General  |  General      |         Input Validation         |  CWE-20   |  A03  |  7.5  |    Require class-validator decorators     |  ⚠️   |  💡   |
-|  [require-throttler](#require-throttler)                    | General |  General  |  General  |  General  |  General  |  General      |       Rate Limiting & DoS        |  CWE-770  |  A05  |  7.5  |     Require ThrottlerGuard/rate limit     |  ⚠️   |  💡   |
+|   Rule                                                        | General |  General  |   Tag       |     CWE     |    OWASP    |    CVSS     |   Description   |                 💼                 |     ⚠️      |   🔧    |   💡    |                     🚫                      |
+|   [require-guards](#require-guards)                           | General |  General  |   General   |   General   |   General   |   General   |   General       |   Authorization & Access Control   |   CWE-284   |   A01   |   9.8   |      Require @UseGuards on controllers      |   💼    |   💡    |
+|   [no-exposed-private-fields](#no-exposed-private-fields)     | General |  General  |   General   |   General   |   General   |   General   |   General       |   Authorization & Access Control   |   CWE-200   |   A01   |   7.5   |   Detect exposed sensitive fields in DTOs   |   💼    |   💡    |
+|   [no-missing-validation-pipe](#no-missing-validation-pipe)   | General |  General  |   General   |   General   |   General   |   General   |   General       |          Input Validation          |   CWE-20    |   A03   |   8.6   |       Require ValidationPipe for DTOs       |   💼    |   💡    |
+|   [require-class-validator](#require-class-validator)         | General |  General  |   General   |   General   |   General   |   General   |   General       |          Input Validation          |   CWE-20    |   A03   |   7.5   |     Require class-validator decorators      |   ⚠️    |   💡    |
+|   [require-throttler](#require-throttler)                     | General |  General  |   General   |   General   |   General   |   General   |   General       |        Rate Limiting & DoS         |   CWE-770   |   A05   |   7.5   |      Require ThrottlerGuard/rate limit      |   ⚠️    |   💡    |
 
 ## 🚀 Quick Start
 

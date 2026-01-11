@@ -24,8 +24,24 @@
 > For **complete OWASP coverage**, combine with [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) which provides 78 additional rules covering all OWASP categories.
 
 ## Philosophy
-
+ 
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-architecture --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Security-focused ESLint plugin.
+</p>
+
+## Description
 
 ## Getting Started
 
@@ -148,15 +164,15 @@ export default [architecture.configs.recommended];
 ---
 
 ## Rules
-
-| Rule                        | Tag     |   CWE   |  OWASP  |  CVSS   | Description |     💼      |   ⚠️    |    🔧    |                  💡                  |  🚫  |
-| :-------------------------- | :------ | :-----: | :-----: | :-----: | :---------- | :---------: | :-----: | :------: | :----------------------------------: | :--: | ----------- | --- | --- | --- | --- | --- |
-| Rule                        | General |   Tag   |   CWE   |  OWASP  | CVSS        | Description |   💼    |    ⚠️    |                  🔧                  |  💡  | 🚫          |
-| Rule                        | General | General | General | General | General     |   General   | General |   CWE    |                OWASP                 | CVSS | Description | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
-| `enforce-naming`            | General | General | General | General | General     |   General   | General | CWE-1078 |      Enforce naming conventions      |  💼  |
-| `ddd-anemic-domain-model`   | General | General | General | General | General     |   General   | General | CWE-1061 |     Prevent anemic domain models     |  ⚠️  | 💡          |
-| `enforce-module-boundaries` | General | General | General | General | General     |   General   | General | CWE-1047 |        Enforce API boundaries        |  💼  |
-| `no-circular-module-deps`   | General | General | General | General | General     |   General   | General | CWE-407  | Prevent circular module dependencies |  💼  | 💡          |
+| Rule | Tag | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :--- | :---: | :---: | :---: | :--- | :-: | :-: | :-: | :-: | :-: |
+|  Rule                         | General |  Tag      |    CWE    |   OWASP   |   CVSS    |  Description  |      💼       |    ⚠️     |     🔧     |                   💡                   |   🚫   |
+|  Rule                         | General |  General  |    Tag    |    CWE    |   OWASP   |  CVSS         |  Description  |    💼     |     ⚠️     |                   🔧                   |   💡   |  🚫           |
+|  Rule                         | General |  General  |  General  |  General  |  General  |  General      |    General    |  General  |    CWE     |                 OWASP                  |  CVSS  |  Description  |  💼   |  ⚠️   |  🔧   |  💡   |  🚫   |
+|  `enforce-naming`             | General |  General  |  General  |  General  |  General  |  General      |    General    |  General  |  CWE-1078  |       Enforce naming conventions       |   💼   |
+|  `ddd-anemic-domain-model`    | General |  General  |  General  |  General  |  General  |  General      |    General    |  General  |  CWE-1061  |      Prevent anemic domain models      |   ⚠️   |  💡           |
+|  `enforce-module-boundaries`  | General |  General  |  General  |  General  |  General  |  General      |    General    |  General  |  CWE-1047  |         Enforce API boundaries         |   💼   |
+|  `no-circular-module-deps`    | General |  General  |  General  |  General  |  General  |  General      |    General    |  General  |  CWE-407   |  Prevent circular module dependencies  |   💼   |  💡           |
 
 ## 🔗 Related ESLint Plugins
 

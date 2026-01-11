@@ -7,6 +7,7 @@
 <p align="center">
   Security rules for MongoDB queries and interactions.
 </p>
+
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-mongodb-security.svg)](https://www.npmjs.com/package/eslint-plugin-mongodb-security)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-mongodb-security.svg)](https://www.npmjs.com/package/eslint-plugin-mongodb-security)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -29,6 +30,21 @@
 ## Philosophy
  
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-mongodb-security --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Security rules for MongoDB queries and interactions.
+</p>
+## Description
 
 ## Getting Started
 

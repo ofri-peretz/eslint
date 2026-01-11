@@ -400,6 +400,7 @@ packages.forEach(pkg => {
         ...imgBlock,
         '',
         ...shortDescBlock,
+        '',
         ...badgeBlock,
         '',
         '## Description',
