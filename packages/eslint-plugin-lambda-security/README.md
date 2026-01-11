@@ -1,7 +1,7 @@
 # eslint-plugin-lambda-security
 
 <p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
 
 <p align="center">
@@ -27,6 +27,36 @@
 ## Philosophy
  
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-lambda-security --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Security best practices for AWS Lambda functions.
+</p>
+## Description
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-lambda-security --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Security best practices for AWS Lambda functions.
+</p>
+## Description
 
 ## Getting Started
 
@@ -137,19 +167,19 @@ src/handlers/api.ts
 ## Rules
 | Rule | Tag | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :--- | :---: | :---: | :---: | :--- | :-: | :-: | :-: | :-: | :-: |
-|      [no-hardcoded-credentials-sdk](#no-hardcoded-credentials-sdk)      | General |  General  |   General   |    General    |     Credential & Secrets Protection     |      CWE-798      |      SAS-2      |      9.8      |      Hardcoded AWS credentials in SDK v3 clients      |      💼      |
-|      [no-secrets-in-env](#no-secrets-in-env)      | General |  General  |   General   |    General    |     Credential & Secrets Protection     |      CWE-798      |      SAS-3      |      9.8      |      Secrets hardcoded in environment variables      |      💼      |
-|      [no-env-logging](#no-env-logging)      | General |  General  |   General   |    General    |     Credential & Secrets Protection     |      CWE-532      |      SAS-3      |      7.5      |      Logging entire `process.env` object      |      ⚠️      |
-|      [no-permissive-cors-response](#no-permissive-cors-response)      | General |  General  |   General   |    General    |     CORS Security     |      CWE-942      |      SAS-4      |      9.1      |      Wildcard CORS in Lambda response headers      |      💼      |      🔧      |
-|      [no-permissive-cors-middy](#no-permissive-cors-middy)      | General |  General  |   General   |    General    |     CORS Security     |      CWE-942      |      SAS-4      |      9.1      |      Permissive CORS in @middy/http-cors middleware      |      💼      |
-|      no-unvalidated-event-body      | General |  General  |   General   |    General    |     Input Validation & Access Control     |      CWE-20      |      SAS-1      |      8.0      |      Lambda handlers using event body without validation      |      ⚠️      |      💡      |
-|      no-missing-authorization-check      | General |  General  |   General   |    General    |     Input Validation & Access Control     |      CWE-862      |      SAS-5      |      7.5      |      Lambda handlers without authorization checks      |      ⚠️      |      💡      |
-|      no-overly-permissive-iam-policy      | General |  General  |   General   |    General    |     Input Validation & Access Control     |      CWE-732      |      SAS-5      |      6.5      |      IAM policies with wildcard permissions      |      💼      |      💡      |
-|      no-user-controlled-requests      | General |  General  |   General   |    General    |     Input Validation & Access Control     |      CWE-918      |      SAS-8      |      9.1      |      HTTP requests with user-controlled URLs (SSRF)      |      💼      |      💡      |
-|      no-error-swallowing      | General |  General  |   General   |    General    |     Security Operations     |      CWE-390      |      SAS-6      |      5.0      |      Empty catch blocks and missing error logging      |      ⚠️      |      💡      |
-|      require-timeout-handling      | General |  General  |   General   |    General    |     Security Operations     |      CWE-400      |      SAS-7      |      6.0      |      External calls without timeout handling      |      ⚠️      |      💡      |
-|      no-unbounded-batch-processing      | General |  General  |   General   |    General    |     Security Operations     |      CWE-770      |      SAS-7      |      5.5      |      Processing batch records without size limits      |      ⚠️      |      💡      |
-|      no-exposed-error-details      | General |  General  |   General   |    General    |     Security Operations     |      CWE-209      |      SAS-9      |      4.3      |      Exposing internal error details in responses      |      ⚠️      |      💡      |
+|        [no-hardcoded-credentials-sdk](#no-hardcoded-credentials-sdk)        | General |  General  |   General   |    General    |     General     |      General      |       Credential & Secrets Protection       |        CWE-798        |        SAS-2        |        9.8        |        Hardcoded AWS credentials in SDK v3 clients        |        💼        |
+|        [no-secrets-in-env](#no-secrets-in-env)        | General |  General  |   General   |    General    |     General     |      General      |       Credential & Secrets Protection       |        CWE-798        |        SAS-3        |        9.8        |        Secrets hardcoded in environment variables        |        💼        |
+|        [no-env-logging](#no-env-logging)        | General |  General  |   General   |    General    |     General     |      General      |       Credential & Secrets Protection       |        CWE-532        |        SAS-3        |        7.5        |        Logging entire `process.env` object        |        ⚠️        |
+|        [no-permissive-cors-response](#no-permissive-cors-response)        | General |  General  |   General   |    General    |     General     |      General      |       CORS Security       |        CWE-942        |        SAS-4        |        9.1        |        Wildcard CORS in Lambda response headers        |        💼        |        🔧        |
+|        [no-permissive-cors-middy](#no-permissive-cors-middy)        | General |  General  |   General   |    General    |     General     |      General      |       CORS Security       |        CWE-942        |        SAS-4        |        9.1        |        Permissive CORS in @middy/http-cors middleware        |        💼        |
+|        no-unvalidated-event-body        | General |  General  |   General   |    General    |     General     |      General      |       Input Validation & Access Control       |        CWE-20        |        SAS-1        |        8.0        |        Lambda handlers using event body without validation        |        ⚠️        |        💡        |
+|        no-missing-authorization-check        | General |  General  |   General   |    General    |     General     |      General      |       Input Validation & Access Control       |        CWE-862        |        SAS-5        |        7.5        |        Lambda handlers without authorization checks        |        ⚠️        |        💡        |
+|        no-overly-permissive-iam-policy        | General |  General  |   General   |    General    |     General     |      General      |       Input Validation & Access Control       |        CWE-732        |        SAS-5        |        6.5        |        IAM policies with wildcard permissions        |        💼        |        💡        |
+|        no-user-controlled-requests        | General |  General  |   General   |    General    |     General     |      General      |       Input Validation & Access Control       |        CWE-918        |        SAS-8        |        9.1        |        HTTP requests with user-controlled URLs (SSRF)        |        💼        |        💡        |
+|        no-error-swallowing        | General |  General  |   General   |    General    |     General     |      General      |       Security Operations       |        CWE-390        |        SAS-6        |        5.0        |        Empty catch blocks and missing error logging        |        ⚠️        |        💡        |
+|        require-timeout-handling        | General |  General  |   General   |    General    |     General     |      General      |       Security Operations       |        CWE-400        |        SAS-7        |        6.0        |        External calls without timeout handling        |        ⚠️        |        💡        |
+|        no-unbounded-batch-processing        | General |  General  |   General   |    General    |     General     |      General      |       Security Operations       |        CWE-770        |        SAS-7        |        5.5        |        Processing batch records without size limits        |        ⚠️        |        💡        |
+|        no-exposed-error-details        | General |  General  |   General   |    General    |     General     |      General      |       Security Operations       |        CWE-209        |        SAS-9        |        4.3        |        Exposing internal error details in responses        |        ⚠️        |        💡        |
 
 ## 🚀 Quick Start
 

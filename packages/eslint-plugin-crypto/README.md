@@ -1,7 +1,7 @@
 # eslint-plugin-crypto
 
 <p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
 
 <p align="center">
@@ -25,6 +25,37 @@
 ## Philosophy
 
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-crypto --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Cryptographic security rules enforcing best practices and modern standards.
+</p>
+
+## Description
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-crypto --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Cryptographic security rules enforcing best practices and modern standards.
+</p>
+## Description
 
 ## Getting Started
 
@@ -108,33 +139,35 @@ export default [crypto.configs.recommended];
 
 ## Rules
 
-| Rule                                                                               | Tag                    |   CWE   |  OWASP   | CVSS | Description                                 | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
-| :--------------------------------------------------------------------------------- | :--------------------- | :-----: | :------: | :--: | :------------------------------------------ | :-: | :-: | :-: | :-: | :-: |
-| [no-weak-hash-algorithm](docs/rules/no-weak-hash-algorithm.md)                     | Core Node.js Crypto    | CWE-327 | A02:2021 | 7.5  | Disallow MD5, SHA1, MD4                     | 💼  |     |     | 💡  |     |
-| [no-weak-cipher-algorithm](docs/rules/no-weak-cipher-algorithm.md)                 | Core Node.js Crypto    | CWE-327 | A02:2021 | 7.5  | Disallow DES, 3DES, RC4                     | 💼  |     |     | 💡  |     |
-| [no-deprecated-cipher-method](docs/rules/no-deprecated-cipher-method.md)           | Core Node.js Crypto    | CWE-327 | A02:2021 | 5.0  | Disallow createCipher()                     | 💼  |     |     | 💡  |     |
-| [no-static-iv](docs/rules/no-static-iv.md)                                         | Core Node.js Crypto    | CWE-329 | A02:2021 | 7.5  | Disallow hardcoded IVs                      | 💼  |     |     | 💡  |     |
-| [no-ecb-mode](docs/rules/no-ecb-mode.md)                                           | Core Node.js Crypto    | CWE-327 | A02:2021 | 7.5  | Disallow ECB encryption                     | 💼  |     |     | 💡  |     |
-| [no-insecure-key-derivation](docs/rules/no-insecure-key-derivation.md)             | Core Node.js Crypto    | CWE-916 | A02:2021 | 7.5  | Require PBKDF2 ≥100k iterations             | 💼  |     |     | 💡  |     |
-| [no-hardcoded-crypto-key](docs/rules/no-hardcoded-crypto-key.md)                   | Core Node.js Crypto    | CWE-321 | A02:2021 | 9.8  | Disallow hardcoded keys                     | 💼  |     |     | 💡  |     |
-| [require-random-iv](docs/rules/require-random-iv.md)                               | Core Node.js Crypto    | CWE-329 | A02:2021 | 7.5  | Require IV from randomBytes()               | 💼  |     |     | 💡  |     |
-| [no-insecure-rsa-padding](docs/rules/no-insecure-rsa-padding.md)                   | CVE-Specific Rules     | CWE-327 | A02:2021 | 7.4  | Marvin Attack (CVE-2023-46809)              | 💼  |     |     | 💡  |     |
-| [no-cryptojs-weak-random](docs/rules/no-cryptojs-weak-random.md)                   | CVE-Specific Rules     | CWE-338 | A02:2021 | 5.3  | Weak PRNG in crypto-js (CVE-2020-36732)     | 💼  |     |     | 💡  |     |
-| [require-secure-pbkdf2-digest](docs/rules/require-secure-pbkdf2-digest.md)         | CVE-Specific Rules     | CWE-916 | A02:2021 | 9.1  | Weak PBKDF2 defaults (CVE-2023-46233)       | 💼  |     |     | 💡  |     |
-| [no-math-random-crypto](docs/rules/no-math-random-crypto.md)                       | Advanced Security      | CWE-338 | A07:2021 | 5.3  | Disallow Math.random() for crypto           | 💼  |     |     | 💡  |     |
-| [no-predictable-salt](docs/rules/no-predictable-salt.md)                           | Advanced Security      | CWE-331 | A07:2021 | 7.5  | Disallow empty/hardcoded salts              | 💼  |     |     | 💡  |     |
-| [require-authenticated-encryption](docs/rules/require-authenticated-encryption.md) | Advanced Security      | CWE-327 | A04:2021 | 6.5  | Require GCM instead of CBC                  | 💼  |     |     | 💡  |     |
-| [no-key-reuse](docs/rules/no-key-reuse.md)                                         | Advanced Security      | CWE-323 | A02:2021 | 7.5  | Warn on key reuse                           | 💼  |     |     | 💡  |     |
-| [no-self-signed-certs](docs/rules/no-self-signed-certs.md)                         | Advanced Security      | CWE-295 | A05:2021 | 7.5  | Disallow rejectUnauthorized: false          | 💼  |     |     | 💡  |     |
-| [no-timing-unsafe-compare](docs/rules/no-timing-unsafe-compare.md)                 | Advanced Security      | CWE-208 | A02:2021 | 5.9  | Require timingSafeEqual()                   | 💼  |     |     | 💡  |     |
-| [require-key-length](docs/rules/require-key-length.md)                             | Advanced Security      | CWE-326 | A02:2021 | 7.5  | Require AES-256                             | 💼  |     |     | 💡  |     |
-| [no-web-crypto-export](docs/rules/no-web-crypto-export.md)                         | Advanced Security      | CWE-321 | A02:2021 | 5.0  | Warn on key export                          | 💼  |     |     | 💡  |     |
-| [no-sha1-hash](docs/rules/no-sha1-hash.md)                                         | Package-Specific Rules | CWE-327 | A02:2021 | 7.5  | Disallow sha1() (crypto-hash)               | 💼  |     |     | 💡  |     |
-| [require-sufficient-length](docs/rules/require-sufficient-length.md)               | Package-Specific Rules | CWE-326 | A02:2021 | 7.5  | Require min 32 chars (crypto-random-string) | 💼  |     |     | 💡  |     |
-| [no-numeric-only-tokens](docs/rules/no-numeric-only-tokens.md)                     | Package-Specific Rules | CWE-330 | A07:2021 | 5.3  | Warn on numeric-only (crypto-random-string) | 💼  |     |     | 💡  |     |
-| [no-cryptojs](docs/rules/no-cryptojs.md)                                           | Package-Specific Rules | CWE-327 | A02:2021 | 5.0  | Warn on deprecated crypto-js                |     |     |     | 💡  |     |
-| [no-cryptojs-weak-random](docs/rules/no-cryptojs-weak-random.md)                   | Package-Specific Rules | CWE-338 | A02:2021 | 5.3  | CVE-2020-36732 (crypto-js)                  | 💼  |     |     | 💡  |     |
-| [prefer-native-crypto](docs/rules/prefer-native-crypto.md)                         | Package-Specific Rules | CWE-327 | A05:2021 | 5.0  | Prefer native crypto                        |     |     |     | 💡  |     |
+| Rule                                                                               | Tag     |   CWE   |         OWASP          |  CVSS   | Description |     💼      |                     ⚠️                      | 🔧  | 💡  | 🚫  |
+| :--------------------------------------------------------------------------------- | :------ | :-----: | :--------------------: | :-----: | :---------- | :---------: | :-----------------------------------------: | :-: | :-: | :-: | --- | --- |
+| Rule                                                                               | General |   Tag   |          CWE           |  OWASP  | CVSS        | Description |                     💼                      | ⚠️  | 🔧  | 💡  | 🚫  |
+| Rule                                                                               | General | General |          Tag           |   CWE   | OWASP       |    CVSS     |                 Description                 | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| [no-weak-hash-algorithm](docs/rules/no-weak-hash-algorithm.md)                     | General | General |  Core Node.js Crypto   | CWE-327 | A02:2021    |     7.5     |           Disallow MD5, SHA1, MD4           | 💼  | 💡  |
+| [no-weak-cipher-algorithm](docs/rules/no-weak-cipher-algorithm.md)                 | General | General |  Core Node.js Crypto   | CWE-327 | A02:2021    |     7.5     |           Disallow DES, 3DES, RC4           | 💼  | 💡  |
+| [no-deprecated-cipher-method](docs/rules/no-deprecated-cipher-method.md)           | General | General |  Core Node.js Crypto   | CWE-327 | A02:2021    |     5.0     |           Disallow createCipher()           | 💼  | 💡  |
+| [no-static-iv](docs/rules/no-static-iv.md)                                         | General | General |  Core Node.js Crypto   | CWE-329 | A02:2021    |     7.5     |           Disallow hardcoded IVs            | 💼  | 💡  |
+| [no-ecb-mode](docs/rules/no-ecb-mode.md)                                           | General | General |  Core Node.js Crypto   | CWE-327 | A02:2021    |     7.5     |           Disallow ECB encryption           | 💼  | 💡  |
+| [no-insecure-key-derivation](docs/rules/no-insecure-key-derivation.md)             | General | General |  Core Node.js Crypto   | CWE-916 | A02:2021    |     7.5     |       Require PBKDF2 ≥100k iterations       | 💼  | 💡  |
+| [no-hardcoded-crypto-key](docs/rules/no-hardcoded-crypto-key.md)                   | General | General |  Core Node.js Crypto   | CWE-321 | A02:2021    |     9.8     |           Disallow hardcoded keys           | 💼  | 💡  |
+| [require-random-iv](docs/rules/require-random-iv.md)                               | General | General |  Core Node.js Crypto   | CWE-329 | A02:2021    |     7.5     |        Require IV from randomBytes()        | 💼  | 💡  |
+| [no-insecure-rsa-padding](docs/rules/no-insecure-rsa-padding.md)                   | General | General |   CVE-Specific Rules   | CWE-327 | A02:2021    |     7.4     |       Marvin Attack (CVE-2023-46809)        | 💼  | 💡  |
+| [no-cryptojs-weak-random](docs/rules/no-cryptojs-weak-random.md)                   | General | General |   CVE-Specific Rules   | CWE-338 | A02:2021    |     5.3     |   Weak PRNG in crypto-js (CVE-2020-36732)   | 💼  | 💡  |
+| [require-secure-pbkdf2-digest](docs/rules/require-secure-pbkdf2-digest.md)         | General | General |   CVE-Specific Rules   | CWE-916 | A02:2021    |     9.1     |    Weak PBKDF2 defaults (CVE-2023-46233)    | 💼  | 💡  |
+| [no-math-random-crypto](docs/rules/no-math-random-crypto.md)                       | General | General |   Advanced Security    | CWE-338 | A07:2021    |     5.3     |      Disallow Math.random() for crypto      | 💼  | 💡  |
+| [no-predictable-salt](docs/rules/no-predictable-salt.md)                           | General | General |   Advanced Security    | CWE-331 | A07:2021    |     7.5     |       Disallow empty/hardcoded salts        | 💼  | 💡  |
+| [require-authenticated-encryption](docs/rules/require-authenticated-encryption.md) | General | General |   Advanced Security    | CWE-327 | A04:2021    |     6.5     |         Require GCM instead of CBC          | 💼  | 💡  |
+| [no-key-reuse](docs/rules/no-key-reuse.md)                                         | General | General |   Advanced Security    | CWE-323 | A02:2021    |     7.5     |              Warn on key reuse              | 💼  | 💡  |
+| [no-self-signed-certs](docs/rules/no-self-signed-certs.md)                         | General | General |   Advanced Security    | CWE-295 | A05:2021    |     7.5     |     Disallow rejectUnauthorized: false      | 💼  | 💡  |
+| [no-timing-unsafe-compare](docs/rules/no-timing-unsafe-compare.md)                 | General | General |   Advanced Security    | CWE-208 | A02:2021    |     5.9     |          Require timingSafeEqual()          | 💼  | 💡  |
+| [require-key-length](docs/rules/require-key-length.md)                             | General | General |   Advanced Security    | CWE-326 | A02:2021    |     7.5     |               Require AES-256               | 💼  | 💡  |
+| [no-web-crypto-export](docs/rules/no-web-crypto-export.md)                         | General | General |   Advanced Security    | CWE-321 | A02:2021    |     5.0     |             Warn on key export              | 💼  | 💡  |
+| [no-sha1-hash](docs/rules/no-sha1-hash.md)                                         | General | General | Package-Specific Rules | CWE-327 | A02:2021    |     7.5     |        Disallow sha1() (crypto-hash)        | 💼  | 💡  |
+| [require-sufficient-length](docs/rules/require-sufficient-length.md)               | General | General | Package-Specific Rules | CWE-326 | A02:2021    |     7.5     | Require min 32 chars (crypto-random-string) | 💼  | 💡  |
+| [no-numeric-only-tokens](docs/rules/no-numeric-only-tokens.md)                     | General | General | Package-Specific Rules | CWE-330 | A07:2021    |     5.3     | Warn on numeric-only (crypto-random-string) | 💼  | 💡  |
+| [no-cryptojs](docs/rules/no-cryptojs.md)                                           | General | General | Package-Specific Rules | CWE-327 | A02:2021    |     5.0     |        Warn on deprecated crypto-js         | 💡  |
+| [no-cryptojs-weak-random](docs/rules/no-cryptojs-weak-random.md)                   | General | General | Package-Specific Rules | CWE-338 | A02:2021    |     5.3     |         CVE-2020-36732 (crypto-js)          | 💼  | 💡  |
+| [prefer-native-crypto](docs/rules/prefer-native-crypto.md)                         | General | General | Package-Specific Rules | CWE-327 | A05:2021    |     5.0     |            Prefer native crypto             | 💡  |
 
 ## Examples
 

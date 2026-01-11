@@ -1,7 +1,7 @@
 # eslint-plugin-mongodb-security
 
 <p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
 
 <p align="center">
@@ -23,13 +23,43 @@
 >
 > **NestJS users**: `@nestjs/mongoose` uses standard Mongoose under the hood — all rules apply. For comprehensive NestJS coverage, combine with [`eslint-plugin-nestjs-security`](https://npmjs.com/package/eslint-plugin-nestjs-security).
 
->
 > [!TIP]
 > For **complete OWASP coverage**, combine with [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) which provides 78 additional rules covering all OWASP categories.
 
 ## Philosophy
  
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-mongodb-security --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Security rules for MongoDB queries and interactions.
+</p>
+
+## Description
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-mongodb-security --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Security rules for MongoDB queries and interactions.
+</p>
+## Description
 
 ## Getting Started
 
@@ -95,14 +125,15 @@ npm install eslint-plugin-mongodb-security --save-dev
 
 ## 🔒 OWASP Top 10 2021 Coverage
 
-| OWASP Category                         | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| **A01:2021 Broken Access Control** |  |  |  |  |  |  |  |  |  |
-| **A02:2021 Cryptographic Failures** |  |  |  |  |  |  |  |  |  |
-| **A03:2021 Injection** |  |  |  |  |  |  |  |  |  |
-| **A04:2021 Insecure Design** |  |  |  |  |  |  |  |  |  |
-| **A05:2021 Security Misconfiguration** |  |  |  |  |  |  |  |  |  |
-| **A07:2021 Identification Failures** |  |  |  |  |  |  |  |  |  |
+| OWASP Category                         | Rule | CWE | OWASP | CVSS | Description | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :------------------------------------- | :--: | :-: | :---: | :--- | :---------: | :-: | :-: | :-: | :-: | --- |
+| **A01:2021 Broken Access Control**     |      |     |       |      |             |     |     |     |     |
+| **A02:2021 Cryptographic Failures**    |      |     |       |      |             |     |     |     |     |
+| **A03:2021 Injection**                 |      |     |       |      |             |     |     |     |     |
+| **A04:2021 Insecure Design**           |      |     |       |      |             |     |     |     |     |
+| **A05:2021 Security Misconfiguration** |      |     |       |      |             |     |     |     |     |
+| **A07:2021 Identification Failures**   |      |     |       |      |             |     |     |     |     |
+
 ---
 
 ## 🛡️ Security Research Coverage
@@ -136,11 +167,12 @@ User.findOne({ email: { $eq: email }, password: { $eq: password } });
 
 ## ⚙️ Configuration Presets
 
-| Preset        | Description        | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| `recommended` |  |  |  |  |  |  |  |  |  |
-| `strict` |  |  |  |  |  |  |  |  |  |
-| `mongoose` |  |  |  |  |  |  |  |  |  |
+| Preset        | Description | Rule | CWE | OWASP | CVSS | Description | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :------------ | :---------: | :--: | :-: | :---- | :--: | :---------: | :-: | :-: | :-: | --- | --- |
+| `recommended` |             |      |     |       |      |             |     |     |     |
+| `strict`      |             |      |     |       |      |             |     |     |     |
+| `mongoose`    |             |      |     |       |      |             |     |     |     |
+
 ---
 
 ## 🤖 AI-Optimized Messages
@@ -169,18 +201,19 @@ Every rule uses `formatLLMMessage` for structured output:
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin | Downloads | Description |
-| :--- | :---: | :--- |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |  |  |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) |  |  |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) |  |  |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) |  |  |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) |  |  |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) |  |  |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) |  |  |
-| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) |  |  |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) |  |  |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |  |  |
+| Plugin                                                                                               | Downloads | Description |
+| :--------------------------------------------------------------------------------------------------- | :-------: | :---------- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)           |           |             |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                                 |           |             |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                         |           |             |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               |           |             |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)     |           |             |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) |           |             |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)     |           |             |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)       |           |             |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)       |           |             |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)               |           |             |
+
 ---
 
 ## 📄 License

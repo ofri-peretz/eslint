@@ -184,7 +184,7 @@ packages.forEach(pkg => {
     if (imageUrl || imgBlock.length > 0) {
         imgBlock = [
             '<p align="center">',
-            '  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>',
+            '  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>',
             '</p>'
         ];
     }
@@ -208,6 +208,7 @@ packages.forEach(pkg => {
     if (badgeBlock.length === 0) {
          const shortName = pluginName;
          badgeBlock = [
+            '',
             '<p align="center">',
             `  <a href="https://www.npmjs.com/package/${pkg}"><img src="https://img.shields.io/npm/v/${pkg}.svg" alt="npm version" /></a>`,
             `  <a href="https://www.npmjs.com/package/${pkg}"><img src="https://img.shields.io/npm/dm/${pkg}.svg" alt="npm downloads" /></a>`,

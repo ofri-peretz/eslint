@@ -1,7 +1,7 @@
 # eslint-plugin-quality
 
 <p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
 
 <p align="center">
@@ -19,13 +19,43 @@
 >
 > **Note:** This plugin focuses on **code quality and maintainability** rather than OWASP security. For security rules, see [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
->
 > [!TIP]
 > For **complete OWASP coverage**, combine with [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) which provides 78 additional rules covering all OWASP categories.
 
 ## Philosophy
  
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-quality --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Code quality and maintainability standards.
+</p>
+
+## Description
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-quality --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Code quality and maintainability standards.
+</p>
+## Description
 
 ## Getting Started
 
@@ -88,6 +118,7 @@ npm install eslint-plugin-quality --save-dev
 ```
 
 ---
+
 | Category           | CWE      | Description                    |
 | ------------------ | -------- | ------------------------------ |
 | **Complexity**     | CWE-1121 | Excessive cognitive complexity |
@@ -118,20 +149,22 @@ export default [quality.configs.recommended];
 ## Rules
 | Rule | Tag | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :--- | :---: | :---: | :---: | :--- | :-: | :-: | :-: | :-: | :-: |
-|      `no-console-log`      | General |  General  |   General   |    General    |     General     |      CWE-1078      |      Prevent console.log in production      |      ⚠️      |      🔧      |
-|      `cognitive-complexity`      | General |  General  |   General   |    General    |     General     |      CWE-1121      |      Limit function complexity      |      💼      |      💡      |
-|      `require-error-handling`      | General |  General  |   General   |    General    |     General     |      CWE-754      |      Ensure proper error handling      |      ⚠️      |
-|      `no-magic-numbers`      | General |  General  |   General   |    General    |     General     |      CWE-1078      |      Require named constants      |      ⚠️      |      💡      |
+|  Rule                      | General |  Tag      |    CWE    |   OWASP   |   CVSS    |  Description  |    💼     |     ⚠️     |                 🔧                  |  💡   |  🚫   |
+|  `no-console-log`          | General |  General  |  General  |  General  |  General  |  General      |  General  |  CWE-1078  |  Prevent console.log in production  |  ⚠️   |  🔧   |
+|  `cognitive-complexity`    | General |  General  |  General  |  General  |  General  |  General      |  General  |  CWE-1121  |      Limit function complexity      |  💼   |  💡   |
+|  `require-error-handling`  | General |  General  |  General  |  General  |  General  |  General      |  General  |  CWE-754   |    Ensure proper error handling     |  ⚠️   |
+|  `no-magic-numbers`        | General |  General  |  General  |  General  |  General  |  General      |  General  |  CWE-1078  |       Require named constants       |  ⚠️   |  💡   |
 
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native plugins with LLM-optimized error messages:
 
-| Plugin | Downloads | Description |
-| :--- | :---: | :--- |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |  |  |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |  |  |
-| [`eslint-plugin-react-a11y`](https://www.npmjs.com/package/eslint-plugin-react-a11y) |  |  |
+| Plugin                                                                                     | Downloads | Description |
+| :----------------------------------------------------------------------------------------- | :-------: | :---------- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |           |             |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)     |           |             |
+| [`eslint-plugin-react-a11y`](https://www.npmjs.com/package/eslint-plugin-react-a11y)       |           |             |
+
 ---
 
 ## License

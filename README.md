@@ -1,5 +1,9 @@
 # 🧭 ESLint Monorepo
 
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
 > **Plugins, configs, resolvers, and tooling for ESLint-driven code quality**
 
 This monorepo houses battle-tested ESLint plugins, sharable configs, and supporting utilities that help teams enforce architecture, security, and consistency with actionable, LLM-friendly feedback.
@@ -9,6 +13,12 @@ This monorepo houses battle-tested ESLint plugins, sharable configs, and support
 [![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
 [![pnpm](https://img.shields.io/badge/maintained%20with-pnpm-cc00ff.svg)](https://pnpm.io/)
 [![Nx](https://img.shields.io/badge/built%20with-Nx-143055.svg)](https://nx.dev/)
+
+---
+
+## Philosophy
+
+**Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
 ---
 

@@ -1,7 +1,7 @@
 # eslint-plugin-nestjs-security
 
 <p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
 
 <p align="center">
@@ -23,6 +23,37 @@
 ## Philosophy
  
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-nestjs-security --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Security rules tailored for NestJS applications.
+</p>
+
+## Description
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-nestjs-security --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Security rules tailored for NestJS applications.
+</p>
+## Description
 
 ## Getting Started
 
@@ -89,11 +120,12 @@ npm install eslint-plugin-nestjs-security --save-dev
 ## Rules
 | Rule | Tag | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :--- | :---: | :---: | :---: | :--- | :-: | :-: | :-: | :-: | :-: |
-|      [require-guards](#require-guards)      | General |  General  |   General   |    General    |     Authorization & Access Control     |      CWE-284      |      A01      |      9.8      |      Require @UseGuards on controllers      |      💼      |      💡      |
-|      [no-exposed-private-fields](#no-exposed-private-fields)      | General |  General  |   General   |    General    |     Authorization & Access Control     |      CWE-200      |      A01      |      7.5      |      Detect exposed sensitive fields in DTOs      |      💼      |      💡      |
-|      [no-missing-validation-pipe](#no-missing-validation-pipe)      | General |  General  |   General   |    General    |     Input Validation     |      CWE-20      |      A03      |      8.6      |      Require ValidationPipe for DTOs      |      💼      |      💡      |
-|      [require-class-validator](#require-class-validator)      | General |  General  |   General   |    General    |     Input Validation     |      CWE-20      |      A03      |      7.5      |      Require class-validator decorators      |      ⚠️      |      💡      |
-|      [require-throttler](#require-throttler)      | General |  General  |   General   |    General    |     Rate Limiting & DoS     |      CWE-770      |      A05      |      7.5      |      Require ThrottlerGuard/rate limit      |      ⚠️      |      💡      |
+|  Rule                                                       | General |  Tag      |    CWE    |   OWASP   |   CVSS    |  Description  |                💼                |    ⚠️     |  🔧   |  💡   |                    🚫                     |
+|  [require-guards](#require-guards)                          | General |  General  |  General  |  General  |  General  |  General      |  Authorization & Access Control  |  CWE-284  |  A01  |  9.8  |     Require @UseGuards on controllers     |  💼   |  💡   |
+|  [no-exposed-private-fields](#no-exposed-private-fields)    | General |  General  |  General  |  General  |  General  |  General      |  Authorization & Access Control  |  CWE-200  |  A01  |  7.5  |  Detect exposed sensitive fields in DTOs  |  💼   |  💡   |
+|  [no-missing-validation-pipe](#no-missing-validation-pipe)  | General |  General  |  General  |  General  |  General  |  General      |         Input Validation         |  CWE-20   |  A03  |  8.6  |      Require ValidationPipe for DTOs      |  💼   |  💡   |
+|  [require-class-validator](#require-class-validator)        | General |  General  |  General  |  General  |  General  |  General      |         Input Validation         |  CWE-20   |  A03  |  7.5  |    Require class-validator decorators     |  ⚠️   |  💡   |
+|  [require-throttler](#require-throttler)                    | General |  General  |  General  |  General  |  General  |  General      |       Rate Limiting & DoS        |  CWE-770  |  A05  |  7.5  |     Require ThrottlerGuard/rate limit     |  ⚠️   |  💡   |
 
 ## 🚀 Quick Start
 
@@ -191,13 +223,14 @@ The rules recognize common "bypass" decorators for intentionally unprotected end
 
 ### Configuration Matrix
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| `require-guards` |  |  |  |  |  |  |  |  |  |
-| `no-missing-validation-pipe` |  |  |  |  |  |  |  |  |  |
-| `require-throttler` |  |  |  |  |  |  |  |  |  |
-| `require-class-validator` |  |  |  |  |  |  |  |  |  |
-| `no-exposed-private-fields` |  |  |  |  |  |  |  |  |  |
+| Rule                         | CWE | OWASP | CVSS | Description | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :--------------------------- | :-: | :---: | :--: | :---------- | :-: | :-: | :-: | :-: | :-: |
+| `require-guards`             |     |       |      |             |     |     |     |     |     |
+| `no-missing-validation-pipe` |     |       |      |             |     |     |     |     |     |
+| `require-throttler`          |     |       |      |             |     |     |     |     |     |
+| `require-class-validator`    |     |       |      |             |     |     |     |     |     |
+| `no-exposed-private-fields`  |     |       |      |             |     |     |     |     |     |
+
 ### 🔮 Future: Cross-File Global Detection (Planned)
 
 We're planning dedicated rules to **verify** global configuration exists:
@@ -256,17 +289,18 @@ This plugin is optimized for ESLint's [Model Context Protocol (MCP)](https://esl
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin | Downloads | Description |
-| :--- | :---: | :--- |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |  |  |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) |  |  |
-| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) |  |  |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) |  |  |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) |  |  |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) |  |  |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) |  |  |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) |  |  |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |  |  |
+| Plugin                                                                                               | Downloads | Description |
+| :--------------------------------------------------------------------------------------------------- | :-------: | :---------- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)           |           |             |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)     |           |             |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)       |           |             |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)     |           |             |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               |           |             |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                         |           |             |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                                 |           |             |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) |           |             |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)               |           |             |
+
 ---
 
 ## 🔒 Privacy
