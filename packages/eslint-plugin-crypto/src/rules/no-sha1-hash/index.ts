@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * ESLint Rule: no-sha1-hash
  * Detects sha1() usage from crypto-hash package
  * CWE-327: SHA-1 is cryptographically broken

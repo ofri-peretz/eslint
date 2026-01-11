@@ -34,7 +34,39 @@ export async function generateStaticParams() {
   return source.generateParams();
 }
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://interlace-eslint.vercel.app';
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://eslint.interlace.tools';
+
+const OG_IMAGE_MAP: Record<string, string> = {
+  'browser-security': 'og-browser.png',
+  'crypto': 'og-crypto-jwt.png',
+  'jwt': 'og-crypto-jwt.png',
+  'pg': 'og-pg.png',
+  'postgres': 'og-pg.png',
+  'mongo': 'og-mongodb.png',
+  'react-features': 'og-features.png',
+  'react-a11y': 'og-react.png',
+  'react': 'og-react.png',
+  'nest': 'og-backend.png',
+  'express': 'og-backend.png',
+  'backend': 'og-backend.png',
+  'secure-coding': 'og-secure-coding.png',
+  'architecture': 'og-architecture.png',
+  'ai': 'og-ai-security.png',
+  'vercel': 'og-ai-security.png',
+};
+
+function getStaticOgImage(slugs: string[]): string {
+  // Check if any segment in the slug matches our known categories
+  for (const segment of slugs) {
+    for (const [key, image] of Object.entries(OG_IMAGE_MAP)) {
+      if (segment.includes(key)) {
+        return `${baseUrl}/images/${image}`;
+      }
+    }
+  }
+  // Default fallback
+  return `${baseUrl}/images/interlace-hero.png`;
+}
 
 export async function generateMetadata(props: PageProps<'/docs/[[...slug]]'>): Promise<Metadata> {
   const params = await props.params;
@@ -43,7 +75,9 @@ export async function generateMetadata(props: PageProps<'/docs/[[...slug]]'>): P
 
   const slugPath = page.slugs.join('/');
   const canonicalUrl = slugPath ? `${baseUrl}/docs/${slugPath}` : `${baseUrl}/docs`;
-  const ogImage = getPageImage(page).url;
+  
+  // Use our high-fidelity static images instead of dynamic generation
+  const ogImageUrl = getStaticOgImage(page.slugs);
 
   return {
     title: page.data.title,
@@ -58,7 +92,7 @@ export async function generateMetadata(props: PageProps<'/docs/[[...slug]]'>): P
       description: page.data.description,
       images: [
         {
-          url: ogImage,
+          url: ogImageUrl,
           width: 1200,
           height: 630,
           alt: page.data.title,
@@ -69,7 +103,7 @@ export async function generateMetadata(props: PageProps<'/docs/[[...slug]]'>): P
       card: 'summary_large_image',
       title: page.data.title,
       description: page.data.description,
-      images: [ogImage],
+      images: [ogImageUrl],
     },
   };
 }

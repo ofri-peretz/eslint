@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * ESLint Rule: detect-eval-with-expression
  * Detects eval(variable) which can allow an attacker to run arbitrary code
  * LLM-optimized with comprehensive fix guidance and security context

@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * ESLint Rule: no-cryptojs
  * Warns on usage of deprecated crypto-js library
  * CWE-1104: Use of Unmaintained Third Party Components

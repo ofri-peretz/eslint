@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * @fileoverview Prevent passwords in URLs
  * @see https://owasp.org/www-project-mobile-top-10/
  * @see https://cwe.mitre.org/data/definitions/598.html

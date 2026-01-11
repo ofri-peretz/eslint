@@ -62,13 +62,23 @@ The error `ERR_INVALID_THIS` when fetching packages with `pnpm` typically indica
 - **Fix**: Ran `pnpm install` locally to regenerate `pnpm-lock.yaml`.
 - **Next Step**: Commit and push `pnpm-lock.yaml` (Attempt 4).
 
+### Actions Taken (Round 5 - Warnings Fix)
+
+- **User Request**: Fix specific build warnings.
+- **2026-01-11**: Updated `apps/docs/next.config.mjs`.
+  - **Fix**: Moved `turbo` config from `experimental` to top-level object (Next.js 16 standard).
+- **2026-01-11**: Updated `pnpm-lock.yaml` via `pnpm add -wD baseline-browser-mapping@latest`.
+  - **Fix**: Resolved "data undefined/old" warning for `baseline-browser-mapping`.
+- **2026-01-11**: Removed `runtime = 'edge'` from `apps/docs/src/app/api/plugin-stats/route.ts`.
+  - **Fix**: Resolved "Using edge runtime ... disables static generation" warning. Defaulting to Node.js/Serverless runtime is safer for ISR.
+
 ### Project Naming (User Request)
 
 ### Actions Taken (Round 5)
 
 - **Deployment Monitoring**:
-  - Deployment `eslint-q0cgargo9-ofri-peretz` is currently **Building** (2m+).
-  - This build includes the lockfile sync, so it should pass the installation phase.
+  - Deployment `eslint-q0cgargo9` (Round 4 / Lockfile Fix): Still **Building**.
+  - Deployment `eslint-glpsbb2gx` (Round 5 / Warnings Fix): **Queued**. This build contains the fixes for `baseline-browser-mapping` and edge runtime warnings.
 
 ### Project Naming (User Request)
 

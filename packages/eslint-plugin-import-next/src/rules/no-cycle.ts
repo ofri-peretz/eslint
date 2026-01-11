@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * ESLint rule to detect circular dependencies including barrel exports
  *
  * Detects circular dependencies that can cause:

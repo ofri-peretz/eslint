@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * ESLint Rule: no-express-unsafe-regex-route
  * Detects ReDoS-vulnerable regular expressions in Express.js route patterns
  * CWE-1333: Inefficient Regular Expression Complexity

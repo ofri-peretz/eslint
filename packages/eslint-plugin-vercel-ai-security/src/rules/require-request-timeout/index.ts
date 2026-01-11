@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * @fileoverview Require timeout for AI API calls to prevent DoS
  * @description Detects AI calls without timeout configuration
  * @see OWASP LLM04: Model Denial of Service

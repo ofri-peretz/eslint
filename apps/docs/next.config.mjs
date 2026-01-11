@@ -1,8 +1,10 @@
 import { createMDX } from 'fumadocs-mdx/next';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import fs from 'node:fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf-8'));
 // Set to monorepo root (where pnpm-lock.yaml is)
 const monorepoRoot = path.resolve(__dirname, '../..');
 
@@ -10,6 +12,9 @@ const withMDX = createMDX();
 
 /** @type {import('next').NextConfig} */
 const config = {
+  env: {
+    NEXT_PUBLIC_APP_VERSION: pkg.version,
+  },
   reactStrictMode: true,
   output: 'standalone',
   poweredByHeader: false,

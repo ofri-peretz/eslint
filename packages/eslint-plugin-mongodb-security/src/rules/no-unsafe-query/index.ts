@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * ESLint Rule: no-unsafe-query
  * Detects potential NoSQL injection via string concatenation in MongoDB queries.
  * CWE-943: Improper Neutralization of Special Elements in Data Query Logic

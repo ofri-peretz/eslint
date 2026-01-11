@@ -1,5 +1,9 @@
 # eslint-plugin-quality
 
+<div align="center">
+  <img src="https://eslint.interlace.tools/images/interlace-hero.png" alt="ESLint Interlace - eslint-plugin-quality" width="100%" />
+</div>
+
 > **Code quality and error handling rules with LLM-optimized messages.** Enforce cognitive complexity limits, proper error handling, and clean code patterns.
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-quality.svg)](https://www.npmjs.com/package/eslint-plugin-quality)

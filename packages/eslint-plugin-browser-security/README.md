@@ -1,5 +1,11 @@
 # eslint-plugin-browser-security
 
+<div align="center">
+  <img src="https://eslint.interlace.tools/images/og-browser.png" alt="ESLint Interlace - eslint-plugin-browser-security" width="100%" />
+</div>
+
+> **📘 Full Documentation:** [https://eslint.interlace.tools/](https://eslint.interlace.tools/)
+>
 > 🔐 Security-focused ESLint plugin for browser applications. Detects XSS vulnerabilities, postMessage abuse, storage API token exposure, cookie security issues, WebSocket vulnerabilities, and more.
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-browser-security.svg)](https://www.npmjs.com/package/eslint-plugin-browser-security)
@@ -75,53 +81,60 @@ export default [browserSecurity.configs.recommended];
 
 ### XSS Prevention
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [no-eval](./docs/rules/no-eval.md) | CWE-95 | A03:2021 |  | Prevent code injection via `eval()`, `new Function()` | 💼 |  |  | 💡 |  |
-| [no-innerhtml](./docs/rules/no-innerhtml.md) | CWE-79 | A03:2021 |  | Prevent XSS via `innerHTML`, `outerHTML` | 💼 |  |  | 💡 |  |
+| Rule                                         |  CWE   |  OWASP   | CVSS | Description                                           | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :------------------------------------------- | :----: | :------: | :--: | :---------------------------------------------------- | :-: | :-: | :-: | :-: | :-: |
+| [no-eval](./docs/rules/no-eval.md)           | CWE-95 | A03:2021 |      | Prevent code injection via `eval()`, `new Function()` | 💼  |     |     | 💡  |     |
+| [no-innerhtml](./docs/rules/no-innerhtml.md) | CWE-79 | A03:2021 |      | Prevent XSS via `innerHTML`, `outerHTML`              | 💼  |     |     | 💡  |     |
+
 ### postMessage Security
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [require-postmessage-origin-check](./docs/rules/require-postmessage-origin-check.md) | CWE-346 | A01:2021 |  | Require origin validation in postMessage handlers | 💼 |  |  | 💡 |  |
-| [no-postmessage-wildcard-origin](./docs/rules/no-postmessage-wildcard-origin.md) | CWE-346 | A01:2021 |  | Prevent wildcard targetOrigin in postMessage | 💼 |  |  | 💡 |  |
-| [no-postmessage-innerhtml](./docs/rules/no-postmessage-innerhtml.md) | CWE-79 | A03:2021 |  | Prevent XSS via innerHTML in postMessage handlers | 💼 |  |  | 💡 |  |
+| Rule                                                                                 |   CWE   |  OWASP   | CVSS | Description                                       | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :----------------------------------------------------------------------------------- | :-----: | :------: | :--: | :------------------------------------------------ | :-: | :-: | :-: | :-: | :-: |
+| [require-postmessage-origin-check](./docs/rules/require-postmessage-origin-check.md) | CWE-346 | A01:2021 |      | Require origin validation in postMessage handlers | 💼  |     |     | 💡  |     |
+| [no-postmessage-wildcard-origin](./docs/rules/no-postmessage-wildcard-origin.md)     | CWE-346 | A01:2021 |      | Prevent wildcard targetOrigin in postMessage      | 💼  |     |     | 💡  |     |
+| [no-postmessage-innerhtml](./docs/rules/no-postmessage-innerhtml.md)                 | CWE-79  | A03:2021 |      | Prevent XSS via innerHTML in postMessage handlers | 💼  |     |     | 💡  |     |
+
 ### Storage Security
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [no-sensitive-localstorage](./docs/rules/no-sensitive-localstorage.md) | CWE-922 | A02:2021 |  | Prevent sensitive data in localStorage | 💼 |  |  | 💡 |  |
-| [no-sensitive-sessionstorage](./docs/rules/no-sensitive-sessionstorage.md) | CWE-922 | A02:2021 |  | Prevent sensitive data in sessionStorage | 💼 |  |  | 💡 |  |
-| [no-sensitive-indexeddb](./docs/rules/no-sensitive-indexeddb.md) | CWE-922 | A02:2021 |  | Prevent sensitive data in IndexedDB | 💼 |  |  | 💡 |  |
-| [no-jwt-in-storage](./docs/rules/no-jwt-in-storage.md) | CWE-922 | A02:2021 |  | Prevent JWT tokens in browser storage | 💼 |  |  | 💡 |  |
+| Rule                                                                       |   CWE   |  OWASP   | CVSS | Description                              | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :------------------------------------------------------------------------- | :-----: | :------: | :--: | :--------------------------------------- | :-: | :-: | :-: | :-: | :-: |
+| [no-sensitive-localstorage](./docs/rules/no-sensitive-localstorage.md)     | CWE-922 | A02:2021 |      | Prevent sensitive data in localStorage   | 💼  |     |     | 💡  |     |
+| [no-sensitive-sessionstorage](./docs/rules/no-sensitive-sessionstorage.md) | CWE-922 | A02:2021 |      | Prevent sensitive data in sessionStorage | 💼  |     |     | 💡  |     |
+| [no-sensitive-indexeddb](./docs/rules/no-sensitive-indexeddb.md)           | CWE-922 | A02:2021 |      | Prevent sensitive data in IndexedDB      | 💼  |     |     | 💡  |     |
+| [no-jwt-in-storage](./docs/rules/no-jwt-in-storage.md)                     | CWE-922 | A02:2021 |      | Prevent JWT tokens in browser storage    | 💼  |     |     | 💡  |     |
+
 ### Cookie Security
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [no-sensitive-cookie-js](./docs/rules/no-sensitive-cookie-js.md) | CWE-1004 | A02:2021 |  | Prevent sensitive data in cookies via JS | 💼 |  |  | 💡 |  |
-| [no-cookie-auth-tokens](./docs/rules/no-cookie-auth-tokens.md) | CWE-1004 | A02:2021 |  | Prevent auth tokens in JS-accessible cookies | 💼 |  |  | 💡 |  |
-| [require-cookie-secure-attrs](./docs/rules/require-cookie-secure-attrs.md) | CWE-614 | A05:2021 |  | Require Secure and SameSite attributes | 💼 |  |  | 💡 |  |
+| Rule                                                                       |   CWE    |  OWASP   | CVSS | Description                                  | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :------------------------------------------------------------------------- | :------: | :------: | :--: | :------------------------------------------- | :-: | :-: | :-: | :-: | :-: |
+| [no-sensitive-cookie-js](./docs/rules/no-sensitive-cookie-js.md)           | CWE-1004 | A02:2021 |      | Prevent sensitive data in cookies via JS     | 💼  |     |     | 💡  |     |
+| [no-cookie-auth-tokens](./docs/rules/no-cookie-auth-tokens.md)             | CWE-1004 | A02:2021 |      | Prevent auth tokens in JS-accessible cookies | 💼  |     |     | 💡  |     |
+| [require-cookie-secure-attrs](./docs/rules/require-cookie-secure-attrs.md) | CWE-614  | A05:2021 |      | Require Secure and SameSite attributes       | 💼  |     |     | 💡  |     |
+
 ### WebSocket Security
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [require-websocket-wss](./docs/rules/require-websocket-wss.md) | CWE-319 | A02:2021 |  | Require secure WebSocket (wss://) | 💼 |  |  | 💡 |  |
-| [no-websocket-innerhtml](./docs/rules/no-websocket-innerhtml.md) | CWE-79 | A03:2021 |  | Prevent XSS in WebSocket handlers | 💼 |  |  | 💡 |  |
-| [no-websocket-eval](./docs/rules/no-websocket-eval.md) | CWE-95 | A03:2021 |  | Prevent RCE in WebSocket handlers | 💼 |  |  | 💡 |  |
+| Rule                                                             |   CWE   |  OWASP   | CVSS | Description                       | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :--------------------------------------------------------------- | :-----: | :------: | :--: | :-------------------------------- | :-: | :-: | :-: | :-: | :-: |
+| [require-websocket-wss](./docs/rules/require-websocket-wss.md)   | CWE-319 | A02:2021 |      | Require secure WebSocket (wss://) | 💼  |     |     | 💡  |     |
+| [no-websocket-innerhtml](./docs/rules/no-websocket-innerhtml.md) | CWE-79  | A03:2021 |      | Prevent XSS in WebSocket handlers | 💼  |     |     | 💡  |     |
+| [no-websocket-eval](./docs/rules/no-websocket-eval.md)           | CWE-95  | A03:2021 |      | Prevent RCE in WebSocket handlers | 💼  |     |     | 💡  |     |
+
 ### File API & Workers Security
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [no-filereader-innerhtml](./docs/rules/no-filereader-innerhtml.md) | CWE-79 | A03:2021 |  | Prevent XSS with FileReader data | 💼 |  |  | 💡 |  |
-| [require-blob-url-revocation](./docs/rules/require-blob-url-revocation.md) | CWE-401 | A04:2021 |  | Require revoking Blob URLs | 💼 |  |  | 💡 |  |
-| [no-dynamic-service-worker-url](./docs/rules/no-dynamic-service-worker-url.md) | CWE-829 | A08:2021 |  | Prevent dynamic service worker URLs | 💼 |  |  | 💡 |  |
-| [no-worker-message-innerhtml](./docs/rules/no-worker-message-innerhtml.md) | CWE-79 | A03:2021 |  | Prevent XSS in Worker handlers | 💼 |  |  | 💡 |  |
+| Rule                                                                           |   CWE   |  OWASP   | CVSS | Description                         | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :----------------------------------------------------------------------------- | :-----: | :------: | :--: | :---------------------------------- | :-: | :-: | :-: | :-: | :-: |
+| [no-filereader-innerhtml](./docs/rules/no-filereader-innerhtml.md)             | CWE-79  | A03:2021 |      | Prevent XSS with FileReader data    | 💼  |     |     | 💡  |     |
+| [require-blob-url-revocation](./docs/rules/require-blob-url-revocation.md)     | CWE-401 | A04:2021 |      | Require revoking Blob URLs          | 💼  |     |     | 💡  |     |
+| [no-dynamic-service-worker-url](./docs/rules/no-dynamic-service-worker-url.md) | CWE-829 | A08:2021 |      | Prevent dynamic service worker URLs | 💼  |     |     | 💡  |     |
+| [no-worker-message-innerhtml](./docs/rules/no-worker-message-innerhtml.md)     | CWE-79  | A03:2021 |      | Prevent XSS in Worker handlers      | 💼  |     |     | 💡  |     |
+
 ### CSP Security
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [no-unsafe-inline-csp](./docs/rules/no-unsafe-inline-csp.md) | CWE-79 | A03:2021 |  | Disallow 'unsafe-inline' in CSP | 💼 |  |  | 💡 |  |
-| [no-unsafe-eval-csp](./docs/rules/no-unsafe-eval-csp.md) | CWE-95 | A03:2021 |  | Disallow 'unsafe-eval' in CSP | 💼 |  |  | 💡 |  |
+| Rule                                                         |  CWE   |  OWASP   | CVSS | Description                     | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :----------------------------------------------------------- | :----: | :------: | :--: | :------------------------------ | :-: | :-: | :-: | :-: | :-: |
+| [no-unsafe-inline-csp](./docs/rules/no-unsafe-inline-csp.md) | CWE-79 | A03:2021 |      | Disallow 'unsafe-inline' in CSP | 💼  |     |     | 💡  |     |
+| [no-unsafe-eval-csp](./docs/rules/no-unsafe-eval-csp.md)     | CWE-95 | A03:2021 |      | Disallow 'unsafe-eval' in CSP   | 💼  |     |     | 💡  |     |
+
 ## 🔍 Detection Examples
 
 ### ❌ Vulnerable Code
@@ -163,12 +176,13 @@ window.addEventListener('message', (event) => {
 
 ## 🗂️ OWASP Coverage
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| `no-eval` |  | A03: Injection |  |  |  |  |  |  |  |
-| `no-innerhtml` |  | A03: Injection |  |  |  |  |  |  |  |
-| `no-sensitive-localstorage` |  | A02: Cryptographic Failures |  |  |  |  |  |  |  |
-| `require-postmessage-origin-check` |  | A01: Broken Access Control |  |  |  |  |  |  |  |
+| Rule                               | CWE |            OWASP            | CVSS | Description | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :--------------------------------- | :-: | :-------------------------: | :--: | :---------- | :-: | :-: | :-: | :-: | :-: |
+| `no-eval`                          |     |       A03: Injection        |      |             |     |     |     |     |     |
+| `no-innerhtml`                     |     |       A03: Injection        |      |             |     |     |     |     |     |
+| `no-sensitive-localstorage`        |     | A02: Cryptographic Failures |      |             |     |     |     |     |     |
+| `require-postmessage-origin-check` |     | A01: Broken Access Control  |      |             |     |     |     |     |     |
+
 ## 🤖 LLM-Optimized Messages
 
 All rules include structured remediation guidance designed for AI assistants:
@@ -196,17 +210,18 @@ All rules include structured remediation guidance designed for AI assistants:
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin                                                                                               |                                                                Downloads                                                                 | Description                                                  | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |  |  |  |  |  |  |  |  |  |
+| Plugin                                                                                               | Downloads | Description | Rule | CWE | OWASP | CVSS | Description | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :--------------------------------------------------------------------------------------------------- | :-------: | :---------: | :--: | :-- | :---: | :--: | :---------: | :-: | :-: | --- | --- | --- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)           |           |             |      |     |       |      |             |     |     |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               |           |             |      |     |       |      |             |     |     |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                         |           |             |      |     |       |      |             |     |     |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                                 |           |             |      |     |       |      |             |     |     |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)     |           |             |      |     |       |      |             |     |     |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)       |           |             |      |     |       |      |             |     |     |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)       |           |             |      |     |       |      |             |     |     |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) |           |             |      |     |       |      |             |     |     |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)               |           |             |      |     |       |      |             |     |     |
+
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)

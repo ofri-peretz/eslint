@@ -1,5 +1,9 @@
 # eslint-plugin-vercel-ai-security
 
+<div align="center">
+  <img src="https://eslint.interlace.tools/images/og-ai-security.png" alt="ESLint Interlace - eslint-plugin-vercel-ai-security" width="100%" />
+</div>
+
 > 🔒 **The Definitive Security Plugin for Vercel AI SDK** — Protect your AI applications from prompt injection, sensitive data leaks, and agentic vulnerabilities with **complete OWASP coverage**.
 
 **eslint-plugin-vercel-ai-security** is a specialized ESLint plugin that provides **SDK-aware security rules** for the [Vercel AI SDK](https://sdk.vercel.ai/). Unlike generic AI security linters, this plugin has **full knowledge** of the AI SDK's API structure, enabling precise detection of security vulnerabilities in `generateText`, `streamText`, `generateObject`, `streamObject`, and tool definitions.

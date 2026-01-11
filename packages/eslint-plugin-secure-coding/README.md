@@ -1,5 +1,9 @@
 # eslint-plugin-secure-coding
 
+<div align="center">
+  <img src="https://eslint.interlace.tools/images/og-secure-coding.png" alt="ESLint Interlace - eslint-plugin-secure-coding" width="100%" />
+</div>
+
 > **Feature-based security rules that AI assistants can actually understand and fix.**
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-secure-coding.svg)](https://www.npmjs.com/package/eslint-plugin-secure-coding)

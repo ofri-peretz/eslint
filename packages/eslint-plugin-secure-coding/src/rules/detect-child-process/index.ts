@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * ESLint Rule: detect-child-process
  * Detects instances of child_process & non-literal exec() calls
  * LLM-optimized with comprehensive command injection prevention guidance

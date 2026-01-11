@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * ESLint Rule: ddd-anemic-domain-model
  * Detects entities with only getters/setters and no business logic
  * Priority 1: Domain-Driven Design

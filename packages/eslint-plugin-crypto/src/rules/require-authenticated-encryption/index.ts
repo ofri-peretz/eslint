@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * ESLint Rule: require-authenticated-encryption
  * Flags CBC/CTR modes without explicit MAC
  * CWE-327: Use of Broken or Risky Cryptographic Algorithm

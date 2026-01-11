@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * @fileoverview Require validated prompts in generateText calls
  * @description Detects when user input is passed directly to generateText without validation
  * @see https://sdk.vercel.ai/docs/ai-sdk-core/generating-text

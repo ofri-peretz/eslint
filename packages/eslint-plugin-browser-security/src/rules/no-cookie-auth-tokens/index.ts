@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * ESLint Rule: no-cookie-auth-tokens
  * Detects storing auth tokens in cookies via JavaScript (should use HttpOnly)
  * CWE-1004: Sensitive Cookie Without 'HttpOnly' Flag

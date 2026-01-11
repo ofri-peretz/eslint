@@ -1,5 +1,9 @@
 # eslint-plugin-nestjs-security
 
+<div align="center">
+  <img src="https://eslint.interlace.tools/images/og-backend.png" alt="ESLint Interlace - eslint-plugin-nestjs-security" width="100%" />
+</div>
+
 > 🔐 Security-focused ESLint plugin for NestJS applications. Detects missing guards, validation pipes, throttling, and exposed private fields with AI-optimized fix guidance.
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-nestjs-security.svg)](https://www.npmjs.com/package/eslint-plugin-nestjs-security)

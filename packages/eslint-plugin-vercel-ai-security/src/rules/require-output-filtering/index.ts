@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * @fileoverview Require output filtering for tool data
  * @description Detects when tools return raw data without filtering
  * @see OWASP ASI04: Data Exfiltration

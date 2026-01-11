@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * ESLint Rule: no-key-reuse
  * Detects same key variable used for multiple cipher operations
  * CWE-323: Reusing a Nonce, Key Pair in Encryption

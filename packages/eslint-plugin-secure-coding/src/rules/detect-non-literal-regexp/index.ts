@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * ESLint Rule: detect-non-literal-regexp
  * Detects RegExp(variable), which might allow an attacker to DOS your server with a long-running regular expression
  * LLM-optimized with comprehensive ReDoS prevention guidance

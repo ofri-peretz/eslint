@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * ESLint Rule: no-missing-csrf-protection
  * Detects missing CSRF token validation in POST/PUT/DELETE requests
  * CWE-352: Cross-Site Request Forgery (CSRF)

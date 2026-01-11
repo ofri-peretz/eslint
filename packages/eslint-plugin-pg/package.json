@@ -29,7 +29,8 @@
     "src/",
     "dist/",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "keywords": [
     "eslint",

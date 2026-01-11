@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * ESLint Rule: no-weak-cipher-algorithm
  * Detects use of weak cipher algorithms (DES, 3DES, RC4, Blowfish)
  * CWE-327: Use of a Broken or Risky Cryptographic Algorithm

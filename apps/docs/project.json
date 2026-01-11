@@ -97,6 +97,16 @@
                 "command": "npx vercel deploy --prebuilt --prod --yes",
                 "cwd": "{projectRoot}"
             }
+        },
+        "nx-release-publish": {
+            "executor": "nx:run-commands",
+            "dependsOn": [
+                "deploy"
+            ],
+            "options": {
+                "command": "echo 'Docs deployed via nx release'",
+                "cwd": "{projectRoot}"
+            }
         }
     }
 }

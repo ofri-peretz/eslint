@@ -1,5 +1,9 @@
 # eslint-plugin-react-a11y
 
+<div align="center">
+  <img src="https://eslint.interlace.tools/images/og-react.png" alt="ESLint Interlace - eslint-plugin-react-a11y" width="100%" />
+</div>
+
 > React accessibility ESLint plugin with 37 LLM-optimized rules for WCAG 2.1 compliance
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-react-a11y.svg)](https://www.npmjs.com/package/eslint-plugin-react-a11y)

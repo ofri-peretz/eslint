@@ -102,6 +102,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         {/* Preconnect for external APIs */}
         <link rel="preconnect" href="https://dev.to" />
         <link rel="preconnect" href="https://res.cloudinary.com" />
+        <meta name="version" content={process.env.NEXT_PUBLIC_APP_VERSION} />
         <link rel="dns-prefetch" href="https://codecov.io" />
         
         {/* PWA theme color */}

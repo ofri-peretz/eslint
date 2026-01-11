@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+- 📘 Launched new documentation site: [eslint.interlace.tools](https://eslint.interlace.tools/)
+
 ### Added
 
 - Initial plugin structure and rules

@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * ESLint Rule: no-static-iv
  * Detects use of hardcoded or reused initialization vectors (IVs)
  * CWE-329: Not Using an Unpredictable IV with CBC Mode

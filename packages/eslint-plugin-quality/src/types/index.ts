@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * Simplified type barrel for eslint-plugin-quality.
  * Many rules were moved/removed; provide placeholders to keep builds green while
  * still exposing option types. Replace with concrete types as rules evolve.

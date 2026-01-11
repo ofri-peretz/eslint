@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * Simplified type barrel for eslint-plugin-architecture.
  * Many legacy/moved rules previously referenced here were removed or relocated.
  * To keep the package compiling and avoid broken imports, we provide placeholder

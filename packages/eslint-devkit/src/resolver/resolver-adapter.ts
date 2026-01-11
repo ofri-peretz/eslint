@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * Interface for external resolvers (compatible with eslint-plugin-import resolvers)
  *
  * Note: This module uses require() for dynamic module loading, which is necessary

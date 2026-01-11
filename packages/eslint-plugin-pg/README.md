@@ -1,5 +1,9 @@
 # eslint-plugin-pg
 
+<div align="center">
+  <img src="https://eslint.interlace.tools/images/og-pg.png" alt="ESLint Interlace - eslint-plugin-pg" width="100%" />
+</div>
+
 > 🔐 Security-focused ESLint plugin for PostgreSQL/node-postgres. Detects SQL injection, connection leaks, transaction issues, and hardcoded credentials with LLM-optimized fix guidance.
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-pg.svg)](https://www.npmjs.com/package/eslint-plugin-pg)

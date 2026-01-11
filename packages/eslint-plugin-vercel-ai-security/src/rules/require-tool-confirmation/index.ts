@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * @fileoverview Require human confirmation for destructive tool operations
  * @description Ensures tools that perform destructive actions have confirmation
  * @see OWASP ASI09: Human-Agent Trust Exploitation

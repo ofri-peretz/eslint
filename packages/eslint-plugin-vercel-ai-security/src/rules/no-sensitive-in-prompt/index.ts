@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * @fileoverview Prevent sensitive data from being passed to LLM prompts
  * @description Detects secrets, credentials, PII in prompts
  * @see OWASP LLM02: Sensitive Information Disclosure

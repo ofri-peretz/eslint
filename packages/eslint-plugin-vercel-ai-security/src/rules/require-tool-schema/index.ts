@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * @fileoverview Require Zod schema validation for tool parameters
  * @description Ensures all tools have proper inputSchema defined with Zod
  * @see https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling

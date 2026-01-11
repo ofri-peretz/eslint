@@ -1,5 +1,9 @@
 # eslint-plugin-jwt
 
+<div align="center">
+  <img src="https://eslint.interlace.tools/images/og-crypto-jwt.png" alt="ESLint Interlace - eslint-plugin-jwt" width="100%" />
+</div>
+
 > 🔐 Security-focused ESLint plugin for JWT authentication. Detects algorithm confusion (CVE-2022-23540), replay attacks, weak secrets, and library-specific vulnerabilities with AI-optimized fix guidance.
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-jwt.svg)](https://www.npmjs.com/package/eslint-plugin-jwt)

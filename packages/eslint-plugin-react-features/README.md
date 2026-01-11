@@ -1,5 +1,9 @@
 # eslint-plugin-react-features
 
+<div align="center">
+  <img src="https://eslint.interlace.tools/images/og-features.png" alt="ESLint Interlace - eslint-plugin-react-features" width="100%" />
+</div>
+
 > **React hooks, patterns, and migration helpers with LLM-optimized messages.** Enforce React best practices and modernize legacy patterns.
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-react-features.svg)](https://www.npmjs.com/package/eslint-plugin-react-features)

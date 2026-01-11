@@ -1,5 +1,11 @@
 # eslint-plugin-import-next
 
+<div align="center">
+  <img src="https://eslint.interlace.tools/images/interlace-hero.png" alt="ESLint Interlace - eslint-plugin-import-next" width="100%" />
+</div>
+
+> **📘 Full Documentation:** [https://eslint.interlace.tools/](https://eslint.interlace.tools/)
+>
 > 🔥 **Drop-in replacement for `eslint-plugin-import`.** 100% backwards compatible, 100x faster, zero false positives, AI-optimized fixes.
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-import-next.svg)](https://www.npmjs.com/package/eslint-plugin-import-next)
@@ -149,77 +155,82 @@ Every rule from `eslint-plugin-import` is implemented with **the same name** and
 
 ### ✅ Static Analysis (13 rules)
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| `no-unresolved` |  |  |  | Ensure imports resolve | 💼 |  |  | 💡 |  |
-| `named` |  |  |  | Ensure named imports exist | 💼 |  |  |  |  |
-| `default` |  |  |  | Ensure default export exists | 💼 |  |  |  |  |
-| `namespace` |  |  |  | Ensure namespace properties exist | 💼 |  |  |  |  |
-| `no-absolute-path` |  |  |  | Forbid absolute paths |  |  | 🔧 |  |  |
-| `no-dynamic-require` |  |  |  | Forbid dynamic require() |  |  |  |  |  |
-| `no-internal-modules` |  |  |  | Enforce entry points only |  |  |  | 💡 |  |
-| `no-relative-packages` |  |  |  | Use package names |  |  | 🔧 |  |  |
-| `no-relative-parent-imports` |  |  |  | Prevent `../` imports |  |  |  |  |  |
-| `no-self-import` |  |  |  | Prevent self-imports | 💼 |  |  | 💡 |  |
-| `no-cycle` |  |  |  | **100x faster** cycle detection | 💼 |  |  | 💡 |  |
-| `no-useless-path-segments` |  |  |  | Simplify paths |  |  | 🔧 |  |  |
-| `no-restricted-paths` |  |  |  | Custom path restrictions |  |  |  |  |  |
+| Rule                         | CWE | OWASP | CVSS | Description                       | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :--------------------------- | :-: | :---: | :--: | :-------------------------------- | :-: | :-: | :-: | :-: | :-: |
+| `no-unresolved`              |     |       |      | Ensure imports resolve            | 💼  |     |     | 💡  |     |
+| `named`                      |     |       |      | Ensure named imports exist        | 💼  |     |     |     |     |
+| `default`                    |     |       |      | Ensure default export exists      | 💼  |     |     |     |     |
+| `namespace`                  |     |       |      | Ensure namespace properties exist | 💼  |     |     |     |     |
+| `no-absolute-path`           |     |       |      | Forbid absolute paths             |     |     | 🔧  |     |     |
+| `no-dynamic-require`         |     |       |      | Forbid dynamic require()          |     |     |     |     |     |
+| `no-internal-modules`        |     |       |      | Enforce entry points only         |     |     |     | 💡  |     |
+| `no-relative-packages`       |     |       |      | Use package names                 |     |     | 🔧  |     |     |
+| `no-relative-parent-imports` |     |       |      | Prevent `../` imports             |     |     |     |     |     |
+| `no-self-import`             |     |       |      | Prevent self-imports              | 💼  |     |     | 💡  |     |
+| `no-cycle`                   |     |       |      | **100x faster** cycle detection   | 💼  |     |     | 💡  |     |
+| `no-useless-path-segments`   |     |       |      | Simplify paths                    |     |     | 🔧  |     |     |
+| `no-restricted-paths`        |     |       |      | Custom path restrictions          |     |     |     |     |     |
+
 ### ✅ Helpful Warnings (8 rules)
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| `export` |  |  |  | Forbid duplicate exports | 💼 |  |  |  |  |
-| `no-deprecated` |  |  |  | Warn on `@deprecated` imports |  |  |  |  |  |
-| `no-empty-named-blocks` |  |  |  | Forbid empty `{}` imports |  |  | 🔧 | 💡 |  |
-| `no-extraneous-dependencies` |  |  |  | Prevent unlisted deps | 💼 |  |  | 💡 |  |
-| `no-mutable-exports` |  |  |  | Forbid `let`/`var` exports |  |  |  |  |  |
-| `no-named-as-default` |  |  |  | Warn on default shadowing | 💼 |  |  |  |  |
-| `no-named-as-default-member` |  |  |  | Warn on property access | 💼 |  |  |  |  |
-| `no-unused-modules` |  |  |  | Find dead code |  |  |  | 💡 |  |
+| Rule                         | CWE | OWASP | CVSS | Description                   | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :--------------------------- | :-: | :---: | :--: | :---------------------------- | :-: | :-: | :-: | :-: | :-: |
+| `export`                     |     |       |      | Forbid duplicate exports      | 💼  |     |     |     |     |
+| `no-deprecated`              |     |       |      | Warn on `@deprecated` imports |     |     |     |     |     |
+| `no-empty-named-blocks`      |     |       |      | Forbid empty `{}` imports     |     |     | 🔧  | 💡  |     |
+| `no-extraneous-dependencies` |     |       |      | Prevent unlisted deps         | 💼  |     |     | 💡  |     |
+| `no-mutable-exports`         |     |       |      | Forbid `let`/`var` exports    |     |     |     |     |     |
+| `no-named-as-default`        |     |       |      | Warn on default shadowing     | 💼  |     |     |     |     |
+| `no-named-as-default-member` |     |       |      | Warn on property access       | 💼  |     |     |     |     |
+| `no-unused-modules`          |     |       |      | Find dead code                |     |     |     | 💡  |     |
+
 ### ✅ Module Systems (5 rules)
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| `no-amd` |  |  |  | Forbid AMD require/define |  |  |  |  |  |
-| `no-commonjs` |  |  |  | Forbid CommonJS |  |  |  |  |  |
-| `no-nodejs-modules` |  |  |  | Forbid Node.js builtins |  |  |  |  |  |
-| `no-import-module-exports` |  |  |  | No mixed ES/CJS |  |  |  |  |  |
-| `unambiguous` |  |  |  | Warn on ambiguous modules |  |  |  |  |  |
+| Rule                       | CWE | OWASP | CVSS | Description               | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :------------------------- | :-: | :---: | :--: | :------------------------ | :-: | :-: | :-: | :-: | :-: |
+| `no-amd`                   |     |       |      | Forbid AMD require/define |     |     |     |     |     |
+| `no-commonjs`              |     |       |      | Forbid CommonJS           |     |     |     |     |     |
+| `no-nodejs-modules`        |     |       |      | Forbid Node.js builtins   |     |     |     |     |     |
+| `no-import-module-exports` |     |       |      | No mixed ES/CJS           |     |     |     |     |     |
+| `unambiguous`              |     |       |      | Warn on ambiguous modules |     |     |     |     |     |
+
 ### ✅ Style Guide (17 rules)
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| `consistent-type-specifier-style` |  |  |  | Type import style |  |  | 🔧 |  |  |
-| `dynamic-import-chunkname` |  |  |  | Require webpack chunk names |  |  |  | 💡 |  |
-| `exports-last` |  |  |  | Exports at end of file |  |  |  |  |  |
-| `extensions` |  |  |  | Enforce file extension usage |  |  |  |  |  |
-| `first` |  |  |  | Imports must be first |  |  | 🔧 |  |  |
-| `group-exports` |  |  |  | Group exports together |  |  |  |  |  |
-| `max-dependencies` |  |  |  | Limit module dependencies |  |  |  |  |  |
-| `newline-after-import` |  |  |  | Newline after imports |  |  | 🔧 |  |  |
-| `no-anonymous-default-export` |  |  |  | Require named default exports |  |  |  |  |  |
-| `no-default-export` |  |  |  | Forbid default exports |  |  |  | 💡 |  |
-| `no-duplicates` |  |  |  | Merge duplicate imports | 💼 |  | 🔧 |  |  |
-| `no-named-default` |  |  |  | Use default import syntax |  |  |  |  |  |
-| `no-named-export` |  |  |  | Forbid named exports |  |  |  |  |  |
-| `no-namespace` |  |  |  | Forbid `* as` imports |  |  |  |  |  |
-| `no-unassigned-import` |  |  |  | Forbid side-effect imports |  |  |  |  |  |
-| `order` |  |  |  | Sort and group imports | 💼 |  | 🔧 |  |  |
-| `prefer-default-export` |  |  |  | Prefer default for single exports |  |  |  |  |  |
+| Rule                              | CWE | OWASP | CVSS | Description                       | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :-------------------------------- | :-: | :---: | :--: | :-------------------------------- | :-: | :-: | :-: | :-: | :-: |
+| `consistent-type-specifier-style` |     |       |      | Type import style                 |     |     | 🔧  |     |     |
+| `dynamic-import-chunkname`        |     |       |      | Require webpack chunk names       |     |     |     | 💡  |     |
+| `exports-last`                    |     |       |      | Exports at end of file            |     |     |     |     |     |
+| `extensions`                      |     |       |      | Enforce file extension usage      |     |     |     |     |     |
+| `first`                           |     |       |      | Imports must be first             |     |     | 🔧  |     |     |
+| `group-exports`                   |     |       |      | Group exports together            |     |     |     |     |     |
+| `max-dependencies`                |     |       |      | Limit module dependencies         |     |     |     |     |     |
+| `newline-after-import`            |     |       |      | Newline after imports             |     |     | 🔧  |     |     |
+| `no-anonymous-default-export`     |     |       |      | Require named default exports     |     |     |     |     |     |
+| `no-default-export`               |     |       |      | Forbid default exports            |     |     |     | 💡  |     |
+| `no-duplicates`                   |     |       |      | Merge duplicate imports           | 💼  |     | 🔧  |     |     |
+| `no-named-default`                |     |       |      | Use default import syntax         |     |     |     |     |     |
+| `no-named-export`                 |     |       |      | Forbid named exports              |     |     |     |     |     |
+| `no-namespace`                    |     |       |      | Forbid `* as` imports             |     |     |     |     |     |
+| `no-unassigned-import`            |     |       |      | Forbid side-effect imports        |     |     |     |     |     |
+| `order`                           |     |       |      | Sort and group imports            | 💼  |     | 🔧  |     |     |
+| `prefer-default-export`           |     |       |      | Prefer default for single exports |     |     |     |     |     |
+
 ### 🆕 Exclusive to `import-next` (10 rules)
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| `no-cross-domain-imports` |  |  |  | Enforce clean architecture boundaries |  |  |  |  |  |
-| `enforce-dependency-direction` |  |  |  | Enforce layered architecture (UI → Services → Data) |  |  |  |  |  |
-| `prefer-node-protocol` |  |  |  | Prefer `node:fs` over `fs` |  |  |  |  |  |
-| `no-barrel-file` |  |  |  | Detect barrel files that harm build performance |  |  |  |  |  |
-| `no-barrel-import` |  |  |  | Flag imports from barrel files |  |  |  |  |  |
-| `prefer-tree-shakeable-imports` |  |  |  | Enforce tree-shakeable import patterns |  |  |  |  |  |
-| `prefer-direct-import` |  |  |  | Suggest direct imports with autofix |  |  |  |  |  |
-| `no-full-package-import` |  |  |  | Block full imports from large packages |  |  |  |  |  |
-| `enforce-team-boundaries` |  |  |  | Prevent unauthorized cross-team imports 🔴 NEW |  |  |  |  |  |
-| `no-legacy-imports` |  |  |  | Detect deprecated imports with autofix 🔴 NEW |  |  |  |  |  |
+| Rule                            | CWE | OWASP | CVSS | Description                                         | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :------------------------------ | :-: | :---: | :--: | :-------------------------------------------------- | :-: | :-: | :-: | :-: | :-: |
+| `no-cross-domain-imports`       |     |       |      | Enforce clean architecture boundaries               |     |     |     |     |     |
+| `enforce-dependency-direction`  |     |       |      | Enforce layered architecture (UI → Services → Data) |     |     |     |     |     |
+| `prefer-node-protocol`          |     |       |      | Prefer `node:fs` over `fs`                          |     |     |     |     |     |
+| `no-barrel-file`                |     |       |      | Detect barrel files that harm build performance     |     |     |     |     |     |
+| `no-barrel-import`              |     |       |      | Flag imports from barrel files                      |     |     |     |     |     |
+| `prefer-tree-shakeable-imports` |     |       |      | Enforce tree-shakeable import patterns              |     |     |     |     |     |
+| `prefer-direct-import`          |     |       |      | Suggest direct imports with autofix                 |     |     |     |     |     |
+| `no-full-package-import`        |     |       |      | Block full imports from large packages              |     |     |     |     |     |
+| `enforce-team-boundaries`       |     |       |      | Prevent unauthorized cross-team imports 🔴 NEW      |     |     |     |     |     |
+| `no-legacy-imports`             |     |       |      | Detect deprecated imports with autofix 🔴 NEW       |     |     |     |     |     |
+
 ---
 
 ## 📦 Installation
@@ -317,17 +328,18 @@ Optimized for **Cursor**, **GitHub Copilot**, and other AI coding tools:
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin                                                                                               |                                                                Downloads                                                                 | Description                                                  | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) |  |  |  |  |  |  |  |  |  |
+| Plugin                                                                                               | Downloads | Description | Rule | CWE | OWASP | CVSS | Description | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :--------------------------------------------------------------------------------------------------- | :-------: | :---------: | :--: | :-- | :---: | :--: | :---------: | :-: | :-: | --- | --- | --- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)           |           |             |      |     |       |      |             |     |     |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               |           |             |      |     |       |      |             |     |     |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                         |           |             |      |     |       |      |             |     |     |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                                 |           |             |      |     |       |      |             |     |     |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)     |           |             |      |     |       |      |             |     |     |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)       |           |             |      |     |       |      |             |     |     |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)       |           |             |      |     |       |      |             |     |     |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)     |           |             |      |     |       |      |             |     |     |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) |           |             |      |     |       |      |             |     |     |
+
 ---
 
 ## 📄 License

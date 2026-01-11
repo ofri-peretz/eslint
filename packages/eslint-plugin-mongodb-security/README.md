@@ -1,5 +1,9 @@
 # eslint-plugin-mongodb-security
 
+<div align="center">
+  <img src="https://eslint.interlace.tools/images/og-mongodb.png" alt="ESLint Interlace - eslint-plugin-mongodb-security" width="100%" />
+</div>
+
 > 🔐 Security-focused ESLint plugin for MongoDB & Mongoose. Detects NoSQL injection (CVE-2025-23061), operator attacks, credential exposure, and ODM-specific vulnerabilities with AI-optimized fix guidance.
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-mongodb-security.svg)](https://www.npmjs.com/package/eslint-plugin-mongodb-security)

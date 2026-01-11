@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * ESLint Rule: require-secure-pbkdf2-digest
  * Detects PBKDF2 using weak hash algorithms (SHA1)
  * CWE-328: Use of Weak Hash

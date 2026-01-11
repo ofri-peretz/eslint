@@ -1,4 +1,10 @@
 /**
+ * Copyright (c) 2025 Ofri Peretz
+ * Licensed under the MIT License. Use of this source code is governed by the
+ * MIT license that can be found in the LICENSE file.
+ */
+
+/**
  * @fileoverview Require max tokens limit in generateText/streamText calls
  * @description Prevents unbounded token consumption in AI requests
  * @see https://sdk.vercel.ai/docs/ai-sdk-core/generating-text
