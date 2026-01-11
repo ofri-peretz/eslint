@@ -44,7 +44,10 @@ export const metadata: Metadata = {
   creator: 'Ofri Peretz',
   publisher: 'Interlace ESLint',
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/eslint-logo.svg', type: 'image/svg+xml' },
+    ],
     apple: '/eslint-logo.svg',
   },
   openGraph: {

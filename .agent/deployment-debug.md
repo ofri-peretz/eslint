@@ -36,4 +36,24 @@ The error `ERR_INVALID_THIS` when fetching packages with `pnpm` typically indica
   - `npx vercel inspect` confirmed deployment `dpl_9g6fiFTgBq8KbpfvVrFQ99eg3864` (URL: `https://eslint-8k9fpz2rl-ofri-peretz.vercel.app`) is in **Error** state.
   - CLI `logs` command failed (deployment not ready), but user-provided logs confirm `ERR_INVALID_THIS`, which is a known `pnpm` v9.x <-> Node 20.x compatibility issue when using Vercel's default environment.
 - **Resolution**: The `corepack enable` fix in `vercel.json` is the correct solution to force the usage of the project's pinned `pnpm` version.
-- **Next Step**: Commit and push changes to trigger redeploy.
+- **Redeploy Status**:
+  - `git push` successful.
+  - Vercel detected change. New deployment `eslint-6n5li9qsg-ofri-peretz` is **Error**.
+  - **Issue Identified**: Vercel warning "Due to `engines`: { `node`: `20.x` } ... Node.js Version `20.x` will be used instead". User requested upgrade to Node 24 to match project settings.
+
+### Actions Taken (Round 2)
+
+- **2026-01-11**: Updated `package.json` engines to `node: "24.x"`.
+- **2026-01-11**: Created `.nvmrc` with `24`.
+
+### Actions Taken (Round 3)
+
+- **2026-01-11**: Added `next` to root `devDependencies` in `package.json`.
+  - **Reason**: Vercel failed to detect Next.js framework because it only checks the root `package.json` when the project root is `.`.
+- **2026-01-11**: Updated `apps/docs/src/app/layout.tsx` metadata.
+  - **Reason**: Enhanced `icons` configuration to support both `.ico` (legacy/fallback) and `.svg` (modern), addressing user requesting for "favico for all sizes".
+
+### Plan
+
+- Commit and push to trigger redeploy (Attempt 3).
+- Monitor Vercel logs.

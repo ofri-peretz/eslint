@@ -13,7 +13,7 @@
     "url": "https://github.com/ofri-peretz/eslint/issues"
   },
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
@@ -89,6 +89,7 @@
     "@nx/eslint": "^22.0.2",
     "@nx/eslint-plugin": "22.0.2",
     "@nx/js": "22.0.3",
+    "next": "^16.1.1",
     "@nx/next": "^22.3.3",
     "@nx/react": "^22.0.2",
     "@nx/vite": "^22.0.3",
