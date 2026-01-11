@@ -45,27 +45,8 @@ on:
       package:
         description: "Package to release (all-affected = release all changed packages)"
         required: false
-        type: choice
+        type: string
         default: "all-affected"
-        options:
-          - all-affected
-          - eslint-devkit
-          - eslint-plugin-secure-coding
-          - eslint-plugin-import-next
-          - eslint-plugin-express-security
-          - eslint-plugin-nestjs-security
-          - eslint-plugin-browser-security
-          - eslint-plugin-crypto
-          - eslint-plugin-jwt
-          - eslint-plugin-pg
-          - eslint-plugin-lambda-security
-          - eslint-plugin-vercel-ai-security
-          - eslint-plugin-mongodb-security
-          - eslint-plugin-architecture
-          - eslint-plugin-quality
-          - eslint-plugin-react-a11y
-          - eslint-plugin-react-features
-          - cli
 
       version-specifier:
         description: "Version bump strategy (auto = conventional commits)"
