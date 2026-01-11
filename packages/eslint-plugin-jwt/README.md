@@ -147,7 +147,6 @@ Every rule uses `formatLLMMessage` for structured output:
 | [require-audience-validation](https://eslint.interlace.tools/docs/jwt/rules/require-audience-validation) | CWE-287 | A07:2025 | 5.3 | [require-audience-validation](docs/rules/require-audience-validation.md) | 💼 |  |  | 💡 |  |
 | [require-max-age](https://eslint.interlace.tools/docs/jwt/rules/require-max-age) | CWE-294 | A04:2025 | 5.3 | [require-max-age](docs/rules/require-max-age.md) | 💼 |  |  | 💡 |  |
 | [no-sensitive-payload](https://eslint.interlace.tools/docs/jwt/rules/no-sensitive-payload) | CWE-359 | A01:2025 | 5.3 | [no-sensitive-payload](docs/rules/no-sensitive-payload.md) | 💼 |  |  | 💡 |  |
-| [Plugin](https://eslint.interlace.tools/docs/jwt/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins
 

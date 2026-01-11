@@ -132,7 +132,6 @@ TypeScript/JavaScript are memory-safe languages. Memory corruption vulnerabiliti
 | [require-rag-content-validation](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-rag-content-validation) | CWE-74 |  | 6.0 | [require-rag-content-validation](./docs/rules/require-rag-content-validation.md) |  | ⚠️ |  |  |  |
 | [require-error-handling](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-error-handling) | CWE-755 |  | 5.0 | [require-error-handling](./docs/rules/require-error-handling.md) |  |  |  | 💡 |  |
 | [require-audit-logging](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-audit-logging) | CWE-778 |  | 4.0 | [require-audit-logging](./docs/rules/require-audit-logging.md) |  |  |  | 💡 |  |
-| [Plugin](https://eslint.interlace.tools/docs/vercel-ai-security/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins
 

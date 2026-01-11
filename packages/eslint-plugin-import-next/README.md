@@ -284,8 +284,6 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
 | [Bundler](https://eslint.interlace.tools/docs/import-next/rules/Bundler) |  |  |  | Bundler |  |  |  |  |  |
 | [Scenario](https://eslint.interlace.tools/docs/import-next/rules/Scenario) |  |  |  | `eslint-plugin-import-next` |  |  |  |  |  |
-| [Rule](https://eslint.interlace.tools/docs/import-next/rules/Rule) |  |  |  | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| [Plugin](https://eslint.interlace.tools/docs/import-next/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins
 

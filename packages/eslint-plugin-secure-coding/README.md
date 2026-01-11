@@ -260,7 +260,6 @@ A: Yes, fully compatible.
 | [no-electron-security-issues](https://eslint.interlace.tools/docs/secure-coding/rules/no-electron-security-issues) | CWE-693 |  | 8.8 | [no-electron-security-issues](./docs/rules/no-electron-security-issues.md) | 💼 |  |  |  |  |
 | [no-insufficient-postmessage-validation](https://eslint.interlace.tools/docs/secure-coding/rules/no-insufficient-postmessage-validation) | CWE-346 |  | 8.8 | [no-insufficient-postmessage-validation](./docs/rules/no-insufficient-postmessage-validation.md) | 💼 |  |  |  |  |
 | [Deprecated](https://eslint.interlace.tools/docs/secure-coding/rules/Deprecated) |  |  |  | Deprecated Rules |  |  |  |  |  |
-| [Plugin](https://eslint.interlace.tools/docs/secure-coding/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins
 

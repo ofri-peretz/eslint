@@ -168,7 +168,6 @@ This plugin runs **100% locally**. No data ever leaves your machine.
 | [no-env-logging](https://eslint.interlace.tools/docs/lambda-security/rules/no-env-logging) | CWE-532 |  | 7.5 | [no-env-logging](#no-env-logging) |  | ⚠️ |  |  |  |
 | [no-permissive-cors-response](https://eslint.interlace.tools/docs/lambda-security/rules/no-permissive-cors-response) | CWE-942 |  | 9.1 | [no-permissive-cors-response](#no-permissive-cors-response) | 💼 |  | 🔧 |  |  |
 | [no-permissive-cors-middy](https://eslint.interlace.tools/docs/lambda-security/rules/no-permissive-cors-middy) | CWE-942 |  | 9.1 | [no-permissive-cors-middy](#no-permissive-cors-middy) | 💼 |  |  |  |  |
-| [Plugin](https://eslint.interlace.tools/docs/lambda-security/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins
 

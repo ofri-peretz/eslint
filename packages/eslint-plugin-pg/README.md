@@ -118,7 +118,6 @@ This plugin runs **100% locally**. No data ever leaves your machine.
 
 | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [Rule](https://eslint.interlace.tools/docs/pg/rules/Rule) |  |  |  | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | [no-unsafe-query](https://eslint.interlace.tools/docs/pg/rules/no-unsafe-query) | CWE-89 | A03:2025 |  | [no-unsafe-query](./docs/rules/no-unsafe-query.md) | 💼 |  |  | 💡 |  |
 | [no-insecure-ssl](https://eslint.interlace.tools/docs/pg/rules/no-insecure-ssl) | CWE-295 | A05:2025 |  | [no-insecure-ssl](./docs/rules/no-insecure-ssl.md) | 💼 |  |  | 💡 |  |
 | [no-hardcoded-credentials](https://eslint.interlace.tools/docs/pg/rules/no-hardcoded-credentials) | CWE-798 | A05:2025 |  | [no-hardcoded-credentials](./docs/rules/no-hardcoded-credentials.md) | 💼 |  |  | 💡 |  |
@@ -132,7 +131,6 @@ This plugin runs **100% locally**. No data ever leaves your machine.
 | [no-select-all](https://eslint.interlace.tools/docs/pg/rules/no-select-all) | CWE-400 | A04:2025 |  | [no-select-all](./docs/rules/no-select-all.md) |  |  |  | 💡 |  |
 | [prefer-pool-query](https://eslint.interlace.tools/docs/pg/rules/prefer-pool-query) | CWE-404 | A04:2025 |  | [prefer-pool-query](./docs/rules/prefer-pool-query.md) |  |  |  | 💡 |  |
 | [no-batch-insert-loop](https://eslint.interlace.tools/docs/pg/rules/no-batch-insert-loop) | CWE-400 | A04:2025 |  | [no-batch-insert-loop](./docs/rules/no-batch-insert-loop.md) | 💼 |  |  | 💡 |  |
-| [Plugin](https://eslint.interlace.tools/docs/pg/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins
 

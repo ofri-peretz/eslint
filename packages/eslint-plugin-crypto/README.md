@@ -161,7 +161,6 @@ MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 | [no-numeric-only-tokens](https://eslint.interlace.tools/docs/crypto/rules/no-numeric-only-tokens) | CWE-330 | A07:2025 | 5.3 | [no-numeric-only-tokens](docs/rules/no-numeric-only-tokens.md) | 💼 |  |  | 💡 |  |
 | [no-cryptojs](https://eslint.interlace.tools/docs/crypto/rules/no-cryptojs) | CWE-327 | A02:2025 | 5.0 | [no-cryptojs](docs/rules/no-cryptojs.md) |  |  |  | 💡 |  |
 | [prefer-native-crypto](https://eslint.interlace.tools/docs/crypto/rules/prefer-native-crypto) | CWE-327 | A05:2025 | 5.0 | [prefer-native-crypto](docs/rules/prefer-native-crypto.md) |  |  |  | 💡 |  |
-| [Plugin](https://eslint.interlace.tools/docs/crypto/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins
 

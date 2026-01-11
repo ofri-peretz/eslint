@@ -194,7 +194,6 @@ MIT © Ofri Peretz
 | [2](https://eslint.interlace.tools/docs/react-a11y/rules/2) |  |  |  | 2.1.1 Keyboard |  |  |  |  |  |
 | [3](https://eslint.interlace.tools/docs/react-a11y/rules/3) |  |  |  | 3.1.1 Language of Page |  |  |  |  |  |
 | [4](https://eslint.interlace.tools/docs/react-a11y/rules/4) |  |  |  | 4.1.1 Parsing |  |  |  |  |  |
-| [Plugin](https://eslint.interlace.tools/docs/react-a11y/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins
 

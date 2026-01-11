@@ -325,3 +325,7 @@ I have verified that the `fix-readmes.js` script enforces absolute URLs for all 
 `[rule-name](https://eslint.interlace.tools/docs/PLUGIN/rules/rule-name)`
 
 This replaces all relative links (e.g., `./docs/rules/...`) ensuring a consistent navigation experience from NPM/GitHub to the documentation site.
+
+## 2026-01-11 - Rules Table Header Cleanup
+
+I have verified that the `fix-readmes.js` script now explicitly excludes rows where the rule name is "Rule" or "Plugin". This prevents header/legend artifacts from appearing as invalid data rows in the generated Rules table.

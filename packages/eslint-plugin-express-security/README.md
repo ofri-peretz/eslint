@@ -119,7 +119,6 @@ This plugin runs **100% locally**. No data ever leaves your machine.
 | [require-rate-limiting](https://eslint.interlace.tools/docs/express-security/rules/require-rate-limiting) | CWE-770 |  | 7.5 | [require-rate-limiting](#require-rate-limiting) |  | ⚠️ |  |  |  |
 | [no-express-unsafe-regex-route](https://eslint.interlace.tools/docs/express-security/rules/no-express-unsafe-regex-route) | CWE-1333 |  | 7.5 | [no-express-unsafe-regex-route](#no-express-unsafe-regex-route) | 💼 |  |  |  |  |
 | [no-graphql-introspection-production](https://eslint.interlace.tools/docs/express-security/rules/no-graphql-introspection-production) | CWE-200 |  | 5.3 | [no-graphql-introspection-production](#no-graphql-introspection-production) |  | ⚠️ |  |  |  |
-| [Plugin](https://eslint.interlace.tools/docs/express-security/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins
 

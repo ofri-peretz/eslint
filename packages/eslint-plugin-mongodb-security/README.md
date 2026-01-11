@@ -87,22 +87,6 @@ Every rule uses `formatLLMMessage` for structured output:
 
 ---
 
-## Rules
-
-**Legend**
-
-| Icon | Description |
-| :---: | :--- |
-| 💼 | **Recommended**: Included in the recommended preset. |
-| ⚠️ | **Warns**: Set towarn in recommended preset. |
-| 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
-| 💡 | **Suggestions**: Providing code suggestions in IDE. |
-| 🚫 | **Deprecated**: This rule is deprecated. |
-
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [Plugin](https://eslint.interlace.tools/docs/mongodb-security/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
-
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:

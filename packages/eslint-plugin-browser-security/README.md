@@ -149,8 +149,6 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 
 | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [Rule](https://eslint.interlace.tools/docs/browser-security/rules/Rule) |  |  |  | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| [Plugin](https://eslint.interlace.tools/docs/browser-security/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
 | [no-eval](https://eslint.interlace.tools/docs/browser-security/rules/no-eval) | CWE-95 | A03:2025 | 9.8 | [no-eval](./docs/rules/no-eval.md) |  | ⚠️ |  | 💡 | 🚫 |
 | [no-innerhtml](https://eslint.interlace.tools/docs/browser-security/rules/no-innerhtml) | CWE-79 | A03:2025 | 6.1 | [no-innerhtml](./docs/rules/no-innerhtml.md) |  | ⚠️ |  | 💡 |  |
 | [require-postmessage-origin-check](https://eslint.interlace.tools/docs/browser-security/rules/require-postmessage-origin-check) | CWE-346 | A01:2025 | 8.8 | [require-postmessage-origin-check](./docs/rules/require-postmessage-origin-check.md) |  | ⚠️ |  |  |  |
