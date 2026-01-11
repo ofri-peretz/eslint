@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-secure-coding",
-  "version": "3.0.0",
+  "version": "2.4.1",
   "description": "Security-focused ESLint plugin with 89 AI-parseable rules for detecting and preventing vulnerabilities. OWASP Top 10 2021 + Mobile Top 10 2024 coverage, CWE references, and AI-assisted fix guidance.",
   "type": "commonjs",
   "main": "./src/index.js",

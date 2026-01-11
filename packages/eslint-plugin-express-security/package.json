@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-express-security",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "Security-focused ESLint plugin for Express.js applications. Detects insecure cookies, missing security headers, CORS misconfigurations, CSRF vulnerabilities, GraphQL security issues, and more.",
   "type": "commonjs",
   "main": "./src/index.js",

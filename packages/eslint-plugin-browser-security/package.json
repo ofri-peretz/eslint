@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-browser-security",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "Security-focused ESLint plugin for browser applications. Detects XSS vulnerabilities, postMessage abuse, localStorage/sessionStorage/IndexedDB token exposure, cookie security issues, WebSocket security, Blob URL leaks, Service Worker risks, and CSP misconfigurations.",
   "type": "commonjs",
   "main": "./src/index.js",
