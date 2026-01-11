@@ -1,11 +1,12 @@
 # eslint-plugin-import-next
 
-<div align="center">
-  <img src="https://eslint.interlace.tools/images/interlace-hero.png" alt="ESLint Interlace - eslint-plugin-import-next" width="200" />
-</div>
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
 
-Next-generation import sorting and validation rules.
-
+<p align="center">
+  Next-generation import sorting and validation rules.
+</p>
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-import-next.svg)](https://www.npmjs.com/package/eslint-plugin-import-next)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-import-next.svg)](https://www.npmjs.com/package/eslint-plugin-import-next)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -23,8 +24,62 @@ Next-generation import sorting and validation rules.
 > For **complete OWASP coverage**, combine with [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) which provides 78 additional rules covering all OWASP categories.
 
 ## Philosophy
+ 
+**Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
-Interlace isn't just a set of rules; it's a philosophy of "interlacing" security directly into your development workflow. We believe in tools that guide rather than gatekeep, providing actionable, educational feedback that elevates developer expertise while securing code.
+## Getting Started
+
+```bash
+npm install eslint-plugin-import-next --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Next-generation import sorting and validation rules.
+</p>
+## Description
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-import-next --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Next-generation import sorting and validation rules.
+</p>
+## Description
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-import-next --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+Next-generation import sorting and validation rules.
+
+## Description
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-import-next --save-dev
+```
+
+Next-generation import sorting and validation rules.
+
+## Description
 
 ## Getting Started
 
@@ -309,3 +364,5 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
+
+<a href="https://eslint.interlace.tools/docs/import-next"><img src="https://eslint.interlace.tools/images/interlace-hero.png" alt="ESLint Interlace Plugin" width="100%" /></a>

@@ -2,9 +2,10 @@
 title: 'Double Release: The Silent PostgreSQL Pool Killer'
 published: false
 description: "Calling client.release() twice corrupts your pool state. Here's how it happens and how ESLint catches it."
-tags: postgresql, nodejs, database, eslint
+tags: postgresql, nodejs, database, eslint, javascript
 cover_image:
 canonical_url:
+series: PostgreSQL Security
 ---
 
 ```javascript
@@ -219,8 +220,11 @@ Release once. Release correctly. Release in finally.
 
 ---
 
-📦 [npm: eslint-plugin-pg](https://www.npmjs.com/package/eslint-plugin-pg)
-📖 [Rule docs: prevent-double-release](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/prevent-double-release.md)
+## Quick Install
+
+📦 [`eslint-plugin-secure-coding`](https://npmjs.com/package/eslint-plugin-secure-coding) — 75 security rules
+📦 [`eslint-plugin-pg`](https://npmjs.com/package/eslint-plugin-pg) — PostgreSQL security
+📦 [`eslint-plugin-crypto`](https://npmjs.com/package/eslint-plugin-crypto) — Cryptography security
 
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
@@ -230,4 +234,4 @@ Release once. Release correctly. Release in finally.
 
 🚀 **Follow me for more security articles & updates:**
 
-[GitHub](https://github.com/ofri-peretz) | [X](https://x.com/ofriperetzdev) | [LinkedIn](https://linkedin.com/in/ofri-peretz) | [Dev.to](https://dev.to/ofri-peretz)
+[GitHub](https://github.com/ofri-peretz) | [LinkedIn](https://linkedin.com/in/ofri-peretz)

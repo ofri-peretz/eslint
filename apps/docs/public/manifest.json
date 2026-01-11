@@ -9,7 +9,7 @@
     "orientation": "portrait-primary",
     "icons": [
         {
-            "src": "/eslint-logo.svg",
+            "src": "/eslint-interlace-logo.svg",
             "sizes": "any",
             "type": "image/svg+xml",
             "purpose": "any maskable"

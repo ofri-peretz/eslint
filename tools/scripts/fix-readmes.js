@@ -19,7 +19,7 @@ const DESCRIPTIONS = {
     'pg': 'Security rules for PostgreSQL interaction in Node.js.',
     'browser-security': 'Browser-specific security rules to prevent XSS and other client-side attacks.',
     'lambda-security': 'Security best practices for AWS Lambda functions.',
-    'secure-coding': 'General secure coding practices and OWASP compliance.',
+    'secure-coding': 'ESLint plugin for general secure coding practices and OWASP compliance.',
     'vercel-ai-security': 'Security rules for Vercel AI SDK usage.',
     'import-next': 'Next-generation import sorting and validation rules.',
     'mongodb-security': 'Security rules for MongoDB queries and interactions.',
@@ -58,8 +58,8 @@ const CVSS_MAP = {
 };
 
 const PHILOSOPHY_TEXT = `## Philosophy
-
-Interlace isn't just a set of rules; it's a philosophy of "interlacing" security directly into your development workflow. We believe in tools that guide rather than gatekeep, providing actionable, educational feedback that elevates developer expertise while securing code.`;
+ 
+**Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.`;
 
 packages.forEach(pkg => {
     const readmePath = path.join(packagesDir, pkg, 'README.md');
@@ -143,18 +143,60 @@ packages.forEach(pkg => {
     // --- RESTRUCTURE START ---
 
     // 1. Resize Image (200px)
+    // 1. Resize Image (200px) & Extract Info
+    let imageUrl = '';
+    let imageAlt = 'ESLint Interlace Plugin';
+
+    // Helper to check if URL is the generic logo
+    const isGenericLogo = (url) => url.includes('eslint-interlace-logo.svg');
+
+    // A. Check Top Image Block
     if (imgBlock.length > 0) {
-        imgBlock = imgBlock.map(line => {
-             return line.replace(/width="100%"/g, 'width="200"')
-                        .replace(/width="300"/g, 'width="200"')
-                        .replace(/width="600"/g, 'width="200"');
-        });
+        const imgLine = imgBlock.find(l => l.includes('<img'));
+        if (imgLine) {
+            const srcMatch = imgLine.match(/src="([^"]+)"/);
+            if (srcMatch && !isGenericLogo(srcMatch[1])) {
+                 imageUrl = srcMatch[1];
+            }
+            
+            const altMatch = imgLine.match(/alt="([^"]+)"/);
+            if (altMatch) imageAlt = altMatch[1];
+        }
+    }
+
+    // B. Check Footer (Scanning existing lines) if we didn't find specific image at top
+    if (!imageUrl) {
+        for (let i = lines.length - 1; i >= 0; i--) {
+            const line = lines[i];
+            if (line.includes('<img') && line.includes('width="100%"')) {
+                const srcMatch = line.match(/src="([^"]+)"/);
+                if (srcMatch && !isGenericLogo(srcMatch[1])) {
+                    imageUrl = srcMatch[1];
+                    // Also try to grab alt? Unlikely to be different/needed if we have the URL
+                    break;
+                }
+            }
+        }
+    }
+
+    // REPLACE Top Image with Generic Logo (NestJS Style: width 120, centered, linked)
+    // Mimics NestJS pattern: <p align="center"><a href="..." ...><img ... /></a></p>
+    if (imageUrl || imgBlock.length > 0) {
+        imgBlock = [
+            '<p align="center">',
+            '  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>',
+            '</p>'
+        ];
     }
 
     // 2. Prepare 1-liner Intro
     // Use mapped description or fallback
     const shortDesc = DESCRIPTIONS[pluginName] || 'Security-focused ESLint plugin.';
-    const shortDescBlock = ['', shortDesc, '']; 
+    const shortDescBlock = [
+        '<p align="center">',
+        `  ${shortDesc}`,
+        '</p>'
+    ]; 
 
     // 3. Prepare Description Section
     // Ensure the blockquote with doc link and pro tip is preserved but maybe moved?
@@ -166,11 +208,13 @@ packages.forEach(pkg => {
     if (badgeBlock.length === 0) {
          const shortName = pluginName;
          badgeBlock = [
-            `[![npm version](https://img.shields.io/npm/v/${pkg}.svg)](https://www.npmjs.com/package/${pkg})`,
-            `[![npm downloads](https://img.shields.io/npm/dm/${pkg}.svg)](https://www.npmjs.com/package/${pkg})`,
-            `[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)`,
-            `[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=${shortName})](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=${shortName})`,
-            `[![Dec 2025](https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white)](https://github.com/ofri-peretz/eslint)`
+            '<p align="center">',
+            `  <a href="https://www.npmjs.com/package/${pkg}"><img src="https://img.shields.io/npm/v/${pkg}.svg" alt="npm version" /></a>`,
+            `  <a href="https://www.npmjs.com/package/${pkg}"><img src="https://img.shields.io/npm/dm/${pkg}.svg" alt="npm downloads" /></a>`,
+            `  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>`,
+            `  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=${shortName}"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=${shortName}" alt="codecov" /></a>`,
+            `  <a href="https://github.com/ofri-peretz/eslint"><img src="https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white" alt="Dec 2025" /></a>`,
+            '</p>'
         ];
     }
 
@@ -187,8 +231,27 @@ packages.forEach(pkg => {
     if (badgeStart !== -1) for(let k=badgeStart; k<=badgeEnd; k++) indicesToRemove.add(k);
 
     // Filter lines to get "body"
+    // We already identified indicesToRemove which includes the original Top Image block.
+    // Now we must also ensure we strip any *existing* footer image so we don't duplicate it.
     let bodyLines = lines.filter((_, idx) => !indicesToRemove.has(idx)).join('\n');
     let bodyLineArray = bodyLines.split('\n');
+
+    // Remove existing Footer Image if present
+    // Logic: Remove lines that look like a full-width image (anchor or img)
+    bodyLineArray = bodyLineArray.filter(line => {
+        const isFooterImg = line.includes('<img') && line.includes('width="100%"');
+        // Check if it's an anchor wrapper around it? 
+        // Simple filter: if line has width="100%" and img src, drop it.
+        // Also drop lines that are just closing </a> if they were wrapping it? 
+        // This is tricky with simple line split. 
+        // For now, let's assume the footer image is the main thing to strip.
+        if (isFooterImg) return false;
+        
+        // Strip standalone formatting/links potentially related to footer?
+        // Let's rely on the fact that our new footer is distinct.
+        // If the user manually added something else 100%, it might get nuked.
+        return true;
+    });
 
     // Remove "## Philosophy" if it exists (we will re-add standard one)
     let philStart = -1;
@@ -350,7 +413,9 @@ packages.forEach(pkg => {
 npm install ${pkg} --save-dev
 \`\`\``,
         '',
-        ...newBodyArray
+        ...newBodyArray,
+        '',
+        imageUrl ? `<a href="https://eslint.interlace.tools/docs/${pluginName}"><img src="${imageUrl}" alt="${imageAlt}" width="100%" /></a>` : ''
     ].join('\n');
     
     // Clean up

@@ -1,11 +1,12 @@
 # eslint-plugin-nestjs-security
 
-<div align="center">
-  <img src="https://eslint.interlace.tools/images/og-backend.png" alt="ESLint Interlace - eslint-plugin-nestjs-security" width="200" />
-</div>
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
 
-Security rules tailored for NestJS applications.
-
+<p align="center">
+  Security rules tailored for NestJS applications.
+</p>
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-nestjs-security.svg)](https://www.npmjs.com/package/eslint-plugin-nestjs-security)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-nestjs-security.svg)](https://www.npmjs.com/package/eslint-plugin-nestjs-security)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -20,8 +21,62 @@ Security rules tailored for NestJS applications.
 > For **complete OWASP coverage**, combine with [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) which provides 78 additional rules covering all OWASP categories.
 
 ## Philosophy
+ 
+**Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
-Interlace isn't just a set of rules; it's a philosophy of "interlacing" security directly into your development workflow. We believe in tools that guide rather than gatekeep, providing actionable, educational feedback that elevates developer expertise while securing code.
+## Getting Started
+
+```bash
+npm install eslint-plugin-nestjs-security --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Security rules tailored for NestJS applications.
+</p>
+## Description
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-nestjs-security --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Security rules tailored for NestJS applications.
+</p>
+## Description
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-nestjs-security --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+Security rules tailored for NestJS applications.
+
+## Description
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-nestjs-security --save-dev
+```
+
+Security rules tailored for NestJS applications.
+
+## Description
 
 ## Getting Started
 
@@ -34,11 +89,11 @@ npm install eslint-plugin-nestjs-security --save-dev
 ## Rules
 | Rule | Tag | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :--- | :---: | :---: | :---: | :--- | :-: | :-: | :-: | :-: | :-: |
-|  [require-guards](#require-guards)  | Authorization & Access Control |  CWE-284  |  A01  |  9.8  |  Require @UseGuards on controllers  |  💼  |  💡  |
-|  [no-exposed-private-fields](#no-exposed-private-fields)  | Authorization & Access Control |  CWE-200  |  A01  |  7.5  |  Detect exposed sensitive fields in DTOs  |  💼  |  💡  |
-|  [no-missing-validation-pipe](#no-missing-validation-pipe)  | Input Validation |  CWE-20  |  A03  |  8.6  |  Require ValidationPipe for DTOs  |  💼  |  💡  |
-|  [require-class-validator](#require-class-validator)  | Input Validation |  CWE-20  |  A03  |  7.5  |  Require class-validator decorators  |  ⚠️  |  💡  |
-|  [require-throttler](#require-throttler)  | Rate Limiting & DoS |  CWE-770  |  A05  |  7.5  |  Require ThrottlerGuard/rate limit  |  ⚠️  |  💡  |
+|      [require-guards](#require-guards)      | General |  General  |   General   |    General    |     Authorization & Access Control     |      CWE-284      |      A01      |      9.8      |      Require @UseGuards on controllers      |      💼      |      💡      |
+|      [no-exposed-private-fields](#no-exposed-private-fields)      | General |  General  |   General   |    General    |     Authorization & Access Control     |      CWE-200      |      A01      |      7.5      |      Detect exposed sensitive fields in DTOs      |      💼      |      💡      |
+|      [no-missing-validation-pipe](#no-missing-validation-pipe)      | General |  General  |   General   |    General    |     Input Validation     |      CWE-20      |      A03      |      8.6      |      Require ValidationPipe for DTOs      |      💼      |      💡      |
+|      [require-class-validator](#require-class-validator)      | General |  General  |   General   |    General    |     Input Validation     |      CWE-20      |      A03      |      7.5      |      Require class-validator decorators      |      ⚠️      |      💡      |
+|      [require-throttler](#require-throttler)      | General |  General  |   General   |    General    |     Rate Limiting & DoS     |      CWE-770      |      A05      |      7.5      |      Require ThrottlerGuard/rate limit      |      ⚠️      |      💡      |
 
 ## 🚀 Quick Start
 
@@ -223,3 +278,5 @@ This plugin runs **100% locally**. No data ever leaves your machine.
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
+
+<a href="https://eslint.interlace.tools/docs/nestjs-security"><img src="https://eslint.interlace.tools/images/og-backend.png" alt="ESLint Interlace Plugin" width="100%" /></a>

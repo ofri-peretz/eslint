@@ -550,3 +550,10 @@ if (node.callee.property.type === 'Identifier' &&
 **Lesson**:
 
 Always check the AST node `type` property before accessing type-specific properties. Use `AST_NODE_TYPES` enum from `@typescript-eslint/utils` for consistent type checking.
+
+## 2026-01-11 - Ad-Hoc Script Placement Violation
+
+### Issue
+Ad-hoc maintenance scripts (`fix-readmes.js`) were created directly in `packages/`.
+### Resolution
+Moved to `tools/scripts/` to comply with Nx monorepo standards. All future maintenance scripts must reside in `tools/`.

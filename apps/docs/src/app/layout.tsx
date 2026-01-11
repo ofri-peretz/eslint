@@ -46,9 +46,9 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
-      { url: '/eslint-logo.svg', type: 'image/svg+xml' },
+      { url: '/eslint-interlace-logo.svg', type: 'image/svg+xml' },
     ],
-    apple: '/eslint-logo.svg',
+    apple: '/eslint-interlace-logo.svg',
   },
   openGraph: {
     type: 'website',

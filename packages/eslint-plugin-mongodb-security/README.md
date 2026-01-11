@@ -1,11 +1,12 @@
 # eslint-plugin-mongodb-security
 
-<div align="center">
-  <img src="https://eslint.interlace.tools/images/og-mongodb.png" alt="ESLint Interlace - eslint-plugin-mongodb-security" width="200" />
-</div>
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
 
-Security rules for MongoDB queries and interactions.
-
+<p align="center">
+  Security rules for MongoDB queries and interactions.
+</p>
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-mongodb-security.svg)](https://www.npmjs.com/package/eslint-plugin-mongodb-security)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-mongodb-security.svg)](https://www.npmjs.com/package/eslint-plugin-mongodb-security)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -27,8 +28,62 @@ Security rules for MongoDB queries and interactions.
 > For **complete OWASP coverage**, combine with [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) which provides 78 additional rules covering all OWASP categories.
 
 ## Philosophy
+ 
+**Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
-Interlace isn't just a set of rules; it's a philosophy of "interlacing" security directly into your development workflow. We believe in tools that guide rather than gatekeep, providing actionable, educational feedback that elevates developer expertise while securing code.
+## Getting Started
+
+```bash
+npm install eslint-plugin-mongodb-security --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Security rules for MongoDB queries and interactions.
+</p>
+## Description
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-mongodb-security --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+<p align="center">
+  Security rules for MongoDB queries and interactions.
+</p>
+## Description
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-mongodb-security --save-dev
+```
+
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+
+Security rules for MongoDB queries and interactions.
+
+## Description
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-mongodb-security --save-dev
+```
+
+Security rules for MongoDB queries and interactions.
+
+## Description
 
 ## Getting Started
 
@@ -131,3 +186,5 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
+
+<a href="https://eslint.interlace.tools/docs/mongodb-security"><img src="https://eslint.interlace.tools/images/og-mongodb.png" alt="ESLint Interlace Plugin" width="100%" /></a>

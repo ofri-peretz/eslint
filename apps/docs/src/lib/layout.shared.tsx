@@ -14,7 +14,7 @@ export function baseOptions(): BaseLayoutProps {
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-fd-primary/20 to-fd-primary/0 rounded-lg blur opacity-0 group-hover:opacity-100 transition duration-500" />
             <Image
-              src="/eslint-logo.svg"
+              src="/eslint-interlace-logo.svg"
               alt="Interlace ESLint"
               width={28}
               height={28}

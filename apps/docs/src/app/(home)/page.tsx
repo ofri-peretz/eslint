@@ -94,7 +94,7 @@ export default function HomePage() {
           <div className="flex items-center justify-center gap-3 mb-6 animate-fade-in">
             <div className="relative">
               <div className="absolute inset-0 bg-purple-500 blur-xl opacity-20" />
-              <Image src="/eslint-logo.svg" alt="ESLint" width={64} height={64} className="relative" />
+              <Image src="/eslint-interlace-logo.svg" alt="ESLint Interlace" width={64} height={64} className="relative" />
             </div>
           </div>
           
@@ -109,8 +109,8 @@ export default function HomePage() {
             Stop hallucinations with structured error metadata.
           </p>
           
-          {/* Quick Install */}
-          <div className="mt-10 rounded-2xl bg-linear-to-b from-white/10 to-transparent p-px max-w-xl mx-auto backdrop-blur-md">
+          {/* Quick Install - Hidden on mobile for better UX */}
+          <div className="mt-10 hidden sm:block rounded-2xl bg-linear-to-b from-white/10 to-transparent p-px max-w-xl mx-auto backdrop-blur-md">
             <div className="rounded-2xl bg-fd-card/40 border border-white/5 relative overflow-hidden">
               <BorderBeam size={250} duration={12} colorFrom="#8b5cf6" colorTo="#a855f7" delay={0} />
               <div className="px-6 py-4 flex items-center justify-between gap-4 overflow-x-auto">
