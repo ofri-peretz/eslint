@@ -106,10 +106,11 @@ export function Folder({
     if (defaultOpen && !expandedItems.includes(value)) {
       toggleExpanded(value);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <li role="treeitem" aria-expanded={isOpen}>
+    <li role="treeitem" aria-expanded={isOpen} aria-selected={isSelected}>
       <div
         onClick={() => {
           toggleExpanded(value);
@@ -185,7 +186,7 @@ export function File({
   };
 
   return (
-    <li role="treeitem">
+    <li role="treeitem" aria-selected={isSelected}>
       <div
         onClick={() => isSelectable && setSelectedId(value)}
         className={cn(

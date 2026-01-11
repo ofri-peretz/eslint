@@ -2,6 +2,25 @@
 
 > Security rule for mobile applications
 
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+⚠️ CWE-209 OWASP:A02 CVSS:5.3 | Error Information Exposure detected | MEDIUM
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A02_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-209](https://cwe.mitre.org/data/definitions/209.html) [OWASP:A02](https://owasp.org/Top10/A02_2021-Injection/) [CVSS:5.3](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Error Information Exposure detected` |
+| **Severity & Compliance** | Impact assessment | `MEDIUM` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A02_2021-Injection/) |
+
 ## Rule Details
 
 This rule security rule for mobile applications.

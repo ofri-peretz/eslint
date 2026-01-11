@@ -53,25 +53,23 @@ export default [quality.configs.recommended];
 
 💼 = Set in `recommended` | ⚠️ = Warns in `recommended` | 🔧 = Auto-fixable | 💡 = Suggestions
 
-| Rule                     | CWE      | Description                       | 💼  | ⚠️  | 🔧  | 💡  |
-| ------------------------ | -------- | --------------------------------- | :-: | :-: | :-: | :-: |
-| `no-console-log`         | CWE-1078 | Prevent console.log in production |     | ⚠️  | 🔧  |     |
-| `cognitive-complexity`   | CWE-1121 | Limit function complexity         | 💼  |     |     | 💡  |
-| `require-error-handling` | CWE-754  | Ensure proper error handling      |     | ⚠️  |     |     |
-| `no-magic-numbers`       | CWE-1078 | Require named constants           |     | ⚠️  |     | 💡  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| `no-console-log` | CWE-1078 |  |  | Prevent console.log in production |  | ⚠️ | 🔧 |  |  |
+| `cognitive-complexity` | CWE-1121 |  |  | Limit function complexity | 💼 |  |  | 💡 |  |
+| `require-error-handling` | CWE-754 |  |  | Ensure proper error handling |  | ⚠️ |  |  |  |
+| `no-magic-numbers` | CWE-1078 |  |  | Require named constants |  | ⚠️ |  | 💡 |  |
 ---
 
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native plugins with LLM-optimized error messages:
 
-| Plugin                                                                                     | Description                                    | Rules |
-| ------------------------------------------------------------------------------------------ | ---------------------------------------------- | :---: |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | Universal security (OWASP Top 10 Web + Mobile) |  89   |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)     | High-performance import linting                |  12   |
-| [`eslint-plugin-react-a11y`](https://www.npmjs.com/package/eslint-plugin-react-a11y)       | React accessibility (WCAG 2.1)                 |  37   |
-
+| Plugin                                                                                     | Description                                    | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-react-a11y`](https://www.npmjs.com/package/eslint-plugin-react-a11y) |  |  |  |  |  |  |  |  |  |
 ---
 
 ## License

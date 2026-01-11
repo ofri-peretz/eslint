@@ -1,8 +1,7 @@
 ---
-title: no-unsafe-inline-csp
+title: "no-unsafe-inline-csp"
 description: "Disallow 'unsafe-inline' in Content Security Policy directives."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -25,12 +24,14 @@ The `'unsafe-inline'` CSP directive allows inline JavaScript and CSS, completely
 
 ```mermaid
 flowchart TD
-    A[CSP String Detected] --> B{Contains 'unsafe-inline'?}
-    B -->|Yes| C[🔒 Security Warning]
-    B -->|No| D[✅ Safe CSP]
-    C --> E[Inline scripts can execute]
-    E --> F[XSS protection bypassed]
+    A["CSP String Detected"] --> B{"Contains 'unsafe-inline'?"}
+    B -->|Yes| C["🔒 Security Warning"]
+    B -->|No| D["✅ Safe CSP"]
+    C --> E["Inline scripts can execute"]
+    E --> F["XSS protection bypassed"]
+
 ```
+
 
 ## ❌ Incorrect
 
@@ -90,12 +91,11 @@ CSP is one of the most effective defenses against XSS attacks. Using `'unsafe-in
 2. **Hashes**: Calculate SHA hashes of allowed inline scripts
 3. **External scripts**: Move inline scripts to external files
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
@@ -138,3 +138,22 @@ helmet({ contentSecurityPolicy: { scriptSrc: ["'unsafe-inline'"] } });
 - [MDN: Content-Security-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP)
 - [OWASP: CSP Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html)
 - [CSP Evaluator](https://csp-evaluator.withgoogle.com/)
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+⚠️ CWE-79 OWASP:A05 CVSS:6.1 | Cross-site Scripting (XSS) detected | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-79](https://cwe.mitre.org/data/definitions/79.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:6.1](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Cross-site Scripting (XSS) detected` |
+| **Severity & Compliance** | Impact assessment | `MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/) |

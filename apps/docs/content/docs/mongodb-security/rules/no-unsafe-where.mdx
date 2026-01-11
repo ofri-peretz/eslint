@@ -1,8 +1,7 @@
 ---
-title: no-unsafe-where
-description: "Prevents use of the dangerous $where operator which executes JavaScript on the MongoDB server, enabling Remote Code Execution (RCE)."
+title: "no-unsafe-where"
+description: "Prevents use of the dangerous `$where` operator which executes JavaScript on the MongoDB server, enabling Remote Code Execution (RCE)."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -69,12 +68,11 @@ User.aggregate([
 ]);
 ```
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 ### Dynamic Query Construction
 

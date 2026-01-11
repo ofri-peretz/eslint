@@ -1,8 +1,7 @@
 ---
-title: require-rate-limiting
-description: Require rate limiting middleware to prevent DDoS and brute-force attacks
+title: "require-rate-limiting"
+description: "**Severity:** \udfe1 Warning"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -87,12 +86,11 @@ app.post('/login', loginLimiter, (req, res) => {
 - Internal microservices behind a load balancer with rate limiting
 - Development environments (use `allowInTests`)
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

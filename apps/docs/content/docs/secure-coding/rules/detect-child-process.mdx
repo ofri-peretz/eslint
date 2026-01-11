@@ -1,8 +1,7 @@
 ---
-title: detect-child-process
-description: "Detects instances of child_process & non-literal exec() calls that may allow command injection. This rule is part of eslint-plugin-secure-coding and provides LL"
+title: "detect-child-process"
+description: "Detects instances of `child_process` & non-literal `exec()` calls that may allow command injection. This rule is part of [`eslint-plugin-secure-coding`](https:/"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -48,51 +47,44 @@ This rule detects dangerous use of Node.js child_process methods that can lead t
   }
 }}%%
 flowchart TD
-    A[🔍 Detect child_process Call] --> B{Method Type}
-    B -->|exec/execSync| C{Dynamic Arguments?}
-    B -->|spawn| D{Dynamic Command/Args?}
-    B -->|Other| E[⚠️ Review Required]
+    A["🔍 Detect child_process Call"] --> B{"Method Type"}
+    B -->|exec/execSync| C{"Dynamic Arguments?"}
+    B -->|spawn| D{"Dynamic Command/Args?"}
+    B -->|Other| E["⚠️ Review Required"]
 
-    C -->|Yes| F[🚨 Command Injection Risk]
-    C -->|No| G[✅ Literal - Safe]
+    C -->|Yes| F["🚨 Command Injection Risk"]
+    C -->|No| G["✅ Literal - Safe"]
 
-    D -->|Yes| H[🚨 Argument Injection Risk]
-    D -->|No| I[✅ Literal Args - Safe]
+    D -->|Yes| H["🚨 Argument Injection Risk"]
+    D -->|No| I["✅ Literal Args - Safe"]
 
-    F --> J[💡 Suggest execFile/spawn]
-    H --> K[💡 Suggest spawn with validation]
+    F --> J["💡 Suggest execFile/spawn"]
+    H --> K["💡 Suggest spawn with validation"]
 
-    J --> L[📝 LLM-Optimized Guidance]
+    J --> L["📝 LLM-Optimized Guidance"]
     K --> L
+
 ```
+
 
 ## Error Message Format
 
-The rule provides **LLM-optimized error messages** with command injection prevention guidance:
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
-```
-⚠️ CWE-78 OWASP:A03-Injection CVSS:9.8 | Command injection detected | CRITICAL [SOC2,PCI-DSS]
-   Fix: Use execFile/spawn with {shell: false} and array args | https://owasp.org/www-community/attacks/Command_Injection
+```text
+🔒 CWE-78 OWASP:A05 CVSS:9.8 | OS Command Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 
 ### Message Components
 
-| Component        | Purpose                     | Example                              |
-| ---------------- | --------------------------- | ------------------------------------ |
-| **CWE**          | Vulnerability identifier    | `CWE-78`                             |
-| **OWASP**        | OWASP Top 10 category       | `OWASP:A03-Injection`                |
-| **CVSS**         | Severity score              | `CVSS:9.8`                           |
-| **Description**  | Issue summary               | `Command injection detected`         |
-| **Severity**     | Risk level                  | `CRITICAL`                           |
-| **Compliance**   | Affected frameworks         | `[SOC2,PCI-DSS]`                     |
-| **Fix**          | Recommended remediation     | `Use execFile/spawn with {shell: false}` |
-| **Documentation**| Link to detailed guidance   | OWASP attack guide URL               |
-
-This format is optimized for:
-
-- 🤖 **LLMs** - Can parse and rewrite command execution patterns
-- 👨‍💻 **Developers** - Clear security context with actionable fixes
-- 🔧 **DevOps** - Proper risk assessment for deployment decisions
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-78](https://cwe.mitre.org/data/definitions/78.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `OS Command Injection detected` |
+| **Severity & Compliance** | Impact assessment | `CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/) |
 
 ## Configuration
 
@@ -331,12 +323,11 @@ for (const attempt of injectionAttempts) {
 - [`detect-object-injection`](./detect-object-injection.md) - Prevents prototype pollution
 - [`detect-non-literal-regexp`](./detect-non-literal-regexp.md) - Prevents ReDoS attacks
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
@@ -385,10 +376,6 @@ execFile('cmd', [], { env: { PATH: userInput } });
 ```
 
 **Mitigation**: Validate all environment variable values.
-
-<Callout type="info">
-  **📚 Learn more about static analysis limitations**: These patterns escape detection because ESLint analyzes code without executing it. See [Static Analysis Limitations](/docs/concepts/static-analysis) to understand what all security rules can and cannot detect—and how to layer your defenses.
-</Callout>
 
 ## Further Reading
 

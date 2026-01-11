@@ -1,8 +1,7 @@
 ---
 title: "require-rag-content-validation"
-description: Requires validation of RAG content before including in AI prompts.
+description: "This rule identifies code patterns where content retrieved from vector stores or document retrieval systems is used directly in AI prompts without validation."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -87,12 +86,11 @@ Poisoned RAG content can:
 - [`require-validated-prompt`](./require-validated-prompt.md) - Validate user prompts
 - [`no-dynamic-system-prompt`](./no-dynamic-system-prompt.md) - Static system prompts
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

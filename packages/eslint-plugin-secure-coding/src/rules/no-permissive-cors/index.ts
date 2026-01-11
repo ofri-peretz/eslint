@@ -22,10 +22,6 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
     replacedBy: ['@see eslint-plugin-express-security/no-permissive-cors'],
     docs: {
       description: 'Prevent overly permissive CORS configuration',
-      category: 'Security',
-      recommended: true,
-      owaspMobile: ['M8'],
-      cweIds: ["CWE-942"],
     },
     messages: {
       violationDetected: formatLLMMessage({
@@ -51,28 +47,41 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
     
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        
-      // Check for Access-Control-Allow-Origin: *
-      if (node.type === AST_NODE_TYPES.CallExpression &&
-          node.callee.property?.name === 'setHeader' &&
-          node.arguments[0]?.value === 'Access-Control-Allow-Origin' &&
-          node.arguments[1]?.value === '*') {
-        report(node);
-      }
-      
-      // Check cors({ origin: '*' })
-      if (node.type === AST_NODE_TYPES.CallExpression &&
-          node.callee.name === 'cors' &&
-          node.arguments[0]?.type === AST_NODE_TYPES.ObjectExpression) {
-        const originProp = node.arguments[0].properties.find(
-          p => p.key?.name === 'origin'
-        );
-        if (originProp?.value.type === 'Literal' && originProp.value.value === '*') {
+        // Check for Access-Control-Allow-Origin: *
+        // res.setHeader('Access-Control-Allow-Origin', '*')
+        if (
+          node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          node.callee.property.type === AST_NODE_TYPES.Identifier &&
+          node.callee.property.name === 'setHeader' &&
+          node.arguments[0]?.type === AST_NODE_TYPES.Literal &&
+          node.arguments[0].value === 'Access-Control-Allow-Origin' &&
+          node.arguments[1]?.type === AST_NODE_TYPES.Literal &&
+          node.arguments[1].value === '*'
+        ) {
           report(node);
         }
-      }
-    
+        
+        // Check cors({ origin: '*' })
+        if (
+          node.callee.type === AST_NODE_TYPES.Identifier &&
+          node.callee.name === 'cors' &&
+          node.arguments[0]?.type === AST_NODE_TYPES.ObjectExpression
+        ) {
+          const originProp = node.arguments[0].properties.find(
+            (p): p is TSESTree.Property =>
+              p.type === AST_NODE_TYPES.Property &&
+              p.key.type === AST_NODE_TYPES.Identifier &&
+              p.key.name === 'origin'
+          );
+          if (
+            originProp &&
+            originProp.value.type === AST_NODE_TYPES.Literal &&
+            originProp.value.value === '*'
+          ) {
+            report(node);
+          }
+        }
       },
-};
+    };
   },
 });

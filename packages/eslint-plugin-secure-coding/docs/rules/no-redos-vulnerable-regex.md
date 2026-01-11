@@ -21,6 +21,25 @@ ESLint Rule: no-redos-vulnerable-regex. This rule is part of [`eslint-plugin-sec
 
 **Risk:** An attacker can provide a specially crafted input that triggers this catastrophic backtracking, causing the application to consume excessive CPU resources and become unresponsive (Denial of Service).
 
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-400 OWASP:A06 CVSS:7.5 | Uncontrolled Resource Consumption (ReDoS) detected | HIGH
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-400](https://cwe.mitre.org/data/definitions/400.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Uncontrolled Resource Consumption (ReDoS) detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/) |
+
 ## Rule Details
 
 This rule detects regular expressions that are vulnerable to **Regular Expression Denial of Service (ReDoS)**. ReDoS occurs when a regex engine takes an exponential amount of time to find a match (or fail to match) for certain inputs, usually due to "catastrophic backtracking".

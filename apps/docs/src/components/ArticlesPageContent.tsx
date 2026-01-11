@@ -2,7 +2,7 @@
 // CACHE-BUSTER: 2026-01-10T20:42:00Z
 
 import React, { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useDevToArticles, type DevToArticle } from '@/lib/api';
 import { 
   Search, 
   ArrowUpRight, 
@@ -23,7 +23,6 @@ import {
   X,
   Square
 } from 'lucide-react';
-import { api, type DevToArticle } from '@/lib/api';
 import { DevToArticleCard } from './DevToArticles';
 import { cn } from '@/lib/utils';
 
@@ -49,11 +48,7 @@ export function ArticlesPageContent() {
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
-  const { data: articles, isLoading, error } = useQuery<DevToArticle[]>({
-    queryKey: ['devto-articles-all'],
-    queryFn: () => api.devto.getArticles('', 100),
-    staleTime: 1000 * 60 * 60 * 24, // 24 hours
-  });
+  const { data: articles, isLoading, error } = useDevToArticles('', 100);
 
   // Get all unique tags, excluding 'eslint' since all articles have it
   const allTags = Array.from(
@@ -159,7 +154,7 @@ export function ArticlesPageContent() {
           <Zap className="size-8 text-red-500" />
         </div>
         <h2 className="text-2xl font-black mb-2">Sync Failed</h2>
-        <p className="text-fd-muted-foreground mb-8 max-w-sm">We couldn't reach the technical articles database. This usually fixes itself in a few minutes.</p>
+        <p className="text-fd-muted-foreground mb-8 max-w-sm">We couldn&apos;t reach the technical articles database. This usually fixes itself in a few minutes.</p>
         <button 
           onClick={() => window.location.reload()}
           className="px-6 py-2.5 bg-fd-primary text-fd-primary-foreground rounded-xl font-bold transition-all hover:scale-105 active:scale-95 shadow-lg shadow-fd-primary/20"

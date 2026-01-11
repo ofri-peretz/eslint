@@ -62,39 +62,22 @@ flowchart TD
 
 ## Error Message Format
 
-The rule provides **LLM-optimized error messages** with actionable security guidance:
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
-```
-🚨 Security: Arbitrary Code Execution Risk | eval(userInput) | src/api.ts:45
-📊 Risk Level: CRITICAL (CWE-95: Code Injection)
-🔍 Issue: eval() with dynamic expression allows arbitrary code execution
-💡 Pattern Detected: object access
-🔧 Recommended Fix: Direct property access or Map
-📝 Refactoring Steps:
-   1. Replace eval() with safe alternative
-   2. Use direct property access: obj[key] or Map
-   3. Validate property names against whitelist
-   4. Add input sanitization
-⏱️  Estimated effort: 8 minutes
-🔗 Security Impact: Prevents Remote Code Execution (RCE)
+```text
+🔒 CWE-95 OWASP:A05 CVSS:9.8 | Eval Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 
 ### Message Components
 
-| Component             | Purpose                  | Example                         |
-| --------------------- | ------------------------ | ------------------------------- |
-| **Risk Level**        | Security severity        | `CRITICAL`                      |
-| **CWE Reference**     | Vulnerability type       | `CWE-95: Code Injection`        |
-| **Pattern Detection** | Recognized usage pattern | `object access`, `JSON parsing` |
-| **Safe Alternative**  | Recommended replacement  | `JSON.parse()`, `Map`, etc.     |
-| **Refactoring Steps** | Concrete fix actions     | Numbered step-by-step guide     |
-| **Time Estimate**     | Effort assessment        | `8 minutes`                     |
-
-This format is optimized for:
-
-- 🤖 **LLMs** - Can parse structured guidance and implement fixes
-- 👨‍💻 **Developers** - Clear security context and actionable steps
-- 📊 **Security Teams** - Proper risk assessment and prioritization
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-95](https://cwe.mitre.org/data/definitions/95.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Eval Injection detected` |
+| **Severity & Compliance** | Impact assessment | `CRITICAL [SOC2,PCI-DSS,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/) |
 
 ## Configuration
 

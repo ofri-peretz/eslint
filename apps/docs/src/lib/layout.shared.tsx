@@ -27,13 +27,7 @@ export function baseOptions(): BaseLayoutProps {
         </div>
       ),
     },
-    links: [
-      {
-        text: 'Technical Articles',
-        url: '/docs/articles',
-        active: 'nested-url',
-      },
-    ],
+    links: [],
     githubUrl: 'https://github.com/ofri-peretz/eslint',
   };
 }

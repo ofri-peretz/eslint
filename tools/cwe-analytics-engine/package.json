@@ -1,0 +1,35 @@
+{
+    "name": "@interlace/cwe-analytics-engine",
+    "version": "0.1.0",
+    "description": "CWE/CVE Analytics Engine - Fetches and aggregates security vulnerability data for the Interlace ESLint ecosystem",
+    "private": true,
+    "type": "module",
+    "main": "./src/index.ts",
+    "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+    "license": "MIT",
+    "homepage": "https://github.com/ofri-peretz/eslint#readme",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ofri-peretz/eslint.git",
+        "directory": "tools/cwe-analytics-engine"
+    },
+    "bugs": {
+        "url": "https://github.com/ofri-peretz/eslint/issues"
+    },
+    "keywords": [
+        "cwe",
+        "cve",
+        "analytics",
+        "security",
+        "eslint",
+        "vulnerability"
+    ],
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "scripts": {
+        "sync": "tsx src/lib/cli.ts",
+        "stats": "tsx src/lib/cli.ts --stats-only",
+        "test": "vitest"
+    }
+}

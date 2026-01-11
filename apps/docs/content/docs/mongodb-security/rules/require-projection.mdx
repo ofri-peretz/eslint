@@ -1,8 +1,7 @@
 ---
-title: require-projection
-description: Requires field projection on queries to minimize data exposure.
+title: "require-projection"
+description: "Requires field projection on queries to minimize data exposure."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -59,12 +58,11 @@ const user = await User.findById(id).select('-password -internalNotes');
 - When using lean() with full document transformation
 - Development/debugging scenarios
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

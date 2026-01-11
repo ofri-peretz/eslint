@@ -20,10 +20,6 @@ export const requireCodeMinification = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       description: 'Require minification configuration',
-      category: 'Security',
-      recommended: true,
-      owaspMobile: ['M7'],
-      cweIds: ["CWE-656"],
     },
     messages: {
       violationDetected: formatLLMMessage({

@@ -1,8 +1,7 @@
 ---
-title: no-debug-code-in-production
-description: Detects debug code that should not be present in production builds.
+title: "no-debug-code-in-production"
+description: "Detects debug code that should not be present in production builds."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -80,12 +79,11 @@ When triggered, this rule produces:
    Fix: Review and apply secure practices | https://cwe.mitre.org/data/definitions/489.html
 ```
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

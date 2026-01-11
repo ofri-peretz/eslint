@@ -1,8 +1,7 @@
 ---
-title: require-helmet
-description: Require helmet middleware for security headers in Express.js applications
+title: "require-helmet"
+description: "**Severity:** \udd34 High"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -77,12 +76,11 @@ app.listen(3000);
 
 Never disable this rule in production. Security headers are a fundamental protection layer.
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

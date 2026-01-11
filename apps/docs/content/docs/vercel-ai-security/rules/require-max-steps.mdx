@@ -1,8 +1,7 @@
 ---
 title: "require-max-steps"
-description: Prevents infinite tool calling loops in multi-step agents.
+description: "This rule identifies AI SDK calls that use tools but don't specify a `maxSteps` limit. Without limits, AI agents can enter infinite loops calling tools repeated"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -87,12 +86,11 @@ Unbounded tool loops can cause:
 - [`require-max-tokens`](./require-max-tokens.md) - Limit token consumption
 - [`require-tool-confirmation`](./require-tool-confirmation.md) - Require confirmation
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

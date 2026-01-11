@@ -1,8 +1,7 @@
 ---
-title: no-format-string-injection
-description: Detects format string injection vulnerabilities. This rule is part of eslint-plugin-secure-coding.
+title: "no-format-string-injection"
+description: "Detects format string injection vulnerabilities. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -106,12 +105,11 @@ const message = util.format('%s', safeFormat);
    Fix: Use hardcoded format strings or validate user formats | https://cwe.mitre.org/...
 ```
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

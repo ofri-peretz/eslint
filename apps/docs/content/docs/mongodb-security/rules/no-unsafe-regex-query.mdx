@@ -1,8 +1,7 @@
 ---
-title: no-unsafe-regex-query
-description: Detects user input in MongoDB $regex operators that could cause ReDoS (Regular Expression Denial of Service) or information disclosure.
+title: "no-unsafe-regex-query"
+description: "Detects user input in MongoDB `$regex` operators that could cause ReDoS (Regular Expression Denial of Service) or information disclosure."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -20,6 +19,25 @@ Detects user input in MongoDB `$regex` operators that could cause ReDoS (Regular
 | **OWASP**         | A03:2021 - Injection          |
 | **Severity**      | High (CVSS: 7.5)              |
 | **Category**      | Security                      |
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-400 OWASP:A06 CVSS:7.5 | Uncontrolled Resource Consumption (ReDoS) detected | HIGH
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-400](https://cwe.mitre.org/data/definitions/400.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Uncontrolled Resource Consumption (ReDoS) detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/) |
 
 ## Rule Details
 
@@ -69,12 +87,11 @@ db.users.createIndex({ name: 'text' });
 User.find({ $text: { $search: userInput } });
 ```
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 ### Sanitized Input
 

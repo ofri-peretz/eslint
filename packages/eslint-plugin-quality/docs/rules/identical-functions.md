@@ -17,6 +17,25 @@ Detects duplicate function implementations with DRY refactoring suggestions. Thi
 | **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
 | **Best For** | Large codebases, teams refactoring legacy code |
 
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+⚠️ CWE-1104 OWASP:A03 CVSS:5.3 | Unmaintainable Third-Party Components detected | MEDIUM
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A03_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-1104](https://cwe.mitre.org/data/definitions/1104.html) [OWASP:A03](https://owasp.org/Top10/A03_2021-Injection/) [CVSS:5.3](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Unmaintainable Third-Party Components detected` |
+| **Severity & Compliance** | Impact assessment | `MEDIUM` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A03_2021-Injection/) |
+
 ## Rule Details
 
 Finds functions with identical or nearly identical implementations and suggests refactoring to follow the DRY (Don't Repeat Yourself) principle.
@@ -315,4 +334,3 @@ The rule uses normalized AST comparison:
 
 Inspired by **SonarQube RSPEC-4144**
 - [DRY Principle](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself)
-

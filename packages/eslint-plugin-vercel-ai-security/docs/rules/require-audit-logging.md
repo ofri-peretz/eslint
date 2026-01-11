@@ -137,3 +137,22 @@ queueAuditLog({ prompt, result }); // Async logging
 
 - [OWASP ASI10: Logging & Monitoring](https://owasp.org)
 - [CWE-778: Insufficient Logging](https://cwe.mitre.org/data/definitions/778.html)
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+⚠️ CWE-778 OWASP:A09 CVSS:5.3 | Insufficient Logging detected | MEDIUM [SOC2,ISO27001,PCI-DSS,NIST-CSF]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A09_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-778](https://cwe.mitre.org/data/definitions/778.html) [OWASP:A09](https://owasp.org/Top10/A09_2021-Injection/) [CVSS:5.3](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Insufficient Logging detected` |
+| **Severity & Compliance** | Impact assessment | `MEDIUM [SOC2,ISO27001,PCI-DSS,NIST-CSF]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A09_2021-Injection/) |

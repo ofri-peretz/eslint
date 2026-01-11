@@ -1,18 +1,37 @@
 ---
-title: require-package-lock
-description: Security rule for mobile applications
+title: "require-package-lock"
+description: "The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from '@/components/RuleComponents';
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Security rule for mobile applications
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-829 OWASP:A03 CVSS:7.5 | Untrusted Control Sphere Inclusion detected | HIGH
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A03_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-829](https://cwe.mitre.org/data/definitions/829.html) [OWASP:A03](https://owasp.org/Top10/A03_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Untrusted Control Sphere Inclusion detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A03_2021-Injection/) |
 
 ## Rule Details
 
 This rule security rule for mobile applications.
 
-**OWASP Mobile Top 10:** M2 (Inadequate Supply Chain Security)  
-**CWE:** [CWE-829](https://cwe.mitre.org/data/definitions/829.html)  
+**OWASP Mobile Top 10:** Mobile  
+**CWE:** [CWE-829](https://cwe.mitre.org/data/definitions/000.html)  
 **Severity:** error
 
 ## Examples
@@ -35,9 +54,9 @@ This rule should be enabled for all mobile and web applications to ensure securi
 
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
@@ -78,7 +97,7 @@ obj[method](userInput);
 ## Further Reading
 
 - [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
-- [CWE-829 Details](https://cwe.mitre.org/data/definitions/829.html)
+- [CWE-829 Details](https://cwe.mitre.org/data/definitions/000.html)
 
 ## Related Rules
 

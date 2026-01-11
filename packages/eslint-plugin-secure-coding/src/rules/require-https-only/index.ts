@@ -4,7 +4,7 @@
  * @see https://cwe.mitre.org/data/definitions/319.html
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -14,16 +14,15 @@ export interface Options {}
 
 type RuleOptions = [Options?];
 
+/** HTTP methods supported by axios for request interception */
+const AXIOS_HTTP_METHODS = ['get', 'post', 'put', 'delete', 'patch', 'head', 'options'] as const;
+
 export const requireHttpsOnly = createRule<RuleOptions, MessageIds>({
   name: 'require-https-only',
   meta: {
     type: 'problem',
     docs: {
       description: 'Enforce HTTPS for all external requests',
-      category: 'Security',
-      recommended: true,
-      owaspMobile: ['M5'],
-      cweIds: ["CWE-319"],
     },
     messages: {
       violationDetected: formatLLMMessage({
@@ -49,27 +48,30 @@ export const requireHttpsOnly = createRule<RuleOptions, MessageIds>({
     
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        
-      // Check fetch/axios calls with http:// URLs
-      if (node.type === 'CallExpression') {
         const callee = node.callee;
-        const isHttpCall = 
-          (callee.name === 'fetch' || 
-           (callee.object?.name === 'axios' && 
-            ['get', 'post', 'put', 'delete', 'patch'].includes(callee.property?.name)));
         
-        if (isHttpCall && node.arguments[0]) {
+        // Check fetch() calls
+        const isFetch = callee.type === AST_NODE_TYPES.Identifier && callee.name === 'fetch';
+        
+        // Check axios.get/post/etc calls
+        const isAxios = 
+          callee.type === AST_NODE_TYPES.MemberExpression &&
+          callee.object.type === AST_NODE_TYPES.Identifier &&
+          callee.object.name === 'axios' &&
+          callee.property.type === AST_NODE_TYPES.Identifier &&
+          (AXIOS_HTTP_METHODS as readonly string[]).includes(callee.property.name);
+        
+        if ((isFetch || isAxios) && node.arguments[0]) {
           const url = node.arguments[0];
-          if (url.type === 'Literal' && 
-              typeof url.value === 'string' && 
-              url.value.startsWith('http://')) {
+          if (
+            url.type === AST_NODE_TYPES.Literal &&
+            typeof url.value === 'string' &&
+            url.value.startsWith('http://')
+          ) {
             report(node);
           }
         }
-      }
-    
       },
-      
-      };
+    };
   },
 });

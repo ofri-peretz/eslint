@@ -1,8 +1,7 @@
 ---
-title: detect-non-literal-fs-filename
-description: "Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system. This rule is part of eslint-plugin-secure-co"
+title: "detect-non-literal-fs-filename"
+description: "Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system. This rule is part of [`eslint-plugin-secure-"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -48,36 +47,40 @@ This rule detects dangerous use of Node.js fs methods with dynamic paths that ca
   }
 }}%%
 flowchart TD
-    A[🔍 Detect fs Call] --> B{Dynamic Path?}
-    B -->|Yes| C[🚨 Path Traversal Risk]
-    B -->|No| D[✅ Literal Path - Safe]
+    A["🔍 Detect fs Call"] --> B{"Dynamic Path?"}
+    B -->|Yes| C["🚨 Path Traversal Risk"]
+    B -->|No| D["✅ Literal Path - Safe"]
 
-    C --> E{Contains ../ ?}
-    E -->|Yes| F[⚠️ Obvious Traversal]
-    E -->|No| G[⚠️ Potential Traversal]
+    C --> E{"Contains ../ ?"}
+    E -->|Yes| F["⚠️ Obvious Traversal"]
+    E -->|No| G["⚠️ Potential Traversal"]
 
-    F --> H[💡 Suggest path.resolve + validation]
+    F --> H["💡 Suggest path.resolve + validation"]
     G --> H
 
-    H --> I[📝 LLM-Optimized Guidance]
+    H --> I["📝 LLM-Optimized Guidance"]
+
 ```
+
 
 ## Error Message Format
 
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-22 OWASP:A01 CVSS:7.5 | Path Traversal detected | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
 ```
-🚨 Security: Path Traversal Vulnerability | fs.readFile(userPath) | src/files.ts:23
-📊 Risk Level: HIGH (CWE-22: Path Traversal)
-🔍 Issue: Path traversal allows accessing files outside intended directory
-💡 Safe Pattern: path.resolve(SAFE_DIR, path.basename(userInput))
-🔧 Refactoring Steps:
-   1. Define a SAFE_DIR constant for allowed operations
-   2. Use path.basename() to strip directory components
-   3. Combine with SAFE_DIR: path.join(SAFE_DIR, path.basename(userPath))
-   4. Optionally validate file extensions
-   5. Add error handling for invalid paths
-⏱️  Estimated effort: 10-15 minutes
-🔗 Security Impact: Prevents unauthorized file system access
-```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Path Traversal detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/) |
 
 ## Configuration
 
@@ -291,12 +294,11 @@ for (const attack of attacks) {
 - [`detect-object-injection`](./detect-object-injection.md) - Prevents prototype pollution
 - [`detect-non-literal-regexp`](./detect-non-literal-regexp.md) - Prevents ReDoS attacks
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

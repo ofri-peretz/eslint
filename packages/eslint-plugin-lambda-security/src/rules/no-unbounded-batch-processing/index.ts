@@ -50,7 +50,6 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.WARNING,
         issueName: 'Unbounded Batch Processing',
         cwe: 'CWE-770',
-        owasp: 'SAS-7',
         cvss: 5.5,
         description:
           'Processing {{source}} without size check. Large batches may cause timeout or memory exhaustion.',

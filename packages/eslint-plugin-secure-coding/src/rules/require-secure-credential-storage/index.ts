@@ -4,7 +4,7 @@
  * @see https://cwe.mitre.org/data/definitions/522.html
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -20,10 +20,6 @@ export const requireSecureCredentialStorage = createRule<RuleOptions, MessageIds
     type: 'problem',
     docs: {
       description: 'Enforce secure storage patterns for credentials',
-      category: 'Security',
-      recommended: true,
-      owaspMobile: ['M1'],
-      cweIds: ["CWE-522"],
     },
     messages: {
       violationDetected: formatLLMMessage({
@@ -41,14 +37,17 @@ export const requireSecureCredentialStorage = createRule<RuleOptions, MessageIds
   defaultOptions: [],
   create(context) {
     return {
-      
       CallExpression(node: TSESTree.CallExpression) {
-        if (node.callee.type === 'MemberExpression' &&
-            ['setItem', 'writeFile'].includes(node.callee.property.name)) {
+        if (
+          node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          node.callee.property.type === AST_NODE_TYPES.Identifier &&
+          ['setItem', 'writeFile'].includes(node.callee.property.name)
+        ) {
           // Check for encryption wrapper
           const hasEncryption = node.arguments.some(arg =>
-            arg.type === 'CallExpression' &&
-            arg.callee.name?.includes('encrypt')
+            arg.type === AST_NODE_TYPES.CallExpression &&
+            arg.callee.type === AST_NODE_TYPES.Identifier &&
+            arg.callee.name.includes('encrypt')
           );
           if (!hasEncryption) {
             context.report({ node, messageId: 'violationDetected' });

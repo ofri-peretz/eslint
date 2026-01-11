@@ -56,12 +56,22 @@ const cdnUrl = '//cdn.example.com/asset.js';
 
 ## Error Message Format
 
-When triggered, this rule produces:
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
+```text
+🔒 CWE-311 OWASP:A04 CVSS:7.5 | Missing Encryption of Sensitive Data detected | HIGH
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A04_2021/
 ```
-🔒 CWE-311 | Detect HTTP resources in HTTPS pages detected - Literal containing http:// in HTTPS context | MEDIUM
-   Fix: Review and apply secure practices | https://cwe.mitre.org/data/definitions/311.html
-```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-311](https://cwe.mitre.org/data/definitions/311.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Missing Encryption of Sensitive Data detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/) |
 
 ## Known False Negatives
 

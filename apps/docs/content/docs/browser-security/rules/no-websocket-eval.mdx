@@ -1,12 +1,30 @@
 ---
-title: browser-security/no-websocket-eval
-description: 🔒 Disallow using eval() or Function() with WebSocket message data
+title: "browser-security/no-websocket-eval"
+description: "The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > 🔒 Disallow using eval() or Function() with WebSocket message data
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-95 OWASP:A05 CVSS:9.8 | Eval Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-95](https://cwe.mitre.org/data/definitions/95.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Eval Injection detected` |
+| **Severity & Compliance** | Impact assessment | `CRITICAL [SOC2,PCI-DSS,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/) |
 
 ## Rule Details
 
@@ -25,7 +43,9 @@ sequenceDiagram
     C->>C: eval(event.data.code)
     Note over C: REMOTE CODE EXECUTION!
     C->>A: Cookies, passwords, data exfiltrated
+
 ```
+
 
 When you use eval with WebSocket data:
 
@@ -126,12 +146,11 @@ The only acceptable scenario is in development tools or REPLs where code executi
 - [`browser-security/no-websocket-innerhtml`](./no-websocket-innerhtml.md) - XSS prevention
 - [`browser-security/require-websocket-wss`](./require-websocket-wss.md) - Require encrypted connections
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

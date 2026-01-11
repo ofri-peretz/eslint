@@ -1,8 +1,7 @@
 ---
-title: no-permissive-cors-response
-description: Detects permissive CORS headers in Lambda API Gateway responses. This rule is part of eslint-plugin-lambda-security.
+title: "no-permissive-cors-response"
+description: "Detects permissive CORS headers in Lambda API Gateway responses. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plu"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -41,17 +40,17 @@ Detects permissive CORS headers in Lambda API Gateway responses. This rule is pa
   }
 }}%%
 flowchart TD
-    A[🔍 Return Statement Found] --> B{Returns object?}
-    B -->|No| C[✅ Skip]
-    B -->|Yes| D{Has statusCode property?}
+    A["🔍 Return Statement Found"] --> B{"Returns object?"}
+    B -->|No| C["✅ Skip"]
+    B -->|Yes| D{"Has statusCode property?"}
     D -->|No| C
-    D -->|Yes| E{Has headers property?}
+    D -->|Yes| E{"Has headers property?"}
     E -->|No| C
-    E -->|Yes| F{Check CORS headers}
-    F --> G{Access-Control-Allow-Origin: '*'?}
-    G -->|Yes| H[🚨 Report Error]
+    E -->|Yes| F{"Check CORS headers"}
+    F --> G{"Access-Control-Allow-Origin: '*'?"}
+    G -->|Yes| H["🚨 Report Error"]
     G -->|No| C
-    H --> I[💡 Suggest specific origin]
+    H --> I["💡 Suggest specific origin"]
 
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px
@@ -62,7 +61,9 @@ flowchart TD
     class H errorNode
     class D,E,F,G processNode
     class C skipNode
+
 ```
+
 
 ## Examples
 
@@ -174,12 +175,11 @@ headers: {
 
 - [`no-permissive-cors-middy`](./no-permissive-cors-middy.md) - CORS in Middy middleware
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
@@ -241,3 +241,22 @@ return { statusCode: 200, body: '...' };
 
 - [CWE-942: Permissive Cross-domain Policy](https://cwe.mitre.org/data/definitions/942.html)
 - [AWS API Gateway CORS](https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html)
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-942 OWASP:A01 CVSS:7.5 | CORS Misconfiguration detected | HIGH
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-942](https://cwe.mitre.org/data/definitions/942.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `CORS Misconfiguration detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/) |

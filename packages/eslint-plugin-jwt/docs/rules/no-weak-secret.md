@@ -5,6 +5,25 @@
 **Severity:** 🟠 High  
 **CWE:** [CWE-326](https://cwe.mitre.org/data/definitions/326.html)
 
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+⚠️ CWE-326 OWASP:A04 CVSS:5.9 | Inadequate Encryption Strength detected | MEDIUM
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A04_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-326](https://cwe.mitre.org/data/definitions/326.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:5.9](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Inadequate Encryption Strength detected` |
+| **Severity & Compliance** | Impact assessment | `MEDIUM` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/) |
+
 ## Rule Details
 
 This rule detects weak secrets used for HMAC-based JWT signing. Weak secrets can be brute-forced offline, allowing attackers to forge tokens.

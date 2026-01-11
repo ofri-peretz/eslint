@@ -1,8 +1,7 @@
 ---
-title: no-transaction-on-pool
-description: Prevents running transaction commands directly on pool (must use dedicated client).
+title: "no-transaction-on-pool"
+description: "Prevents running transaction commands directly on pool (must use dedicated client)."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -60,12 +59,11 @@ try {
 
 - Never disable this rule - transactions on pool are always incorrect
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

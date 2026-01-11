@@ -43,13 +43,12 @@ src/app.ts
 
 ## 📊 OWASP Top 10 Coverage Matrix
 
-| OWASP Category                | Coverage | Rules                                                                                                                                 |
-| ----------------------------- | :------: | ------------------------------------------------------------------------------------------------------------------------------------- |
-| **A01:2021** Access Control   |    ✅    | `no-graphql-introspection-production`                                                                                                 |
-| **A03:2021** Injection        |    ✅    | `no-express-unsafe-regex-route` (ReDoS)                                                                                               |
-| **A05:2021** Misconfiguration |    ✅    | `require-helmet`, `no-permissive-cors`, `no-cors-credentials-wildcard`, `require-rate-limiting`, `require-express-body-parser-limits` |
-| **A07:2021** Auth/Session     |    ✅    | `require-csrf-protection`, `no-insecure-cookie-options`                                                                               |
-
+| OWASP Category                | Coverage | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| **A01:2021** Access Control |  |  |  |  |  |  |  |  |  |
+| **A03:2021** Injection |  |  |  |  |  |  |  |  |  |
+| **A05:2021** Misconfiguration |  |  |  |  |  |  |  |  |  |
+| **A07:2021** Auth/Session |  |  |  |  |  |  |  |  |  |
 > [!TIP]
 > For **complete OWASP coverage**, combine with [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) which provides 78 additional rules covering all OWASP categories.
 
@@ -61,33 +60,29 @@ src/app.ts
 
 ### Headers & CORS (4 rules)
 
-| Rule                                                                      | CWE     | OWASP | CVSS | Description                            | 💼  | ⚠️  | 🔧  | 💡  |
-| ------------------------------------------------------------------------- | ------- | ----- | ---- | -------------------------------------- | --- | --- | --- | --- |
-| [require-helmet](#require-helmet)                                         | CWE-693 | A05   | 7.1  | Require helmet() middleware            | 💼  |     |     |     |
-| [no-permissive-cors](#no-permissive-cors)                                 | CWE-942 | A05   | 9.1  | Detect wildcard CORS origins           | 💼  |     |     |     |
-| [no-cors-credentials-wildcard](#no-cors-credentials-wildcard)             | CWE-942 | A05   | 9.1  | Block credentials: true + origin: "\*" | 💼  |     |     |     |
-| [require-express-body-parser-limits](#require-express-body-parser-limits) | CWE-770 | A05   | 7.5  | Require body parser size limits        |     | ⚠️  |     |     |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [require-helmet](#require-helmet) | CWE-693 | A05 | 7.1 | Require helmet() middleware | 💼 |  |  |  |  |
+| [no-permissive-cors](#no-permissive-cors) | CWE-942 | A05 | 9.1 | Detect wildcard CORS origins | 💼 |  |  |  |  |
+| [no-cors-credentials-wildcard](#no-cors-credentials-wildcard) | CWE-942 | A05 | 9.1 | Block credentials: true + origin: "\*" | 💼 |  |  |  |  |
+| [require-express-body-parser-limits](#require-express-body-parser-limits) | CWE-770 | A05 | 7.5 | Require body parser size limits |  | ⚠️ |  |  |  |
 ### CSRF & Cookies (2 rules)
 
-| Rule                                                      | CWE     | OWASP | CVSS | Description                    | 💼  | ⚠️  | 🔧  | 💡  |
-| --------------------------------------------------------- | ------- | ----- | ---- | ------------------------------ | --- | --- | --- | --- |
-| [require-csrf-protection](#require-csrf-protection)       | CWE-352 | A07   | 8.8  | Require CSRF middleware        |     | ⚠️  |     |     |
-| [no-insecure-cookie-options](#no-insecure-cookie-options) | CWE-614 | A07   | 5.3  | Detect missing Secure/HttpOnly | 💼  |     |     |     |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [require-csrf-protection](#require-csrf-protection) | CWE-352 | A07 | 8.8 | Require CSRF middleware |  | ⚠️ |  |  |  |
+| [no-insecure-cookie-options](#no-insecure-cookie-options) | CWE-614 | A07 | 5.3 | Detect missing Secure/HttpOnly | 💼 |  |  |  |  |
 ### Rate Limiting & DoS (2 rules)
 
-| Rule                                                            | CWE      | OWASP | CVSS | Description                      | 💼  | ⚠️  | 🔧  | 💡  |
-| --------------------------------------------------------------- | -------- | ----- | ---- | -------------------------------- | --- | --- | --- | --- |
-| [require-rate-limiting](#require-rate-limiting)                 | CWE-770  | A05   | 7.5  | Require rate limiting middleware |     | ⚠️  |     |     |
-| [no-express-unsafe-regex-route](#no-express-unsafe-regex-route) | CWE-1333 | A03   | 7.5  | Detect ReDoS in route patterns   | 💼  |     |     |     |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [require-rate-limiting](#require-rate-limiting) | CWE-770 | A05 | 7.5 | Require rate limiting middleware |  | ⚠️ |  |  |  |
+| [no-express-unsafe-regex-route](#no-express-unsafe-regex-route) | CWE-1333 | A03 | 7.5 | Detect ReDoS in route patterns | 💼 |  |  |  |  |
 ### GraphQL (1 rule)
 
-| Rule                                                                        | CWE     | OWASP | CVSS | Description                           | 💼  | ⚠️  | 🔧  | 💡  |
-| --------------------------------------------------------------------------- | ------- | ----- | ---- | ------------------------------------- | --- | --- | --- | --- |
-| [no-graphql-introspection-production](#no-graphql-introspection-production) | CWE-200 | A01   | 5.3  | Disable GraphQL introspection in prod |     | ⚠️  |     |     |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-graphql-introspection-production](#no-graphql-introspection-production) | CWE-200 | A01 | 5.3 | Disable GraphQL introspection in prod |  | ⚠️ |  |  |  |
 ---
 
 ## 🔍 Rule Details
@@ -402,18 +397,17 @@ This plugin is optimized for ESLint's [Model Context Protocol (MCP)](https://esl
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin                                                                                               |                                                                Downloads                                                                 | Description                                                  | Rules |
-| ---------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------: | ------------------------------------------------------------ | :---: |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)           |      [![npm](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://npmjs.com/package/eslint-plugin-secure-coding)      | Universal security (OWASP Top 10 Web + Mobile)               |  89   |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)       |    [![npm](https://img.shields.io/npm/dm/eslint-plugin-nestjs-security.svg)](https://npmjs.com/package/eslint-plugin-nestjs-security)    | NestJS security (guards, validation pipes, throttler)        |   5   |
-| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)       |    [![npm](https://img.shields.io/npm/dm/eslint-plugin-lambda-security.svg)](https://npmjs.com/package/eslint-plugin-lambda-security)    | AWS Lambda/Middy security (API Gateway, CORS, secrets)       |   5   |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)     |   [![npm](https://img.shields.io/npm/dm/eslint-plugin-browser-security.svg)](https://npmjs.com/package/eslint-plugin-browser-security)   | Browser security (XSS, postMessage, storage, cookies)        |  21   |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               |                [![npm](https://img.shields.io/npm/dm/eslint-plugin-jwt.svg)](https://npmjs.com/package/eslint-plugin-jwt)                | JWT security (algorithm confusion, weak secrets, claims)     |  13   |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                         |             [![npm](https://img.shields.io/npm/dm/eslint-plugin-crypto.svg)](https://npmjs.com/package/eslint-plugin-crypto)             | Cryptographic best practices (weak algorithms, key handling) |  24   |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                                 |                 [![npm](https://img.shields.io/npm/dm/eslint-plugin-pg.svg)](https://npmjs.com/package/eslint-plugin-pg)                 | PostgreSQL/node-postgres security                            |  13   |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![npm](https://img.shields.io/npm/dm/eslint-plugin-vercel-ai-security.svg)](https://npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security (OWASP LLM + Agentic Top 10)          |  19   |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)               |        [![npm](https://img.shields.io/npm/dm/eslint-plugin-import-next.svg)](https://npmjs.com/package/eslint-plugin-import-next)        | High-performance import linting                              |  12   |
-
+| Plugin                                                                                               |                                                                Downloads                                                                 | Description                                                  | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |  |  |  |  |  |  |  |  |  |
 ---
 
 ## 🔒 Privacy

@@ -1,8 +1,7 @@
 ---
-title: no-sensitive-localstorage
-description: "Detects storage of sensitive data (tokens, passwords, PII) in localStorage. This rule is part of eslint-plugin-browser-security."
+title: "no-sensitive-localstorage"
+description: "Detects storage of sensitive data (tokens, passwords, PII) in localStorage. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/packag"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -46,15 +45,15 @@ Detects storage of sensitive data (tokens, passwords, PII) in localStorage. This
   }
 }}%%
 flowchart TD
-    A[🔐 JWT Token Stored] --> B{Storage Location?}
-    B -->|localStorage| C[⚠️ Accessible via JS]
-    B -->|httpOnly Cookie| D[✅ Not accessible via JS]
-    C --> E[XSS Attack Occurs]
-    E --> F[🚨 Token Stolen!]
-    D --> G[XSS Attack Occurs]
-    G --> H[✅ Token Protected]
-    F --> I[Attacker has full access]
-    H --> J[Attack impact limited]
+    A["🔐 JWT Token Stored"] --> B{"Storage Location?"}
+    B -->|localStorage| C["⚠️ Accessible via JS"]
+    B -->|httpOnly Cookie| D["✅ Not accessible via JS"]
+    C --> E["XSS Attack Occurs"]
+    E --> F["🚨 Token Stolen!"]
+    D --> G["XSS Attack Occurs"]
+    G --> H["✅ Token Protected"]
+    F --> I["Attacker has full access"]
+    H --> J["Attack impact limited"]
 
     classDef dangerNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px
     classDef safeNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px
@@ -63,7 +62,9 @@ flowchart TD
     class C,E,F,I dangerNode
     class D,H,J safeNode
     class A,B,G processNode
+
 ```
+
 
 ## Examples
 
@@ -193,12 +194,11 @@ function getToken() {
 - [`no-innerhtml`](./no-innerhtml.md) - Prevent XSS that could access localStorage
 - [`require-postmessage-origin-check`](./require-postmessage-origin-check.md) - Cross-origin security
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

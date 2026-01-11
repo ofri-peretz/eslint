@@ -23,6 +23,25 @@ Detects potential privilege escalation vulnerabilities where user input is used 
 
 **Risk:** Attackers can grant themselves administrative privileges, accessing unauthorized data, deleting critical resources, or taking full control of the application.
 
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-269 OWASP:A01 CVSS:8.8 | Improper Privilege Management detected | HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-269](https://cwe.mitre.org/data/definitions/269.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:8.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Improper Privilege Management detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/) |
+
 ## Rule Details
 
 Privilege escalation occurs when user input is used to assign roles or permissions without proper authorization checks. This rule detects assignments and operations that modify user privileges using unvalidated user input.

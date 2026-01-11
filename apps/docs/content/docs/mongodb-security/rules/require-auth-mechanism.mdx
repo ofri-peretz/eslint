@@ -1,8 +1,7 @@
 ---
-title: require-auth-mechanism
-description: Requires explicit authentication mechanism specification for MongoDB connections.
+title: "require-auth-mechanism"
+description: "Requires explicit authentication mechanism specification for MongoDB connections."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -20,6 +19,25 @@ Requires explicit authentication mechanism specification for MongoDB connections
 | **OWASP**         | A07:2021 - Identification/Auth Failures |
 | **Severity**      | Medium (CVSS: 6.5)                      |
 | **Category**      | Security                                |
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-287 OWASP:A07 CVSS:9.8 | Improper Authentication detected | CRITICAL
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A07_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-287](https://cwe.mitre.org/data/definitions/287.html) [OWASP:A07](https://owasp.org/Top10/A07_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Improper Authentication detected` |
+| **Severity & Compliance** | Impact assessment | `CRITICAL` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A07_2021-Injection/) |
 
 ## Rule Details
 
@@ -67,12 +85,11 @@ mongoose.connect(uri, {
 - Development environments with passwordless local MongoDB
 - When using MongoDB Atlas with default secure configuration
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

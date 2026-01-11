@@ -1,3 +1,5 @@
+import { useQuery } from '@tanstack/react-query';
+
 export interface CodecovTotals {
   files: number;
   lines: number;
@@ -45,6 +47,19 @@ export interface ChangelogEntry {
   tags: string[];
 }
 
+export interface PluginStats {
+  plugins: {
+    name: string;
+    rules: number;
+    description: string;
+    category: string;
+    version: string;
+  }[];
+  totalRules: number;
+  totalPlugins: number;
+  generatedAt: string;
+}
+
 export type ChangelogPath = `${string}CHANGELOG.md`;
 
 /**
@@ -83,7 +98,7 @@ export const CACHE_STALE_TIME = 1000 * 60 * 60 * 24; // 24 hours
 export const api = {
   codecov: {
     getRepo: () => fetcher<CodecovRepo>('/api/stats'),
-    getComponents: () => fetcher<CodecovComponent[]>('https://codecov.io/api/v2/github/ofri-peretz/repos/eslint/components/'),
+    getComponents: () => fetcher<CodecovComponent[]>('/api/stats/components'),
   },
   devto: {
     /**
@@ -109,6 +124,59 @@ export const api = {
   github: {
     getChangelog: (repo: string, path: ChangelogPath) => 
       fetcher<string>(`https://raw.githubusercontent.com/${repo}/main/${path}`),
+  },
+  stats: {
+    getPluginStats: () => fetcher<PluginStats>('/api/plugin-stats'),
   }
 };
+
+// --- React Query Hooks ---
+
+export function useCodecovRepo() {
+  return useQuery({
+    queryKey: ['codecov-repo'],
+    queryFn: api.codecov.getRepo,
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
+}
+
+export function useCodecovComponents() {
+  return useQuery({
+    queryKey: ['codecov-components'],
+    queryFn: api.codecov.getComponents,
+    staleTime: 1000 * 60 * 60,
+  });
+}
+
+export function useDevToArticles(plugin: string = '', limit: number = 100) {
+  return useQuery({
+    queryKey: ['devto-articles', plugin, limit],
+    queryFn: () => api.devto.getArticles(plugin, limit),
+    staleTime: CACHE_STALE_TIME,
+  });
+}
+
+export function useDevToTags() {
+  return useQuery({
+    queryKey: ['devto-tags'],
+    queryFn: api.devto.getTags,
+    staleTime: CACHE_STALE_TIME,
+  });
+}
+
+export function useGitHubChangelog(repo: string, path: ChangelogPath) {
+  return useQuery({
+    queryKey: ['github-changelog', repo, path],
+    queryFn: () => api.github.getChangelog(repo, path),
+    staleTime: CACHE_STALE_TIME,
+  });
+}
+
+export function usePluginStats() {
+  return useQuery({
+    queryKey: ['plugin-stats'],
+    queryFn: api.stats.getPluginStats,
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
+}
 

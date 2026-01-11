@@ -1,8 +1,7 @@
 ---
-title: no-allow-arbitrary-loads
-description: "Prevents disabling App Transport Security (ATS) by detecting allowArbitraryLoads: true in configuration."
+title: "no-allow-arbitrary-loads"
+description: "Prevents disabling App Transport Security (ATS) by detecting `allowArbitraryLoads: true` in configuration."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -79,12 +78,11 @@ When triggered, this rule produces:
    Fix: Review and apply secure practices | https://cwe.mitre.org/data/definitions/295.html
 ```
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
@@ -105,7 +103,7 @@ const config = { allowArbitraryLoads: enableInsecure };
 **Why**: Rule only checks JavaScript/TypeScript, not Info.plist XML.
 
 ```xml
-{/*  ❌ NOT DETECTED - XML plist  */}
+
 <key>NSAppTransportSecurity</key>
 <dict>
   <key>NSAllowsArbitraryLoads</key>

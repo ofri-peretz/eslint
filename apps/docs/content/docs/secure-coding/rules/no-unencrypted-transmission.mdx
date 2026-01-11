@@ -1,8 +1,7 @@
 ---
-title: no-unencrypted-transmission
-description: "Detects unencrypted data transmission (HTTP vs HTTPS, plain text protocols). This rule is part of eslint-plugin-secure-coding and provides LLM-optimized error m"
+title: "no-unencrypted-transmission"
+description: "Detects unencrypted data transmission (HTTP vs HTTPS, plain text protocols). This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -42,21 +41,21 @@ Detects unencrypted data transmission (HTTP vs HTTPS, plain text protocols). Thi
   }
 }}%%
 flowchart TD
-    A[🔍 Analyze URL/String] --> B{Contains Protocol?}
-    B -->|No| C[✅ Valid: No protocol]
-    B -->|Yes| D{Is Insecure Protocol?}
-    D -->|No| E[✅ Valid: HTTPS/WSS/etc.]
-    D -->|Yes| F{Protocol Type}
-    F --> G[HTTP]
-    F --> H[WS]
-    F --> I[MongoDB]
-    F --> J[Redis]
-    F --> K[MySQL]
-    G --> L[❌ Report: Use HTTPS]
-    H --> M[❌ Report: Use WSS]
-    I --> N[❌ Report: Use MongoDB+srv]
-    J --> O[❌ Report: Use Redis TLS]
-    K --> P[❌ Report: Use MySQL SSL]
+    A["🔍 Analyze URL/String"] --> B{"Contains Protocol?"}
+    B -->|No| C["✅ Valid: No protocol"]
+    B -->|Yes| D{"Is Insecure Protocol?"}
+    D -->|No| E["✅ Valid: HTTPS/WSS/etc."]
+    D -->|Yes| F{"Protocol Type"}
+    F --> G["HTTP"]
+    F --> H["WS"]
+    F --> I["MongoDB"]
+    F --> J["Redis"]
+    F --> K["MySQL"]
+    G --> L["❌ Report: Use HTTPS"]
+    H --> M["❌ Report: Use WSS"]
+    I --> N["❌ Report: Use MongoDB+srv"]
+    J --> O["❌ Report: Use Redis TLS"]
+    K --> P["❌ Report: Use MySQL SSL"]
 
     style C fill:#d1fae5,stroke:#059669,stroke-width:2px
     style E fill:#d1fae5,stroke:#059669,stroke-width:2px
@@ -65,7 +64,9 @@ flowchart TD
     style N fill:#fee2e2,stroke:#dc2626,stroke-width:2px
     style O fill:#fee2e2,stroke:#dc2626,stroke-width:2px
     style P fill:#fee2e2,stroke:#dc2626,stroke-width:2px
+
 ```
+
 
 ## Why This Matters
 
@@ -188,12 +189,11 @@ fetch('https://api.example.com/data');
 4. **Environment variables**: Store URLs in environment variables
 5. **Test exceptions**: Use `allowInTests: true` for localhost in tests
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

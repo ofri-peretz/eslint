@@ -22,6 +22,25 @@ Detects unvalidated user input usage (req.body, req.query, etc.) in Express, Fas
 **Vulnerability:** Failing to validate user input allows attackers to send malformed or malicious data to the application.
 **Risk:** This is the root cause of many vulnerabilities, including SQL Injection, XSS, and Remote Code Execution. It can also lead to application crashes or logic errors if data doesn't match expected formats.
 
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-20 OWASP:A06 CVSS:7.5 | Improper Input Validation detected | HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-20](https://cwe.mitre.org/data/definitions/20.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Improper Input Validation detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/) |
+
 ## Rule Details
 
 Unvalidated user input is a critical security vulnerability that can lead to injection attacks, data corruption, and unauthorized access. This rule detects direct usage of user input sources without validation.

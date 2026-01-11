@@ -1,8 +1,7 @@
 ---
-title: no-operator-injection
-description: "Detects MongoDB operator injection attacks where user input is passed directly as query values, allowing attackers to inject operators like $ne, $gt, $or to byp"
+title: "no-operator-injection"
+description: "Detects MongoDB operator injection attacks where user input is passed directly as query values, allowing attackers to inject operators like `$ne`, `$gt`, `$or` "
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -63,12 +62,11 @@ if (typeof req.body.email !== 'string') throw new Error('Invalid input');
 User.findOne({ email: req.body.email });
 ```
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 ### Object Spread
 

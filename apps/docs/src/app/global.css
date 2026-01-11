@@ -226,24 +226,21 @@ nav [data-separator]:first-child {
 .fd-toc-item {
   font-size: 0.8125rem !important;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  border-left: 2px solid transparent;
-  padding-left: 1rem !important;
-  margin-left: -2px;
-  border-radius: 0 6px 6px 0;
+  padding-left: 1rem;
+  border-radius: 6px;
+  text-decoration: none !important;
+  border-left: 0 !important;
 }
 
 .fd-toc-item[data-active='true'] {
   color: hsl(var(--fd-primary)) !important;
   font-weight: 600 !important;
-  border-left-color: hsl(var(--fd-primary));
-  background: linear-gradient(to right, hsl(var(--fd-primary) / 0.08), transparent 80%);
-  transform: translateX(2px);
+  background: linear-gradient(to right, hsl(var(--fd-primary) / 0.1), transparent);
 }
 
 .fd-toc-item:hover:not([data-active='true']) {
   color: hsl(var(--fd-foreground));
-  border-left-color: hsl(var(--fd-border));
-  background: linear-gradient(to right, hsl(var(--fd-muted) / 0.3), transparent 60%);
+  background: hsl(var(--fd-muted) / 0.5);
 }
 
 /* Page improvements */

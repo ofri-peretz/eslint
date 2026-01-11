@@ -84,40 +84,36 @@ export default [
 
 ### Critical Severity (NoSQL Injection)
 
-| Rule                                                         | CWE     | OWASP    | CVE            | Description                              | 💼  | 💡  |
-| ------------------------------------------------------------ | ------- | -------- | -------------- | ---------------------------------------- | --- | --- |
-| [no-unsafe-query](docs/rules/no-unsafe-query.md)             | CWE-943 | A03:2021 | —              | Prevents string concatenation in queries | 💼  | 💡  |
-| [no-operator-injection](docs/rules/no-operator-injection.md) | CWE-943 | A03:2021 | —              | Prevents $ne, $gt, $lt injection attacks | 💼  | 💡  |
-| [no-unsafe-where](docs/rules/no-unsafe-where.md)             | CWE-943 | A01:2021 | CVE-2025-23061 | Prevents $where operator RCE             | 💼  | 💡  |
-| [no-unsafe-regex-query](docs/rules/no-unsafe-regex-query.md) | CWE-400 | A03:2021 | —              | Prevents ReDoS via $regex                | 💼  | 💡  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-unsafe-query](docs/rules/no-unsafe-query.md) | CWE-943 | A03:2021 |  | Prevents string concatenation in queries | 💼 |  |  | 💡 |  |
+| [no-operator-injection](docs/rules/no-operator-injection.md) | CWE-943 | A03:2021 |  | Prevents $ne, $gt, $lt injection attacks | 💼 |  |  | 💡 |  |
+| [no-unsafe-where](docs/rules/no-unsafe-where.md) | CWE-943 | A01:2021 |  | Prevents $where operator RCE | 💼 |  |  | 💡 |  |
+| [no-unsafe-regex-query](docs/rules/no-unsafe-regex-query.md) | CWE-400 | A03:2021 |  | Prevents ReDoS via $regex | 💼 |  |  | 💡 |  |
 ### High Severity (Credentials & Connection)
 
-| Rule                                                                           | CWE     | OWASP    | Description                             | 💼  | 💡  |
-| ------------------------------------------------------------------------------ | ------- | -------- | --------------------------------------- | --- | --- |
-| [no-hardcoded-connection-string](docs/rules/no-hardcoded-connection-string.md) | CWE-798 | A07:2021 | Prevents credentials in connection URIs | 💼  | 💡  |
-| [no-hardcoded-credentials](docs/rules/no-hardcoded-credentials.md)             | CWE-798 | A07:2021 | Prevents hardcoded auth options         | 💼  | 💡  |
-| [require-tls-connection](docs/rules/require-tls-connection.md)                 | CWE-295 | A02:2021 | Requires TLS for production connections | 💼  | 💡  |
-| [require-auth-mechanism](docs/rules/require-auth-mechanism.md)                 | CWE-287 | A07:2021 | Requires explicit SCRAM-SHA-256         | 💼  | 💡  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-hardcoded-connection-string](docs/rules/no-hardcoded-connection-string.md) | CWE-798 | A07:2021 |  | Prevents credentials in connection URIs | 💼 |  |  | 💡 |  |
+| [no-hardcoded-credentials](docs/rules/no-hardcoded-credentials.md) | CWE-798 | A07:2021 |  | Prevents hardcoded auth options | 💼 |  |  | 💡 |  |
+| [require-tls-connection](docs/rules/require-tls-connection.md) | CWE-295 | A02:2021 |  | Requires TLS for production connections | 💼 |  |  | 💡 |  |
+| [require-auth-mechanism](docs/rules/require-auth-mechanism.md) | CWE-287 | A07:2021 |  | Requires explicit SCRAM-SHA-256 | 💼 |  |  | 💡 |  |
 ### Medium Severity (Mongoose ODM)
 
-| Rule                                                                   | CWE     | OWASP    | Description                              | 💼  | 💡  |
-| ---------------------------------------------------------------------- | ------- | -------- | ---------------------------------------- | --- | --- |
-| [require-schema-validation](docs/rules/require-schema-validation.md)   | CWE-20  | A04:2021 | Requires Mongoose schema validators      | 💼  | 💡  |
-| [no-select-sensitive-fields](docs/rules/no-select-sensitive-fields.md) | CWE-200 | A01:2021 | Prevents returning password/token fields | 💼  | 💡  |
-| [no-bypass-middleware](docs/rules/no-bypass-middleware.md)             | CWE-284 | A01:2021 | Prevents bypassing pre/post hooks        | 💼  | 💡  |
-| [no-unsafe-populate](docs/rules/no-unsafe-populate.md)                 | CWE-943 | A03:2021 | Prevents user-controlled populate()      | 💼  | 💡  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [require-schema-validation](docs/rules/require-schema-validation.md) | CWE-20 | A04:2021 |  | Requires Mongoose schema validators | 💼 |  |  | 💡 |  |
+| [no-select-sensitive-fields](docs/rules/no-select-sensitive-fields.md) | CWE-200 | A01:2021 |  | Prevents returning password/token fields | 💼 |  |  | 💡 |  |
+| [no-bypass-middleware](docs/rules/no-bypass-middleware.md) | CWE-284 | A01:2021 |  | Prevents bypassing pre/post hooks | 💼 |  |  | 💡 |  |
+| [no-unsafe-populate](docs/rules/no-unsafe-populate.md) | CWE-943 | A03:2021 |  | Prevents user-controlled populate() | 💼 |  |  | 💡 |  |
 ### Low Severity (Best Practices)
 
-| Rule                                                               | CWE     | OWASP    | Description                            | 💼  | 💡  |
-| ------------------------------------------------------------------ | ------- | -------- | -------------------------------------- | --- | --- |
-| [no-unbounded-find](docs/rules/no-unbounded-find.md)               | CWE-400 | A04:2021 | Requires limit() on find queries       |     | 💡  |
-| [require-projection](docs/rules/require-projection.md)             | CWE-200 | A01:2021 | Requires field projection              |     | 💡  |
-| [require-lean-queries](docs/rules/require-lean-queries.md)         | CWE-400 | A04:2021 | Suggests .lean() for read-only queries |     | 💡  |
-| [no-debug-mode-production](docs/rules/no-debug-mode-production.md) | CWE-489 | A05:2021 | Prevents debug mode in production      | 💼  | 💡  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-unbounded-find](docs/rules/no-unbounded-find.md) | CWE-400 | A04:2021 |  | Requires limit() on find queries |  |  |  | 💡 |  |
+| [require-projection](docs/rules/require-projection.md) | CWE-200 | A01:2021 |  | Requires field projection |  |  |  | 💡 |  |
+| [require-lean-queries](docs/rules/require-lean-queries.md) | CWE-400 | A04:2021 |  | Suggests .lean() for read-only queries |  |  |  | 💡 |  |
+| [no-debug-mode-production](docs/rules/no-debug-mode-production.md) | CWE-489 | A05:2021 |  | Prevents debug mode in production | 💼 |  |  | 💡 |  |
 ---
 
 ## 📚 Supported Libraries
@@ -142,15 +138,14 @@ This plugin analyzes code that uses the following MongoDB/Mongoose libraries. **
 
 ## 🔒 OWASP Top 10 2021 Coverage
 
-| OWASP Category                         | Rules                                                                                                        | Coverage |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------ | -------- |
-| **A01:2021 Broken Access Control**     | `no-unsafe-where`, `no-select-sensitive-fields`, `no-bypass-middleware`                                      | ✅       |
-| **A02:2021 Cryptographic Failures**    | `require-tls-connection`                                                                                     | ✅       |
-| **A03:2021 Injection**                 | `no-unsafe-query`, `no-operator-injection`, `no-unsafe-where`, `no-unsafe-regex-query`, `no-unsafe-populate` | ✅       |
-| **A04:2021 Insecure Design**           | `require-schema-validation`, `no-unbounded-find`, `require-lean-queries`                                     | ✅       |
-| **A05:2021 Security Misconfiguration** | `no-debug-mode-production`                                                                                   | ✅       |
-| **A07:2021 Identification Failures**   | `no-hardcoded-connection-string`, `no-hardcoded-credentials`, `require-auth-mechanism`                       | ✅       |
-
+| OWASP Category                         | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| **A01:2021 Broken Access Control** |  |  |  |  |  |  |  |  |  |
+| **A02:2021 Cryptographic Failures** |  |  |  |  |  |  |  |  |  |
+| **A03:2021 Injection** |  |  |  |  |  |  |  |  |  |
+| **A04:2021 Insecure Design** |  |  |  |  |  |  |  |  |  |
+| **A05:2021 Security Misconfiguration** |  |  |  |  |  |  |  |  |  |
+| **A07:2021 Identification Failures** |  |  |  |  |  |  |  |  |  |
 ---
 
 ## 🛡️ Security Research Coverage
@@ -184,12 +179,11 @@ User.findOne({ email: { $eq: email }, password: { $eq: password } });
 
 ## ⚙️ Configuration Presets
 
-| Preset        | Description        | Rules                                  |
-| ------------- | ------------------ | -------------------------------------- |
-| `recommended` | Balanced security  | Critical=error, High=warn, Medium=warn |
-| `strict`      | Maximum security   | All 16 rules=error                     |
-| `mongoose`    | Mongoose ODM focus | ODM-specific rules only                |
-
+| Preset        | Description        | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| `recommended` |  |  |  |  |  |  |  |  |  |
+| `strict` |  |  |  |  |  |  |  |  |  |
+| `mongoose` |  |  |  |  |  |  |  |  |  |
 ---
 
 ## 🤖 AI-Optimized Messages
@@ -218,19 +212,18 @@ Every rule uses `formatLLMMessage` for structured output:
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin                                                                                               | Downloads                                                                                                                                | Description                                      | Rules |
-| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ----- |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)           | [![npm](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://npmjs.com/package/eslint-plugin-secure-coding)           | Universal security (OWASP Top 10 Web + Mobile)   | 75    |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                                 | [![npm](https://img.shields.io/npm/dm/eslint-plugin-pg.svg)](https://npmjs.com/package/eslint-plugin-pg)                                 | PostgreSQL/node-postgres security                | 13    |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                         | [![npm](https://img.shields.io/npm/dm/eslint-plugin-crypto.svg)](https://npmjs.com/package/eslint-plugin-crypto)                         | Cryptographic best practices                     | 24    |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               | [![npm](https://img.shields.io/npm/dm/eslint-plugin-jwt.svg)](https://npmjs.com/package/eslint-plugin-jwt)                               | JWT security (algorithm confusion, weak secrets) | 13    |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)     | [![npm](https://img.shields.io/npm/dm/eslint-plugin-browser-security.svg)](https://npmjs.com/package/eslint-plugin-browser-security)     | Browser/DOM security (XSS, postMessage, CSP)     | 21    |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![npm](https://img.shields.io/npm/dm/eslint-plugin-vercel-ai-security.svg)](https://npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security (OWASP LLM Top 10)        | 19    |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)     | [![npm](https://img.shields.io/npm/dm/eslint-plugin-express-security.svg)](https://npmjs.com/package/eslint-plugin-express-security)     | Express.js security                              | 9     |
-| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)       | [![npm](https://img.shields.io/npm/dm/eslint-plugin-lambda-security.svg)](https://npmjs.com/package/eslint-plugin-lambda-security)       | AWS Lambda/Middy security                        | 13    |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)       | [![npm](https://img.shields.io/npm/dm/eslint-plugin-nestjs-security.svg)](https://npmjs.com/package/eslint-plugin-nestjs-security)       | NestJS security (guards, throttling)             | 5     |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)               | [![npm](https://img.shields.io/npm/dm/eslint-plugin-import-next.svg)](https://npmjs.com/package/eslint-plugin-import-next)               | High-performance import linting                  | 55    |
-
+| Plugin                                                                                               | Downloads                                                                                                                                | Description                                      | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |  |  |  |  |  |  |  |  |  |
 ---
 
 ## 📄 License

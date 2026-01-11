@@ -15,6 +15,25 @@ Disallow `dangerouslySetInnerHTML` usage to prevent XSS vulnerabilities. This ru
 | **ESLint MCP** | ✅ Optimized for ESLint MCP integration                              |
 | **Best For**   | All React projects, especially security-critical applications        |
 
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+⚠️ CWE-79 OWASP:A05 CVSS:6.1 | Cross-site Scripting (XSS) detected | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-79](https://cwe.mitre.org/data/definitions/79.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:6.1](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Cross-site Scripting (XSS) detected` |
+| **Severity & Compliance** | Impact assessment | `MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/) |
+
 ## Rule Details
 
 ```mermaid
@@ -224,4 +243,3 @@ Only disable this rule when:
 - **[DOMPurify](https://github.com/cure53/DOMPurify)** - HTML sanitization library
 - **[CWE-79](https://cwe.mitre.org/data/definitions/79.html)** - Cross-site Scripting reference
 - **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
-

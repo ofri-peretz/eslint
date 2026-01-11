@@ -1,8 +1,7 @@
 ---
-title: no-dynamic-system-prompts
-description: Prevent runtime modification of system prompts without validation.
+title: "no-dynamic-system-prompts"
+description: "Prevent runtime modification of system prompts without validation."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -11,6 +10,25 @@ Prevent runtime modification of system prompts without validation.
 **OWASP LLM Top 10 2025**: LLM01 - Prompt Injection  
 **CWE**: [CWE-94](https://cwe.mitre.org/data/definitions/94.html)  
 **Severity**: 🔴 Critical
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-94 OWASP:A05 CVSS:9.8 | Code Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-94](https://cwe.mitre.org/data/definitions/94.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Code Injection detected` |
+| **Severity & Compliance** | Impact assessment | `CRITICAL [SOC2,PCI-DSS,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/) |
 
 ## Rule Details
 
@@ -177,12 +195,11 @@ const systemPrompt = SYSTEM_PROMPTS_BY_ROLE[user.tier];
 - If your application requires dynamic system prompts (use validation)
 - If you don't use LLM APIs
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

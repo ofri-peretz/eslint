@@ -4,7 +4,7 @@
  * @see https://cwe.mitre.org/data/definitions/770.html
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -20,10 +20,6 @@ export const requireNetworkTimeout = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       description: 'Require timeout limits for network requests',
-      category: 'Security',
-      recommended: true,
-      owaspMobile: ['M5'],
-      cweIds: ["CWE-770"],
     },
     messages: {
       violationDetected: formatLLMMessage({
@@ -41,13 +37,25 @@ export const requireNetworkTimeout = createRule<RuleOptions, MessageIds>({
   defaultOptions: [],
   create(context) {
     return {
-      
       CallExpression(node: TSESTree.CallExpression) {
-        if (node.callee.name === 'fetch' || 
-            (node.callee.type === 'MemberExpression' && 
-             node.callee.object.name === 'axios')) {
-          const hasTimeout = node.arguments[1]?.type === 'ObjectExpression' &&
-            node.arguments[1].properties.some(p => p.key?.name === 'timeout');
+        const callee = node.callee;
+        
+        const isFetch = callee.type === AST_NODE_TYPES.Identifier && callee.name === 'fetch';
+        const isAxios = 
+          callee.type === AST_NODE_TYPES.MemberExpression &&
+          callee.object.type === AST_NODE_TYPES.Identifier &&
+          callee.object.name === 'axios';
+        
+        if (isFetch || isAxios) {
+          const optionsArg = node.arguments[1];
+          const hasTimeout = 
+            optionsArg?.type === AST_NODE_TYPES.ObjectExpression &&
+            optionsArg.properties.some(p =>
+              p.type === AST_NODE_TYPES.Property &&
+              p.key.type === AST_NODE_TYPES.Identifier &&
+              p.key.name === 'timeout'
+            );
+          
           if (!hasTimeout) {
             context.report({ node, messageId: 'violationDetected' });
           }

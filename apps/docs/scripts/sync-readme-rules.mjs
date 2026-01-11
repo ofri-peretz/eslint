@@ -15,7 +15,8 @@ const packagesDir = path.join(rootDir, 'packages');
 const outputDir = path.resolve(__dirname, '../src/data/plugin-rules');
 
 // Plugin slug to package name mapping
-const PLUGIN_MAPPINGS = {
+// Plugin slug to package name mapping
+export const PLUGIN_MAPPINGS = {
   'browser-security': 'eslint-plugin-browser-security',
   'crypto': 'eslint-plugin-crypto',
   'express-security': 'eslint-plugin-express-security',
@@ -31,47 +32,99 @@ const PLUGIN_MAPPINGS = {
 
 /**
  * Parse a markdown table and extract rule information
+ * Strictly enforces the standardized 10-column layout.
  */
-function parseRulesTable(markdown) {
+/**
+ * Parse a markdown table and extract rule information
+ * Strictly enforces the standardized 10-column layout.
+ */
+export function parseRulesTable(markdown) {
   const rules = [];
   
-  // Find all tables in the markdown
-  const tableRegex = /\|[^\n]+\|\n\|[-:\s|]+\|\n((?:\|[^\n]+\|\n?)+)/g;
+  // Find all tables with header row
+  const tableRegex = /(\|[^\n]+\|)\n(\|[-:\s|]+\|)\n((?:\|[^\n]+\|\n?)+)/g;
   let tableMatch;
   
   while ((tableMatch = tableRegex.exec(markdown)) !== null) {
-    const tableContent = tableMatch[0];
-    const rows = tableContent.split('\n').filter(row => row.trim().startsWith('|'));
+    const headerRow = tableMatch[1];
+    const dataRowsContent = tableMatch[3];
     
-    // Skip header and separator rows
-    const dataRows = rows.slice(2);
+    // Parse header cells
+    const headerCells = headerRow.split('|').map(cell => cell.trim()).filter(Boolean);
+    
+    /**
+     * STANDARD 10-COLUMN SCHEMA:
+     * | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+     */
+    const isRulesTable = headerCells.length === 10 && 
+                         headerCells[0].toLowerCase() === 'rule' &&
+                         headerCells[1].toLowerCase().includes('cwe') &&
+                         !headerCells.some(h => h.toLowerCase() === 'category') &&
+                         !headerCells.some(h => h.toLowerCase() === 'plugin');
+    
+    if (!isRulesTable) {
+      continue;
+    }
+    
+    const dataRows = dataRowsContent.split('\n').filter(row => row.trim().startsWith('|'));
     
     for (const row of dataRows) {
-      const cells = row.split('|').map(cell => cell.trim()).filter(Boolean);
+      // Split by | but PRESERVE empty cells
+      // Leading/trailing | and 10 columns = 12 parts
+      const rawCells = row.split('|');
+      const cells = rawCells.map(cell => cell.trim());
       
-      if (cells.length < 2) continue;
+      // Ensure we have correct number of cells (12 including empty ends)
+      if (cells.length < 11) continue;
       
-      // Extract rule name from first cell (may contain markdown link)
-      const ruleCell = cells[0];
-      const ruleNameMatch = ruleCell.match(/\[([^\]]+)\]\([^)]+\)/);
-      const ruleName = ruleNameMatch ? ruleNameMatch[1] : ruleCell.replace(/[`*]/g, '');
+      const shift = row.trim().startsWith('|') ? 1 : 0;
       
-      // Skip if this doesn't look like a rule name
-      if (!ruleName || ruleName.includes('Rule') || ruleName.includes('---')) continue;
+      // Extract rule name and strip markdown
+      const ruleCell = cells[0 + shift];
       
-      // Extract other columns if present
-      const rule = {
-        name: ruleName,
-        cwe: cells[1] || '',
-        owasp: cells[2] || '',
-        description: cells[3] || '',
-        recommended: cells[4]?.includes('💼') || cells[0]?.includes('💼') || false,
-        fixable: cells[5]?.includes('🔧') || cells[0]?.includes('🔧') || false,
-        hasSuggestions: cells[6]?.includes('💡') || cells[0]?.includes('💡') || false,
+      // 1. SKIP sub-category headers (e.g., "| **Injection** | | | |")
+      // These usually have only one populated cell or use bolding without backticks
+      if (ruleCell.startsWith('**') && ruleCell.endsWith('**') && !ruleCell.includes('`') && !ruleCell.includes('[')) {
+        continue;
+      }
+
+      // 2. SKIP empty rows or placeholder rows
+      if (!ruleCell || ruleCell === '---' || ruleCell.length < 2) continue;
+
+      // 3. Extract Name from [name](link) or `name`
+      let ruleName = ruleCell;
+      const ruleLinkMatch = ruleCell.match(/\[([^\]]+)\]/);
+      if (ruleLinkMatch) {
+        ruleName = ruleLinkMatch[1];
+      }
+      ruleName = ruleName.replace(/[`*~]/g, '').trim();
+      
+      // 4. FINAL INTEGRITY GUARD:
+      // If the cell content contains "A01", "CWE", or multiple spaces, it's likely not a rule slug
+      if (ruleName.includes(' ') || /^[AM]\d+/.test(ruleName) || /^CWE-\d+/.test(ruleName)) {
+        continue;
+      }
+      
+      // Helper to strip markdown from technical cells
+      const stripMd = (val) => {
+        if (!val) return '';
+        return val.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1').replace(/[`*~]/g, '').trim();
       };
       
-      // Only add if we have a valid rule name
-      if (rule.name && rule.name.length > 0 && !rule.name.includes('|')) {
+      const rule = {
+        name: ruleName,
+        cwe: stripMd(cells[1 + shift]),
+        owasp: stripMd(cells[2 + shift]),
+        cvss: stripMd(cells[3 + shift]),
+        description: cells[4 + shift] || '',
+        recommended: cells[5 + shift].includes('💼'),
+        warns: cells[6 + shift].includes('⚠️'),
+        fixable: cells[7 + shift].includes('🔧'),
+        hasSuggestions: cells[8 + shift].includes('💡'),
+        deprecated: cells[9 + shift].includes('🚫'),
+      };
+      
+      if (rule.name && !rule.name.includes('|')) {
         rules.push(rule);
       }
     }
@@ -83,17 +136,22 @@ function parseRulesTable(markdown) {
 /**
  * Extract the main rules section from README
  */
-function extractRulesSection(markdown) {
+/**
+ * Extract the main rules section from README
+ */
+export function extractRulesSection(markdown) {
   // Find the Rules section
-  const rulesHeaderMatch = markdown.match(/^##\s*🔐?\s*Rules.*$/m);
+  let rulesHeaderMatch = markdown.match(/^##\s*🔐?\s*75 Active Security Rules.*$/m) || 
+                           markdown.match(/^##\s*🔐?\s*Rules.*$/m);
+  
   if (!rulesHeaderMatch) {
     // Try alternative headers
-    const altMatch = markdown.match(/^##\s*(?:Available\s+)?Rules.*$/im);
-    if (!altMatch) return null;
+    rulesHeaderMatch = markdown.match(/^##\s*(?:Available\s+)?Rules.*$/im);
+    if (!rulesHeaderMatch) return null;
   }
   
   // Extract everything from Rules header to the next major section
-  const startIndex = markdown.indexOf(rulesHeaderMatch?.[0] || '## Rules');
+  const startIndex = markdown.indexOf(rulesHeaderMatch[0]);
   if (startIndex === -1) return null;
   
   const afterStart = markdown.slice(startIndex);
@@ -108,7 +166,10 @@ function extractRulesSection(markdown) {
 /**
  * Process a single plugin README
  */
-function processPlugin(pluginSlug, packageName) {
+/**
+ * Process a single plugin README
+ */
+export function processPlugin(pluginSlug, packageName) {
   const readmePath = path.join(packagesDir, packageName, 'README.md');
   
   if (!fs.existsSync(readmePath)) {
@@ -118,19 +179,90 @@ function processPlugin(pluginSlug, packageName) {
   
   const markdown = fs.readFileSync(readmePath, 'utf8');
   const rulesSection = extractRulesSection(markdown) || markdown;
-  const rules = parseRulesTable(rulesSection);
   
-  // Transform rules to include internal links
-  const transformedRules = rules.map(rule => ({
-    ...rule,
-    href: `/docs/${pluginSlug}/rules/${rule.name}`,
-  }));
+  const rules = [];
+  let currentCategory = "General";
+  
+  // Split section by lines to track categories
+  const lines = rulesSection.split('\n');
+  let tableBuffer = [];
+  let inTable = false;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    // Detect Category (### Subheaders)
+    const categoryMatch = line.match(/^###\s+(.+)$/);
+    if (categoryMatch) {
+      // If we were in a table, process it BEFORE changing category
+      if (inTable && tableBuffer.length >= 3) {
+        const tableContent = tableBuffer.join('\n');
+        const parsedRules = parseRulesTable(tableContent);
+        parsedRules.forEach(rule => {
+          rules.push({
+            ...rule,
+            category: currentCategory,
+            href: `/docs/${pluginSlug}/rules/${rule.name}`,
+          });
+        });
+        tableBuffer = [];
+        inTable = false;
+      }
+      currentCategory = categoryMatch[1].replace(/\(\d+\s+rules\)/, '').trim();
+      continue;
+    }
+    
+    // Detect Table
+    if (line.startsWith('|')) {
+      tableBuffer.push(lines[i]);
+      inTable = true;
+    } else if (inTable) {
+      // End of table - process buffer
+      if (tableBuffer.length >= 3) {
+        const tableContent = tableBuffer.join('\n');
+        const parsedRules = parseRulesTable(tableContent);
+        parsedRules.forEach(rule => {
+          rules.push({
+            ...rule,
+            category: currentCategory,
+            href: `/docs/${pluginSlug}/rules/${rule.name}`,
+          });
+        });
+      }
+      tableBuffer = [];
+      inTable = false;
+    }
+  }
+  
+  // Final buffer flush
+  if (tableBuffer.length >= 3) {
+    const tableContent = tableBuffer.join('\n');
+    const parsedRules = parseRulesTable(tableContent);
+    parsedRules.forEach(rule => {
+      rules.push({
+        ...rule,
+        category: currentCategory,
+        href: `/docs/${pluginSlug}/rules/${rule.name}`,
+      });
+    });
+  }
+  
+  // De-duplicate rules by name (take the one with non-empty info if exists)
+  const dedupedRules = [];
+  const names = new Set();
+  
+  for (const rule of rules) {
+    if (!names.has(rule.name)) {
+      dedupedRules.push(rule);
+      names.add(rule.name);
+    }
+  }
   
   return {
     plugin: pluginSlug,
     package: packageName,
-    rules: transformedRules,
-    totalRules: transformedRules.length,
+    rules: dedupedRules,
+    totalRules: dedupedRules.length,
     lastSynced: new Date().toISOString(),
   };
 }
@@ -179,6 +311,17 @@ async function main() {
   }, null, 2));
   
   console.log(`\nSync complete: ${results.success.length} succeeded, ${results.errors.length} errors`);
+  
+  if (results.errors.length > 0) {
+    process.exit(1);
+  }
 }
 
-main().catch(console.error);
+export { parseRulesTable, extractRulesSection, processPlugin, PLUGIN_MAPPINGS };
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

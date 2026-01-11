@@ -72,32 +72,29 @@ export default [
 
 ### Critical Severity (Algorithm Attacks)
 
-| Rule                                                           | CWE     | OWASP    | Description                                  | 💼  | 🔧  | 💡  |
-| -------------------------------------------------------------- | ------- | -------- | -------------------------------------------- | --- | --- | --- |
-| [no-algorithm-none](docs/rules/no-algorithm-none.md)           | CWE-347 | A02:2021 | Prevent `alg:"none"` attack (CVE-2022-23540) | 💼  |     | 💡  |
-| [no-algorithm-confusion](docs/rules/no-algorithm-confusion.md) | CWE-347 | A02:2021 | Prevent RS256→HS256 key confusion            | 💼  |     | 💡  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-algorithm-none](docs/rules/no-algorithm-none.md) | CWE-347 | A02:2021 |  | Prevent `alg:"none"` attack (CVE-2022-23540) | 💼 |  |  | 💡 |  |
+| [no-algorithm-confusion](docs/rules/no-algorithm-confusion.md) | CWE-347 | A02:2021 |  | Prevent RS256→HS256 key confusion | 💼 |  |  | 💡 |  |
 ### High Severity (Verification & Secrets)
 
-| Rule                                                                     | CWE     | OWASP    | Description                              | 💼  | 🔧  | 💡  |
-| ------------------------------------------------------------------------ | ------- | -------- | ---------------------------------------- | --- | --- | --- |
-| [require-algorithm-whitelist](docs/rules/require-algorithm-whitelist.md) | CWE-757 | A02:2021 | Require explicit algorithm specification | 💼  |     | 💡  |
-| [no-decode-without-verify](docs/rules/no-decode-without-verify.md)       | CWE-345 | A04:2021 | Prevent trusting decoded payloads        | 💼  |     | 💡  |
-| [no-weak-secret](docs/rules/no-weak-secret.md)                           | CWE-326 | A02:2021 | Require 256-bit minimum secrets          | 💼  |     | 💡  |
-| [no-hardcoded-secret](docs/rules/no-hardcoded-secret.md)                 | CWE-798 | A05:2021 | Prevent secrets in source code           | 💼  |     | 💡  |
-| [no-timestamp-manipulation](docs/rules/no-timestamp-manipulation.md)     | CWE-294 | A05:2021 | Prevent disabling automatic `iat`        | 💼  |     | 💡  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [require-algorithm-whitelist](docs/rules/require-algorithm-whitelist.md) | CWE-757 | A02:2021 |  | Require explicit algorithm specification | 💼 |  |  | 💡 |  |
+| [no-decode-without-verify](docs/rules/no-decode-without-verify.md) | CWE-345 | A04:2021 |  | Prevent trusting decoded payloads | 💼 |  |  | 💡 |  |
+| [no-weak-secret](docs/rules/no-weak-secret.md) | CWE-326 | A02:2021 |  | Require 256-bit minimum secrets | 💼 |  |  | 💡 |  |
+| [no-hardcoded-secret](docs/rules/no-hardcoded-secret.md) | CWE-798 | A05:2021 |  | Prevent secrets in source code | 💼 |  |  | 💡 |  |
+| [no-timestamp-manipulation](docs/rules/no-timestamp-manipulation.md) | CWE-294 | A05:2021 |  | Prevent disabling automatic `iat` | 💼 |  |  | 💡 |  |
 ### Medium Severity (Claims & Best Practices)
 
-| Rule                                                                     | CWE     | OWASP    | Description                          | 💼  | 🔧  | 💡  |
-| ------------------------------------------------------------------------ | ------- | -------- | ------------------------------------ | --- | --- | --- |
-| [require-expiration](docs/rules/require-expiration.md)                   | CWE-613 | A04:2021 | Require `exp` claim or `expiresIn`   | 💼  |     | 💡  |
-| [require-issued-at](docs/rules/require-issued-at.md)                     | CWE-294 | A04:2021 | Require `iat` claim for freshness    | 💼  |     | 💡  |
-| [require-issuer-validation](docs/rules/require-issuer-validation.md)     | CWE-287 | A01:2021 | Require issuer validation            | 💼  |     | 💡  |
-| [require-audience-validation](docs/rules/require-audience-validation.md) | CWE-287 | A01:2021 | Require audience validation          | 💼  |     | 💡  |
-| [require-max-age](docs/rules/require-max-age.md)                         | CWE-294 | A04:2021 | Require maxAge for replay prevention | 💼  |     | 💡  |
-| [no-sensitive-payload](docs/rules/no-sensitive-payload.md)               | CWE-359 | A01:2021 | Prevent PII in token payload         | 💼  |     | 💡  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [require-expiration](docs/rules/require-expiration.md) | CWE-613 | A04:2021 |  | Require `exp` claim or `expiresIn` | 💼 |  |  | 💡 |  |
+| [require-issued-at](docs/rules/require-issued-at.md) | CWE-294 | A04:2021 |  | Require `iat` claim for freshness | 💼 |  |  | 💡 |  |
+| [require-issuer-validation](docs/rules/require-issuer-validation.md) | CWE-287 | A01:2021 |  | Require issuer validation | 💼 |  |  | 💡 |  |
+| [require-audience-validation](docs/rules/require-audience-validation.md) | CWE-287 | A01:2021 |  | Require audience validation | 💼 |  |  | 💡 |  |
+| [require-max-age](docs/rules/require-max-age.md) | CWE-294 | A04:2021 |  | Require maxAge for replay prevention | 💼 |  |  | 💡 |  |
+| [no-sensitive-payload](docs/rules/no-sensitive-payload.md) | CWE-359 | A01:2021 |  | Prevent PII in token payload | 💼 |  |  | 💡 |  |
 ## 🔐 OWASP Top 10 2021 Coverage
 
 | OWASP Category                         |                                             Rules                                              | Coverage |
@@ -111,18 +108,17 @@ export default [
 
 ### CWE Coverage Summary
 
-| CWE     | Description                                    | Rules                                                               |
-| ------- | ---------------------------------------------- | ------------------------------------------------------------------- |
-| CWE-287 | Improper Authentication                        | `require-issuer-validation`, `require-audience-validation`          |
-| CWE-294 | Authentication Bypass by Capture-Replay        | `require-issued-at`, `no-timestamp-manipulation`, `require-max-age` |
-| CWE-326 | Inadequate Encryption Strength                 | `no-weak-secret`                                                    |
-| CWE-345 | Insufficient Verification of Data Authenticity | `no-decode-without-verify`                                          |
-| CWE-347 | Improper Cryptographic Signature Verification  | `no-algorithm-none`, `no-algorithm-confusion`                       |
-| CWE-359 | Exposure of Private Information                | `no-sensitive-payload`                                              |
-| CWE-613 | Insufficient Session Expiration                | `require-expiration`                                                |
-| CWE-757 | Selection of Less-Secure Algorithm             | `require-algorithm-whitelist`                                       |
-| CWE-798 | Use of Hard-coded Credentials                  | `no-hardcoded-secret`                                               |
-
+| CWE     | Description                                    | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| CWE-287 |  |  |  |  |  |  |  |  |  |
+| CWE-294 |  |  |  |  |  |  |  |  |  |
+| CWE-326 |  |  |  |  |  |  |  |  |  |
+| CWE-345 |  |  |  |  |  |  |  |  |  |
+| CWE-347 |  |  |  |  |  |  |  |  |  |
+| CWE-359 |  |  |  |  |  |  |  |  |  |
+| CWE-613 |  |  |  |  |  |  |  |  |  |
+| CWE-757 |  |  |  |  |  |  |  |  |  |
+| CWE-798 |  |  |  |  |  |  |  |  |  |
 ## 🛡️ Security Research Coverage
 
 ### CVE-2022-23540 (jsonwebtoken Algorithm None)
@@ -164,12 +160,11 @@ jwt.verify(token, publicKey, { algorithms: ['RS256'] });
 
 ## ⚙️ Configuration Presets
 
-| Preset        | Description                      | Rules                     |
-| ------------- | -------------------------------- | ------------------------- |
-| `recommended` | Balanced security                | Critical=error, High=warn |
-| `strict`      | Maximum security (2025 research) | All 13 rules=error        |
-| `legacy`      | Migration mode                   | Critical rules only       |
-
+| Preset        | Description                      | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| `recommended` |  |  |  |  |  |  |  |  |  |
+| `strict` |  |  |  |  |  |  |  |  |  |
+| `legacy` |  |  |  |  |  |  |  |  |  |
 ## 📚 Supported Libraries
 
 | Library      | npm                                                | Detection |
@@ -204,18 +199,17 @@ Every rule uses `formatLLMMessage` for structured output:
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin                                                                                               |                                                                Downloads                                                                 | Description                                                  | Rules |
-| ---------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------: | ------------------------------------------------------------ | :---: |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)           |      [![npm](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://npmjs.com/package/eslint-plugin-secure-coding)      | Universal security (OWASP Top 10 Web + Mobile)               |  89   |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                         |             [![npm](https://img.shields.io/npm/dm/eslint-plugin-crypto.svg)](https://npmjs.com/package/eslint-plugin-crypto)             | Cryptographic best practices (weak algorithms, key handling) |  24   |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                                 |                 [![npm](https://img.shields.io/npm/dm/eslint-plugin-pg.svg)](https://npmjs.com/package/eslint-plugin-pg)                 | PostgreSQL/node-postgres security                            |  13   |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)     |   [![npm](https://img.shields.io/npm/dm/eslint-plugin-express-security.svg)](https://npmjs.com/package/eslint-plugin-express-security)   | Express.js security (CORS, cookies, CSRF, helmet)            |   8   |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)       |    [![npm](https://img.shields.io/npm/dm/eslint-plugin-nestjs-security.svg)](https://npmjs.com/package/eslint-plugin-nestjs-security)    | NestJS security (guards, validation pipes, throttler)        |   5   |
-| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)       |    [![npm](https://img.shields.io/npm/dm/eslint-plugin-lambda-security.svg)](https://npmjs.com/package/eslint-plugin-lambda-security)    | AWS Lambda/Middy security (API Gateway, CORS, secrets)       |   5   |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)     |   [![npm](https://img.shields.io/npm/dm/eslint-plugin-browser-security.svg)](https://npmjs.com/package/eslint-plugin-browser-security)   | Browser security (XSS, postMessage, storage, cookies)        |  21   |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![npm](https://img.shields.io/npm/dm/eslint-plugin-vercel-ai-security.svg)](https://npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security (OWASP LLM + Agentic Top 10)          |  19   |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)               |        [![npm](https://img.shields.io/npm/dm/eslint-plugin-import-next.svg)](https://npmjs.com/package/eslint-plugin-import-next)        | High-performance import linting                              |  12   |
-
+| Plugin                                                                                               |                                                                Downloads                                                                 | Description                                                  | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |  |  |  |  |  |  |  |  |  |
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)

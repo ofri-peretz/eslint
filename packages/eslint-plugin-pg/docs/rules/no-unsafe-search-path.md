@@ -48,10 +48,22 @@ await client.query('SET search_path = $1', [safeSchema]);
 
 ## Error Message Format
 
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-426 OWASP:A03 CVSS:7.5 | Untrusted Search Path detected | HIGH
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A03_2021/
 ```
-🔒 CWE-426 | Dynamic search_path enables schema hijacking | HIGH
-   Fix: Use hardcoded schema or validate against allowlist
-```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-426](https://cwe.mitre.org/data/definitions/426.html) [OWASP:A03](https://owasp.org/Top10/A03_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Untrusted Search Path detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A03_2021-Injection/) |
 
 ## When Not To Use It
 

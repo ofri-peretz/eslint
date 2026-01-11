@@ -51,7 +51,6 @@ export const noExposedErrorDetails = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Exposed Error Details',
         cwe: 'CWE-209',
-        owasp: 'SAS-9',
         cvss: 4.3,
         description:
           'Response exposes {{property}} which may leak internal paths, configs, or stack traces.',

@@ -52,7 +52,11 @@ export default [
   },
   // Local rule: Ensure vitest configs have watch: false for CI
   {
-    files: ['**/vitest.config.mts', '**/vitest.config.ts', '**/vitest.config.js'],
+    files: [
+      '**/vitest.config.mts',
+      '**/vitest.config.ts',
+      '**/vitest.config.js',
+    ],
     plugins: {
       local: localPlugin,
     },
@@ -109,4 +113,3 @@ export default [
     },
   },
 ];
-

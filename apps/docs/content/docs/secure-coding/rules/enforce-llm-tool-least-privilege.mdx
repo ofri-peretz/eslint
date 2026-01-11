@@ -1,8 +1,7 @@
 ---
-title: enforce-llm-tool-least-privilege
-description: Ensure LLM tools have minimal necessary permissions.
+title: "enforce-llm-tool-least-privilege"
+description: "Ensure LLM tools have minimal necessary permissions."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -52,12 +51,11 @@ Define specific permissions for each tool. Use RBAC (role-based access control).
 
 Introduced in v2.3.0
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

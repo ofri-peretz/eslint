@@ -1,8 +1,7 @@
 ---
-title: no-missing-csrf-protection
-description: Detects missing CSRF token validation in POST/PUT/DELETE requests. This rule is part of eslint-plugin-secure-coding and provides LLM-optimized error messages th
+title: "no-missing-csrf-protection"
+description: "Detects missing CSRF token validation in POST/PUT/DELETE requests. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plu"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -42,21 +41,23 @@ Detects missing CSRF token validation in POST/PUT/DELETE requests. This rule is 
   }
 }}%%
 flowchart TD
-    A[🔍 Analyze Route Handler] --> B{Is POST/PUT/DELETE/PATCH?}
-    B -->|No| C[✅ Valid: GET/HEAD/OPTIONS]
-    B -->|Yes| D{Has CSRF Middleware?}
-    D -->|Yes| E[✅ Valid: CSRF protected]
-    D -->|No| F{Check Route Arguments}
-    F --> G{CSRF in Arguments?}
+    A["🔍 Analyze Route Handler"] --> B{"Is POST/PUT/DELETE/PATCH?"}
+    B -->|No| C["✅ Valid: GET/HEAD/OPTIONS"]
+    B -->|Yes| D{"Has CSRF Middleware?"}
+    D -->|Yes| E["✅ Valid: CSRF protected"]
+    D -->|No| F{"Check Route Arguments"}
+    F --> G{"CSRF in Arguments?"}
     G -->|Yes| E
-    G -->|No| H{Global CSRF?}
+    G -->|No| H{"Global CSRF?"}
     H -->|Yes| E
-    H -->|No| I[❌ Report: Missing CSRF]
+    H -->|No| I["❌ Report: Missing CSRF"]
 
     style C fill:#d1fae5,stroke:#059669,stroke-width:2px
     style E fill:#d1fae5,stroke:#059669,stroke-width:2px
     style I fill:#fee2e2,stroke:#dc2626,stroke-width:2px
+
 ```
+
 
 ## Why This Matters
 
@@ -123,6 +124,25 @@ app.get('/api/users', (req, res) => {
 });
 ```
 
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-352 OWASP:A01 CVSS:8.8 | Cross-Site Request Forgery (CSRF) detected | HIGH
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-352](https://cwe.mitre.org/data/definitions/352.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:8.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Cross-Site Request Forgery (CSRF) detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/) |
+
 ## Configuration
 
 ### Default Configuration
@@ -166,12 +186,11 @@ app.get('/api/users', (req, res) => {
 4. **Token validation**: Validate CSRF tokens on every protected request
 5. **GET requests**: Don't require CSRF (idempotent operations)
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

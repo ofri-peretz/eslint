@@ -1,8 +1,7 @@
 ---
 title: "require-output-validation"
-description: Requires validation of AI output before displaying to users.
+description: "This rule identifies code patterns where AI-generated output is displayed to users without validation or fact-checking."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -65,12 +64,11 @@ Unvalidated AI output can:
 - **Damage reputation** - Incorrect information attributed to your brand
 - **Violate regulations** - False claims in regulated industries
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

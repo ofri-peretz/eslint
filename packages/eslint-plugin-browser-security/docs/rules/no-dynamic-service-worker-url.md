@@ -86,3 +86,22 @@ registerSW(dynamicUrl);
 
 - [MDN: Service Worker API](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API)
 - [Google: Service Worker Security](https://web.dev/service-worker-lifecycle/)
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-829 OWASP:A03 CVSS:7.5 | Untrusted Control Sphere Inclusion detected | HIGH
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A03_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-829](https://cwe.mitre.org/data/definitions/829.html) [OWASP:A03](https://owasp.org/Top10/A03_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Untrusted Control Sphere Inclusion detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A03_2021-Injection/) |

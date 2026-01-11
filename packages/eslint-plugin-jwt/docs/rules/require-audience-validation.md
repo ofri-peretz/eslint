@@ -5,6 +5,25 @@
 **Severity:** 🟡 Medium  
 **CWE:** [CWE-287](https://cwe.mitre.org/data/definitions/287.html)
 
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-287 OWASP:A07 CVSS:9.8 | Improper Authentication detected | CRITICAL
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A07_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-287](https://cwe.mitre.org/data/definitions/287.html) [OWASP:A07](https://owasp.org/Top10/A07_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Improper Authentication detected` |
+| **Severity & Compliance** | Impact assessment | `CRITICAL` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A07_2021-Injection/) |
+
 ## Rule Details
 
 This rule mandates audience validation. Without it, tokens intended for other services are accepted.

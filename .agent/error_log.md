@@ -320,3 +320,233 @@ npx nx dev docs  # Restart dev server
 - During development, enable DevTools "Disable cache" checkbox (Network tab)
 - Use incognito windows for testing major changes
 - Consider adding cache-control headers in Next.js config for dev mode
+
+---
+
+## 22. MDX Evaluation Error: HTML Comments from Sync Script
+
+**Date**: 2026-01-10
+**Error Type**: Build Error (MDX Evaluation)
+**File**: `./apps/docs/content/docs/[plugin]/rules/[rule].mdx`
+
+**Error Message**:
+
+```
+Error evaluating Node.js code
+11:2: Unexpected character `!` (U+0021) before name, expected a character that can start a name, such as a letter, `$`, or `_` (note: to create a comment in MDX, use `{/* text */}`)
+```
+
+**Root Cause**:
+The `sync-rules-docs.mjs` script was migrating rule documentation from `.md` to `.mdx`. The source Markdown files contained HTML comments (`<!-- end auto-generated rule header -->`). While valid in standard Markdown, HTML comments are not valid in MDX because MDX follows JSX syntax where `<!--` is an invalid tag start.
+
+**Resolution**:
+Updated the `convertMdToMdx` function in `apps/docs/scripts/sync-rules-docs.mjs` to:
+
+1.  **Strip HTML comments** entirely: `<!--[\s\S]*?-->` → `""`. This removes potential JSX syntax violations and marker-related confusion.
+2.  **Refine metadata extraction**: Stripped emojis (💼, 💡, 🔧) from the description to ensure clean frontmatter.
+3.  **Perform "Nuclear Cache Clear"**: Executed `npx nx reset && rm -rf apps/docs/.next` to flush poisoned Turbopack HMR caches that were still serving the invalid `<!--` syntax even after the files on disk were updated.
+
+**Lesson**:
+When programmatically converting from Markdown to MDX, automated transformation of HTML entities and comments is required. Furthermore, Turbopack's HMR cache is extremely persistent; syntax errors in MDX can "poison" the cache, requiring a full reset even after the source file is corrected.
+
+---
+
+## 23. JSX Parse Error - Expression Expected (BenchmarkChartsContent.tsx)
+
+**Date**: 2026-01-11
+**Error Type**: Build Error (Turbopack)
+**File**: `apps/docs/src/components/BenchmarkChartsContent.tsx`
+
+**Error Message**:
+
+```
+Parsing ecmascript source code failed
+> 33 |     <div className="space-y-10 my-8">
+     |     ^
+Expression expected
+```
+
+**Root Cause**: The error occurred because inside the `BenchmarkChartsContent` component, the `return` statement was preceded by an incomplete `useState` definition (`const [visiblePlugins, setVisiblePlugins] = useState({`) that was never closed. This syntax error (missing closing brace/parenthesis) caused the parser to fail when it encountered the JSX block immediately following it.
+
+**Resolution**: Removed the incomplete `useState` definition and cleaned up the `BenchmarkChartsContent.tsx` file to ensure valid syntax before the `return` statement.
+
+**Prevention**: Always ensure that React hooks and component logic are fully defined and syntactically correct before returning JSX. Use ESLint or Typescript checks to catch these syntax errors early.
+
+---
+
+## 24. Invalid `RuleMetaDataDocs` Properties in ESLint Rules
+
+**Date**: 2026-01-11
+**Error Type**: TypeScript Build Error
+**Affected Package**: `eslint-plugin-secure-coding` (75+ rule files)
+
+**Error Message**:
+
+```
+error TS2353: Object literal may only specify known properties, and 'category' does not exist in type 'RuleMetaDataDocs'.
+error TS2353: Object literal may only specify known properties, and 'recommended' does not exist in type 'RuleMetaDataDocs'.
+error TS2353: Object literal may only specify known properties, and 'owaspMobile' does not exist in type 'RuleMetaDataDocs'.
+```
+
+**Root Cause**:
+
+The `@typescript-eslint/utils@8.46.2` version of `RuleMetaDataDocs` type does not include the following properties that were used in rule definitions:
+
+1. `category: 'Security'` - Not part of the official ESLint rule metadata schema
+2. `recommended: true` - This is typically handled at the plugin config level, not in individual rule `docs`
+3. `owaspMobile: ['M1', ...]` - Custom extension property not recognized by the type
+
+These properties were likely added as custom metadata extensions but were not properly typed with a custom `PluginDocs` type.
+
+**Resolution**:
+
+Removed all three invalid properties from the `docs` object in all 75+ rule files using batch `sed` commands:
+
+```bash
+find packages/eslint-plugin-secure-coding/src/rules -name "index.ts" -exec sed -i '' '/category.*Security/d' {} \;
+find packages/eslint-plugin-secure-coding/src/rules -name "index.ts" -exec sed -i '' '/recommended.*true/d' {} \;
+find packages/eslint-plugin-secure-coding/src/rules -name "index.ts" -exec sed -i '' '/owaspMobile:/d' {} \;
+```
+
+**Future Consideration**:
+
+If `owaspMobile` and `category` metadata is needed, define a custom `PluginDocs` interface in `@interlace/eslint-devkit` and use it with `createRule`:
+
+```typescript
+interface InterlacePluginDocs {
+  category?: 'Security' | 'Performance' | 'BestPractice';
+  owaspMobile?: string[];
+}
+
+// Then use: createRule<RuleOptions, MessageIds, InterlacePluginDocs>(...)
+```
+
+---
+
+## 25. TypeScript Error TS18047: `'item' is possibly 'null'` in Type Guard
+
+**Date**: 2026-01-11
+**Error Type**: TypeScript Build Error
+**Affected Package**: `eslint-plugin-lambda-security`
+**Affected File**: `src/rules/no-error-swallowing/index.ts`
+
+**Error Message**:
+
+```
+packages/eslint-plugin-lambda-security/src/rules/no-error-swallowing/index.ts:138:68 - error TS18047: 'item' is possibly 'null'.
+
+138               if (!item || typeof item !== 'object' || !('type' in item)) continue;
+                                                                       ~~~~
+```
+
+**Root Cause**:
+
+TypeScript's control flow analysis loses narrowing when using the `in` operator check on a variable that was previously checked for null. The sequence of checks:
+
+```typescript
+if (!item) continue; // item could still be null
+if (typeof item !== 'object') continue; // item is object | null
+if (!('type' in item)) continue; // TS error: item may be null
+```
+
+TypeScript correctly flags this because after `typeof item !== 'object'` check, the type is still `object | null` (since `typeof null === 'object'`).
+
+**Resolution**:
+
+The `'type' in item` check still fails because TypeScript doesn't trust `item != null && typeof item === 'object'` to exclude `null` (since `typeof null === 'object'`).
+
+The working fix uses `Object.prototype.hasOwnProperty.call()` which TypeScript accepts:
+
+```typescript
+for (const item of child) {
+  // Use Object.prototype.hasOwnProperty to verify it's a real object with 'type'
+  if (
+    item != null &&
+    typeof item === 'object' &&
+    Object.prototype.hasOwnProperty.call(item, 'type')
+  ) {
+    checkNode(item as TSESTree.Node);
+  }
+}
+```
+
+**Lesson**:
+
+When checking for property existence on potentially-null array items:
+
+1. The `in` operator triggers TS18047 even after null checks because `typeof null === 'object'`
+2. Use `Object.prototype.hasOwnProperty.call(item, 'prop')` instead - TypeScript accepts this pattern
+3. Alternatively, use a user-defined type guard function that returns `item is T`
+
+---
+
+## 26. TypeScript Error TS2339: Property Access on AST Union Types
+
+**Date**: 2026-01-11
+**Error Type**: TypeScript Build Error
+**Affected Package**: `eslint-plugin-secure-coding`
+**Affected Files**: Multiple rule files (`require-network-timeout`, `require-https-only`, `require-secure-credential-storage`, `no-debug-code-in-production`, `require-data-minimization`)
+
+**Error Messages**:
+
+```
+Property 'name' does not exist on type 'Expression'.
+Property 'object' does not exist on type 'Expression'.
+Property 'property' does not exist on type 'Expression'.
+Property 'key' does not exist on type 'ObjectLiteralElement'.
+  Property 'key' does not exist on type 'SpreadElement'.
+Property 'name' does not exist on type 'PrivateIdentifier | Expression'.
+```
+
+**Root Cause**:
+
+When accessing properties on AST nodes in ESLint rules, the types are often **union types**. For example:
+
+- `CallExpression.callee` is of type `Expression`, which includes `Identifier`, `MemberExpression`, `CallExpression`, etc.
+- `ObjectExpression.properties[n]` is of type `ObjectLiteralElement`, which includes `Property` and `SpreadElement`
+- `MemberExpression.property` is of type `Expression | PrivateIdentifier`
+
+TypeScript correctly complains when you try to access `.name`, `.object`, `.property`, or `.key` without first narrowing the type.
+
+**Resolution**:
+
+Add **type guards** before accessing type-specific properties:
+
+```typescript
+// ❌ WRONG - TypeScript error
+if (node.callee.name === 'fetch') { ... }
+
+// ✅ CORRECT - Type guard first
+if (node.callee.type === 'Identifier' && node.callee.name === 'fetch') { ... }
+
+// ❌ WRONG - SpreadElement doesn't have .key
+node.properties.some(p => p.key?.name === 'timeout');
+
+// ✅ CORRECT - Exclude SpreadElement, check key type
+node.properties.some(p =>
+  p.type !== 'SpreadElement' &&
+  p.key.type === 'Identifier' &&
+  p.key.name === 'timeout'
+);
+
+// ❌ WRONG - MemberExpression.property could be PrivateIdentifier
+if (node.callee.property.name === 'log') { ... }
+
+// ✅ CORRECT - Check property is Identifier
+if (node.callee.property.type === 'Identifier' &&
+    node.callee.property.name === 'log') { ... }
+```
+
+**Pattern Summary**:
+
+| Property Access          | Required Type Guard                  |
+| ------------------------ | ------------------------------------ |
+| `callee.name`            | `callee.type === 'Identifier'`       |
+| `callee.object`          | `callee.type === 'MemberExpression'` |
+| `callee.property.name`   | `property.type === 'Identifier'`     |
+| `properties[n].key`      | `p.type !== 'SpreadElement'`         |
+| `properties[n].key.name` | `p.key.type === 'Identifier'`        |
+
+**Lesson**:
+
+Always check the AST node `type` property before accessing type-specific properties. Use `AST_NODE_TYPES` enum from `@typescript-eslint/utils` for consistent type checking.

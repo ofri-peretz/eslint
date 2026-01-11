@@ -75,7 +75,6 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Server-Side Request Forgery (SSRF)',
         cwe: 'CWE-918',
-        owasp: 'SAS-8',
         cvss: 9.1,
         description:
           'HTTP request URL contains user-controlled input from {{source}}. Attackers can access internal services or exfiltrate data.',

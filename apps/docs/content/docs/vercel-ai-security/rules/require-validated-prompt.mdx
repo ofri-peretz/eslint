@@ -1,8 +1,7 @@
 ---
 title: "require-validated-prompt"
-description: Prevents prompt injection by detecting unvalidated user input in AI prompts.
+description: "This rule identifies code patterns where user-controlled input is passed directly to AI prompts without validation or sanitization. Such patterns expose your ap"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -107,12 +106,11 @@ Prompt injection is the #1 security risk for LLM applications according to OWASP
 - [`no-sensitive-in-prompt`](./no-sensitive-in-prompt.md) - Prevent sensitive data in prompts
 - [`no-dynamic-system-prompt`](./no-dynamic-system-prompt.md) - Prevent dynamic system prompts
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

@@ -278,7 +278,7 @@ export default function HomePage() {
       {/* Latest Updates */}
       <section className="py-24 px-6">
         <div className="max-w-6xl mx-auto">
-          <RelatedArticles plugin="secure-coding" limit={3} />
+          <RelatedArticles plugin="all" limit={3} />
         </div>
       </section>
 

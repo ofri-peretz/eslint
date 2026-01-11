@@ -82,7 +82,6 @@ export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Missing Authorization Check',
         cwe: 'CWE-862',
-        owasp: 'SAS-5',
         cvss: 7.5,
         description:
           'Lambda handler performs {{operation}} operation without authorization check. Users may access resources without proper permissions.',

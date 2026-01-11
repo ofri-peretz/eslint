@@ -4,7 +4,7 @@
  * @see https://cwe.mitre.org/data/definitions/532.html
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -20,10 +20,6 @@ export const noPiiInLogs = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       description: 'Prevent PII (email, SSN, credit cards) in console logs',
-      category: 'Security',
-      recommended: true,
-      owaspMobile: ['M6'],
-      cweIds: ["CWE-532"],
     },
     messages: {
       violationDetected: formatLLMMessage({
@@ -49,35 +45,38 @@ export const noPiiInLogs = createRule<RuleOptions, MessageIds>({
     
     return {
       CallExpression(node: TSESTree.CallExpression) {
-        
-      // Check console.log/error/warn calls
-      if (node.type === 'CallExpression' &&
-          node.callee.type === 'MemberExpression' &&
+        // Check console.log/error/warn calls
+        if (
+          node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          node.callee.object.type === AST_NODE_TYPES.Identifier &&
           node.callee.object.name === 'console' &&
-          ['log', 'error', 'warn', 'info'].includes(node.callee.property.name)) {
-        
-        // Check arguments for PII-related property access
-        for (const arg of node.arguments) {
-          if (arg.type === 'MemberExpression') {
-            const propName = arg.property.name?.toLowerCase();
-            const piiProps = ['email', 'ssn', 'password', 'creditcard', 'phone'];
-            
-            if (piiProps.some(p => propName?.includes(p))) {
-              report(node);
+          node.callee.property.type === AST_NODE_TYPES.Identifier &&
+          ['log', 'error', 'warn', 'info'].includes(node.callee.property.name)
+        ) {
+          // Check arguments for PII-related property access
+          for (const arg of node.arguments) {
+            if (
+              arg.type === AST_NODE_TYPES.MemberExpression &&
+              arg.property.type === AST_NODE_TYPES.Identifier
+            ) {
+              const propName = arg.property.name.toLowerCase();
+              const piiProps = ['email', 'ssn', 'password', 'creditcard', 'phone'];
+              
+              if (piiProps.some(p => propName.includes(p))) {
+                report(node);
+              }
             }
-          }
-          
-          // Check string literals mentioning PII
-          if (arg.type === 'Literal' && typeof arg.value === 'string') {
-            const text = arg.value.toLowerCase();
-            if (text.includes('email:') || text.includes('ssn:') || text.includes('password:')) {
-              report(node);
+            
+            // Check string literals mentioning PII
+            if (arg.type === AST_NODE_TYPES.Literal && typeof arg.value === 'string') {
+              const text = arg.value.toLowerCase();
+              if (text.includes('email:') || text.includes('ssn:') || text.includes('password:')) {
+                report(node);
+              }
             }
           }
         }
-      }
-    
       },
-};
+    };
   },
 });

@@ -20,10 +20,6 @@ export const requireSecureDeletion = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       description: 'Require secure data deletion patterns',
-      category: 'Security',
-      recommended: true,
-      owaspMobile: ['M9'],
-      cweIds: ["CWE-459"],
     },
     messages: {
       violationDetected: formatLLMMessage({

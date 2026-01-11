@@ -1,8 +1,7 @@
 ---
-title: no-missing-cors-check
-description: "Detects missing CORS validation (wildcard CORS, missing origin check) that can allow unauthorized cross-origin requests. This rule is part of eslint-plugin-secu"
+title: "no-missing-cors-check"
+description: "Detects missing CORS validation (wildcard CORS, missing origin check) that can allow unauthorized cross-origin requests. This rule is part of [`eslint-plugin-se"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -164,23 +163,23 @@ app.use(
   }
 }}%%
 flowchart TD
-    A[🔍 Literal/CallExpression/MemberExpression Found] --> B{In Test File?}
-    B -->|Yes & allowInTests| C[✅ Skip]
-    B -->|No| D{Matches Ignore Pattern?}
+    A["🔍 Literal/CallExpression/MemberExpression Found"] --> B{"In Test File?"}
+    B -->|Yes & allowInTests| C["✅ Skip"]
+    B -->|No| D{"Matches Ignore Pattern?"}
     D -->|Yes| C
-    D -->|No| E{Check Pattern}
-    E --> F{Wildcard Origin?}
-    F -->|Yes| G{Inside CORS Config?}
-    F -->|No| H{Wildcard Header?}
-    H -->|Yes| I{Access-Control-Allow-Origin?}
+    D -->|No| E{"Check Pattern"}
+    E --> F{"Wildcard Origin?"}
+    F -->|Yes| G{"Inside CORS Config?"}
+    F -->|No| H{"Wildcard Header?"}
+    H -->|Yes| I{"Access-Control-Allow-Origin?"}
     H -->|No| C
-    G -->|Yes| J[🚨 Report Error]
+    G -->|Yes| J["🚨 Report Error"]
     G -->|No| C
     I -->|Yes| J
     I -->|No| C
-    J --> K[💡 Suggest Fixes]
-    K --> L[Use Origin Validation]
-    K --> M[Use CORS Middleware]
+    J --> K["💡 Suggest Fixes"]
+    K --> L["Use Origin Validation"]
+    K --> M["Use CORS Middleware"]
 
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
@@ -191,7 +190,9 @@ flowchart TD
     class J errorNode
     class E,F,G,H,I processNode
     class C skipNode
+
 ```
+
 
 ## Best Practices
 
@@ -299,12 +300,11 @@ app.use(
 );
 ```
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

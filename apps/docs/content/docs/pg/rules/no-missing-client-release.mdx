@@ -1,8 +1,7 @@
 ---
-title: no-missing-client-release
-description: Ensures acquired pool clients are released back to the pool.
+title: "no-missing-client-release"
+description: "Ensures acquired pool clients are released back to the pool."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -59,12 +58,11 @@ async function simpleQuery() {
    Fix: Add client.release() in a finally block
 ```
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

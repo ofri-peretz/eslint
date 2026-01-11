@@ -114,14 +114,13 @@ By using these exported types, you get:
 
 All exported types follow this naming convention:
 
-| Rule Name                   | Type Name                       |
-| --------------------------- | ------------------------------- |
-| `img-requires-alt`          | `ImgRequiresAltOptions`         |
-| `no-circular-dependencies`  | `NoCircularDependenciesOptions` |
-| `react-no-inline-functions` | `ReactNoInlineFunctionsOptions` |
-| `no-console-log`            | `NoConsoleLogOptions`           |
-| `cognitive-complexity`      | `CognitiveComplexityOptions`    |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| `img-requires-alt` |  |  |  |  |  |  |  |  |  |
+| `no-circular-dependencies` |  |  |  |  |  |  |  |  |  |
+| `react-no-inline-functions` |  |  |  |  |  |  |  |  |  |
+| `no-console-log` |  |  |  |  |  |  |  |  |  |
+| `cognitive-complexity` |  |  |  |  |  |  |  |  |  |
 ## Implementation Details
 
 ### File Structure

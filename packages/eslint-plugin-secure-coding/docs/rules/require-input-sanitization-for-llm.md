@@ -6,6 +6,25 @@ Enforce input sanitization before LLM API calls.
 **CWE**: [CWE-20](https://cwe.mitre.org/data/definitions/20.html)  
 **Severity**: 🔴 High
 
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-20 OWASP:A06 CVSS:7.5 | Improper Input Validation detected | HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-20](https://cwe.mitre.org/data/definitions/20.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Improper Input Validation detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/) |
+
 ## Rule Details
 
 Requires all user input to be sanitized before being passed to LLM APIs.
@@ -82,4 +101,3 @@ myAI.complete(userPrompt);
 ```
 
 **Mitigation**: Apply rule to wrapper implementations.
-

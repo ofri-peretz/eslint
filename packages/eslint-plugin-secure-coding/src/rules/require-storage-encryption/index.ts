@@ -20,10 +20,6 @@ export const requireStorageEncryption = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       description: 'Require encryption for persistent storage',
-      category: 'Security',
-      recommended: true,
-      owaspMobile: ['M9'],
-      cweIds: ["CWE-311"],
     },
     messages: {
       violationDetected: formatLLMMessage({
@@ -44,11 +40,13 @@ export const requireStorageEncryption = createRule<RuleOptions, MessageIds>({
       
       CallExpression(node: TSESTree.CallExpression) {
         if (node.callee.type === 'MemberExpression' &&
+            node.callee.property.type === 'Identifier' &&
             ['setItem', 'writeFile'].includes(node.callee.property.name)) {
           // Check for encryption wrapper
           const hasEncryption = node.arguments.some(arg =>
             arg.type === 'CallExpression' &&
-            arg.callee.name?.includes('encrypt')
+            arg.callee.type === 'Identifier' &&
+            arg.callee.name.includes('encrypt')
           );
           if (!hasEncryption) {
             context.report({ node, messageId: 'violationDetected' });

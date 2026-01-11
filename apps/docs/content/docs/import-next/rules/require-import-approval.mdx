@@ -1,15 +1,12 @@
 ---
-title: require-import-approval
-description: "💼 This rule is enabled in the following configs: recommended, typescript."
+title: "require-import-approval"
+description: "Enforce explicit approval for high-risk package imports"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 💼 This rule is enabled in the following configs: `recommended`, `typescript`.
 💡 This rule is automatically fixable by the `--fix` CLI option.
-
-{/*  end auto-generated rule header  */}
 
 Enforce explicit approval for high-risk package imports
 
@@ -85,22 +82,9 @@ This rule aims to prevent issues related to require-import-approval.
 
 ## Implementation
 
-- [Source Code](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/src/rules/require-import-approval.ts)
-- [Test Cases](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/src/tests/require-import-approval.test.ts)
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/require-import-approval.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/require-import-approval.test.ts)
 
-## OWASP
+## OWASP Foundation
 
-- **Category**: [General Security](https://owasp.org/www-project-top-ten/)
-
-<WhenNotToUse />
-
-## Known False Negatives
-
-<FalseNegativeCTA />
-
-This rule uses pattern-based detection. The following may not be caught:
-
-- **Dynamic patterns** - Runtime-generated code or values
-- **Indirect references** - Values passed through multiple variables or functions
-- **External data** - Data from APIs, databases, or user input
-
+- **Category**: A00:2021 - General Security

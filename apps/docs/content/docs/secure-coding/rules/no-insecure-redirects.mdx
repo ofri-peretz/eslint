@@ -1,8 +1,7 @@
 ---
-title: no-insecure-redirects
-description: "ESLint Rule: no-insecure-redirects. This rule is part of eslint-plugin-secure-coding."
+title: "no-insecure-redirects"
+description: "ESLint Rule: no-insecure-redirects. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -44,16 +43,18 @@ ESLint Rule: no-insecure-redirects. This rule is part of [`eslint-plugin-secure-
   }
 }}%%
 flowchart TD
-    A[🔍 Detect no insecure redirects] --> B{Valid pattern?}
-    B -->|❌ No| C[🚨 Report violation]
-    B -->|✅ Yes| D[✅ Pass]
+    A["🔍 Detect no insecure redirects"] --> B{"Valid pattern?"}
+    B -->|❌ No| C["🚨 Report violation"]
+    B -->|✅ Yes| D["✅ Pass"]
 
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
 
     class A startNode
     class C errorNode
+
 ```
+
 
 ### Why This Matters
 
@@ -107,12 +108,11 @@ export default [
 
 - [`rule-name`](./rule-name.md) - Description
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

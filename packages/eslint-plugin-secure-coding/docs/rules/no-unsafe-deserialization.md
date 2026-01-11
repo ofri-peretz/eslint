@@ -104,10 +104,22 @@ const obj = safeDeserialize(userInput);
 
 ## Error Message Format
 
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-502 OWASP:A08 CVSS:9.8 | Deserialization of Untrusted Data detected | CRITICAL
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A08_2021/
 ```
-🔒 CWE-502 OWASP:A08-Integrity CVSS:9.8 | Unsafe Deserialization | CRITICAL [SOC2,PCI-DSS,HIPAA]
-   Fix: Use JSON.parse() or safe deserialization libraries | https://cwe.mitre.org/...
-```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-502](https://cwe.mitre.org/data/definitions/502.html) [OWASP:A08](https://owasp.org/Top10/A08_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Deserialization of Untrusted Data detected` |
+| **Severity & Compliance** | Impact assessment | `CRITICAL` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A08_2021-Injection/) |
 
 ## Known False Negatives
 

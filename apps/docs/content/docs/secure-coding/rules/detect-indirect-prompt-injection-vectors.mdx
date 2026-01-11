@@ -1,8 +1,7 @@
 ---
-title: detect-indirect-prompt-injection-vectors
+title: "detect-indirect-prompt-injection-vectors"
 description: "Detect external content (emails, documents, APIs) reaching LLM without validation."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -83,12 +82,11 @@ Without scanning, this gets embedded in RAG context and executed by LLM.
 3. **Allowlist**: Only allow known-safe document types
 4. **Sandboxing**: Process external content in isolated environment
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

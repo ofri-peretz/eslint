@@ -1,8 +1,7 @@
 ---
 title: "require-abort-signal"
-description: Ensures streaming calls have AbortSignal for graceful cancellation.
+description: "This rule identifies streaming AI SDK calls (`streamText`, `streamObject`) that don't include an AbortSignal for cancellation."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -80,12 +79,11 @@ Without abort signals:
 - [`require-max-tokens`](./require-max-tokens.md) - Limit token consumption
 - [`require-error-handling`](./require-error-handling.md) - Handle errors
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

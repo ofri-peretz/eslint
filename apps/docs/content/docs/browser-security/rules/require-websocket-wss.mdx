@@ -1,8 +1,7 @@
 ---
-title: browser-security/require-websocket-wss
-description: "🔒 Require secure WebSocket connections (wss://) instead of unencrypted (ws://)"
+title: "browser-security/require-websocket-wss"
+description: "This rule enforces the use of `wss://` (WebSocket Secure) protocol instead of `ws://` (unencrypted WebSocket). Unencrypted WebSocket connections are vulnerable "
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -26,7 +25,9 @@ sequenceDiagram
     A->>A: Reads/modifies data
     A->>C: Sends (modified) data
     Note over A: Attacker can read<br/>and modify all traffic!
+
 ```
+
 
 When you use `ws://`:
 
@@ -112,12 +113,11 @@ However, **always use `wss://` in production**. The performance overhead of TLS 
 - [MDN: WebSocket API](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
 - [CVE-2024-37890: WebSocket DoS Vulnerability](https://nvd.nist.gov/vuln/detail/CVE-2024-37890)
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

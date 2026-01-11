@@ -1,8 +1,7 @@
 ---
-title: prefer-pool-query
-description: Suggests using pool.query() for single-shot queries instead of manual connect/release.
+title: "prefer-pool-query"
+description: "Suggests using `pool.query()` for single-shot queries instead of manual connect/release."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -83,12 +82,11 @@ async function transferFunds(from: string, to: string, amount: number) {
 - When you need session variables or prepared statements
 - When connection reuse is critical for performance
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

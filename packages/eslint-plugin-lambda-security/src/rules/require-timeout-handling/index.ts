@@ -62,7 +62,6 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.WARNING,
         issueName: 'Missing Timeout Handling',
         cwe: 'CWE-400',
-        owasp: 'SAS-7',
         cvss: 6.0,
         description:
           'Lambda handler makes external calls without timeout handling. Function may timeout without cleanup.',

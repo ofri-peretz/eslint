@@ -4,7 +4,7 @@
  * @see https://cwe.mitre.org/data/definitions/494.html
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -20,10 +20,6 @@ export const noDynamicDependencyLoading = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       description: 'Prevent runtime dependency injection with dynamic paths',
-      category: 'Security',
-      recommended: true,
-      owaspMobile: ['M2'],
-      cweIds: ['CWE-494'],
     },
     messages: {
       violationDetected: formatLLMMessage({
@@ -43,7 +39,11 @@ export const noDynamicDependencyLoading = createRule<RuleOptions, MessageIds>({
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // Dynamic require
-        if (node.callee.name === 'require' && node.arguments[0]?.type !== 'Literal') {
+        if (
+          node.callee.type === AST_NODE_TYPES.Identifier &&
+          node.callee.name === 'require' &&
+          node.arguments[0]?.type !== AST_NODE_TYPES.Literal
+        ) {
           context.report({ node, messageId: 'violationDetected' });
         }
       },

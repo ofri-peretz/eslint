@@ -135,7 +135,13 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
             checkNode(child as TSESTree.Node);
           } else if (Array.isArray(child)) {
             for (const item of child) {
-              if (item !== null && item !== undefined && typeof item === 'object' && 'type' in item) {
+              // Use Object.prototype.hasOwnProperty to avoid 'in' operator narrowing issues
+              if (
+                item !== null &&
+                item !== undefined &&
+                typeof item === 'object' &&
+                Object.prototype.hasOwnProperty.call(item, 'type')
+              ) {
                 checkNode(item as TSESTree.Node);
               }
             }

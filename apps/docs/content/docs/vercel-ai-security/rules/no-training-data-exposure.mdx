@@ -1,8 +1,7 @@
 ---
 title: "no-training-data-exposure"
-description: Prevents user data from being sent to LLM training endpoints.
+description: "This rule identifies code patterns where user data might be sent to LLM training endpoints or when training data collection is enabled."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -70,12 +69,11 @@ Exposing user data to training can:
 - **Compliance violations** - GDPR, CCPA violations
 - **IP leakage** - Proprietary information exposed
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

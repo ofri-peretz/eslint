@@ -154,3 +154,22 @@ const tools = createConfirmableTools({ deleteFile: deleteFn });
 - [OWASP LLM06: Excessive Agency](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
 - [OWASP ASI09: Human-Agent Trust Exploitation](https://owasp.org)
 - [CWE-862: Missing Authorization](https://cwe.mitre.org/data/definitions/862.html)
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-862 OWASP:A01 CVSS:8.1 | Missing Authorization detected | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-862](https://cwe.mitre.org/data/definitions/862.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:8.1](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Missing Authorization detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/) |

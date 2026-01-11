@@ -20,10 +20,6 @@ export const noSensitiveDataInCache = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       description: 'Prevent caching sensitive data without encryption',
-      category: 'Security',
-      recommended: true,
-      owaspMobile: ['M9'],
-      cweIds: ["CWE-524"],
     },
     messages: {
       violationDetected: formatLLMMessage({

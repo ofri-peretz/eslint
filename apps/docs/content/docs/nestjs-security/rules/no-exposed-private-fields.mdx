@@ -1,10 +1,9 @@
 ---
-title: no-exposed-private-fields
-description: Detect exposed sensitive fields in DTOs/entities
+title: "no-exposed-private-fields"
+description: "This rule detects sensitive fields (like passwords, tokens, secrets) in entity or DTO classes that are not excluded from serialization, which can lead to accide"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from '@/components/RuleComponents';
-import { Callout } from 'fumadocs-ui/components/callout';
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Detect exposed sensitive fields in DTOs/entities
 
@@ -76,19 +75,12 @@ class UsersController {
 
 - For internal DTOs not used in API responses
 - For DTOs that are explicitly mapped before sending to clients
-- When using serialization libraries (e.g., `class-transformer` with `ClassSerializerInterceptor`) that provide runtime protection
-
-<Callout type="info">
-  **Advanced Topic**: For a deep dive into response security patterns across
-  Express, NestJS, and other frameworks, see [API Response
-  Security](/docs/concepts/dto-serialization-security).
-</Callout>
 
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

@@ -20,10 +20,6 @@ export const requireSecureDefaults = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       description: 'Ensure secure default configurations',
-      category: 'Security',
-      recommended: true,
-      owaspMobile: ['M8'],
-      cweIds: ["CWE-453"],
     },
     messages: {
       violationDetected: formatLLMMessage({

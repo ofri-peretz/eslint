@@ -61,20 +61,22 @@ flowchart TD
 
 ## Error Message Format
 
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-915 OWASP:A01 CVSS:9.8 | Object Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
 ```
-🚨 Security: Prototype Pollution Risk | obj[userKey] = value | src/config.ts:34
-📊 Risk Level: CRITICAL (CWE-915: Improperly Controlled Modification of Object Prototype)
-🔍 Issue: Prototype pollution allows modifying object prototypes or injecting properties
-💡 Safe Alternative: Object.create(null) or Map
-🔧 Refactoring Steps:
-   1. Use Map instead of plain objects: new Map()
-   2. Use Object.create(null) for prototype-free objects
-   3. Avoid direct property assignment with user input
-   4. Implement property whitelisting
-   5. Consider freezing Object.prototype in secure contexts
-⏱️  Estimated effort: 15-20 minutes
-🔗 Security Impact: Prevents prototype chain manipulation
-```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-915](https://cwe.mitre.org/data/definitions/915.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Object Injection detected` |
+| **Severity & Compliance** | Impact assessment | `CRITICAL [SOC2,PCI-DSS,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/) |
 
 ## Configuration
 

@@ -23,6 +23,25 @@ Detects missing authentication checks in route handlers. This rule is part of [`
 
 **Risk:** Unauthorized access to sensitive data or functionality. This can lead to data breaches, modification of data by unauthorized users, or access to privileged administrative functions.
 
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-287 OWASP:A07 CVSS:9.8 | Improper Authentication detected | CRITICAL
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A07_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-287](https://cwe.mitre.org/data/definitions/287.html) [OWASP:A07](https://owasp.org/Top10/A07_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Improper Authentication detected` |
+| **Severity & Compliance** | Impact assessment | `CRITICAL` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A07_2021-Injection/) |
+
 ## Rule Details
 
 Missing authentication checks allow unauthorized access to protected resources. This rule detects route handlers that don't have authentication middleware configured.

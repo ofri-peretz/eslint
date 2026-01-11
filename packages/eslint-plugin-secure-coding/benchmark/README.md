@@ -48,20 +48,19 @@ npm run benchmark:fair    # Apples-to-apples comparison
 
 #### Rule-by-Rule Detection (Same Categories)
 
-| Rule Category            | `security` | `secure-coding` | Difference |
-| ------------------------ | ---------- | --------------- | ---------- |
-| Timing Attacks           | 1          | **5**           | +4 🟢      |
-| Child Process            | 2          | **4**           | +2 🟢      |
-| Non-literal Regexp       | 1          | **3**           | +2 🟢      |
-| Eval/Code Execution      | 1          | **2**           | +1 🟢      |
-| Insufficient Randomness  | 0          | **1**           | +1 🟢      |
-| FS Path Traversal        | 5          | 5               | =          |
-| Object Injection         | 5          | 5               | =          |
-| Dynamic Require          | 2          | 2               | =          |
-| Unsafe Regex             | 2          | 2               | =          |
-| Buffer (deprecated APIs) | 2          | 0               | -2 🔵      |
-| **TOTAL**                | **21**     | **29**          | **+8**     |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| Timing Attacks |  |  |  |  |  |  |  |  |  |
+| Child Process |  |  |  |  |  |  |  |  |  |
+| Non-literal Regexp |  |  |  |  |  |  |  |  |  |
+| Eval/Code Execution |  |  |  |  |  |  |  |  |  |
+| Insufficient Randomness |  |  |  |  |  |  |  |  |  |
+| FS Path Traversal |  |  |  |  |  |  |  |  |  |
+| Object Injection |  |  |  |  |  |  |  |  |  |
+| Dynamic Require |  |  |  |  |  |  |  |  |  |
+| Unsafe Regex |  |  |  |  |  |  |  |  |  |
+| Buffer (deprecated APIs) |  |  |  |  |  |  |  |  |  |
+| **TOTAL** |  |  |  |  |  |  |  |  |  |
 ---
 
 ## 🔍 LLM/AI Message Comparison

@@ -77,36 +77,34 @@ export default [vercelAISecurity.configs.recommended];
 
 ### 🛡️ OWASP LLM Top 10 2025 (10/10 ✅)
 
-| Rule                                                                         | CWE     | OWASP | CVSS | Description                                                 | 💼  | ⚠️  | 💡  |
-| :--------------------------------------------------------------------------- | :------ | :---- | :--- | :---------------------------------------------------------- | :-: | :-: | :-: |
-| [require-validated-prompt](./docs/rules/require-validated-prompt.md)         | CWE-74  | LLM01 | 9.0  | Prevent prompt injection via input validation               | 💼  |     |     |
-| [no-sensitive-in-prompt](./docs/rules/no-sensitive-in-prompt.md)             | CWE-200 | LLM02 | 8.0  | Prevent sensitive data (secrets, PII) in prompts            | 💼  |     |     |
-| [no-training-data-exposure](./docs/rules/no-training-data-exposure.md)       | CWE-359 | LLM03 | 7.0  | Prevent user data exposure to training endpoints            |     | ⚠️  |     |
-| [require-request-timeout](./docs/rules/require-request-timeout.md)           | CWE-400 | LLM04 | 5.0  | Require timeouts for AI calls to prevent DoS                |     | ⚠️  |     |
-| [no-unsafe-output-handling](./docs/rules/no-unsafe-output-handling.md)       | CWE-94  | LLM05 | 9.8  | Prevent unsafe use of AI output (eval, SQL, HTML)           | 💼  |     |     |
-| [require-tool-confirmation](./docs/rules/require-tool-confirmation.md)       | CWE-862 | LLM06 | 7.0  | Require confirmation for destructive tool usage             | 💼  |     |     |
-| [no-system-prompt-leak](./docs/rules/no-system-prompt-leak.md)               | CWE-200 | LLM07 | 7.5  | Prevent system prompt leakage in responses                  | 💼  |     |     |
-| [require-embedding-validation](./docs/rules/require-embedding-validation.md) | CWE-20  | LLM08 | 5.5  | Validate embeddings before storage/search                   |     |     | 💡  |
-| [require-output-validation](./docs/rules/require-output-validation.md)       | CWE-707 | LLM09 | 5.0  | Validate AI output before display to prevent misinformation |     |     | 💡  |
-| [require-max-tokens](./docs/rules/require-max-tokens.md)                     | CWE-770 | LLM10 | 6.5  | Require `maxTokens` limit to prevent exhaustion             |     | ⚠️  |     |
-| [require-max-steps](./docs/rules/require-max-steps.md)                       | CWE-834 | LLM10 | 6.5  | Require `maxSteps` for multi-step tools                     |     | ⚠️  |     |
-| [require-abort-signal](./docs/rules/require-abort-signal.md)                 | CWE-404 | LLM10 | 4.0  | Require `abortSignal` for cancellable streams               |     |     | 💡  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [require-validated-prompt](./docs/rules/require-validated-prompt.md) | CWE-74 | LLM01 | 9.0 | Prevent prompt injection via input validation | 💼 |  |  |  |  |
+| [no-sensitive-in-prompt](./docs/rules/no-sensitive-in-prompt.md) | CWE-200 | LLM02 | 8.0 | Prevent sensitive data (secrets, PII) in prompts | 💼 |  |  |  |  |
+| [no-training-data-exposure](./docs/rules/no-training-data-exposure.md) | CWE-359 | LLM03 | 7.0 | Prevent user data exposure to training endpoints |  | ⚠️ |  |  |  |
+| [require-request-timeout](./docs/rules/require-request-timeout.md) | CWE-400 | LLM04 | 5.0 | Require timeouts for AI calls to prevent DoS |  | ⚠️ |  |  |  |
+| [no-unsafe-output-handling](./docs/rules/no-unsafe-output-handling.md) | CWE-94 | LLM05 | 9.8 | Prevent unsafe use of AI output (eval, SQL, HTML) | 💼 |  |  |  |  |
+| [require-tool-confirmation](./docs/rules/require-tool-confirmation.md) | CWE-862 | LLM06 | 7.0 | Require confirmation for destructive tool usage | 💼 |  |  |  |  |
+| [no-system-prompt-leak](./docs/rules/no-system-prompt-leak.md) | CWE-200 | LLM07 | 7.5 | Prevent system prompt leakage in responses | 💼 |  |  |  |  |
+| [require-embedding-validation](./docs/rules/require-embedding-validation.md) | CWE-20 | LLM08 | 5.5 | Validate embeddings before storage/search |  |  |  | 💡 |  |
+| [require-output-validation](./docs/rules/require-output-validation.md) | CWE-707 | LLM09 | 5.0 | Validate AI output before display to prevent misinformation |  |  |  | 💡 |  |
+| [require-max-tokens](./docs/rules/require-max-tokens.md) | CWE-770 | LLM10 | 6.5 | Require `maxTokens` limit to prevent exhaustion |  | ⚠️ |  |  |  |
+| [require-max-steps](./docs/rules/require-max-steps.md) | CWE-834 | LLM10 | 6.5 | Require `maxSteps` for multi-step tools |  | ⚠️ |  |  |  |
+| [require-abort-signal](./docs/rules/require-abort-signal.md) | CWE-404 | LLM10 | 4.0 | Require `abortSignal` for cancellable streams |  |  |  | 💡 |  |
 ### 🤖 OWASP Agentic Top 10 2026 (9/10 ✅)
 
-| Rule                                                                             | CWE     | OWASP | CVSS | Description                                          | 💼  | ⚠️  | 💡  |
-| :------------------------------------------------------------------------------- | :------ | :---- | :--- | :--------------------------------------------------- | :-: | :-: | :-: |
-| [no-dynamic-system-prompt](./docs/rules/no-dynamic-system-prompt.md)             | CWE-74  | ASI01 | 8.0  | Prevent dynamic system prompts (Agent Confusion)     | 💼  |     |     |
-| [require-tool-schema](./docs/rules/require-tool-schema.md)                       | CWE-20  | ASI02 | 7.5  | Require Zod schemas for all tool parameters          |     | ⚠️  |     |
-| [no-hardcoded-api-keys](./docs/rules/no-hardcoded-api-keys.md)                   | CWE-798 | ASI03 | 8.5  | Prevent hardcoded API keys in configuration          | 💼  |     |     |
-| [require-output-filtering](./docs/rules/require-output-filtering.md)             | CWE-200 | ASI04 | 6.5  | Filter sensitive data returned by tools              |     | ⚠️  |     |
-| [no-unsafe-output-handling](./docs/rules/no-unsafe-output-handling.md)           | CWE-94  | ASI05 | 9.8  | Prevent unexpected code execution from AI output     | 💼  |     |     |
-| **ASI06: Memory Corruption**                                                     | -       | ASI06 | -    | _N/A (TypeScript/JS is memory-safe)_                 |  -  |  -  |  -  |
-| [require-rag-content-validation](./docs/rules/require-rag-content-validation.md) | CWE-74  | ASI07 | 6.0  | Validate RAG content before use in prompts           |     | ⚠️  |     |
-| [require-error-handling](./docs/rules/require-error-handling.md)                 | CWE-755 | ASI08 | 5.0  | Require error handling to prevent cascading failures |     |     | 💡  |
-| [require-tool-confirmation](./docs/rules/require-tool-confirmation.md)           | CWE-862 | ASI09 | 7.0  | Require human-in-the-loop for sensitive actions      | 💼  |     |     |
-| [require-audit-logging](./docs/rules/require-audit-logging.md)                   | CWE-778 | ASI10 | 4.0  | Suggest audit logging for AI operations              |     |     | 💡  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-dynamic-system-prompt](./docs/rules/no-dynamic-system-prompt.md) | CWE-74 | ASI01 | 8.0 | Prevent dynamic system prompts (Agent Confusion) | 💼 |  |  |  |  |
+| [require-tool-schema](./docs/rules/require-tool-schema.md) | CWE-20 | ASI02 | 7.5 | Require Zod schemas for all tool parameters |  | ⚠️ |  |  |  |
+| [no-hardcoded-api-keys](./docs/rules/no-hardcoded-api-keys.md) | CWE-798 | ASI03 | 8.5 | Prevent hardcoded API keys in configuration | 💼 |  |  |  |  |
+| [require-output-filtering](./docs/rules/require-output-filtering.md) | CWE-200 | ASI04 | 6.5 | Filter sensitive data returned by tools |  | ⚠️ |  |  |  |
+| [no-unsafe-output-handling](./docs/rules/no-unsafe-output-handling.md) | CWE-94 | ASI05 | 9.8 | Prevent unexpected code execution from AI output | 💼 |  |  |  |  |
+| **ASI06: Memory Corruption** | - | ASI06 | - | _N/A (TypeScript/JS is memory-safe)_ | - | - |  | - |  |
+| [require-rag-content-validation](./docs/rules/require-rag-content-validation.md) | CWE-74 | ASI07 | 6.0 | Validate RAG content before use in prompts |  | ⚠️ |  |  |  |
+| [require-error-handling](./docs/rules/require-error-handling.md) | CWE-755 | ASI08 | 5.0 | Require error handling to prevent cascading failures |  |  |  | 💡 |  |
+| [require-tool-confirmation](./docs/rules/require-tool-confirmation.md) | CWE-862 | ASI09 | 7.0 | Require human-in-the-loop for sensitive actions | 💼 |  |  |  |  |
+| [require-audit-logging](./docs/rules/require-audit-logging.md) | CWE-778 | ASI10 | 4.0 | Suggest audit logging for AI operations |  |  |  | 💡 |  |
 ---
 
 ## 🔧 Supported AI SDK Functions
@@ -158,18 +156,17 @@ All rule messages follow a structured format optimized for AI coding assistants:
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin                                                                                           |                                                              Downloads                                                               | Description                                                  | Rules |
-| ------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------: | ------------------------------------------------------------ | :---: |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)       |    [![npm](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://npmjs.com/package/eslint-plugin-secure-coding)    | Universal security (OWASP Top 10 Web + Mobile)               |  89   |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                           |              [![npm](https://img.shields.io/npm/dm/eslint-plugin-jwt.svg)](https://npmjs.com/package/eslint-plugin-jwt)              | JWT security (algorithm confusion, weak secrets, claims)     |  13   |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                     |           [![npm](https://img.shields.io/npm/dm/eslint-plugin-crypto.svg)](https://npmjs.com/package/eslint-plugin-crypto)           | Cryptographic best practices (weak algorithms, key handling) |  24   |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                             |               [![npm](https://img.shields.io/npm/dm/eslint-plugin-pg.svg)](https://npmjs.com/package/eslint-plugin-pg)               | PostgreSQL/node-postgres security                            |  13   |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![npm](https://img.shields.io/npm/dm/eslint-plugin-express-security.svg)](https://npmjs.com/package/eslint-plugin-express-security) | Express.js security (CORS, cookies, CSRF, helmet)            |   8   |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)   |  [![npm](https://img.shields.io/npm/dm/eslint-plugin-nestjs-security.svg)](https://npmjs.com/package/eslint-plugin-nestjs-security)  | NestJS security (guards, validation pipes, throttler)        |   5   |
-| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)   |  [![npm](https://img.shields.io/npm/dm/eslint-plugin-lambda-security.svg)](https://npmjs.com/package/eslint-plugin-lambda-security)  | AWS Lambda/Middy security (API Gateway, CORS, secrets)       |   5   |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![npm](https://img.shields.io/npm/dm/eslint-plugin-browser-security.svg)](https://npmjs.com/package/eslint-plugin-browser-security) | Browser security (XSS, postMessage, storage, cookies)        |  21   |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)           |      [![npm](https://img.shields.io/npm/dm/eslint-plugin-import-next.svg)](https://npmjs.com/package/eslint-plugin-import-next)      | High-performance import linting                              |  12   |
-
+| Plugin                                                                                           |                                                              Downloads                                                               | Description                                                  | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |  |  |  |  |  |  |  |  |  |
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)

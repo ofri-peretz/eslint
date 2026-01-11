@@ -1,8 +1,7 @@
 ---
-title: no-privilege-escalation
-description: Detects potential privilege escalation vulnerabilities where user input is used to assign roles or permissions without proper validation. This rule is part of e
+title: "no-privilege-escalation"
+description: "Detects potential privilege escalation vulnerabilities where user input is used to assign roles or permissions without proper validation. This rule is part of ["
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -28,6 +27,25 @@ Detects potential privilege escalation vulnerabilities where user input is used 
 **Vulnerability:** Privilege escalation (specifically vertical privilege escalation) occurs when an attacker can access resources or functions reserved for higher-privileged users (like admins) by manipulating inputs used in role assignment or authorization checks.
 
 **Risk:** Attackers can grant themselves administrative privileges, accessing unauthorized data, deleting critical resources, or taking full control of the application.
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-269 OWASP:A01 CVSS:8.8 | Improper Privilege Management detected | HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-269](https://cwe.mitre.org/data/definitions/269.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:8.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Improper Privilege Management detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/) |
 
 ## Rule Details
 
@@ -151,12 +169,11 @@ app.post('/api/grant', (req, res) => {
 4. **Audit logs**: Log all privilege changes for security auditing
 5. **Separate concerns**: Keep role assignment logic separate from user input handling
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

@@ -79,12 +79,22 @@ await verifyPermission('admin:read');
 
 ## Error Message Format
 
-When triggered, this rule produces:
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
+```text
+⚠️ CWE-602 OWASP:A06 CVSS:6.5 | Client-Side Enforcement of Server-Side Security detected | MEDIUM
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
 ```
-🔒 CWE-602 | Client-Side Auth Logic | CRITICAL
-   Fix: Move authentication checks to the server | https://cwe.mitre.org/data/definitions/602.html
-```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-602](https://cwe.mitre.org/data/definitions/602.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:6.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Client-Side Enforcement of Server-Side Security detected` |
+| **Severity & Compliance** | Impact assessment | `MEDIUM` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/) |
 
 ## Known False Negatives
 

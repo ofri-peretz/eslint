@@ -1,8 +1,7 @@
 ---
-title: no-algorithm-none
-description: "Disallow JWT 'none' algorithm which bypasses signature verification (CVE-2022-23540)"
+title: "no-algorithm-none"
+description: "**Severity:** \udd34 Critical"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -69,12 +68,11 @@ jwt.verify(token, secret, { algorithms: ['HS256'] });
 
 Never disable this rule in production code. You may use `allowInTests: true` for security testing.
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

@@ -33,7 +33,7 @@ export default function NotFound() {
           404 - Page Not Found
         </h1>
         <p className="text-fd-muted-foreground text-lg mb-12 max-w-xl mx-auto">
-          The page you're looking for doesn't exist. It might have been moved to a new section of our security ecosystem.
+          The page you&apos;re looking for doesn&apos;t exist. It might have been moved to a new section of our security ecosystem.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">

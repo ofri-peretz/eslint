@@ -2,6 +2,25 @@
 
 > Security rule for mobile applications
 
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-494 OWASP:A08 CVSS:8.1 | Download of Code Without Integrity Check detected | HIGH
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A08_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-494](https://cwe.mitre.org/data/definitions/494.html) [OWASP:A08](https://owasp.org/Top10/A08_2021-Injection/) [CVSS:8.1](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Download of Code Without Integrity Check detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A08_2021-Injection/) |
+
 ## Rule Details
 
 This rule security rule for mobile applications.

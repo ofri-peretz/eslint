@@ -59,34 +59,32 @@ src/components/Display.tsx
 
 ### OWASP Top 10 Web 2021
 
-| Category     | Description               | Rules                                                                                                                                                                                 |
-| ------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **A01:2021** | Broken Access Control     | `no-privilege-escalation`, `no-missing-authorization`, `no-zip-slip`, `detect-non-literal-fs-filename`                                                                                |
-| **A02:2021** | Cryptographic Failures    | ~~`no-weak-crypto`~~, `no-http-urls`, `require-https-only`, ~~`no-timing-attack`~~, ~~`no-insufficient-random`~~, `no-hardcoded-credentials` + **eslint-plugin-jwt/crypto**           |
-| **A03:2021** | Injection                 | `no-sql-injection`, `database-injection`, `detect-eval-with-expression`, `detect-child-process`, `no-xxe-injection`, `no-xpath-injection`, `no-ldap-injection`, `no-unsanitized-html` |
-| **A04:2021** | Insecure Design           | `no-improper-type-validation`, `detect-weak-password-validation`                                                                                                                      |
-| **A05:2021** | Security Misconfiguration | ~~`no-missing-cors-check`~~, ~~`no-missing-security-headers`~~, ~~`no-permissive-cors`~~, `require-csp-headers` + **eslint-plugin-express-security**                                  |
-| **A06:2021** | Vulnerable Components     | `detect-suspicious-dependencies`, `require-package-lock`, `require-dependency-integrity`                                                                                              |
-| **A07:2021** | Auth/Session Failures     | `no-missing-authentication`, ~~`no-insecure-cookie-settings`~~, ~~`no-missing-csrf-protection`~~, `no-weak-password-recovery` + **eslint-plugin-express-security**                    |
-| **A08:2021** | Software/Data Integrity   | `no-unsafe-deserialization`, `no-unsafe-dynamic-require`                                                                                                                              |
-| **A09:2021** | Security Logging          | `no-sensitive-data-exposure`, `no-pii-in-logs`                                                                                                                                        |
-| **A10:2021** | SSRF                      | `no-unvalidated-url-input`, `require-url-validation`                                                                                                                                  |
-
+| Category     | Description               | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| **A01:2021** |  |  |  |  |  |  |  |  |  |
+| **A02:2021** |  |  |  |  |  |  |  |  |  |
+| **A03:2021** |  |  |  |  |  |  |  |  |  |
+| **A04:2021** |  |  |  |  |  |  |  |  |  |
+| **A05:2021** |  |  |  |  |  |  |  |  |  |
+| **A06:2021** |  |  |  |  |  |  |  |  |  |
+| **A07:2021** |  |  |  |  |  |  |  |  |  |
+| **A08:2021** |  |  |  |  |  |  |  |  |  |
+| **A09:2021** |  |  |  |  |  |  |  |  |  |
+| **A10:2021** |  |  |  |  |  |  |  |  |  |
 ### OWASP Mobile Top 10 2024
 
-| Category | Description                    | Rules                                                                                                                                            |
-| -------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **M1**   | Improper Credential Usage      | `no-credentials-in-storage-api`, `no-hardcoded-credentials`                                                                                      |
-| **M2**   | Inadequate Supply Chain        | `detect-suspicious-dependencies`, `require-package-lock`, `require-dependency-integrity`                                                         |
-| **M3**   | Insecure Authentication        | `no-client-side-auth-logic`, `detect-weak-password-validation`                                                                                   |
-| **M4**   | Insufficient Input/Output      | `no-unvalidated-deeplinks`, `require-mime-type-validation`, `require-url-validation`, `no-arbitrary-file-access`                                 |
-| **M5**   | Insecure Communication         | `no-allow-arbitrary-loads`, `no-http-urls`, `require-https-only`, `no-disabled-certificate-validation`                                           |
-| **M6**   | Inadequate Privacy             | `no-pii-in-logs`, `no-tracking-without-consent`, `no-sensitive-data-in-analytics`, `require-data-minimization`                                   |
-| **M7**   | Insufficient Binary Protection | `no-debug-code-in-production`, `require-code-minification`                                                                                       |
-| **M8**   | Security Misconfiguration      | `no-verbose-error-messages`, `require-secure-defaults`                                                                                           |
-| **M9**   | Insecure Data Storage          | `no-sensitive-data-in-cache`, `no-data-in-temp-storage`, `require-secure-deletion`, `require-storage-encryption`, `no-unencrypted-local-storage` |
-| **M10**  | Insufficient Crypto            | `no-weak-crypto`, `require-credential-storage`                                                                                                   |
-
+| Category | Description                    | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| **M1** |  |  |  |  |  |  |  |  |  |
+| **M2** |  |  |  |  |  |  |  |  |  |
+| **M3** |  |  |  |  |  |  |  |  |  |
+| **M4** |  |  |  |  |  |  |  |  |  |
+| **M5** |  |  |  |  |  |  |  |  |  |
+| **M6** |  |  |  |  |  |  |  |  |  |
+| **M7** |  |  |  |  |  |  |  |  |  |
+| **M8** |  |  |  |  |  |  |  |  |  |
+| **M9** |  |  |  |  |  |  |  |  |  |
+| **M10** |  |  |  |  |  |  |  |  |  |
 ---
 
 ## 🔐 75 Active Security Rules
@@ -95,158 +93,145 @@ src/components/Display.tsx
 
 ### Injection Prevention (11 rules)
 
-| Rule                                                                       | CWE     | OWASP | CVSS | Description                                     | 💼  | ⚠️  | 🔧  | 💡  |
-| -------------------------------------------------------------------------- | ------- | ----- | ---- | ----------------------------------------------- | --- | --- | --- | --- |
-| [no-sql-injection](./docs/rules/no-sql-injection.md)                       | CWE-89  | A03   | 9.8  | Prevent SQL injection via string concatenation  | 💼  |     |     |     |
-| [database-injection](./docs/rules/database-injection.md)                   | CWE-89  | A03   | 9.8  | Comprehensive SQL/NoSQL/ORM injection detection | 💼  |     |     |     |
-| [detect-eval-with-expression](./docs/rules/detect-eval-with-expression.md) | CWE-95  | A03   | 9.8  | Detect eval() with dynamic expressions          | 💼  |     |     |     |
-| [detect-child-process](./docs/rules/detect-child-process.md)               | CWE-78  | A03   | 9.8  | Detect command injection in child_process       | 💼  |     |     |     |
-| [no-unsafe-dynamic-require](./docs/rules/no-unsafe-dynamic-require.md)     | CWE-95  | A03   | 7.5  | Forbid dynamic require() calls                  | 💼  |     |     |     |
-| [no-graphql-injection](./docs/rules/no-graphql-injection.md)               | CWE-943 | A03   | 8.6  | Prevent GraphQL injection attacks               | 💼  |     |     |     |
-| [no-xxe-injection](./docs/rules/no-xxe-injection.md)                       | CWE-611 | A03   | 9.1  | Prevent XML External Entity injection           | 💼  |     |     |     |
-| [no-xpath-injection](./docs/rules/no-xpath-injection.md)                   | CWE-643 | A03   | 9.8  | Prevent XPath injection attacks                 | 💼  |     |     |     |
-| [no-ldap-injection](./docs/rules/no-ldap-injection.md)                     | CWE-90  | A03   | 9.8  | Prevent LDAP injection attacks                  | 💼  |     |     |     |
-| [no-directive-injection](./docs/rules/no-directive-injection.md)           | CWE-94  | A03   | 8.8  | Prevent template directive injection            | 💼  |     |     |     |
-| [no-format-string-injection](./docs/rules/no-format-string-injection.md)   | CWE-134 | A03   | 9.8  | Prevent format string vulnerabilities           | 💼  |     |     |     |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-sql-injection](./docs/rules/no-sql-injection.md) | CWE-89 | A03 | 9.8 | Prevent SQL injection via string concatenation | 💼 |  |  |  |  |
+| [database-injection](./docs/rules/database-injection.md) | CWE-89 | A03 | 9.8 | Comprehensive SQL/NoSQL/ORM injection detection | 💼 |  |  |  |  |
+| [detect-eval-with-expression](./docs/rules/detect-eval-with-expression.md) | CWE-95 | A03 | 9.8 | Detect eval() with dynamic expressions | 💼 |  |  |  |  |
+| [detect-child-process](./docs/rules/detect-child-process.md) | CWE-78 | A03 | 9.8 | Detect command injection in child_process | 💼 |  |  |  |  |
+| [no-unsafe-dynamic-require](./docs/rules/no-unsafe-dynamic-require.md) | CWE-95 | A03 | 7.5 | Forbid dynamic require() calls | 💼 |  |  |  |  |
+| [no-graphql-injection](./docs/rules/no-graphql-injection.md) | CWE-943 | A03 | 8.6 | Prevent GraphQL injection attacks | 💼 |  |  |  |  |
+| [no-xxe-injection](./docs/rules/no-xxe-injection.md) | CWE-611 | A03 | 9.1 | Prevent XML External Entity injection | 💼 |  |  |  |  |
+| [no-xpath-injection](./docs/rules/no-xpath-injection.md) | CWE-643 | A03 | 9.8 | Prevent XPath injection attacks | 💼 |  |  |  |  |
+| [no-ldap-injection](./docs/rules/no-ldap-injection.md) | CWE-90 | A03 | 9.8 | Prevent LDAP injection attacks | 💼 |  |  |  |  |
+| [no-directive-injection](./docs/rules/no-directive-injection.md) | CWE-94 | A03 | 8.8 | Prevent template directive injection | 💼 |  |  |  |  |
+| [no-format-string-injection](./docs/rules/no-format-string-injection.md) | CWE-134 | A03 | 9.8 | Prevent format string vulnerabilities | 💼 |  |  |  |  |
 ### Mobile Security (30 rules)
 
 > **Note:** These rules map to OWASP Mobile Top 10 but are **framework-agnostic** and highly effective for general web application security (e.g., preventing PII leaks, insecure communication, and credential misuse).
 
-| Rule                                                                                     | CWE     | OWASP Mobile | CVSS | Description                         | 💼  | ⚠️  | 🔧  | 💡  |
-| ---------------------------------------------------------------------------------------- | ------- | ------------ | ---- | ----------------------------------- | --- | --- | --- | --- |
-| [no-http-urls](./docs/rules/no-http-urls.md)                                             | CWE-319 | M5           | 7.5  | Prevent insecure HTTP URLs          | 💼  |     |     |     |
-| [no-hardcoded-credentials](./docs/rules/no-hardcoded-credentials.md)                     | CWE-798 | M1           | 7.5  | Detect hardcoded secrets            | 💼  |     | 🔧  | 💡  |
-| [no-credentials-in-storage-api](./docs/rules/no-credentials-in-storage-api.md)           | CWE-522 | M1           | 7.5  | Prevent credentials in localStorage | 💼  |     |     |     |
-| [no-credentials-in-query-params](./docs/rules/no-credentials-in-query-params.md)         | CWE-598 | M1           | 7.5  | Detect credentials in URLs          | 💼  |     |     |     |
-| [no-allow-arbitrary-loads](./docs/rules/no-allow-arbitrary-loads.md)                     | CWE-295 | M5           | 7.5  | Prevent insecure ATS configuration  |     |     |     |     |
-| [no-disabled-certificate-validation](./docs/rules/no-disabled-certificate-validation.md) | CWE-295 | M5           | 7.5  | Detect disabled cert validation     |     |     |     |     |
-| [require-https-only](./docs/rules/require-https-only.md)                                 | CWE-319 | M5           | 7.5  | Enforce HTTPS-only connections      | 💼  |     |     |     |
-| [require-network-timeout](./docs/rules/require-network-timeout.md)                       | CWE-400 | M5           | 7.5  | Require network timeouts            |     |     |     |     |
-| [detect-weak-password-validation](./docs/rules/detect-weak-password-validation.md)       | CWE-521 | M3           | 7.5  | Detect weak password requirements   |     |     |     |     |
-| [no-client-side-auth-logic](./docs/rules/no-client-side-auth-logic.md)                   | CWE-602 | M3           | 7.5  | Prevent client-side auth            |     |     |     |     |
-| [no-hardcoded-session-tokens](./docs/rules/no-hardcoded-session-tokens.md)               | CWE-798 | M3           | 9.8  | Detect hardcoded session tokens     | 💼  |     |     |     |
-| [no-unvalidated-deeplinks](./docs/rules/no-unvalidated-deeplinks.md)                     | CWE-939 | M4           | 7.5  | Require deeplink validation         | 💼  |     |     |     |
-| [require-url-validation](./docs/rules/require-url-validation.md)                         | CWE-601 | M4           | 7.5  | Require URL validation              |     |     |     |     |
-| [require-mime-type-validation](./docs/rules/require-mime-type-validation.md)             | CWE-434 | M4           | 7.5  | Require MIME type validation        |     |     |     |     |
-| [no-arbitrary-file-access](./docs/rules/no-arbitrary-file-access.md)                     | CWE-22  | M4           | 7.5  | Prevent path traversal              |     |     |     |     |
-| [no-pii-in-logs](./docs/rules/no-pii-in-logs.md)                                         | CWE-532 | M6           | 7.5  | Prevent PII in logs                 |     | ⚠️  |     |     |
-| [no-tracking-without-consent](./docs/rules/no-tracking-without-consent.md)               | CWE-359 | M6           | 7.5  | Require tracking consent            |     |     |     |     |
-| [no-sensitive-data-in-analytics](./docs/rules/no-sensitive-data-in-analytics.md)         | CWE-359 | M6           | 7.5  | Prevent PII in analytics            |     |     |     |     |
-| [require-data-minimization](./docs/rules/require-data-minimization.md)                   | CWE-213 | M6           | 7.5  | Identify excessive data collection  |     |     |     |     |
-| [no-debug-code-in-production](./docs/rules/no-debug-code-in-production.md)               | CWE-489 | M7           | 7.5  | Detect debug code                   |     |     |     |     |
-| [require-code-minification](./docs/rules/require-code-minification.md)                   | CWE-656 | M7           | 7.5  | Require minification config         |     |     |     |     |
-| [no-verbose-error-messages](./docs/rules/no-verbose-error-messages.md)                   | CWE-209 | M8           | 7.5  | Prevent stack trace exposure        |     | ⚠️  |     |     |
-| [require-secure-defaults](./docs/rules/require-secure-defaults.md)                       | CWE-276 | M8           | 7.5  | Require secure default configs      |     |     |     |     |
-| [no-sensitive-data-in-cache](./docs/rules/no-sensitive-data-in-cache.md)                 | CWE-524 | M9           | 7.5  | Prevent sensitive cache data        |     |     |     |     |
-| [no-data-in-temp-storage](./docs/rules/no-data-in-temp-storage.md)                       | CWE-312 | M9           | 7.5  | Prevent sensitive temp data         |     |     |     |     |
-| [require-secure-deletion](./docs/rules/require-secure-deletion.md)                       | CWE-459 | M9           | 7.5  | Require secure data deletion        |     |     |     |     |
-| [require-storage-encryption](./docs/rules/require-storage-encryption.md)                 | CWE-311 | M9           | 7.5  | Require encrypted storage           |     |     |     |     |
-| [no-unencrypted-local-storage](./docs/rules/no-unencrypted-local-storage.md)             | CWE-312 | M9           | 7.5  | Prevent unencrypted local storage   |     |     |     |     |
-| [require-credential-storage](./docs/rules/require-credential-storage.md)                 | CWE-522 | M10          | 7.5  | Require secure credential storage   |     |     |     |     |
-| [no-exposed-debug-endpoints](./docs/rules/no-exposed-debug-endpoints.md)                 | CWE-489 | M8           | 7.5  | Prevent exposed debug endpoints     |     |     |     |     |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-http-urls](./docs/rules/no-http-urls.md) | CWE-319 | M5 | 7.5 | Prevent insecure HTTP URLs | 💼 |  |  |  |  |
+| [no-hardcoded-credentials](./docs/rules/no-hardcoded-credentials.md) | CWE-798 | M1 | 7.5 | Detect hardcoded secrets | 💼 |  | 🔧 | 💡 |  |
+| [no-credentials-in-storage-api](./docs/rules/no-credentials-in-storage-api.md) | CWE-522 | M1 | 7.5 | Prevent credentials in localStorage | 💼 |  |  |  |  |
+| [no-credentials-in-query-params](./docs/rules/no-credentials-in-query-params.md) | CWE-598 | M1 | 7.5 | Detect credentials in URLs | 💼 |  |  |  |  |
+| [no-allow-arbitrary-loads](./docs/rules/no-allow-arbitrary-loads.md) | CWE-295 | M5 | 7.5 | Prevent insecure ATS configuration |  |  |  |  |  |
+| [no-disabled-certificate-validation](./docs/rules/no-disabled-certificate-validation.md) | CWE-295 | M5 | 7.5 | Detect disabled cert validation |  |  |  |  |  |
+| [require-https-only](./docs/rules/require-https-only.md) | CWE-319 | M5 | 7.5 | Enforce HTTPS-only connections | 💼 |  |  |  |  |
+| [require-network-timeout](./docs/rules/require-network-timeout.md) | CWE-400 | M5 | 7.5 | Require network timeouts |  |  |  |  |  |
+| [detect-weak-password-validation](./docs/rules/detect-weak-password-validation.md) | CWE-521 | M3 | 7.5 | Detect weak password requirements |  |  |  |  |  |
+| [no-client-side-auth-logic](./docs/rules/no-client-side-auth-logic.md) | CWE-602 | M3 | 7.5 | Prevent client-side auth |  |  |  |  |  |
+| [no-hardcoded-session-tokens](./docs/rules/no-hardcoded-session-tokens.md) | CWE-798 | M3 | 9.8 | Detect hardcoded session tokens | 💼 |  |  |  |  |
+| [no-unvalidated-deeplinks](./docs/rules/no-unvalidated-deeplinks.md) | CWE-939 | M4 | 7.5 | Require deeplink validation | 💼 |  |  |  |  |
+| [require-url-validation](./docs/rules/require-url-validation.md) | CWE-601 | M4 | 7.5 | Require URL validation |  |  |  |  |  |
+| [require-mime-type-validation](./docs/rules/require-mime-type-validation.md) | CWE-434 | M4 | 7.5 | Require MIME type validation |  |  |  |  |  |
+| [no-arbitrary-file-access](./docs/rules/no-arbitrary-file-access.md) | CWE-22 | M4 | 7.5 | Prevent path traversal |  |  |  |  |  |
+| [no-pii-in-logs](./docs/rules/no-pii-in-logs.md) | CWE-532 | M6 | 7.5 | Prevent PII in logs |  | ⚠️ |  |  |  |
+| [no-tracking-without-consent](./docs/rules/no-tracking-without-consent.md) | CWE-359 | M6 | 7.5 | Require tracking consent |  |  |  |  |  |
+| [no-sensitive-data-in-analytics](./docs/rules/no-sensitive-data-in-analytics.md) | CWE-359 | M6 | 7.5 | Prevent PII in analytics |  |  |  |  |  |
+| [require-data-minimization](./docs/rules/require-data-minimization.md) | CWE-213 | M6 | 7.5 | Identify excessive data collection |  |  |  |  |  |
+| [no-debug-code-in-production](./docs/rules/no-debug-code-in-production.md) | CWE-489 | M7 | 7.5 | Detect debug code |  |  |  |  |  |
+| [require-code-minification](./docs/rules/require-code-minification.md) | CWE-656 | M7 | 7.5 | Require minification config |  |  |  |  |  |
+| [no-verbose-error-messages](./docs/rules/no-verbose-error-messages.md) | CWE-209 | M8 | 7.5 | Prevent stack trace exposure |  | ⚠️ |  |  |  |
+| [require-secure-defaults](./docs/rules/require-secure-defaults.md) | CWE-276 | M8 | 7.5 | Require secure default configs |  |  |  |  |  |
+| [no-sensitive-data-in-cache](./docs/rules/no-sensitive-data-in-cache.md) | CWE-524 | M9 | 7.5 | Prevent sensitive cache data |  |  |  |  |  |
+| [no-data-in-temp-storage](./docs/rules/no-data-in-temp-storage.md) | CWE-312 | M9 | 7.5 | Prevent sensitive temp data |  |  |  |  |  |
+| [require-secure-deletion](./docs/rules/require-secure-deletion.md) | CWE-459 | M9 | 7.5 | Require secure data deletion |  |  |  |  |  |
+| [require-storage-encryption](./docs/rules/require-storage-encryption.md) | CWE-311 | M9 | 7.5 | Require encrypted storage |  |  |  |  |  |
+| [no-unencrypted-local-storage](./docs/rules/no-unencrypted-local-storage.md) | CWE-312 | M9 | 7.5 | Prevent unencrypted local storage |  |  |  |  |  |
+| [require-credential-storage](./docs/rules/require-credential-storage.md) | CWE-522 | M10 | 7.5 | Require secure credential storage |  |  |  |  |  |
+| [no-exposed-debug-endpoints](./docs/rules/no-exposed-debug-endpoints.md) | CWE-489 | M8 | 7.5 | Prevent exposed debug endpoints |  |  |  |  |  |
 ### Path & File Security (3 rules)
 
-| Rule                                                                             | CWE     | OWASP | CVSS | Description                               | 💼  | ⚠️  | 🔧  | 💡  |
-| -------------------------------------------------------------------------------- | ------- | ----- | ---- | ----------------------------------------- | --- | --- | --- | --- |
-| [detect-non-literal-fs-filename](./docs/rules/detect-non-literal-fs-filename.md) | CWE-22  | A01   | 7.5  | Detect path traversal in fs operations    | 💼  |     |     |     |
-| [no-zip-slip](./docs/rules/no-zip-slip.md)                                       | CWE-22  | A01   | 8.1  | Prevent zip slip vulnerabilities          | 💼  |     |     |     |
-| [no-toctou-vulnerability](./docs/rules/no-toctou-vulnerability.md)               | CWE-367 | A01   | 7.0  | Detect time-of-check to time-of-use races | 💼  |     |     | 💡  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [detect-non-literal-fs-filename](./docs/rules/detect-non-literal-fs-filename.md) | CWE-22 | A01 | 7.5 | Detect path traversal in fs operations | 💼 |  |  |  |  |
+| [no-zip-slip](./docs/rules/no-zip-slip.md) | CWE-22 | A01 | 8.1 | Prevent zip slip vulnerabilities | 💼 |  |  |  |  |
+| [no-toctou-vulnerability](./docs/rules/no-toctou-vulnerability.md) | CWE-367 | A01 | 7.0 | Detect time-of-check to time-of-use races | 💼 |  |  | 💡 |  |
 ### Regex Security (3 rules)
 
-| Rule                                                                         | CWE      | OWASP | CVSS | Description                          | 💼  | ⚠️  | 🔧  | 💡  |
-| ---------------------------------------------------------------------------- | -------- | ----- | ---- | ------------------------------------ | --- | --- | --- | --- |
-| [detect-non-literal-regexp](./docs/rules/detect-non-literal-regexp.md)       | CWE-400  | A03   | 7.5  | Detect ReDoS in RegExp construction  |     | ⚠️  |     |     |
-| [no-redos-vulnerable-regex](./docs/rules/no-redos-vulnerable-regex.md)       | CWE-1333 | A03   | 7.5  | Detect ReDoS-vulnerable patterns     | 💼  |     |     | 💡  |
-| [no-unsafe-regex-construction](./docs/rules/no-unsafe-regex-construction.md) | CWE-400  | A03   | 7.5  | Prevent unsafe regex from user input |     | ⚠️  |     | 💡  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [detect-non-literal-regexp](./docs/rules/detect-non-literal-regexp.md) | CWE-400 | A03 | 7.5 | Detect ReDoS in RegExp construction |  | ⚠️ |  |  |  |
+| [no-redos-vulnerable-regex](./docs/rules/no-redos-vulnerable-regex.md) | CWE-1333 | A03 | 7.5 | Detect ReDoS-vulnerable patterns | 💼 |  |  | 💡 |  |
+| [no-unsafe-regex-construction](./docs/rules/no-unsafe-regex-construction.md) | CWE-400 | A03 | 7.5 | Prevent unsafe regex from user input |  | ⚠️ |  | 💡 |  |
 ### Object & Prototype (2 rules)
 
-| Rule                                                                   | CWE     | OWASP | CVSS | Description                    | 💼  | ⚠️  | 🔧  | 💡  |
-| ---------------------------------------------------------------------- | ------- | ----- | ---- | ------------------------------ | --- | --- | --- | --- |
-| [detect-object-injection](./docs/rules/detect-object-injection.md)     | CWE-915 | A03   | 7.3  | Detect prototype pollution     |     | ⚠️  |     |     |
-| [no-unsafe-deserialization](./docs/rules/no-unsafe-deserialization.md) | CWE-502 | A08   | 9.8  | Prevent unsafe deserialization | 💼  |     |     |     |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [detect-object-injection](./docs/rules/detect-object-injection.md) | CWE-915 | A03 | 7.3 | Detect prototype pollution |  | ⚠️ |  |  |  |
+| [no-unsafe-deserialization](./docs/rules/no-unsafe-deserialization.md) | CWE-502 | A08 | 9.8 | Prevent unsafe deserialization | 💼 |  |  |  |  |
 ### Cryptography (6 rules)
 
 > [!WARNING]
 > **5 rules deprecated** — Use [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) (13 rules) and [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) (24 rules) for comprehensive coverage.
 
-| Rule                                                                 | CWE     | OWASP | CVSS | Description                          | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
-| -------------------------------------------------------------------- | ------- | ----- | ---- | ------------------------------------ | --- | --- | --- | --- | --- |
-| [no-hardcoded-credentials](./docs/rules/no-hardcoded-credentials.md) | CWE-798 | A07   | 7.5  | Detect hardcoded passwords/keys      | 💼  |     |     |     |     |
-| [no-weak-crypto](./docs/rules/no-weak-crypto.md)                     | CWE-327 | A02   | 7.5  | Detect weak algorithms (MD5, SHA1)   | 💼  |     |     |     | 🚫  |
-| [no-insufficient-random](./docs/rules/no-insufficient-random.md)     | CWE-330 | A02   | 5.3  | Detect Math.random() for security    |     | ⚠️  |     |     | 🚫  |
-| [no-timing-attack](./docs/rules/no-timing-attack.md)                 | CWE-208 | A02   | 5.9  | Detect timing attack vulnerabilities | 💼  |     |     |     | 🚫  |
-| [no-insecure-comparison](./docs/rules/no-insecure-comparison.md)     | CWE-697 | A02   | 5.3  | Detect insecure string comparison    |     | ⚠️  | 🔧  |     | 🚫  |
-| [no-insecure-jwt](./docs/rules/no-insecure-jwt.md)                   | CWE-347 | A02   | 7.5  | Detect JWT security issues           | 💼  |     |     |     | 🚫  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-hardcoded-credentials](./docs/rules/no-hardcoded-credentials.md) | CWE-798 | A07 | 7.5 | Detect hardcoded passwords/keys | 💼 |  |  |  |  |
+| [no-weak-crypto](./docs/rules/no-weak-crypto.md) | CWE-327 | A02 | 7.5 | Detect weak algorithms (MD5, SHA1) | 💼 |  |  |  | 🚫 |
+| [no-insufficient-random](./docs/rules/no-insufficient-random.md) | CWE-330 | A02 | 5.3 | Detect Math.random() for security |  | ⚠️ |  |  | 🚫 |
+| [no-timing-attack](./docs/rules/no-timing-attack.md) | CWE-208 | A02 | 5.9 | Detect timing attack vulnerabilities | 💼 |  |  |  | 🚫 |
+| [no-insecure-comparison](./docs/rules/no-insecure-comparison.md) | CWE-697 | A02 | 5.3 | Detect insecure string comparison |  | ⚠️ | 🔧 |  | 🚫 |
+| [no-insecure-jwt](./docs/rules/no-insecure-jwt.md) | CWE-347 | A02 | 7.5 | Detect JWT security issues | 💼 |  |  |  | 🚫 |
 ### Input Validation & XSS (5 rules)
 
-| Rule                                                                       | CWE     | OWASP | CVSS | Description                           | 💼  | ⚠️  | 🔧  | 💡  |
-| -------------------------------------------------------------------------- | ------- | ----- | ---- | ------------------------------------- | --- | --- | --- | --- |
-| [no-unvalidated-user-input](./docs/rules/no-unvalidated-user-input.md)     | CWE-20  | A03   | 8.6  | Detect unvalidated user input         |     | ⚠️  |     |     |
-| [no-unsanitized-html](./docs/rules/no-unsanitized-html.md)                 | CWE-79  | A03   | 6.1  | Detect XSS via innerHTML              | 💼  |     |     |     |
-| [no-unescaped-url-parameter](./docs/rules/no-unescaped-url-parameter.md)   | CWE-79  | A03   | 6.1  | Detect XSS via URL parameters         |     | ⚠️  |     |     |
-| [no-improper-sanitization](./docs/rules/no-improper-sanitization.md)       | CWE-116 | A03   | 7.5  | Detect improper output encoding       | 💼  |     |     |     |
-| [no-improper-type-validation](./docs/rules/no-improper-type-validation.md) | CWE-20  | A04   | 5.3  | Detect type confusion vulnerabilities |     | ⚠️  |     |     |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-unvalidated-user-input](./docs/rules/no-unvalidated-user-input.md) | CWE-20 | A03 | 8.6 | Detect unvalidated user input |  | ⚠️ |  |  |  |
+| [no-unsanitized-html](./docs/rules/no-unsanitized-html.md) | CWE-79 | A03 | 6.1 | Detect XSS via innerHTML | 💼 |  |  |  |  |
+| [no-unescaped-url-parameter](./docs/rules/no-unescaped-url-parameter.md) | CWE-79 | A03 | 6.1 | Detect XSS via URL parameters |  | ⚠️ |  |  |  |
+| [no-improper-sanitization](./docs/rules/no-improper-sanitization.md) | CWE-116 | A03 | 7.5 | Detect improper output encoding | 💼 |  |  |  |  |
+| [no-improper-type-validation](./docs/rules/no-improper-type-validation.md) | CWE-20 | A04 | 5.3 | Detect type confusion vulnerabilities |  | ⚠️ |  |  |  |
 ### Authentication & Authorization (3 rules)
 
-| Rule                                                                   | CWE     | OWASP | CVSS | Description                    | 💼  | ⚠️  | 🔧  | 💡  |
-| ---------------------------------------------------------------------- | ------- | ----- | ---- | ------------------------------ | --- | --- | --- | --- |
-| [no-missing-authentication](./docs/rules/no-missing-authentication.md) | CWE-306 | A07   | 9.8  | Detect missing auth checks     |     | ⚠️  |     |     |
-| [no-privilege-escalation](./docs/rules/no-privilege-escalation.md)     | CWE-269 | A01   | 8.8  | Detect privilege escalation    |     | ⚠️  |     |     |
-| [no-weak-password-recovery](./docs/rules/no-weak-password-recovery.md) | CWE-640 | A07   | 9.8  | Detect insecure password reset | 💼  |     |     |     |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-missing-authentication](./docs/rules/no-missing-authentication.md) | CWE-306 | A07 | 9.8 | Detect missing auth checks |  | ⚠️ |  |  |  |
+| [no-privilege-escalation](./docs/rules/no-privilege-escalation.md) | CWE-269 | A01 | 8.8 | Detect privilege escalation |  | ⚠️ |  |  |  |
+| [no-weak-password-recovery](./docs/rules/no-weak-password-recovery.md) | CWE-640 | A07 | 9.8 | Detect insecure password reset | 💼 |  |  |  |  |
 ### Session & Cookies (3 rules)
 
 > [!WARNING]
 > **2 rules deprecated** — Use [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) or [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) for framework-specific cookie/CSRF detection.
 
-| Rule                                                                       | CWE     | OWASP | CVSS | Description                       | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
-| -------------------------------------------------------------------------- | ------- | ----- | ---- | --------------------------------- | --- | --- | --- | --- | --- |
-| [no-insecure-cookie-settings](./docs/rules/no-insecure-cookie-settings.md) | CWE-614 | A07   | 5.3  | Detect missing Secure/HttpOnly    |     | ⚠️  |     |     | 🚫  |
-| [no-missing-csrf-protection](./docs/rules/no-missing-csrf-protection.md)   | CWE-352 | A07   | 8.8  | Detect missing CSRF tokens        |     | ⚠️  |     |     | 🚫  |
-| [no-document-cookie](./docs/rules/no-document-cookie.md)                   | CWE-565 | A07   | 4.3  | Detect direct cookie manipulation |     | ⚠️  |     | 💡  |     |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-insecure-cookie-settings](./docs/rules/no-insecure-cookie-settings.md) | CWE-614 | A07 | 5.3 | Detect missing Secure/HttpOnly |  | ⚠️ |  |  | 🚫 |
+| [no-missing-csrf-protection](./docs/rules/no-missing-csrf-protection.md) | CWE-352 | A07 | 8.8 | Detect missing CSRF tokens |  | ⚠️ |  |  | 🚫 |
+| [no-document-cookie](./docs/rules/no-document-cookie.md) | CWE-565 | A07 | 4.3 | Detect direct cookie manipulation |  | ⚠️ |  | 💡 |  |
 ### Network & Headers (5 rules)
 
 > [!WARNING]
 > **4 rules deprecated** — Use [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) or [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) for framework-specific CORS/header detection (helmet integration).
 
-| Rule                                                                       | CWE      | OWASP | CVSS | Description                          | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
-| -------------------------------------------------------------------------- | -------- | ----- | ---- | ------------------------------------ | --- | --- | --- | --- | --- |
-| [no-missing-cors-check](./docs/rules/no-missing-cors-check.md)             | CWE-942  | A05   | 7.5  | Detect missing CORS validation       |     | ⚠️  |     |     | 🚫  |
-| [no-missing-security-headers](./docs/rules/no-missing-security-headers.md) | CWE-693  | A05   | 5.3  | Detect missing security headers      |     | ⚠️  |     | 💡  | 🚫  |
-| [no-insecure-redirects](./docs/rules/no-insecure-redirects.md)             | CWE-601  | A01   | 6.1  | Detect open redirect vulnerabilities |     | ⚠️  |     | 💡  |     |
-| [no-unencrypted-transmission](./docs/rules/no-unencrypted-transmission.md) | CWE-319  | A02   | 7.5  | Detect HTTP instead of HTTPS         |     | ⚠️  |     |     |     |
-| [no-clickjacking](./docs/rules/no-clickjacking.md)                         | CWE-1021 | A05   | 6.1  | Detect clickjacking vulnerabilities  | 💼  |     |     |     | 🚫  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-missing-cors-check](./docs/rules/no-missing-cors-check.md) | CWE-942 | A05 | 7.5 | Detect missing CORS validation |  | ⚠️ |  |  | 🚫 |
+| [no-missing-security-headers](./docs/rules/no-missing-security-headers.md) | CWE-693 | A05 | 5.3 | Detect missing security headers |  | ⚠️ |  | 💡 | 🚫 |
+| [no-insecure-redirects](./docs/rules/no-insecure-redirects.md) | CWE-601 | A01 | 6.1 | Detect open redirect vulnerabilities |  | ⚠️ |  | 💡 |  |
+| [no-unencrypted-transmission](./docs/rules/no-unencrypted-transmission.md) | CWE-319 | A02 | 7.5 | Detect HTTP instead of HTTPS |  | ⚠️ |  |  |  |
+| [no-clickjacking](./docs/rules/no-clickjacking.md) | CWE-1021 | A05 | 6.1 | Detect clickjacking vulnerabilities | 💼 |  |  |  | 🚫 |
 ### Data Exposure (2 rules)
 
-| Rule                                                                     | CWE     | OWASP | CVSS | Description                        | 💼  | ⚠️  | 🔧  | 💡  |
-| ------------------------------------------------------------------------ | ------- | ----- | ---- | ---------------------------------- | --- | --- | --- | --- |
-| [no-exposed-sensitive-data](./docs/rules/no-exposed-sensitive-data.md)   | CWE-200 | A01   | 7.5  | Detect sensitive data in responses | 💼  |     |     |     |
-| [no-sensitive-data-exposure](./docs/rules/no-sensitive-data-exposure.md) | CWE-532 | A09   | 5.5  | Detect sensitive data in logs      |     | ⚠️  |     | 💡  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-exposed-sensitive-data](./docs/rules/no-exposed-sensitive-data.md) | CWE-200 | A01 | 7.5 | Detect sensitive data in responses | 💼 |  |  |  |  |
+| [no-sensitive-data-exposure](./docs/rules/no-sensitive-data-exposure.md) | CWE-532 | A09 | 5.5 | Detect sensitive data in logs |  | ⚠️ |  | 💡 |  |
 ### Buffer, Memory & DoS (3 rules)
 
-| Rule                                                                                 | CWE     | OWASP | CVSS | Description                     | 💼  | ⚠️  | 🔧  | 💡  |
-| ------------------------------------------------------------------------------------ | ------- | ----- | ---- | ------------------------------- | --- | --- | --- | --- |
-| [no-buffer-overread](./docs/rules/no-buffer-overread.md)                             | CWE-126 | A06   | 7.5  | Detect buffer over-read         | 💼  |     |     |     |
-| [no-unlimited-resource-allocation](./docs/rules/no-unlimited-resource-allocation.md) | CWE-770 | A05   | 7.5  | Detect unbounded allocations    | 💼  |     |     |     |
-| [no-unchecked-loop-condition](./docs/rules/no-unchecked-loop-condition.md)           | CWE-835 | A05   | 7.5  | Detect infinite loop conditions | 💼  |     |     |     |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-buffer-overread](./docs/rules/no-buffer-overread.md) | CWE-126 | A06 | 7.5 | Detect buffer over-read | 💼 |  |  |  |  |
+| [no-unlimited-resource-allocation](./docs/rules/no-unlimited-resource-allocation.md) | CWE-770 | A05 | 7.5 | Detect unbounded allocations | 💼 |  |  |  |  |
+| [no-unchecked-loop-condition](./docs/rules/no-unchecked-loop-condition.md) | CWE-835 | A05 | 7.5 | Detect infinite loop conditions | 💼 |  |  |  |  |
 ### Platform-Specific (2 rules)
 
-| Rule                                                                                             | CWE     | OWASP | CVSS | Description                        | 💼  | ⚠️  | 🔧  | 💡  |
-| ------------------------------------------------------------------------------------------------ | ------- | ----- | ---- | ---------------------------------- | --- | --- | --- | --- |
-| [no-electron-security-issues](./docs/rules/no-electron-security-issues.md)                       | CWE-693 | A05   | 8.8  | Detect Electron security misconfig | 💼  |     |     |     |
-| [no-insufficient-postmessage-validation](./docs/rules/no-insufficient-postmessage-validation.md) | CWE-346 | A07   | 8.8  | Detect postMessage origin issues   | 💼  |     |     |     |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-electron-security-issues](./docs/rules/no-electron-security-issues.md) | CWE-693 | A05 | 8.8 | Detect Electron security misconfig | 💼 |  |  |  |  |
+| [no-insufficient-postmessage-validation](./docs/rules/no-insufficient-postmessage-validation.md) | CWE-346 | A07 | 8.8 | Detect postMessage origin issues | 💼 |  |  |  |  |
 ---
 
 ## 🚀 Quick Start (Org-friendly)
@@ -427,17 +412,16 @@ For **better coverage**, use these dedicated plugins instead of deprecated rules
 
 ### All Ecosystem Plugins
 
-| Plugin                                                                                               | Description                                                                | Rules |
-| ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | :---: |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               | JWT security (algorithm confusion, weak secrets, claims validation)        |  13   |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                         | Cryptographic best practices (weak algorithms, key handling, CVE-specific) |  24   |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                                 | PostgreSQL/node-postgres security and best practices                       |  13   |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)     | Express.js security (CORS, cookies, CSRF, helmet)                          |  15   |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)       | NestJS security (guards, validation pipes, throttler)                      |  15   |
-| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)       | AWS Lambda/Middy security (API Gateway, headers, validation)               |   9   |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security (OWASP LLM + Agentic Top 10)                        |  19   |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)               | High-performance import linting with AI-guided cycle fixes                 |  12   |
-
+| Plugin                                                                                               | Description                                                                | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |  |  |  |  |  |  |  |  |  |
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)

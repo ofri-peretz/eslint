@@ -1,8 +1,7 @@
 ---
-title: browser-security/no-jwt-in-storage
-description: 🔒 Disallow storing JWT tokens in localStorage or sessionStorage
+title: "browser-security/no-jwt-in-storage"
+description: "This rule prevents storing JWT tokens in browser storage (localStorage/sessionStorage). JWTs stored in these locations are fully accessible to JavaScript, makin"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -16,15 +15,17 @@ This rule prevents storing JWT tokens in browser storage (localStorage/sessionSt
 
 ```mermaid
 flowchart TD
-    A[XSS Attack Injected] --> B{Where is JWT?}
-    B -->|localStorage/sessionStorage| C[document.cookie or Storage API]
-    C --> D[Token Stolen!]
-    B -->|HttpOnly Cookie| E[Not accessible via JS]
-    E --> F[Token Safe ✓]
+    A["XSS Attack Injected"] --> B{"Where is JWT?"}
+    B -->|localStorage/sessionStorage| C["document.cookie or Storage API"]
+    C --> D["Token Stolen!"]
+    B -->|HttpOnly Cookie| E["Not accessible via JS"]
+    E --> F["Token Safe ✓"]
 
     style D fill:#ff6b6b
     style F fill:#51cf66
+
 ```
+
 
 When you store JWTs in browser storage:
 
@@ -167,12 +168,11 @@ class TokenService {
 - [Auth0: Token Storage](https://auth0.com/docs/secure/security-guidance/data-security/token-storage)
 - [`browser-security/no-sensitive-localstorage`](./no-sensitive-localstorage.md) - General sensitive data detection
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

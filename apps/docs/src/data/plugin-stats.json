@@ -76,37 +76,9 @@
       "description": "Drop-in replacement for eslint-plugin-import",
       "category": "architecture",
       "version": "2.1.0"
-    },
-    {
-      "name": "eslint-plugin-architecture",
-      "rules": 13,
-      "description": "ESLint architecture rules enforcing DDD, API boundaries, and project structure",
-      "category": "architecture",
-      "version": "1.0.5"
-    },
-    {
-      "name": "eslint-plugin-quality",
-      "rules": 21,
-      "description": "ESLint quality rules for code health, error handling, and complexity management",
-      "category": "quality",
-      "version": "1.0.5"
-    },
-    {
-      "name": "eslint-plugin-react-features",
-      "rules": 44,
-      "description": "ESLint React rules for modern react features, hooks, and patterns",
-      "category": "react",
-      "version": "1.0.5"
-    },
-    {
-      "name": "eslint-plugin-react-a11y",
-      "rules": 39,
-      "description": "React accessibility ESLint plugin with 37 LLM-optimized rules for WCAG 2",
-      "category": "react",
-      "version": "2.0.5"
     }
   ],
-  "totalRules": 416,
-  "totalPlugins": 15,
-  "generatedAt": "2026-01-10T22:53:41.822Z"
+  "totalRules": 299,
+  "totalPlugins": 11,
+  "generatedAt": "2026-01-11T08:41:02.504Z"
 }

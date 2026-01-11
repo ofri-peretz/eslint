@@ -53,26 +53,24 @@ export default [reactFeatures.configs.recommended];
 
 💼 = Set in `recommended` | ⚠️ = Warns in `recommended` | 🔧 = Auto-fixable | 💡 = Suggestions
 
-| Rule                    | CWE      | Description                     | 💼  | ⚠️  | 🔧  | 💡  |
-| ----------------------- | -------- | ------------------------------- | :-: | :-: | :-: | :-: |
-| `jsx-key`               | CWE-1078 | Require key prop in iterators   | 💼  |     |     |     |
-| `hooks-exhaustive-deps` | CWE-1121 | Enforce exhaustive dependencies | 💼  |     | 🔧  |     |
-| `rules-of-hooks`        | CWE-1078 | Enforce rules of hooks          | 💼  |     |     |     |
-| `no-class-components`   | CWE-1047 | Prefer functional components    |     | ⚠️  |     | 💡  |
-| `prefer-use-state`      | CWE-1047 | Prefer useState over this.state |     | ⚠️  |     | 💡  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| `jsx-key` | CWE-1078 |  |  | Require key prop in iterators | 💼 |  |  |  |  |
+| `hooks-exhaustive-deps` | CWE-1121 |  |  | Enforce exhaustive dependencies | 💼 |  | 🔧 |  |  |
+| `rules-of-hooks` | CWE-1078 |  |  | Enforce rules of hooks | 💼 |  |  |  |  |
+| `no-class-components` | CWE-1047 |  |  | Prefer functional components |  | ⚠️ |  | 💡 |  |
+| `prefer-use-state` | CWE-1047 |  |  | Prefer useState over this.state |  | ⚠️ |  | 💡 |  |
 ---
 
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native plugins with LLM-optimized error messages:
 
-| Plugin                                                                                     | Description                                    | Rules |
-| ------------------------------------------------------------------------------------------ | ---------------------------------------------- | :---: |
-| [`eslint-plugin-react-a11y`](https://www.npmjs.com/package/eslint-plugin-react-a11y)       | React accessibility (WCAG 2.1)                 |  37   |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | Universal security (OWASP Top 10 Web + Mobile) |  89   |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)     | High-performance import linting                |  12   |
-
+| Plugin                                                                                     | Description                                    | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [`eslint-plugin-react-a11y`](https://www.npmjs.com/package/eslint-plugin-react-a11y) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |  |  |  |  |  |  |  |  |  |
 ---
 
 ## License

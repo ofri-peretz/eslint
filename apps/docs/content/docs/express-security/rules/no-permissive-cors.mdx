@@ -1,8 +1,7 @@
 ---
-title: no-permissive-cors
-description: Detects overly permissive CORS configurations in Express.js applications. This rule is part of eslint-plugin-express-security and provides LLM-optimized error m
+title: "no-permissive-cors"
+description: "Detects overly permissive CORS configurations in Express.js applications. This rule is part of [`eslint-plugin-express-security`](https://www.npmjs.com/package/"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -54,7 +53,9 @@ sequenceDiagram
     Victim->>Attacker: Attacker's JS reads response!
 
     Note over Attacker: Attacker now has victim's data
+
 ```
+
 
 ## Rule Logic Flow
 
@@ -69,17 +70,17 @@ sequenceDiagram
   }
 }}%%
 flowchart TD
-    A[🔍 CallExpression Found] --> B{Is cors() call?}
-    B -->|No| C[✅ Skip]
-    B -->|Yes| D{Has arguments?}
-    D -->|No| E[🚨 Report: Default is permissive]
-    D -->|Yes| F{Check origin config}
-    F --> G{origin: '*'?}
-    G -->|Yes| H[🚨 Report: Wildcard origin]
-    G -->|No| I{origin: true?}
-    I -->|Yes & not allowed| J[🚨 Report: Origin reflection]
+    A["🔍 CallExpression Found"] --> B{"Is cors() call?"}
+    B -->|No| C["✅ Skip"]
+    B -->|Yes| D{"Has arguments?"}
+    D -->|No| E["🚨 Report: Default is permissive"]
+    D -->|Yes| F{"Check origin config"}
+    F --> G{"origin: '*'?"}
+    G -->|Yes| H["🚨 Report: Wildcard origin"]
+    G -->|No| I{"origin: true?"}
+    I -->|Yes & not allowed| J["🚨 Report: Origin reflection"]
     I -->|No| C
-    H --> K[💡 Suggest whitelist]
+    H --> K["💡 Suggest whitelist"]
     J --> K
     E --> K
 
@@ -92,7 +93,9 @@ flowchart TD
     class E,H,J errorNode
     class B,D,F,G,I processNode
     class C skipNode
+
 ```
+
 
 ## Detection Patterns
 
@@ -166,6 +169,25 @@ app.use(
 );
 ```
 
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-942 OWASP:A01 CVSS:7.5 | CORS Misconfiguration detected | HIGH
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-942](https://cwe.mitre.org/data/definitions/942.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `CORS Misconfiguration detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/) |
+
 ## Configuration
 
 ```javascript
@@ -238,12 +260,11 @@ app.use(cors({ origin: allowedOrigins }));
 - [`no-cors-credentials-wildcard`](./no-cors-credentials-wildcard.md) - Credentials with wildcard origin
 - [`require-helmet`](./require-helmet.md) - Security headers
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

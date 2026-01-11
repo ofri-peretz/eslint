@@ -20,10 +20,6 @@ export const noPasswordInUrl = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       description: 'Prevent passwords in URLs',
-      category: 'Security',
-      recommended: true,
-      owaspMobile: ['M3'],
-      cweIds: ["CWE-598"],
     },
     messages: {
       violationDetected: formatLLMMessage({

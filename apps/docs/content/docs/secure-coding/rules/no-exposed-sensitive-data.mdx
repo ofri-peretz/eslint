@@ -1,8 +1,7 @@
 ---
-title: no-exposed-sensitive-data
-description: "Detects exposure of sensitive data (SSN, credit card numbers, passwords, API keys) in logs or output. This rule is part of eslint-plugin-secure-coding and provi"
+title: "no-exposed-sensitive-data"
+description: "Detects exposure of sensitive data (SSN, credit card numbers, passwords, API keys) in logs or output. This rule is part of [`eslint-plugin-secure-coding`](https"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -56,16 +55,18 @@ The rule detects:
   }
 }}%%
 flowchart TD
-    App[Application] -->|Log(password)| LogFile[📝 Log File / ELK / Splunk]
-    LogFile -->|Unrestricted Access| Attacker[🕵️ Attacker/Insider]
-    Attacker -->|Read Logs| Leak[🔓 Data Leak (CWE-532)]
+    App[Application] -->"|Log(password)| LogFile[📝 Log File / ELK / Splunk"]
+    LogFile -->"|Unrestricted Access| Attacker[🕵️ Attacker/Insider"]
+    Attacker -->"|Read Logs| Leak[🔓 Data Leak (CWE-532)"]
 
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
 
     class App startNode
     class Leak errorNode
+
 ```
+
 
 ### Why This Matters
 
@@ -135,12 +136,11 @@ The rule provides guidance:
 - **"Remove Sensitive Data"**: Advises removing the variable from the log.
 - **"Mask Data"**: Suggests replacing the value with `***` or a hash.
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

@@ -4,7 +4,7 @@
  * @see https://cwe.mitre.org/data/definitions/213.html
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -20,10 +20,6 @@ export const requireDataMinimization = createRule<RuleOptions, MessageIds>({
     type: 'suggestion',
     docs: {
       description: 'Identify excessive data collection patterns',
-      category: 'Security',
-      recommended: true,
-      owaspMobile: ['M6'],
-      cweIds: ['CWE-213'],
     },
     messages: {
       violationDetected: formatLLMMessage({
@@ -50,7 +46,8 @@ export const requireDataMinimization = createRule<RuleOptions, MessageIds>({
         if (node.properties.length > 10) {
           // Check if this looks like user data collection
           const hasUserData = node.properties.some(p => 
-            p.type === 'Property' && 
+            p.type === AST_NODE_TYPES.Property && 
+            p.key.type === AST_NODE_TYPES.Identifier &&
             ['email', 'name', 'phone', 'address'].includes(p.key.name)
           );
           
@@ -62,4 +59,3 @@ export const requireDataMinimization = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

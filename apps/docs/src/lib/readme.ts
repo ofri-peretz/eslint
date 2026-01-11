@@ -108,7 +108,7 @@ function extractIntroduction(markdown: string): string {
 function extractRules(markdown: string, pluginSlug: string): ParsedRule[] {
   const rules: ParsedRule[] = [];
   
-  // Find all tables in the markdown - capture header row too
+  // Find all tables
   const tableRegex = /(\|[^\n]+\|)\n(\|[-:\s|]+\|)\n((?:\|[^\n]+\|\n?)+)/g;
   let tableMatch;
   
@@ -116,49 +116,55 @@ function extractRules(markdown: string, pluginSlug: string): ParsedRule[] {
     const headerRow = tableMatch[1];
     const dataRowsContent = tableMatch[3];
     
-    // Only process tables where first column header is "Rule"
-    const headerCells = headerRow.split('|').map(cell => cell.trim()).filter(Boolean);
-    if (!headerCells[0] || !headerCells[0].toLowerCase().includes('rule')) {
-      continue; // Skip non-rules tables (OWASP coverage tables, etc.)
+    // Split headers and find indices
+    const headerCells = headerRow.split('|').map(cell => cell.trim()).filter(c => c !== '');
+    const ruleIdx = headerCells.findIndex(h => h.toLowerCase().includes('rule'));
+    
+    // Only process tables that have a "Rule" column and are NOT the Coverage matrix or Related plugins
+    // These tables usually have Rule as the FIRST column
+    if (ruleIdx === -1 || (headerCells[0].toLowerCase().includes('owasp') && headerCells.length > 5)) {
+      continue;
     }
     
+    // Find other column indices
+    const cweIdx = headerCells.findIndex(h => h.toLowerCase() === 'cwe');
+    const owaspIdx = headerCells.findIndex(h => h.toLowerCase() === 'owasp');
+    const cvssIdx = headerCells.findIndex(h => h.toLowerCase() === 'cvss');
+    const descIdx = headerCells.findIndex(h => h.toLowerCase() === 'description');
+
     const dataRows = dataRowsContent.split('\n').filter(row => row.trim().startsWith('|'));
     
     for (const row of dataRows) {
-      const cells = row.split('|').map(cell => cell.trim()).filter(Boolean);
+      const cells = row.split('|').map(cell => cell.trim()).filter((_, i, arr) => i > 0 && i < arr.length - 1);
       
-      if (cells.length < 2) continue;
+      if (cells.length < headerCells.length) continue;
       
-      // Extract rule name from first cell (may contain markdown link)
-      const ruleCell = cells[0];
+      const ruleCell = cells[ruleIdx];
+      // Skip empty rules or categories like "A01:2021"
+      if (!ruleCell || ruleCell.startsWith('**A') || ruleCell === '') continue;
+
       const ruleNameMatch = ruleCell.match(/\[([^\]]+)\]\(([^)]+)\)/);
-      const ruleName = ruleNameMatch ? ruleNameMatch[1] : ruleCell.replace(/[`*~]/g, '');
+      const ruleName = (ruleNameMatch ? ruleNameMatch[1] : ruleCell).replace(/[`*~]/g, '');
       
-      // Skip invalid rule names or header remnants
-      if (!ruleName || ruleName.includes('---') || ruleName.length < 2) continue;
+      if (!ruleName || ruleName.includes('|') || ruleName.length < 2) continue;
       
-      // Detect column structure based on header
-      // Common structures:
-      // | Rule | CWE | OWASP | Description | 💼 | 🔧 | 💡 |
-      // | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 |
-      const hasCVSS = headerCells.some(h => h.toLowerCase().includes('cvss'));
-      const descIndex = hasCVSS ? 4 : 3;
+      const stripMd = (val: string) => val.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1').replace(/[`*~]/g, '').trim();
       
-      const rule: ParsedRule = {
+      const rule: any = {
         name: ruleName,
-        cwe: cells[1] || '',
-        owasp: cells[2] || '',
-        description: cells[descIndex] || cells[3] || '',
+        cwe: cweIdx !== -1 ? stripMd(cells[cweIdx] || '') : '',
+        owasp: owaspIdx !== -1 ? stripMd(cells[owaspIdx] || '') : '',
+        cvss: cvssIdx !== -1 ? stripMd(cells[cvssIdx] || '') : '',
+        description: descIdx !== -1 ? cells[descIdx] || '' : '',
         recommended: row.includes('💼'),
+        warns: row.includes('⚠️'),
         fixable: row.includes('🔧'),
         hasSuggestions: row.includes('💡'),
+        deprecated: row.includes('🚫'),
         href: `/docs/${pluginSlug}/rules/${ruleName}`,
       };
       
-      // Only add if we have a valid rule name (not deprecated markers, etc.)
-      if (rule.name && rule.name.length > 0 && !rule.name.includes('|')) {
-        rules.push(rule);
-      }
+      rules.push(rule);
     }
   }
   

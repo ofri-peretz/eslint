@@ -1,8 +1,7 @@
 ---
-title: no-debug-mode-production
-description: Detects Mongoose debug mode that could expose sensitive query information in production.
+title: "no-debug-mode-production"
+description: "Detects Mongoose debug mode that could expose sensitive query information in production."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -77,12 +76,11 @@ if (process.env.DEBUG) {
 - In development-only codebases
 - When debug logging is properly secured
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

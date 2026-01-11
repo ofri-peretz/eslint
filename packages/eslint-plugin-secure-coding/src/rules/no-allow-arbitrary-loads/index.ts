@@ -20,10 +20,6 @@ export const noAllowArbitraryLoads = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       description: 'Prevent configuration allowing insecure loads',
-      category: 'Security',
-      recommended: true,
-      owaspMobile: ['M5'],
-      cweIds: ["CWE-749"],
     },
     messages: {
       violationDetected: formatLLMMessage({

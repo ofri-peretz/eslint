@@ -1,8 +1,7 @@
 ---
-title: no-unsafe-populate
-description: Detects user-controlled populate() paths that could lead to data exposure or injection.
+title: "no-unsafe-populate"
+description: "Detects user-controlled `populate()` paths that could lead to data exposure or injection."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -64,12 +63,11 @@ User.findById(id).populate({
 });
 ```
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 ### Spread Operator
 

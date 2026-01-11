@@ -1,8 +1,7 @@
 ---
-title: no-buffer-overread
-description: Detects buffer access beyond bounds. This rule is part of eslint-plugin-secure-coding.
+title: "no-buffer-overread"
+description: "Detects buffer access beyond bounds. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -125,12 +124,11 @@ function safeRead(buf: Buffer, offset: number): number | undefined {
    Fix: Add bounds check before buffer access | https://nodejs.org/api/buffer.html
 ```
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

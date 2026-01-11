@@ -19,7 +19,7 @@ const OUTPUT_FILE = join(__dirname, '../src/data/plugin-stats.json');
 /**
  * Count rules by parsing the rules export in index.ts
  */
-function countRulesInPackage(packagePath) {
+export function countRulesInPackage(packagePath) {
   const indexPath = join(packagePath, 'src/index.ts');
   
   if (!existsSync(indexPath)) {
@@ -33,10 +33,7 @@ function countRulesInPackage(packagePath) {
   return ruleMatches ? ruleMatches.length : 0;
 }
 
-/**
- * Get package metadata from package.json
- */
-function getPackageMetadata(packagePath) {
+export function getPackageMetadata(packagePath) {
   const pkgJsonPath = join(packagePath, 'package.json');
   
   if (!existsSync(pkgJsonPath)) {
@@ -48,13 +45,11 @@ function getPackageMetadata(packagePath) {
     name: pkgJson.name,
     description: pkgJson.description,
     version: pkgJson.version,
+    private: pkgJson.private,
   };
 }
 
-/**
- * Determine category based on package name
- */
-function getCategory(packageName) {
+export function getCategory(packageName) {
   if (packageName.includes('express') || 
       packageName.includes('nestjs') || 
       packageName.includes('lambda')) {
@@ -83,9 +78,18 @@ async function main() {
   const stats = [];
   let totalRules = 0;
 
+  const UNPUBLISHED_PLUGINS = [
+    'eslint-plugin-react-features',
+    'eslint-plugin-architecture', 
+    'eslint-plugin-react-a11y',
+    'eslint-plugin-quality'
+  ];
+
   for (const packagePath of packages) {
     const metadata = getPackageMetadata(packagePath);
     if (!metadata) continue;
+    if (metadata.private === true) continue;
+    if (UNPUBLISHED_PLUGINS.includes(metadata.name)) continue;
 
     const ruleCount = countRulesInPackage(packagePath);
     const category = getCategory(metadata.name);
@@ -100,6 +104,7 @@ async function main() {
 
     totalRules += ruleCount;
     console.log(`  ✓ ${metadata.name}: ${ruleCount} rules`);
+
   }
 
   // Sort by category then by rule count
@@ -131,4 +136,11 @@ async function main() {
   console.log(`   Total: ${totalRules} rules across ${stats.length} plugins`);
 }
 
-main().catch(console.error);
+export { countRulesInPackage, getPackageMetadata, getCategory };
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

@@ -43,7 +43,6 @@ export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Overly Permissive IAM Policy',
         cwe: 'CWE-732',
-        owasp: 'SAS-5',
         cvss: 6.5,
         description:
           'IAM policy has wildcard {{property}}: "{{value}}". Violates principle of least privilege.',

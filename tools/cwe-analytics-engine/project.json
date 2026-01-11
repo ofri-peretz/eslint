@@ -1,0 +1,27 @@
+{
+  "name": "cwe-analytics-engine",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools/cwe-analytics-engine/src",
+  "projectType": "library",
+  "tags": [
+    "scope:tools",
+    "type:utility"
+  ],
+  "// targets": "to see all targets run: nx show project cwe-analytics-engine --web",
+  "targets": {
+    "sync": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx tsx src/lib/cli.ts",
+        "cwd": "tools/cwe-analytics-engine"
+      }
+    },
+    "stats": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx tsx src/lib/cli.ts --stats-only",
+        "cwd": "tools/cwe-analytics-engine"
+      }
+    }
+  }
+}

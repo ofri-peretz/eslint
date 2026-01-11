@@ -35,32 +35,29 @@ src/db.ts
 
 ### Security (6 rules)
 
-| Rule                                                                 | CWE     | OWASP    | Description                                     | 💼  | 🔧  | 💡  |
-| -------------------------------------------------------------------- | ------- | -------- | ----------------------------------------------- | --- | --- | --- |
-| [no-unsafe-query](./docs/rules/no-unsafe-query.md)                   | CWE-89  | A03:2021 | Prevents SQL injection via string interpolation | 💼  |     | 💡  |
-| [no-insecure-ssl](./docs/rules/no-insecure-ssl.md)                   | CWE-295 | A05:2021 | Prevents disabling SSL certificate validation   | 💼  |     | 💡  |
-| [no-hardcoded-credentials](./docs/rules/no-hardcoded-credentials.md) | CWE-798 | A05:2021 | Prevents hardcoded passwords in config          | 💼  |     | 💡  |
-| [no-unsafe-search-path](./docs/rules/no-unsafe-search-path.md)       | CWE-426 | A01:2021 | Prevents dynamic search_path hijacking          | 💼  |     | 💡  |
-| [no-unsafe-copy-from](./docs/rules/no-unsafe-copy-from.md)           | CWE-22  | A03:2021 | Prevents COPY FROM file path exposure           | 💼  |     | 💡  |
-| [no-transaction-on-pool](./docs/rules/no-transaction-on-pool.md)     | CWE-362 | A04:2021 | Prevents transaction commands on pool           | 💼  |     | 💡  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-unsafe-query](./docs/rules/no-unsafe-query.md) | CWE-89 | A03:2021 |  | Prevents SQL injection via string interpolation | 💼 |  |  | 💡 |  |
+| [no-insecure-ssl](./docs/rules/no-insecure-ssl.md) | CWE-295 | A05:2021 |  | Prevents disabling SSL certificate validation | 💼 |  |  | 💡 |  |
+| [no-hardcoded-credentials](./docs/rules/no-hardcoded-credentials.md) | CWE-798 | A05:2021 |  | Prevents hardcoded passwords in config | 💼 |  |  | 💡 |  |
+| [no-unsafe-search-path](./docs/rules/no-unsafe-search-path.md) | CWE-426 | A01:2021 |  | Prevents dynamic search_path hijacking | 💼 |  |  | 💡 |  |
+| [no-unsafe-copy-from](./docs/rules/no-unsafe-copy-from.md) | CWE-22 | A03:2021 |  | Prevents COPY FROM file path exposure | 💼 |  |  | 💡 |  |
+| [no-transaction-on-pool](./docs/rules/no-transaction-on-pool.md) | CWE-362 | A04:2021 |  | Prevents transaction commands on pool | 💼 |  |  | 💡 |  |
 ### Resource Management (3 rules)
 
-| Rule                                                                   | CWE     | OWASP    | Description                        | 💼  | 🔧  | 💡  |
-| ---------------------------------------------------------------------- | ------- | -------- | ---------------------------------- | --- | --- | --- |
-| [no-missing-client-release](./docs/rules/no-missing-client-release.md) | CWE-772 | A09:2021 | Ensures pool clients are released  | 💼  |     | 💡  |
-| [prevent-double-release](./docs/rules/prevent-double-release.md)       | CWE-415 | A04:2021 | Prevents double client.release()   | 💼  |     | 💡  |
-| [no-floating-query](./docs/rules/no-floating-query.md)                 | CWE-252 | A06:2021 | Ensures query promises are handled | 💼  |     | 💡  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-missing-client-release](./docs/rules/no-missing-client-release.md) | CWE-772 | A09:2021 |  | Ensures pool clients are released | 💼 |  |  | 💡 |  |
+| [prevent-double-release](./docs/rules/prevent-double-release.md) | CWE-415 | A04:2021 |  | Prevents double client.release() | 💼 |  |  | 💡 |  |
+| [no-floating-query](./docs/rules/no-floating-query.md) | CWE-252 | A06:2021 |  | Ensures query promises are handled | 💼 |  |  | 💡 |  |
 ### Quality & Performance (4 rules)
 
-| Rule                                                         | CWE     | OWASP    | Description                                    | 💼  | 🔧  | 💡  |
-| ------------------------------------------------------------ | ------- | -------- | ---------------------------------------------- | --- | --- | --- |
-| [check-query-params](./docs/rules/check-query-params.md)     | CWE-20  | A06:2021 | Validates parameter count matches placeholders | 💼  |     | 💡  |
-| [no-select-all](./docs/rules/no-select-all.md)               | CWE-400 | A04:2021 | Discourages SELECT \*                          |     |     | 💡  |
-| [prefer-pool-query](./docs/rules/prefer-pool-query.md)       | CWE-404 | A04:2021 | Suggests pool.query() for simple queries       |     |     | 💡  |
-| [no-batch-insert-loop](./docs/rules/no-batch-insert-loop.md) | CWE-400 | A04:2021 | Prevents N+1 mutation queries                  | 💼  |     | 💡  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [check-query-params](./docs/rules/check-query-params.md) | CWE-20 | A06:2021 |  | Validates parameter count matches placeholders | 💼 |  |  | 💡 |  |
+| [no-select-all](./docs/rules/no-select-all.md) | CWE-400 | A04:2021 |  | Discourages SELECT \* |  |  |  | 💡 |  |
+| [prefer-pool-query](./docs/rules/prefer-pool-query.md) | CWE-404 | A04:2021 |  | Suggests pool.query() for simple queries |  |  |  | 💡 |  |
+| [no-batch-insert-loop](./docs/rules/no-batch-insert-loop.md) | CWE-400 | A04:2021 |  | Prevents N+1 mutation queries | 💼 |  |  | 💡 |  |
 ---
 
 ## 🚀 Quick Start
@@ -141,33 +138,31 @@ This plugin runs **100% locally**. No data ever leaves your machine.
 
 ## 🗂️ OWASP Top 10 2021 Coverage
 
-| OWASP Category                         | Rules                                                                         | Coverage |
-| -------------------------------------- | :---------------------------------------------------------------------------- | :------: |
-| **A01:2021 Broken Access Control**     | `no-unsafe-search-path`                                                       |    ✅    |
-| **A03:2021 Injection**                 | `no-unsafe-query`, `no-unsafe-copy-from`                                      |    ✅    |
-| **A04:2021 Insecure Design**           | `no-transaction-on-pool`, `prevent-double-release`                            |    ✅    |
-| **A05:2021 Security Misconfiguration** | `no-insecure-ssl`, `no-hardcoded-credentials`                                 |    ✅    |
-| **A06:2021 Vulnerable Components**     | `no-floating-query`, `check-query-params`                                     |    ✅    |
-| **A09:2021 Logging Failures**          | `no-missing-client-release` (connection leak → resource exhaustion detection) |    ✅    |
-
+| OWASP Category                         | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| **A01:2021 Broken Access Control** |  |  |  |  |  |  |  |  |  |
+| **A03:2021 Injection** |  |  |  |  |  |  |  |  |  |
+| **A04:2021 Insecure Design** |  |  |  |  |  |  |  |  |  |
+| **A05:2021 Security Misconfiguration** |  |  |  |  |  |  |  |  |  |
+| **A06:2021 Vulnerable Components** |  |  |  |  |  |  |  |  |  |
+| **A09:2021 Logging Failures** |  |  |  |  |  |  |  |  |  |
 ---
 
 ## 🔗 Related Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin                                                                                               |                                                                Downloads                                                                 | Description                                                  | Rules |
-| ---------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------: | ------------------------------------------------------------ | :---: |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)           |      [![npm](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://npmjs.com/package/eslint-plugin-secure-coding)      | Universal security (OWASP Top 10 Web + Mobile)               |  89   |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               |                [![npm](https://img.shields.io/npm/dm/eslint-plugin-jwt.svg)](https://npmjs.com/package/eslint-plugin-jwt)                | JWT security (algorithm confusion, weak secrets, claims)     |  13   |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                         |             [![npm](https://img.shields.io/npm/dm/eslint-plugin-crypto.svg)](https://npmjs.com/package/eslint-plugin-crypto)             | Cryptographic best practices (weak algorithms, key handling) |  24   |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)     |   [![npm](https://img.shields.io/npm/dm/eslint-plugin-express-security.svg)](https://npmjs.com/package/eslint-plugin-express-security)   | Express.js security (CORS, cookies, CSRF, helmet)            |   8   |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)       |    [![npm](https://img.shields.io/npm/dm/eslint-plugin-nestjs-security.svg)](https://npmjs.com/package/eslint-plugin-nestjs-security)    | NestJS security (guards, validation pipes, throttler)        |   5   |
-| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)       |    [![npm](https://img.shields.io/npm/dm/eslint-plugin-lambda-security.svg)](https://npmjs.com/package/eslint-plugin-lambda-security)    | AWS Lambda/Middy security (API Gateway, CORS, secrets)       |   5   |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)     |   [![npm](https://img.shields.io/npm/dm/eslint-plugin-browser-security.svg)](https://npmjs.com/package/eslint-plugin-browser-security)   | Browser security (XSS, postMessage, storage, cookies)        |  21   |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![npm](https://img.shields.io/npm/dm/eslint-plugin-vercel-ai-security.svg)](https://npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security (OWASP LLM + Agentic Top 10)          |  19   |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)               |        [![npm](https://img.shields.io/npm/dm/eslint-plugin-import-next.svg)](https://npmjs.com/package/eslint-plugin-import-next)        | High-performance import linting                              |  12   |
-
+| Plugin                                                                                               |                                                                Downloads                                                                 | Description                                                  | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |  |  |  |  |  |  |  |  |  |
 ---
 
 ## 📄 License

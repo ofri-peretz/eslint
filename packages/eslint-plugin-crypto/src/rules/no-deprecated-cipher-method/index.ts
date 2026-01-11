@@ -85,11 +85,14 @@ export const noDeprecatedCipherMethod = createRule<RuleOptions, MessageIds>({
         node.callee.property.type === AST_NODE_TYPES.Identifier &&
         DEPRECATED_METHODS.has(node.callee.property.name)
       ) {
-        const methodName = node.callee.property.name;
+        // Capture narrowed type before callback (TypeScript loses narrowing in closures)
+        const callee = node.callee;
+        const propertyNode = callee.property as TSESTree.Identifier;
+        const methodName = propertyNode.name;
         const replacementName = methodName === 'createCipher' ? 'createCipheriv' : 'createDecipheriv';
 
         context.report({
-          node: node.callee.property,
+          node: propertyNode,
           messageId: 'deprecatedCipherMethod',
           data: {
             method: methodName,
@@ -99,7 +102,7 @@ export const noDeprecatedCipherMethod = createRule<RuleOptions, MessageIds>({
             {
               messageId: 'useCipheriv',
               fix: (fixer: TSESLint.RuleFixer) => {
-                return fixer.replaceText(node.callee.property as TSESTree.Identifier, replacementName);
+                return fixer.replaceText(propertyNode, replacementName);
               },
             },
           ],

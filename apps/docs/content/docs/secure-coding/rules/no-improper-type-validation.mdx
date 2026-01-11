@@ -1,8 +1,7 @@
 ---
-title: no-improper-type-validation
-description: Detects improper type validation in user input handling. This rule is part of eslint-plugin-secure-coding.
+title: "no-improper-type-validation"
+description: "Detects improper type validation in user input handling. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -131,12 +130,11 @@ if (result.success) {
    Fix: Use value != null && typeof value === 'object' | https://cwe.mitre.org/...
 ```
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

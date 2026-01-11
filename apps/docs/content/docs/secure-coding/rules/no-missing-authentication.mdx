@@ -1,8 +1,7 @@
 ---
-title: no-missing-authentication
-description: Detects missing authentication checks in route handlers. This rule is part of eslint-plugin-secure-coding and provides LLM-optimized error messages that AI assi
+title: "no-missing-authentication"
+description: "Detects missing authentication checks in route handlers. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -28,6 +27,25 @@ Detects missing authentication checks in route handlers. This rule is part of [`
 **Vulnerability:** Missing authentication checks in API route handlers or controller methods allow anonymous or unauthenticated users to access endpoints that should be protected.
 
 **Risk:** Unauthorized access to sensitive data or functionality. This can lead to data breaches, modification of data by unauthorized users, or access to privileged administrative functions.
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-287 OWASP:A07 CVSS:9.8 | Improper Authentication detected | CRITICAL
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A07_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-287](https://cwe.mitre.org/data/definitions/287.html) [OWASP:A07](https://owasp.org/Top10/A07_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Improper Authentication detected` |
+| **Severity & Compliance** | Impact assessment | `CRITICAL` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A07_2021-Injection/) |
 
 ## Rule Details
 
@@ -142,12 +160,11 @@ app.get('/api/public', (req, res) => {
 4. **Token validation**: Verify JWT/session tokens on all protected endpoints
 5. **Role-based access**: Combine with role checks for fine-grained control
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

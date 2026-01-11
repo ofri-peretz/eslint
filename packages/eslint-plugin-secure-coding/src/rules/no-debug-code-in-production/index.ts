@@ -4,7 +4,7 @@
  * @see https://cwe.mitre.org/data/definitions/489.html
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -20,10 +20,6 @@ export const noDebugCodeInProduction = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       description: 'Detect debug code in production',
-      category: 'Security',
-      recommended: true,
-      owaspMobile: ['M7'],
-      cweIds: ["CWE-489"],
     },
     messages: {
       violationDetected: formatLLMMessage({
@@ -41,16 +37,19 @@ export const noDebugCodeInProduction = createRule<RuleOptions, MessageIds>({
   defaultOptions: [],
   create(context) {
     return {
-      
       Identifier(node: TSESTree.Identifier) {
         if (['DEBUG', '__DEV__'].includes(node.name)) {
           context.report({ node, messageId: 'violationDetected' });
         }
       },
       CallExpression(node: TSESTree.CallExpression) {
-        if (node.callee.type === 'MemberExpression' &&
-            node.callee.object.name === 'console' &&
-            node.callee.property.name === 'log') {
+        if (
+          node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          node.callee.object.type === AST_NODE_TYPES.Identifier &&
+          node.callee.object.name === 'console' &&
+          node.callee.property.type === AST_NODE_TYPES.Identifier &&
+          node.callee.property.name === 'log'
+        ) {
           context.report({ node, messageId: 'violationDetected' });
         }
       },

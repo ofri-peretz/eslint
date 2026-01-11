@@ -53,25 +53,23 @@ export default [architecture.configs.recommended];
 
 💼 = Set in `recommended` | ⚠️ = Warns in `recommended` | 🔧 = Auto-fixable | 💡 = Suggestions
 
-| Rule                        | CWE      | Description                          | 💼  | ⚠️  | 🔧  | 💡  |
-| --------------------------- | -------- | ------------------------------------ | :-: | :-: | :-: | :-: |
-| `enforce-naming`            | CWE-1078 | Enforce naming conventions           | 💼  |     |     |     |
-| `ddd-anemic-domain-model`   | CWE-1061 | Prevent anemic domain models         |     | ⚠️  |     | 💡  |
-| `enforce-module-boundaries` | CWE-1047 | Enforce API boundaries               | 💼  |     |     |     |
-| `no-circular-module-deps`   | CWE-407  | Prevent circular module dependencies | 💼  |     |     | 💡  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| `enforce-naming` | CWE-1078 |  |  | Enforce naming conventions | 💼 |  |  |  |  |
+| `ddd-anemic-domain-model` | CWE-1061 |  |  | Prevent anemic domain models |  | ⚠️ |  | 💡 |  |
+| `enforce-module-boundaries` | CWE-1047 |  |  | Enforce API boundaries | 💼 |  |  |  |  |
+| `no-circular-module-deps` | CWE-407 |  |  | Prevent circular module dependencies | 💼 |  |  | 💡 |  |
 ---
 
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native plugins with LLM-optimized error messages:
 
-| Plugin                                                                                     | Description                                    | Rules |
-| ------------------------------------------------------------------------------------------ | ---------------------------------------------- | :---: |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | Universal security (OWASP Top 10 Web + Mobile) |  89   |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)     | High-performance import linting                |  12   |
-| [`eslint-plugin-quality`](https://www.npmjs.com/package/eslint-plugin-quality)             | Code quality and complexity                    |  10   |
-
+| Plugin                                                                                     | Description                                    | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-quality`](https://www.npmjs.com/package/eslint-plugin-quality) |  |  |  |  |  |  |  |  |  |
 ---
 
 ## License

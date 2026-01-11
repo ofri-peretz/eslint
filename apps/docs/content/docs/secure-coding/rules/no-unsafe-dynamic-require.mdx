@@ -1,8 +1,7 @@
 ---
-title: no-unsafe-dynamic-require
-description: Disallows dynamic require() calls with non-literal arguments that could lead to security vulnerabilities. This rule is part of eslint-plugin-secure-coding and p
+title: "no-unsafe-dynamic-require"
+description: "Disallows dynamic `require()` calls with non-literal arguments that could lead to security vulnerabilities. This rule is part of [`eslint-plugin-secure-coding`]"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -160,12 +159,11 @@ This rule provides LLM-optimized error messages:
 | **Fix Suggestions**           | ✅ Detailed               | ⚠️ Basic               | ⚠️ Basic           |
 | **Dynamic Import Support**    | ✅ Configurable           | ❌ No                  | ⚠️ Limited         |
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

@@ -1,15 +1,12 @@
 ---
-title: no-cycle
-description: "💼 This rule is enabled in the following configs: recommended, typescript."
+title: "no-cycle"
+description: "Detect circular dependencies that cause bundle memory bloat and initialization issues"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 💼 This rule is enabled in the following configs: `recommended`, `typescript`.
 💡 This rule is automatically fixable by the `--fix` CLI option.
-
-{/*  end auto-generated rule header  */}
 
 Detect circular dependencies that cause bundle memory bloat and initialization issues
 
@@ -102,22 +99,9 @@ This rule aims to prevent issues related to cycle.
 
 ## Implementation
 
-- [Source Code](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/src/rules/no-cycle.ts)
-- [Test Cases](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/src/tests/no-cycle.test.ts)
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-cycle.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-cycle.test.ts)
 
-## OWASP
+## OWASP Foundation
 
 - **Category**: A05:2021 - Security Misconfiguration
-
-<WhenNotToUse />
-
-## Known False Negatives
-
-<FalseNegativeCTA />
-
-This rule uses pattern-based detection. The following may not be caught:
-
-- **Dynamic patterns** - Runtime-generated code or values
-- **Indirect references** - Values passed through multiple variables or functions
-- **External data** - Data from APIs, databases, or user input
-

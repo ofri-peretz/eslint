@@ -1,8 +1,7 @@
 ---
-title: no-select-all
-description: "Discourages SELECT * in favor of explicit column lists."
+title: "no-select-all"
+description: "Discourages `SELECT *` in favor of explicit column lists."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -56,12 +55,11 @@ await pool.query('SELECT COUNT(*) FROM users');
 - In development/debugging scripts
 - When schema is stable and all columns are needed
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

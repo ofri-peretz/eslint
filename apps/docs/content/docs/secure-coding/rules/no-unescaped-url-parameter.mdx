@@ -1,8 +1,7 @@
 ---
-title: no-unescaped-url-parameter
-description: Detects unescaped URL parameters that can lead to Cross-Site Scripting (XSS) or open redirect vulnerabilities. This rule is part of eslint-plugin-secure-coding
+title: "no-unescaped-url-parameter"
+description: "Detects unescaped URL parameters that can lead to Cross-Site Scripting (XSS) or open redirect vulnerabilities. This rule is part of [`eslint-plugin-secure-codin"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -32,6 +31,25 @@ Detects unescaped URL parameters that can lead to Cross-Site Scripting (XSS) or 
 - **Cross-Site Scripting (XSS):** If the URL is reflected in the page (e.g., `href`), attackers can inject `javascript:` URIs.
 - **Open Redirect:** Attackers can redirect users to malicious sites if the input controls the domain or path.
 - **Parameter Injection:** Attackers can inject additional query parameters to override settings.
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+⚠️ CWE-79 OWASP:A05 CVSS:6.1 | Cross-site Scripting (XSS) detected | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-79](https://cwe.mitre.org/data/definitions/79.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:6.1](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Cross-site Scripting (XSS) detected` |
+| **Severity & Compliance** | Impact assessment | `MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/) |
 
 ## Rule Details
 
@@ -135,21 +153,21 @@ const url = `https://example.com?${params}`; // ✅ Safe
   }
 }}%%
 flowchart TD
-    A[🔍 TemplateLiteral/BinaryExpression Found] --> B{In Test File?}
-    B -->|Yes & allowInTests| C[✅ Skip]
-    B -->|No| D{Matches Ignore Pattern?}
+    A["🔍 TemplateLiteral/BinaryExpression Found"] --> B{"In Test File?"}
+    B -->|Yes & allowInTests| C["✅ Skip"]
+    B -->|No| D{"Matches Ignore Pattern?"}
     D -->|Yes| C
-    D -->|No| E{Is URL Construction?}
+    D -->|No| E{"Is URL Construction?"}
     E -->|No| C
-    E -->|Yes| F{Check Expressions}
-    F --> G{User Input Pattern?}
+    E -->|Yes| F{"Check Expressions"}
+    F --> G{"User Input Pattern?"}
     G -->|No| C
-    G -->|Yes| H{Inside Encoding Call?}
+    G -->|Yes| H{"Inside Encoding Call?"}
     H -->|Yes| C
-    H -->|No| I[🚨 Report Error]
-    I --> J[💡 Suggest Fixes]
-    J --> K[Use encodeURIComponent]
-    J --> L[Use URLSearchParams]
+    H -->|No| I["🚨 Report Error"]
+    I --> J["💡 Suggest Fixes"]
+    J --> K["Use encodeURIComponent"]
+    J --> L["Use URLSearchParams"]
 
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
@@ -160,7 +178,9 @@ flowchart TD
     class I errorNode
     class E,F,G,H processNode
     class C skipNode
+
 ```
+
 
 ## Best Practices
 
@@ -222,12 +242,11 @@ url.searchParams.set('page', '1');
 const finalUrl = url.toString(); // Automatically encoded
 ```
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

@@ -43,19 +43,18 @@ src/handlers/api.ts
 
 ## 📊 OWASP Serverless Top 10 Coverage Matrix
 
-| OWASP Category                         | Coverage | Rules                                                                            |
-| -------------------------------------- | :------: | -------------------------------------------------------------------------------- |
-| **SAS-1: Injection**                   |    ✅    | `no-unvalidated-event-body`                                                      |
-| **SAS-2: Broken Authentication**       |    ✅    | `no-hardcoded-credentials-sdk`                                                   |
-| **SAS-3: Sensitive Data Exposure**     |    ✅    | `no-env-logging`, `no-secrets-in-env`                                            |
-| **SAS-4: Security Misconfiguration**   |    ✅    | `no-permissive-cors-*`                                                           |
-| **SAS-5: Broken Access Control**       |    ✅    | `no-missing-authorization-check`, `no-overly-permissive-iam-policy`              |
-| **SAS-6: Insufficient Logging**        |    ✅    | `no-error-swallowing`                                                            |
-| **SAS-7: Denial of Service**           |    ✅    | `require-timeout-handling`, `no-unbounded-batch-processing`                      |
-| **SAS-8: Server-Side Request Forgery** |    ✅    | `no-user-controlled-requests`                                                    |
-| **SAS-9: Functions Misconfiguration**  |    ✅    | `no-exposed-error-details`                                                       |
-| **SAS-10: Improper Crypto**            |    ➡️    | Use [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) |
-
+| OWASP Category                         | Coverage | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| **SAS-1: Injection** |  |  |  |  |  |  |  |  |  |
+| **SAS-2: Broken Authentication** |  |  |  |  |  |  |  |  |  |
+| **SAS-3: Sensitive Data Exposure** |  |  |  |  |  |  |  |  |  |
+| **SAS-4: Security Misconfiguration** |  |  |  |  |  |  |  |  |  |
+| **SAS-5: Broken Access Control** |  |  |  |  |  |  |  |  |  |
+| **SAS-6: Insufficient Logging** |  |  |  |  |  |  |  |  |  |
+| **SAS-7: Denial of Service** |  |  |  |  |  |  |  |  |  |
+| **SAS-8: Server-Side Request Forgery** |  |  |  |  |  |  |  |  |  |
+| **SAS-9: Functions Misconfiguration** |  |  |  |  |  |  |  |  |  |
+| **SAS-10: Improper Crypto** |  |  |  |  |  |  |  |  |  |
 ---
 
 ## 🔐 13 Security Rules
@@ -64,37 +63,33 @@ src/handlers/api.ts
 
 ### Credential & Secrets Protection (3 rules)
 
-| Rule                                                          | CWE     | OWASP | CVSS | Description                                 | 💼  | ⚠️  | 🔧  | 💡  |
-| ------------------------------------------------------------- | ------- | ----- | ---- | ------------------------------------------- | --- | --- | --- | --- |
-| [no-hardcoded-credentials-sdk](#no-hardcoded-credentials-sdk) | CWE-798 | SAS-2 | 9.8  | Hardcoded AWS credentials in SDK v3 clients | 💼  |     |     |     |
-| [no-secrets-in-env](#no-secrets-in-env)                       | CWE-798 | SAS-3 | 9.8  | Secrets hardcoded in environment variables  | 💼  |     |     |     |
-| [no-env-logging](#no-env-logging)                             | CWE-532 | SAS-3 | 7.5  | Logging entire `process.env` object         |     | ⚠️  |     |     |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-hardcoded-credentials-sdk](#no-hardcoded-credentials-sdk) | CWE-798 | SAS-2 | 9.8 | Hardcoded AWS credentials in SDK v3 clients | 💼 |  |  |  |  |
+| [no-secrets-in-env](#no-secrets-in-env) | CWE-798 | SAS-3 | 9.8 | Secrets hardcoded in environment variables | 💼 |  |  |  |  |
+| [no-env-logging](#no-env-logging) | CWE-532 | SAS-3 | 7.5 | Logging entire `process.env` object |  | ⚠️ |  |  |  |
 ### CORS Security (2 rules)
 
-| Rule                                                        | CWE     | OWASP | CVSS | Description                                    | 💼  | ⚠️  | 🔧  | 💡  |
-| ----------------------------------------------------------- | ------- | ----- | ---- | ---------------------------------------------- | --- | --- | --- | --- |
-| [no-permissive-cors-response](#no-permissive-cors-response) | CWE-942 | SAS-4 | 9.1  | Wildcard CORS in Lambda response headers       | 💼  |     | 🔧  |     |
-| [no-permissive-cors-middy](#no-permissive-cors-middy)       | CWE-942 | SAS-4 | 9.1  | Permissive CORS in @middy/http-cors middleware | 💼  |     |     |     |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-permissive-cors-response](#no-permissive-cors-response) | CWE-942 | SAS-4 | 9.1 | Wildcard CORS in Lambda response headers | 💼 |  | 🔧 |  |  |
+| [no-permissive-cors-middy](#no-permissive-cors-middy) | CWE-942 | SAS-4 | 9.1 | Permissive CORS in @middy/http-cors middleware | 💼 |  |  |  |  |
 ### Input Validation & Access Control (4 rules)
 
-| Rule                            | CWE     | OWASP | CVSS | Description                                         | 💼  | ⚠️  | 🔧  | 💡  |
-| ------------------------------- | ------- | ----- | ---- | --------------------------------------------------- | --- | --- | --- | --- |
-| no-unvalidated-event-body       | CWE-20  | SAS-1 | 8.0  | Lambda handlers using event body without validation |     | ⚠️  |     | 💡  |
-| no-missing-authorization-check  | CWE-862 | SAS-5 | 7.5  | Lambda handlers without authorization checks        |     | ⚠️  |     | 💡  |
-| no-overly-permissive-iam-policy | CWE-732 | SAS-5 | 6.5  | IAM policies with wildcard permissions              | 💼  |     |     | 💡  |
-| no-user-controlled-requests     | CWE-918 | SAS-8 | 9.1  | HTTP requests with user-controlled URLs (SSRF)      | 💼  |     |     | 💡  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| no-unvalidated-event-body | CWE-20 | SAS-1 | 8.0 | Lambda handlers using event body without validation |  | ⚠️ |  | 💡 |  |
+| no-missing-authorization-check | CWE-862 | SAS-5 | 7.5 | Lambda handlers without authorization checks |  | ⚠️ |  | 💡 |  |
+| no-overly-permissive-iam-policy | CWE-732 | SAS-5 | 6.5 | IAM policies with wildcard permissions | 💼 |  |  | 💡 |  |
+| no-user-controlled-requests | CWE-918 | SAS-8 | 9.1 | HTTP requests with user-controlled URLs (SSRF) | 💼 |  |  | 💡 |  |
 ### Security Operations (4 rules)
 
-| Rule                          | CWE     | OWASP | CVSS | Description                                  | 💼  | ⚠️  | 🔧  | 💡  |
-| ----------------------------- | ------- | ----- | ---- | -------------------------------------------- | --- | --- | --- | --- |
-| no-error-swallowing           | CWE-390 | SAS-6 | 5.0  | Empty catch blocks and missing error logging |     | ⚠️  |     | 💡  |
-| require-timeout-handling      | CWE-400 | SAS-7 | 6.0  | External calls without timeout handling      |     | ⚠️  |     | 💡  |
-| no-unbounded-batch-processing | CWE-770 | SAS-7 | 5.5  | Processing batch records without size limits |     | ⚠️  |     | 💡  |
-| no-exposed-error-details      | CWE-209 | SAS-9 | 4.3  | Exposing internal error details in responses |     | ⚠️  |     | 💡  |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| no-error-swallowing | CWE-390 | SAS-6 | 5.0 | Empty catch blocks and missing error logging |  | ⚠️ |  | 💡 |  |
+| require-timeout-handling | CWE-400 | SAS-7 | 6.0 | External calls without timeout handling |  | ⚠️ |  | 💡 |  |
+| no-unbounded-batch-processing | CWE-770 | SAS-7 | 5.5 | Processing batch records without size limits |  | ⚠️ |  | 💡 |  |
+| no-exposed-error-details | CWE-209 | SAS-9 | 4.3 | Exposing internal error details in responses |  | ⚠️ |  | 💡 |  |
 ---
 
 ## 🔍 Rule Details
@@ -351,18 +346,17 @@ This plugin is optimized for ESLint's [Model Context Protocol (MCP)](https://esl
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin                                                                                               |                                                                Downloads                                                                 | Description                                                  | Rules |
-| ---------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------: | ------------------------------------------------------------ | :---: |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)           |      [![npm](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://npmjs.com/package/eslint-plugin-secure-coding)      | Universal security (OWASP Top 10 Web + Mobile)               |  89   |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)     |   [![npm](https://img.shields.io/npm/dm/eslint-plugin-express-security.svg)](https://npmjs.com/package/eslint-plugin-express-security)   | Express.js security (CORS, cookies, CSRF, helmet)            |   8   |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)       |    [![npm](https://img.shields.io/npm/dm/eslint-plugin-nestjs-security.svg)](https://npmjs.com/package/eslint-plugin-nestjs-security)    | NestJS security (guards, validation pipes, throttler)        |   5   |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)     |   [![npm](https://img.shields.io/npm/dm/eslint-plugin-browser-security.svg)](https://npmjs.com/package/eslint-plugin-browser-security)   | Browser security (XSS, postMessage, storage, cookies)        |  21   |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               |                [![npm](https://img.shields.io/npm/dm/eslint-plugin-jwt.svg)](https://npmjs.com/package/eslint-plugin-jwt)                | JWT security (algorithm confusion, weak secrets, claims)     |  13   |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                         |             [![npm](https://img.shields.io/npm/dm/eslint-plugin-crypto.svg)](https://npmjs.com/package/eslint-plugin-crypto)             | Cryptographic best practices (weak algorithms, key handling) |  24   |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                                 |                 [![npm](https://img.shields.io/npm/dm/eslint-plugin-pg.svg)](https://npmjs.com/package/eslint-plugin-pg)                 | PostgreSQL/node-postgres security                            |  13   |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![npm](https://img.shields.io/npm/dm/eslint-plugin-vercel-ai-security.svg)](https://npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security (OWASP LLM + Agentic Top 10)          |  19   |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)               |        [![npm](https://img.shields.io/npm/dm/eslint-plugin-import-next.svg)](https://npmjs.com/package/eslint-plugin-import-next)        | High-performance import linting                              |  12   |
-
+| Plugin                                                                                               |                                                                Downloads                                                                 | Description                                                  | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) |  |  |  |  |  |  |  |  |  |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |  |  |  |  |  |  |  |  |  |
 ---
 
 ## 🔒 Privacy

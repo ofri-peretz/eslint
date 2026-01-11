@@ -603,19 +603,22 @@ sequenceDiagram
 
 ## Error Message Format
 
-This rule provides LLM-optimized error messages:
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
+```text
+⚠️ CWE-532 OWASP:A09 CVSS:5.3 | Log Information Exposure detected | MEDIUM [GDPR,HIPAA,PCI-DSS,SOC2]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A09_2021/
 ```
-⚠️ CWE-532 | console.log found in production code | MEDIUM
-   Fix: Use logger.debug() or remove statement | https://eslint.org/docs/latest/rules/no-console
-```
 
-**Why this format?**
+### Message Components
 
-- **Structured** - AI assistants can parse and understand
-- **Actionable** - Shows both problem and solution
-- **Strategy-aware** - Indicates which remediation strategy to use
-- **Auto-fixable** - AI can apply the fix automatically
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-532](https://cwe.mitre.org/data/definitions/532.html) [OWASP:A09](https://owasp.org/Top10/A09_2021-Injection/) [CVSS:5.3](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Log Information Exposure detected` |
+| **Severity & Compliance** | Impact assessment | `MEDIUM [GDPR,HIPAA,PCI-DSS,SOC2]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A09_2021-Injection/) |
 
 ## When Not To Use
 

@@ -70,12 +70,22 @@ if (ALLOWED_FILES.includes(req.query.file)) {
 
 ## Error Message Format
 
-When triggered, this rule produces:
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
+```text
+🔒 CWE-22 OWASP:A01 CVSS:7.5 | Path Traversal detected | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
 ```
-🔒 CWE-22 | Arbitrary File Access | HIGH
-   Fix: Validate and sanitize file paths, use allowlists | https://cwe.mitre.org/data/definitions/22.html
-```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Path Traversal detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/) |
 
 ## Known False Negatives
 

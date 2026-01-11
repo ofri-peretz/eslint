@@ -62,39 +62,22 @@ flowchart TD
 
 ## Error Message Format
 
-The rule provides **LLM-optimized error messages** with command injection prevention guidance:
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
-```
-🚨 Security: Command Injection Risk | exec(`git clone ${repoUrl}`) | src/deploy.ts:89
-📊 Risk Level: CRITICAL (CWE-78: OS Command Injection)
-🔍 Issue: Command injection vulnerability in exec call
-💡 Safe Alternatives: execFile, spawn
-🔧 Refactoring Steps:
-   1. Replace exec() with execFile() or spawn()
-   2. Split command and arguments into separate array elements
-   3. Use {shell: false} option to prevent shell interpretation
-   4. Validate and sanitize all user inputs
-   5. Consider using execa library for better security
-⏱️  Estimated effort: 15-25 minutes
-🔗 Security Impact: Prevents arbitrary command execution on server
+```text
+🔒 CWE-78 OWASP:A05 CVSS:9.8 | OS Command Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 
 ### Message Components
 
-| Component             | Purpose                | Example                          |
-| --------------------- | ---------------------- | -------------------------------- |
-| **Risk Level**        | Security severity      | `CRITICAL`                       |
-| **CWE Reference**     | Vulnerability type     | `CWE-78: OS Command Injection`   |
-| **Issue Description** | Specific vulnerability | `Command injection in exec call` |
-| **Safe Alternatives** | Recommended methods    | `execFile, spawn`                |
-| **Refactoring Steps** | Step-by-step fixes     | Numbered implementation guide    |
-| **Time Estimate**     | Effort assessment      | `15-25 minutes`                  |
-
-This format is optimized for:
-
-- 🤖 **LLMs** - Can parse and rewrite command execution patterns
-- 👨‍💻 **Developers** - Clear security context with actionable fixes
-- 🔧 **DevOps** - Proper risk assessment for deployment decisions
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-78](https://cwe.mitre.org/data/definitions/78.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `OS Command Injection detected` |
+| **Severity & Compliance** | Impact assessment | `CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/) |
 
 ## Configuration
 

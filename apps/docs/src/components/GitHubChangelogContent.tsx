@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -9,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, GitCommit, ArrowUpRight, Loader2, AlertCircle, FileWarning, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { api, type ChangelogEntry, type ChangelogPath } from '@/lib/api';
+import { type ChangelogEntry, type ChangelogPath, useGitHubChangelog } from '@/lib/api';
 
 interface GitHubChangelogProps {
   repo: string; // e.g., "ofri-peretz/eslint"
@@ -93,18 +92,19 @@ export const GitHubChangelog = ({ repo, path, limit = 5 }: GitHubChangelogProps)
   // Runtime check for path
   const isValidPath = path.endsWith('CHANGELOG.md');
 
-  const { data: allEntries, isLoading, error } = useQuery({
-    queryKey: ['changelog', repo, path],
-    queryFn: async () => {
-      if (!isValidPath) {
-        throw new Error('Invalid changelog path. Must point to a CHANGELOG.md file.');
-      }
-      
-      const text = await api.github.getChangelog(repo, path);
-      return parseChangelog(text);
-    },
-    enabled: !!repo && !!path,
-  });
+  const { data: rawText, isLoading: isFetching, error } = useGitHubChangelog(repo, path);
+  
+  // Memoize parsing to avoid re-parsing on every render
+  const allEntries = React.useMemo(() => {
+    if (!rawText) return undefined;
+    if (!isValidPath) {
+      throw new Error('Invalid changelog path. Must point to a CHANGELOG.md file.');
+    }
+    return parseChangelog(rawText);
+  }, [rawText, isValidPath]);
+
+  // Derived loading state
+  const isLoading = isFetching && !allEntries;
 
   const totalPages = allEntries ? Math.ceil(allEntries.length / limit) : 0;
   const entries = allEntries?.slice((page - 1) * limit, page * limit);
@@ -265,12 +265,16 @@ export const GitHubChangelog = ({ repo, path, limit = 5 }: GitHubChangelogProps)
                   components={{
                     li: ({ children }) => (
                       <div className="flex gap-3">
-                        <span className="text-purple-500/50 mt-1.5 flex-shrink-0 text-[10px]">●</span>
+                        <span className="text-purple-500/50 mt-1.5 shrink-0 text-[10px]">●</span>
                         <div className="flex-1">{children}</div>
                       </div>
                     ),
                     p: ({ children, node }) => {
-                      if (node?.parent?.type === 'listItem') {
+                      // Correctly type the node to access parent safely without 'any'
+                      // react-markdown passes hast nodes which don't explicitly have 'parent' in the default type
+                      // but it is available at runtime during the transform path
+                      const nodeType = node as unknown as { parent?: { type: string } };
+                      if (nodeType?.parent?.type === 'listItem') {
                         return <>{children}</>;
                       }
                       return <p className="mb-4 last:mb-0">{children}</p>;

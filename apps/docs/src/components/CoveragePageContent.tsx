@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import dynamic from 'next/dynamic';
 import { motion } from 'motion/react';
 import { 
   Gauge, 
@@ -31,12 +32,16 @@ const getCoverageBg = (coverage: number, solid = false) => {
   return solid ? 'bg-red-500' : 'bg-red-500/10';
 };
 
+
+
 interface CoveragePageContentProps {
   repo: CodecovRepo | undefined;
   isLoadingRepo: boolean;
   components: CodecovComponent[] | undefined;
   isLoadingComponents: boolean;
 }
+
+const ShimmerButton = dynamic(() => import('@/components/ui/shimmer-button').then(m => m.ShimmerButton), { ssr: false });
 
 export function CoveragePageContent({
   repo,
@@ -66,10 +71,19 @@ export function CoveragePageContent({
           href="https://app.codecov.io/gh/ofri-peretz/eslint" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="group flex items-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-xl font-bold transition-all hover:scale-105 hover:shadow-lg hover:shadow-orange-500/20 active:scale-95 whitespace-nowrap"
         >
-          Full Breakdown on Codecov
-          <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          <ShimmerButton 
+            className="shadow-2xl shadow-[#F01F7A]/20"
+            background="#F01F7A"
+            shimmerColor="#ffffff"
+            shimmerSize="0.10em"
+            borderRadius="100px"
+          >
+            <span className="flex items-center gap-2 text-sm font-bold text-white tracking-wide">
+              Full Breakdown on Codecov
+              <ArrowUpRight className="size-4 group-hover:translate-x-1 transition-transform" />
+            </span>
+          </ShimmerButton>
         </a>
       </div>
 
@@ -84,7 +98,7 @@ export function CoveragePageContent({
             <Gauge className="size-20 text-orange-500" />
           </div>
           <div className="relative">
-            <div className="text-sm font-bold text-orange-500 uppercase tracking-widest mb-2">Total Coverage</div>
+            <div className="text-sm font-bold text-orange-500 uppercase tracking-widest mb-2">Overall Project Coverage</div>
             <div className="text-5xl font-black tracking-tighter flex items-center gap-1">
               {isLoadingRepo ? (
                 <Loader2 className="size-8 animate-spin opacity-50" />
@@ -159,7 +173,9 @@ export function CoveragePageContent({
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {components?.map((component, index) => (
+            {components
+              ?.filter(c => !['eslint-plugin-react-features', 'eslint-plugin-architecture', 'eslint-plugin-react-a11y', 'eslint-plugin-quality'].includes(c.name))
+              .map((component, index) => (
               <motion.div
                 key={component.component_id}
                 initial={{ opacity: 0, y: 10 }}

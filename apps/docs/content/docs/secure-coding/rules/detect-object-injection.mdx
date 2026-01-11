@@ -1,8 +1,7 @@
 ---
-title: detect-object-injection
-description: "Detects variable[key] as a left- or right-hand assignment operand (prototype pollution). This rule is part of eslint-plugin-secure-coding and provides LLM-optim"
+title: "detect-object-injection"
+description: "Detects `variable[key]` as a left- or right-hand assignment operand (prototype pollution). This rule is part of [`eslint-plugin-secure-coding`](https://www.npmj"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -48,39 +47,43 @@ This rule detects dangerous use of bracket notation with dynamic property names 
   }
 }}%%
 flowchart TD
-    A[🔍 Detect Bracket Notation] --> B{Dynamic Property?}
-    B -->|Yes| C[🚨 Prototype Pollution Risk]
-    B -->|No| D[✅ Literal Property - Safe]
+    A["🔍 Detect Bracket Notation"] --> B{"Dynamic Property?"}
+    B -->|Yes| C["🚨 Prototype Pollution Risk"]
+    B -->|No| D["✅ Literal Property - Safe"]
 
-    C --> E{Dangerous Property?}
-    E -->|__proto__| F[⚠️ Prototype Pollution]
-    E -->|constructor| G[⚠️ Method Injection]
-    E -->|Other| H[⚠️ Property Injection]
+    C --> E{"Dangerous Property?"}
+    E -->|__proto__| F["⚠️ Prototype Pollution"]
+    E -->|constructor| G["⚠️ Method Injection"]
+    E -->|Other| H["⚠️ Property Injection"]
 
-    F --> I[💡 Suggest Map/Object.create]
+    F --> I["💡 Suggest Map/Object.create"]
     G --> I
-    H --> J[💡 Suggest whitelisting]
+    H --> J["💡 Suggest whitelisting"]
 
-    I --> K[📝 LLM-Optimized Guidance]
+    I --> K["📝 LLM-Optimized Guidance"]
     J --> K
+
 ```
+
 
 ## Error Message Format
 
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-915 OWASP:A01 CVSS:9.8 | Object Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
 ```
-🚨 Security: Prototype Pollution Risk | obj[userKey] = value | src/config.ts:34
-📊 Risk Level: CRITICAL (CWE-915: Improperly Controlled Modification of Object Prototype)
-🔍 Issue: Prototype pollution allows modifying object prototypes or injecting properties
-💡 Safe Alternative: Object.create(null) or Map
-🔧 Refactoring Steps:
-   1. Use Map instead of plain objects: new Map()
-   2. Use Object.create(null) for prototype-free objects
-   3. Avoid direct property assignment with user input
-   4. Implement property whitelisting
-   5. Consider freezing Object.prototype in secure contexts
-⏱️  Estimated effort: 15-20 minutes
-🔗 Security Impact: Prevents prototype chain manipulation
-```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-915](https://cwe.mitre.org/data/definitions/915.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Object Injection detected` |
+| **Severity & Compliance** | Impact assessment | `CRITICAL [SOC2,PCI-DSS,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/) |
 
 ## Configuration
 
@@ -300,12 +303,11 @@ for (const prop of pollutionAttempts) {
 - [`no-unsafe-dynamic-require`](./no-unsafe-dynamic-require.md) - Prevents unsafe module loading
 - [`detect-non-literal-regexp`](./detect-non-literal-regexp.md) - Prevents ReDoS attacks
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

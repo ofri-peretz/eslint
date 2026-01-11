@@ -1,8 +1,7 @@
 ---
 title: "require-tool-schema"
-description: Ensures all AI tools have Zod schema validation for input parameters.
+description: "This rule identifies AI tools that lack input schema validation. Without schema validation, AI models can pass arbitrary data to tool execute functions, enablin"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -84,12 +83,11 @@ Without input validation, AI agents can:
 - [`require-tool-confirmation`](./require-tool-confirmation.md) - Require confirmation for destructive tools
 - [`require-output-filtering`](./require-output-filtering.md) - Filter tool output
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
@@ -151,3 +149,22 @@ const weatherTool = createTool({
 - [OWASP ASI02: Tool Misuse & Exploitation](https://owasp.org)
 - [CWE-20: Improper Input Validation](https://cwe.mitre.org/data/definitions/20.html)
 - [Vercel AI SDK Tools](https://sdk.vercel.ai/docs/ai-sdk-core/tools)
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-20 OWASP:A06 CVSS:7.5 | Improper Input Validation detected | HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-20](https://cwe.mitre.org/data/definitions/20.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Improper Input Validation detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/) |

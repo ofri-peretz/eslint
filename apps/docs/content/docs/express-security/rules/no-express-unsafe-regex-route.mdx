@@ -1,8 +1,7 @@
 ---
-title: no-express-unsafe-regex-route
-description: Disallow vulnerable regular expressions in route definitions
+title: "no-express-unsafe-regex-route"
+description: "**Severity:** \udd34 Critical"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -70,12 +69,11 @@ app.get(/^\/api\/\w+$/, handler);
 
 Never disable this rule. ReDoS can completely freeze your server.
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

@@ -67,7 +67,6 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
         icon: MessageIcons.SECURITY,
         issueName: 'Unvalidated Event Input',
         cwe: 'CWE-20',
-        owasp: 'SAS-1',
         cvss: 8.0,
         description:
           'Lambda handler uses {{property}} without validation. This can lead to injection attacks.',

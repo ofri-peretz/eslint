@@ -1,8 +1,7 @@
 ---
-title: prevent-double-release
-description: Prevents calling client.release() multiple times on the same client.
+title: "prevent-double-release"
+description: "Prevents calling `client.release()` multiple times on the same client."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -158,12 +157,11 @@ async function query() {
    Fix: Ensure client.release() is called exactly once per acquisition, preferably in a finally block. | https://node-postgres.com/api/client#clientrelease
 ```
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static AST analysis limitations:
 

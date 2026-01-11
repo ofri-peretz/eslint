@@ -1,8 +1,7 @@
 ---
-title: no-permissive-cors-middy
-description: Detects permissive CORS configurations in Middy middleware. This rule is part of eslint-plugin-lambda-security.
+title: "no-permissive-cors-middy"
+description: "Detects permissive CORS configurations in Middy middleware. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-l"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -100,12 +99,11 @@ export const handler = middy(baseHandler).use(
 
 - [`no-permissive-cors-response`](./no-permissive-cors-response.md) - CORS in direct responses
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
@@ -162,3 +160,22 @@ export const handler = middy(baseHandler).use(corsMiddleware);
 
 - [CWE-942: Permissive Cross-domain Policy](https://cwe.mitre.org/data/definitions/942.html)
 - [Middy CORS Middleware](https://middy.js.org/docs/middlewares/http-cors/)
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-942 OWASP:A01 CVSS:7.5 | CORS Misconfiguration detected | HIGH
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-942](https://cwe.mitre.org/data/definitions/942.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `CORS Misconfiguration detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/) |

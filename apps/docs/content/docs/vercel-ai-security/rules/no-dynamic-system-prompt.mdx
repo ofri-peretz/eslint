@@ -1,8 +1,7 @@
 ---
 title: "no-dynamic-system-prompt"
-description: Prevents dynamic content in system prompts to avoid agent confusion attacks.
+description: "This rule identifies code patterns where system prompts contain dynamic or user-controlled content. Dynamic system prompts can lead to agent confusion attacks w"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -95,12 +94,11 @@ Dynamic system prompts enable attackers to:
 - [`no-system-prompt-leak`](./no-system-prompt-leak.md) - Prevent system prompt exposure
 - [`require-validated-prompt`](./require-validated-prompt.md) - Validate user prompts
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

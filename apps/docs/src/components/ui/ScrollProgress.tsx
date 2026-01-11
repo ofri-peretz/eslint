@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 
@@ -15,13 +15,11 @@ import { cn } from '@/lib/utils';
  */
 export function ScrollProgress({ className }: { className?: string }) {
   const [progress, setProgress] = useState(0);
-  const [mounted, setMounted] = useState(false);
-  const portalTarget = useRef<HTMLElement | null>(null);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    // Store the portal target after mount (avoids SSR issues)
-    portalTarget.current = document.body;
-    setMounted(true);
+    // Store the portal target in state after mount (avoids SSR issues)
+    setPortalTarget(document.body);
 
     const handleScroll = () => {
       const totalScroll = document.documentElement.scrollTop;
@@ -43,7 +41,7 @@ export function ScrollProgress({ className }: { className?: string }) {
   // CRITICAL: Return null during SSR and first client render
   // This ensures server HTML (null) matches initial client HTML (null)
   // preventing hydration mismatch errors
-  if (!mounted || !portalTarget.current) return null;
+  if (!portalTarget) return null;
 
   return createPortal(
     <div className={cn("fixed top-0 left-0 right-0 h-[3px] z-[99999] pointer-events-none", className)}>
@@ -52,6 +50,6 @@ export function ScrollProgress({ className }: { className?: string }) {
         style={{ transform: `scaleX(${progress})` }}
       />
     </div>,
-    portalTarget.current
+    portalTarget
   );
 }

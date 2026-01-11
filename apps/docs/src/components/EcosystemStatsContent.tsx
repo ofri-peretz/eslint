@@ -2,13 +2,11 @@
 // Refreshed: 2026-01-10T19:22:00Z
 
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
 const MotionDiv = dynamic(() => import('motion/react').then(m => m.motion.div), { ssr: false });
 import { Shield, Zap, Target, Gauge, Loader2, ArrowUpRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import pluginStats from '@/data/plugin-stats.json';
-import { api, type CodecovRepo } from '@/lib/api';
+import { useCodecovRepo, usePluginStats, type PluginStats } from '@/lib/api';
 import { BorderBeam } from './ui/border-beam';
 
 interface EcosystemStatsData {
@@ -25,16 +23,12 @@ export function EcosystemStats() {
     setMounted(true);
   }, []);
 
-  const { data: repoData, error: codecovError } = useQuery<CodecovRepo>({
-    queryKey: ['codecov-repo'],
-    queryFn: api.codecov.getRepo,
-    staleTime: 1000 * 60 * 60,
-    retry: 1, // Minimize noise if Codecov is down
-  });
+  const { data: repoData, error: codecovError } = useCodecovRepo();
+  const { data: pluginStats } = usePluginStats();
 
   const stats: EcosystemStatsData = {
-    rules: pluginStats.totalRules,
-    plugins: pluginStats.totalPlugins,
+    rules: pluginStats?.totalRules ?? 0,
+    plugins: pluginStats?.totalPlugins ?? 0,
     coverage: repoData?.totals?.coverage ?? 81.65,
     owaspCoverage: 100
   };

@@ -1,8 +1,7 @@
 ---
-title: no-eval
-description: Detects dangerous eval() and similar code execution patterns. This rule is part of eslint-plugin-frontend-security.
+title: "no-eval"
+description: "Detects dangerous eval() and similar code execution patterns. This rule is part of [`eslint-plugin-frontend-security`](https://www.npmjs.com/package/eslint-plug"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -46,14 +45,14 @@ Detects dangerous eval() and similar code execution patterns. This rule is part 
   }
 }}%%
 flowchart TD
-    A[🔍 CallExpression Found] --> B{Is eval?}
-    B -->|Yes| C[🚨 Report Error]
-    B -->|No| D{Is new Function?}
-    D -->|Yes| E{Has dynamic args?}
+    A["🔍 CallExpression Found"] --> B{"Is eval?"}
+    B -->|Yes| C["🚨 Report Error"]
+    B -->|No| D{"Is new Function?"}
+    D -->|Yes| E{"Has dynamic args?"}
     E -->|Yes| C
-    E -->|No| F[✅ Skip]
-    D -->|No| G{Is setTimeout/setInterval?}
-    G -->|Yes| H{String argument?}
+    E -->|No| F["✅ Skip"]
+    D -->|No| G{"Is setTimeout/setInterval?"}
+    G -->|Yes| H{"String argument?"}
     H -->|Yes| C
     H -->|No| F
     G -->|No| F
@@ -67,7 +66,9 @@ flowchart TD
     class C errorNode
     class B,D,E,G,H processNode
     class F skipNode
+
 ```
+
 
 ## Examples
 
@@ -131,12 +132,11 @@ const result = parser.evaluate(expression);
 
 - [`no-innerhtml`](./no-innerhtml.md) - XSS via innerHTML
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
@@ -190,3 +190,22 @@ new Worker(`data:,${userCode}`);
 - [CWE-94: Code Injection](https://cwe.mitre.org/data/definitions/94.html)
 - [MDN: eval()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval#never_use_eval!)
 - [OWASP Code Injection](https://owasp.org/www-community/attacks/Code_Injection)
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-94 OWASP:A05 CVSS:9.8 | Code Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-94](https://cwe.mitre.org/data/definitions/94.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Code Injection detected` |
+| **Severity & Compliance** | Impact assessment | `CRITICAL [SOC2,PCI-DSS,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/) |

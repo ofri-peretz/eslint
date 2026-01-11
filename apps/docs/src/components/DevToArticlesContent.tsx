@@ -2,9 +2,8 @@
 // REFACTORED: 2026-01-10T21:24:00Z - Simplified card structure
 
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Heart, MessageCircle, Clock, ArrowUpRight, Loader2, AlertCircle, Eye } from 'lucide-react';
-import { api, type DevToArticle } from '@/lib/api';
+import { ArrowUpRight, Loader2, AlertCircle, Eye, Heart, MessageCircle, Clock } from 'lucide-react';
+import { type DevToArticle, useDevToArticles } from '@/lib/api';
 
 interface DevToArticleCardProps {
   article: DevToArticle;
@@ -73,7 +72,7 @@ export function DevToArticleCard({ article }: DevToArticleCardProps) {
           {article.tag_list.slice(0, 3).map((tag) => (
             <span
               key={tag}
-              className="px-3 py-1 text-xs font-medium text-fd-muted-foreground bg-fd-muted rounded"
+              className="px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-md"
             >
               #{tag}
             </span>
@@ -122,10 +121,7 @@ interface RelatedArticlesProps {
 }
 
 export function RelatedArticles({ plugin, limit = 3 }: RelatedArticlesProps) {
-  const { data: articles, isLoading, error } = useQuery({
-    queryKey: ['devto-articles', plugin, limit],
-    queryFn: () => api.devto.getArticles(plugin, limit),
-  });
+  const { data: articles, isLoading, error } = useDevToArticles(plugin, limit);
 
   if (isLoading) {
     return (
@@ -157,7 +153,7 @@ export function RelatedArticles({ plugin, limit = 3 }: RelatedArticlesProps) {
       <div className="mt-16 p-6 rounded-2xl bg-red-500/5 border border-red-500/20 text-red-500 flex items-center gap-4">
         <AlertCircle className="w-6 h-6 shrink-0" />
         <div>
-          <p className="font-bold">Couldn't load dev.to articles</p>
+          <p className="font-bold">Couldn&apos;t load dev.to articles</p>
           <p className="text-sm opacity-80">Check the plugin name or try again later.</p>
         </div>
       </div>
@@ -187,7 +183,7 @@ export function RelatedArticles({ plugin, limit = 3 }: RelatedArticlesProps) {
         </a>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {articles.map((article: DevToArticle) => (
           <DevToArticleCard key={article.id} article={article} />
         ))}

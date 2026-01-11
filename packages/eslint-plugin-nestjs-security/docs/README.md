@@ -10,24 +10,21 @@ This plugin provides security rules specifically designed for NestJS framework a
 
 ### Authorization & Access Control
 
-| Rule                                                                | Description                       | CWE     | Status   |
-| ------------------------------------------------------------------- | --------------------------------- | ------- | -------- |
-| [`require-guards`](./rules/require-guards.md)                       | Require @UseGuards on controllers | CWE-284 | ✅ Ready |
-| [`no-exposed-private-fields`](./rules/no-exposed-private-fields.md) | Detect exposed sensitive fields   | CWE-200 | ✅ Ready |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [`require-guards`](./rules/require-guards.md) | CWE-284 |  |  | Require @UseGuards on controllers |  |  |  |  |  |
+| [`no-exposed-private-fields`](./rules/no-exposed-private-fields.md) | CWE-200 |  |  | Detect exposed sensitive fields |  |  |  |  |  |
 ### Input Validation
 
-| Rule                                                                  | Description                        | CWE    | Status   |
-| --------------------------------------------------------------------- | ---------------------------------- | ------ | -------- |
-| [`no-missing-validation-pipe`](./rules/no-missing-validation-pipe.md) | Require ValidationPipe for DTOs    | CWE-20 | ✅ Ready |
-| [`require-class-validator`](./rules/require-class-validator.md)       | Require class-validator decorators | CWE-20 | ✅ Ready |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [`no-missing-validation-pipe`](./rules/no-missing-validation-pipe.md) | CWE-20 |  |  | Require ValidationPipe for DTOs |  |  |  |  |  |
+| [`require-class-validator`](./rules/require-class-validator.md) | CWE-20 |  |  | Require class-validator decorators |  |  |  |  |  |
 ### Rate Limiting
 
-| Rule                                                | Description                       | CWE     | Status   |
-| --------------------------------------------------- | --------------------------------- | ------- | -------- |
-| [`require-throttler`](./rules/require-throttler.md) | Require ThrottlerGuard/rate limit | CWE-770 | ✅ Ready |
-
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [`require-throttler`](./rules/require-throttler.md) | CWE-770 |  |  | Require ThrottlerGuard/rate limit |  |  |  |  |  |
 ## Quick Start
 
 ```javascript

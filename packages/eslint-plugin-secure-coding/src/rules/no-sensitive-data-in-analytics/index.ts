@@ -4,7 +4,7 @@
  * @see https://cwe.mitre.org/data/definitions/359.html
  */
 
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import type { TSESTree } from '@interlace/eslint-devkit';
 
 type MessageIds = 'violationDetected';
@@ -20,10 +20,6 @@ export const noSensitiveDataInAnalytics = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       description: 'Prevent PII being sent to analytics services',
-      category: 'Security',
-      recommended: true,
-      owaspMobile: ['M6'],
-      cweIds: ['CWE-359'],
     },
     messages: {
       violationDetected: formatLLMMessage({
@@ -49,16 +45,22 @@ export const noSensitiveDataInAnalytics = createRule<RuleOptions, MessageIds>({
     return {
       CallExpression(node: TSESTree.CallExpression) {
         // analytics.track() with sensitive data
-        if (node.callee.type === 'MemberExpression' &&
-            node.callee.object.name === 'analytics' &&
-            node.callee.property.name === 'track') {
-          
+        if (
+          node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          node.callee.object.type === AST_NODE_TYPES.Identifier &&
+          node.callee.object.name === 'analytics' &&
+          node.callee.property.type === AST_NODE_TYPES.Identifier &&
+          node.callee.property.name === 'track'
+        ) {
           const dataArg = node.arguments[1];
-          if (dataArg?.type === 'ObjectExpression') {
+          if (dataArg?.type === AST_NODE_TYPES.ObjectExpression) {
             dataArg.properties.forEach(prop => {
-              if (prop.type === 'Property') {
-                const key = prop.key.name?.toLowerCase();
-                const matchedField = sensitiveFields.find(f => key?.includes(f));
+              if (
+                prop.type === AST_NODE_TYPES.Property &&
+                prop.key.type === AST_NODE_TYPES.Identifier
+              ) {
+                const key = prop.key.name.toLowerCase();
+                const matchedField = sensitiveFields.find(f => key.includes(f));
                 if (matchedField) {
                   report(prop, matchedField);
                 }
@@ -70,4 +72,3 @@ export const noSensitiveDataInAnalytics = createRule<RuleOptions, MessageIds>({
     };
   },
 });
-

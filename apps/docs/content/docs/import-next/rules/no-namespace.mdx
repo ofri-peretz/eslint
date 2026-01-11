@@ -1,15 +1,12 @@
 ---
-title: no-namespace
-description: "💼 This rule is enabled in the following configs: recommended, typescript."
+title: "no-namespace"
+description: "Forbid namespace (a.k.a. \"wildcard\" *) imports"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 💼 This rule is enabled in the following configs: `recommended`, `typescript`.
 💡 This rule is automatically fixable by the `--fix` CLI option.
-
-{/*  end auto-generated rule header  */}
 
 Forbid namespace (a.k.a. "wildcard" *) imports
 
@@ -38,22 +35,9 @@ This rule aims to prevent issues related to namespace.
 
 ## Implementation
 
-- [Source Code](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/src/rules/no-namespace.ts)
-- [Test Cases](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/src/tests/no-namespace.test.ts)
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-namespace.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-namespace.test.ts)
 
-## OWASP
+## OWASP Foundation
 
-- **Category**: [General Security](https://owasp.org/www-project-top-ten/)
-
-<WhenNotToUse />
-
-## Known False Negatives
-
-<FalseNegativeCTA />
-
-This rule uses pattern-based detection. The following may not be caught:
-
-- **Dynamic patterns** - Runtime-generated code or values
-- **Indirect references** - Values passed through multiple variables or functions
-- **External data** - Data from APIs, databases, or user input
-
+- **Category**: A00:2021 - General Security

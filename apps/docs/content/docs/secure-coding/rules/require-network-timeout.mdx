@@ -1,9 +1,9 @@
 ---
-title: require-network-timeout
-description: Security rule for mobile applications
+title: "require-network-timeout"
+description: "This rule security rule for mobile applications."
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from '@/components/RuleComponents';
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Security rule for mobile applications
 
@@ -11,8 +11,8 @@ import { FalseNegativeCTA, WhenNotToUse } from '@/components/RuleComponents';
 
 This rule security rule for mobile applications.
 
-**OWASP Mobile Top 10:** M5 (Insecure Communication)  
-**CWE:** [CWE-770](https://cwe.mitre.org/data/definitions/770.html)  
+**OWASP Mobile Top 10:** Mobile  
+**CWE:** [CWE-770](https://cwe.mitre.org/data/definitions/000.html)  
 **Severity:** error
 
 ## Examples
@@ -35,9 +35,9 @@ This rule should be enabled for all mobile and web applications to ensure securi
 
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
@@ -78,7 +78,7 @@ obj[method](userInput);
 ## Further Reading
 
 - [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
-- [CWE-770 Details](https://cwe.mitre.org/data/definitions/770.html)
+- [CWE-770 Details](https://cwe.mitre.org/data/definitions/000.html)
 
 ## Related Rules
 

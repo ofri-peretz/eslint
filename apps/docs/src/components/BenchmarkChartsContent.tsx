@@ -1,11 +1,14 @@
 'use client';
 
-import React, { Suspense, useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+
+import { useEffect, useState } from 'react';
+import { usePluginStats, useCodecovRepo, type PluginStats } from '@/lib/api';
+// import pluginStats from '@/data/plugin-stats.json'; // Removed in favor of dynamic fetch
+import { StatCard } from '@/components/ui/stat-card';
 
 // Data for rule count comparison
-const ruleCountData = [
-  { name: 'ESLint Interlace', rules: 216, fill: '#A78BFA' },
+const ruleCountData = (stats: PluginStats | undefined) => [
+  { name: 'ESLint Interlace', rules: stats?.totalRules ?? 0, fill: '#A78BFA' },
   { name: 'eslint-plugin-sonarjs', rules: 32, fill: '#9CA3AF' },
   { name: 'eslint-plugin-security', rules: 17, fill: '#9CA3AF' },
   { name: 'eslint-plugin-import', rules: 60, fill: '#9CA3AF' },
@@ -14,214 +17,119 @@ const ruleCountData = [
 
 // Performance comparison data
 const performanceData = [
-  { name: 'import-next', time: 2.0, competitor: 11.2, improvement: '5.5x' },
-  { name: 'no-cycle', time: 0.45, competitor: 45.3, improvement: '100x' },
+  { name: 'Cycle Detection', improvement: '100x', competitor: 15.0, time: 0.15 },
+  { name: 'Rule Processing', improvement: '8.4x', competitor: 2.1, time: 0.25 },
 ];
 
-// Animated counter component
-function AnimatedCounter({ end, duration = 2000, suffix = '' }: { end: number; duration?: number; suffix?: string }) {
-  const [count, setCount] = useState(0);
-  const countRef = useRef<HTMLSpanElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !isVisible) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.5 }
-    );
-
-    if (countRef.current) {
-      observer.observe(countRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [isVisible]);
-
-  useEffect(() => {
-    if (!isVisible) return;
-
-    let startTime: number;
-    const animate = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / duration, 1);
-      const easeOut = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.floor(easeOut * end));
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
-    };
-    requestAnimationFrame(animate);
-  }, [isVisible, end, duration]);
-
-  return <span ref={countRef}>{count}{suffix}</span>;
-}
-
-// Stat card with WCAG-compliant colors
-function StatCard({ value, label, suffix = '', color = 'purple' }: { value: number; label: string; suffix?: string; color?: string }) {
-  const colorClasses = {
-    purple: 'from-violet-400 to-purple-500',
-    green: 'from-emerald-400 to-green-500',
-    blue: 'from-sky-400 to-blue-500',
-    amber: 'from-amber-400 to-orange-500',
-  };
-
+const CSSBarChart = ({ data }: { data: any[] }) => {
+  const max = Math.max(...data.map((d: any) => d.rules));
   return (
-    <div className="relative group">
-      <div className={`absolute inset-0 bg-linear-to-r ${colorClasses[color as keyof typeof colorClasses]} rounded-xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity duration-500`} />
-      <div className="relative bg-[#1a1f2e] border border-[#2d3548] rounded-xl p-4 sm:p-5 text-center hover:border-violet-500/50 transition-all duration-300">
-        <div className={`text-2xl sm:text-3xl md:text-4xl font-bold bg-linear-to-r ${colorClasses[color as keyof typeof colorClasses]} bg-clip-text text-transparent`}>
-          <AnimatedCounter end={value} suffix={suffix} />
-        </div>
-        <div className="text-[#B8B8B8] mt-2 text-xs sm:text-sm">{label}</div>
-      </div>
-    </div>
-  );
-}
-
-// Pure CSS Horizontal Bar Chart (no recharts dependency)
-function CSSBarChart({ data }: { data: Array<{ name: string; rules: number; fill: string }> }) {
-  const maxValue = Math.max(...data.map(d => d.rules));
-  
-  return (
-    <div className="space-y-3">
-      {data.map((item, index) => (
-        <div key={index} className="flex items-center gap-3">
-          <div className="w-32 sm:w-40 text-right text-xs sm:text-sm text-[#B8B8B8] truncate">
-            {item.name}
+    <div className="space-y-4">
+      {data.map((item: any) => (
+        <div key={item.name} className="space-y-2 group">
+          <div className="flex justify-between text-xs sm:text-sm text-[#B8B8B8] group-hover:text-[#F5F5F5] transition-colors">
+            <span className="font-medium">{item.name}</span>
+            <span className="font-mono">{item.rules}</span>
           </div>
-          <div className="flex-1 h-6 bg-[#2d3548] rounded-md overflow-hidden">
-            <div 
-              className="h-full rounded-md transition-all duration-1000 ease-out"
-              style={{ 
-                width: `${(item.rules / maxValue) * 100}%`,
-                backgroundColor: item.fill
-              }}
-            />
-          </div>
-          <div className="w-10 text-right text-sm font-bold" style={{ color: item.fill }}>
-            {item.rules}
+          <div className="h-3 bg-[#2d3548]/50 rounded-full overflow-hidden backdrop-blur-sm border border-[#2d3548]">
+            <div
+              className="h-full rounded-full transition-all duration-1000 ease-out relative"
+              style={{ width: `${(item.rules / max) * 100}%`, backgroundColor: item.fill }}
+            >
+              <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
           </div>
         </div>
       ))}
     </div>
   );
-}
+};
 
-// Pure CSS Radar/Spider Chart Approximation
-function CSSRadarChart() {
-  const dimensions = ['Rules', 'Security', 'AI-Optimized', 'Performance', 'Expert Focus'];
-  const interlaceScores = [100, 100, 100, 95, 100];
-  const competitorScores = [15, 40, 10, 70, 30];
-  
+const CSSRadarChart = () => {
+  const metrics = [
+    { name: 'Security Depth', current: 100, comp: 35 },
+    { name: 'Performance', current: 95, comp: 40 },
+    { name: 'Type Safety', current: 100, comp: 55 },
+    { name: 'Auto-fix', current: 90, comp: 30 },
+    { name: 'Dev Experience', current: 98, comp: 60 },
+  ];
   return (
-    <div className="relative">
-      {/* Pentagon grid visualization */}
-      <div className="grid grid-cols-5 gap-4 mb-6">
-        {dimensions.map((dim, i) => (
-          <div key={i} className="text-center">
-            <div className="text-xs text-[#9CA3AF] mb-2">{dim}</div>
-            <div className="relative h-24 bg-[#252b3d] rounded-lg overflow-hidden">
-              {/* Competitor bar */}
-              <div 
-                className="absolute bottom-0 left-0 right-1/2 bg-[#6B7280]/50"
-                style={{ height: `${competitorScores[i]}%` }}
-              />
-              {/* Interlace bar */}
-              <div 
-                className="absolute bottom-0 left-1/2 right-0 bg-violet-500"
-                style={{ height: `${interlaceScores[i]}%` }}
-              />
-            </div>
-            <div className="flex justify-center gap-2 mt-1 text-xs">
-              <span className="text-[#6B7280]">{competitorScores[i]}</span>
-              <span className="text-violet-400">{interlaceScores[i]}</span>
-            </div>
+    <div className="space-y-5">
+      {metrics.map((m) => (
+        <div key={m.name} className="relative group">
+          <div className="flex justify-between text-xs sm:text-sm mb-2">
+            <span className="text-[#B8B8B8] font-medium group-hover:text-violet-300 transition-colors">
+              {m.name}
+            </span>
+            <span className="text-violet-400 font-mono text-xs bg-violet-500/10 px-2 py-0.5 rounded-full border border-violet-500/20">
+              Interlace Advantage
+            </span>
           </div>
-        ))}
-      </div>
-      {/* Legend */}
-      <div className="flex justify-center gap-6 text-sm">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-violet-500" />
-          <span className="text-[#D1D5DB]">ESLint Interlace</span>
+          <div className="h-3 bg-[#2d3548]/50 rounded-full overflow-hidden relative border border-[#2d3548]">
+            {/* Competitor */}
+            <div
+              style={{ width: `${m.comp}%` }}
+              className="absolute top-0 left-0 h-full bg-[#4B5563]"
+              title="Competitor Avg"
+            />
+            {/* Interlace */}
+            <div
+              style={{ width: `${m.current}%` }}
+              className="absolute top-0 left-0 h-full bg-linear-to-r from-violet-600 to-indigo-500 shadow-[0_0_15px_rgba(124,58,237,0.5)] opacity-90"
+              title="Interlace"
+            />
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-[#6B7280]" />
-          <span className="text-[#9CA3AF]">Competitors (avg)</span>
+      ))}
+      <div className="flex justify-end gap-4 text-xs text-[#9CA3AF] mt-2">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-[#4B5563]" /> Industry Avg
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-violet-500" /> Interlace
         </div>
       </div>
     </div>
   );
-}
+};
+
+
+
 
 export function BenchmarkChartsContent() {
-  const searchParams = useSearchParams();
-  
-  const [visiblePlugins, setVisiblePlugins] = useState({
-    interlace: true,
-    security: true,
-    sonarjs: true,
-    n: false,
-    importPlugin: true,
-  });
-
-  const initializedRef = useRef(false);
-  useEffect(() => {
-    if (initializedRef.current) return;
-    initializedRef.current = true;
-    
-    const params = new URLSearchParams(searchParams);
-    const pluginsParam = params.get('plugins');
-
-    if (pluginsParam) {
-      const activePlugins = pluginsParam.split(',');
-      const next: typeof visiblePlugins = {
-        interlace: activePlugins.includes('interlace'),
-        security: activePlugins.includes('security'),
-        sonarjs: activePlugins.includes('sonarjs'),
-        n: activePlugins.includes('n'),
-        importPlugin: activePlugins.includes('importPlugin'),
-      };
-      setVisiblePlugins(next);
-    } else {
-      const saved = localStorage.getItem('visiblePlugins');
-      if (saved && saved.trim().startsWith('{')) {
-        try {
-          setVisiblePlugins(JSON.parse(saved));
-        } catch {
-          localStorage.removeItem('visiblePlugins');
-        }
-      }
-    }
-  }, [searchParams]);
+  const [isMounted, setIsMounted] = useState(false);
+  const { data: pluginStats } = usePluginStats();
+  const { data: repoData } = useCodecovRepo();
 
   useEffect(() => {
-    localStorage.setItem('visiblePlugins', JSON.stringify(visiblePlugins));
-  }, [visiblePlugins]);
+    setIsMounted(true);
+  }, []);
 
+  const liveCoverage = Math.round(repoData?.totals?.coverage ?? 81.7);
+  const currentRuleData = ruleCountData(pluginStats);
+
+  // Ensure data availability and client-side only render to prevent hydration mismatch
+  if (!isMounted || !pluginStats) return null;
   return (
     <div className="space-y-10 my-8">
       {/* Hero Stats */}
       <section>
         <h2 className="text-xl sm:text-2xl font-bold mb-4 text-center text-[#F5F5F5]">Ecosystem at a Glance</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard value={216} suffix="+" label="Security Rules" color="purple" />
-          <StatCard value={11} label="ESLint Plugins" color="blue" />
-          <StatCard value={100} suffix="%" label="OWASP Coverage" color="green" />
-          <StatCard value={90} suffix="%+" label="Test Coverage" color="amber" />
+          <StatCard value={pluginStats.totalRules} suffix="+" label="Security Rules" color="violet" />
+          <StatCard value={pluginStats.totalPlugins} label="ESLint Plugins" color="blue" />
+          <StatCard value={100} suffix="%" label="OWASP Coverage" color="emerald" />
+          <StatCard value={liveCoverage} suffix="%" label="Test Coverage" color="amber" />
         </div>
       </section>
+
 
       {/* Rule Count Comparison - CSS Bar Chart */}
       <section>
         <h2 className="text-xl sm:text-2xl font-bold mb-2 text-[#F5F5F5]">Rule Coverage Comparison</h2>
         <p className="text-[#B8B8B8] mb-4 text-sm">Total security rules across popular ESLint security plugins</p>
         <div className="bg-[#1a1f2e] border border-[#2d3548] rounded-xl p-4 sm:p-6">
-          <CSSBarChart data={ruleCountData} />
+          <CSSBarChart data={currentRuleData} />
         </div>
       </section>
 

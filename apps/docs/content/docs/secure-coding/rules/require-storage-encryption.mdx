@@ -1,18 +1,37 @@
 ---
-title: require-storage-encryption
-description: Security rule for mobile applications
+title: "require-storage-encryption"
+description: "The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from '@/components/RuleComponents';
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Security rule for mobile applications
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-311 OWASP:A04 CVSS:7.5 | Missing Encryption of Sensitive Data detected | HIGH
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A04_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-311](https://cwe.mitre.org/data/definitions/311.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Missing Encryption of Sensitive Data detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/) |
 
 ## Rule Details
 
 This rule security rule for mobile applications.
 
-**OWASP Mobile Top 10:** M9 (Insecure Data Storage)  
-**CWE:** [CWE-311](https://cwe.mitre.org/data/definitions/311.html)  
+**OWASP Mobile Top 10:** Mobile  
+**CWE:** [CWE-311](https://cwe.mitre.org/data/definitions/000.html)  
 **Severity:** error
 
 ## Examples
@@ -35,9 +54,9 @@ This rule should be enabled for all mobile and web applications to ensure securi
 
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
@@ -79,7 +98,7 @@ myAI.complete(userPrompt);
 ## Further Reading
 
 - [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
-- [CWE-311 Details](https://cwe.mitre.org/data/definitions/311.html)
+- [CWE-311 Details](https://cwe.mitre.org/data/definitions/000.html)
 
 ## Related Rules
 

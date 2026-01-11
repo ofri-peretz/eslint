@@ -20,10 +20,6 @@ export const requirePackageLock = createRule<RuleOptions, MessageIds>({
     type: 'suggestion',
     docs: {
       description: 'Ensure package-lock.json or yarn.lock exists',
-      category: 'Security',
-      recommended: true,
-      owaspMobile: ['M2'],
-      cweIds: ['CWE-829'],
     },
     messages: {
       violationDetected: formatLLMMessage({

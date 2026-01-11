@@ -1,8 +1,7 @@
 ---
-title: no-unsafe-query
-description: Prevents NoSQL injection by detecting direct use of user input in MongoDB query objects.
+title: "no-unsafe-query"
+description: "Prevents NoSQL injection by detecting direct use of user input in MongoDB query objects."
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -119,12 +118,11 @@ User.find({ email: safeEmail }); // ← May flag
 
 **Workaround**: Always use `{ $eq: value }` pattern.
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 

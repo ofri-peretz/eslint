@@ -20,10 +20,6 @@ export const detectMixedContent = createRule<RuleOptions, MessageIds>({
     type: 'problem',
     docs: {
       description: 'Detect HTTP resources in HTTPS pages',
-      category: 'Security',
-      recommended: true,
-      owaspMobile: ['M5'],
-      cweIds: ["CWE-311"],
     },
     messages: {
       violationDetected: formatLLMMessage({

@@ -1,8 +1,7 @@
 ---
-title: no-unvalidated-user-input
-description: "Detects unvalidated user input usage (req.body, req.query, etc.) in Express, Fastify, and Next.js applications. This rule is part of eslint-plugin-secure-coding"
+title: "no-unvalidated-user-input"
+description: "Detects unvalidated user input usage (req.body, req.query, etc.) in Express, Fastify, and Next.js applications. This rule is part of [`eslint-plugin-secure-codi"
 ---
-
 
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
@@ -27,6 +26,25 @@ Detects unvalidated user input usage (req.body, req.query, etc.) in Express, Fas
 
 **Vulnerability:** Failing to validate user input allows attackers to send malformed or malicious data to the application.
 **Risk:** This is the root cause of many vulnerabilities, including SQL Injection, XSS, and Remote Code Execution. It can also lead to application crashes or logic errors if data doesn't match expected formats.
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-20 OWASP:A06 CVSS:7.5 | Improper Input Validation detected | HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-20](https://cwe.mitre.org/data/definitions/20.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Improper Input Validation detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/) |
 
 ## Rule Details
 
@@ -156,21 +174,21 @@ app.get('/api/users/:id', (req, res) => {
   }
 }}%%
 flowchart TD
-    A[🔍 MemberExpression/Identifier Found] --> B{In Test File?}
-    B -->|Yes & allowInTests| C[✅ Skip]
-    B -->|No| D{Matches Ignore Pattern?}
+    A["🔍 MemberExpression/Identifier Found"] --> B{"In Test File?"}
+    B -->|Yes & allowInTests| C["✅ Skip"]
+    B -->|No| D{"Matches Ignore Pattern?"}
     D -->|Yes| C
-    D -->|No| E{Check Input Patterns}
-    E --> F{req.body/query/params?}
-    F -->|Yes| G{Inside Validation Call?}
-    F -->|No| H{userInput/input?}
+    D -->|No| E{"Check Input Patterns"}
+    E --> F{"req.body/query/params?"}
+    F -->|Yes| G{"Inside Validation Call?"}
+    F -->|No| H{"userInput/input?"}
     H -->|Yes| G
     H -->|No| C
     G -->|Yes| C
-    G -->|No| I[🚨 Report Error]
-    I --> J[💡 Suggest Fixes]
-    J --> K[Use Zod]
-    J --> L[Use Joi]
+    G -->|No| I["🚨 Report Error"]
+    I --> J["💡 Suggest Fixes"]
+    J --> K["Use Zod"]
+    J --> L["Use Joi"]
 
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
@@ -181,7 +199,9 @@ flowchart TD
     class I errorNode
     class E,F,G,H processNode
     class C skipNode
+
 ```
+
 
 ## Best Practices
 
@@ -250,12 +270,11 @@ app.post('/api/users', async (req, res) => {
 });
 ```
 
-
 <WhenNotToUse />
 
-## Known False Negatives
-
 <FalseNegativeCTA />
+
+## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
