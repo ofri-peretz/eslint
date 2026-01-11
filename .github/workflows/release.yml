@@ -125,7 +125,7 @@ concurrency:
 
 env:
   NODE_VERSION: "22"
-  PNPM_VERSION: "10.18.3"
+  PNPM_VERSION: "9.15.4"
   # Dependency order: devkit MUST be first since others depend on it
   # This array defines the release sequence for all-affected mode
   DEPENDENCY_ORDER: "eslint-devkit,eslint-plugin-secure-coding,eslint-plugin-crypto,eslint-plugin-jwt,eslint-plugin-pg,eslint-plugin-mongodb-security,eslint-plugin-express-security,eslint-plugin-nestjs-security,eslint-plugin-browser-security,eslint-plugin-lambda-security,eslint-plugin-vercel-ai-security,eslint-plugin-architecture,eslint-plugin-quality,eslint-plugin-react-a11y,eslint-plugin-react-features,eslint-plugin-import-next,cli"
