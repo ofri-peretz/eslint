@@ -1,0 +1,1138 @@
+{
+  "plugin": "secure-coding",
+  "package": "eslint-plugin-secure-coding",
+  "rules": [
+    {
+      "name": "A01:2021",
+      "cwe": "Broken Access Control",
+      "owasp": "`no-privilege-escalation`, `no-missing-authorization`, `no-zip-slip`, `detect-non-literal-fs-filename`",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/A01:2021"
+    },
+    {
+      "name": "A02:2021",
+      "cwe": "Cryptographic Failures",
+      "owasp": "~~`no-weak-crypto`~~, `no-http-urls`, `require-https-only`, ~~`no-timing-attack`~~, ~~`no-insufficient-random`~~, `no-hardcoded-credentials` + **eslint-plugin-jwt/crypto**",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/A02:2021"
+    },
+    {
+      "name": "A03:2021",
+      "cwe": "Injection",
+      "owasp": "`no-sql-injection`, `database-injection`, `detect-eval-with-expression`, `detect-child-process`, `no-xxe-injection`, `no-xpath-injection`, `no-ldap-injection`, `no-unsanitized-html`",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/A03:2021"
+    },
+    {
+      "name": "A04:2021",
+      "cwe": "Insecure Design",
+      "owasp": "`no-improper-type-validation`, `detect-weak-password-validation`",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/A04:2021"
+    },
+    {
+      "name": "A05:2021",
+      "cwe": "Security Misconfiguration",
+      "owasp": "~~`no-missing-cors-check`~~, ~~`no-missing-security-headers`~~, ~~`no-permissive-cors`~~, `require-csp-headers` + **eslint-plugin-express-security**",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/A05:2021"
+    },
+    {
+      "name": "A06:2021",
+      "cwe": "Vulnerable Components",
+      "owasp": "`detect-suspicious-dependencies`, `require-package-lock`, `require-dependency-integrity`",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/A06:2021"
+    },
+    {
+      "name": "A07:2021",
+      "cwe": "Auth/Session Failures",
+      "owasp": "`no-missing-authentication`, ~~`no-insecure-cookie-settings`~~, ~~`no-missing-csrf-protection`~~, `no-weak-password-recovery` + **eslint-plugin-express-security**",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/A07:2021"
+    },
+    {
+      "name": "A08:2021",
+      "cwe": "Software/Data Integrity",
+      "owasp": "`no-unsafe-deserialization`, `no-unsafe-dynamic-require`",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/A08:2021"
+    },
+    {
+      "name": "A09:2021",
+      "cwe": "Security Logging",
+      "owasp": "`no-sensitive-data-exposure`, `no-pii-in-logs`",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/A09:2021"
+    },
+    {
+      "name": "A10:2021",
+      "cwe": "SSRF",
+      "owasp": "`no-unvalidated-url-input`, `require-url-validation`",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/A10:2021"
+    },
+    {
+      "name": "M1",
+      "cwe": "Improper Credential Usage",
+      "owasp": "`no-credentials-in-storage-api`, `no-hardcoded-credentials`",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/M1"
+    },
+    {
+      "name": "M2",
+      "cwe": "Inadequate Supply Chain",
+      "owasp": "`detect-suspicious-dependencies`, `require-package-lock`, `require-dependency-integrity`",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/M2"
+    },
+    {
+      "name": "M3",
+      "cwe": "Insecure Authentication",
+      "owasp": "`no-client-side-auth-logic`, `detect-weak-password-validation`",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/M3"
+    },
+    {
+      "name": "M4",
+      "cwe": "Insufficient Input/Output",
+      "owasp": "`no-unvalidated-deeplinks`, `require-mime-type-validation`, `require-url-validation`, `no-arbitrary-file-access`",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/M4"
+    },
+    {
+      "name": "M5",
+      "cwe": "Insecure Communication",
+      "owasp": "`no-allow-arbitrary-loads`, `no-http-urls`, `require-https-only`, `no-disabled-certificate-validation`",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/M5"
+    },
+    {
+      "name": "M6",
+      "cwe": "Inadequate Privacy",
+      "owasp": "`no-pii-in-logs`, `no-tracking-without-consent`, `no-sensitive-data-in-analytics`, `require-data-minimization`",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/M6"
+    },
+    {
+      "name": "M7",
+      "cwe": "Insufficient Binary Protection",
+      "owasp": "`no-debug-code-in-production`, `require-code-minification`",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/M7"
+    },
+    {
+      "name": "M8",
+      "cwe": "Security Misconfiguration",
+      "owasp": "`no-verbose-error-messages`, `require-secure-defaults`",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/M8"
+    },
+    {
+      "name": "M9",
+      "cwe": "Insecure Data Storage",
+      "owasp": "`no-sensitive-data-in-cache`, `no-data-in-temp-storage`, `require-secure-deletion`, `require-storage-encryption`, `no-unencrypted-local-storage`",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/M9"
+    },
+    {
+      "name": "M10",
+      "cwe": "Insufficient Crypto",
+      "owasp": "`no-weak-crypto`, `require-credential-storage`",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/M10"
+    },
+    {
+      "name": "no-sql-injection",
+      "cwe": "CWE-89",
+      "owasp": "A03",
+      "description": "9.8",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-sql-injection"
+    },
+    {
+      "name": "database-injection",
+      "cwe": "CWE-89",
+      "owasp": "A03",
+      "description": "9.8",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/database-injection"
+    },
+    {
+      "name": "detect-eval-with-expression",
+      "cwe": "CWE-95",
+      "owasp": "A03",
+      "description": "9.8",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/detect-eval-with-expression"
+    },
+    {
+      "name": "detect-child-process",
+      "cwe": "CWE-78",
+      "owasp": "A03",
+      "description": "9.8",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/detect-child-process"
+    },
+    {
+      "name": "no-unsafe-dynamic-require",
+      "cwe": "CWE-95",
+      "owasp": "A03",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-unsafe-dynamic-require"
+    },
+    {
+      "name": "no-graphql-injection",
+      "cwe": "CWE-943",
+      "owasp": "A03",
+      "description": "8.6",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-graphql-injection"
+    },
+    {
+      "name": "no-xxe-injection",
+      "cwe": "CWE-611",
+      "owasp": "A03",
+      "description": "9.1",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-xxe-injection"
+    },
+    {
+      "name": "no-xpath-injection",
+      "cwe": "CWE-643",
+      "owasp": "A03",
+      "description": "9.8",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-xpath-injection"
+    },
+    {
+      "name": "no-ldap-injection",
+      "cwe": "CWE-90",
+      "owasp": "A03",
+      "description": "9.8",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-ldap-injection"
+    },
+    {
+      "name": "no-directive-injection",
+      "cwe": "CWE-94",
+      "owasp": "A03",
+      "description": "8.8",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-directive-injection"
+    },
+    {
+      "name": "no-format-string-injection",
+      "cwe": "CWE-134",
+      "owasp": "A03",
+      "description": "9.8",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-format-string-injection"
+    },
+    {
+      "name": "no-http-urls",
+      "cwe": "CWE-319",
+      "owasp": "M5",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-http-urls"
+    },
+    {
+      "name": "no-hardcoded-credentials",
+      "cwe": "CWE-798",
+      "owasp": "M1",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-hardcoded-credentials"
+    },
+    {
+      "name": "no-credentials-in-storage-api",
+      "cwe": "CWE-522",
+      "owasp": "M1",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-credentials-in-storage-api"
+    },
+    {
+      "name": "no-credentials-in-query-params",
+      "cwe": "CWE-598",
+      "owasp": "M1",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-credentials-in-query-params"
+    },
+    {
+      "name": "no-allow-arbitrary-loads",
+      "cwe": "CWE-295",
+      "owasp": "M5",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-allow-arbitrary-loads"
+    },
+    {
+      "name": "no-disabled-certificate-validation",
+      "cwe": "CWE-295",
+      "owasp": "M5",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-disabled-certificate-validation"
+    },
+    {
+      "name": "require-https-only",
+      "cwe": "CWE-319",
+      "owasp": "M5",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/require-https-only"
+    },
+    {
+      "name": "require-network-timeout",
+      "cwe": "CWE-400",
+      "owasp": "M5",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/require-network-timeout"
+    },
+    {
+      "name": "detect-weak-password-validation",
+      "cwe": "CWE-521",
+      "owasp": "M3",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/detect-weak-password-validation"
+    },
+    {
+      "name": "no-client-side-auth-logic",
+      "cwe": "CWE-602",
+      "owasp": "M3",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-client-side-auth-logic"
+    },
+    {
+      "name": "no-hardcoded-session-tokens",
+      "cwe": "CWE-798",
+      "owasp": "M3",
+      "description": "9.8",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-hardcoded-session-tokens"
+    },
+    {
+      "name": "no-unvalidated-deeplinks",
+      "cwe": "CWE-939",
+      "owasp": "M4",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-unvalidated-deeplinks"
+    },
+    {
+      "name": "require-url-validation",
+      "cwe": "CWE-601",
+      "owasp": "M4",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/require-url-validation"
+    },
+    {
+      "name": "require-mime-type-validation",
+      "cwe": "CWE-434",
+      "owasp": "M4",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/require-mime-type-validation"
+    },
+    {
+      "name": "no-arbitrary-file-access",
+      "cwe": "CWE-22",
+      "owasp": "M4",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-arbitrary-file-access"
+    },
+    {
+      "name": "no-pii-in-logs",
+      "cwe": "CWE-532",
+      "owasp": "M6",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-pii-in-logs"
+    },
+    {
+      "name": "no-tracking-without-consent",
+      "cwe": "CWE-359",
+      "owasp": "M6",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-tracking-without-consent"
+    },
+    {
+      "name": "no-sensitive-data-in-analytics",
+      "cwe": "CWE-359",
+      "owasp": "M6",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-sensitive-data-in-analytics"
+    },
+    {
+      "name": "require-data-minimization",
+      "cwe": "CWE-213",
+      "owasp": "M6",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/require-data-minimization"
+    },
+    {
+      "name": "no-debug-code-in-production",
+      "cwe": "CWE-489",
+      "owasp": "M7",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-debug-code-in-production"
+    },
+    {
+      "name": "require-code-minification",
+      "cwe": "CWE-656",
+      "owasp": "M7",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/require-code-minification"
+    },
+    {
+      "name": "no-verbose-error-messages",
+      "cwe": "CWE-209",
+      "owasp": "M8",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-verbose-error-messages"
+    },
+    {
+      "name": "require-secure-defaults",
+      "cwe": "CWE-276",
+      "owasp": "M8",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/require-secure-defaults"
+    },
+    {
+      "name": "no-sensitive-data-in-cache",
+      "cwe": "CWE-524",
+      "owasp": "M9",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-sensitive-data-in-cache"
+    },
+    {
+      "name": "no-data-in-temp-storage",
+      "cwe": "CWE-312",
+      "owasp": "M9",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-data-in-temp-storage"
+    },
+    {
+      "name": "require-secure-deletion",
+      "cwe": "CWE-459",
+      "owasp": "M9",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/require-secure-deletion"
+    },
+    {
+      "name": "require-storage-encryption",
+      "cwe": "CWE-311",
+      "owasp": "M9",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/require-storage-encryption"
+    },
+    {
+      "name": "no-unencrypted-local-storage",
+      "cwe": "CWE-312",
+      "owasp": "M9",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-unencrypted-local-storage"
+    },
+    {
+      "name": "require-credential-storage",
+      "cwe": "CWE-522",
+      "owasp": "M10",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/require-credential-storage"
+    },
+    {
+      "name": "no-exposed-debug-endpoints",
+      "cwe": "CWE-489",
+      "owasp": "M8",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-exposed-debug-endpoints"
+    },
+    {
+      "name": "detect-non-literal-fs-filename",
+      "cwe": "CWE-22",
+      "owasp": "A01",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/detect-non-literal-fs-filename"
+    },
+    {
+      "name": "no-zip-slip",
+      "cwe": "CWE-22",
+      "owasp": "A01",
+      "description": "8.1",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-zip-slip"
+    },
+    {
+      "name": "no-toctou-vulnerability",
+      "cwe": "CWE-367",
+      "owasp": "A01",
+      "description": "7.0",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": true,
+      "href": "/docs/secure-coding/rules/no-toctou-vulnerability"
+    },
+    {
+      "name": "detect-non-literal-regexp",
+      "cwe": "CWE-400",
+      "owasp": "A03",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/detect-non-literal-regexp"
+    },
+    {
+      "name": "no-redos-vulnerable-regex",
+      "cwe": "CWE-1333",
+      "owasp": "A03",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": true,
+      "href": "/docs/secure-coding/rules/no-redos-vulnerable-regex"
+    },
+    {
+      "name": "no-unsafe-regex-construction",
+      "cwe": "CWE-400",
+      "owasp": "A03",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": true,
+      "href": "/docs/secure-coding/rules/no-unsafe-regex-construction"
+    },
+    {
+      "name": "detect-object-injection",
+      "cwe": "CWE-915",
+      "owasp": "A03",
+      "description": "7.3",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/detect-object-injection"
+    },
+    {
+      "name": "no-unsafe-deserialization",
+      "cwe": "CWE-502",
+      "owasp": "A08",
+      "description": "9.8",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-unsafe-deserialization"
+    },
+    {
+      "name": "no-hardcoded-credentials",
+      "cwe": "CWE-798",
+      "owasp": "A07",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-hardcoded-credentials"
+    },
+    {
+      "name": "no-weak-crypto",
+      "cwe": "CWE-327",
+      "owasp": "A02",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-weak-crypto"
+    },
+    {
+      "name": "no-insufficient-random",
+      "cwe": "CWE-330",
+      "owasp": "A02",
+      "description": "5.3",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-insufficient-random"
+    },
+    {
+      "name": "no-timing-attack",
+      "cwe": "CWE-208",
+      "owasp": "A02",
+      "description": "5.9",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-timing-attack"
+    },
+    {
+      "name": "no-insecure-comparison",
+      "cwe": "CWE-697",
+      "owasp": "A02",
+      "description": "5.3",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-insecure-comparison"
+    },
+    {
+      "name": "no-insecure-jwt",
+      "cwe": "CWE-347",
+      "owasp": "A02",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-insecure-jwt"
+    },
+    {
+      "name": "no-unvalidated-user-input",
+      "cwe": "CWE-20",
+      "owasp": "A03",
+      "description": "8.6",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-unvalidated-user-input"
+    },
+    {
+      "name": "no-unsanitized-html",
+      "cwe": "CWE-79",
+      "owasp": "A03",
+      "description": "6.1",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-unsanitized-html"
+    },
+    {
+      "name": "no-unescaped-url-parameter",
+      "cwe": "CWE-79",
+      "owasp": "A03",
+      "description": "6.1",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-unescaped-url-parameter"
+    },
+    {
+      "name": "no-improper-sanitization",
+      "cwe": "CWE-116",
+      "owasp": "A03",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-improper-sanitization"
+    },
+    {
+      "name": "no-improper-type-validation",
+      "cwe": "CWE-20",
+      "owasp": "A04",
+      "description": "5.3",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-improper-type-validation"
+    },
+    {
+      "name": "no-missing-authentication",
+      "cwe": "CWE-306",
+      "owasp": "A07",
+      "description": "9.8",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-missing-authentication"
+    },
+    {
+      "name": "no-privilege-escalation",
+      "cwe": "CWE-269",
+      "owasp": "A01",
+      "description": "8.8",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-privilege-escalation"
+    },
+    {
+      "name": "no-weak-password-recovery",
+      "cwe": "CWE-640",
+      "owasp": "A07",
+      "description": "9.8",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-weak-password-recovery"
+    },
+    {
+      "name": "no-insecure-cookie-settings",
+      "cwe": "CWE-614",
+      "owasp": "A07",
+      "description": "5.3",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-insecure-cookie-settings"
+    },
+    {
+      "name": "no-missing-csrf-protection",
+      "cwe": "CWE-352",
+      "owasp": "A07",
+      "description": "8.8",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-missing-csrf-protection"
+    },
+    {
+      "name": "no-document-cookie",
+      "cwe": "CWE-565",
+      "owasp": "A07",
+      "description": "4.3",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": true,
+      "href": "/docs/secure-coding/rules/no-document-cookie"
+    },
+    {
+      "name": "no-missing-cors-check",
+      "cwe": "CWE-942",
+      "owasp": "A05",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-missing-cors-check"
+    },
+    {
+      "name": "no-missing-security-headers",
+      "cwe": "CWE-693",
+      "owasp": "A05",
+      "description": "5.3",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": true,
+      "href": "/docs/secure-coding/rules/no-missing-security-headers"
+    },
+    {
+      "name": "no-insecure-redirects",
+      "cwe": "CWE-601",
+      "owasp": "A01",
+      "description": "6.1",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": true,
+      "href": "/docs/secure-coding/rules/no-insecure-redirects"
+    },
+    {
+      "name": "no-unencrypted-transmission",
+      "cwe": "CWE-319",
+      "owasp": "A02",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-unencrypted-transmission"
+    },
+    {
+      "name": "no-clickjacking",
+      "cwe": "CWE-1021",
+      "owasp": "A05",
+      "description": "6.1",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-clickjacking"
+    },
+    {
+      "name": "no-exposed-sensitive-data",
+      "cwe": "CWE-200",
+      "owasp": "A01",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-exposed-sensitive-data"
+    },
+    {
+      "name": "no-sensitive-data-exposure",
+      "cwe": "CWE-532",
+      "owasp": "A09",
+      "description": "5.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": true,
+      "href": "/docs/secure-coding/rules/no-sensitive-data-exposure"
+    },
+    {
+      "name": "no-buffer-overread",
+      "cwe": "CWE-126",
+      "owasp": "A06",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-buffer-overread"
+    },
+    {
+      "name": "no-unlimited-resource-allocation",
+      "cwe": "CWE-770",
+      "owasp": "A05",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-unlimited-resource-allocation"
+    },
+    {
+      "name": "no-unchecked-loop-condition",
+      "cwe": "CWE-835",
+      "owasp": "A05",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-unchecked-loop-condition"
+    },
+    {
+      "name": "no-electron-security-issues",
+      "cwe": "CWE-693",
+      "owasp": "A05",
+      "description": "8.8",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-electron-security-issues"
+    },
+    {
+      "name": "no-insufficient-postmessage-validation",
+      "cwe": "CWE-346",
+      "owasp": "A07",
+      "description": "8.8",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-insufficient-postmessage-validation"
+    },
+    {
+      "name": "recommended",
+      "cwe": "Balanced security for most projects (Web + key Mobile security)",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/recommended"
+    },
+    {
+      "name": "strict",
+      "cwe": "Maximum security enforcement (all rules as errors)",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/strict"
+    },
+    {
+      "name": "owasp-top-10",
+      "cwe": "OWASP Top 10 Web 2021 compliance focused",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/owasp-top-10"
+    },
+    {
+      "name": "owasp-mobile-top-10",
+      "cwe": "OWASP Mobile Top 10 2024 compliance focused",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/owasp-mobile-top-10"
+    },
+    {
+      "name": "no-insecure-jwt",
+      "cwe": "[`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)",
+      "owasp": "13 specialized rules vs 1 generic rule, CVE-2022-23540 coverage",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-insecure-jwt"
+    },
+    {
+      "name": "no-weak-crypto, no-insufficient-random, no-timing-attack, no-insecure-comparison",
+      "cwe": "[`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)",
+      "owasp": "24 rules, CVE-specific detection, library-aware",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-weak-crypto, no-insufficient-random, no-timing-attack, no-insecure-comparison"
+    },
+    {
+      "name": "no-permissive-cors, no-missing-cors-check, no-missing-csrf-protection, no-insecure-cookie-settings, no-missing-security-headers, no-clickjacking",
+      "cwe": "[`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)",
+      "owasp": "Framework-aware, helmet integration",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/no-permissive-cors, no-missing-cors-check, no-missing-csrf-protection, no-insecure-cookie-settings, no-missing-security-headers, no-clickjacking"
+    },
+    {
+      "name": "`eslint-plugin-jwt`",
+      "cwe": "JWT security (algorithm confusion, weak secrets, claims validation)",
+      "owasp": "13",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/`eslint-plugin-jwt`"
+    },
+    {
+      "name": "`eslint-plugin-crypto`",
+      "cwe": "Cryptographic best practices (weak algorithms, key handling, CVE-specific)",
+      "owasp": "24",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/`eslint-plugin-crypto`"
+    },
+    {
+      "name": "`eslint-plugin-pg`",
+      "cwe": "PostgreSQL/node-postgres security and best practices",
+      "owasp": "13",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/`eslint-plugin-pg`"
+    },
+    {
+      "name": "`eslint-plugin-express-security`",
+      "cwe": "Express.js security (CORS, cookies, CSRF, helmet)",
+      "owasp": "15",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/`eslint-plugin-express-security`"
+    },
+    {
+      "name": "`eslint-plugin-nestjs-security`",
+      "cwe": "NestJS security (guards, validation pipes, throttler)",
+      "owasp": "15",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/`eslint-plugin-nestjs-security`"
+    },
+    {
+      "name": "`eslint-plugin-lambda-security`",
+      "cwe": "AWS Lambda/Middy security (API Gateway, headers, validation)",
+      "owasp": "9",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/`eslint-plugin-lambda-security`"
+    },
+    {
+      "name": "`eslint-plugin-vercel-ai-security`",
+      "cwe": "Vercel AI SDK security (OWASP LLM + Agentic Top 10)",
+      "owasp": "19",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/`eslint-plugin-vercel-ai-security`"
+    },
+    {
+      "name": "`eslint-plugin-import-next`",
+      "cwe": "High-performance import linting with AI-guided cycle fixes",
+      "owasp": "12",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/secure-coding/rules/`eslint-plugin-import-next`"
+    }
+  ],
+  "totalRules": 113,
+  "lastSynced": "2026-01-11T04:37:52.299Z"
+}

@@ -1,0 +1,22 @@
+{
+  "lastSynced": "2026-01-11T04:37:52.302Z",
+  "plugins": 11,
+  "success": 11,
+  "errors": 0,
+  "details": {
+    "success": [
+      "browser-security: 21 rules",
+      "crypto: 25 rules",
+      "express-security: 26 rules",
+      "jwt: 13 rules",
+      "lambda-security: 34 rules",
+      "mongodb-security: 16 rules",
+      "nestjs-security: 28 rules",
+      "pg: 13 rules",
+      "secure-coding: 113 rules",
+      "vercel-ai-security: 48 rules",
+      "import-next: 88 rules"
+    ],
+    "errors": []
+  }
+}

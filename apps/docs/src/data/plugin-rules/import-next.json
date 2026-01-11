@@ -1,0 +1,888 @@
+{
+  "plugin": "import-next",
+  "package": "eslint-plugin-import-next",
+  "rules": [
+    {
+      "name": "no-cycle is extremely slow",
+      "cwe": "[#1889](https://github.com/import-js/eslint-plugin-import/issues/1889), [#2388](https://github.com/import-js/eslint-plugin-import/issues/2388)",
+      "owasp": "✅ **Solved**",
+      "description": "100x faster with incremental caching",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-cycle is extremely slow"
+    },
+    {
+      "name": "namespace rule performance",
+      "cwe": "[#2340](https://github.com/import-js/eslint-plugin-import/issues/2340)",
+      "owasp": "✅ **Solved**",
+      "description": "Shared ExportsMap cache",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/namespace rule performance"
+    },
+    {
+      "name": "ESLint 9 flat config blocked",
+      "cwe": "[#2556](https://github.com/import-js/eslint-plugin-import/issues/2556), [#2948](https://github.com/import-js/eslint-plugin-import/issues/2948)",
+      "owasp": "✅ **Solved**",
+      "description": "First-class flat config",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/ESLint 9 flat config blocked"
+    },
+    {
+      "name": "exports field not supported",
+      "cwe": "[#1810](https://github.com/import-js/eslint-plugin-import/issues/1810), [#2495](https://github.com/import-js/eslint-plugin-import/issues/2495)",
+      "owasp": "🟡 Phase 1",
+      "description": "Native exports field support",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/exports field not supported"
+    },
+    {
+      "name": "No barrel file detection",
+      "cwe": "[#2922](https://github.com/import-js/eslint-plugin-import/issues/2922)",
+      "owasp": "✅ **Solved**",
+      "description": "5 bundle optimization rules",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/No barrel file detection"
+    },
+    {
+      "name": "#imports not recognized",
+      "cwe": "[#1868](https://github.com/import-js/eslint-plugin-import/issues/1868)",
+      "owasp": "🟡 Phase 1",
+      "description": "Subpath imports support",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/#imports not recognized"
+    },
+    {
+      "name": "Double-parsing with TypeScript",
+      "cwe": "[typescript-eslint docs](https://typescript-eslint.io/troubleshooting/performance-troubleshooting)",
+      "owasp": "✅ **Solved**",
+      "description": "Shared AST, no re-parsing",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/Double-parsing with TypeScript"
+    },
+    {
+      "name": "Vite",
+      "cwe": "`ReferenceError: Cannot access 'X' before initialization`",
+      "owasp": "Circular import race condition",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/Vite"
+    },
+    {
+      "name": "Next.js",
+      "cwe": "Build hangs, OOM errors",
+      "owasp": "Infinite resolution loop",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/Next.js"
+    },
+    {
+      "name": "Webpack",
+      "cwe": "Incorrect tree-shaking, larger bundles",
+      "owasp": "Dependency graph confusion",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/Webpack"
+    },
+    {
+      "name": "esbuild",
+      "cwe": "Silent failures in production",
+      "owasp": "Module order ambiguity",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/esbuild"
+    },
+    {
+      "name": "First run (10k files)",
+      "cwe": "~45s",
+      "owasp": "~45s",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/First run (10k files)"
+    },
+    {
+      "name": "Subsequent runs",
+      "cwe": "~45s (re-analyzes)",
+      "owasp": "**~0.4s** (cached)",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/Subsequent runs"
+    },
+    {
+      "name": "Memory (large monorepo)",
+      "cwe": "2-4 GB",
+      "owasp": "~500 MB",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/Memory (large monorepo)"
+    },
+    {
+      "name": "maxDepth: Infinity",
+      "cwe": "Often crashes",
+      "owasp": "✅ Works",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/maxDepth: Infinity"
+    },
+    {
+      "name": "no-unresolved",
+      "cwe": "Ensure imports resolve",
+      "owasp": "💼",
+      "description": "💡",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-unresolved"
+    },
+    {
+      "name": "named",
+      "cwe": "Ensure named imports exist",
+      "owasp": "💼",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/named"
+    },
+    {
+      "name": "default",
+      "cwe": "Ensure default export exists",
+      "owasp": "💼",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/default"
+    },
+    {
+      "name": "namespace",
+      "cwe": "Ensure namespace properties exist",
+      "owasp": "💼",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/namespace"
+    },
+    {
+      "name": "no-absolute-path",
+      "cwe": "Forbid absolute paths",
+      "owasp": "🔧",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-absolute-path"
+    },
+    {
+      "name": "no-dynamic-require",
+      "cwe": "Forbid dynamic require()",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-dynamic-require"
+    },
+    {
+      "name": "no-internal-modules",
+      "cwe": "Enforce entry points only",
+      "owasp": "💡",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-internal-modules"
+    },
+    {
+      "name": "no-relative-packages",
+      "cwe": "Use package names",
+      "owasp": "🔧",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-relative-packages"
+    },
+    {
+      "name": "no-relative-parent-imports",
+      "cwe": "Prevent `../` imports",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-relative-parent-imports"
+    },
+    {
+      "name": "no-self-import",
+      "cwe": "Prevent self-imports",
+      "owasp": "💼",
+      "description": "💡",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-self-import"
+    },
+    {
+      "name": "no-cycle",
+      "cwe": "**100x faster** cycle detection",
+      "owasp": "💼",
+      "description": "💡",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-cycle"
+    },
+    {
+      "name": "no-useless-path-segments",
+      "cwe": "Simplify paths",
+      "owasp": "🔧",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-useless-path-segments"
+    },
+    {
+      "name": "no-restricted-paths",
+      "cwe": "Custom path restrictions",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-restricted-paths"
+    },
+    {
+      "name": "export",
+      "cwe": "Forbid duplicate exports",
+      "owasp": "💼",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/export"
+    },
+    {
+      "name": "no-deprecated",
+      "cwe": "Warn on `@deprecated` imports",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-deprecated"
+    },
+    {
+      "name": "no-empty-named-blocks",
+      "cwe": "Forbid empty `{}` imports",
+      "owasp": "🔧",
+      "description": "💡",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-empty-named-blocks"
+    },
+    {
+      "name": "no-extraneous-dependencies",
+      "cwe": "Prevent unlisted deps",
+      "owasp": "💼",
+      "description": "💡",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-extraneous-dependencies"
+    },
+    {
+      "name": "no-mutable-exports",
+      "cwe": "Forbid `let`/`var` exports",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-mutable-exports"
+    },
+    {
+      "name": "no-named-as-default",
+      "cwe": "Warn on default shadowing",
+      "owasp": "💼",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-named-as-default"
+    },
+    {
+      "name": "no-named-as-default-member",
+      "cwe": "Warn on property access",
+      "owasp": "💼",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-named-as-default-member"
+    },
+    {
+      "name": "no-unused-modules",
+      "cwe": "Find dead code",
+      "owasp": "💡",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-unused-modules"
+    },
+    {
+      "name": "no-amd",
+      "cwe": "Forbid AMD require/define",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-amd"
+    },
+    {
+      "name": "no-commonjs",
+      "cwe": "Forbid CommonJS",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-commonjs"
+    },
+    {
+      "name": "no-nodejs-modules",
+      "cwe": "Forbid Node.js builtins",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-nodejs-modules"
+    },
+    {
+      "name": "no-import-module-exports",
+      "cwe": "No mixed ES/CJS",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-import-module-exports"
+    },
+    {
+      "name": "unambiguous",
+      "cwe": "Warn on ambiguous modules",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/unambiguous"
+    },
+    {
+      "name": "consistent-type-specifier-style",
+      "cwe": "Type import style",
+      "owasp": "🔧",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/consistent-type-specifier-style"
+    },
+    {
+      "name": "dynamic-import-chunkname",
+      "cwe": "Require webpack chunk names",
+      "owasp": "💡",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/dynamic-import-chunkname"
+    },
+    {
+      "name": "exports-last",
+      "cwe": "Exports at end of file",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/exports-last"
+    },
+    {
+      "name": "extensions",
+      "cwe": "Enforce file extension usage",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/extensions"
+    },
+    {
+      "name": "first",
+      "cwe": "Imports must be first",
+      "owasp": "🔧",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/first"
+    },
+    {
+      "name": "group-exports",
+      "cwe": "Group exports together",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/group-exports"
+    },
+    {
+      "name": "max-dependencies",
+      "cwe": "Limit module dependencies",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/max-dependencies"
+    },
+    {
+      "name": "newline-after-import",
+      "cwe": "Newline after imports",
+      "owasp": "🔧",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/newline-after-import"
+    },
+    {
+      "name": "no-anonymous-default-export",
+      "cwe": "Require named default exports",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-anonymous-default-export"
+    },
+    {
+      "name": "no-default-export",
+      "cwe": "Forbid default exports",
+      "owasp": "💡",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-default-export"
+    },
+    {
+      "name": "no-duplicates",
+      "cwe": "Merge duplicate imports",
+      "owasp": "💼",
+      "description": "🔧",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-duplicates"
+    },
+    {
+      "name": "no-named-default",
+      "cwe": "Use default import syntax",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-named-default"
+    },
+    {
+      "name": "no-named-export",
+      "cwe": "Forbid named exports",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-named-export"
+    },
+    {
+      "name": "no-namespace",
+      "cwe": "Forbid `* as` imports",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-namespace"
+    },
+    {
+      "name": "no-unassigned-import",
+      "cwe": "Forbid side-effect imports",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-unassigned-import"
+    },
+    {
+      "name": "order",
+      "cwe": "Sort and group imports",
+      "owasp": "💼",
+      "description": "🔧",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/order"
+    },
+    {
+      "name": "prefer-default-export",
+      "cwe": "Prefer default for single exports",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/prefer-default-export"
+    },
+    {
+      "name": "no-cross-domain-imports",
+      "cwe": "Enforce clean architecture boundaries",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-cross-domain-imports"
+    },
+    {
+      "name": "enforce-dependency-direction",
+      "cwe": "Enforce layered architecture (UI → Services → Data)",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/enforce-dependency-direction"
+    },
+    {
+      "name": "prefer-node-protocol",
+      "cwe": "Prefer `node:fs` over `fs`",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/prefer-node-protocol"
+    },
+    {
+      "name": "no-barrel-file",
+      "cwe": "Detect barrel files that harm build performance",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-barrel-file"
+    },
+    {
+      "name": "no-barrel-import",
+      "cwe": "Flag imports from barrel files",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-barrel-import"
+    },
+    {
+      "name": "prefer-tree-shakeable-imports",
+      "cwe": "Enforce tree-shakeable import patterns",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/prefer-tree-shakeable-imports"
+    },
+    {
+      "name": "prefer-direct-import",
+      "cwe": "Suggest direct imports with autofix",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/prefer-direct-import"
+    },
+    {
+      "name": "no-full-package-import",
+      "cwe": "Block full imports from large packages",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-full-package-import"
+    },
+    {
+      "name": "enforce-team-boundaries",
+      "cwe": "Prevent unauthorized cross-team imports 🔴 NEW",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/enforce-team-boundaries"
+    },
+    {
+      "name": "no-legacy-imports",
+      "cwe": "Detect deprecated imports with autofix 🔴 NEW",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/no-legacy-imports"
+    },
+    {
+      "name": "recommended",
+      "cwe": "Essential rules for most projects",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/recommended"
+    },
+    {
+      "name": "strict",
+      "cwe": "All rules enabled as errors",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/strict"
+    },
+    {
+      "name": "typescript",
+      "cwe": "Optimized for TypeScript projects",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/typescript"
+    },
+    {
+      "name": "module-resolution",
+      "cwe": "Focus on import resolution",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/module-resolution"
+    },
+    {
+      "name": "import-style",
+      "cwe": "Focus on import formatting",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/import-style"
+    },
+    {
+      "name": "esm",
+      "cwe": "Enforce ES Modules only",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/esm"
+    },
+    {
+      "name": "architecture",
+      "cwe": "Clean architecture boundaries",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/architecture"
+    },
+    {
+      "name": "performance",
+      "cwe": "Bundle optimization (barrel detection)",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/performance"
+    },
+    {
+      "name": "enterprise",
+      "cwe": "Team boundaries & legacy import tracking 🔴 NEW",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/enterprise"
+    },
+    {
+      "name": "errors",
+      "cwe": "Matches eslint-plugin-import errors preset",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/errors"
+    },
+    {
+      "name": "warnings",
+      "cwe": "Matches eslint-plugin-import warnings preset",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/warnings"
+    },
+    {
+      "name": "`eslint-plugin-secure-coding`",
+      "cwe": "[![npm](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://npmjs.com/package/eslint-plugin-secure-coding)",
+      "owasp": "Universal security (OWASP Top 10 Web + Mobile)",
+      "description": "89",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/`eslint-plugin-secure-coding`"
+    },
+    {
+      "name": "`eslint-plugin-jwt`",
+      "cwe": "[![npm](https://img.shields.io/npm/dm/eslint-plugin-jwt.svg)](https://npmjs.com/package/eslint-plugin-jwt)",
+      "owasp": "JWT security (algorithm confusion, weak secrets, claims)",
+      "description": "13",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/`eslint-plugin-jwt`"
+    },
+    {
+      "name": "`eslint-plugin-crypto`",
+      "cwe": "[![npm](https://img.shields.io/npm/dm/eslint-plugin-crypto.svg)](https://npmjs.com/package/eslint-plugin-crypto)",
+      "owasp": "Cryptographic best practices (weak algorithms, key handling)",
+      "description": "24",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/`eslint-plugin-crypto`"
+    },
+    {
+      "name": "`eslint-plugin-pg`",
+      "cwe": "[![npm](https://img.shields.io/npm/dm/eslint-plugin-pg.svg)](https://npmjs.com/package/eslint-plugin-pg)",
+      "owasp": "PostgreSQL/node-postgres security",
+      "description": "13",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/`eslint-plugin-pg`"
+    },
+    {
+      "name": "`eslint-plugin-express-security`",
+      "cwe": "[![npm](https://img.shields.io/npm/dm/eslint-plugin-express-security.svg)](https://npmjs.com/package/eslint-plugin-express-security)",
+      "owasp": "Express.js security (CORS, cookies, CSRF, helmet)",
+      "description": "8",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/`eslint-plugin-express-security`"
+    },
+    {
+      "name": "`eslint-plugin-nestjs-security`",
+      "cwe": "[![npm](https://img.shields.io/npm/dm/eslint-plugin-nestjs-security.svg)](https://npmjs.com/package/eslint-plugin-nestjs-security)",
+      "owasp": "NestJS security (guards, validation pipes, throttler)",
+      "description": "5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/`eslint-plugin-nestjs-security`"
+    },
+    {
+      "name": "`eslint-plugin-lambda-security`",
+      "cwe": "[![npm](https://img.shields.io/npm/dm/eslint-plugin-lambda-security.svg)](https://npmjs.com/package/eslint-plugin-lambda-security)",
+      "owasp": "AWS Lambda/Middy security (API Gateway, CORS, secrets)",
+      "description": "5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/`eslint-plugin-lambda-security`"
+    },
+    {
+      "name": "`eslint-plugin-browser-security`",
+      "cwe": "[![npm](https://img.shields.io/npm/dm/eslint-plugin-browser-security.svg)](https://npmjs.com/package/eslint-plugin-browser-security)",
+      "owasp": "Browser security (XSS, postMessage, storage, cookies)",
+      "description": "21",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/`eslint-plugin-browser-security`"
+    },
+    {
+      "name": "`eslint-plugin-vercel-ai-security`",
+      "cwe": "[![npm](https://img.shields.io/npm/dm/eslint-plugin-vercel-ai-security.svg)](https://npmjs.com/package/eslint-plugin-vercel-ai-security)",
+      "owasp": "Vercel AI SDK security (OWASP LLM + Agentic Top 10)",
+      "description": "19",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/import-next/rules/`eslint-plugin-vercel-ai-security`"
+    }
+  ],
+  "totalRules": 88,
+  "lastSynced": "2026-01-11T04:37:52.302Z"
+}

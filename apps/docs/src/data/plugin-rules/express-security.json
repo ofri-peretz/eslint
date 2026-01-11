@@ -1,0 +1,268 @@
+{
+  "plugin": "express-security",
+  "package": "eslint-plugin-express-security",
+  "rules": [
+    {
+      "name": "A01:2021 Access Control",
+      "cwe": "✅",
+      "owasp": "`no-graphql-introspection-production`",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/A01:2021 Access Control"
+    },
+    {
+      "name": "A03:2021 Injection",
+      "cwe": "✅",
+      "owasp": "`no-express-unsafe-regex-route` (ReDoS)",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/A03:2021 Injection"
+    },
+    {
+      "name": "A05:2021 Misconfiguration",
+      "cwe": "✅",
+      "owasp": "`require-helmet`, `no-permissive-cors`, `no-cors-credentials-wildcard`, `require-rate-limiting`, `require-express-body-parser-limits`",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/A05:2021 Misconfiguration"
+    },
+    {
+      "name": "A07:2021 Auth/Session",
+      "cwe": "✅",
+      "owasp": "`require-csrf-protection`, `no-insecure-cookie-options`",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/A07:2021 Auth/Session"
+    },
+    {
+      "name": "require-helmet",
+      "cwe": "CWE-693",
+      "owasp": "A05",
+      "description": "7.1",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/require-helmet"
+    },
+    {
+      "name": "no-permissive-cors",
+      "cwe": "CWE-942",
+      "owasp": "A05",
+      "description": "9.1",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/no-permissive-cors"
+    },
+    {
+      "name": "no-cors-credentials-wildcard",
+      "cwe": "CWE-942",
+      "owasp": "A05",
+      "description": "9.1",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/no-cors-credentials-wildcard"
+    },
+    {
+      "name": "require-express-body-parser-limits",
+      "cwe": "CWE-770",
+      "owasp": "A05",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/require-express-body-parser-limits"
+    },
+    {
+      "name": "require-csrf-protection",
+      "cwe": "CWE-352",
+      "owasp": "A07",
+      "description": "8.8",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/require-csrf-protection"
+    },
+    {
+      "name": "no-insecure-cookie-options",
+      "cwe": "CWE-614",
+      "owasp": "A07",
+      "description": "5.3",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/no-insecure-cookie-options"
+    },
+    {
+      "name": "require-rate-limiting",
+      "cwe": "CWE-770",
+      "owasp": "A05",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/require-rate-limiting"
+    },
+    {
+      "name": "no-express-unsafe-regex-route",
+      "cwe": "CWE-1333",
+      "owasp": "A03",
+      "description": "7.5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/no-express-unsafe-regex-route"
+    },
+    {
+      "name": "no-graphql-introspection-production",
+      "cwe": "CWE-200",
+      "owasp": "A01",
+      "description": "5.3",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/no-graphql-introspection-production"
+    },
+    {
+      "name": "recommended",
+      "cwe": "Balanced security for Express projects (critical as error, others warn)",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/recommended"
+    },
+    {
+      "name": "strict",
+      "cwe": "Maximum security enforcement (all rules as errors)",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/strict"
+    },
+    {
+      "name": "api",
+      "cwe": "HTTP/API security rules only (CORS, CSRF, cookies, rate limiting)",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/api"
+    },
+    {
+      "name": "graphql",
+      "cwe": "GraphQL-specific security rules only",
+      "owasp": "",
+      "description": "",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/graphql"
+    },
+    {
+      "name": "`eslint-plugin-secure-coding`",
+      "cwe": "[![npm](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://npmjs.com/package/eslint-plugin-secure-coding)",
+      "owasp": "Universal security (OWASP Top 10 Web + Mobile)",
+      "description": "89",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/`eslint-plugin-secure-coding`"
+    },
+    {
+      "name": "`eslint-plugin-nestjs-security`",
+      "cwe": "[![npm](https://img.shields.io/npm/dm/eslint-plugin-nestjs-security.svg)](https://npmjs.com/package/eslint-plugin-nestjs-security)",
+      "owasp": "NestJS security (guards, validation pipes, throttler)",
+      "description": "5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/`eslint-plugin-nestjs-security`"
+    },
+    {
+      "name": "`eslint-plugin-lambda-security`",
+      "cwe": "[![npm](https://img.shields.io/npm/dm/eslint-plugin-lambda-security.svg)](https://npmjs.com/package/eslint-plugin-lambda-security)",
+      "owasp": "AWS Lambda/Middy security (API Gateway, CORS, secrets)",
+      "description": "5",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/`eslint-plugin-lambda-security`"
+    },
+    {
+      "name": "`eslint-plugin-browser-security`",
+      "cwe": "[![npm](https://img.shields.io/npm/dm/eslint-plugin-browser-security.svg)](https://npmjs.com/package/eslint-plugin-browser-security)",
+      "owasp": "Browser security (XSS, postMessage, storage, cookies)",
+      "description": "21",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/`eslint-plugin-browser-security`"
+    },
+    {
+      "name": "`eslint-plugin-jwt`",
+      "cwe": "[![npm](https://img.shields.io/npm/dm/eslint-plugin-jwt.svg)](https://npmjs.com/package/eslint-plugin-jwt)",
+      "owasp": "JWT security (algorithm confusion, weak secrets, claims)",
+      "description": "13",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/`eslint-plugin-jwt`"
+    },
+    {
+      "name": "`eslint-plugin-crypto`",
+      "cwe": "[![npm](https://img.shields.io/npm/dm/eslint-plugin-crypto.svg)](https://npmjs.com/package/eslint-plugin-crypto)",
+      "owasp": "Cryptographic best practices (weak algorithms, key handling)",
+      "description": "24",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/`eslint-plugin-crypto`"
+    },
+    {
+      "name": "`eslint-plugin-pg`",
+      "cwe": "[![npm](https://img.shields.io/npm/dm/eslint-plugin-pg.svg)](https://npmjs.com/package/eslint-plugin-pg)",
+      "owasp": "PostgreSQL/node-postgres security",
+      "description": "13",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/`eslint-plugin-pg`"
+    },
+    {
+      "name": "`eslint-plugin-vercel-ai-security`",
+      "cwe": "[![npm](https://img.shields.io/npm/dm/eslint-plugin-vercel-ai-security.svg)](https://npmjs.com/package/eslint-plugin-vercel-ai-security)",
+      "owasp": "Vercel AI SDK security (OWASP LLM + Agentic Top 10)",
+      "description": "19",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/`eslint-plugin-vercel-ai-security`"
+    },
+    {
+      "name": "`eslint-plugin-import-next`",
+      "cwe": "[![npm](https://img.shields.io/npm/dm/eslint-plugin-import-next.svg)](https://npmjs.com/package/eslint-plugin-import-next)",
+      "owasp": "High-performance import linting",
+      "description": "12",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/express-security/rules/`eslint-plugin-import-next`"
+    }
+  ],
+  "totalRules": 26,
+  "lastSynced": "2026-01-11T04:37:52.291Z"
+}

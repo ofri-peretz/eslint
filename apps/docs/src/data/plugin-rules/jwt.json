@@ -1,0 +1,138 @@
+{
+  "plugin": "jwt",
+  "package": "eslint-plugin-jwt",
+  "rules": [
+    {
+      "name": "no-algorithm-none",
+      "cwe": "CWE-347",
+      "owasp": "A02:2021",
+      "description": "Prevent `alg:\"none\"` attack (CVE-2022-23540)",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/jwt/rules/no-algorithm-none"
+    },
+    {
+      "name": "no-algorithm-confusion",
+      "cwe": "CWE-347",
+      "owasp": "A02:2021",
+      "description": "Prevent RS256→HS256 key confusion",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/jwt/rules/no-algorithm-confusion"
+    },
+    {
+      "name": "require-algorithm-whitelist",
+      "cwe": "CWE-757",
+      "owasp": "A02:2021",
+      "description": "Require explicit algorithm specification",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/jwt/rules/require-algorithm-whitelist"
+    },
+    {
+      "name": "no-decode-without-verify",
+      "cwe": "CWE-345",
+      "owasp": "A04:2021",
+      "description": "Prevent trusting decoded payloads",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/jwt/rules/no-decode-without-verify"
+    },
+    {
+      "name": "no-weak-secret",
+      "cwe": "CWE-326",
+      "owasp": "A02:2021",
+      "description": "Require 256-bit minimum secrets",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/jwt/rules/no-weak-secret"
+    },
+    {
+      "name": "no-hardcoded-secret",
+      "cwe": "CWE-798",
+      "owasp": "A05:2021",
+      "description": "Prevent secrets in source code",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/jwt/rules/no-hardcoded-secret"
+    },
+    {
+      "name": "no-timestamp-manipulation",
+      "cwe": "CWE-294",
+      "owasp": "A05:2021",
+      "description": "Prevent disabling automatic `iat`",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/jwt/rules/no-timestamp-manipulation"
+    },
+    {
+      "name": "require-expiration",
+      "cwe": "CWE-613",
+      "owasp": "A04:2021",
+      "description": "Require `exp` claim or `expiresIn`",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/jwt/rules/require-expiration"
+    },
+    {
+      "name": "require-issued-at",
+      "cwe": "CWE-294",
+      "owasp": "A04:2021",
+      "description": "Require `iat` claim for freshness",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/jwt/rules/require-issued-at"
+    },
+    {
+      "name": "require-issuer-validation",
+      "cwe": "CWE-287",
+      "owasp": "A01:2021",
+      "description": "Require issuer validation",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/jwt/rules/require-issuer-validation"
+    },
+    {
+      "name": "require-audience-validation",
+      "cwe": "CWE-287",
+      "owasp": "A01:2021",
+      "description": "Require audience validation",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/jwt/rules/require-audience-validation"
+    },
+    {
+      "name": "require-max-age",
+      "cwe": "CWE-294",
+      "owasp": "A04:2021",
+      "description": "Require maxAge for replay prevention",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/jwt/rules/require-max-age"
+    },
+    {
+      "name": "no-sensitive-payload",
+      "cwe": "CWE-359",
+      "owasp": "A01:2021",
+      "description": "Prevent PII in token payload",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/jwt/rules/no-sensitive-payload"
+    }
+  ],
+  "totalRules": 13,
+  "lastSynced": "2026-01-11T04:37:52.292Z"
+}

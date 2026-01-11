@@ -8,31 +8,34 @@ description: Browser security rules for XSS, CSRF, and client-side vulnerabiliti
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-browser-security.svg)](https://www.npmjs.com/package/eslint-plugin-browser-security) [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-browser-security.svg)](https://www.npmjs.com/package/eslint-plugin-browser-security) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=browser_security)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=browser_security)
 
 <Callout type="info">
-  **21 specialized rules** — LLM-optimized error messages with CWE, OWASP, and CVSS metadata.
+  **21 specialized rules** — LLM-optimized error messages with CWE, OWASP, and
+  CVSS metadata.
 </Callout>
 
 ## When to Use
 
 This plugin is designed for **client-side JavaScript/TypeScript** applications running in web browsers:
 
-| Environment | Examples |
-|-------------|----------|
-| **Frontend Frameworks** | React, Vue, Angular, Svelte, Solid |
-| **Build Tools** | Vite, Webpack, esbuild, Parcel |
+| Environment               | Examples                                        |
+| ------------------------- | ----------------------------------------------- |
+| **Frontend Frameworks**   | React, Vue, Angular, Svelte, Solid              |
+| **Build Tools**           | Vite, Webpack, esbuild, Parcel                  |
 | **Full-Stack Frameworks** | Next.js (client), Nuxt (client), Remix (client) |
-| **Vanilla JS** | Any browser-based JavaScript |
+| **Vanilla JS**            | Any browser-based JavaScript                    |
 
 ### Target Vulnerabilities
 
-| Category | Threats |
-|----------|---------|
-| **XSS (Cross-Site Scripting)** | `innerHTML`, `document.write`, unsafe DOM manipulation |
-| **CSRF (Cross-Site Request Forgery)** | Missing tokens, insecure cookie handling |
-| **Insecure Communication** | `postMessage` origin validation, WebSocket security |
-| **Data Leakage** | `localStorage` sensitive data, URL-based secrets |
+| Category                              | Threats                                                |
+| ------------------------------------- | ------------------------------------------------------ |
+| **XSS (Cross-Site Scripting)**        | `innerHTML`, `document.write`, unsafe DOM manipulation |
+| **CSRF (Cross-Site Request Forgery)** | Missing tokens, insecure cookie handling               |
+| **Insecure Communication**            | `postMessage` origin validation, WebSocket security    |
+| **Data Leakage**                      | `localStorage` sensitive data, URL-based secrets       |
 
 <Callout type="tip">
-  **Not for server-side code** — For Node.js/Express security, see [express-security](/docs/express-security). For database security, see [mongodb-security](/docs/mongodb-security) or [pg](/docs/pg).
+  **Not for server-side code** — For Node.js/Express security, see
+  [express-security](/docs/express-security). For database security, see
+  [mongodb-security](/docs/mongodb-security) or [pg](/docs/pg).
 </Callout>
 
 ## Installation
@@ -51,18 +54,16 @@ export default [browsersecurity.configs.recommended];
 
 ## Available Presets
 
-| Preset | Description |
-|--------|-------------|
-| `recommended` | Balanced security for most projects |
-| `strict` | Maximum enforcement (all rules as errors) |
+| Preset        | Description                               |
+| ------------- | ----------------------------------------- |
+| `recommended` | Balanced security for most projects       |
+| `strict`      | Maximum enforcement (all rules as errors) |
 
 ## Rules
 
-Browse all 21 rules in the sidebar, or see the [Rules section](/docs/browser-security/rules).
+Browse all 21 rules with CWE and OWASP references:
 
-<Cards>
-  <Card title="📚 Browse All Rules" description="View all rules with examples and configurations" href="/docs/browser-security/rules" />
-</Cards>
+<ReadmeRulesTable plugin="browser-security" />
 
 ## Related Articles
 

@@ -1,0 +1,258 @@
+{
+  "plugin": "crypto",
+  "package": "eslint-plugin-crypto",
+  "rules": [
+    {
+      "name": "no-weak-hash-algorithm",
+      "cwe": "CWE-327",
+      "owasp": "A02:2021",
+      "description": "Disallow MD5, SHA1, MD4",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/no-weak-hash-algorithm"
+    },
+    {
+      "name": "no-weak-cipher-algorithm",
+      "cwe": "CWE-327",
+      "owasp": "A02:2021",
+      "description": "Disallow DES, 3DES, RC4",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/no-weak-cipher-algorithm"
+    },
+    {
+      "name": "no-deprecated-cipher-method",
+      "cwe": "CWE-327",
+      "owasp": "A02:2021",
+      "description": "Disallow createCipher()",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/no-deprecated-cipher-method"
+    },
+    {
+      "name": "no-static-iv",
+      "cwe": "CWE-329",
+      "owasp": "A02:2021",
+      "description": "Disallow hardcoded IVs",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/no-static-iv"
+    },
+    {
+      "name": "no-ecb-mode",
+      "cwe": "CWE-327",
+      "owasp": "A02:2021",
+      "description": "Disallow ECB encryption",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/no-ecb-mode"
+    },
+    {
+      "name": "no-insecure-key-derivation",
+      "cwe": "CWE-916",
+      "owasp": "A02:2021",
+      "description": "Require PBKDF2 ≥100k iterations",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/no-insecure-key-derivation"
+    },
+    {
+      "name": "no-hardcoded-crypto-key",
+      "cwe": "CWE-321",
+      "owasp": "A02:2021",
+      "description": "Disallow hardcoded keys",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/no-hardcoded-crypto-key"
+    },
+    {
+      "name": "require-random-iv",
+      "cwe": "CWE-329",
+      "owasp": "A02:2021",
+      "description": "Require IV from randomBytes()",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/require-random-iv"
+    },
+    {
+      "name": "no-insecure-rsa-padding",
+      "cwe": "CWE-327",
+      "owasp": "A02:2021",
+      "description": "Marvin Attack (CVE-2023-46809)",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/no-insecure-rsa-padding"
+    },
+    {
+      "name": "no-cryptojs-weak-random",
+      "cwe": "CWE-338",
+      "owasp": "A02:2021",
+      "description": "Weak PRNG in crypto-js (CVE-2020-36732)",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/no-cryptojs-weak-random"
+    },
+    {
+      "name": "require-secure-pbkdf2-digest",
+      "cwe": "CWE-916",
+      "owasp": "A02:2021",
+      "description": "Weak PBKDF2 defaults (CVE-2023-46233)",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/require-secure-pbkdf2-digest"
+    },
+    {
+      "name": "no-math-random-crypto",
+      "cwe": "CWE-338",
+      "owasp": "A07:2021",
+      "description": "Disallow Math.random() for crypto",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/no-math-random-crypto"
+    },
+    {
+      "name": "no-predictable-salt",
+      "cwe": "CWE-331",
+      "owasp": "A07:2021",
+      "description": "Disallow empty/hardcoded salts",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/no-predictable-salt"
+    },
+    {
+      "name": "require-authenticated-encryption",
+      "cwe": "CWE-327",
+      "owasp": "A04:2021",
+      "description": "Require GCM instead of CBC",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/require-authenticated-encryption"
+    },
+    {
+      "name": "no-key-reuse",
+      "cwe": "CWE-323",
+      "owasp": "A02:2021",
+      "description": "Warn on key reuse",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/no-key-reuse"
+    },
+    {
+      "name": "no-self-signed-certs",
+      "cwe": "CWE-295",
+      "owasp": "A05:2021",
+      "description": "Disallow rejectUnauthorized: false",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/no-self-signed-certs"
+    },
+    {
+      "name": "no-timing-unsafe-compare",
+      "cwe": "CWE-208",
+      "owasp": "A02:2021",
+      "description": "Require timingSafeEqual()",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/no-timing-unsafe-compare"
+    },
+    {
+      "name": "require-key-length",
+      "cwe": "CWE-326",
+      "owasp": "A02:2021",
+      "description": "Require AES-256",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/require-key-length"
+    },
+    {
+      "name": "no-web-crypto-export",
+      "cwe": "CWE-321",
+      "owasp": "A02:2021",
+      "description": "Warn on key export",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/no-web-crypto-export"
+    },
+    {
+      "name": "no-sha1-hash",
+      "cwe": "CWE-327",
+      "owasp": "A02:2021",
+      "description": "Disallow sha1() (crypto-hash)",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/no-sha1-hash"
+    },
+    {
+      "name": "require-sufficient-length",
+      "cwe": "CWE-326",
+      "owasp": "A02:2021",
+      "description": "Require min 32 chars (crypto-random-string)",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/require-sufficient-length"
+    },
+    {
+      "name": "no-numeric-only-tokens",
+      "cwe": "CWE-330",
+      "owasp": "A07:2021",
+      "description": "Warn on numeric-only (crypto-random-string)",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/no-numeric-only-tokens"
+    },
+    {
+      "name": "no-cryptojs",
+      "cwe": "CWE-327",
+      "owasp": "A02:2021",
+      "description": "Warn on deprecated crypto-js",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/no-cryptojs"
+    },
+    {
+      "name": "no-cryptojs-weak-random",
+      "cwe": "CWE-338",
+      "owasp": "A02:2021",
+      "description": "CVE-2020-36732 (crypto-js)",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/no-cryptojs-weak-random"
+    },
+    {
+      "name": "prefer-native-crypto",
+      "cwe": "CWE-327",
+      "owasp": "A05:2021",
+      "description": "Prefer native crypto",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/crypto/rules/prefer-native-crypto"
+    }
+  ],
+  "totalRules": 25,
+  "lastSynced": "2026-01-11T04:37:52.289Z"
+}

@@ -14,6 +14,12 @@ import { PluginCard, PluginCards } from '@/components/PluginCard';
 import { LLMWorkflowDemo } from '@/components/LLMWorkflowDemo';
 import { ESLintEcosystemBeam } from '@/components/ESLintEcosystemBeam';
 import { NumberTicker } from '@/components/ui/number-ticker';
+import { Changelog, ChangelogItem } from '@/components/Changelog';
+import { GitHubChangelog } from '@/components/GitHubChangelog';
+import { EcosystemStats } from '@/components/EcosystemStats';
+import { LLMErrorDemo } from '@/components/LLMErrorDemo';
+import { Tree, Folder, File } from '@/components/ui/file-tree';
+import { ReadmeRulesTable } from '@/components/ReadmeRulesTable';
 
 export function getMDXComponents(components?: MDXComponents): MDXComponents {
   return {
@@ -41,8 +47,17 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     PluginCard,
     PluginCards,
     LLMWorkflowDemo,
+    LLMErrorDemo,
     ESLintEcosystemBeam,
     NumberTicker,
+    Changelog,
+    ChangelogItem,
+    GitHubChangelog,
+    EcosystemStats,
+    Tree,
+    Folder,
+    File,
+    ReadmeRulesTable,
     ...components,
   };
 }

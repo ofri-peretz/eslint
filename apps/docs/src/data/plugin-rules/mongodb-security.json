@@ -1,0 +1,168 @@
+{
+  "plugin": "mongodb-security",
+  "package": "eslint-plugin-mongodb-security",
+  "rules": [
+    {
+      "name": "no-unsafe-query",
+      "cwe": "CWE-943",
+      "owasp": "A03:2021",
+      "description": "—",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": true,
+      "href": "/docs/mongodb-security/rules/no-unsafe-query"
+    },
+    {
+      "name": "no-operator-injection",
+      "cwe": "CWE-943",
+      "owasp": "A03:2021",
+      "description": "—",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": true,
+      "href": "/docs/mongodb-security/rules/no-operator-injection"
+    },
+    {
+      "name": "no-unsafe-where",
+      "cwe": "CWE-943",
+      "owasp": "A01:2021",
+      "description": "CVE-2025-23061",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": true,
+      "href": "/docs/mongodb-security/rules/no-unsafe-where"
+    },
+    {
+      "name": "no-unsafe-regex-query",
+      "cwe": "CWE-400",
+      "owasp": "A03:2021",
+      "description": "—",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": true,
+      "href": "/docs/mongodb-security/rules/no-unsafe-regex-query"
+    },
+    {
+      "name": "no-hardcoded-connection-string",
+      "cwe": "CWE-798",
+      "owasp": "A07:2021",
+      "description": "Prevents credentials in connection URIs",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/mongodb-security/rules/no-hardcoded-connection-string"
+    },
+    {
+      "name": "no-hardcoded-credentials",
+      "cwe": "CWE-798",
+      "owasp": "A07:2021",
+      "description": "Prevents hardcoded auth options",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/mongodb-security/rules/no-hardcoded-credentials"
+    },
+    {
+      "name": "require-tls-connection",
+      "cwe": "CWE-295",
+      "owasp": "A02:2021",
+      "description": "Requires TLS for production connections",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/mongodb-security/rules/require-tls-connection"
+    },
+    {
+      "name": "require-auth-mechanism",
+      "cwe": "CWE-287",
+      "owasp": "A07:2021",
+      "description": "Requires explicit SCRAM-SHA-256",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/mongodb-security/rules/require-auth-mechanism"
+    },
+    {
+      "name": "require-schema-validation",
+      "cwe": "CWE-20",
+      "owasp": "A04:2021",
+      "description": "Requires Mongoose schema validators",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/mongodb-security/rules/require-schema-validation"
+    },
+    {
+      "name": "no-select-sensitive-fields",
+      "cwe": "CWE-200",
+      "owasp": "A01:2021",
+      "description": "Prevents returning password/token fields",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/mongodb-security/rules/no-select-sensitive-fields"
+    },
+    {
+      "name": "no-bypass-middleware",
+      "cwe": "CWE-284",
+      "owasp": "A01:2021",
+      "description": "Prevents bypassing pre/post hooks",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/mongodb-security/rules/no-bypass-middleware"
+    },
+    {
+      "name": "no-unsafe-populate",
+      "cwe": "CWE-943",
+      "owasp": "A03:2021",
+      "description": "Prevents user-controlled populate()",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/mongodb-security/rules/no-unsafe-populate"
+    },
+    {
+      "name": "no-unbounded-find",
+      "cwe": "CWE-400",
+      "owasp": "A04:2021",
+      "description": "Requires limit() on find queries",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/mongodb-security/rules/no-unbounded-find"
+    },
+    {
+      "name": "require-projection",
+      "cwe": "CWE-200",
+      "owasp": "A01:2021",
+      "description": "Requires field projection",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/mongodb-security/rules/require-projection"
+    },
+    {
+      "name": "require-lean-queries",
+      "cwe": "CWE-400",
+      "owasp": "A04:2021",
+      "description": "Suggests .lean() for read-only queries",
+      "recommended": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/mongodb-security/rules/require-lean-queries"
+    },
+    {
+      "name": "no-debug-mode-production",
+      "cwe": "CWE-489",
+      "owasp": "A05:2021",
+      "description": "Prevents debug mode in production",
+      "recommended": true,
+      "fixable": false,
+      "hasSuggestions": false,
+      "href": "/docs/mongodb-security/rules/no-debug-mode-production"
+    }
+  ],
+  "totalRules": 16,
+  "lastSynced": "2026-01-11T04:37:52.295Z"
+}

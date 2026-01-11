@@ -1,0 +1,64 @@
+name: Sync Documentation Data
+
+on:
+  schedule:
+    # Run daily at midnight UTC
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: "Force Vercel rebuild after sync"
+        required: false
+        default: "false"
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  sync-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync plugin stats
+        run: node apps/docs/scripts/sync-plugin-stats.mjs
+
+      - name: Sync README rules tables
+        run: node apps/docs/scripts/sync-readme-rules.mjs
+
+      - name: Check for changes
+        id: changes
+        run: |
+          git diff --quiet apps/docs/src/data/ || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit changes
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add apps/docs/src/data/
+          git commit -m "chore(docs): sync plugin stats and rules [automated]"
+          git push
+
+      - name: Trigger Vercel rebuild
+        if: steps.changes.outputs.changed == 'true' || github.event.inputs.force_rebuild == 'true'
+        env:
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -n "$VERCEL_DEPLOY_HOOK" ]; then
+            curl -X POST "$VERCEL_DEPLOY_HOOK"
+            echo "Triggered Vercel rebuild"
+          else
+            echo "VERCEL_DEPLOY_HOOK not configured, skipping rebuild"
+          fi
