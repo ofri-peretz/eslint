@@ -92,8 +92,6 @@ Every rule uses `formatLLMMessage` for structured output:
 
 | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [OWASP](https://eslint.interlace.tools/docs/jwt/rules/OWASP) |  |  |  | OWASP Category |  |  |  |  |  |
-| [Library](https://eslint.interlace.tools/docs/jwt/rules/Library) |  |  |  | Detection |  |  |  |  |  |
 | [no-algorithm-none](https://eslint.interlace.tools/docs/jwt/rules/no-algorithm-none) | CWE-347 | A02:2025 | 9.8 | [no-algorithm-none](docs/rules/no-algorithm-none.md) | 💼 |  |  | 💡 |  |
 | [no-algorithm-confusion](https://eslint.interlace.tools/docs/jwt/rules/no-algorithm-confusion) | CWE-347 | A02:2025 | 9.8 | [no-algorithm-confusion](docs/rules/no-algorithm-confusion.md) | 💼 |  |  | 💡 |  |
 | [require-algorithm-whitelist](https://eslint.interlace.tools/docs/jwt/rules/require-algorithm-whitelist) | CWE-757 | A02:2025 | 7.5 | [require-algorithm-whitelist](docs/rules/require-algorithm-whitelist.md) | 💼 |  |  | 💡 |  |

@@ -347,3 +347,9 @@ I have updated the `fix-readmes.js` script to enforce the following structure ac
 11. **Footer**: License & large centered image.
 
 This has been verified on `eslint-plugin-jwt` and applied to all plugins.
+
+## 2026-01-11 - Rules Table Data Cleanup
+
+I have updated the `fix-readmes.js` script to strictly filter out rows where the "Rule Name" matches metadata keywords like `OWASP`, `Library`, `CWE`, `CVSS`, `Detection`. This removes artifact rows that were incorrectly being treated as rule data.
+
+I have also updated `.agent/package-readme-structure.md` to reflect this critical data cleanliness standard.

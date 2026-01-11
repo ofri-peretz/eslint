@@ -109,7 +109,8 @@ packages.forEach(pkg => {
              // Check if it's already in processedRules (deduplication)
              const rawRuleName = match[1];
              if (processedRules.has(rawRuleName) || processedRules.has(`[${rawRuleName}]`)) return;
-             if (rawRuleName === 'Rule' || rawRuleName === 'Plugin') return; // Skip header/misc rows mismatch
+             // Skip header/misc rows artifacts
+             if (['Rule', 'Plugin', 'OWASP', 'Library', 'CWE', 'CVSS', 'Detection'].includes(rawRuleName)) return;
              
              // Extract Cells
              const parts = line.split('|').map(c => c.trim()).filter((c, i) => i !== 0 && i !== line.split('|').length - 1); // remove outer empty splits if | is at ends
