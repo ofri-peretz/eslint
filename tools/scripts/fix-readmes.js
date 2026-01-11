@@ -174,24 +174,37 @@ packages.forEach(pkg => {
         '## Documentation', // User wants to strip this in favor of standard Getting Started links
         '## Installation', // Legacy: we actively skip this later, but need to identify it as 'known' to not treat as custom
         '## 📦 Installation', // Also skip
-        '## 🚀 Quick Start' // Keep this as a custom section we want to preserve? Or merge?
-        // User wants LESS Getting Started. "Quick Start" might be redundant if we have Getting Started.
-        // Let's treat "Getting Started" as the one truth. 
-        // We will explicitly SKIP 'Installation' and 'Quick Start' if they contain just npm install.
+        '## 🚀 Quick Start', // Keep this as a custom section we want to preserve? Or merge?
+        '## 🛡️ Security Research Coverage', // User explicitly requested to DROP this
+        '## Security Research Coverage',
+        '## 🛡 Security Research Coverage' // Variant
     ];
 
     const customSections = [];
     let currentCustomSection = null;
+    let existingDescription = [];
+    let captureDescription = false;
     let capture = false;
 
     lines.forEach(line => {
+        const trimmed = line.trim();
+        
         if (line.startsWith('## ')) {
-            const trimmed = line.trim();
-            // Check if it's one of our core generated sections
-            const isCore = ['## Description', '## Philosophy', '## Getting Started', '## Rules', '## 🔗 Related ESLint Plugins', '## 📄 License'].includes(trimmed);
+            // Check if it's Description specifically to capture it separate from generic custom sections
+            if (trimmed === '## Description') {
+                captureDescription = true;
+                capture = false;
+                currentCustomSection = null;
+                return;
+            } else {
+                captureDescription = false;
+            }
+
+            // Check if it's one of our core generated sections (including Description which we handled above)
+            const isCore = STANDARD_HEADERS.some(h => trimmed.startsWith(h));
             
             // Check if it's a section we want to NUKE because it's redundant (Transformation 2026-01-11)
-            const isLegacyInstallation = ['## Installation', '## 📦 Installation', '## 🚀 Quick Start'].some(h => trimmed.startsWith(h));
+            const isLegacyInstallation = ['## Installation', '## 📦 Installation', '## 🚀 Quick Start', '## 🛡️ Security Research Coverage', '## Security Research Coverage'].some(h => trimmed.startsWith(h));
 
             if (isCore || isLegacyInstallation) {
                 capture = false;
@@ -202,6 +215,8 @@ packages.forEach(pkg => {
                 customSections.push(currentCustomSection);
                 capture = true;
             }
+        } else if (captureDescription) {
+            existingDescription.push(line);
         } else if (capture && currentCustomSection) {
             currentCustomSection.content.push(line);
         }
@@ -211,9 +226,7 @@ packages.forEach(pkg => {
 
     const output = [];
 
-    // 1. Header & Logo
-    output.push(`# ${pkg}`);
-    output.push('');
+    // 1. Header & Logo (No H1 Title as per user request "Structure starts with Logo")
     output.push('<p align="center">');
     output.push(`  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>`);
     output.push('</p>');
@@ -222,7 +235,7 @@ packages.forEach(pkg => {
     output.push(`  ${shortDesc}`);
     output.push('</p>');
     output.push('');
-
+    
     // 2. Badges
     output.push('<p align="center">');
     output.push(`  <a href="https://www.npmjs.com/package/${pkg}" target="_blank"><img src="https://img.shields.io/npm/v/${pkg}.svg" alt="NPM Version" /></a>`);
@@ -233,10 +246,15 @@ packages.forEach(pkg => {
     output.push('</p>');
     output.push('');
 
-    // 3. Description Section
+    // 3. Description Section (Preserve existing elaboration if found)
     output.push('## Description');
     output.push('');
-    output.push(shortDesc); // Use the text again as the main description, or elaborate? User said "adding description". The map text is good.
+    const cleanDesc = existingDescription.join('\n').trim();
+    if (cleanDesc.length > 10) {
+        output.push(cleanDesc);
+    } else {
+        output.push(shortDesc);
+    }
     output.push('');
     
     // 4. Philosophy

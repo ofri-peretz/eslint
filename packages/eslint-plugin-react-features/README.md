@@ -1,5 +1,3 @@
-# eslint-plugin-react-features
-
 <p align="center">
   <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
@@ -34,11 +32,6 @@ Advanced React patterns, hook usage, and best practices enforcement.
 ```bash
 npm install eslint-plugin-react-features --save-dev
 ```
-
-## License
-MIT © [Ofri Peretz](https://github.com/ofri-peretz)
-
-<a href="https://eslint.interlace.tools/docs/react-features"><img src="https://eslint.interlace.tools/images/og-features.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 
 ## 🔗 Related ESLint Plugins
 

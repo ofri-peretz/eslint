@@ -1,5 +1,3 @@
-# eslint-plugin-jwt
-
 <p align="center">
   <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
@@ -52,44 +50,6 @@ npm install eslint-plugin-jwt --save-dev
 | **A07:2025 Identification Failures**   |                   `require-issuer-validation`, `require-audience-validation`                   |    ✅    |
 | **A08:2025 Software/Data Integrity**   |           `no-algorithm-none`, `no-algorithm-confusion`, `no-decode-without-verify`            |    ✅    |
 
-## 🛡️ Security Research Coverage
-### CVE-2022-23540 (jsonwebtoken Algorithm None)
-
-The `no-algorithm-none` rule detects attempts to use `alg:"none"` which bypasses signature verification entirely.
-
-```javascript
-// ❌ Vulnerable - Accepts unsigned tokens
-jwt.verify(token, secret, { algorithms: ['none'] });
-
-// ✅ Safe - Explicit secure algorithm
-jwt.verify(token, secret, { algorithms: ['RS256'] });
-```
-
-### LightSEC 2025 "Back to the Future" Attack
-
-The `no-timestamp-manipulation` and `require-max-age` rules prevent replay attacks where tokens are captured and replayed years later.
-
-```javascript
-// ❌ Vulnerable - Disables timestamp, enables replay
-jwt.sign(payload, secret, { noTimestamp: true });
-
-// ✅ Safe - Automatic iat, maxAge validation
-jwt.sign(payload, secret, { expiresIn: '1h' });
-jwt.verify(token, secret, { maxAge: '1h' });
-```
-
-### Algorithm Confusion Attack
-
-The `no-algorithm-confusion` rule detects when symmetric algorithms (HS256) are used with asymmetric keys (public keys).
-
-```javascript
-// ❌ Vulnerable - Public key as HMAC secret
-jwt.verify(token, publicKey, { algorithms: ['HS256'] });
-
-// ✅ Safe - Asymmetric algorithm with public key
-jwt.verify(token, publicKey, { algorithms: ['RS256'] });
-```
-
 ## ⚙️ Configuration Presets
 | Preset        | Description | Rule | CWE | OWASP | CVSS | Description | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
 | :------------ | :---------: | :--: | :-: | :---- | :--: | :---------: | :-: | :-: | :-: | --- | --- |
@@ -98,8 +58,8 @@ jwt.verify(token, publicKey, { algorithms: ['RS256'] });
 | `legacy`      |             |      |     |       |      |             |     |     |     |
 
 ## 📚 Supported Libraries
-| Library      | npm                                                | Detection |
-| ------------ | -------------------------------------------------- | --------- |
+| Library | npm | Detection |
+| ------- | --- | --------- |
 
 ## 🤖 AI-Optimized Messages
 Every rule uses `formatLLMMessage` for structured output:

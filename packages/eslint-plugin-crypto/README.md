@@ -1,5 +1,3 @@
-# eslint-plugin-crypto
-
 <p align="center">
   <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
@@ -117,11 +115,6 @@ All rules include LLM-optimized error messages with:
 | **A04:2021 Insecure Design**           |      |     |       |      |             |     |     |     |     |
 | **A05:2021 Security Misconfiguration** |      |     |       |      |             |     |     |     |     |
 | **A07:2021 Identification Failures**   |      |     |       |      |             |     |     |     |     |
-
-## License
-MIT © [Ofri Peretz](https://github.com/ofri-peretz)
-
-<a href="https://eslint.interlace.tools/docs/crypto"><img src="https://eslint.interlace.tools/images/og-crypto-jwt.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 
 ## Rules
 

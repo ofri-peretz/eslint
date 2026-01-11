@@ -1,5 +1,3 @@
-# eslint-plugin-react-a11y
-
 <p align="center">
   <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
@@ -170,11 +168,6 @@ This plugin is optimized for ESLint's Model Context Protocol (MCP):
 - **eslint-plugin-llm-optimized** - Full plugin with 144+ rules
 - **eslint-plugin-secure-coding** - Security-focused rules
 - **@interlace/eslint-devkit** - Build custom LLM-optimized rules
-
-## License
-MIT © Ofri Peretz
-
-<a href="https://eslint.interlace.tools/docs/react-a11y"><img src="https://eslint.interlace.tools/images/og-react.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 
 ## Rules
 

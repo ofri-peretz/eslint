@@ -329,3 +329,21 @@ This replaces all relative links (e.g., `./docs/rules/...`) ensuring a consisten
 ## 2026-01-11 - Rules Table Header Cleanup
 
 I have verified that the `fix-readmes.js` script now explicitly excludes rows where the rule name is "Rule" or "Plugin". This prevents header/legend artifacts from appearing as invalid data rows in the generated Rules table.
+
+## 2026-01-11 - Final README Structure Standardization
+
+I have updated the `fix-readmes.js` script to enforce the following structure across all plugins:
+
+1.  **Starts with Logo** (Removed duplicate H1 `# Title`).
+2.  **Introduction** (Short text, centered).
+3.  **Badges** (Centered).
+4.  **Description** (Preserves existing elaborate description if available, falls back to short intro).
+5.  **Philosophy** (Standard block).
+6.  **Getting Started** (Multi-language docs link + `npm install`).
+7.  **Custom Sections** (Preserves `What You Get`, `OWASP Coverage`, `Presets`, etc.).
+8.  **Strip List**: Explicitly drops `Security Research Coverage` as requested.
+9.  **Rules Table**: Single unified table, no "Tag" column, explicit OWASP/CWE mappings.
+10. **Related Plugins**: Full ecosystem table with badges.
+11. **Footer**: License & large centered image.
+
+This has been verified on `eslint-plugin-jwt` and applied to all plugins.

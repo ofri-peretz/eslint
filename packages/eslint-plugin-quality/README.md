@@ -1,5 +1,3 @@
-# eslint-plugin-quality
-
 <p align="center">
   <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
@@ -34,11 +32,6 @@ Code quality, maintainability standards, and cognitive complexity limits.
 ```bash
 npm install eslint-plugin-quality --save-dev
 ```
-
-## License
-MIT © [Ofri Peretz](https://github.com/ofri-peretz)
-
-<a href="https://eslint.interlace.tools/docs/quality"><img src="https://eslint.interlace.tools/images/interlace-hero.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 
 ## 🔗 Related ESLint Plugins
 
