@@ -46,8 +46,6 @@ npm install eslint-plugin-secure-coding --save-dev
 ---
 
 ## 📚 Documentation
-- **[Rules Reference](./docs/RULES.md)** - Complete list of all 75 rules with configuration options
-
 ---
 
 ### What an error looks like (LLM-optimized)

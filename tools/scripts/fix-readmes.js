@@ -171,6 +171,7 @@ packages.forEach(pkg => {
         '## 🔗 Related ESLint Plugins', 
         '## 📄 License',
         '## License', // Legacy plain license header
+        '## Documentation', // User wants to strip this in favor of standard Getting Started links
         '## Installation', // Legacy: we actively skip this later, but need to identify it as 'known' to not treat as custom
         '## 📦 Installation', // Also skip
         '## 🚀 Quick Start' // Keep this as a custom section we want to preserve? Or merge?
@@ -257,8 +258,16 @@ packages.forEach(pkg => {
 
     // 6. Custom Sections (Usage Examples, etc.)
     customSections.forEach(section => {
+        // Filter out redundant documentation links if they sneaked into a custom section
+        const filteredContent = section.content.filter(line => 
+            !line.includes('[Rules Reference]') && 
+            !line.includes('./docs/RULES.md')
+        );
+        
+        if (filteredContent.length === 0 && section.header.includes('Documentation')) return;
+
         output.push(section.header);
-        output.push(section.content.join('\n').trim());
+        output.push(filteredContent.join('\n').trim());
         output.push('');
     });
 

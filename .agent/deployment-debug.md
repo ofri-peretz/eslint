@@ -298,3 +298,22 @@ I have confirmed that `eslint-plugin-architecture/README.md` (and all others via
 9. **Related Plugins** (centered badges in table)
 10. **📄 License**
 11. **Footer Image** (centered)
+
+## 2026-01-11 - Getting Started Structure Enforcement
+
+I have verified that the `fix-readmes.js` script implements the following structure for the "Getting Started" section across ALL plugins, ensuring multi-language support and consistent installation instructions:
+
+```markdown
+## Getting Started
+
+- To check out the [guide](https://eslint.interlace.tools/docs/PLUGIN), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/PLUGIN), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- [가이드](https://eslint.interlace.tools/docs/PLUGIN) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/PLUGIN)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
+
+\`\`\`bash
+npm install eslint-plugin-PLUGIN --save-dev
+\`\`\`
+```
+
+This ensures zero deviation in onboarding experience across the ecosystem.
