@@ -9,31 +9,29 @@ const packages = fs.readdirSync(packagesDir, { withFileTypes: true })
     .map(dirent => dirent.name)
     .filter(name => name.startsWith('eslint-plugin-'));
 
-// Map of short descriptions for 1-liner intro
+// Map of short specific descriptions
 const DESCRIPTIONS = {
-    'express-security': 'Comprehensive security rules for Express.js applications, mapping to OWASP Top 10.',
-    'crypto': 'Cryptographic security rules enforcing best practices and modern standards.',
-    'react-features': 'Advanced React patterns and best practices enforcement.',
-    'nestjs-security': 'Security rules tailored for NestJS applications.',
-    'jwt': 'Security validation for JSON Web Tokens (JWT) implementation.',
-    'pg': 'Security rules for PostgreSQL interaction in Node.js.',
-    'browser-security': 'Browser-specific security rules to prevent XSS and other client-side attacks.',
-    'lambda-security': 'Security best practices for AWS Lambda functions.',
-    'secure-coding': 'ESLint plugin for general secure coding practices and OWASP compliance.',
-    'vercel-ai-security': 'Security rules for Vercel AI SDK usage.',
-    'import-next': 'Next-generation import sorting and validation rules.',
-    'mongodb-security': 'Security rules for MongoDB queries and interactions.',
-    'quality': 'Code quality and maintainability standards.',
-    'react-a11y': 'Accessibility rules for React applications.'
+    'eslint-plugin-express-security': 'Comprehensive security rules for Express.js applications, mapping to OWASP Top 10.',
+    'eslint-plugin-crypto': 'Cryptographic security rules enforcing best practices and modern standards (Node.js crypto).',
+    'eslint-plugin-react-features': 'Advanced React patterns, hook usage, and best practices enforcement.',
+    'eslint-plugin-nestjs-security': 'Security rules tailored for NestJS applications (Controllers, Providers, Decorators).',
+    'eslint-plugin-jwt': 'Security validation for JSON Web Tokens (JWT) implementation (signing, verification).',
+    'eslint-plugin-pg': 'Security rules for PostgreSQL interaction in Node.js (SQL injection prevention).',
+    'eslint-plugin-browser-security': 'Browser-specific security rules to prevent XSS and other client-side attacks.',
+    'eslint-plugin-lambda-security': 'Security best practices for AWS Lambda functions (IAM, timeouts, environment).',
+    'eslint-plugin-secure-coding': 'General secure coding practices and OWASP compliance for JavaScript/TypeScript.',
+    'eslint-plugin-vercel-ai-security': 'Security rules for Vercel AI SDK usage (prompt injection, data handling).',
+    'eslint-plugin-import-next': 'Next-generation import sorting, validation, and architectural boundaries.',
+    'eslint-plugin-mongodb-security': 'Security rules for MongoDB queries and interactions (NoSQL injection).',
+    'eslint-plugin-quality': 'Code quality, maintainability standards, and cognitive complexity limits.',
+    'eslint-plugin-react-a11y': 'Accessibility (a11y) rules for React applications, enforcing WCAG standards.',
+    'eslint-plugin-architecture': 'Architectural boundaries, circular dependency detection, and module structure.'
 };
 
 const CVSS_MAP = {
-    // CVEs
     'no-insecure-rsa-padding': '7.4',
     'no-cryptojs-weak-random': '5.3',
     'require-secure-pbkdf2-digest': '9.1',
-
-    // Generic
     'no-weak-hash-algorithm': '7.5',
     'no-weak-cipher-algorithm': '7.5',
     'no-deprecated-cipher-method': '5.0',
@@ -58,372 +56,246 @@ const CVSS_MAP = {
 };
 
 const PHILOSOPHY_TEXT = `## Philosophy
- 
+
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.`;
+
+const ECOSYSTEM_TABLE = `## 🔗 Related ESLint Plugins
+
+Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
+
+| Plugin | NPM | Downloads | License | Description |
+| :--- | :---: | :---: | :---: | :--- |
+| [\`eslint-plugin-secure-coding\`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![npm](https://img.shields.io/npm/v/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![license](https://img.shields.io/npm/l/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
+| [\`eslint-plugin-pg\`](https://www.npmjs.com/package/eslint-plugin-pg) | [![npm](https://img.shields.io/npm/v/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | [![license](https://img.shields.io/npm/l/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
+| [\`eslint-plugin-crypto\`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![npm](https://img.shields.io/npm/v/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | [![license](https://img.shields.io/npm/l/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
+| [\`eslint-plugin-jwt\`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![npm](https://img.shields.io/npm/v/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | [![license](https://img.shields.io/npm/l/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
+| [\`eslint-plugin-browser-security\`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
+| [\`eslint-plugin-vercel-ai-security\`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security rules. |
+| [\`eslint-plugin-express-security\`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
+| [\`eslint-plugin-lambda-security\`](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | AWS Lambda security best practices. |
+| [\`eslint-plugin-nestjs-security\`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | NestJS security rules & patterns. |
+| [\`eslint-plugin-import-next\`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![npm](https://img.shields.io/npm/v/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | [![license](https://img.shields.io/npm/l/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |`;
 
 packages.forEach(pkg => {
     const readmePath = path.join(packagesDir, pkg, 'README.md');
     if (!fs.existsSync(readmePath)) return;
 
+    console.log(`Processing ${pkg}...`);
     let content = fs.readFileSync(readmePath, 'utf8');
-    
-    // Split lines for processing
     const lines = content.split('\n');
-
     const pluginName = pkg.replace('eslint-plugin-', '');
-    const docLinkLine = `> **📘 Full Documentation:** [https://eslint.interlace.tools/docs/${pluginName}](https://eslint.interlace.tools/docs/${pluginName})`;
+    const shortDesc = DESCRIPTIONS[pkg] || 'Security-focused ESLint plugin.';
 
-    // extract standard blocks
-    let titleIndex = -1;
-    let imgStart = -1;
-    let imgEnd = -1;
-    let badgeStart = -1;
-    let badgeEnd = -1;
-    let descStart = -1;
-    let descEnd = -1;
+    const docUrl = `https://eslint.interlace.tools/docs/${pluginName}`;
+    const baseUrl = `https://eslint.interlace.tools`;
 
-    // A. Find Title
-    if (lines[0].startsWith('# ')) titleIndex = 0;
+    // --- 1. EXTRACT DATA TO PRESERVE ---
 
-    // B. Find Image
-    for (let i = 0; i < lines.length; i++) {
-        if (lines[i].includes('<div align="center">')) {
-            imgStart = i;
-            for (let j = i; j < lines.length; j++) {
-                if (lines[j].includes('</div>')) {
-                    imgEnd = j;
-                    break;
-                }
-            }
-            break; 
-        }
-    }
-
-    // C. Find Badges
-    for (let i = 0; i < lines.length; i++) {
-        if (i === titleIndex) continue;
-        if (i >= imgStart && i <= imgEnd) continue;
-        if (lines[i].trim().startsWith('[![')) {
-             badgeStart = i;
-             for (let j = i; j < lines.length; j++) {
-                 if (!lines[j].trim().startsWith('[![') && lines[j].trim() !== '') {
-                     badgeEnd = j - 1;
-                     break;
-                 }
-                 badgeEnd = j;
-             }
-             break;
-        }
-    }
-
-    // D. Find Description (Blockquote)
-    // IMPORTANT: In previous passes, we updated desc to include Title > Doc Link > ...
-    for (let i = 0; i < lines.length; i++) {
-        if (i === titleIndex) continue;
-        if (i >= imgStart && i <= imgEnd) continue;
-        if (lines[i].trim().startsWith('>') && descStart === -1) {
-             descStart = i;
-             for (let j = i; j < lines.length; j++) {
-                if (!lines[j].trim().startsWith('>') && lines[j].trim() !== '') {
-                    descEnd = j - 1;
-                    break;
-                }
-                descEnd = j;
-             }
-             break; // Only capture the first blockquote as description
-        }
-    }
-
-    // Extract Contents
-    let titleBlock = titleIndex !== -1 ? lines[titleIndex] : '';
-    let imgBlock = (imgStart !== -1 && imgEnd !== -1) ? lines.slice(imgStart, imgEnd + 1) : [];
-    let badgeBlock = (badgeStart !== -1 && badgeEnd !== -1) ? lines.slice(badgeStart, badgeEnd + 1) : [];
-    let descBlock = (descStart !== -1 && descEnd !== -1) ? lines.slice(descStart, descEnd + 1) : [];
-
-    // --- RESTRUCTURE START ---
-
-    // 1. Resize Image (200px)
-    // 1. Resize Image (200px) & Extract Info
-    let imageUrl = '';
-    let imageAlt = 'ESLint Interlace Plugin';
-
-    // Helper to check if URL is the generic logo
-    const isGenericLogo = (url) => url.includes('eslint-interlace-logo.svg');
-
-    // A. Check Top Image Block
-    if (imgBlock.length > 0) {
-        const imgLine = imgBlock.find(l => l.includes('<img'));
-        if (imgLine) {
-            const srcMatch = imgLine.match(/src="([^"]+)"/);
-            if (srcMatch && !isGenericLogo(srcMatch[1])) {
-                 imageUrl = srcMatch[1];
-            }
-            
-            const altMatch = imgLine.match(/alt="([^"]+)"/);
-            if (altMatch) imageAlt = altMatch[1];
-        }
-    }
-
-    // B. Check Footer (Scanning existing lines) if we didn't find specific image at top
-    if (!imageUrl) {
-        for (let i = lines.length - 1; i >= 0; i--) {
-            const line = lines[i];
-            if (line.includes('<img') && line.includes('width="100%"')) {
-                const srcMatch = line.match(/src="([^"]+)"/);
-                if (srcMatch && !isGenericLogo(srcMatch[1])) {
-                    imageUrl = srcMatch[1];
-                    // Also try to grab alt? Unlikely to be different/needed if we have the URL
-                    break;
-                }
-            }
-        }
-    }
-
-    // REPLACE Top Image with Generic Logo (NestJS Style: width 120, centered, linked)
-    // Mimics NestJS pattern: <p align="center"><a href="..." ...><img ... /></a></p>
-    if (imageUrl || imgBlock.length > 0) {
-        imgBlock = [
-            '<p align="center">',
-            '  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>',
-            '</p>'
-        ];
-    }
-
-    // 2. Prepare 1-liner Intro
-    // Use mapped description or fallback
-    const shortDesc = DESCRIPTIONS[pluginName] || 'Security-focused ESLint plugin.';
-    const shortDescBlock = [
-        '<p align="center">',
-        `  ${shortDesc}`,
-        '</p>'
-    ]; 
-
-    // 3. Prepare Description Section
-    // Ensure the blockquote with doc link and pro tip is preserved but maybe moved?
-    // User wants: Intro -> Badges -> Description
-    // We already have descBlock which contains Doc Link + Pro Tip + Original Description
-    // Let's create an explicit '## Description' section containing this.
-
-    // 4. Badges (Ensure Exists)
-    if (badgeBlock.length === 0) {
-         const shortName = pluginName;
-         badgeBlock = [
-            '',
-            '<p align="center">',
-            `  <a href="https://www.npmjs.com/package/${pkg}"><img src="https://img.shields.io/npm/v/${pkg}.svg" alt="npm version" /></a>`,
-            `  <a href="https://www.npmjs.com/package/${pkg}"><img src="https://img.shields.io/npm/dm/${pkg}.svg" alt="npm downloads" /></a>`,
-            `  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>`,
-            `  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=${shortName}"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=${shortName}" alt="codecov" /></a>`,
-            `  <a href="https://github.com/ofri-peretz/eslint"><img src="https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white" alt="Dec 2025" /></a>`,
-            '</p>'
-        ];
-    }
-
-    // 5. Consolidate Rules Table
-    // Iterate lines to find all tables starting with | Rule | or similar
-    // Also capture headings above them to use as Tags.
+    // A. Rules Table Rows
+    // We look for rows that look like rule definitions, extracting them to rebuild the table.
+    const ruleRows = [];
+    const processedRules = new Set();
     
-    // We need to do this carefully. We cannot just regex.
-    // Let's first identify indices for removal of header parts.
-    const indicesToRemove = new Set();
-    if (titleIndex !== -1) indicesToRemove.add(titleIndex);
-    if (imgStart !== -1) for(let k=imgStart; k<=imgEnd; k++) indicesToRemove.add(k);
-    if (descStart !== -1) for(let k=descStart; k<=descEnd; k++) indicesToRemove.add(k);
-    if (badgeStart !== -1) for(let k=badgeStart; k<=badgeEnd; k++) indicesToRemove.add(k);
+    // Regex strategies for extraction
+    const ruleRowRegex = /^\|\s*\[?([a-zA-Z0-9\-\/]+)\]?.*\|.*$/;
 
-    // Filter lines to get "body"
-    // We already identified indicesToRemove which includes the original Top Image block.
-    // Now we must also ensure we strip any *existing* footer image so we don't duplicate it.
-    let bodyLines = lines.filter((_, idx) => !indicesToRemove.has(idx)).join('\n');
-    let bodyLineArray = bodyLines.split('\n');
+    lines.forEach(line => {
+        const match = line.match(ruleRowRegex);
+        if (match && !line.includes('---') && !line.toLowerCase().includes('| rule |') && !line.toLowerCase().includes('| icon |')) {
+             // It's likely a rule row.
+             // We need to parse it to ensure it has all columns: Rule, CWE, OWASP, CVSS, Desc, Flags
+             // If strict parsing fails, we try to salvage what we can or skip if it's garbage/header.
+             
+             // Check if it's already in processedRules (deduplication)
+             const rawRuleName = match[1];
+             if (processedRules.has(rawRuleName) || processedRules.has(`[${rawRuleName}]`)) return;
+             
+             // Extract Cells
+             const parts = line.split('|').map(c => c.trim()).filter((c, i) => i !== 0 && i !== line.split('|').length - 1); // remove outer empty splits if | is at ends
+             // Wait, split result for "| A | B |" is ["", " A ", " B ", ""]
+             
+             const cells = line.split('|').map(c => c.trim());
+             // Remove empty start/end if they exist (markdown tables usually have leading/trailing pipes)
+             if (cells[0] === '') cells.shift();
+             if (cells[cells.length-1] === '') cells.pop();
 
-    // Remove existing Footer Image if present
-    // Logic: Remove lines that look like a full-width image (anchor or img)
-    bodyLineArray = bodyLineArray.filter(line => {
-        const isFooterImg = line.includes('<img') && line.includes('width="100%"');
-        // Check if it's an anchor wrapper around it? 
-        // Simple filter: if line has width="100%" and img src, drop it.
-        // Also drop lines that are just closing </a> if they were wrapping it? 
-        // This is tricky with simple line split. 
-        // For now, let's assume the footer image is the main thing to strip.
-        if (isFooterImg) return false;
-        
-        // Strip standalone formatting/links potentially related to footer?
-        // Let's rely on the fact that our new footer is distinct.
-        // If the user manually added something else 100%, it might get nuked.
-        return true;
+             // Basic validation: needs at least Rule and Desc? 
+             // Existing standard tables have ~10 columns.
+             // If < 3, probably not a rule row.
+             if (cells.length < 3) return;
+
+             processedRules.add(rawRuleName);
+             
+             // Normalize Row Data
+             let rule = cells.find(c => c.includes(rawRuleName)) || `[${rawRuleName}](${docUrl}/rules/${rawRuleName})`;
+             // Ensure link
+             if (!rule.includes('](')) rule = `[${rawRuleName}](${docUrl}/rules/${rawRuleName})`;
+
+             let cwe = cells.find(c => c.includes('CWE-')) || '';
+             let owasp = cells.find(c => c.includes(':202')) || ''; // 2021 or 2025
+             if (owasp) owasp = owasp.replace('2021', '2025');
+
+             let cvss = cells.find(c => /^[0-9]\.[0-9]$/.test(c)) || '';
+             // Fallback CVSS
+             if (!cvss) {
+                 const shortRuleName = rawRuleName.split('/').pop();
+                 cvss = CVSS_MAP[shortRuleName] || '';
+             }
+
+             // Description: Find the longest cell that isn't the others
+             const getWeight = (c) => {
+                 if (c === rule) return -1;
+                 if (c.includes('CWE-')) return -1;
+                 if (c.includes(':202')) return -1;
+                 if (/^[0-9]\.[0-9]$/.test(c)) return -1;
+                 if (['💼','⚠️','🔧','💡','🚫'].includes(c)) return -1;
+                 return c.length;
+             };
+             const desc = cells.reduce((prev, curr) => getWeight(curr) > getWeight(prev) ? curr : prev, '');
+
+             const hasFlag = (icon) => cells.includes(icon) ? icon : '';
+             
+             ruleRows.push(`| ${rule} | ${cwe} | ${owasp} | ${cvss} | ${desc} | ${hasFlag('💼')} | ${hasFlag('⚠️')} | ${hasFlag('🔧')} | ${hasFlag('💡')} | ${hasFlag('🚫')} |`);
+        }
     });
 
-    // Remove "## Philosophy" if it exists (we will re-add standard one)
-    let philStart = -1;
-    let philEnd = -1;
-     for(let i=0; i<bodyLineArray.length; i++) {
-        if(bodyLineArray[i].includes('## Philosophy')) {
-            philStart = i;
-            // find next section
-             for(let j=i+1; j<bodyLineArray.length; j++) {
-                 if(bodyLineArray[j].startsWith('## ')) {
-                     philEnd = j;
-                     break;
-                 }
-             }
-             if (philEnd === -1) philEnd = bodyLineArray.length;
-             break;
-        }
-    }
-    if (philStart !== -1) {
-        bodyLineArray.splice(philStart, philEnd - philStart);
-    }
-    
-    // Process Tables for Consolidation
-    // Strategy: Parse Markdown to find headings and tables
-    // We look for '### <Title>' followed eventually by a table.
-    // We collect all rows.
-    
-    let allRows = [];
-    let currentTag = 'General';
-    let newBodyArray = [];
-    let skippingTable = false;
-    let insideRulesSection = false;
-
-    for (let i = 0; i < bodyLineArray.length; i++) {
-        const line = bodyLineArray[i];
-
-        // Detect Rules Section Start
-        if (line.match(/^##\s+.*Rules/)) {
-            insideRulesSection = true;
-            newBodyArray.push('## Rules'); // We will just put the table here later
-            newBodyArray.push('');
-            // We want to skip everything inside here until next Double Header (##)
-            continue;
-        }
-
-        if (insideRulesSection) {
-            if (line.startsWith('## ') && !line.match(/^##\s+.*Rules/)) {
-                // Next major section
-                insideRulesSection = false;
-                newBodyArray.push(line);
-                continue;
-            }
-
-            // Capture Tag from H3
-            if (line.startsWith('### ')) {
-                // "### Headers & CORS (4 rules)" -> "Headers & CORS"
-                currentTag = line.replace('### ', '').replace(/\(.*\)/, '').trim();
-                continue;
-            }
-
-            // Capture Table Row
-            if (line.trim().startsWith('|')) {
-                // Ignore headers/separators
-                if (line.includes('---') || line.toLowerCase().includes('| rule |')) continue;
-                
-                // Parse row
-                // Assume standard pipe format: | Rule | ...
-                const parts = line.split('|').filter(p => p.trim() !== ''); // split and filter empty edges
-                // Reconstruct with Tag
-                // Original: Rule | CWE | OWASP | CVSS | Desc | ...
-                // New: Rule | Tag | CWE | OWASP | CVSS | Desc | ...
-                
-                // Be careful about splitting logic if pipes are inside content? Unlikely for this readme.
-                // Standard row: | [rule-name](...) | CWE-123 | ...
-                
-                // Let's construct a row object or just string manipulation
-                // parts[0] is Rule
-                // We want to insert Tag after Rule (idx 1)
-                
-                // Need to ensure we don't duplicate rows if multiple runs
-                // ...
-                
-                // Rebuild row string
-                const rule = parts[0]?.trim() || '';
-                if (!rule) continue;
-                
-                // Check if CVSS needs injecting (from previous logic)
-                let cvssIndex = 3; // Rule(0), CWE(1), OWASP(2), CVSS(3)? Need to verify header structure
-                // Assume current structure: | Rule | CWE | OWASP | CVSS | Desc | ...
-                // Let's verify via parts length
-                
-                // Just prepend Tag to parts and join
-                // But wait, split/filter removes empty start/end.
-                // Reconstruct: | Rule | Tag | Rest... |
-                
-                let rowContent = `| ${parts.join(' | ')} |`; // Placeholder
-                
-                // let's interpret columns based on common known structure
-                // Rule, CWE, OWASP, CVSS, Description, ...
-                
-                // Inject Tag
-                // Rule | Tag | CWE | ...
-                
-                // To be safe, let's just insert the tag value into index 1
-                parts.splice(1, 0, currentTag);
-                
-                allRows.push(`| ${parts.join(' | ')} |`);
-                
-            }
-            // Skip other content in rules section (descriptions between tables etc, unless we want to keep them? 
-            // User wants consolidated table, implies removing intermediate text)
-            continue; 
-        }
-
-        newBodyArray.push(line);
-    }
-    
-    // Sort rows? or leave as is (grouped by encounter)
-    // If we have rows, build the table
-    if (allRows.length > 0) {
-        // Find where we put "## Rules"
-        const rulesIdx = newBodyArray.indexOf('## Rules');
-        if (rulesIdx !== -1) {
-            const header = `| Rule | Tag | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |`;
-            const separator = `| :--- | :--- | :---: | :---: | :---: | :--- | :-: | :-: | :-: | :-: | :-: |`;
-            // Insert table
-            newBodyArray.splice(rulesIdx + 1, 0, header, separator, ...allRows);
-        }
-    }
-
-    // Reconstruct Final Layout
-    // Title
-    // Image
-    // Intro (1-liner)
-    // Badges
-    // ## Description
-    // [Blockquote descBlock]
-    // ## Philosophy
-    // ## Getting Started
-    // [Rest of Body (Rules, etc)]
-
-    const newContent = [
-        titleBlock,
-        '',
-        ...imgBlock,
-        '',
-        ...shortDescBlock,
-        '',
-        ...badgeBlock,
-        '',
+    // B. Custom Sections (Preserve "Usage Examples", "Configuration Presets", etc.)
+    // We scan for ## headers that are NOT standard.
+    // NOTE: 'Installation' and 'Getting Started' variants should be skipped to avoid duplication.
+    const STANDARD_HEADERS = [
+        '# ',
         '## Description',
-        '',
-        ...descBlock,
-        '',
-        PHILOSOPHY_TEXT,
-        '',
+        '## Philosophy',
         '## Getting Started',
-        '',
-        `\`\`\`bash
-npm install ${pkg} --save-dev
-\`\`\``,
-        '',
-        ...newBodyArray,
-        '',
-        imageUrl ? `<a href="https://eslint.interlace.tools/docs/${pluginName}"><img src="${imageUrl}" alt="${imageAlt}" width="100%" /></a>` : ''
-    ].join('\n');
-    
-    // Clean up
-    const finalContent = newContent.replace(/\n{3,}/g, '\n\n');
-    
-    fs.writeFileSync(readmePath, finalContent);
-    console.log(`[${pkg}] Applied NestJS-style layout & Unified Rules Table`);
+        '## Rules',
+        '## 🔗 Related ESLint Plugins', 
+        '## 📄 License',
+        '## License', // Legacy plain license header
+        '## Installation', // Legacy: we actively skip this later, but need to identify it as 'known' to not treat as custom
+        '## 📦 Installation', // Also skip
+        '## 🚀 Quick Start' // Keep this as a custom section we want to preserve? Or merge?
+        // User wants LESS Getting Started. "Quick Start" might be redundant if we have Getting Started.
+        // Let's treat "Getting Started" as the one truth. 
+        // We will explicitly SKIP 'Installation' and 'Quick Start' if they contain just npm install.
+    ];
 
+    const customSections = [];
+    let currentCustomSection = null;
+    let capture = false;
+
+    lines.forEach(line => {
+        if (line.startsWith('## ')) {
+            const trimmed = line.trim();
+            // Check if it's one of our core generated sections
+            const isCore = ['## Description', '## Philosophy', '## Getting Started', '## Rules', '## 🔗 Related ESLint Plugins', '## 📄 License'].includes(trimmed);
+            
+            // Check if it's a section we want to NUKE because it's redundant (Transformation 2026-01-11)
+            const isLegacyInstallation = ['## Installation', '## 📦 Installation', '## 🚀 Quick Start'].some(h => trimmed.startsWith(h));
+
+            if (isCore || isLegacyInstallation) {
+                capture = false;
+                currentCustomSection = null;
+            } else {
+                // It is a truly custom section (e.g. "Available Presets", "Supported Functions", "FAQ")
+                currentCustomSection = { header: line, content: [] };
+                customSections.push(currentCustomSection);
+                capture = true;
+            }
+        } else if (capture && currentCustomSection) {
+            currentCustomSection.content.push(line);
+        }
+    });
+
+    // --- 2. RECONSTRUCT CONTENT ---
+
+    const output = [];
+
+    // 1. Header & Logo
+    output.push(`# ${pkg}`);
+    output.push('');
+    output.push('<p align="center">');
+    output.push(`  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>`);
+    output.push('</p>');
+    output.push('');
+    output.push('<p align="center">');
+    output.push(`  ${shortDesc}`);
+    output.push('</p>');
+    output.push('');
+
+    // 2. Badges
+    output.push('<p align="center">');
+    output.push(`  <a href="https://www.npmjs.com/package/${pkg}" target="_blank"><img src="https://img.shields.io/npm/v/${pkg}.svg" alt="NPM Version" /></a>`);
+    output.push(`  <a href="https://www.npmjs.com/package/${pkg}" target="_blank"><img src="https://img.shields.io/npm/dm/${pkg}.svg" alt="NPM Downloads" /></a>`);
+    output.push(`  <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>`);
+    output.push(`  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=${pluginName}" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=${pluginName}" alt="Codecov" /></a>`);
+    output.push(`  <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white" alt="Dec 2025" /></a>`);
+    output.push('</p>');
+    output.push('');
+
+    // 3. Description Section
+    output.push('## Description');
+    output.push('');
+    output.push(shortDesc); // Use the text again as the main description, or elaborate? User said "adding description". The map text is good.
+    output.push('');
+    
+    // 4. Philosophy
+    output.push(PHILOSOPHY_TEXT);
+    output.push('');
+
+    // 5. Getting Started (SINGLE source of truth)
+    output.push('## Getting Started');
+    output.push('');
+    output.push(`- To check out the [guide](${docUrl}), visit [eslint.interlace.tools](${baseUrl}). 📚`);
+    output.push(`- 要查看中文 [指南](${docUrl}), 请访问 [eslint.interlace.tools](${baseUrl}). 📚`);
+    output.push(`- [가이드](${docUrl}) 문서는 [eslint.interlace.tools](${baseUrl})에서 확인하실 수 있습니다. 📚`);
+    output.push(`- [ガイド](${docUrl})は [eslint.interlace.tools](${baseUrl})でご確認ください。 📚`);
+    output.push('');
+    output.push('```bash');
+    output.push(`npm install ${pkg} --save-dev`);
+    output.push('```');
+    output.push('');
+
+    // 6. Custom Sections (Usage Examples, etc.)
+    customSections.forEach(section => {
+        output.push(section.header);
+        output.push(section.content.join('\n').trim());
+        output.push('');
+    });
+
+    // 7. Rules Table
+    if (ruleRows.length > 0) {
+        output.push('## Rules');
+        output.push('');
+        output.push('**Legend**');
+        output.push('');
+        output.push('| Icon | Description |');
+        output.push('| :---: | :--- |');
+        output.push('| 💼 | **Recommended**: Included in the recommended preset. |');
+        output.push('| ⚠️ | **Warns**: Set towarn in recommended preset. |');
+        output.push('| 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |');
+        output.push('| 💡 | **Suggestions**: Providing code suggestions in IDE. |');
+        output.push('| 🚫 | **Deprecated**: This rule is deprecated. |');
+        output.push('');
+        output.push('| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |');
+        output.push('| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |');
+        output.push(ruleRows.join('\n'));
+        output.push('');
+    }
+
+    // 8. Ecosystem Table
+    output.push(ECOSYSTEM_TABLE);
+    output.push('');
+
+    // 9. Footer Image
+    // Use generic footer link
+    output.push(`## 📄 License
+
+MIT © [Ofri Peretz](https://github.com/ofri-peretz)
+`);
+    output.push(`<p align="center">`);
+    output.push(`  <a href="https://eslint.interlace.tools/docs/${pluginName}"><img src="https://eslint.interlace.tools/images/og-${pluginName}.png" alt="ESLint Interlace Plugin" width="100%" /></a>`);
+    output.push(`</p>`);
+
+    fs.writeFileSync(readmePath, output.join('\n'));
+    console.log(`[${pkg}] Regenerated successfully.`);
 });

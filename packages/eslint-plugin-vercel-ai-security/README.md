@@ -5,201 +5,37 @@
 </p>
 
 <p align="center">
-  Security rules for Vercel AI SDK usage.
+  Security rules for Vercel AI SDK usage (prompt injection, data handling).
 </p>
 
-[![npm version](https://img.shields.io/npm/v/eslint-plugin-vercel-ai-security.svg)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security)
-[![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-vercel-ai-security.svg)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=vercel-ai-security)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=vercel-ai-security)
-[![Dec 2025](https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white)](https://github.com/ofri-peretz/eslint)
+<p align="center">
+  <a href="https://www.npmjs.com/package/eslint-plugin-vercel-ai-security" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-vercel-ai-security.svg" alt="NPM Version" /></a>
+  <a href="https://www.npmjs.com/package/eslint-plugin-vercel-ai-security" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-vercel-ai-security.svg" alt="NPM Downloads" /></a>
+  <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=vercel-ai-security" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=vercel-ai-security" alt="Codecov" /></a>
+  <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white" alt="Dec 2025" /></a>
+</p>
 
 ## Description
 
-> **📘 Full Documentation:** [https://eslint.interlace.tools/docs/vercel-ai-security](https://eslint.interlace.tools/docs/vercel-ai-security)
->
-> **Note:** ASI06 (Memory Corruption) is N/A for TypeScript/JavaScript as these are memory-safe languages.
-
-> [!TIP]
-> For **complete OWASP coverage**, combine with [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) which provides 78 additional rules covering all OWASP categories.
+Security rules for Vercel AI SDK usage (prompt injection, data handling).
 
 ## Philosophy
- 
+
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
 ## Getting Started
 
-```bash
-npm install eslint-plugin-vercel-ai-security --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Security rules for Vercel AI SDK usage.
-</p>
-## Description
-
-## Getting Started
+- To check out the [guide](https://eslint.interlace.tools/docs/vercel-ai-security), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/vercel-ai-security), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- [가이드](https://eslint.interlace.tools/docs/vercel-ai-security) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/vercel-ai-security)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
 
 ```bash
 npm install eslint-plugin-vercel-ai-security --save-dev
 ```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Security rules for Vercel AI SDK usage.
-</p>
-
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-vercel-ai-security --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Security rules for Vercel AI SDK usage.
-</p>
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-vercel-ai-security --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Security rules for Vercel AI SDK usage.
-</p>
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-vercel-ai-security --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Security rules for Vercel AI SDK usage.
-</p>
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-vercel-ai-security --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-Security rules for Vercel AI SDK usage.
-
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-vercel-ai-security --save-dev
-```
-
-Security rules for Vercel AI SDK usage.
-
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-vercel-ai-security --save-dev
-```
-
----
-
-## 📦 Installation
-
-```bash
-# npm
-npm install eslint-plugin-vercel-ai-security --save-dev
-
-# pnpm
-pnpm add -D eslint-plugin-vercel-ai-security
-
-# yarn
-yarn add -D eslint-plugin-vercel-ai-security
-```
-
----
-
-## 🚀 Quick Start
-
-### ESLint Flat Config (Recommended)
-
-```javascript
-// eslint.config.js
-import vercelAISecurity from 'eslint-plugin-vercel-ai-security';
-
-export default [vercelAISecurity.configs.recommended];
-```
-
-### Available Presets
-
-| Preset            | Description                                                             |
-| ----------------- | ----------------------------------------------------------------------- |
-| **`recommended`** | Balanced security: Critical rules as errors, high-priority as warnings. |
-| **`strict`**      | Maximum security: All rules enabled as errors for production.           |
-| **`minimal`**     | Gradual adoption: Only the 2 most critical rules.                       |
-
----
-
-## Rules
-| Rule | Tag | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :--- | :---: | :---: | :---: | :--- | :-: | :-: | :-: | :-: | :-: |
-|   Rule                                                                               | General |  General  |   Tag       |     CWE     |    OWASP    |    CVSS     |   Description   |                💼                |     ⚠️      |    🔧     |   💡    |                               🚫                                |
-|   [require-validated-prompt](./docs/rules/require-validated-prompt.md)               | General |  General  |   General   |   General   |   General   |   General   |   General       |     🛡️ OWASP LLM Top 10 2025     |   CWE-74    |   LLM01   |   9.0   |          Prevent prompt injection via input validation          |   💼    |
-|   [no-sensitive-in-prompt](./docs/rules/no-sensitive-in-prompt.md)                   | General |  General  |   General   |   General   |   General   |   General   |   General       |     🛡️ OWASP LLM Top 10 2025     |   CWE-200   |   LLM02   |   8.0   |        Prevent sensitive data (secrets, PII) in prompts         |   💼    |
-|   [no-training-data-exposure](./docs/rules/no-training-data-exposure.md)             | General |  General  |   General   |   General   |   General   |   General   |   General       |     🛡️ OWASP LLM Top 10 2025     |   CWE-359   |   LLM03   |   7.0   |        Prevent user data exposure to training endpoints         |   ⚠️    |
-|   [require-request-timeout](./docs/rules/require-request-timeout.md)                 | General |  General  |   General   |   General   |   General   |   General   |   General       |     🛡️ OWASP LLM Top 10 2025     |   CWE-400   |   LLM04   |   5.0   |          Require timeouts for AI calls to prevent DoS           |   ⚠️    |
-|   [no-unsafe-output-handling](./docs/rules/no-unsafe-output-handling.md)             | General |  General  |   General   |   General   |   General   |   General   |   General       |     🛡️ OWASP LLM Top 10 2025     |   CWE-94    |   LLM05   |   9.8   |        Prevent unsafe use of AI output (eval, SQL, HTML)        |   💼    |
-|   [require-tool-confirmation](./docs/rules/require-tool-confirmation.md)             | General |  General  |   General   |   General   |   General   |   General   |   General       |     🛡️ OWASP LLM Top 10 2025     |   CWE-862   |   LLM06   |   7.0   |         Require confirmation for destructive tool usage         |   💼    |
-|   [no-system-prompt-leak](./docs/rules/no-system-prompt-leak.md)                     | General |  General  |   General   |   General   |   General   |   General   |   General       |     🛡️ OWASP LLM Top 10 2025     |   CWE-200   |   LLM07   |   7.5   |           Prevent system prompt leakage in responses            |   💼    |
-|   [require-embedding-validation](./docs/rules/require-embedding-validation.md)       | General |  General  |   General   |   General   |   General   |   General   |   General       |     🛡️ OWASP LLM Top 10 2025     |   CWE-20    |   LLM08   |   5.5   |            Validate embeddings before storage/search            |   💡    |
-|   [require-output-validation](./docs/rules/require-output-validation.md)             | General |  General  |   General   |   General   |   General   |   General   |   General       |     🛡️ OWASP LLM Top 10 2025     |   CWE-707   |   LLM09   |   5.0   |   Validate AI output before display to prevent misinformation   |   💡    |
-|   [require-max-tokens](./docs/rules/require-max-tokens.md)                           | General |  General  |   General   |   General   |   General   |   General   |   General       |     🛡️ OWASP LLM Top 10 2025     |   CWE-770   |   LLM10   |   6.5   |         Require `maxTokens` limit to prevent exhaustion         |   ⚠️    |
-|   [require-max-steps](./docs/rules/require-max-steps.md)                             | General |  General  |   General   |   General   |   General   |   General   |   General       |     🛡️ OWASP LLM Top 10 2025     |   CWE-834   |   LLM10   |   6.5   |             Require `maxSteps` for multi-step tools             |   ⚠️    |
-|   [require-abort-signal](./docs/rules/require-abort-signal.md)                       | General |  General  |   General   |   General   |   General   |   General   |   General       |     🛡️ OWASP LLM Top 10 2025     |   CWE-404   |   LLM10   |   4.0   |          Require `abortSignal` for cancellable streams          |   💡    |
-|   [no-dynamic-system-prompt](./docs/rules/no-dynamic-system-prompt.md)               | General |  General  |   General   |   General   |   General   |   General   |   General       |   🤖 OWASP Agentic Top 10 2026   |   CWE-74    |   ASI01   |   8.0   |        Prevent dynamic system prompts (Agent Confusion)         |   💼    |
-|   [require-tool-schema](./docs/rules/require-tool-schema.md)                         | General |  General  |   General   |   General   |   General   |   General   |   General       |   🤖 OWASP Agentic Top 10 2026   |   CWE-20    |   ASI02   |   7.5   |           Require Zod schemas for all tool parameters           |   ⚠️    |
-|   [no-hardcoded-api-keys](./docs/rules/no-hardcoded-api-keys.md)                     | General |  General  |   General   |   General   |   General   |   General   |   General       |   🤖 OWASP Agentic Top 10 2026   |   CWE-798   |   ASI03   |   8.5   |           Prevent hardcoded API keys in configuration           |   💼    |
-|   [require-output-filtering](./docs/rules/require-output-filtering.md)               | General |  General  |   General   |   General   |   General   |   General   |   General       |   🤖 OWASP Agentic Top 10 2026   |   CWE-200   |   ASI04   |   6.5   |             Filter sensitive data returned by tools             |   ⚠️    |
-|   [no-unsafe-output-handling](./docs/rules/no-unsafe-output-handling.md)             | General |  General  |   General   |   General   |   General   |   General   |   General       |   🤖 OWASP Agentic Top 10 2026   |   CWE-94    |   ASI05   |   9.8   |        Prevent unexpected code execution from AI output         |   💼    |
-|   **ASI06: Memory Corruption**                                                       | General |  General  |   General   |   General   |   General   |   General   |   General       |   🤖 OWASP Agentic Top 10 2026   |      -      |   ASI06   |    -    |              _N/A (TypeScript/JS is memory-safe)_               |   -     |   -     |   -     |
-|   [require-rag-content-validation](./docs/rules/require-rag-content-validation.md)   | General |  General  |   General   |   General   |   General   |   General   |   General       |   🤖 OWASP Agentic Top 10 2026   |   CWE-74    |   ASI07   |   6.0   |           Validate RAG content before use in prompts            |   ⚠️    |
-|   [require-error-handling](./docs/rules/require-error-handling.md)                   | General |  General  |   General   |   General   |   General   |   General   |   General       |   🤖 OWASP Agentic Top 10 2026   |   CWE-755   |   ASI08   |   5.0   |      Require error handling to prevent cascading failures       |   💡    |
-|   [require-tool-confirmation](./docs/rules/require-tool-confirmation.md)             | General |  General  |   General   |   General   |   General   |   General   |   General       |   🤖 OWASP Agentic Top 10 2026   |   CWE-862   |   ASI09   |   7.0   |         Require human-in-the-loop for sensitive actions         |   💼    |
-|   [require-audit-logging](./docs/rules/require-audit-logging.md)                     | General |  General  |   General   |   General   |   General   |   General   |   General       |   🤖 OWASP Agentic Top 10 2026   |   CWE-778   |   ASI10   |   4.0   |             Suggest audit logging for AI operations             |   💡    |
 
 ## 🔧 Supported AI SDK Functions
-
 | Function               | Full Coverage                  |
 | ---------------------- | ------------------------------ |
 | `generateText`         | ✅ All 19 rules                |
@@ -212,7 +48,6 @@ export default [vercelAISecurity.configs.recommended];
 ---
 
 ## 📊 Test Coverage
-
 | Metric        | Coverage |
 | ------------- | -------- |
 | **Rules**     | 19       |
@@ -223,7 +58,6 @@ export default [vercelAISecurity.configs.recommended];
 ---
 
 ## 🤖 AI-Agent Optimized Messages
-
 All rule messages follow a structured format optimized for AI coding assistants:
 
 ```
@@ -234,7 +68,6 @@ All rule messages follow a structured format optimized for AI coding assistants:
 ---
 
 ## 📦 Compatibility
-
 | Package              | Version                        |
 | -------------------- | ------------------------------ |
 | `ai` (Vercel AI SDK) | ^3.0.0 \|\| ^4.0.0 \|\| ^5.0.0 |
@@ -243,30 +76,7 @@ All rule messages follow a structured format optimized for AI coding assistants:
 
 ---
 
-## 🔗 Related ESLint Plugins
-
-Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
-
-| Plugin                                                                                           | Downloads | Description |
-| :----------------------------------------------------------------------------------------------- | :-------: | :---------- |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)       |           |             |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                           |           |             |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                     |           |             |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                             |           |             |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) |           |             |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)   |           |             |
-| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)   |           |             |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) |           |             |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)           |           |             |
-
-## 📄 License
-
-MIT © [Ofri Peretz](https://github.com/ofri-peretz)
-
----
-
 ## 🙋 FAQ
-
 ### What's the difference between this and generic AI security linters?
 
 Generic linters guess at patterns. This plugin knows the **exact** Vercel AI SDK API.
@@ -287,3 +97,64 @@ await generateText({ prompt: internalPrompt });
 TypeScript/JavaScript are memory-safe languages. Memory corruption vulnerabilities (buffer overflows, use-after-free, etc.) are not possible in these environments.
 
 <a href="https://eslint.interlace.tools/docs/vercel-ai-security"><img src="https://eslint.interlace.tools/images/og-ai-security.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+
+## Rules
+
+**Legend**
+
+| Icon | Description |
+| :---: | :--- |
+| 💼 | **Recommended**: Included in the recommended preset. |
+| ⚠️ | **Warns**: Set towarn in recommended preset. |
+| 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
+| 💡 | **Suggestions**: Providing code suggestions in IDE. |
+| 🚫 | **Deprecated**: This rule is deprecated. |
+
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [ESLint](https://eslint.interlace.tools/docs/vercel-ai-security/rules/ESLint) |  |  |  | ^8.0.0 \ |  |  |  |  |  |
+| [require-validated-prompt](./docs/rules/require-validated-prompt.md) | CWE-74 |  | 9.0 | 🛡️ OWASP LLM Top 10 2025 | 💼 |  |  |  |  |
+| [no-sensitive-in-prompt](./docs/rules/no-sensitive-in-prompt.md) | CWE-200 |  | 8.0 | 🛡️ OWASP LLM Top 10 2025 | 💼 |  |  |  |  |
+| [no-training-data-exposure](./docs/rules/no-training-data-exposure.md) | CWE-359 |  | 7.0 | 🛡️ OWASP LLM Top 10 2025 |  | ⚠️ |  |  |  |
+| [require-request-timeout](./docs/rules/require-request-timeout.md) | CWE-400 |  | 5.0 | 🛡️ OWASP LLM Top 10 2025 |  | ⚠️ |  |  |  |
+| [no-unsafe-output-handling](./docs/rules/no-unsafe-output-handling.md) | CWE-94 |  | 9.8 | 🛡️ OWASP LLM Top 10 2025 | 💼 |  |  |  |  |
+| [require-tool-confirmation](./docs/rules/require-tool-confirmation.md) | CWE-862 |  | 7.0 | 🛡️ OWASP LLM Top 10 2025 | 💼 |  |  |  |  |
+| [no-system-prompt-leak](./docs/rules/no-system-prompt-leak.md) | CWE-200 |  | 7.5 | 🛡️ OWASP LLM Top 10 2025 | 💼 |  |  |  |  |
+| [require-embedding-validation](./docs/rules/require-embedding-validation.md) | CWE-20 |  | 5.5 | 🛡️ OWASP LLM Top 10 2025 |  |  |  | 💡 |  |
+| [require-output-validation](./docs/rules/require-output-validation.md) | CWE-707 |  | 5.0 | 🛡️ OWASP LLM Top 10 2025 |  |  |  | 💡 |  |
+| [require-max-tokens](./docs/rules/require-max-tokens.md) | CWE-770 |  | 6.5 | 🛡️ OWASP LLM Top 10 2025 |  | ⚠️ |  |  |  |
+| [require-max-steps](./docs/rules/require-max-steps.md) | CWE-834 |  | 6.5 | 🛡️ OWASP LLM Top 10 2025 |  | ⚠️ |  |  |  |
+| [require-abort-signal](./docs/rules/require-abort-signal.md) | CWE-404 |  | 4.0 | 🛡️ OWASP LLM Top 10 2025 |  |  |  | 💡 |  |
+| [no-dynamic-system-prompt](./docs/rules/no-dynamic-system-prompt.md) | CWE-74 |  | 8.0 | 🤖 OWASP Agentic Top 10 2026 | 💼 |  |  |  |  |
+| [require-tool-schema](./docs/rules/require-tool-schema.md) | CWE-20 |  | 7.5 | 🤖 OWASP Agentic Top 10 2026 |  | ⚠️ |  |  |  |
+| [no-hardcoded-api-keys](./docs/rules/no-hardcoded-api-keys.md) | CWE-798 |  | 8.5 | 🤖 OWASP Agentic Top 10 2026 | 💼 |  |  |  |  |
+| [require-output-filtering](./docs/rules/require-output-filtering.md) | CWE-200 |  | 6.5 | 🤖 OWASP Agentic Top 10 2026 |  | ⚠️ |  |  |  |
+| [require-rag-content-validation](./docs/rules/require-rag-content-validation.md) | CWE-74 |  | 6.0 | 🤖 OWASP Agentic Top 10 2026 |  | ⚠️ |  |  |  |
+| [require-error-handling](./docs/rules/require-error-handling.md) | CWE-755 |  | 5.0 | 🤖 OWASP Agentic Top 10 2026 |  |  |  | 💡 |  |
+| [require-audit-logging](./docs/rules/require-audit-logging.md) | CWE-778 |  | 4.0 | 🤖 OWASP Agentic Top 10 2026 |  |  |  | 💡 |  |
+| [Plugin](https://eslint.interlace.tools/docs/vercel-ai-security/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
+
+## 🔗 Related ESLint Plugins
+
+Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
+
+| Plugin | NPM | Downloads | License | Description |
+| :--- | :---: | :---: | :---: | :--- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![npm](https://img.shields.io/npm/v/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![license](https://img.shields.io/npm/l/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) | [![npm](https://img.shields.io/npm/v/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | [![license](https://img.shields.io/npm/l/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![npm](https://img.shields.io/npm/v/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | [![license](https://img.shields.io/npm/l/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![npm](https://img.shields.io/npm/v/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | [![license](https://img.shields.io/npm/l/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security rules. |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | AWS Lambda security best practices. |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | NestJS security rules & patterns. |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![npm](https://img.shields.io/npm/v/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | [![license](https://img.shields.io/npm/l/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
+
+## 📄 License
+
+MIT © [Ofri Peretz](https://github.com/ofri-peretz)
+
+<p align="center">
+  <a href="https://eslint.interlace.tools/docs/vercel-ai-security"><img src="https://eslint.interlace.tools/images/og-vercel-ai-security.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+</p>

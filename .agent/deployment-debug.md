@@ -236,3 +236,65 @@ Markdown README rendering breaks if there are no blank lines between HTML tags a
 - README generation script updated.
 - All READMEs regenerated with correct spacing.
 - Fix verified and pushed.
+
+### 2026-01-11: README Table Standardization & Deduplication
+
+**Issue:** READMEs were suffering from severe duplication of "Getting Started" sections, multiple logo instances, and repeated Rules headers due to non-idempotent script runs.
+**Fix:**
+
+- Rewrote `tools/scripts/fix-readmes.js` to use aggressive **pre-stripping** logic.
+- Implemented **Semantic Row Parsing** to reconstruct Rules tables accurately without preserving duplicate legacy rows.
+- Enforced a strict **One-Pass Generation** model where the output layout is reconstructed from scratch using extracted data, ensuring zero duplication.
+- **Result:** All 15 plugins now perfectly adhere to the NestJS-style layout with single headers, centered badges, and unified rule tables.
+
+## 2026-01-11 - Finalized Table Standard (No Tags, OWASP 2025)
+
+### Adjustments
+
+- **Drop "Tag" Column**: The "Tag" column (e.g., "General") is redundant and adds noise. Categorization should be handled by specific CWE/OWASP mappings.
+- **OWASP 2025**: Updated all OWASP references from 2021 to 2025.
+- **Strict CVSS**: Ensure every rule has a CVSS score.
+- **Unified Table**: Single table per plugin, no subdivisions.
+
+### New Table Format
+
+| Rule             |   CWE   |  OWASP   | CVSS | Description | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :--------------- | :-----: | :------: | :--: | :---------- | :-: | :-: | :-: | :-: | :-: |
+| [rule-name](...) | CWE-XXX | AXX:2025 | 9.8  | ...         | ... | ... | ... | ... | ... |
+
+### Status
+
+- Script updated.
+- All plugins regenerated.
+
+## 2026-01-11 - Package Badges & Links Alignment
+
+### Objective
+
+Enhance the "Related Plugins" ecosystem table in all READMEs by adding badges/shields (NPM Version, License, Downloads) to each row, providing immediate trust signals.
+
+### Actions
+
+- Updated `tools/scripts/fix-readmes.js` (or manual alignment) to inject badge columns into the ecosystem table.
+- Aligned `ux-export.md` to reflect this new "Badge-Dense" table standard.
+- Verified links point to correct NPM/Doc locations.
+
+### Result
+
+All 15 plugin READMEs now display a standardized, high-trust ecosystem table.
+
+## 2026-01-11 - Final Layout Confirmation
+
+I have confirmed that `eslint-plugin-architecture/README.md` (and all others via script idempotency) now strictly follows the desired layout:
+
+1. **Title**
+2. **Main Logo** (centered)
+3. **Short Description** (centered)
+4. **Badges** (centered)
+5. **Description**
+6. **Philosophy**
+7. **Getting Started** (Single, Multi-lang)
+8. **Rules** (rebuilt table)
+9. **Related Plugins** (centered badges in table)
+10. **📄 License**
+11. **Footer Image** (centered)

@@ -5,154 +5,37 @@
 </p>
 
 <p align="center">
-  Accessibility rules for React applications.
+  Accessibility (a11y) rules for React applications, enforcing WCAG standards.
 </p>
 
-[![npm version](https://img.shields.io/npm/v/eslint-plugin-react-a11y.svg)](https://www.npmjs.com/package/eslint-plugin-react-a11y)
-[![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-react-a11y.svg)](https://www.npmjs.com/package/eslint-plugin-react-a11y)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=react-a11y)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=react-a11y)
-[![Dec 2025](https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white)](https://github.com/ofri-peretz/eslint)
+<p align="center">
+  <a href="https://www.npmjs.com/package/eslint-plugin-react-a11y" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-react-a11y.svg" alt="NPM Version" /></a>
+  <a href="https://www.npmjs.com/package/eslint-plugin-react-a11y" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-react-a11y.svg" alt="NPM Downloads" /></a>
+  <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=react-a11y" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=react-a11y" alt="Codecov" /></a>
+  <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white" alt="Dec 2025" /></a>
+</p>
 
 ## Description
 
-> **📘 Full Documentation:** [https://eslint.interlace.tools/docs/react-a11y](https://eslint.interlace.tools/docs/react-a11y)
->
-> **Note:** This plugin focuses on **WCAG 2.1** accessibility compliance rather than OWASP security. For security rules, see [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
-
-> [!TIP]
-> For **complete OWASP coverage**, combine with [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) which provides 78 additional rules covering all OWASP categories.
+Accessibility (a11y) rules for React applications, enforcing WCAG standards.
 
 ## Philosophy
- 
+
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
 ## Getting Started
 
-```bash
-npm install eslint-plugin-react-a11y --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Accessibility rules for React applications.
-</p>
-## Description
-
-## Getting Started
+- To check out the [guide](https://eslint.interlace.tools/docs/react-a11y), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/react-a11y), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- [가이드](https://eslint.interlace.tools/docs/react-a11y) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/react-a11y)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
 
 ```bash
 npm install eslint-plugin-react-a11y --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Accessibility rules for React applications.
-</p>
-
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-react-a11y --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Accessibility rules for React applications.
-</p>
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-react-a11y --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Accessibility rules for React applications.
-</p>
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-react-a11y --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Accessibility rules for React applications.
-</p>
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-react-a11y --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-Accessibility rules for React applications.
-
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-react-a11y --save-dev
-```
-
-Accessibility rules for React applications.
-
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-react-a11y --save-dev
-```
-
----
-
-| Standard     | Level | Coverage | Rule | CWE | OWASP | CVSS | Description | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
-| :----------- | :---: | :------: | :--: | :-- | :---: | :--: | :---------: | :-: | :-: | --- | --- | --- |
-| **WCAG 2.1** |       |          |      |     |       |      |             |     |     |
-| **WCAG 2.1** |       |          |      |     |       |      |             |     |     |
-| **WCAG 2.1** |       |          |      |     |       |      |             |     |     |
-
-## Installation
-
-```bash
-npm install --save-dev eslint-plugin-react-a11y
-# or
-pnpm add -D eslint-plugin-react-a11y
-# or
-yarn add -D eslint-plugin-react-a11y
 ```
 
 ## Quick Start
-
 ```javascript
 // eslint.config.js
 import reactA11y from 'eslint-plugin-react-a11y';
@@ -161,7 +44,6 @@ export default [reactA11y.configs.recommended];
 ```
 
 ## Available Presets
-
 | Preset          | Rule | CWE | OWASP | CVSS                        | Description | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
 | :-------------- | :--: | :-: | :---: | :-------------------------- | :---------: | :-: | :-: | :-: | :-: | --- |
 | **recommended** |      |     |       | 37 rules (mixed error/warn) |             |     |     |     |     |
@@ -169,50 +51,7 @@ export default [reactA11y.configs.recommended];
 | **wcag-a**      |      |     |       | 16 rules                    |             |     |     |     |     |
 | **wcag-aa**     |      |     |       | 24 rules                    |             |     |     |     |     |
 
-## Rules
-| Rule | Tag | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :--- | :---: | :---: | :---: | :--- | :-: | :-: | :-: | :-: | :-: |
-|   Rule                                                                                                               | General |  General  |   Tag       |     CWE     |    OWASP    |    CVSS     |   Description   |               💼               |                           ⚠️                           |                        🔧                         |   💡    |   🚫    |
-|   [`anchor-ambiguous-text`](./docs/rules/anchor-ambiguous-text.md)                                                   | General |  General  |   General   |   General   |   General   |   General   |   General       |          Anchor Rules          |                        CWE-1078                        |   Prevent ambiguous link text like "click here"   |   ⚠️    |
-|   [`anchor-has-content`](./docs/rules/anchor-has-content.md)                                                         | General |  General  |   General   |   General   |   General   |   General   |   General       |          Anchor Rules          |                        CWE-1078                        |      Require anchor elements to have content      |   💼    |
-|   [`anchor-is-valid`](./docs/rules/anchor-is-valid.md)                                                               | General |  General  |   General   |   General   |   General   |   General   |   General       |          Anchor Rules          |                        CWE-1078                        |       Require valid href on anchor elements       |   💼    |
-|   [`aria-activedescendant-has-tabindex`](./docs/rules/aria-activedescendant-has-tabindex.md)                         | General |  General  |   General   |   General   |   General   |   General   |   General       |           ARIA Rules           |      Require tabindex with aria-activedescendant       |
-|   [`aria-props`](./docs/rules/aria-props.md)                                                                         | General |  General  |   General   |   General   |   General   |   General   |   General       |           ARIA Rules           |              Validate ARIA property names              |
-|   [`aria-role`](./docs/rules/aria-role.md)                                                                           | General |  General  |   General   |   General   |   General   |   General   |   General       |           ARIA Rules           |             Require valid ARIA role values             |
-|   [`aria-unsupported-elements`](./docs/rules/aria-unsupported-elements.md)                                           | General |  General  |   General   |   General   |   General   |   General   |   General       |           ARIA Rules           |          Prevent ARIA on unsupported elements          |
-|   [`autocomplete-valid`](./docs/rules/autocomplete-valid.md)                                                         | General |  General  |   General   |   General   |   General   |   General   |   General       |       Form & Input Rules       |          Require valid autocomplete attribute          |
-|   [`control-has-associated-label`](./docs/rules/control-has-associated-label.md)                                     | General |  General  |   General   |   General   |   General   |   General   |   General       |       Form & Input Rules       |            Require labels on form controls             |
-|   [`label-has-associated-control`](./docs/rules/label-has-associated-control.md)                                     | General |  General  |   General   |   General   |   General   |   General   |   General       |       Form & Input Rules       |       Require labels to have associated controls       |
-|   [`click-events-have-key-events`](./docs/rules/click-events-have-key-events.md)                                     | General |  General  |   General   |   General   |   General   |   General   |   General       |          Event Rules           |       Require keyboard events with click events        |
-|   [`mouse-events-have-key-events`](./docs/rules/mouse-events-have-key-events.md)                                     | General |  General  |   General   |   General   |   General   |   General   |   General       |          Event Rules           |       Require keyboard events with mouse events        |
-|   [`heading-has-content`](./docs/rules/heading-has-content.md)                                                       | General |  General  |   General   |   General   |   General   |   General   |   General       |         Content Rules          |        Require heading elements to have content        |
-|   [`html-has-lang`](./docs/rules/html-has-lang.md)                                                                   | General |  General  |   General   |   General   |   General   |   General   |   General       |         Content Rules          |         Require lang attribute on html element         |
-|   [`iframe-has-title`](./docs/rules/iframe-has-title.md)                                                             | General |  General  |   General   |   General   |   General   |   General   |   General       |         Content Rules          |            Require title on iframe elements            |
-|   [`lang`](./docs/rules/lang.md)                                                                                     | General |  General  |   General   |   General   |   General   |   General   |   General       |         Content Rules          |           Require valid lang attribute value           |
-|   [`media-has-caption`](./docs/rules/media-has-caption.md)                                                           | General |  General  |   General   |   General   |   General   |   General   |   General       |         Content Rules          |           Require captions on media elements           |
-|   [`img-redundant-alt`](./docs/rules/img-redundant-alt.md)                                                           | General |  General  |   General   |   General   |   General   |   General   |   General       |          Image Rules           |          Prevent redundant words in alt text           |
-|   [`img-requires-alt`](./docs/rules/img-requires-alt.md)                                                             | General |  General  |   General   |   General   |   General   |   General   |   General       |          Image Rules           |            Require alt attribute on images             |
-|   [`interactive-supports-focus`](./docs/rules/interactive-supports-focus.md)                                         | General |  General  |   General   |   General   |   General   |   General   |   General       |   Interactive Element Rules    |     Require focus support on interactive elements      |
-|   [`no-interactive-element-to-noninteractive-role`](./docs/rules/no-interactive-element-to-noninteractive-role.md)   | General |  General  |   General   |   General   |   General   |   General   |   General       |   Interactive Element Rules    |         Prevent demoting interactive elements          |
-|   [`no-noninteractive-element-interactions`](./docs/rules/no-noninteractive-element-interactions.md)                 | General |  General  |   General   |   General   |   General   |   General   |   General       |   Interactive Element Rules    |   Prevent event handlers on non-interactive elements   |
-|   [`no-noninteractive-element-to-interactive-role`](./docs/rules/no-noninteractive-element-to-interactive-role.md)   | General |  General  |   General   |   General   |   General   |   General   |   General       |   Interactive Element Rules    |       Prevent promoting non-interactive elements       |
-|   [`no-noninteractive-tabindex`](./docs/rules/no-noninteractive-tabindex.md)                                         | General |  General  |   General   |   General   |   General   |   General   |   General       |   Interactive Element Rules    |      Prevent tabindex on non-interactive elements      |
-|   [`no-static-element-interactions`](./docs/rules/no-static-element-interactions.md)                                 | General |  General  |   General   |   General   |   General   |   General   |   General       |   Interactive Element Rules    |       Prevent event handlers on static elements        |
-|   [`no-access-key`](./docs/rules/no-access-key.md)                                                                   | General |  General  |   General   |   General   |   General   |   General   |   General       |    Focus & Navigation Rules    |           Prevent accessKey attribute usage            |
-|   [`no-aria-hidden-on-focusable`](./docs/rules/no-aria-hidden-on-focusable.md)                                       | General |  General  |   General   |   General   |   General   |   General   |   General       |    Focus & Navigation Rules    |       Prevent aria-hidden on focusable elements        |
-|   [`no-autofocus`](./docs/rules/no-autofocus.md)                                                                     | General |  General  |   General   |   General   |   General   |   General   |   General       |    Focus & Navigation Rules    |           Prevent autofocus attribute usage            |
-|   [`no-keyboard-inaccessible-elements`](./docs/rules/no-keyboard-inaccessible-elements.md)                           | General |  General  |   General   |   General   |   General   |   General   |   General       |    Focus & Navigation Rules    |         Prevent keyboard inaccessible elements         |
-|   [`tabindex-no-positive`](./docs/rules/tabindex-no-positive.md)                                                     | General |  General  |   General   |   General   |   General   |   General   |   General       |    Focus & Navigation Rules    |            Prevent positive tabindex values            |
-|   [`no-distracting-elements`](./docs/rules/no-distracting-elements.md)                                               | General |  General  |   General   |   General   |   General   |   General   |   General       |   Visual & Distraction Rules   |     Prevent distracting elements (blink, marquee)      |
-|   [`no-missing-aria-labels`](./docs/rules/no-missing-aria-labels.md)                                                 | General |  General  |   General   |   General   |   General   |   General   |   General       |   Visual & Distraction Rules   |      Require ARIA labels on interactive elements       |
-|   [`no-redundant-roles`](./docs/rules/no-redundant-roles.md)                                                         | General |  General  |   General   |   General   |   General   |   General   |   General       |   Visual & Distraction Rules   |           Prevent redundant role attributes            |
-|   [`role-has-required-aria-props`](./docs/rules/role-has-required-aria-props.md)                                     | General |  General  |   General   |   General   |   General   |   General   |   General       |           Role Rules           |       Require required ARIA properties for roles       |
-|   [`role-supports-aria-props`](./docs/rules/role-supports-aria-props.md)                                             | General |  General  |   General   |   General   |   General   |   General   |   General       |           Role Rules           |           Validate ARIA properties for roles           |
-|   [`prefer-tag-over-role`](./docs/rules/prefer-tag-over-role.md)                                                     | General |  General  |   General   |   General   |   General   |   General   |   General       |           Role Rules           |        Prefer semantic HTML over role attribute        |
-|   [`scope`](./docs/rules/scope.md)                                                                                   | General |  General  |   General   |   General   |   General   |   General   |   General       |           Scope Rule           |          Require valid scope attribute usage           |
-
 ## Configuration Examples
-
 ### Basic Usage
 
 ```javascript
@@ -283,7 +122,6 @@ export default [
 ```
 
 ## Error Message Format
-
 All rules produce LLM-optimized 2-line structured messages:
 
 ```
@@ -299,7 +137,6 @@ Line 2:    Fix: [instruction] | [doc-link]
 ```
 
 ## ESLint MCP Integration
-
 This plugin is optimized for ESLint's Model Context Protocol (MCP):
 
 ```json
@@ -315,7 +152,6 @@ This plugin is optimized for ESLint's Model Context Protocol (MCP):
 ```
 
 ## WCAG 2.1 Compliance Mapping
-
 | WCAG Criterion               | Rule | CWE | OWASP | CVSS | Description | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
 | :--------------------------- | :--: | :-: | :---: | :--- | :---------: | :-: | :-: | :-: | :-: | --- |
 | 1.1.1 Non-text Content       |      |     |       |      |             |     |     |     |     |
@@ -331,13 +167,56 @@ This plugin is optimized for ESLint's Model Context Protocol (MCP):
 | 4.1.2 Name, Role, Value      |      |     |       |      |             |     |     |     |     |
 
 ## Related Packages
-
 - **eslint-plugin-llm-optimized** - Full plugin with 144+ rules
 - **eslint-plugin-secure-coding** - Security-focused rules
 - **@interlace/eslint-devkit** - Build custom LLM-optimized rules
 
 ## License
-
 MIT © Ofri Peretz
 
 <a href="https://eslint.interlace.tools/docs/react-a11y"><img src="https://eslint.interlace.tools/images/og-react.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+
+## Rules
+
+**Legend**
+
+| Icon | Description |
+| :---: | :--- |
+| 💼 | **Recommended**: Included in the recommended preset. |
+| ⚠️ | **Warns**: Set towarn in recommended preset. |
+| 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
+| 💡 | **Suggestions**: Providing code suggestions in IDE. |
+| 🚫 | **Deprecated**: This rule is deprecated. |
+
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [1](https://eslint.interlace.tools/docs/react-a11y/rules/1) |  |  |  | 1.1.1 Non-text Content |  |  |  |  |  |
+| [2](https://eslint.interlace.tools/docs/react-a11y/rules/2) |  |  |  | 2.1.1 Keyboard |  |  |  |  |  |
+| [3](https://eslint.interlace.tools/docs/react-a11y/rules/3) |  |  |  | 3.1.1 Language of Page |  |  |  |  |  |
+| [4](https://eslint.interlace.tools/docs/react-a11y/rules/4) |  |  |  | 4.1.1 Parsing |  |  |  |  |  |
+| [Plugin](https://eslint.interlace.tools/docs/react-a11y/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
+
+## 🔗 Related ESLint Plugins
+
+Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
+
+| Plugin | NPM | Downloads | License | Description |
+| :--- | :---: | :---: | :---: | :--- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![npm](https://img.shields.io/npm/v/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![license](https://img.shields.io/npm/l/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) | [![npm](https://img.shields.io/npm/v/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | [![license](https://img.shields.io/npm/l/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![npm](https://img.shields.io/npm/v/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | [![license](https://img.shields.io/npm/l/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![npm](https://img.shields.io/npm/v/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | [![license](https://img.shields.io/npm/l/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security rules. |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | AWS Lambda security best practices. |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | NestJS security rules & patterns. |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![npm](https://img.shields.io/npm/v/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | [![license](https://img.shields.io/npm/l/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
+
+## 📄 License
+
+MIT © [Ofri Peretz](https://github.com/ofri-peretz)
+
+<p align="center">
+  <a href="https://eslint.interlace.tools/docs/react-a11y"><img src="https://eslint.interlace.tools/images/og-react-a11y.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+</p>

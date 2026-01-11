@@ -5,136 +5,35 @@
 </p>
 
 <p align="center">
-  Security rules for PostgreSQL interaction in Node.js.
+  Security rules for PostgreSQL interaction in Node.js (SQL injection prevention).
 </p>
 
-[![npm version](https://img.shields.io/npm/v/eslint-plugin-pg.svg)](https://www.npmjs.com/package/eslint-plugin-pg)
-[![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-pg.svg)](https://www.npmjs.com/package/eslint-plugin-pg)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=pg)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=pg)
-[![AI-Native: Agent Ready](https://img.shields.io/badge/AI--Native-Agent%20Ready-success)](https://eslint.org/docs/latest/use/mcp)
-[![Dec 2025](https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white)](https://github.com/ofri-peretz/eslint)
+<p align="center">
+  <a href="https://www.npmjs.com/package/eslint-plugin-pg" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-pg.svg" alt="NPM Version" /></a>
+  <a href="https://www.npmjs.com/package/eslint-plugin-pg" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-pg.svg" alt="NPM Downloads" /></a>
+  <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=pg" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=pg" alt="Codecov" /></a>
+  <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white" alt="Dec 2025" /></a>
+</p>
 
 ## Description
 
-> **📘 Full Documentation:** [https://eslint.interlace.tools/docs/pg](https://eslint.interlace.tools/docs/pg)
->
-> 🔐 Security-focused ESLint plugin for PostgreSQL/node-postgres. Detects SQL injection, connection leaks, transaction issues, and hardcoded credentials with LLM-optimized fix guidance.
-
-> [!TIP]
-> For **complete OWASP coverage**, combine with [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) which provides 78 additional rules covering all OWASP categories.
+Security rules for PostgreSQL interaction in Node.js (SQL injection prevention).
 
 ## Philosophy
- 
+
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
 ## Getting Started
 
-```bash
-npm install eslint-plugin-pg --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Security rules for PostgreSQL interaction in Node.js.
-</p>
-## Description
-
-## Getting Started
+- To check out the [guide](https://eslint.interlace.tools/docs/pg), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/pg), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- [가이드](https://eslint.interlace.tools/docs/pg) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/pg)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
 
 ```bash
 npm install eslint-plugin-pg --save-dev
 ```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Security rules for PostgreSQL interaction in Node.js.
-</p>
-
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-pg --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Security rules for PostgreSQL interaction in Node.js.
-</p>
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-pg --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Security rules for PostgreSQL interaction in Node.js.
-</p>
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-pg --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Security rules for PostgreSQL interaction in Node.js.
-</p>
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-pg --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-Security rules for PostgreSQL interaction in Node.js.
-
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-pg --save-dev
-```
-
-Security rules for PostgreSQL interaction in Node.js.
-
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-pg --save-dev
-```
-
----
 
 ## 💡 What You Get
 
@@ -150,39 +49,6 @@ Every rule produces a **structured error message**:
 src/db.ts
   42:15  error  🔒 CWE-89 OWASP:A03-Injection CVSS:9.8 | Unsafe query detected | CRITICAL
                     Fix: Use parameterized query: client.query('SELECT * FROM users WHERE id = $1', [userId])
-```
-
----
-
-## Rules
-| Rule | Tag | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :--- | :---: | :---: | :---: | :--- | :-: | :-: | :-: | :-: | :-: |
-|   Rule                                                                     | General |  General  |   Tag       |     CWE     |    OWASP    |    CVSS     |   Description   |            💼             |     ⚠️      |      🔧      |                         💡                          |   🚫    |
-|   [no-unsafe-query](./docs/rules/no-unsafe-query.md)                       | General |  General  |   General   |   General   |   General   |   General   |   General       |         Security          |   CWE-89    |   A03:2021   |   Prevents SQL injection via string interpolation   |   💼    |   💡    |
-|   [no-insecure-ssl](./docs/rules/no-insecure-ssl.md)                       | General |  General  |   General   |   General   |   General   |   General   |   General       |         Security          |   CWE-295   |   A05:2021   |    Prevents disabling SSL certificate validation    |   💼    |   💡    |
-|   [no-hardcoded-credentials](./docs/rules/no-hardcoded-credentials.md)     | General |  General  |   General   |   General   |   General   |   General   |   General       |         Security          |   CWE-798   |   A05:2021   |       Prevents hardcoded passwords in config        |   💼    |   💡    |
-|   [no-unsafe-search-path](./docs/rules/no-unsafe-search-path.md)           | General |  General  |   General   |   General   |   General   |   General   |   General       |         Security          |   CWE-426   |   A01:2021   |       Prevents dynamic search_path hijacking        |   💼    |   💡    |
-|   [no-unsafe-copy-from](./docs/rules/no-unsafe-copy-from.md)               | General |  General  |   General   |   General   |   General   |   General   |   General       |         Security          |   CWE-22    |   A03:2021   |        Prevents COPY FROM file path exposure        |   💼    |   💡    |
-|   [no-transaction-on-pool](./docs/rules/no-transaction-on-pool.md)         | General |  General  |   General   |   General   |   General   |   General   |   General       |         Security          |   CWE-362   |   A04:2021   |        Prevents transaction commands on pool        |   💼    |   💡    |
-|   [no-missing-client-release](./docs/rules/no-missing-client-release.md)   | General |  General  |   General   |   General   |   General   |   General   |   General       |    Resource Management    |   CWE-772   |   A09:2021   |          Ensures pool clients are released          |   💼    |   💡    |
-|   [prevent-double-release](./docs/rules/prevent-double-release.md)         | General |  General  |   General   |   General   |   General   |   General   |   General       |    Resource Management    |   CWE-415   |   A04:2021   |          Prevents double client.release()           |   💼    |   💡    |
-|   [no-floating-query](./docs/rules/no-floating-query.md)                   | General |  General  |   General   |   General   |   General   |   General   |   General       |    Resource Management    |   CWE-252   |   A06:2021   |         Ensures query promises are handled          |   💼    |   💡    |
-|   [check-query-params](./docs/rules/check-query-params.md)                 | General |  General  |   General   |   General   |   General   |   General   |   General       |   Quality & Performance   |   CWE-20    |   A06:2021   |   Validates parameter count matches placeholders    |   💼    |   💡    |
-|   [no-select-all](./docs/rules/no-select-all.md)                           | General |  General  |   General   |   General   |   General   |   General   |   General       |   Quality & Performance   |   CWE-400   |   A04:2021   |                Discourages SELECT \*                |   💡    |
-|   [prefer-pool-query](./docs/rules/prefer-pool-query.md)                   | General |  General  |   General   |   General   |   General   |   General   |   General       |   Quality & Performance   |   CWE-404   |   A04:2021   |      Suggests pool.query() for simple queries       |   💡    |
-|   [no-batch-insert-loop](./docs/rules/no-batch-insert-loop.md)             | General |  General  |   General   |   General   |   General   |   General   |   General       |   Quality & Performance   |   CWE-400   |   A04:2021   |            Prevents N+1 mutation queries            |   💼    |   💡    |
-
-## 🚀 Quick Start
-
-```bash
-npm install --save-dev eslint-plugin-pg
-```
-
-```javascript
-// eslint.config.js
-import pg from 'eslint-plugin-pg';
-
-export default [pg.configs.recommended];
 ```
 
 ---
@@ -248,19 +114,6 @@ This plugin runs **100% locally**. No data ever leaves your machine.
 
 ---
 
-## 🗂️ OWASP Top 10 2021 Coverage
-
-| OWASP Category                         | Rule | CWE | OWASP | CVSS | Description | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
-| :------------------------------------- | :--: | :-: | :---: | :--- | :---------: | :-: | :-: | :-: | :-: | --- |
-| **A01:2021 Broken Access Control**     |      |     |       |      |             |     |     |     |     |
-| **A03:2021 Injection**                 |      |     |       |      |             |     |     |     |     |
-| **A04:2021 Insecure Design**           |      |     |       |      |             |     |     |     |     |
-| **A05:2021 Security Misconfiguration** |      |     |       |      |             |     |     |     |     |
-| **A06:2021 Vulnerable Components**     |      |     |       |      |             |     |     |     |     |
-| **A09:2021 Logging Failures**          |      |     |       |      |             |     |     |     |     |
-
----
-
 ## 🔗 Related Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
@@ -279,8 +132,56 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 
 ---
 
+## Rules
+
+**Legend**
+
+| Icon | Description                                                        |
+| :--: | :----------------------------------------------------------------- |
+|  💼  | **Recommended**: Included in the recommended preset.               |
+|  ⚠️  | **Warns**: Set towarn in recommended preset.                       |
+|  🔧  | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
+|  💡  | **Suggestions**: Providing code suggestions in IDE.                |
+|  🚫  | **Deprecated**: This rule is deprecated.                           |
+
+| Rule                                                                   |   CWE   |  OWASP   | CVSS | Description           | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :--------------------------------------------------------------------- | :-----: | :------: | :--: | :-------------------- | :-: | :-: | :-: | :-: | :-: |
+| [Plugin](https://eslint.interlace.tools/docs/pg/rules/Plugin)          |         |          |      | Description           |     |     |     |     |     |
+| [no-unsafe-query](./docs/rules/no-unsafe-query.md)                     | CWE-89  | A03:2025 |      | Security              | 💼  |     |     | 💡  |     |
+| [no-insecure-ssl](./docs/rules/no-insecure-ssl.md)                     | CWE-295 | A05:2025 |      | Security              | 💼  |     |     | 💡  |     |
+| [no-hardcoded-credentials](./docs/rules/no-hardcoded-credentials.md)   | CWE-798 | A05:2025 |      | Security              | 💼  |     |     | 💡  |     |
+| [no-unsafe-search-path](./docs/rules/no-unsafe-search-path.md)         | CWE-426 | A01:2025 |      | Security              | 💼  |     |     | 💡  |     |
+| [no-unsafe-copy-from](./docs/rules/no-unsafe-copy-from.md)             | CWE-22  | A03:2025 |      | Security              | 💼  |     |     | 💡  |     |
+| [no-transaction-on-pool](./docs/rules/no-transaction-on-pool.md)       | CWE-362 | A04:2025 |      | Security              | 💼  |     |     | 💡  |     |
+| [no-missing-client-release](./docs/rules/no-missing-client-release.md) | CWE-772 | A09:2025 |      | Resource Management   | 💼  |     |     | 💡  |     |
+| [prevent-double-release](./docs/rules/prevent-double-release.md)       | CWE-415 | A04:2025 |      | Resource Management   | 💼  |     |     | 💡  |     |
+| [no-floating-query](./docs/rules/no-floating-query.md)                 | CWE-252 | A06:2025 |      | Resource Management   | 💼  |     |     | 💡  |     |
+| [check-query-params](./docs/rules/check-query-params.md)               | CWE-20  | A06:2025 |      | Quality & Performance | 💼  |     |     | 💡  |     |
+| [no-select-all](./docs/rules/no-select-all.md)                         | CWE-400 | A04:2025 |      | Quality & Performance |     |     |     | 💡  |     |
+| [prefer-pool-query](./docs/rules/prefer-pool-query.md)                 | CWE-404 | A04:2025 |      | Quality & Performance |     |     |     | 💡  |     |
+| [no-batch-insert-loop](./docs/rules/no-batch-insert-loop.md)           | CWE-400 | A04:2025 |      | Quality & Performance | 💼  |     |     | 💡  |     |
+
+## 🔗 Related ESLint Plugins
+
+Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
+
+| Plugin                                                                                               |                                                                              NPM                                                                              |                                                                              Downloads                                                                               |                                                                              License                                                                              | Description                                 |
+| :--------------------------------------------------------------------------------------------------- | :-----------------------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------ |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)           |      [![npm](https://img.shields.io/npm/v/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding)      |      [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding)      |      [![license](https://img.shields.io/npm/l/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding)      | General security rules & OWASP guidelines.  |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                                 |                 [![npm](https://img.shields.io/npm/v/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg)                 |                 [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg)                 |                 [![license](https://img.shields.io/npm/l/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg)                 | PostgreSQL security & best practices.       |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                         |             [![npm](https://img.shields.io/npm/v/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto)             |             [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto)             |             [![license](https://img.shields.io/npm/l/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto)             | NodeJS Cryptography security rules.         |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               |                [![npm](https://img.shields.io/npm/v/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt)                |                [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt)                |                [![license](https://img.shields.io/npm/l/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt)                | JWT security & best practices.              |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)     |   [![npm](https://img.shields.io/npm/v/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security)   |   [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security)   |   [![license](https://img.shields.io/npm/l/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security)   | Browser-specific security & XSS prevention. |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security rules.               |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)     |   [![npm](https://img.shields.io/npm/v/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security)   |   [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security)   |   [![license](https://img.shields.io/npm/l/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security)   | Express.js security hardening rules.        |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)       |    [![npm](https://img.shields.io/npm/v/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security)    |    [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security)    |    [![license](https://img.shields.io/npm/l/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security)    | AWS Lambda security best practices.         |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)       |    [![npm](https://img.shields.io/npm/v/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security)    |    [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security)    |    [![license](https://img.shields.io/npm/l/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security)    | NestJS security rules & patterns.           |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)               |        [![npm](https://img.shields.io/npm/v/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next)        |        [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next)        |        [![license](https://img.shields.io/npm/l/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next)        | Next-gen import sorting & architecture.     |
+
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
-<a href="https://eslint.interlace.tools/docs/pg"><img src="https://eslint.interlace.tools/images/og-pg.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+<p align="center">
+  <a href="https://eslint.interlace.tools/docs/pg"><img src="https://eslint.interlace.tools/images/og-pg.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+</p>

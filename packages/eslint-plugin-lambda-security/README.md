@@ -5,139 +5,37 @@
 </p>
 
 <p align="center">
-  Security best practices for AWS Lambda functions.
+  Security best practices for AWS Lambda functions (IAM, timeouts, environment).
 </p>
 
-[![npm version](https://img.shields.io/npm/v/eslint-plugin-lambda-security.svg)](https://www.npmjs.com/package/eslint-plugin-lambda-security)
-[![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-lambda-security.svg)](https://www.npmjs.com/package/eslint-plugin-lambda-security)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=lambda-security)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=lambda-security)
-[![Dec 2025](https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white)](https://github.com/ofri-peretz/eslint)
+<p align="center">
+  <a href="https://www.npmjs.com/package/eslint-plugin-lambda-security" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-lambda-security.svg" alt="NPM Version" /></a>
+  <a href="https://www.npmjs.com/package/eslint-plugin-lambda-security" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-lambda-security.svg" alt="NPM Downloads" /></a>
+  <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=lambda-security" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=lambda-security" alt="Codecov" /></a>
+  <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white" alt="Dec 2025" /></a>
+</p>
 
 ## Description
 
-> **📘 Full Documentation:** [https://eslint.interlace.tools/docs/lambda-security](https://eslint.interlace.tools/docs/lambda-security)
->
-> **Serverless-first security:** This plugin provides security rules for **AWS Lambda**, **Middy.js**, **Serverless Framework**, **AWS SAM**, and **AWS SDK v3**.
-> With **5 security rules** mapped to OWASP Serverless Top 10, CWE and CVSS, it transforms your linter into a serverless security auditor that AI assistants can understand and fix.
-
->
-> [!TIP]
-> For **complete OWASP coverage**, combine with [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) which provides 78 additional rules covering all OWASP categories.
+Security best practices for AWS Lambda functions (IAM, timeouts, environment).
 
 ## Philosophy
- 
+
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
 ## Getting Started
 
-```bash
-npm install eslint-plugin-lambda-security --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Security best practices for AWS Lambda functions.
-</p>
-## Description
-
-## Getting Started
+- To check out the [guide](https://eslint.interlace.tools/docs/lambda-security), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/lambda-security), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- [가이드](https://eslint.interlace.tools/docs/lambda-security) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/lambda-security)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
 
 ```bash
 npm install eslint-plugin-lambda-security --save-dev
 ```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Security best practices for AWS Lambda functions.
-</p>
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-lambda-security --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Security best practices for AWS Lambda functions.
-</p>
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-lambda-security --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Security best practices for AWS Lambda functions.
-</p>
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-lambda-security --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Security best practices for AWS Lambda functions.
-</p>
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-lambda-security --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-Security best practices for AWS Lambda functions.
-
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-lambda-security --save-dev
-```
-
-Security best practices for AWS Lambda functions.
-
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-lambda-security --save-dev
-```
-
----
 
 ## 💡 What you get
-
 - **Serverless-focused coverage:** 5 rules targeting Lambda-specific vulnerabilities (credentials, CORS, secrets, logging).
 - **LLM-optimized & MCP-ready:** Structured 2-line messages with CWE + OWASP + CVSS + concrete fixes so humans _and_ AI auto-fixers stay aligned.
 - **Standards aligned:** OWASP Serverless Top 10, CWE tagging, CVSS scoring in every finding for compliance mapping.
@@ -165,7 +63,6 @@ src/handlers/api.ts
 ---
 
 ## 📊 OWASP Serverless Top 10 Coverage Matrix
-
 | OWASP Category                         | Coverage | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
 | **SAS-1: Injection** |  |  |  |  |  |  |  |  |  |
@@ -180,49 +77,7 @@ src/handlers/api.ts
 | **SAS-10: Improper Crypto** |  |  |  |  |  |  |  |  |  |
 ---
 
-## Rules
-| Rule | Tag | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :--- | :---: | :---: | :---: | :--- | :-: | :-: | :-: | :-: | :-: |
-|         [no-hardcoded-credentials-sdk](#no-hardcoded-credentials-sdk)         | General |  General  |   General   |    General    |     General     |      General      |       General       |        Credential & Secrets Protection        |         CWE-798         |         SAS-2         |         9.8         |         Hardcoded AWS credentials in SDK v3 clients         |         💼         |
-|         [no-secrets-in-env](#no-secrets-in-env)         | General |  General  |   General   |    General    |     General     |      General      |       General       |        Credential & Secrets Protection        |         CWE-798         |         SAS-3         |         9.8         |         Secrets hardcoded in environment variables         |         💼         |
-|         [no-env-logging](#no-env-logging)         | General |  General  |   General   |    General    |     General     |      General      |       General       |        Credential & Secrets Protection        |         CWE-532         |         SAS-3         |         7.5         |         Logging entire `process.env` object         |         ⚠️         |
-|         [no-permissive-cors-response](#no-permissive-cors-response)         | General |  General  |   General   |    General    |     General     |      General      |       General       |        CORS Security        |         CWE-942         |         SAS-4         |         9.1         |         Wildcard CORS in Lambda response headers         |         💼         |         🔧         |
-|         [no-permissive-cors-middy](#no-permissive-cors-middy)         | General |  General  |   General   |    General    |     General     |      General      |       General       |        CORS Security        |         CWE-942         |         SAS-4         |         9.1         |         Permissive CORS in @middy/http-cors middleware         |         💼         |
-|         no-unvalidated-event-body         | General |  General  |   General   |    General    |     General     |      General      |       General       |        Input Validation & Access Control        |         CWE-20         |         SAS-1         |         8.0         |         Lambda handlers using event body without validation         |         ⚠️         |         💡         |
-|         no-missing-authorization-check         | General |  General  |   General   |    General    |     General     |      General      |       General       |        Input Validation & Access Control        |         CWE-862         |         SAS-5         |         7.5         |         Lambda handlers without authorization checks         |         ⚠️         |         💡         |
-|         no-overly-permissive-iam-policy         | General |  General  |   General   |    General    |     General     |      General      |       General       |        Input Validation & Access Control        |         CWE-732         |         SAS-5         |         6.5         |         IAM policies with wildcard permissions         |         💼         |         💡         |
-|         no-user-controlled-requests         | General |  General  |   General   |    General    |     General     |      General      |       General       |        Input Validation & Access Control        |         CWE-918         |         SAS-8         |         9.1         |         HTTP requests with user-controlled URLs (SSRF)         |         💼         |         💡         |
-|         no-error-swallowing         | General |  General  |   General   |    General    |     General     |      General      |       General       |        Security Operations        |         CWE-390         |         SAS-6         |         5.0         |         Empty catch blocks and missing error logging         |         ⚠️         |         💡         |
-|         require-timeout-handling         | General |  General  |   General   |    General    |     General     |      General      |       General       |        Security Operations        |         CWE-400         |         SAS-7         |         6.0         |         External calls without timeout handling         |         ⚠️         |         💡         |
-|         no-unbounded-batch-processing         | General |  General  |   General   |    General    |     General     |      General      |       General       |        Security Operations        |         CWE-770         |         SAS-7         |         5.5         |         Processing batch records without size limits         |         ⚠️         |         💡         |
-|         no-exposed-error-details         | General |  General  |   General   |    General    |     General     |      General      |       General       |        Security Operations        |         CWE-209         |         SAS-9         |         4.3         |         Exposing internal error details in responses         |         ⚠️         |         💡         |
-
-## 🚀 Quick Start
-
-### ESLint Flat Config (Recommended)
-
-```javascript
-// eslint.config.js
-import lambdaSecurity from 'eslint-plugin-lambda-security';
-
-export default [
-  lambdaSecurity.configs.recommended,
-  // ... other configs
-];
-```
-
-### Strict Mode
-
-```javascript
-import lambdaSecurity from 'eslint-plugin-lambda-security';
-
-export default [lambdaSecurity.configs.strict];
-```
-
----
-
 ## 📋 Available Presets
-
 | Preset            | Description                                                            |
 | ----------------- | ---------------------------------------------------------------------- |
 | **`recommended`** | Balanced security for Lambda projects (critical as error, others warn) |
@@ -231,7 +86,6 @@ export default [lambdaSecurity.configs.strict];
 ---
 
 ## ⚙️ Configuration Options
-
 All rules accept these common options:
 
 ```javascript
@@ -251,7 +105,6 @@ All rules accept these common options:
 ---
 
 ## 🏢 Enterprise Integration Example
-
 ```javascript
 // eslint.config.js
 import lambdaSecurity from 'eslint-plugin-lambda-security';
@@ -271,7 +124,6 @@ export default [
 ---
 
 ## 🤖 LLM & AI Integration
-
 This plugin is optimized for ESLint's [Model Context Protocol (MCP)](https://eslint.org/docs/latest/use/mcp), enabling AI assistants like **Cursor**, **GitHub Copilot**, and **Claude** to:
 
 - Understand the exact vulnerability type via CWE references
@@ -292,31 +144,53 @@ This plugin is optimized for ESLint's [Model Context Protocol (MCP)](https://esl
 
 ---
 
+## 🔒 Privacy
+This plugin runs **100% locally**. No data ever leaves your machine.
+
+---
+
+## Rules
+
+**Legend**
+
+| Icon | Description |
+| :---: | :--- |
+| 💼 | **Recommended**: Included in the recommended preset. |
+| ⚠️ | **Warns**: Set towarn in recommended preset. |
+| 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
+| 💡 | **Suggestions**: Providing code suggestions in IDE. |
+| 🚫 | **Deprecated**: This rule is deprecated. |
+
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-hardcoded-credentials-sdk](#no-hardcoded-credentials-sdk) | CWE-798 |  | 9.8 | Credential & Secrets Protection | 💼 |  |  |  |  |
+| [no-secrets-in-env](#no-secrets-in-env) | CWE-798 |  | 9.8 | Credential & Secrets Protection | 💼 |  |  |  |  |
+| [no-env-logging](#no-env-logging) | CWE-532 |  | 7.5 | Credential & Secrets Protection |  | ⚠️ |  |  |  |
+| [no-permissive-cors-response](#no-permissive-cors-response) | CWE-942 |  | 9.1 | CORS Security | 💼 |  | 🔧 |  |  |
+| [no-permissive-cors-middy](#no-permissive-cors-middy) | CWE-942 |  | 9.1 | CORS Security | 💼 |  |  |  |  |
+| [Plugin](https://eslint.interlace.tools/docs/lambda-security/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
+
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin | Downloads | Description |
-| :--- | :---: | :--- |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |  |  |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) |  |  |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) |  |  |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) |  |  |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) |  |  |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) |  |  |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) |  |  |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) |  |  |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |  |  |
----
-
-## 🔒 Privacy
-
-This plugin runs **100% locally**. No data ever leaves your machine.
-
----
+| Plugin | NPM | Downloads | License | Description |
+| :--- | :---: | :---: | :---: | :--- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![npm](https://img.shields.io/npm/v/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![license](https://img.shields.io/npm/l/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) | [![npm](https://img.shields.io/npm/v/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | [![license](https://img.shields.io/npm/l/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![npm](https://img.shields.io/npm/v/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | [![license](https://img.shields.io/npm/l/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![npm](https://img.shields.io/npm/v/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | [![license](https://img.shields.io/npm/l/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security rules. |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | AWS Lambda security best practices. |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | NestJS security rules & patterns. |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![npm](https://img.shields.io/npm/v/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | [![license](https://img.shields.io/npm/l/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
 
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
-<a href="https://eslint.interlace.tools/docs/lambda-security"><img src="https://eslint.interlace.tools/images/interlace-hero.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+<p align="center">
+  <a href="https://eslint.interlace.tools/docs/lambda-security"><img src="https://eslint.interlace.tools/images/og-lambda-security.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+</p>

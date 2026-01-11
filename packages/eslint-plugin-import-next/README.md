@@ -5,139 +5,37 @@
 </p>
 
 <p align="center">
-  Next-generation import sorting and validation rules.
+  Next-generation import sorting, validation, and architectural boundaries.
 </p>
 
-[![npm version](https://img.shields.io/npm/v/eslint-plugin-import-next.svg)](https://www.npmjs.com/package/eslint-plugin-import-next)
-[![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-import-next.svg)](https://www.npmjs.com/package/eslint-plugin-import-next)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=import-next)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=import-next)
-[![Dec 2025](https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white)](https://github.com/ofri-peretz/eslint)
+<p align="center">
+  <a href="https://www.npmjs.com/package/eslint-plugin-import-next" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-import-next.svg" alt="NPM Version" /></a>
+  <a href="https://www.npmjs.com/package/eslint-plugin-import-next" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-import-next.svg" alt="NPM Downloads" /></a>
+  <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=import-next" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=import-next" alt="Codecov" /></a>
+  <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white" alt="Dec 2025" /></a>
+</p>
 
 ## Description
 
-> **📘 Full Documentation:** [https://eslint.interlace.tools/docs/import-next](https://eslint.interlace.tools/docs/import-next)
->
-> 📢 **Found an issue we haven't addressed?** [Open an issue](https://github.com/ofri-peretz/eslint/issues) - we prioritize real developer pain.
-
-> [!TIP]
-> For **complete OWASP coverage**, combine with [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) which provides 78 additional rules covering all OWASP categories.
+Next-generation import sorting, validation, and architectural boundaries.
 
 ## Philosophy
- 
+
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
 ## Getting Started
 
-```bash
-npm install eslint-plugin-import-next --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Next-generation import sorting and validation rules.
-</p>
-
-## Description
-
-## Getting Started
+- To check out the [guide](https://eslint.interlace.tools/docs/import-next), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/import-next), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- [가이드](https://eslint.interlace.tools/docs/import-next) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/import-next)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
 
 ```bash
 npm install eslint-plugin-import-next --save-dev
 ```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Next-generation import sorting and validation rules.
-</p>
-
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-import-next --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Next-generation import sorting and validation rules.
-</p>
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-import-next --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Next-generation import sorting and validation rules.
-</p>
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-import-next --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-<p align="center">
-  Next-generation import sorting and validation rules.
-</p>
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-import-next --save-dev
-```
-
-<p align="center">
-  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo.svg" alt="ESLint Interlace Logo" width="120" /></a>
-</p>
-
-Next-generation import sorting and validation rules.
-
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-import-next --save-dev
-```
-
-Next-generation import sorting and validation rules.
-
-## Description
-
-## Getting Started
-
-```bash
-npm install eslint-plugin-import-next --save-dev
-```
-
----
 
 ## 🎯 The `no-cycle` Problem (Why This Plugin Exists)
-
 ### The `maxDepth` Limitation in `eslint-plugin-import`
 
 The original `eslint-plugin-import` has a critical limitation: the `maxDepth` option defaults to `Infinity` in theory, but **in practice, many projects are forced to set `maxDepth: 1` or `maxDepth: 2`** because:
@@ -194,7 +92,6 @@ src/
 ---
 
 ## ⚡ Performance: The `no-cycle` Benchmark
-
 | Scenario                    | `eslint-plugin-import` | `eslint-plugin-import-next` |
 | --------------------------- | ---------------------- | --------------------------- |
 | **First run (10k files)**   | ~45s                   | ~45s                        |
@@ -216,7 +113,6 @@ clearCircularDependencyCache();
 ---
 
 ## 🔄 Full Compatibility Matrix
-
 Every rule from `eslint-plugin-import` is implemented with **the same name** and **compatible options**:
 
 ### ✅ Static Analysis (13 rules)
@@ -299,40 +195,7 @@ Every rule from `eslint-plugin-import` is implemented with **the same name** and
 
 ---
 
-## 📦 Installation
-
-```bash
-npm install --save-dev eslint-plugin-import-next
-# or
-pnpm add -D eslint-plugin-import-next
-```
-
-## 🚀 Quick Start (Flat Config)
-
-```javascript
-// eslint.config.js
-import importNext from 'eslint-plugin-import-next';
-
-export default [
-  // Use recommended preset (most common rules)
-  importNext.configs.recommended,
-
-  // Or customize individual rules
-  {
-    plugins: { 'import-next': importNext },
-    rules: {
-      'import-next/no-cycle': 'error', // No maxDepth needed!
-      'import-next/no-duplicates': 'error',
-      'import-next/order': 'warn',
-    },
-  },
-];
-```
-
----
-
 ## � Available Presets
-
 | Preset              | Description                                     |
 | ------------------- | ----------------------------------------------- |
 | `recommended`       | Essential rules for most projects               |
@@ -350,7 +213,6 @@ export default [
 ---
 
 ## 🤖 Smart Fixes (LLM-Optimized)
-
 Unlike legacy plugins, we analyze the _type_ of issue and suggest the correct fix:
 
 ```bash
@@ -374,7 +236,6 @@ Unlike legacy plugins, we analyze the _type_ of issue and suggest the correct fi
 ---
 
 ## 🤖 LLM & MCP Integration
-
 Optimized for **Cursor**, **GitHub Copilot**, and other AI coding tools:
 
 ```json
@@ -391,7 +252,6 @@ Optimized for **Cursor**, **GitHub Copilot**, and other AI coding tools:
 ---
 
 ## 🔗 Related Packages
-
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
 | Plugin                                                                                               | Downloads | Description |
@@ -408,8 +268,46 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 
 ---
 
+## Rules
+
+**Legend**
+
+| Icon | Description |
+| :---: | :--- |
+| 💼 | **Recommended**: Included in the recommended preset. |
+| ⚠️ | **Warns**: Set towarn in recommended preset. |
+| 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
+| 💡 | **Suggestions**: Providing code suggestions in IDE. |
+| 🚫 | **Deprecated**: This rule is deprecated. |
+
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [Bundler](https://eslint.interlace.tools/docs/import-next/rules/Bundler) |  |  |  | Bundler |  |  |  |  |  |
+| [Scenario](https://eslint.interlace.tools/docs/import-next/rules/Scenario) |  |  |  | `eslint-plugin-import-next` |  |  |  |  |  |
+| [Rule](https://eslint.interlace.tools/docs/import-next/rules/Rule) |  |  |  | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| [Plugin](https://eslint.interlace.tools/docs/import-next/rules/Plugin) |  |  |  | Description |  |  |  |  |  |
+
+## 🔗 Related ESLint Plugins
+
+Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
+
+| Plugin | NPM | Downloads | License | Description |
+| :--- | :---: | :---: | :---: | :--- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![npm](https://img.shields.io/npm/v/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![license](https://img.shields.io/npm/l/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) | [![npm](https://img.shields.io/npm/v/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | [![license](https://img.shields.io/npm/l/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![npm](https://img.shields.io/npm/v/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | [![license](https://img.shields.io/npm/l/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![npm](https://img.shields.io/npm/v/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | [![license](https://img.shields.io/npm/l/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security rules. |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | AWS Lambda security best practices. |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | NestJS security rules & patterns. |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![npm](https://img.shields.io/npm/v/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | [![license](https://img.shields.io/npm/l/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
+
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
-<a href="https://eslint.interlace.tools/docs/import-next"><img src="https://eslint.interlace.tools/images/interlace-hero.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+<p align="center">
+  <a href="https://eslint.interlace.tools/docs/import-next"><img src="https://eslint.interlace.tools/images/og-import-next.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+</p>
