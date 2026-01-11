@@ -1,41 +1,38 @@
 # eslint-plugin-react-a11y
 
 <div align="center">
-  <img src="https://eslint.interlace.tools/images/og-react.png" alt="ESLint Interlace - eslint-plugin-react-a11y" width="100%" />
+  <img src="https://eslint.interlace.tools/images/og-react.png" alt="ESLint Interlace - eslint-plugin-react-a11y" width="200" />
 </div>
 
-> React accessibility ESLint plugin with 37 LLM-optimized rules for WCAG 2.1 compliance
+Accessibility rules for React applications.
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-react-a11y.svg)](https://www.npmjs.com/package/eslint-plugin-react-a11y)
+[![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-react-a11y.svg)](https://www.npmjs.com/package/eslint-plugin-react-a11y)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=react_a11y)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=react_a11y)
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=react-a11y)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=react-a11y)
+[![Dec 2025](https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white)](https://github.com/ofri-peretz/eslint)
 
-A comprehensive ESLint plugin for React accessibility with LLM-optimized error messages, auto-fix capabilities, and structured context for AI assistants.
+## Description
 
----
-
-## 📚 Documentation
-
-- **[Rules Reference](./docs/RULES.md)**: Complete list of all 37 rules with configuration options and WCAG mapping.
-- **[WCAG 2.1 Guide](https://www.w3.org/WAI/WCAG21/quickref/)**: Official WCAG quick reference.
-- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)**: Enable AI assistant integration.
-
----
-
-## 💡 What you get
-
-- **Comprehensive WCAG 2.1 coverage:** 37 rules covering Level A, AA, and AAA accessibility requirements.
-- **LLM-optimized & MCP-ready:** Structured 2-line messages with WCAG + concrete fixes so humans _and_ AI auto-fixers stay aligned.
-- **High auto-fix rate:** 60-80% of issues can be automatically fixed by AI assistants.
-- **Tiered presets:** `recommended`, `strict`, `wcag-a`, `wcag-aa` for fast policy rollout.
-- **100% local:** No cloud calls, complete privacy for your codebase.
-
----
-
-## 📊 OWASP Coverage Matrix
-
+> **📘 Full Documentation:** [https://eslint.interlace.tools/docs/react-a11y](https://eslint.interlace.tools/docs/react-a11y)
+>
 > **Note:** This plugin focuses on **WCAG 2.1** accessibility compliance rather than OWASP security. For security rules, see [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
+>
+> [!TIP]
+> For **complete OWASP coverage**, combine with [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) which provides 78 additional rules covering all OWASP categories.
+
+## Philosophy
+
+Interlace isn't just a set of rules; it's a philosophy of "interlacing" security directly into your development workflow. We believe in tools that guide rather than gatekeep, providing actionable, educational feedback that elevates developer expertise while securing code.
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-react-a11y --save-dev
+```
+
+---
 | Standard     | Level     | Coverage | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
 | **WCAG 2.1** |  |  |  |  |  |  |  |  |  |
@@ -68,91 +65,47 @@ export default [reactA11y.configs.recommended];
 | **strict** |  |  |  | 37 rules (all errors) |  |  |  |  |  |
 | **wcag-a** |  |  |  | 16 rules |  |  |  |  |  |
 | **wcag-aa** |  |  |  | 24 rules |  |  |  |  |  |
-## 📋 37 Accessibility Rules
+## Rules
+| Rule | Tag | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :--- | :---: | :---: | :---: | :--- | :-: | :-: | :-: | :-: | :-: |
+|  [`anchor-ambiguous-text`](./docs/rules/anchor-ambiguous-text.md)  | Anchor Rules |  CWE-1078  |  Prevent ambiguous link text like "click here"  |  ⚠️  |
+|  [`anchor-has-content`](./docs/rules/anchor-has-content.md)  | Anchor Rules |  CWE-1078  |  Require anchor elements to have content  |  💼  |
+|  [`anchor-is-valid`](./docs/rules/anchor-is-valid.md)  | Anchor Rules |  CWE-1078  |  Require valid href on anchor elements  |  💼  |
+|  [`aria-activedescendant-has-tabindex`](./docs/rules/aria-activedescendant-has-tabindex.md)  | ARIA Rules |  Require tabindex with aria-activedescendant  |
+|  [`aria-props`](./docs/rules/aria-props.md)  | ARIA Rules |  Validate ARIA property names  |
+|  [`aria-role`](./docs/rules/aria-role.md)  | ARIA Rules |  Require valid ARIA role values  |
+|  [`aria-unsupported-elements`](./docs/rules/aria-unsupported-elements.md)  | ARIA Rules |  Prevent ARIA on unsupported elements  |
+|  [`autocomplete-valid`](./docs/rules/autocomplete-valid.md)  | Form & Input Rules |  Require valid autocomplete attribute  |
+|  [`control-has-associated-label`](./docs/rules/control-has-associated-label.md)  | Form & Input Rules |  Require labels on form controls  |
+|  [`label-has-associated-control`](./docs/rules/label-has-associated-control.md)  | Form & Input Rules |  Require labels to have associated controls  |
+|  [`click-events-have-key-events`](./docs/rules/click-events-have-key-events.md)  | Event Rules |  Require keyboard events with click events  |
+|  [`mouse-events-have-key-events`](./docs/rules/mouse-events-have-key-events.md)  | Event Rules |  Require keyboard events with mouse events  |
+|  [`heading-has-content`](./docs/rules/heading-has-content.md)  | Content Rules |  Require heading elements to have content  |
+|  [`html-has-lang`](./docs/rules/html-has-lang.md)  | Content Rules |  Require lang attribute on html element  |
+|  [`iframe-has-title`](./docs/rules/iframe-has-title.md)  | Content Rules |  Require title on iframe elements  |
+|  [`lang`](./docs/rules/lang.md)  | Content Rules |  Require valid lang attribute value  |
+|  [`media-has-caption`](./docs/rules/media-has-caption.md)  | Content Rules |  Require captions on media elements  |
+|  [`img-redundant-alt`](./docs/rules/img-redundant-alt.md)  | Image Rules |  Prevent redundant words in alt text  |
+|  [`img-requires-alt`](./docs/rules/img-requires-alt.md)  | Image Rules |  Require alt attribute on images  |
+|  [`interactive-supports-focus`](./docs/rules/interactive-supports-focus.md)  | Interactive Element Rules |  Require focus support on interactive elements  |
+|  [`no-interactive-element-to-noninteractive-role`](./docs/rules/no-interactive-element-to-noninteractive-role.md)  | Interactive Element Rules |  Prevent demoting interactive elements  |
+|  [`no-noninteractive-element-interactions`](./docs/rules/no-noninteractive-element-interactions.md)  | Interactive Element Rules |  Prevent event handlers on non-interactive elements  |
+|  [`no-noninteractive-element-to-interactive-role`](./docs/rules/no-noninteractive-element-to-interactive-role.md)  | Interactive Element Rules |  Prevent promoting non-interactive elements  |
+|  [`no-noninteractive-tabindex`](./docs/rules/no-noninteractive-tabindex.md)  | Interactive Element Rules |  Prevent tabindex on non-interactive elements  |
+|  [`no-static-element-interactions`](./docs/rules/no-static-element-interactions.md)  | Interactive Element Rules |  Prevent event handlers on static elements  |
+|  [`no-access-key`](./docs/rules/no-access-key.md)  | Focus & Navigation Rules |  Prevent accessKey attribute usage  |
+|  [`no-aria-hidden-on-focusable`](./docs/rules/no-aria-hidden-on-focusable.md)  | Focus & Navigation Rules |  Prevent aria-hidden on focusable elements  |
+|  [`no-autofocus`](./docs/rules/no-autofocus.md)  | Focus & Navigation Rules |  Prevent autofocus attribute usage  |
+|  [`no-keyboard-inaccessible-elements`](./docs/rules/no-keyboard-inaccessible-elements.md)  | Focus & Navigation Rules |  Prevent keyboard inaccessible elements  |
+|  [`tabindex-no-positive`](./docs/rules/tabindex-no-positive.md)  | Focus & Navigation Rules |  Prevent positive tabindex values  |
+|  [`no-distracting-elements`](./docs/rules/no-distracting-elements.md)  | Visual & Distraction Rules |  Prevent distracting elements (blink, marquee)  |
+|  [`no-missing-aria-labels`](./docs/rules/no-missing-aria-labels.md)  | Visual & Distraction Rules |  Require ARIA labels on interactive elements  |
+|  [`no-redundant-roles`](./docs/rules/no-redundant-roles.md)  | Visual & Distraction Rules |  Prevent redundant role attributes  |
+|  [`role-has-required-aria-props`](./docs/rules/role-has-required-aria-props.md)  | Role Rules |  Require required ARIA properties for roles  |
+|  [`role-supports-aria-props`](./docs/rules/role-supports-aria-props.md)  | Role Rules |  Validate ARIA properties for roles  |
+|  [`prefer-tag-over-role`](./docs/rules/prefer-tag-over-role.md)  | Role Rules |  Prefer semantic HTML over role attribute  |
+|  [`scope`](./docs/rules/scope.md)  | Scope Rule |  Require valid scope attribute usage  |
 
-💼 = Set in `recommended` | ⚠️ = Warns in `recommended` | 🔧 = Auto-fixable | 💡 = Suggestions
-
-### Anchor Rules (3 rules)
-
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [`anchor-ambiguous-text`](./docs/rules/anchor-ambiguous-text.md) | CWE-1078 |  |  | Prevent ambiguous link text like "click here" |  | ⚠️ |  |  |  |
-| [`anchor-has-content`](./docs/rules/anchor-has-content.md) | CWE-1078 |  |  | Require anchor elements to have content | 💼 |  |  |  |  |
-| [`anchor-is-valid`](./docs/rules/anchor-is-valid.md) | CWE-1078 |  |  | Require valid href on anchor elements | 💼 |  |  |  |  |
-### ARIA Rules (4 rules)
-
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [`aria-activedescendant-has-tabindex`](./docs/rules/aria-activedescendant-has-tabindex.md) |  |  |  | Require tabindex with aria-activedescendant |  |  |  |  |  |
-| [`aria-props`](./docs/rules/aria-props.md) |  |  |  | Validate ARIA property names |  |  |  |  |  |
-| [`aria-role`](./docs/rules/aria-role.md) |  |  |  | Require valid ARIA role values |  |  |  |  |  |
-| [`aria-unsupported-elements`](./docs/rules/aria-unsupported-elements.md) |  |  |  | Prevent ARIA on unsupported elements |  |  |  |  |  |
-### Form & Input Rules (3 rules)
-
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [`autocomplete-valid`](./docs/rules/autocomplete-valid.md) |  |  |  | Require valid autocomplete attribute |  |  |  |  |  |
-| [`control-has-associated-label`](./docs/rules/control-has-associated-label.md) |  |  |  | Require labels on form controls |  |  |  |  |  |
-| [`label-has-associated-control`](./docs/rules/label-has-associated-control.md) |  |  |  | Require labels to have associated controls |  |  |  |  |  |
-### Event Rules (2 rules)
-
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [`click-events-have-key-events`](./docs/rules/click-events-have-key-events.md) |  |  |  | Require keyboard events with click events |  |  |  |  |  |
-| [`mouse-events-have-key-events`](./docs/rules/mouse-events-have-key-events.md) |  |  |  | Require keyboard events with mouse events |  |  |  |  |  |
-### Content Rules (5 rules)
-
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [`heading-has-content`](./docs/rules/heading-has-content.md) |  |  |  | Require heading elements to have content |  |  |  |  |  |
-| [`html-has-lang`](./docs/rules/html-has-lang.md) |  |  |  | Require lang attribute on html element |  |  |  |  |  |
-| [`iframe-has-title`](./docs/rules/iframe-has-title.md) |  |  |  | Require title on iframe elements |  |  |  |  |  |
-| [`lang`](./docs/rules/lang.md) |  |  |  | Require valid lang attribute value |  |  |  |  |  |
-| [`media-has-caption`](./docs/rules/media-has-caption.md) |  |  |  | Require captions on media elements |  |  |  |  |  |
-### Image Rules (2 rules)
-
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [`img-redundant-alt`](./docs/rules/img-redundant-alt.md) |  |  |  | Prevent redundant words in alt text |  |  |  |  |  |
-| [`img-requires-alt`](./docs/rules/img-requires-alt.md) |  |  |  | Require alt attribute on images |  |  |  |  |  |
-### Interactive Element Rules (6 rules)
-
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [`interactive-supports-focus`](./docs/rules/interactive-supports-focus.md) |  |  |  | Require focus support on interactive elements |  |  |  |  |  |
-| [`no-interactive-element-to-noninteractive-role`](./docs/rules/no-interactive-element-to-noninteractive-role.md) |  |  |  | Prevent demoting interactive elements |  |  |  |  |  |
-| [`no-noninteractive-element-interactions`](./docs/rules/no-noninteractive-element-interactions.md) |  |  |  | Prevent event handlers on non-interactive elements |  |  |  |  |  |
-| [`no-noninteractive-element-to-interactive-role`](./docs/rules/no-noninteractive-element-to-interactive-role.md) |  |  |  | Prevent promoting non-interactive elements |  |  |  |  |  |
-| [`no-noninteractive-tabindex`](./docs/rules/no-noninteractive-tabindex.md) |  |  |  | Prevent tabindex on non-interactive elements |  |  |  |  |  |
-| [`no-static-element-interactions`](./docs/rules/no-static-element-interactions.md) |  |  |  | Prevent event handlers on static elements |  |  |  |  |  |
-### Focus & Navigation Rules (5 rules)
-
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [`no-access-key`](./docs/rules/no-access-key.md) |  |  |  | Prevent accessKey attribute usage |  |  |  |  |  |
-| [`no-aria-hidden-on-focusable`](./docs/rules/no-aria-hidden-on-focusable.md) |  |  |  | Prevent aria-hidden on focusable elements |  |  |  |  |  |
-| [`no-autofocus`](./docs/rules/no-autofocus.md) |  |  |  | Prevent autofocus attribute usage |  |  |  |  |  |
-| [`no-keyboard-inaccessible-elements`](./docs/rules/no-keyboard-inaccessible-elements.md) |  |  |  | Prevent keyboard inaccessible elements |  |  |  |  |  |
-| [`tabindex-no-positive`](./docs/rules/tabindex-no-positive.md) |  |  |  | Prevent positive tabindex values |  |  |  |  |  |
-### Visual & Distraction Rules (3 rules)
-
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [`no-distracting-elements`](./docs/rules/no-distracting-elements.md) |  |  |  | Prevent distracting elements (blink, marquee) |  |  |  |  |  |
-| [`no-missing-aria-labels`](./docs/rules/no-missing-aria-labels.md) |  |  |  | Require ARIA labels on interactive elements |  |  |  |  |  |
-| [`no-redundant-roles`](./docs/rules/no-redundant-roles.md) |  |  |  | Prevent redundant role attributes |  |  |  |  |  |
-### Role Rules (3 rules)
-
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [`role-has-required-aria-props`](./docs/rules/role-has-required-aria-props.md) |  |  |  | Require required ARIA properties for roles |  |  |  |  |  |
-| [`role-supports-aria-props`](./docs/rules/role-supports-aria-props.md) |  |  |  | Validate ARIA properties for roles |  |  |  |  |  |
-| [`prefer-tag-over-role`](./docs/rules/prefer-tag-over-role.md) |  |  |  | Prefer semantic HTML over role attribute |  |  |  |  |  |
-### Scope Rule (1 rule)
-
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [`scope`](./docs/rules/scope.md) |  |  |  | Require valid scope attribute usage |  |  |  |  |  |
 ## Configuration Examples
 
 ### Basic Usage

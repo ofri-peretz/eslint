@@ -1,33 +1,38 @@
 # eslint-plugin-architecture
 
 <div align="center">
-  <img src="https://eslint.interlace.tools/images/og-architecture.png" alt="ESLint Interlace - eslint-plugin-architecture" width="100%" />
+  <img src="https://eslint.interlace.tools/images/og-architecture.png" alt="ESLint Interlace - eslint-plugin-architecture" width="200" />
 </div>
 
-> **📘 Full Documentation:** [https://eslint.interlace.tools/](https://eslint.interlace.tools/)
->
-> **Enforce DDD, API boundaries, and project structure with LLM-optimized messages.** Keep your codebase clean with architectural constraints.
+Security-focused ESLint plugin.
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-architecture.svg)](https://www.npmjs.com/package/eslint-plugin-architecture)
+[![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-architecture.svg)](https://www.npmjs.com/package/eslint-plugin-architecture)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=architecture)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=architecture)
+[![Dec 2025](https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white)](https://github.com/ofri-peretz/eslint)
 
----
+## Description
 
-## 💡 What you get
-
-- **DDD enforcement:** Prevent anemic domain models and enforce proper encapsulation.
-- **LLM-optimized & MCP-ready:** Structured 2-line messages with CWE + concrete fixes so humans _and_ AI auto-fixers stay aligned.
-- **API boundary enforcement:** Ensure modules expose only their public API.
-- **Naming conventions:** Enforce consistent naming across your codebase.
-- **Tiered presets:** `recommended`, `strict`, `ddd` for fast policy rollout.
-
----
-
-## 📊 OWASP Coverage Matrix
-
+> **📘 Full Documentation:** [https://eslint.interlace.tools/docs/architecture](https://eslint.interlace.tools/docs/architecture)
+>
 > **Note:** This plugin focuses on **software architecture and design patterns** rather than OWASP security. For security rules, see [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
+>
+> [!TIP]
+> For **complete OWASP coverage**, combine with [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) which provides 78 additional rules covering all OWASP categories.
+
+## Philosophy
+
+Interlace isn't just a set of rules; it's a philosophy of "interlacing" security directly into your development workflow. We believe in tools that guide rather than gatekeep, providing actionable, educational feedback that elevates developer expertise while securing code.
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-architecture --save-dev
+```
+
+---
 | Category          | CWE      | Description                           |
 | ----------------- | -------- | ------------------------------------- |
 | **Design**        | CWE-1047 | Modules with excessive static imports |
@@ -55,28 +60,24 @@ export default [architecture.configs.recommended];
 
 ---
 
-## 📋 Rules
-
-💼 = Set in `recommended` | ⚠️ = Warns in `recommended` | 🔧 = Auto-fixable | 💡 = Suggestions
-
-| Rule                        |   CWE    | OWASP | CVSS | Description                          | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
-| :-------------------------- | :------: | :---: | :--: | :----------------------------------- | :-: | :-: | :-: | :-: | :-: |
-| `enforce-naming`            | CWE-1078 |       |      | Enforce naming conventions           | 💼  |     |     |     |     |
-| `ddd-anemic-domain-model`   | CWE-1061 |       |      | Prevent anemic domain models         |     | ⚠️  |     | 💡  |     |
-| `enforce-module-boundaries` | CWE-1047 |       |      | Enforce API boundaries               | 💼  |     |     |     |     |
-| `no-circular-module-deps`   | CWE-407  |       |      | Prevent circular module dependencies | 💼  |     |     | 💡  |     |
-
----
+## Rules
+| Rule | Tag | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :--- | :---: | :---: | :---: | :--- | :-: | :-: | :-: | :-: | :-: |
+|  Rule                         | General |    CWE     |  OWASP  |  CVSS  |  Description                           |  💼   |  ⚠️   |  🔧   |  💡   |  🚫   |
+|  `enforce-naming`             | General |  CWE-1078  |  Enforce naming conventions            |  💼   |
+|  `ddd-anemic-domain-model`    | General |  CWE-1061  |  Prevent anemic domain models          |  ⚠️   |  💡   |
+|  `enforce-module-boundaries`  | General |  CWE-1047  |  Enforce API boundaries                |  💼   |
+|  `no-circular-module-deps`    | General |  CWE-407   |  Prevent circular module dependencies  |  💼   |  💡   |
 
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native plugins with LLM-optimized error messages:
 
-| Plugin                                                                                     | Description | Rule | CWE | OWASP | CVSS | Description | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
-| :----------------------------------------------------------------------------------------- | :---------: | :--: | :-: | :---- | :--: | :---------: | :-: | :-: | :-: | --- | --- |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |             |      |     |       |      |             |     |     |     |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)     |             |      |     |       |      |             |     |     |     |
-| [`eslint-plugin-quality`](https://www.npmjs.com/package/eslint-plugin-quality)             |             |      |     |       |      |             |     |     |     |
+| Plugin | Downloads | Description |
+| :--- | :---: | :--- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |  |  |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |  |  |
+| [`eslint-plugin-quality`](https://www.npmjs.com/package/eslint-plugin-quality) |  |  |
 
 ---
 

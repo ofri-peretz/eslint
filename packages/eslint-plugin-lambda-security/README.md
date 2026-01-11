@@ -1,19 +1,37 @@
 # eslint-plugin-lambda-security
 
 <div align="center">
-  <img src="https://eslint.interlace.tools/images/interlace-hero.png" alt="ESLint Interlace - eslint-plugin-lambda-security" width="100%" />
+  <img src="https://eslint.interlace.tools/images/interlace-hero.png" alt="ESLint Interlace - eslint-plugin-lambda-security" width="200" />
 </div>
 
-> 🔐 Security-focused ESLint plugin for AWS Lambda and serverless applications. Detects hardcoded credentials, permissive CORS, environment secrets, and logging issues with AI-optimized fix guidance.
+Security best practices for AWS Lambda functions.
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-lambda-security.svg)](https://www.npmjs.com/package/eslint-plugin-lambda-security)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-lambda-security.svg)](https://www.npmjs.com/package/eslint-plugin-lambda-security)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=lambda_security)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=lambda_security)
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=lambda-security)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=lambda-security)
 [![Dec 2025](https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white)](https://github.com/ofri-peretz/eslint)
 
+## Description
+
+> **📘 Full Documentation:** [https://eslint.interlace.tools/docs/lambda-security](https://eslint.interlace.tools/docs/lambda-security)
+>
 > **Serverless-first security:** This plugin provides security rules for **AWS Lambda**, **Middy.js**, **Serverless Framework**, **AWS SAM**, and **AWS SDK v3**.
 > With **5 security rules** mapped to OWASP Serverless Top 10, CWE and CVSS, it transforms your linter into a serverless security auditor that AI assistants can understand and fix.
+
+>
+> [!TIP]
+> For **complete OWASP coverage**, combine with [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) which provides 78 additional rules covering all OWASP categories.
+
+## Philosophy
+
+Interlace isn't just a set of rules; it's a philosophy of "interlacing" security directly into your development workflow. We believe in tools that guide rather than gatekeep, providing actionable, educational feedback that elevates developer expertise while securing code.
+
+## Getting Started
+
+```bash
+npm install eslint-plugin-lambda-security --save-dev
+```
 
 ---
 
@@ -61,195 +79,22 @@ src/handlers/api.ts
 | **SAS-10: Improper Crypto** |  |  |  |  |  |  |  |  |  |
 ---
 
-## 🔐 13 Security Rules
-
-💼 = Set in `recommended` | ⚠️ = Warns in `recommended` | 🔧 = Auto-fixable | 💡 = Suggestions
-
-### Credential & Secrets Protection (3 rules)
-
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [no-hardcoded-credentials-sdk](#no-hardcoded-credentials-sdk) | CWE-798 | SAS-2 | 9.8 | Hardcoded AWS credentials in SDK v3 clients | 💼 |  |  |  |  |
-| [no-secrets-in-env](#no-secrets-in-env) | CWE-798 | SAS-3 | 9.8 | Secrets hardcoded in environment variables | 💼 |  |  |  |  |
-| [no-env-logging](#no-env-logging) | CWE-532 | SAS-3 | 7.5 | Logging entire `process.env` object |  | ⚠️ |  |  |  |
-### CORS Security (2 rules)
-
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [no-permissive-cors-response](#no-permissive-cors-response) | CWE-942 | SAS-4 | 9.1 | Wildcard CORS in Lambda response headers | 💼 |  | 🔧 |  |  |
-| [no-permissive-cors-middy](#no-permissive-cors-middy) | CWE-942 | SAS-4 | 9.1 | Permissive CORS in @middy/http-cors middleware | 💼 |  |  |  |  |
-### Input Validation & Access Control (4 rules)
-
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| no-unvalidated-event-body | CWE-20 | SAS-1 | 8.0 | Lambda handlers using event body without validation |  | ⚠️ |  | 💡 |  |
-| no-missing-authorization-check | CWE-862 | SAS-5 | 7.5 | Lambda handlers without authorization checks |  | ⚠️ |  | 💡 |  |
-| no-overly-permissive-iam-policy | CWE-732 | SAS-5 | 6.5 | IAM policies with wildcard permissions | 💼 |  |  | 💡 |  |
-| no-user-controlled-requests | CWE-918 | SAS-8 | 9.1 | HTTP requests with user-controlled URLs (SSRF) | 💼 |  |  | 💡 |  |
-### Security Operations (4 rules)
-
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| no-error-swallowing | CWE-390 | SAS-6 | 5.0 | Empty catch blocks and missing error logging |  | ⚠️ |  | 💡 |  |
-| require-timeout-handling | CWE-400 | SAS-7 | 6.0 | External calls without timeout handling |  | ⚠️ |  | 💡 |  |
-| no-unbounded-batch-processing | CWE-770 | SAS-7 | 5.5 | Processing batch records without size limits |  | ⚠️ |  | 💡 |  |
-| no-exposed-error-details | CWE-209 | SAS-9 | 4.3 | Exposing internal error details in responses |  | ⚠️ |  | 💡 |  |
----
-
-## 🔍 Rule Details
-
-### `no-hardcoded-credentials-sdk`
-
-Detects hardcoded AWS credentials in AWS SDK v3 client configurations.
-
-**❌ Incorrect**
-
-```javascript
-// Hardcoded credentials - NEVER do this!
-const client = new S3Client({
-  credentials: {
-    accessKeyId: 'AKIAIOSFODNN7EXAMPLE',
-    secretAccessKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
-  },
-});
-```
-
-**✅ Correct**
-
-```javascript
-// Use credential provider chain
-import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
-
-const client = new S3Client({
-  credentials: fromNodeProviderChain(),
-});
-
-// Or let SDK use default chain (recommended for Lambda)
-const client = new S3Client({ region: 'us-east-1' });
-```
-
-**Detection Patterns:**
-
-- Real AWS access key patterns (AKIA*, ASIA*)
-- Secret access keys with 20+ characters
-- Session tokens with 15+ characters
-- Template literal credential construction
-
----
-
-### `no-permissive-cors-response`
-
-Detects wildcard CORS (`Access-Control-Allow-Origin: '*'`) in Lambda response headers.
-
-**❌ Incorrect**
-
-```javascript
-return {
-  statusCode: 200,
-  headers: { 'Access-Control-Allow-Origin': '*' },
-  body: JSON.stringify(data),
-};
-```
-
-**✅ Correct**
-
-```javascript
-return {
-  statusCode: 200,
-  headers: { 'Access-Control-Allow-Origin': 'https://your-app.com' },
-  body: JSON.stringify(data),
-};
-
-// Or use dynamic origin from request
-return {
-  statusCode: 200,
-  headers: { 'Access-Control-Allow-Origin': event.headers.origin },
-  body: JSON.stringify(data),
-};
-```
-
----
-
-### `no-permissive-cors-middy`
-
-Detects permissive CORS configuration in Middy http-cors middleware.
-
-**❌ Incorrect**
-
-```javascript
-// Default is permissive!
-middy(handler).use(httpCors());
-
-// Explicit wildcard
-middy(handler).use(httpCors({ origin: '*' }));
-```
-
-**✅ Correct**
-
-```javascript
-middy(handler).use(
-  httpCors({
-    origins: ['https://your-app.com', 'https://app.your-domain.com'],
-  }),
-);
-```
-
----
-
-### `no-secrets-in-env`
-
-Detects secrets hardcoded in environment variable assignments.
-
-**❌ Incorrect**
-
-```javascript
-process.env.DB_PASSWORD = 'my-secret-password-12345';
-
-const envConfig = {
-  API_KEY: 'sk-1234567890abcdef1234567890abcdef',
-};
-```
-
-**✅ Correct**
-
-```javascript
-// Read from process.env (populated by Lambda)
-const password = process.env.DB_PASSWORD;
-
-// Use AWS Secrets Manager
-import {
-  SecretsManagerClient,
-  GetSecretValueCommand,
-} from '@aws-sdk/client-secrets-manager';
-
-const secret = await client.send(
-  new GetSecretValueCommand({ SecretId: 'my-secret' }),
-);
-```
-
----
-
-### `no-env-logging`
-
-Detects logging of the entire `process.env` object, which may expose secrets.
-
-**❌ Incorrect**
-
-```javascript
-console.log(process.env);
-console.log(JSON.stringify(process.env));
-logger.info(process.env);
-```
-
-**✅ Correct**
-
-```javascript
-// Log specific, non-sensitive values
-console.log('Region:', process.env.AWS_REGION);
-console.log('Environment:', process.env.NODE_ENV);
-```
-
----
+## Rules
+| Rule | Tag | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :--- | :---: | :---: | :---: | :--- | :-: | :-: | :-: | :-: | :-: |
+|  [no-hardcoded-credentials-sdk](#no-hardcoded-credentials-sdk)  | Credential & Secrets Protection |  CWE-798  |  SAS-2  |  9.8  |  Hardcoded AWS credentials in SDK v3 clients  |  💼  |
+|  [no-secrets-in-env](#no-secrets-in-env)  | Credential & Secrets Protection |  CWE-798  |  SAS-3  |  9.8  |  Secrets hardcoded in environment variables  |  💼  |
+|  [no-env-logging](#no-env-logging)  | Credential & Secrets Protection |  CWE-532  |  SAS-3  |  7.5  |  Logging entire `process.env` object  |  ⚠️  |
+|  [no-permissive-cors-response](#no-permissive-cors-response)  | CORS Security |  CWE-942  |  SAS-4  |  9.1  |  Wildcard CORS in Lambda response headers  |  💼  |  🔧  |
+|  [no-permissive-cors-middy](#no-permissive-cors-middy)  | CORS Security |  CWE-942  |  SAS-4  |  9.1  |  Permissive CORS in @middy/http-cors middleware  |  💼  |
+|  no-unvalidated-event-body  | Input Validation & Access Control |  CWE-20  |  SAS-1  |  8.0  |  Lambda handlers using event body without validation  |  ⚠️  |  💡  |
+|  no-missing-authorization-check  | Input Validation & Access Control |  CWE-862  |  SAS-5  |  7.5  |  Lambda handlers without authorization checks  |  ⚠️  |  💡  |
+|  no-overly-permissive-iam-policy  | Input Validation & Access Control |  CWE-732  |  SAS-5  |  6.5  |  IAM policies with wildcard permissions  |  💼  |  💡  |
+|  no-user-controlled-requests  | Input Validation & Access Control |  CWE-918  |  SAS-8  |  9.1  |  HTTP requests with user-controlled URLs (SSRF)  |  💼  |  💡  |
+|  no-error-swallowing  | Security Operations |  CWE-390  |  SAS-6  |  5.0  |  Empty catch blocks and missing error logging  |  ⚠️  |  💡  |
+|  require-timeout-handling  | Security Operations |  CWE-400  |  SAS-7  |  6.0  |  External calls without timeout handling  |  ⚠️  |  💡  |
+|  no-unbounded-batch-processing  | Security Operations |  CWE-770  |  SAS-7  |  5.5  |  Processing batch records without size limits  |  ⚠️  |  💡  |
+|  no-exposed-error-details  | Security Operations |  CWE-209  |  SAS-9  |  4.3  |  Exposing internal error details in responses  |  ⚠️  |  💡  |
 
 ## 🚀 Quick Start
 
@@ -350,17 +195,17 @@ This plugin is optimized for ESLint's [Model Context Protocol (MCP)](https://esl
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin                                                                                               |                                                                Downloads                                                                 | Description                                                  | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) |  |  |  |  |  |  |  |  |  |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |  |  |  |  |  |  |  |  |  |
+| Plugin | Downloads | Description |
+| :--- | :---: | :--- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |  |  |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) |  |  |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) |  |  |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) |  |  |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) |  |  |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) |  |  |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) |  |  |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) |  |  |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) |  |  |
 ---
 
 ## 🔒 Privacy

@@ -1,72 +1,36 @@
 # eslint-plugin-import-next
 
 <div align="center">
-  <img src="https://eslint.interlace.tools/images/interlace-hero.png" alt="ESLint Interlace - eslint-plugin-import-next" width="100%" />
+  <img src="https://eslint.interlace.tools/images/interlace-hero.png" alt="ESLint Interlace - eslint-plugin-import-next" width="200" />
 </div>
 
-> **📘 Full Documentation:** [https://eslint.interlace.tools/](https://eslint.interlace.tools/)
->
-> 🔥 **Drop-in replacement for `eslint-plugin-import`.** 100% backwards compatible, 100x faster, zero false positives, AI-optimized fixes.
+Next-generation import sorting and validation rules.
 
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-import-next.svg)](https://www.npmjs.com/package/eslint-plugin-import-next)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-import-next.svg)](https://www.npmjs.com/package/eslint-plugin-import-next)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=import_next)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=import_next)
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=import-next)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=import-next)
 [![Dec 2025](https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white)](https://github.com/ofri-peretz/eslint)
 
----
+## Description
 
-## 💡 What you get
+> **📘 Full Documentation:** [https://eslint.interlace.tools/docs/import-next](https://eslint.interlace.tools/docs/import-next)
+>
+> 📢 **Found an issue we haven't addressed?** [Open an issue](https://github.com/ofri-peretz/eslint/issues) - we prioritize real developer pain.
 
-- **100x faster cycle detection** - Incremental caching means re-runs are near-instant
-- **Zero false positives** - Tested against real-world monorepos with zero noise
-- **LLM-optimized messages** - Structured errors with CWE + OWASP + specific fix guidance
-- **Unlimited `maxDepth`** - No artificial limits on cycle detection depth
-- **ESLint 9 native** - First-class flat config support
-- **TypeScript ready** - Works out of the box, no extra resolver config
+>
+> [!TIP]
+> For **complete OWASP coverage**, combine with [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) which provides 78 additional rules covering all OWASP categories.
 
----
+## Philosophy
 
-## 🚀 Migrate from `eslint-plugin-import` in 60 Seconds
+Interlace isn't just a set of rules; it's a philosophy of "interlacing" security directly into your development workflow. We believe in tools that guide rather than gatekeep, providing actionable, educational feedback that elevates developer expertise while securing code.
 
-**Step 1: Install**
+## Getting Started
 
 ```bash
-npm uninstall eslint-plugin-import
-npm install --save-dev eslint-plugin-import-next
+npm install eslint-plugin-import-next --save-dev
 ```
-
-**Step 2: Find & Replace in your ESLint config**
-
-```diff
-- import importPlugin from 'eslint-plugin-import';
-+ import importPlugin from 'eslint-plugin-import-next';
-```
-
-```diff
-- 'import/no-cycle': 'error',
-+ 'import-next/no-cycle': 'error',
-```
-
-**That's it.** All rule names are identical. All options are compatible. Your existing configuration works out of the box.
-
----
-
-## 🗣️ Community Pain Points: We Listen
-
-This plugin directly addresses the top complaints from the `eslint-plugin-import` community:
-
-| Pain Point                         | GitHub Issue                                                                                                                                   | Status        | Notes                                |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------ |
-| **`no-cycle` is extremely slow**   | [#1889](https://github.com/import-js/eslint-plugin-import/issues/1889), [#2388](https://github.com/import-js/eslint-plugin-import/issues/2388) | ✅ **Solved** | 100x faster with incremental caching |
-| **`namespace` rule performance**   | [#2340](https://github.com/import-js/eslint-plugin-import/issues/2340)                                                                         | ✅ **Solved** | Shared ExportsMap cache              |
-| **ESLint 9 flat config blocked**   | [#2556](https://github.com/import-js/eslint-plugin-import/issues/2556), [#2948](https://github.com/import-js/eslint-plugin-import/issues/2948) | ✅ **Solved** | First-class flat config              |
-| **`exports` field not supported**  | [#1810](https://github.com/import-js/eslint-plugin-import/issues/1810), [#2495](https://github.com/import-js/eslint-plugin-import/issues/2495) | 🟡 Phase 1    | Native exports field support         |
-| **No barrel file detection**       | [#2922](https://github.com/import-js/eslint-plugin-import/issues/2922)                                                                         | ✅ **Solved** | 5 bundle optimization rules          |
-| **`#imports` not recognized**      | [#1868](https://github.com/import-js/eslint-plugin-import/issues/1868)                                                                         | 🟡 Phase 1    | Subpath imports support              |
-| **Double-parsing with TypeScript** | [typescript-eslint docs](https://typescript-eslint.io/troubleshooting/performance-troubleshooting)                                             | ✅ **Solved** | Shared AST, no re-parsing            |
-
-> 📢 **Found an issue we haven't addressed?** [Open an issue](https://github.com/ofri-peretz/eslint/issues) - we prioritize real developer pain.
 
 ---
 
@@ -328,17 +292,17 @@ Optimized for **Cursor**, **GitHub Copilot**, and other AI coding tools:
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin                                                                                               | Downloads | Description | Rule | CWE | OWASP | CVSS | Description | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
-| :--------------------------------------------------------------------------------------------------- | :-------: | :---------: | :--: | :-- | :---: | :--: | :---------: | :-: | :-: | --- | --- | --- |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)           |           |             |      |     |       |      |             |     |     |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               |           |             |      |     |       |      |             |     |     |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                         |           |             |      |     |       |      |             |     |     |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                                 |           |             |      |     |       |      |             |     |     |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)     |           |             |      |     |       |      |             |     |     |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)       |           |             |      |     |       |      |             |     |     |
-| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)       |           |             |      |     |       |      |             |     |     |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)     |           |             |      |     |       |      |             |     |     |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) |           |             |      |     |       |      |             |     |     |
+| Plugin | Downloads | Description |
+| :--- | :---: | :--- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) |  |  |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) |  |  |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) |  |  |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) |  |  |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) |  |  |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) |  |  |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) |  |  |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) |  |  |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) |  |  |
 
 ---
 
