@@ -6,6 +6,7 @@
  */
 
 const requireVitestWatchFalse = require('./require-vitest-watch-false');
+const changelogFormat = require('./changelog-format');
 
 module.exports = {
   meta: {
@@ -14,12 +15,14 @@ module.exports = {
   },
   rules: {
     'require-vitest-watch-false': requireVitestWatchFalse,
+    'changelog-format': changelogFormat,
   },
   configs: {
     recommended: {
       plugins: ['local'],
       rules: {
         'local/require-vitest-watch-false': 'error',
+        'local/changelog-format': 'error',
       },
     },
   },

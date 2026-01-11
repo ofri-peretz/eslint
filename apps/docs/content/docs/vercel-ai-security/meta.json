@@ -1,4 +1,8 @@
 {
   "title": "Vercel AI",
-  "pages": ["index", "rules"]
+  "pages": [
+    "index",
+    "rules",
+    "changelog"
+  ]
 }

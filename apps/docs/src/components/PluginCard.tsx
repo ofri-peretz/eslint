@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { BorderBeam } from './ui/border-beam';
+import { CompactBadges, createNpmBadges } from './CompactBadges';
 
 interface PluginCardProps {
   title: string;
@@ -13,6 +14,10 @@ interface PluginCardProps {
   icon?: string;
   logo?: React.ComponentType<{ className?: string }>;
   category?: 'security' | 'framework' | 'architecture';
+  /** npm package name for badges (e.g., "eslint-plugin-secure-coding") */
+  packageName?: string;
+  /** Show badges */
+  showBadges?: boolean;
 }
 
 
@@ -54,10 +59,13 @@ export function PluginCard({
   icon,
   logo: Logo,
   category = 'security',
+  packageName,
+  showBadges = false,
 }: PluginCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const styles = categoryStyles[category];
+  const badges = packageName && showBadges ? createNpmBadges(packageName, { showBundleSize: false }) : [];
 
   return (
     <Link href={href} className="block h-full">
@@ -99,41 +107,60 @@ export function PluginCard({
         />
 
         {/* Content */}
-        <div className="relative p-5 h-full flex flex-col">
+        <div className="relative p-6 h-full flex flex-col z-10">
           {/* Header with icon/logo */}
-          <div className="flex items-start gap-3 mb-3">
-            {Logo ? (
-              <Logo className="size-6 shrink-0 text-fd-foreground" />
-            ) : (
-              <span className="text-2xl shrink-0">{icon || styles.icon}</span>
-            )}
-            <h3 className="font-bold text-fd-foreground group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-linear-to-r group-hover:from-fd-foreground group-hover:to-purple-400 transition-all duration-300 leading-tight">
+          <div className="flex items-center gap-4 mb-4">
+            <div className={cn(
+              "p-2.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 shadow-lg",
+              styles.glow
+            )}>
+              {Logo ? (
+                <Logo className="size-6 shrink-0" />
+              ) : (
+                <span className="text-xl shrink-0">{icon || styles.icon}</span>
+              )}
+            </div>
+            <h3 className="font-black text-lg tracking-tight text-fd-foreground group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-linear-to-r group-hover:from-fd-foreground group-hover:to-purple-400 transition-all duration-300 leading-tight">
               {title}
             </h3>
           </div>
 
           {/* Description */}
-          <p className="text-sm text-fd-muted-foreground group-hover:text-fd-foreground transition-colors grow pr-16">
+          <p className="text-sm text-fd-muted-foreground/90 group-hover:text-fd-foreground transition-colors leading-relaxed">
             {description}
           </p>
 
-          {/* Footer with arrow indicator */}
-          <div className="mt-4 flex items-center gap-2 text-sm text-fd-muted-foreground group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-            <span>Explore</span>
-            <span className="transform group-hover:translate-x-2 transition-transform duration-300">
-              →
-            </span>
-          </div>
+          {/* Compact Badges (npm stats) */}
+          {badges.length > 0 && (
+            <div className="mt-4 -mb-2">
+              <CompactBadges 
+                badges={badges} 
+                height={18} 
+                gap={4}
+                className="opacity-80 group-hover:opacity-100 transition-opacity"
+              />
+            </div>
+          )}
 
-          {/* Rules badge - absolute positioned bottom-right */}
-          <div
-            className={cn(
-              'absolute bottom-5 right-5 px-2.5 py-1 rounded-full text-xs font-semibold',
-              styles.badge,
-              'group-hover:scale-110 transition-transform duration-300'
-            )}
-          >
-            {rules} rules
+          {/* Footer stats */}
+          <div className="mt-auto pt-4 flex items-center justify-between gap-4 border-t border-white/10">
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-fd-muted-foreground group-hover:text-fd-foreground transition-colors">
+              <span>Explore Rule set</span>
+              <span className="transform group-hover:translate-x-1.5 transition-transform duration-300">
+                →
+              </span>
+            </div>
+            
+            {/* Rules badge */}
+            <div
+              className={cn(
+                'px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider',
+                styles.badge,
+                'shadow-lg border border-white/5'
+              )}
+            >
+              {rules} rules
+            </div>
           </div>
         </div>
 

@@ -68,6 +68,24 @@
         "color": true
       },
       "outputs": []
+    },
+    "sync-docs": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm tsx scripts/sync-readme-rules.ts",
+        "cwd": "{workspaceRoot}",
+        "color": true
+      },
+      "cache": false
+    },
+    "lint-docs": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm tsx scripts/validate-docs.ts",
+        "cwd": "{workspaceRoot}",
+        "color": true
+      },
+      "cache": false
     }
   }
 }

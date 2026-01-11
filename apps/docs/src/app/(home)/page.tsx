@@ -2,37 +2,72 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Shield, Zap, Lock, Code, ArrowRight, Terminal, CheckCircle2 } from 'lucide-react';
-import { FlickeringGrid } from '@/components/ui/flickering-grid';
-import { PluginCarousel } from '@/components/ui/plugin-carousel';
-import { ShimmerButton } from '@/components/ui/shimmer-button';
-import { BorderBeam } from '@/components/ui/border-beam';
-import { NumberTicker } from '@/components/ui/number-ticker';
-import { LLMWorkflowDemo } from '@/components/LLMWorkflowDemo';
-import { ESLintEcosystemWithLabels } from '@/components/ESLintEcosystemBeam';
+import { 
+  Shield, 
+  Zap, 
+  Lock, 
+  Code, 
+  ArrowRight, 
+  Terminal, 
+  CheckCircle2, 
+  Book, 
+  FileCode, 
+  BarChart3, 
+  Cpu, 
+  Database, 
+  Layout as LayoutIcon, 
+  Activity,
+  Globe 
+} from 'lucide-react';
+const LLMWorkflowDemo = dynamic(() => import('@/components/LLMWorkflowDemo').then(m => m.LLMWorkflowDemo), { 
+  ssr: false,
+  loading: () => <div className="w-full max-w-6xl mx-auto min-h-[500px] animate-pulse bg-fd-card/10 rounded-3xl" />
+});
+const NumberTicker = dynamic(() => import('@/components/ui/number-ticker').then(m => m.NumberTicker), { ssr: false });
+const FlickeringGrid = dynamic(() => import('@/components/ui/flickering-grid').then(m => m.FlickeringGrid), { ssr: false });
+const PluginCarousel = dynamic(() => import('@/components/ui/plugin-carousel').then(m => m.PluginCarousel), { ssr: false });
+const ShimmerButton = dynamic(() => import('@/components/ui/shimmer-button').then(m => m.ShimmerButton), { ssr: false });
+const BorderBeam = dynamic(() => import('@/components/ui/border-beam').then(m => m.BorderBeam), { ssr: false });
+const ESLintEcosystemWithLabels = dynamic(() => import('@/components/ESLintEcosystemBeam').then(m => m.ESLintEcosystemWithLabels), { 
+  ssr: false,
+  loading: () => <div className="h-64 w-full bg-fd-card/10 rounded-xl animate-pulse" />
+});
+const RelatedArticles = dynamic(() => import('@/components/DevToArticles').then(m => m.RelatedArticles), { ssr: false });
+const PluginCard = dynamic(() => import('@/components/PluginCard').then(m => m.PluginCard), { ssr: false });
+const PluginCards = dynamic(() => import('@/components/PluginCard').then(m => m.PluginCards), { ssr: false });
+import { CTACard, CTAGrid } from '@/components/ui/cta';
+import dynamic from 'next/dynamic';
 import { pluginLogos } from '@/components/TechLogos';
-import { PluginCard, PluginCards } from '@/components/PluginCard';
+const EcosystemStats = dynamic(() => import('@/components/EcosystemStats').then(m => m.EcosystemStats), { 
+  ssr: false,
+  loading: () => <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-4 h-[180px] animate-pulse bg-fd-card/10 rounded-2xl" />
+});
 
-const plugins = [
-  // Security Plugins
-  { name: 'eslint-plugin-secure-coding', rules: 75, description: 'Core OWASP Top 10 Web + Mobile coverage', category: 'security' as const },
-  { name: 'eslint-plugin-pg', rules: 13, description: 'PostgreSQL SQL injection prevention', category: 'security' as const },
-  { name: 'eslint-plugin-jwt', rules: 13, description: 'JWT security best practices', category: 'security' as const },
-  { name: 'eslint-plugin-crypto', rules: 24, description: 'Cryptographic security', category: 'security' as const },
-  { name: 'eslint-plugin-browser-security', rules: 21, description: 'XSS and client-side security', category: 'security' as const },
-  { name: 'eslint-plugin-mongodb-security', rules: 16, description: 'NoSQL injection prevention', category: 'security' as const },
-  { name: 'eslint-plugin-vercel-ai-security', rules: 19, description: 'AI/LLM security for Vercel AI SDK', category: 'security' as const },
-  // Framework Plugins
-  { name: 'eslint-plugin-express-security', rules: 9, description: 'Express.js middleware security', category: 'framework' as const },
-  { name: 'eslint-plugin-nestjs-security', rules: 5, description: 'NestJS guards and validation', category: 'framework' as const },
-  { name: 'eslint-plugin-lambda-security', rules: 5, description: 'AWS Lambda security', category: 'framework' as const },
-  // Architecture Plugins
-  { name: 'eslint-plugin-import-next', rules: 56, description: 'Import analysis and architecture enforcement', category: 'architecture' as const },
-];
+// Import plugin data from generated JSON (synced via GitHub Action)
+import pluginData from '@/data/plugin-stats.json';
+
+// Filter to show main plugins on homepage (subset of all 15 plugins)
+const plugins = pluginData.plugins
+  .filter(p => 
+    // Show security, framework, and main architecture plugins
+    p.category === 'security' || 
+    p.category === 'framework' ||
+    p.name === 'eslint-plugin-import-next'
+  )
+  .slice(0, 11)
+  .map(p => ({
+    name: p.name,
+    rules: p.rules,
+    description: p.description,
+    category: p.category as 'security' | 'framework' | 'architecture',
+  }));
+
+const totalRules = pluginData.totalRules;
+const totalPlugins = pluginData.totalPlugins;
 
 const stats = [
-  { label: 'Security Rules', value: 216, icon: Shield, suffix: '+' },
-  { label: 'Specialized Plugins', value: plugins.length, icon: Code, suffix: '' },
+  { label: 'Security Rules', value: totalRules, icon: Shield, suffix: '+' },
+  { label: 'Specialized Plugins', value: totalPlugins, icon: Code, suffix: '' },
   { label: 'OWASP Coverage', value: 100, icon: Lock, suffix: '%' },
   { label: 'LLM-Optimized', value: 100, icon: Zap, suffix: '%' },
 ];
@@ -78,17 +113,17 @@ export default function HomePage() {
           <div className="mt-10 rounded-2xl bg-linear-to-b from-white/10 to-transparent p-px max-w-xl mx-auto backdrop-blur-md">
             <div className="rounded-2xl bg-fd-card/40 border border-white/5 relative overflow-hidden">
               <BorderBeam size={250} duration={12} colorFrom="#8b5cf6" colorTo="#a855f7" delay={0} />
-              <div className="px-6 py-4 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 text-sm text-fd-muted-foreground font-mono">
-                  <span className="text-purple-400 font-bold">$</span>
-                  <span>npm install</span>
+              <div className="px-6 py-4 flex items-center justify-between gap-4 overflow-x-auto">
+                <div className="flex items-center gap-3 text-sm text-fd-muted-foreground font-mono whitespace-nowrap min-w-0">
+                  <span className="text-purple-400 font-bold shrink-0">$</span>
+                  <span className="shrink-0">npm install</span>
                   <PluginCarousel 
                     plugins={pluginNames}
                     interval={3500}
                     className="text-fd-foreground font-semibold"
                   />
                 </div>
-                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
               </div>
             </div>
           </div>
@@ -114,22 +149,8 @@ export default function HomePage() {
 
       {/* Dynamic Stats Section */}
       <section className="py-12 px-6 border-y border-fd-border/50 bg-fd-card/30 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
-          {stats.map((stat) => (
-            <div key={stat.label} className="text-center group relative">
-              <div className="absolute inset-0 bg-purple-500/5 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative">
-                <div className="text-4xl sm:text-5xl font-bold tracking-tight text-fd-foreground mb-2 tabular-nums">
-                  <NumberTicker value={stat.value} />
-                  <span className="text-purple-500">{stat.suffix}</span>
-                </div>
-                <div className="flex items-center justify-center gap-2 text-sm text-fd-muted-foreground font-medium uppercase tracking-wide">
-                  <stat.icon className="size-4 text-purple-500" />
-                  {stat.label}
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="max-w-6xl mx-auto">
+          <EcosystemStats />
         </div>
       </section>
 
@@ -176,6 +197,64 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Solutions Navigator */}
+      <section className="py-24 px-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-linear-to-b from-transparent via-purple-500/5 to-transparent pointer-events-none" />
+        <div className="max-w-6xl mx-auto relative z-10">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold mb-4">Choose Your Security Path</h2>
+            <p className="text-fd-muted-foreground text-lg max-w-2xl mx-auto">
+              Targeted security rules for every layer of your stack. From AI assistants to database integrity.
+            </p>
+          </div>
+
+          <CTAGrid columns={3}>
+            <CTACard
+              href="/docs"
+              title="Getting Started"
+              description="Supercharge your ESLint config in 2 minutes with our zero-config presets."
+              icon={<Book className="size-8" />}
+              gradient="purple"
+            />
+            <CTACard
+              href="/docs/secure-coding"
+              title="Web & Mobile Security"
+              description="Complete protection against OWASP Top 10 vulnerabilities like XSS and Injection."
+              icon={<Shield className="size-8" />}
+              gradient="emerald"
+            />
+            <CTACard
+              href="/docs/vercel-ai-security"
+              title="AI & LLM Safety"
+              description="Hardening the Vercel AI SDK against prompt injections and data leakage."
+              icon={<Cpu className="size-8" />}
+              gradient="blue"
+            />
+            <CTACard
+              href="/docs/pg"
+              title="Database Integrity"
+              description="Battle-tested PostgreSQL rules to prevent SQLi and enforce best practices."
+              icon={<Database className="size-8" />}
+              gradient="amber"
+            />
+            <CTACard
+              href="/docs/examples"
+              title="Interactive Examples"
+              description="Explore real-world vulnerabilities and how our rules catch them instantly."
+              icon={<FileCode className="size-8" />}
+              gradient="purple"
+            />
+            <CTACard
+              href="/docs/benchmarks"
+              title="Reliability & Speed"
+              description="Low latency, 100% coverage. See the verified benchmarks for our ecosystem."
+              icon={<BarChart3 className="size-8" />}
+              gradient="emerald"
+            />
+          </CTAGrid>
+        </div>
+      </section>
+
       {/* Interactive LLM Demo */}
       <section className="py-24 px-6">
         <LLMWorkflowDemo />
@@ -193,6 +272,13 @@ export default function HomePage() {
           <div className="flex justify-center transform scale-90 sm:scale-100">
             <ESLintEcosystemWithLabels />
           </div>
+        </div>
+      </section>
+
+      {/* Latest Updates */}
+      <section className="py-24 px-6">
+        <div className="max-w-6xl mx-auto">
+          <RelatedArticles plugin="secure-coding" limit={3} />
         </div>
       </section>
 
@@ -263,18 +349,54 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Additional Resources */}
+      <section className="py-24 px-6 bg-fd-accent/5 border-t border-fd-border/50">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-8">
+            <Link href="/docs/coverage" className="group">
+              <h4 className="font-bold mb-2 flex items-center gap-2 group-hover:text-purple-400 transition-colors">
+                <Activity className="size-4" />
+                Coverage Report
+              </h4>
+              <p className="text-sm text-fd-muted-foreground">View detailed rule coverage of OWASP and CWE standards.</p>
+            </Link>
+            <Link href="/docs/concepts" className="group">
+              <h4 className="font-bold mb-2 flex items-center gap-2 group-hover:text-purple-400 transition-colors">
+                <Zap className="size-4" />
+                Core Concepts
+              </h4>
+              <p className="text-sm text-fd-muted-foreground">Learn about the architecture and philosophy behind Interlace.</p>
+            </Link>
+            <Link href="/docs/secure-coding/changelog" className="group">
+              <h4 className="font-bold mb-2 flex items-center gap-2 group-hover:text-purple-400 transition-colors">
+                <Terminal className="size-4" />
+                Changelog
+              </h4>
+              <p className="text-sm text-fd-muted-foreground">Stay up to date with the latest rules and improvements.</p>
+            </Link>
+             <a href="https://github.com/ofri-peretz/eslint" className="group">
+              <h4 className="font-bold mb-2 flex items-center gap-2 group-hover:text-purple-400 transition-colors">
+                <Globe className="size-4" />
+                Community
+              </h4>
+              <p className="text-sm text-fd-muted-foreground">Join the discussion on GitHub and help us build a safer web.</p>
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="py-12 px-6 border-t border-fd-border bg-fd-card">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8 text-sm text-fd-muted-foreground">
           <div className="flex flex-col gap-2">
-            <span className="font-semibold text-fd-foreground">Interlace ESLint Ecosystem</span>
+            <span className="font-semibold text-fd-foreground">ESLint Interlace Ecosystem</span>
             <span>© {new Date().getFullYear()} Ofri Peretz. MIT Licensed.</span>
           </div>
           <div className="flex items-center gap-8">
             <a href="https://github.com/ofri-peretz/eslint" className="hover:text-purple-400 transition-colors">GitHub</a>
             <a href="https://www.npmjs.com/~ofri-peretz" className="hover:text-purple-400 transition-colors">NPM</a>
             <a href="https://ofriperetz.dev" className="hover:text-purple-400 transition-colors">Portfolio</a>
-            <a href="/docs/privacy" className="hover:text-purple-400 transition-colors">Privacy</a>
+            <Link href="/docs/privacy" className="hover:text-purple-400 transition-colors">Privacy</Link>
           </div>
         </div>
       </footer>

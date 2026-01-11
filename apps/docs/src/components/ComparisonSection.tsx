@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
 interface ComparisonItem {
@@ -47,7 +48,7 @@ export function ComparisonSection() {
   return (
     <div ref={sectionRef} className="my-12">
       <h2 className="text-2xl font-bold mb-8 text-center">
-        LLM-Optimized vs Traditional
+        ESLint Interlace vs Traditional
       </h2>
       
       <div className="grid md:grid-cols-2 gap-8">
@@ -151,7 +152,7 @@ export function ComparisonSection() {
           <div className="relative mt-4">
             <h3 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mb-6 flex items-center gap-3">
               <span className="text-3xl">✅</span>
-              Interlace ESLint
+              ESLint Interlace
             </h3>
             
             <ul className="space-y-4">
@@ -192,13 +193,13 @@ export function ComparisonSection() {
       
       {/* Explore Examples Link */}
       <div className="text-center mt-8">
-        <a
+        <Link
           href="/docs/examples"
           className="inline-flex items-center gap-2 px-6 py-3 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 hover:border-purple-500/50 text-purple-400 rounded-full transition-all duration-300 group"
         >
           <span>Explore Real Examples</span>
           <span className="group-hover:translate-x-1 transition-transform">→</span>
-        </a>
+        </Link>
       </div>
     </div>
   );

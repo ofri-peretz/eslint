@@ -4,6 +4,7 @@
         "how-ast-works",
         "mcp-integration",
         "static-analysis",
+        "dto-serialization-security",
         "fixable-rules"
     ]
 }

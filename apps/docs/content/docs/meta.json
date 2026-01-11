@@ -3,9 +3,10 @@
     "pages": [
         "---Guide---",
         "index",
-        "guide/getting-started",
         "examples",
         "benchmarks",
+        "coverage",
+        "articles",
         "concepts",
         "---ESLint Plugins (Security)---",
         "secure-coding",

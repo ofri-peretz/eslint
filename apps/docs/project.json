@@ -47,14 +47,27 @@
         "dev": {
             "executor": "nx:run-commands",
             "options": {
-                "command": "next dev",
+                "command": "next dev -p 3000",
                 "cwd": "{projectRoot}"
+            }
+        },
+        "dev:fresh": {
+            "executor": "nx:run-commands",
+            "options": {
+                "commands": [
+                    "npx nx daemon --stop 2>/dev/null || true",
+                    "npx nx reset",
+                    "rm -rf .next .turbo ../../.turbo ../../node_modules/.cache",
+                    "next dev -p 3000"
+                ],
+                "cwd": "{projectRoot}",
+                "parallel": false
             }
         },
         "lint": {
             "executor": "nx:run-commands",
             "options": {
-                "command": "next lint",
+                "command": "eslint src",
                 "cwd": "{projectRoot}"
             }
         },

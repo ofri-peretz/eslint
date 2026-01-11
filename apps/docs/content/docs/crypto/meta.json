@@ -1,4 +1,8 @@
 {
   "title": "Cryptography",
-  "pages": ["index", "rules"]
+  "pages": [
+    "index",
+    "rules",
+    "changelog"
+  ]
 }

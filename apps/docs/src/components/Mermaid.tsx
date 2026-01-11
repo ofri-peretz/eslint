@@ -1,16 +1,17 @@
 'use client';
 
-import { use, useEffect, useId, useState } from 'react';
+import { use, useId, useSyncExternalStore } from 'react';
 import { useTheme } from 'next-themes';
 
+// Use useSyncExternalStore for hydration-safe client detection
+const emptySubscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
+
 export function Mermaid({ chart }: { chart: string }) {
-  const [mounted, setMounted] = useState(false);
+  const isClient = useSyncExternalStore(emptySubscribe, getSnapshot, getServerSnapshot);
   
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  
-  if (!mounted) return <div className="animate-pulse bg-violet-500/10 h-64 rounded-xl" />;
+  if (!isClient) return <div className="animate-pulse bg-violet-500/10 h-64 rounded-xl" />;
   
   return <MermaidContent chart={chart} />;
 }
@@ -73,6 +74,19 @@ function MermaidContent({ chart }: { chart: string }) {
       
       // Edges
       edgeLabelBackground: isDark ? '#1e293b' : '#ffffff',
+      
+      // Sequence diagram specific
+      actorTextColor: isDark ? '#f1f5f9' : '#1e293b',
+      actorBkg: isDark ? '#2d3548' : '#ede9fe',
+      actorBorder: isDark ? '#a78bfa' : '#7c3aed',
+      signalColor: isDark ? '#f1f5f9' : '#1e293b',
+      signalTextColor: isDark ? '#f1f5f9' : '#1e293b',
+      noteBkgColor: isDark ? '#2d3548' : '#fef9c3',
+      noteTextColor: isDark ? '#f1f5f9' : '#1e293b',
+      noteBorderColor: isDark ? '#a78bfa' : '#7c3aed',
+      activationBkgColor: isDark ? '#3b2d5c' : '#ede9fe',
+      activationBorderColor: isDark ? '#a78bfa' : '#7c3aed',
+      sequenceNumberColor: isDark ? '#f1f5f9' : '#1e293b',
       
       // Fonts
       fontSize: '14px',

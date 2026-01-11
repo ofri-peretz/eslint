@@ -3,8 +3,8 @@ title: no-exposed-private-fields
 description: Detect exposed sensitive fields in DTOs/entities
 ---
 
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
+import { FalseNegativeCTA, WhenNotToUse } from '@/components/RuleComponents';
+import { Callout } from 'fumadocs-ui/components/callout';
 
 > Detect exposed sensitive fields in DTOs/entities
 
@@ -76,7 +76,13 @@ class UsersController {
 
 - For internal DTOs not used in API responses
 - For DTOs that are explicitly mapped before sending to clients
+- When using serialization libraries (e.g., `class-transformer` with `ClassSerializerInterceptor`) that provide runtime protection
 
+<Callout type="info">
+  **Advanced Topic**: For a deep dive into response security patterns across
+  Express, NestJS, and other frameworks, see [API Response
+  Security](/docs/concepts/dto-serialization-security).
+</Callout>
 
 <WhenNotToUse />
 

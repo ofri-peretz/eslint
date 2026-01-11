@@ -1,4 +1,8 @@
 {
   "title": "Browser Security",
-  "pages": ["index", "rules"]
+  "pages": [
+    "index",
+    "rules",
+    "changelog"
+  ]
 }

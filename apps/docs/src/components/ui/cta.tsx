@@ -111,30 +111,33 @@ export function CTACard({
       href={href}
       {...externalProps}
       className={cn(
-        'group relative overflow-hidden rounded-xl p-6',
+        'group relative overflow-hidden rounded-2xl p-8',
         'bg-linear-to-br', g.bg,
         'border', g.border,
-        'transition-all duration-300',
-        'hover:-translate-y-1',
-        'shadow-lg group-hover:shadow-xl', g.glow
+        'transition-all duration-500', // Smoother transition
+        'hover:-translate-y-2',
+        'shadow-lg group-hover:shadow-2xl', g.glow,
+        'flex flex-col h-full min-h-[160px]'
       )}
     >
       {/* Shimmer effect */}
-      <span className="absolute inset-0 bg-linear-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+      <span className="absolute inset-0 bg-linear-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
       
-      <div className="relative z-10">
+      <div className="relative z-10 flex flex-col h-full">
         {icon && (
-          <div className={cn('text-2xl mb-3', g.accent)}>
+          <div className={cn('text-4xl mb-6 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3', g.accent)}>
             {icon}
           </div>
         )}
-        <h3 className="font-semibold text-fd-foreground mb-1 flex items-center gap-2">
-          {title}
-          <span className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all">→</span>
-        </h3>
-        <p className="text-sm text-fd-muted-foreground group-hover:text-fd-foreground transition-colors">
-          {description}
-        </p>
+        <div className="mt-auto"> {/* Push text to bottom or keep it balanced */}
+          <h3 className="text-xl font-bold text-fd-foreground mb-3 flex items-center gap-3">
+            {title}
+            <span className="opacity-40 group-hover:opacity-100 group-hover:translate-x-1.5 transition-all duration-300">→</span>
+          </h3>
+          <p className="text-sm text-fd-muted-foreground group-hover:text-fd-foreground/90 transition-colors leading-relaxed">
+            {description}
+          </p>
+        </div>
       </div>
     </Component>
   );

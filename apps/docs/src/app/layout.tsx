@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import { RootProvider } from 'fumadocs-ui/provider/next';
 import './global.css';
 import { Space_Grotesk } from 'next/font/google';
+import { Providers } from '@/components/Providers';
+
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -15,11 +17,11 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://interlace-eslint.ve
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: 'Interlace ESLint | Security-First ESLint Plugins',
-    template: '%s | Interlace ESLint',
+    default: 'ESLint Interlace | Security-First ESLint Plugins',
+    template: '%s | ESLint Interlace',
   },
   description:
-    '216+ security rules across 11 specialized ESLint plugins. LLM-optimized error messages with CWE, OWASP, and CVSS metadata. Full OWASP Top 10 coverage.',
+    '416+ security rules across 15 specialized ESLint plugins. LLM-optimized error messages with CWE, OWASP, and CVSS metadata. Full OWASP Top 10 coverage.',
   keywords: [
     'eslint',
     'eslint-plugin',
@@ -49,10 +51,10 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: baseUrl,
-    siteName: 'Interlace ESLint',
+    siteName: 'ESLint Interlace',
     title: 'Interlace ESLint | Security-First ESLint Plugins',
     description:
-      '216+ security rules across 11 specialized ESLint plugins. LLM-optimized error messages with CWE, OWASP, and CVSS metadata.',
+      '416+ security rules across 15 specialized ESLint plugins. LLM-optimized error messages with CWE, OWASP, and CVSS metadata.',
     images: [
       {
         url: '/og-image.png',
@@ -66,7 +68,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Interlace ESLint | Security-First ESLint Plugins',
     description:
-      '216+ security rules across 11 specialized ESLint plugins. LLM-optimized with CWE, OWASP, CVSS metadata.',
+      '416+ security rules across 15 specialized ESLint plugins. LLM-optimized with CWE, OWASP, CVSS metadata.',
     images: ['/og-image.png'],
     creator: '@AnyWayPod',
   },
@@ -94,6 +96,18 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={spaceGrotesk.className} suppressHydrationWarning>
       <head>
+        {/* Preconnect for external APIs */}
+        <link rel="preconnect" href="https://dev.to" />
+        <link rel="preconnect" href="https://res.cloudinary.com" />
+        <link rel="dns-prefetch" href="https://codecov.io" />
+        
+        {/* PWA theme color */}
+        <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#1e1b4b" media="(prefers-color-scheme: dark)" />
+        
+        {/* PWA manifest */}
+        <link rel="manifest" href="/manifest.json" />
+        
         {/* Structured Data for Organization */}
         <script
           type="application/ld+json"
@@ -101,11 +115,11 @@ export default function Layout({ children }: { children: ReactNode }) {
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@type': 'SoftwareApplication',
-              name: 'Interlace ESLint',
+              name: 'ESLint Interlace',
               applicationCategory: 'DeveloperApplication',
               operatingSystem: 'Any',
               description:
-                '216+ security rules across 11 specialized ESLint plugins with LLM-optimized error messages.',
+                '416+ security rules across 15 specialized ESLint plugins with LLM-optimized error messages.',
               offers: {
                 '@type': 'Offer',
                 price: '0',
@@ -120,8 +134,10 @@ export default function Layout({ children }: { children: ReactNode }) {
           }}
         />
       </head>
-      <body className="flex flex-col min-h-screen">
-        <RootProvider>{children}</RootProvider>
+      <body className="flex flex-col min-h-screen" suppressHydrationWarning>
+        <Providers>
+          <RootProvider>{children}</RootProvider>
+        </Providers>
       </body>
     </html>
   );
