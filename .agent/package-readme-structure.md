@@ -51,7 +51,8 @@ This document defines the strict structure and content requirements for all ESLi
 ### 4. Description
 
 - **Content**: Detailed explanation of the plugin's purpose and capabilities.
-- **Source**: Preserves manual edits found in existing `## Description` sections. If none, falls back to the short introduction.
+- **Goal**: 3-4 sentences highlighting "what's in it for you" (value proposition).
+- **Source**: Preserves manual edits found in existing `## Description` sections. If none, falls back to the short introduction (but should be expanded).
 
 ### 5. Philosophy
 
@@ -135,7 +136,7 @@ This document defines the strict structure and content requirements for all ESLi
 ## Exclusions (Do NOT Include)
 
 - **Security Research Coverage**: Do NOT include dedicated sections for specific CVEs or research papers unless critical. (Dropped 2026-01-11).
-- **References**: Do NOT list raw reference links; these belong in the official documentation site.
+- **References**: Do NOT list raw reference links; these belong in the official documentation site. Users should be directed to the docs for deep dives.
 - **Rule Details**: **No** verbose rule descriptions or code examples in the README. Keep it high-level.
 
 ## Maintenance

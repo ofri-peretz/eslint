@@ -178,7 +178,9 @@ packages.forEach(pkg => {
         '## 🚀 Quick Start', // Keep this as a custom section we want to preserve? Or merge?
         '## 🛡️ Security Research Coverage', // User explicitly requested to DROP this
         '## Security Research Coverage',
-        '## 🛡 Security Research Coverage' // Variant
+        '## 🛡 Security Research Coverage', // Variant
+        '## References', // User requested to DROP this (drive traffic to docs)
+        '## 📖 References'
     ];
 
     const customSections = [];
@@ -205,7 +207,7 @@ packages.forEach(pkg => {
             const isCore = STANDARD_HEADERS.some(h => trimmed.startsWith(h));
             
             // Check if it's a section we want to NUKE because it's redundant (Transformation 2026-01-11)
-            const isLegacyInstallation = ['## Installation', '## 📦 Installation', '## 🚀 Quick Start', '## 🛡️ Security Research Coverage', '## Security Research Coverage'].some(h => trimmed.startsWith(h));
+            const isLegacyInstallation = ['## Installation', '## 📦 Installation', '## 🚀 Quick Start', '## 🛡️ Security Research Coverage', '## Security Research Coverage', '## References', '## 📖 References'].some(h => trimmed.startsWith(h));
 
             if (isCore || isLegacyInstallation) {
                 capture = false;
