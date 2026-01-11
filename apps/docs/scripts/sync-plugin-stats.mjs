@@ -136,7 +136,7 @@ async function main() {
   console.log(`   Total: ${totalRules} rules across ${stats.length} plugins`);
 }
 
-export { countRulesInPackage, getPackageMetadata, getCategory };
+
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   main().catch((err) => {
