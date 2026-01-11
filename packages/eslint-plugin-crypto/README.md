@@ -7,6 +7,7 @@
 <p align="center">
   Cryptographic security rules enforcing best practices and modern standards.
 </p>
+
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-crypto.svg)](https://www.npmjs.com/package/eslint-plugin-crypto)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-crypto.svg)](https://www.npmjs.com/package/eslint-plugin-crypto)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

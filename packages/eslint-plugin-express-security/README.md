@@ -7,6 +7,7 @@
 <p align="center">
   Comprehensive security rules for Express.js applications, mapping to OWASP Top 10.
 </p>
+
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-express-security.svg)](https://www.npmjs.com/package/eslint-plugin-express-security)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-express-security.svg)](https://www.npmjs.com/package/eslint-plugin-express-security)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -21,7 +22,7 @@
 > For **complete OWASP coverage**, combine with [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) which provides 78 additional rules covering all OWASP categories.
 
 ## Philosophy
- 
+
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
 ## Getting Started
@@ -118,22 +119,23 @@ npm install eslint-plugin-express-security --save-dev
 ---
 
 ## Rules
-| Rule | Tag | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :--- | :---: | :---: | :---: | :--- | :-: | :-: | :-: | :-: | :-: |
-|  Rule                                                                         | General |  Tag      |    CWE    |   OWASP   |   CVSS    |  Description  |          💼           |     ⚠️     |   🔧    |   💡   |                    🚫                    |
-|  Rule                                                                         | General |  General  |  General  |  General  |  General  |  General      |    Headers & CORS     |    CWE     |  OWASP  |  CVSS  |               Description                |  💼   |  ⚠️   |  🔧   |  💡   |  🚫   |
-|  [require-helmet](#require-helmet)                                            | General |  General  |  General  |  General  |  General  |  General      |    Headers & CORS     |  CWE-693   |   A05   |  7.1   |       Require helmet() middleware        |  💼   |
-|  [no-permissive-cors](#no-permissive-cors)                                    | General |  General  |  General  |  General  |  General  |  General      |    Headers & CORS     |  CWE-942   |   A05   |  9.1   |       Detect wildcard CORS origins       |  💼   |
-|  [no-cors-credentials-wildcard](#no-cors-credentials-wildcard)                | General |  General  |  General  |  General  |  General  |  General      |    Headers & CORS     |  CWE-942   |   A05   |  9.1   |  Block credentials: true + origin: "\*"  |  💼   |
-|  [require-express-body-parser-limits](#require-express-body-parser-limits)    | General |  General  |  General  |  General  |  General  |  General      |    Headers & CORS     |  CWE-770   |   A05   |  7.5   |     Require body parser size limits      |  ⚠️   |
-|  Rule                                                                         | General |  General  |  General  |  General  |  General  |  General      |    CSRF & Cookies     |    CWE     |  OWASP  |  CVSS  |               Description                |  💼   |  ⚠️   |  🔧   |  💡   |  🚫   |
-|  [require-csrf-protection](#require-csrf-protection)                          | General |  General  |  General  |  General  |  General  |  General      |    CSRF & Cookies     |  CWE-352   |   A07   |  8.8   |         Require CSRF middleware          |  ⚠️   |
-|  [no-insecure-cookie-options](#no-insecure-cookie-options)                    | General |  General  |  General  |  General  |  General  |  General      |    CSRF & Cookies     |  CWE-614   |   A07   |  5.3   |      Detect missing Secure/HttpOnly      |  💼   |
-|  Rule                                                                         | General |  General  |  General  |  General  |  General  |  General      |  Rate Limiting & DoS  |    CWE     |  OWASP  |  CVSS  |               Description                |  💼   |  ⚠️   |  🔧   |  💡   |  🚫   |
-|  [require-rate-limiting](#require-rate-limiting)                              | General |  General  |  General  |  General  |  General  |  General      |  Rate Limiting & DoS  |  CWE-770   |   A05   |  7.5   |     Require rate limiting middleware     |  ⚠️   |
-|  [no-express-unsafe-regex-route](#no-express-unsafe-regex-route)              | General |  General  |  General  |  General  |  General  |  General      |  Rate Limiting & DoS  |  CWE-1333  |   A03   |  7.5   |      Detect ReDoS in route patterns      |  💼   |
-|  Rule                                                                         | General |  General  |  General  |  General  |  General  |  General      |        GraphQL        |    CWE     |  OWASP  |  CVSS  |               Description                |  💼   |  ⚠️   |  🔧   |  💡   |  🚫   |
-|  [no-graphql-introspection-production](#no-graphql-introspection-production)  | General |  General  |  General  |  General  |  General  |  General      |        GraphQL        |  CWE-200   |   A01   |  5.3   |  Disable GraphQL introspection in prod   |  ⚠️   |
+
+| Rule                                                                        | Tag     |   CWE   |  OWASP  |  CVSS   | Description |     💼      |         ⚠️          |    🔧    |  💡   |  🚫  |
+| :-------------------------------------------------------------------------- | :------ | :-----: | :-----: | :-----: | :---------- | :---------: | :-----------------: | :------: | :---: | :--: | -------------------------------------- | --- | --- | --- | --- | --- |
+| Rule                                                                        | General |   Tag   |   CWE   |  OWASP  | CVSS        | Description |         💼          |    ⚠️    |  🔧   |  💡  | 🚫                                     |
+| Rule                                                                        | General | General | General | General | General     |   General   |   Headers & CORS    |   CWE    | OWASP | CVSS | Description                            | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| [require-helmet](#require-helmet)                                           | General | General | General | General | General     |   General   |   Headers & CORS    | CWE-693  |  A05  | 7.1  | Require helmet() middleware            | 💼  |
+| [no-permissive-cors](#no-permissive-cors)                                   | General | General | General | General | General     |   General   |   Headers & CORS    | CWE-942  |  A05  | 9.1  | Detect wildcard CORS origins           | 💼  |
+| [no-cors-credentials-wildcard](#no-cors-credentials-wildcard)               | General | General | General | General | General     |   General   |   Headers & CORS    | CWE-942  |  A05  | 9.1  | Block credentials: true + origin: "\*" | 💼  |
+| [require-express-body-parser-limits](#require-express-body-parser-limits)   | General | General | General | General | General     |   General   |   Headers & CORS    | CWE-770  |  A05  | 7.5  | Require body parser size limits        | ⚠️  |
+| Rule                                                                        | General | General | General | General | General     |   General   |   CSRF & Cookies    |   CWE    | OWASP | CVSS | Description                            | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| [require-csrf-protection](#require-csrf-protection)                         | General | General | General | General | General     |   General   |   CSRF & Cookies    | CWE-352  |  A07  | 8.8  | Require CSRF middleware                | ⚠️  |
+| [no-insecure-cookie-options](#no-insecure-cookie-options)                   | General | General | General | General | General     |   General   |   CSRF & Cookies    | CWE-614  |  A07  | 5.3  | Detect missing Secure/HttpOnly         | 💼  |
+| Rule                                                                        | General | General | General | General | General     |   General   | Rate Limiting & DoS |   CWE    | OWASP | CVSS | Description                            | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| [require-rate-limiting](#require-rate-limiting)                             | General | General | General | General | General     |   General   | Rate Limiting & DoS | CWE-770  |  A05  | 7.5  | Require rate limiting middleware       | ⚠️  |
+| [no-express-unsafe-regex-route](#no-express-unsafe-regex-route)             | General | General | General | General | General     |   General   | Rate Limiting & DoS | CWE-1333 |  A03  | 7.5  | Detect ReDoS in route patterns         | 💼  |
+| Rule                                                                        | General | General | General | General | General     |   General   |       GraphQL       |   CWE    | OWASP | CVSS | Description                            | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| [no-graphql-introspection-production](#no-graphql-introspection-production) | General | General | General | General | General     |   General   |       GraphQL       | CWE-200  |  A01  | 5.3  | Disable GraphQL introspection in prod  | ⚠️  |
 
 ## 🚀 Quick Start
 

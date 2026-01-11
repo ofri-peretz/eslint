@@ -7,6 +7,7 @@
 <p align="center">
   Browser-specific security rules to prevent XSS and other client-side attacks.
 </p>
+
 [![npm version](https://img.shields.io/npm/v/eslint-plugin-browser-security.svg)](https://www.npmjs.com/package/eslint-plugin-browser-security)
 [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-browser-security.svg)](https://www.npmjs.com/package/eslint-plugin-browser-security)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -23,7 +24,7 @@
 > For **complete OWASP coverage**, combine with [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) which provides 78 additional rules covering all OWASP categories.
 
 ## Philosophy
- 
+
 **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
 ## Getting Started
@@ -182,31 +183,32 @@ export default [browserSecurity.configs.recommended];
 ```
 
 ## Rules
-| Rule | Tag | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :--- | :---: | :---: | :---: | :--- | :-: | :-: | :-: | :-: | :-: |
-|  Rule                                                                                  | General |  Tag      |          CWE           |   OWASP    |    CVSS    |  Description  |                           💼                            |  ⚠️   |  🔧   |  💡   |  🚫   |
-|  Rule                                                                                  | General |  General  |          Tag           |    CWE     |   OWASP    |  CVSS         |                       Description                       |  💼   |  ⚠️   |  🔧   |  💡   |  🚫   |
-|  [no-eval](./docs/rules/no-eval.md)                                                    | General |  General  |     XSS Prevention     |   CWE-95   |  A03:2021  |  9.8          |  Prevent code injection via `eval()`, `new Function()`  |  ⚠️   |  💡   |  🚫   |
-|  [no-innerhtml](./docs/rules/no-innerhtml.md)                                          | General |  General  |     XSS Prevention     |   CWE-79   |  A03:2021  |  6.1          |        Prevent XSS via `innerHTML`, `outerHTML`         |  ⚠️   |  💡   |
-|  [require-postmessage-origin-check](./docs/rules/require-postmessage-origin-check.md)  | General |  General  |  postMessage Security  |  CWE-346   |  A01:2021  |  8.8          |    Require origin validation in postMessage handlers    |  ⚠️   |   �   |   �   |
-|  [no-postmessage-wildcard-origin](./docs/rules/no-postmessage-wildcard-origin.md)      | General |  General  |  postMessage Security  |  CWE-346   |  A01:2021  |  8.8          |      Prevent wildcard targetOrigin in postMessage       |  ⚠️   |   �   |   �   |
-|  [no-postmessage-innerhtml](./docs/rules/no-postmessage-innerhtml.md)                  | General |  General  |  postMessage Security  |   CWE-79   |  A03:2021  |  6.1          |    Prevent XSS via innerHTML in postMessage handlers    |  ⚠️   |
-|  [no-sensitive-localstorage](./docs/rules/no-sensitive-localstorage.md)                | General |  General  |    Storage Security    |  CWE-922   |  A02:2021  |  7.5          |         Prevent sensitive data in localStorage          |  💼   |  ⚠️   |  💡   |
-|  [no-sensitive-sessionstorage](./docs/rules/no-sensitive-sessionstorage.md)            | General |  General  |    Storage Security    |  CWE-922   |  A02:2021  |  7.5          |        Prevent sensitive data in sessionStorage         |  💼   |  ⚠️   |  💡   |
-|  [no-sensitive-indexeddb](./docs/rules/no-sensitive-indexeddb.md)                      | General |  General  |    Storage Security    |  CWE-922   |  A02:2021  |  7.5          |           Prevent sensitive data in IndexedDB           |  💼   |  ⚠️   |  💡   |
-|  [no-jwt-in-storage](./docs/rules/no-jwt-in-storage.md)                                | General |  General  |    Storage Security    |  CWE-922   |  A02:2021  |  7.5          |          Prevent JWT tokens in browser storage          |  💼   |  ⚠️   |  💡   |
-|  [no-sensitive-cookie-js](./docs/rules/no-sensitive-cookie-js.md)                      | General |  General  |    Cookie Security     |  CWE-1004  |  A02:2021  |  5.3          |        Prevent sensitive data in cookies via JS         |  💼   |  ⚠️   |  💡   |
-|  [no-cookie-auth-tokens](./docs/rules/no-cookie-auth-tokens.md)                        | General |  General  |    Cookie Security     |  CWE-1004  |  A02:2021  |  5.3          |      Prevent auth tokens in JS-accessible cookies       |  💼   |  ⚠️   |  💡   |
-|  [require-cookie-secure-attrs](./docs/rules/require-cookie-secure-attrs.md)            | General |  General  |    Cookie Security     |  CWE-614   |  A05:2021  |  5.3          |         Require Secure and SameSite attributes          |  ⚠️   |  🚫   |
-|  [require-websocket-wss](./docs/rules/require-websocket-wss.md)                        | General |  General  |   WebSocket Security   |  CWE-319   |  A02:2021  |  7.5          |            Require secure WebSocket (wss://)            |  💼   |  ⚠️   |  💡   |  🚫   |
-|  [no-websocket-innerhtml](./docs/rules/no-websocket-innerhtml.md)                      | General |  General  |   WebSocket Security   |   CWE-79   |  A03:2021  |  6.1          |            Prevent XSS in WebSocket handlers            |  💼   |  ⚠️   |  💡   |
-|  [no-websocket-eval](./docs/rules/no-websocket-eval.md)                                | General |  General  |   WebSocket Security   |   CWE-95   |  A03:2021  |  9.8          |            Prevent RCE in WebSocket handlers            |  💼   |  ⚠️   |  💡   |
-|  [no-filereader-innerhtml](./docs/rules/no-filereader-innerhtml.md)                    | General |  General  |   File API & Workers   |   CWE-79   |  A03:2021  |  6.1          |            Prevent XSS with FileReader data             |  💼   |  ⚠️   |  💡   |
-|  [require-blob-url-revocation](./docs/rules/require-blob-url-revocation.md)            | General |  General  |   File API & Workers   |  CWE-401   |  A04:2021  |  5.3          |               Require revoking Blob URLs                |  ⚠️   |  💡   |
-|  [no-dynamic-service-worker-url](./docs/rules/no-dynamic-service-worker-url.md)        | General |  General  |   File API & Workers   |  CWE-829   |  A08:2021  |  7.5          |           Prevent dynamic service worker URLs           |  💼   |  ⚠️   |  💡   |
-|  [no-worker-message-innerhtml](./docs/rules/no-worker-message-innerhtml.md)            | General |  General  |   File API & Workers   |   CWE-79   |  A03:2021  |  6.1          |             Prevent XSS in Worker handlers              |  💼   |  ⚠️   |
-|  [no-unsafe-inline-csp](./docs/rules/no-unsafe-inline-csp.md)                          | General |  General  |      CSP Security      |   CWE-79   |  A03:2021  |  6.1          |             Disallow 'unsafe-inline' in CSP             |  💼   |  ⚠️   |  💡   |
-|  [no-unsafe-eval-csp](./docs/rules/no-unsafe-eval-csp.md)                              | General |  General  |      CSP Security      |   CWE-95   |  A03:2021  |  9.8          |              Disallow 'unsafe-eval' in CSP              |  💼   |  ⚠️   |  💡   |
+
+| Rule                                                                                 | Tag     |   CWE   |        OWASP         |   CVSS   | Description |     💼      |                          ⚠️                           | 🔧  | 💡  | 🚫  |
+| :----------------------------------------------------------------------------------- | :------ | :-----: | :------------------: | :------: | :---------- | :---------: | :---------------------------------------------------: | :-: | :-: | :-: | --- | --- |
+| Rule                                                                                 | General |   Tag   |         CWE          |  OWASP   | CVSS        | Description |                          💼                           | ⚠️  | 🔧  | 💡  | 🚫  |
+| Rule                                                                                 | General | General |         Tag          |   CWE    | OWASP       |    CVSS     |                      Description                      | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| [no-eval](./docs/rules/no-eval.md)                                                   | General | General |    XSS Prevention    |  CWE-95  | A03:2021    |     9.8     | Prevent code injection via `eval()`, `new Function()` | ⚠️  | 💡  | 🚫  |
+| [no-innerhtml](./docs/rules/no-innerhtml.md)                                         | General | General |    XSS Prevention    |  CWE-79  | A03:2021    |     6.1     |       Prevent XSS via `innerHTML`, `outerHTML`        | ⚠️  | 💡  |
+| [require-postmessage-origin-check](./docs/rules/require-postmessage-origin-check.md) | General | General | postMessage Security | CWE-346  | A01:2021    |     8.8     |   Require origin validation in postMessage handlers   | ⚠️  |  �  |  �  |
+| [no-postmessage-wildcard-origin](./docs/rules/no-postmessage-wildcard-origin.md)     | General | General | postMessage Security | CWE-346  | A01:2021    |     8.8     |     Prevent wildcard targetOrigin in postMessage      | ⚠️  |  �  |  �  |
+| [no-postmessage-innerhtml](./docs/rules/no-postmessage-innerhtml.md)                 | General | General | postMessage Security |  CWE-79  | A03:2021    |     6.1     |   Prevent XSS via innerHTML in postMessage handlers   | ⚠️  |
+| [no-sensitive-localstorage](./docs/rules/no-sensitive-localstorage.md)               | General | General |   Storage Security   | CWE-922  | A02:2021    |     7.5     |        Prevent sensitive data in localStorage         | 💼  | ⚠️  | 💡  |
+| [no-sensitive-sessionstorage](./docs/rules/no-sensitive-sessionstorage.md)           | General | General |   Storage Security   | CWE-922  | A02:2021    |     7.5     |       Prevent sensitive data in sessionStorage        | 💼  | ⚠️  | 💡  |
+| [no-sensitive-indexeddb](./docs/rules/no-sensitive-indexeddb.md)                     | General | General |   Storage Security   | CWE-922  | A02:2021    |     7.5     |          Prevent sensitive data in IndexedDB          | 💼  | ⚠️  | 💡  |
+| [no-jwt-in-storage](./docs/rules/no-jwt-in-storage.md)                               | General | General |   Storage Security   | CWE-922  | A02:2021    |     7.5     |         Prevent JWT tokens in browser storage         | 💼  | ⚠️  | 💡  |
+| [no-sensitive-cookie-js](./docs/rules/no-sensitive-cookie-js.md)                     | General | General |   Cookie Security    | CWE-1004 | A02:2021    |     5.3     |       Prevent sensitive data in cookies via JS        | 💼  | ⚠️  | 💡  |
+| [no-cookie-auth-tokens](./docs/rules/no-cookie-auth-tokens.md)                       | General | General |   Cookie Security    | CWE-1004 | A02:2021    |     5.3     |     Prevent auth tokens in JS-accessible cookies      | 💼  | ⚠️  | 💡  |
+| [require-cookie-secure-attrs](./docs/rules/require-cookie-secure-attrs.md)           | General | General |   Cookie Security    | CWE-614  | A05:2021    |     5.3     |        Require Secure and SameSite attributes         | ⚠️  | 🚫  |
+| [require-websocket-wss](./docs/rules/require-websocket-wss.md)                       | General | General |  WebSocket Security  | CWE-319  | A02:2021    |     7.5     |           Require secure WebSocket (wss://)           | 💼  | ⚠️  | 💡  | 🚫  |
+| [no-websocket-innerhtml](./docs/rules/no-websocket-innerhtml.md)                     | General | General |  WebSocket Security  |  CWE-79  | A03:2021    |     6.1     |           Prevent XSS in WebSocket handlers           | 💼  | ⚠️  | 💡  |
+| [no-websocket-eval](./docs/rules/no-websocket-eval.md)                               | General | General |  WebSocket Security  |  CWE-95  | A03:2021    |     9.8     |           Prevent RCE in WebSocket handlers           | 💼  | ⚠️  | 💡  |
+| [no-filereader-innerhtml](./docs/rules/no-filereader-innerhtml.md)                   | General | General |  File API & Workers  |  CWE-79  | A03:2021    |     6.1     |           Prevent XSS with FileReader data            | 💼  | ⚠️  | 💡  |
+| [require-blob-url-revocation](./docs/rules/require-blob-url-revocation.md)           | General | General |  File API & Workers  | CWE-401  | A04:2021    |     5.3     |              Require revoking Blob URLs               | ⚠️  | 💡  |
+| [no-dynamic-service-worker-url](./docs/rules/no-dynamic-service-worker-url.md)       | General | General |  File API & Workers  | CWE-829  | A08:2021    |     7.5     |          Prevent dynamic service worker URLs          | 💼  | ⚠️  | 💡  |
+| [no-worker-message-innerhtml](./docs/rules/no-worker-message-innerhtml.md)           | General | General |  File API & Workers  |  CWE-79  | A03:2021    |     6.1     |            Prevent XSS in Worker handlers             | 💼  | ⚠️  |
+| [no-unsafe-inline-csp](./docs/rules/no-unsafe-inline-csp.md)                         | General | General |     CSP Security     |  CWE-79  | A03:2021    |     6.1     |            Disallow 'unsafe-inline' in CSP            | 💼  | ⚠️  | 💡  |
+| [no-unsafe-eval-csp](./docs/rules/no-unsafe-eval-csp.md)                             | General | General |     CSP Security     |  CWE-95  | A03:2021    |     9.8     |             Disallow 'unsafe-eval' in CSP             | 💼  | ⚠️  | 💡  |
 
 ## 🔍 Detection Examples
 
