@@ -35,14 +35,14 @@ const config = {
   },
 
   // Enable experimental optimizations
+  turbo: {
+    resolveAlias: {
+      'motion/react': 'motion',
+    },
+  },
   experimental: {
     optimizePackageImports: ['lucide-react', 'motion', 'motion/react', 'fumadocs-ui', 'fumadocs-core'],
     webVitalsAttribution: ['CLS', 'LCP', 'FID', 'INP', 'TTFB'],
-    turbo: {
-      resolveAlias: {
-        'motion/react': 'motion',
-      },
-    },
   },
 
   // Webpack optimizations for production builds (fallback)

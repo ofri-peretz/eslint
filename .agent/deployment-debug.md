@@ -64,5 +64,17 @@ The error `ERR_INVALID_THIS` when fetching packages with `pnpm` typically indica
 
 ### Project Naming (User Request)
 
-- **User Request**: Rename Vercel project from `eslint` to `eslint-interlace-tools-docs` to reflect monorepo structure.
-- **Plan**: Stabilize the deployment first (get a green build), then address project renaming/aliasing.
+### Actions Taken (Round 5)
+
+- **Deployment Monitoring**:
+  - Deployment `eslint-q0cgargo9-ofri-peretz` is currently **Building** (2m+).
+  - This build includes the lockfile sync, so it should pass the installation phase.
+
+### Project Naming (User Request)
+
+- **User Request**: Rename Vercel project to `eslint-interlace-docs`.
+- **Constraint**: Renaming a Vercel project is a platform-side action that preserves analytics, environment variables, and domains.
+- **Action**:
+  - **Option 1 (Recommended)**: Go to Vercel Dashboard -> Project `eslint` -> Settings -> General -> Project Name -> Change to `eslint-interlace-docs`.
+  - **Option 2 (CLI)**: I can run `vercel link` to connect this local folder to a _new_ or existing project named `eslint-interlace-docs`. This does NOT rename the old one, it just switches the local pointer.
+- **Decision**: Waiting for current build (`eslint-q0cgargo9...`) to finish to confirm stability before advising on rename. The git connection (`ofri-peretz/eslint`) is already correct.
