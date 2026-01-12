@@ -88,7 +88,19 @@ This document defines the strict structure and content requirements for all ESLi
 
 ### 8. Configuration Presets (Optional)
 
-- **Constraint**: Keep it concise. A small table with `Preset` and `Description`.
+- **Constraint**: Strict 2-column table: `Preset` and `Description`.
+- **Source of Truth**: The `configs` export in `src/index.ts` of the respective package.
+- **Process**: Review the plugin's `src/index.ts` (specifically `export const configs`) to identify available presets (e.g., `recommended`, `strict`, `all`) and their inline comments/descriptions.
+- **Format**:
+
+  ```markdown
+  ## ⚙️ Configuration Presets
+
+  | Preset        | Description                                                 |
+  | :------------ | :---------------------------------------------------------- |
+  | `recommended` | Balanced security profile for most applications.            |
+  | `strict`      | Maximum security settings (may require more configuration). |
+  ```
 
 ### 9. Supported Libraries (Optional)
 
@@ -98,7 +110,7 @@ This document defines the strict structure and content requirements for all ESLi
 ### 10. AI-Optimized Messages
 
 - **Content**: An example block showing the structured error format (CWE, OWASP, Fix, Link).
-- **Goal**: Demonstrate the value for AI assistants (Copilot, Cursor).
+- **Goal**: Demonstrate the value for AI assistants (Copilot, Cursor) with a concise 1-sentence explanation.
 - **Requirement**: Must include a brief explanation **below** the code block detailing _why_ this format is optimized (e.g., "This structure enables AI agents to verify...").
 - **Placement**: Lower section, before Rules.
 
@@ -110,6 +122,7 @@ This document defines the strict structure and content requirements for all ESLi
   - **Rule Name**: Must be a link to the official documentation: `[rule-name](https://eslint.interlace.tools/docs/PLUGIN/rules/rule-name)`.
   - **No Tag Column**: Categorization is handled by metadata (CWE/OWASP).
   - **Clean Data**: **No** header artifacts (rows named "Rule" or "Plugin").
+  - **Exclusions**: Rows with "OWASP", "Library", "CWE", "CVSS" in the Rule Name column are considered header artifacts and MUST be stripped.
 
 ### 12. Related Plugins
 
@@ -139,6 +152,27 @@ This document defines the strict structure and content requirements for all ESLi
 - **Security Research Coverage**: Do NOT include dedicated sections for specific CVEs or research papers unless critical. (Dropped 2026-01-11).
 - **References**: Do NOT list raw reference links; these belong in the official documentation site. Users should be directed to the docs for deep dives.
 - **Rule Details**: **No** verbose rule descriptions or code examples in the README. Keep it high-level.
+
+## Governed Documents
+
+This standard applies to the following 16 plugins:
+
+- `packages/eslint-plugin-architecture/README.md`
+- `packages/eslint-plugin-browser-security/README.md`
+- `packages/eslint-plugin-crypto/README.md`
+- `packages/eslint-plugin-express-security/README.md`
+- `packages/eslint-plugin-import-next/README.md`
+- `packages/eslint-plugin-jwt/README.md`
+- `packages/eslint-plugin-lambda-security/README.md`
+- `packages/eslint-plugin-mongodb-security/README.md`
+- `packages/eslint-plugin-nestjs-security/README.md`
+- `packages/eslint-plugin-pg/README.md`
+- `packages/eslint-plugin-quality/README.md`
+- `packages/eslint-plugin-react-a11y/README.md`
+- `packages/eslint-plugin-react-features/README.md`
+- `packages/eslint-plugin-secure-coding/README.md`
+- `packages/eslint-plugin-vercel-ai-security/README.md`
+- `packages/eslint-devkit/README.md` (Partial applicability)
 
 ## Maintenance
 
