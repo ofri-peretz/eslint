@@ -39,12 +39,6 @@ const config = {
     minimumCacheTTL: 31536000, 
   },
 
-  // Enable experimental optimizations
-  turbo: {
-    resolveAlias: {
-      'motion/react': 'motion',
-    },
-  },
   experimental: {
     optimizePackageImports: ['lucide-react', 'motion', 'motion/react', 'fumadocs-ui', 'fumadocs-core'],
     webVitalsAttribution: ['CLS', 'LCP', 'FID', 'INP', 'TTFB'],

@@ -1,7 +1,6 @@
 # no-children-prop
 
 > **Keywords:** React, children, props, composition, ESLint rule, best practices, LLM-optimized
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Prevent passing `children` as a prop. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
 
@@ -67,45 +66,6 @@ Passing `children` as a prop instead of nesting is less readable and can cause i
 ## Related Rules
 
 - [`jsx-key`](./jsx-key.md) - Keys in children lists
-
-## Known False Negatives
-
-The following patterns are **not detected** due to static analysis limitations:
-
-### Values from Variables
-
-**Why**: Static analysis cannot trace values stored in variables.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = userInput;
-dangerousOperation(value);
-```
-
-**Mitigation**: Implement runtime validation and review code manually.
-
-### Custom Wrapper Functions
-
-**Why**: Custom wrapper functions are not recognized.
-
-```typescript
-// ❌ NOT DETECTED - Custom wrapper
-myCustomWrapper(sensitiveData); // Uses insecure API internally
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations.
-
-### Dynamic Property Access
-
-**Why**: Dynamic property access cannot be statically analyzed.
-
-```typescript
-// ❌ NOT DETECTED - Dynamic access
-obj[methodName](data);
-```
-
-**Mitigation**: Avoid dynamic method invocation with sensitive operations.
-
 
 ## Further Reading
 

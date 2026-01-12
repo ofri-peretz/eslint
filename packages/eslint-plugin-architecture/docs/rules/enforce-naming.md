@@ -1,7 +1,6 @@
 # enforce-naming
 
 > **Keywords:** naming conventions, domain-driven design, DDD, ESLint rule, ubiquitous language, business glossary, code consistency, auto-fix, LLM-optimized, code quality
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Enforce domain-specific naming conventions with business context. This rule is part of [`@eslint/eslint-plugin-architecture`](https://www.npmjs.com/package/@eslint/eslint-plugin-architecture) and provides LLM-optimized error messages with fix suggestions.
 
@@ -352,45 +351,6 @@ When `glossaryUrl` is provided, the rule messages include a link to your busines
 4. **Use examples**: Show concrete usage examples
 5. **Link to glossary**: Maintain a central glossary document
 6. **Gradual adoption**: Start with warnings, move to errors over time
-
-## Known False Negatives
-
-The following patterns are **not detected** due to static analysis limitations:
-
-### Values from Variables
-
-**Why**: Static analysis cannot trace values stored in variables.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = userInput;
-dangerousOperation(value);
-```
-
-**Mitigation**: Implement runtime validation and review code manually.
-
-### Custom Wrapper Functions
-
-**Why**: Custom wrapper functions are not recognized.
-
-```typescript
-// ❌ NOT DETECTED - Custom wrapper
-myCustomWrapper(sensitiveData); // Uses insecure API internally
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations.
-
-### Dynamic Property Access
-
-**Why**: Dynamic property access cannot be statically analyzed.
-
-```typescript
-// ❌ NOT DETECTED - Dynamic access
-obj[methodName](data);
-```
-
-**Mitigation**: Avoid dynamic method invocation with sensitive operations.
-
 
 ## Further Reading
 

@@ -1,7 +1,6 @@
 # no-unhandled-promise
 
 > **Keywords:** unhandled promise, promise rejection, async error handling, Promise, async/await, error handling, Node.js, JavaScript promises, async patterns, promise chains, try/catch, await, error propagation, CWE-1024, SonarQube RSPEC-4635
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling. This rule detects promises that are created but never have their rejection handled, preventing silent failures in production applications.
 
@@ -239,45 +238,6 @@ process.on('unhandledRejection', (reason, promise) => {
 
 - [`no-silent-errors`](./no-silent-errors.md) - Detects empty catch blocks
 - [`no-missing-error-context`](./no-missing-error-context.md) - Requires error context information
-
-## Known False Negatives
-
-The following patterns are **not detected** due to static analysis limitations:
-
-### Values from Variables
-
-**Why**: Static analysis cannot trace values stored in variables.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = userInput;
-dangerousOperation(value);
-```
-
-**Mitigation**: Implement runtime validation and review code manually.
-
-### Custom Wrapper Functions
-
-**Why**: Custom wrapper functions are not recognized.
-
-```typescript
-// ❌ NOT DETECTED - Custom wrapper
-myCustomWrapper(sensitiveData); // Uses insecure API internally
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations.
-
-### Dynamic Property Access
-
-**Why**: Dynamic property access cannot be statically analyzed.
-
-```typescript
-// ❌ NOT DETECTED - Dynamic access
-obj[methodName](data);
-```
-
-**Mitigation**: Avoid dynamic method invocation with sensitive operations.
-
 
 ## Further Reading
 

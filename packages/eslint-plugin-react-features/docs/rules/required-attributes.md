@@ -1,7 +1,6 @@
 # required-attributes
 
 > **Keywords:** React, accessibility, ESLint rule, required attributes, aria attributes, React props, auto-fix, LLM-optimized, React accessibility
-**CWE:** [CWE-494](https://cwe.mitre.org/data/definitions/494.html)
 
 Enforce required attributes on React components with customizable ignore lists. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features) and provides LLM-optimized error messages with fix suggestions.
 
@@ -135,45 +134,6 @@ Ensures React components have required attributes (e.g., accessibility attribute
 - [`img-requires-alt`](./img-requires-alt.md) - Specific img alt enforcement
 - [`react-no-inline-functions`](./react-no-inline-functions.md) - React performance optimization
 - [`react-class-to-hooks`](./react-class-to-hooks.md) - React modernization
-
-## Known False Negatives
-
-The following patterns are **not detected** due to static analysis limitations:
-
-### Values from Variables
-
-**Why**: Static analysis cannot trace values stored in variables.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = userInput;
-dangerousOperation(value);
-```
-
-**Mitigation**: Implement runtime validation and review code manually.
-
-### Custom Wrapper Functions
-
-**Why**: Custom wrapper functions are not recognized.
-
-```typescript
-// ❌ NOT DETECTED - Custom wrapper
-myCustomWrapper(sensitiveData); // Uses insecure API internally
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations.
-
-### Dynamic Property Access
-
-**Why**: Dynamic property access cannot be statically analyzed.
-
-```typescript
-// ❌ NOT DETECTED - Dynamic access
-obj[methodName](data);
-```
-
-**Mitigation**: Avoid dynamic method invocation with sensitive operations.
-
 
 ## Further Reading
 

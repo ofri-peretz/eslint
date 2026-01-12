@@ -1,7 +1,6 @@
 # no-unescaped-entities
 
 > **Keywords:** React, JSX, entities, quotes, apostrophe, ESLint rule, HTML, LLM-optimized
-**CWE:** [CWE-116](https://cwe.mitre.org/data/definitions/116.html)
 
 Detect unescaped HTML entities in JSX. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
 
@@ -79,45 +78,6 @@ Characters like `>`, `"`, `'`, `}` have special meaning in JSX and must be escap
 ## Related Rules
 
 - [`no-danger`](./no-danger.md) - HTML injection safety
-
-## Known False Negatives
-
-The following patterns are **not detected** due to static analysis limitations:
-
-### Values from Variables
-
-**Why**: Static analysis cannot trace values stored in variables.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = userInput;
-dangerousOperation(value);
-```
-
-**Mitigation**: Implement runtime validation and review code manually.
-
-### Custom Wrapper Functions
-
-**Why**: Custom wrapper functions are not recognized.
-
-```typescript
-// ❌ NOT DETECTED - Custom wrapper
-myCustomWrapper(sensitiveData); // Uses insecure API internally
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations.
-
-### Dynamic Property Access
-
-**Why**: Dynamic property access cannot be statically analyzed.
-
-```typescript
-// ❌ NOT DETECTED - Dynamic access
-obj[methodName](data);
-```
-
-**Mitigation**: Avoid dynamic method invocation with sensitive operations.
-
 
 ## Further Reading
 

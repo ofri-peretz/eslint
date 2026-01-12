@@ -175,7 +175,6 @@ async function main() {
   console.log('\nRule sync complete.');
 }
 
-export { convertMdToMdx, updateMetaJson, PLUGIN_MAPPINGS };
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   main().catch((err) => {

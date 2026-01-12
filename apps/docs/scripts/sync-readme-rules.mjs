@@ -317,8 +317,6 @@ async function main() {
   }
 }
 
-export { parseRulesTable, extractRulesSection, processPlugin, PLUGIN_MAPPINGS };
-
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   main().catch((err) => {
     console.error(err);

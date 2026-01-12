@@ -1,7 +1,6 @@
 # react-no-inline-functions
 
 > **Keywords:** React, performance, ESLint rule, inline functions, useCallback, React optimization, re-renders, auto-fix, LLM-optimized, React performance
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Prevent inline functions in React renders with performance metrics. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features) and provides LLM-optimized error messages with fix suggestions.
 
@@ -142,45 +141,6 @@ For more examples and patterns, see [CONFIGURATION_EXAMPLES.md](../../src/types/
 - [`react-class-to-hooks`](./react-class-to-hooks.md) - Migration to hooks
 - [`required-attributes`](./required-attributes.md) - React attribute enforcement
 - [`img-requires-alt`](./img-requires-alt.md) - Image accessibility
-
-## Known False Negatives
-
-The following patterns are **not detected** due to static analysis limitations:
-
-### Values from Variables
-
-**Why**: Static analysis cannot trace values stored in variables.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = userInput;
-dangerousOperation(value);
-```
-
-**Mitigation**: Implement runtime validation and review code manually.
-
-### Custom Wrapper Functions
-
-**Why**: Custom wrapper functions are not recognized.
-
-```typescript
-// ❌ NOT DETECTED - Custom wrapper
-myCustomWrapper(sensitiveData); // Uses insecure API internally
-```
-
-**Mitigation**: Apply this rule's principles to wrapper function implementations.
-
-### Dynamic Property Access
-
-**Why**: Dynamic property access cannot be statically analyzed.
-
-```typescript
-// ❌ NOT DETECTED - Dynamic access
-obj[methodName](data);
-```
-
-**Mitigation**: Avoid dynamic method invocation with sensitive operations.
-
 
 ## Further Reading
 

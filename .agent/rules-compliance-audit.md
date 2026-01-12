@@ -1,8 +1,11 @@
 # Rule Documentation Compliance Audit Standard
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Date:** January 2026  
-**Purpose:** Standardize rule documentation across all Interlace ESLint plugins
+**Scope:** SECURITY-FOCUSED ESLint plugins only  
+**Purpose:** Standardize security rule documentation with CWE/OWASP/CVSS metadata
+
+> ⚠️ **Important**: This standard applies to **security plugins only** (jwt, crypto, pg, mongodb, express, nestjs, lambda, vercel-ai-security, browser-security, secure-coding). For architectural/quality plugins (import-next, architecture, quality, react-features, react-a11y), use simpler documentation without security metadata.
 
 ---
 
@@ -11,6 +14,8 @@
 1. [Automation Integration](#automation-integration)
 2. [Mandatory Structure](#mandatory-structure)
 3. [Section Requirements](#section-requirements)
+   - [Code Examples](#3-code-examples)
+   - [Known False Negatives](#4-known-false-negatives)
 4. [Style & Formatting](#style--formatting)
 5. [Quality Criteria](#quality-criteria)
 6. [Validation Checklist](#validation-checklist)
@@ -247,7 +252,9 @@ npx tsx scripts/sync-readme-rules.ts
 
 ## Mandatory Structure
 
-All rule documentation files **MUST** follow this exact section order:
+> ⚠️ **This structure is for SECURITY plugins only**. Non-security plugins should omit CWE/OWASP/CVSS/Severity fields.
+
+All **security rule** documentation files **MUST** follow this exact section order:
 
 ```markdown
 # rule-name
@@ -276,6 +283,45 @@ All rule documentation files **MUST** follow this exact section order:
 ## 📚 References | Further Reading (optional)
 ```
 
+### For Non-Security Plugins
+
+Architectural/quality plugins (import-next, architecture, quality, react-features, react-a11y) should use a simplified structure **without** CWE/OWASP/CVSS metadata, but **MUST still include Known False Negatives**:
+
+````markdown
+# rule-name
+
+> Short description (1 sentence)
+
+## Rule Details
+
+## ❌ Incorrect (optional - add if helpful)
+
+## ✅ Correct (optional - add if helpful)
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### [Pattern Category]
+
+**Why**: [Explanation]
+
+```typescript
+// ❌ NOT DETECTED - [explanation]
+[code example]
+```
+````
+
+**Mitigation**: [How developers can work around this limitation]
+
+## Options (if configurable)
+
+## Related Rules (optional)
+
+````
+
+> **Note**: Per `.agent/workflows/fn-documentation.md`, **all rules must include Known False Negatives documentation** to ensure transparency with users about static analysis limitations.
+
 ---
 
 ## Section Requirements
@@ -296,9 +342,9 @@ All rule documentation files **MUST** follow this exact section order:
 
 > Require strong secrets (256+ bits) for HMAC-based JWT signing
 
-**Severity:** 🟠 HIGH  
+**Severity:** 🟠 HIGH
 **CWE:** [CWE-326](https://cwe.mitre.org/data/definitions/326.html)
-```
+````
 
 ```markdown
 # no-dynamic-system-prompt
