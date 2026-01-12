@@ -1,101 +1,66 @@
 # require-code-minification
 
-> Security rule for mobile applications
+> Require minification configuration
 
-## Error Message Format
-
-The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
-
-```text
-⚠️ CWE-656 OWASP:A06 CVSS:5.3 | Reliance on Security Through Obscurity detected | MEDIUM
-   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
-```
-
-### Message Components
-
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-656](https://cwe.mitre.org/data/definitions/656.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:5.3](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description** | Specific vulnerability | `Reliance on Security Through Obscurity detected` |
-| **Severity & Compliance** | Impact assessment | `MEDIUM` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/) |
+**Severity:** 🟠 HIGH  
+**CWE:** [CWE-656](https://cwe.mitre.org/data/definitions/656.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10 M7](https://owasp.org/www-project-mobile-top-10/)
 
 ## Rule Details
 
-This rule security rule for mobile applications.
+This rule detects security violations related to Require minification configuration.
 
-**OWASP Mobile Top 10:** Mobile  
-**CWE:** [CWE-656](https://cwe.mitre.org/data/definitions/000.html)  
-**Severity:** error
+## ❌ Incorrect
 
-## Examples
-
-### ❌ Incorrect
-
-```javascript
-// Insecure pattern
+```typescript
+// Example of insecure pattern detected by this rule
+// TODO: Add specific examples based on implementation
 ```
 
-### ✅ Correct
+## ✅ Correct
 
-```javascript
-// Secure pattern
+```typescript
+// Example of secure pattern  
+// TODO: Add specific examples based on implementation
 ```
-
-## When Not To Use It
-
-This rule should be enabled for all mobile and web applications to ensure security best practices.
 
 ## Known False Negatives
-
-The following patterns are **not detected** due to static analysis limitations:
 
 ### Values from Variables
 
 **Why**: Values stored in variables are not traced.
 
 ```typescript
-// ❌ NOT DETECTED - Value from variable
+// ❌ NOT DETECTED
 const value = userInput;
-dangerousOperation(value);
+operation(value);
 ```
 
-**Mitigation**: Validate all user inputs.
+**Mitigation**: Review code manually for security patterns.
 
-### Wrapper Functions
+### Dynamic Patterns
 
-**Why**: Custom wrappers not recognized.
+**Why**: Dynamic code paths cannot be statically analyzed.
 
 ```typescript
-// ❌ NOT DETECTED - Wrapper
-myWrapper(userInput); // Uses dangerous API internally
+// ❌ NOT DETECTED
+obj[method](data);
 ```
 
-**Mitigation**: Apply rule to wrapper implementations.
+**Mitigation**: Avoid dynamic invocation with sensitive data.
 
-### Dynamic Invocation
+### Third-Party Libraries
 
-**Why**: Dynamic calls not analyzed.
+**Why**: External library implementations are not analyzed.
 
 ```typescript
-// ❌ NOT DETECTED - Dynamic
-obj[method](userInput);
+// ❌ NOT DETECTED
+library.operation(sensitiveData);
 ```
 
-**Mitigation**: Avoid dynamic method invocation.
+**Mitigation**: Review third-party library security documentation.
 
-## Further Reading
+## References
 
+- [CWE-656](https://cwe.mitre.org/data/definitions/656.html)
 - [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
-- [CWE-656 Details](https://cwe.mitre.org/data/definitions/000.html)
-
-## Related Rules
-
-- See other mobile security rules in this plugin
-
----
-
-**Category:** Mobile Security  
-**Type:** Problem  
-**Recommended:** Yes

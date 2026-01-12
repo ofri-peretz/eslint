@@ -1,82 +1,66 @@
 # require-secure-deletion
 
-> Security rule for mobile applications
+> Require secure data deletion patterns
+
+**Severity:** 🟠 HIGH  
+**CWE:** [CWE-459](https://cwe.mitre.org/data/definitions/459.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10 M9](https://owasp.org/www-project-mobile-top-10/)
 
 ## Rule Details
 
-This rule security rule for mobile applications.
+This rule detects security violations related to Require secure data deletion patterns.
 
-**OWASP Mobile Top 10:** Mobile  
-**CWE:** [CWE-459](https://cwe.mitre.org/data/definitions/000.html)  
-**Severity:** error
+## ❌ Incorrect
 
-## Examples
-
-### ❌ Incorrect
-
-```javascript
-// Insecure pattern
+```typescript
+// Example of insecure pattern detected by this rule
+// TODO: Add specific examples based on implementation
 ```
 
-### ✅ Correct
+## ✅ Correct
 
-```javascript
-// Secure pattern
+```typescript
+// Example of secure pattern  
+// TODO: Add specific examples based on implementation
 ```
-
-## When Not To Use It
-
-This rule should be enabled for all mobile and web applications to ensure security best practices.
 
 ## Known False Negatives
-
-The following patterns are **not detected** due to static analysis limitations:
 
 ### Values from Variables
 
 **Why**: Values stored in variables are not traced.
 
 ```typescript
-// ❌ NOT DETECTED - Value from variable
+// ❌ NOT DETECTED
 const value = userInput;
-dangerousOperation(value);
+operation(value);
 ```
 
-**Mitigation**: Validate all user inputs.
+**Mitigation**: Review code manually for security patterns.
 
-### Wrapper Functions
+### Dynamic Patterns
 
-**Why**: Custom wrappers not recognized.
+**Why**: Dynamic code paths cannot be statically analyzed.
 
 ```typescript
-// ❌ NOT DETECTED - Wrapper
-myWrapper(userInput); // Uses dangerous API internally
+// ❌ NOT DETECTED
+obj[method](data);
 ```
 
-**Mitigation**: Apply rule to wrapper implementations.
+**Mitigation**: Avoid dynamic invocation with sensitive data.
 
-### Dynamic Invocation
+### Third-Party Libraries
 
-**Why**: Dynamic calls not analyzed.
+**Why**: External library implementations are not analyzed.
 
 ```typescript
-// ❌ NOT DETECTED - Dynamic
-obj[method](userInput);
+// ❌ NOT DETECTED
+library.operation(sensitiveData);
 ```
 
-**Mitigation**: Avoid dynamic method invocation.
+**Mitigation**: Review third-party library security documentation.
 
-## Further Reading
+## References
 
+- [CWE-459](https://cwe.mitre.org/data/definitions/459.html)
 - [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
-- [CWE-459 Details](https://cwe.mitre.org/data/definitions/000.html)
-
-## Related Rules
-
-- See other mobile security rules in this plugin
-
----
-
-**Category:** Mobile Security  
-**Type:** Problem  
-**Recommended:** Yes
