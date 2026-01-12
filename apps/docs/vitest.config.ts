@@ -14,10 +14,11 @@ export default defineConfig({
   plugins: [],
   test: {
     globals: true,
-    environment: 'node',
+    environment: 'jsdom', // Changed from 'node' to support React component testing
     watch: false,
     include: [
       'tests/**/*.test.ts',
+      'tests/**/*.test.tsx', // Include TSX test files
     ],
     exclude: [],
     passWithNoTests: true,

@@ -18,7 +18,8 @@ function formatDate(dateString: string): string {
 }
 
 export function DevToArticleCard({ article }: DevToArticleCardProps) {
-  const image = article.cover_image || article.social_image;
+  // Ensure we only use valid image URLs (not empty strings or null)
+  const image = (article.cover_image?.trim() || article.social_image?.trim()) || null;
 
   return (
     <a
@@ -31,7 +32,7 @@ export function DevToArticleCard({ article }: DevToArticleCardProps) {
         
         {/* SECTION 1: THUMBNAIL IMAGE */}
         <div className="relative h-52 w-full shrink-0 overflow-hidden">
-          {image && image.length > 0 ? (
+          {image ? (
             <img
               src={image}
               alt=""

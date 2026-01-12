@@ -209,7 +209,7 @@ export async function GET(request: Request) {
     // Authenticated endpoint returns full stats including page_views_count
     // Falls back to public API (no views) if no API key
     const endpoint = apiKey
-      ? 'https://dev.to/api/articles/me/published?per_page=100'
+      ? 'https://dev.to/api/articles/me/all?per_page=100'
       : 'https://dev.to/api/articles?username=ofri-peretz&per_page=100';
 
     const response = await fetch(endpoint, {
