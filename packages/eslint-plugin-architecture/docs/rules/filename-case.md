@@ -187,4 +187,33 @@ src/
 - **[Naming Conventions](https://google.github.io/styleguide/tsguide.html#naming-style)** - Google TypeScript Style Guide
 - **[eslint-plugin-unicorn filename-case](https://github.com/sindresorhus/eslint-plugin-unicorn/blob/main/docs/rules/filename-case.md)** - Unicorn's implementation
 - **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Dynamic Variable References
+
+**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const value = externalSource();
+processValue(value); // Variable origin not tracked
+```
+
+**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
+
+### Imported Values
+
+**Why**: When values come from imports, the rule cannot analyze their origin or construction.
+
+```typescript
+// ❌ NOT DETECTED - Value from import
+import { getValue } from './helpers';
+processValue(getValue()); // Cross-file not tracked
+```
+
+**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+
+
 

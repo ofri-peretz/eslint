@@ -103,4 +103,47 @@ process.exit(exitCode);
 
 - **[Node.js process.exit()](https://nodejs.org/api/process.html#processexitcode)** - Official docs
 - **[Graceful Shutdown](https://blog.heroku.com/best-practices-nodejs-graceful-shutdown)** - Best practices
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Dynamic Variable References
+
+**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const value = externalSource();
+processValue(value); // Variable origin not tracked
+```
+
+**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
+
+### Wrapped or Aliased Functions
+
+**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
+
+```typescript
+// ❌ NOT DETECTED - Custom wrapper
+function myWrapper(data) {
+  return internalApi(data); // Wrapper not analyzed
+}
+myWrapper(unsafeInput);
+```
+
+**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
+
+### Imported Values
+
+**Why**: When values come from imports, the rule cannot analyze their origin or construction.
+
+```typescript
+// ❌ NOT DETECTED - Value from import
+import { getValue } from './helpers';
+processValue(getValue()); // Cross-file not tracked
+```
+
+**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
+
+
 

@@ -149,4 +149,33 @@ Button.propTypes = {
 
 - **[Default Props](https://react.dev/learn/passing-props-to-a-component#specifying-default-values-for-props)** - React docs
 - **[PropTypes Validation](https://react.dev/reference/react/Component#static-proptypes)** - Type checking
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Dynamic Variable References
+
+**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
+
+```typescript
+// ❌ NOT DETECTED - Prop from variable
+const propValue = computedValue;
+<Component prop={propValue} /> // Computation not analyzed
+```
+
+**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
+
+### Cross-Module Data Flow
+
+**Why**: ESLint rules analyze one file at a time. Values imported from other modules cannot be traced.
+
+```typescript
+// ❌ NOT DETECTED - Value from import
+import { getValue } from './helpers';
+processValue(getValue()); // Cross-file not tracked
+```
+
+**Mitigation**: Apply the same rule to imported modules. Use module boundaries and explicit exports.
+
+
 

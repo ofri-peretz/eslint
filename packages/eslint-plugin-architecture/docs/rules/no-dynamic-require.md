@@ -76,4 +76,47 @@ const plugin = plugins[name];
 ## Further Reading
 
 - **[Webpack Dynamic Imports](https://webpack.js.org/guides/code-splitting/#dynamic-imports)** - Code splitting guide
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Dynamic Variable References
+
+**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const value = externalSource();
+processValue(value); // Variable origin not tracked
+```
+
+**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
+
+### Wrapped or Aliased Functions
+
+**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
+
+```typescript
+// ❌ NOT DETECTED - Custom wrapper
+function myWrapper(data) {
+  return internalApi(data); // Wrapper not analyzed
+}
+myWrapper(unsafeInput);
+```
+
+**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
+
+### Cross-Module Data Flow
+
+**Why**: ESLint rules analyze one file at a time. Values imported from other modules cannot be traced.
+
+```typescript
+// ❌ NOT DETECTED - Value from import
+import { getValue } from './helpers';
+processValue(getValue()); // Cross-file not tracked
+```
+
+**Mitigation**: Apply the same rule to imported modules. Use module boundaries and explicit exports.
+
+
 
