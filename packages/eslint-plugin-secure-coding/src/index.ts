@@ -71,7 +71,6 @@ import { noUnencryptedTransmission } from './rules/no-unencrypted-transmission';
 import { noClickjacking } from './rules/no-clickjacking';
 
 // Security rules - Data Exposure
-import { noExposedSensitiveData } from './rules/no-exposed-sensitive-data';
 import { noSensitiveDataExposure } from './rules/no-sensitive-data-exposure';
 
 // Security rules - Buffer & Memory
@@ -180,7 +179,6 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'no-insecure-redirects': noInsecureRedirects,
   'no-unencrypted-transmission': noUnencryptedTransmission,
   'no-clickjacking': noClickjacking,
-  'no-exposed-sensitive-data': noExposedSensitiveData,
   'no-sensitive-data-exposure': noSensitiveDataExposure,
   'no-buffer-overread': noBufferOverread,
   'no-unlimited-resource-allocation': noUnlimitedResourceAllocation,
@@ -312,7 +310,6 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'secure-coding/no-clickjacking': 'error',
 
   // High - Data Exposure (OWASP A01)
-  'secure-coding/no-exposed-sensitive-data': 'error',
   'secure-coding/no-sensitive-data-exposure': 'warn',
 
   // Medium - Buffer & Memory
@@ -381,7 +378,6 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       // A01:2021 – Broken Access Control
       'secure-coding/no-missing-authentication': 'error',
       'secure-coding/no-privilege-escalation': 'error',
-      'secure-coding/no-exposed-sensitive-data': 'error',
       'secure-coding/no-insecure-redirects': 'error',
       
       // A02:2021 – Cryptographic Failures
@@ -538,7 +534,6 @@ export type {
   NoUnencryptedTransmissionOptions,
   NoClickjackingOptions,
   // Data Exposure
-  NoExposedSensitiveDataOptions,
   NoSensitiveDataExposureOptions,
   // Buffer & Memory
   NoBufferOverreadOptions,

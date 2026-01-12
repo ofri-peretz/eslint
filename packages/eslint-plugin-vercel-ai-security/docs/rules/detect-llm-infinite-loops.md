@@ -1,0 +1,92 @@
+# detect-llm-infinite-loops
+
+Detect potential infinite reasoning loops in LLM agents.
+
+**OWASP LLM Top 10 2025**: LLM10 - Unbounded Consumption  
+**CWE**: [CWE-834](https://cwe.mitre.org/data/definitions/834.html)  
+**Severity**: 🔴 High
+
+## Rule Details
+
+Identifies LLM reasoning loops without iteration limits or timeouts.
+
+### ❌ Incorrect
+
+```typescript
+while (true) {
+  await llm.complete(prompt);
+}
+
+while (reasoning) {
+  await agent.reason();
+}
+```
+
+### ✅ Correct
+
+```typescript
+for (let i = 0; i < MAX_ITERATIONS; i++) {
+  await llm.complete(prompt);
+}
+
+let iteration = 0;
+while (condition && iteration < 10) {
+  await agent.step();
+  iteration++;
+}
+```
+
+## Options
+
+```json
+{
+  "vercel-ai-security/detect-llm-infinite-loops": ["error"]
+}
+```
+
+## Best Practices
+
+Set `maxIterations` for all agent loops. Implement execution timeouts.
+
+## Version
+
+Introduced in v1.0.0
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Prompt from Variable
+
+**Why**: Prompt content from variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Prompt from variable
+const prompt = buildPrompt(userInput);
+await generateText({ prompt });
+```
+
+**Mitigation**: Validate all prompt components.
+
+### Nested Context
+
+**Why**: Deep nesting obscures injection.
+
+```typescript
+// ❌ NOT DETECTED - Nested
+const messages = [{ role: 'user', content: userInput }];
+await chat({ messages });
+```
+
+**Mitigation**: Validate at all levels.
+
+### Custom AI Wrappers
+
+**Why**: Custom AI clients not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom wrapper
+myAI.complete(userPrompt);
+```
+
+**Mitigation**: Apply rule to wrapper implementations.

@@ -70,7 +70,6 @@ import type { Options as NoUnencryptedTransmissionOptions } from '../rules/no-un
 import type { Options as NoClickjackingOptions } from '../rules/no-clickjacking';
 
 // Data Exposure Rules
-import type { Options as NoExposedSensitiveDataOptions } from '../rules/no-exposed-sensitive-data';
 import type { Options as NoSensitiveDataExposureOptions } from '../rules/no-sensitive-data-exposure';
 
 // Buffer & Memory Rules
@@ -127,7 +126,6 @@ export type {
   NoUnencryptedTransmissionOptions,
   NoClickjackingOptions,
   // Data Exposure
-  NoExposedSensitiveDataOptions,
   NoSensitiveDataExposureOptions,
   // Buffer & Memory
   NoBufferOverreadOptions,
@@ -194,7 +192,6 @@ export type AllSecurityRulesOptions = {
   'no-unencrypted-transmission'?: NoUnencryptedTransmissionOptions;
   'no-clickjacking'?: NoClickjackingOptions;
   // Data Exposure
-  'no-exposed-sensitive-data'?: NoExposedSensitiveDataOptions;
   'no-sensitive-data-exposure'?: NoSensitiveDataExposureOptions;
   // Buffer & Memory
   'no-buffer-overread'?: NoBufferOverreadOptions;
