@@ -98,7 +98,8 @@ This document defines the strict structure and content requirements for all ESLi
 ### 10. AI-Optimized Messages
 
 - **Content**: An example block showing the structured error format (CWE, OWASP, Fix, Link).
-- **Goal**: Demonstrate the value for AI assistants (Copilot, Cursor) with a concise 1-sentence explanation.
+- **Goal**: Demonstrate the value for AI assistants (Copilot, Cursor).
+- **Requirement**: Must include a brief explanation **below** the code block detailing _why_ this format is optimized (e.g., "This structure enables AI agents to verify...").
 - **Placement**: Lower section, before Rules.
 
 ### 11. Rules Table

@@ -16,7 +16,7 @@
 
 ## Description
 
-Security validation for JSON Web Tokens (JWT) implementation (signing, verification).
+Secure your JWT implementation with precision. This plugin enforces critical security best practices, including algorithm whitelisting, expiration validation, and protection against common attacks like algorithm confusion and 'none' algorithm bypasses. Designed for modern stacks, it provides AI-optimized error messages that guide developers to the correct fix instantly, ensuring your authentication layer remains robust against evolving threats.
 
 ## Philosophy
 
@@ -70,13 +70,7 @@ Every rule uses `formatLLMMessage` for structured output:
    https://nvd.nist.gov/vuln/detail/CVE-2022-23540
 ```
 
-## 📖 References
-- [RFC 8725 - JWT Best Current Practices](https://tools.ietf.org/html/rfc8725)
-- [CVE-2022-23540 - jsonwebtoken algorithm none](https://nvd.nist.gov/vuln/detail/CVE-2022-23540)
-- [CVE-2025-30204 - golang-jwt DoS](https://nvd.nist.gov/vuln/detail/CVE-2025-30204)
-- [LightSEC 2025 - "Back to the Future" Attack](https://securitypattern.com/post/jwt-back-to-the-future)
-- [PortSwigger - JWT Algorithm Confusion](https://portswigger.net/web-security/jwt/algorithm-confusion)
-- [OWASP JWT Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html)
+By structuring errors with specific CWE codes, OWASP categories, and direct fix suggestions, this format allows AI coding assistants to autonomously identify, explain, and resolve security vulnerabilities with high confidence.
 
 ## Rules
 

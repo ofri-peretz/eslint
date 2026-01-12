@@ -76,15 +76,6 @@ Every rule uses `formatLLMMessage` for structured output:
 
 ---
 
-## 📖 References
-- [OWASP NoSQL Injection Testing](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05.6-Testing_for_NoSQL_Injection)
-- [CVE-2025-23061 - Mongoose populate() bypass](https://nvd.nist.gov/vuln/detail/CVE-2025-23061)
-- [CVE-2024-53900 - Mongoose $where RCE](https://nvd.nist.gov/vuln/detail/CVE-2024-53900)
-- [MongoDB Security Checklist](https://www.mongodb.com/docs/manual/administration/security-checklist/)
-- [CWE-943: NoSQL Injection](https://cwe.mitre.org/data/definitions/943.html)
-
----
-
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
