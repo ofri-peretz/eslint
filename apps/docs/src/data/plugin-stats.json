@@ -12,56 +12,56 @@
       "rules": 28,
       "description": "Security-focused ESLint plugin for browser applications",
       "category": "security",
-      "version": "1.0.3"
+      "version": "1.1.0"
     },
     {
       "name": "eslint-plugin-crypto",
       "rules": 25,
       "description": "Security-focused ESLint plugin with 24 AI-parseable rules for cryptographic best practices",
       "category": "security",
-      "version": "2.0.3"
+      "version": "2.1.0"
     },
     {
       "name": "eslint-plugin-vercel-ai-security",
       "rules": 22,
       "description": "Security-focused ESLint plugin for Vercel AI SDK",
       "category": "security",
-      "version": "1.1.3"
+      "version": "1.2.0"
     },
     {
       "name": "eslint-plugin-mongodb-security",
       "rules": 19,
       "description": "Security-focused ESLint plugin for MongoDB & Mongoose",
       "category": "security",
-      "version": "8.0.0"
+      "version": "8.1.0"
     },
     {
       "name": "eslint-plugin-pg",
       "rules": 15,
       "description": "ESLint plugin with security and best practices rules for the pg Node",
       "category": "security",
-      "version": "1.2.1"
+      "version": "1.3.0"
     },
     {
       "name": "eslint-plugin-jwt",
       "rules": 13,
       "description": "Security-focused ESLint plugin for JWT operations",
       "category": "security",
-      "version": "2.0.3"
+      "version": "2.1.0"
     },
     {
       "name": "eslint-plugin-lambda-security",
       "rules": 15,
       "description": "Security-focused ESLint plugin for AWS Lambda and Middy applications",
       "category": "framework",
-      "version": "1.0.3"
+      "version": "1.1.0"
     },
     {
       "name": "eslint-plugin-express-security",
       "rules": 13,
       "description": "Security-focused ESLint plugin for Express",
       "category": "framework",
-      "version": "1.0.3"
+      "version": "1.1.0"
     },
     {
       "name": "eslint-plugin-nestjs-security",
@@ -75,10 +75,10 @@
       "rules": 61,
       "description": "Drop-in replacement for eslint-plugin-import",
       "category": "architecture",
-      "version": "2.1.0"
+      "version": "2.2.0"
     }
   ],
   "totalRules": 299,
   "totalPlugins": 11,
-  "generatedAt": "2026-01-11T09:34:02.341Z"
+  "generatedAt": "2026-01-12T02:51:26.922Z"
 }

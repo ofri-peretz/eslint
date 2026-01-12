@@ -353,3 +353,26 @@ This has been verified on `eslint-plugin-jwt` and applied to all plugins.
 I have updated the `fix-readmes.js` script to strictly filter out rows where the "Rule Name" matches metadata keywords like `OWASP`, `Library`, `CWE`, `CVSS`, `Detection`. This removes artifact rows that were incorrectly being treated as rule data.
 
 I have also updated `.agent/package-readme-structure.md` to reflect this critical data cleanliness standard.
+
+## 2026-01-12 - Standardize Plugin Presets and Footer Images
+
+### Issues
+
+1. `eslint-plugin-react-a11y` "Configuration Presets" table was just a list without descriptions, not adhering to strict 2-column format.
+2. Footer images in plugin READMEs were width `100%`, causing visual dominance.
+3. "Related Plugins" table in some plugins (`quality`, `architecture`, `react-features`, `mongodb-security`) was inconsistent or used 5-column format instead of standard 3-column.
+4. `eslint-plugin-nestjs-security` and `eslint-plugin-lambda-security` had potentially redundant tables (Matrix).
+
+### Resolution
+
+1. **React A11y Presets**: Updated `eslint-plugin-react-a11y/README.md` to use a strict 2-column table (`Preset`, `Description`) sourced from `src/index.ts`.
+2. **Footer Width**: Enforced `width="300"` on footer OG images across all plugins (`crypto`, `import-next`, `express-security`, `pg`, `secure-coding`, `browser-security`, `vercel-ai-security`, `jwt`, `lambda-security`, `react-a11y`, `quality`, `architecture`, `react-features`, `mongodb-security`).
+3. **Related Plugins**: Standardized the table to 3 columns (`Plugin`, `Downloads`, `Description`) for `quality`, `architecture`, `react-features`, `mongodb-security`.
+4. **Cleanup**: Verified removal of "Configuration Matrix" tables where redundant.
+
+## 2026-01-11: Post-Audit Polish
+- **Fix**: Removed malformed "ESLint" row from `eslint-plugin-vercel-ai-security` Rules table (caused by copy-paste error).
+- **Fix**: Synced `eslint-plugin-quality` Rule icons with actual exported configuration (removed incorrect ⚠️/💼 icons for rules not in recommended config).
+- **Standardization**: Enforced strict placement of Footer Image (bottom) and Custom Sections (below Rules) in `eslint-plugin-vercel-ai-security`.
+- **Assets**: Corrected footer image reference to existing `og-ai-security.png`.
+- **Badges**: Added NPM badges to Compatibility tables as requested.

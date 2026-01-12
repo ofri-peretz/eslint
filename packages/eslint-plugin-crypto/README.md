@@ -11,12 +11,12 @@
   <a href="https://www.npmjs.com/package/eslint-plugin-crypto" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-crypto.svg" alt="NPM Downloads" /></a>
   <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
   <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=crypto" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=crypto" alt="Codecov" /></a>
-  <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white" alt="Dec 2025" /></a>
+  <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
 </p>
 
 ## Description
 
-Cryptographic security rules enforcing best practices and modern standards (Node.js crypto).
+This plugin enforces cryptographic best practices and modern security standards specifically for Node.js environments. It assists developers in avoiding weak algorithms and insecure implementations by flagging potential risks directly in the code. By integrating these checks, you can ensure that your application's data protection measures are robust and compliant with industry standards.
 
 ## Philosophy
 
@@ -28,12 +28,15 @@ Cryptographic security rules enforcing best practices and modern standards (Node
 - 要查看中文 [指南](https://eslint.interlace.tools/docs/crypto), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
 - [가이드](https://eslint.interlace.tools/docs/crypto) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
 - [ガイド](https://eslint.interlace.tools/docs/crypto)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
+- Para ver la [guía](https://eslint.interlace.tools/docs/crypto), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/crypto)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
 
 ```bash
 npm install eslint-plugin-crypto --save-dev
 ```
 
 ## 💡 What You Get
+
 - **24 security rules** covering cryptographic best practices
 - **CVE detection** for CVE-2023-46809, CVE-2020-36732, CVE-2023-46233
 - **OWASP Top 10 coverage** for cryptographic vulnerabilities
@@ -41,22 +44,32 @@ npm install eslint-plugin-crypto --save-dev
 - **Package support** for crypto-hash, crypto-random-string, crypto-js
 
 ## Features
+
 - 🔐 **24 Rules** covering crypto best practices
 - 🎯 **CVE Detection** (CVE-2023-46809, CVE-2020-36732, CVE-2023-46233)
 - 🤖 **AI-Optimized** messages with CWE references
 - ⚡ **Auto-Fix** suggestions where safe
 - 📦 **Package Support** for crypto-hash, crypto-random-string, crypto-js
 
-## Presets
+## ⚙️ Configuration Presets
+
 | Preset               | Description                                  |
-| -------------------- | -------------------------------------------- |
+| :------------------- | :------------------------------------------- |
 | `recommended`        | Balanced security defaults for most projects |
-| `strict`             | All 24 rules as errors for maximum security  |
+| `strict`             | Strict preset - all rules as errors          |
 | `cryptojs-migration` | For teams migrating from crypto-js           |
 | `nodejs-only`        | Only Node.js crypto rules                    |
 | `cve-focused`        | Rules targeting specific CVEs                |
 
+## 📚 Supported Libraries
+
+| Library            | npm                                                                                                                | Downloads                                                                                                              | Detection                         |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `crypto` (Node.js) | [![node](https://img.shields.io/badge/node-built--in-green?style=flat-square)](https://nodejs.org/api/crypto.html) | -                                                                                                                      | Weak Algo, Key Length, Randomness |
+| `crypto-js`        | [![npm](https://img.shields.io/npm/v/crypto-js.svg?style=flat-square)](https://www.npmjs.com/package/crypto-js)    | [![downloads](https://img.shields.io/npm/dt/crypto-js.svg?style=flat-square)](https://www.npmjs.com/package/crypto-js) | Legacy patterns, Weak PRNG        |
+
 ## Examples
+
 ### ❌ Bad
 
 ```javascript
@@ -90,6 +103,7 @@ if (crypto.timingSafeEqual(Buffer.from(userToken), Buffer.from(storedToken))) { 
 ```
 
 ## Peer Dependencies (Optional)
+
 ```json
 {
   "crypto-hash": ">=3.0.0",
@@ -99,83 +113,86 @@ if (crypto.timingSafeEqual(Buffer.from(userToken), Buffer.from(storedToken))) { 
 ```
 
 ## AI-Optimized Messages
-All rules include LLM-optimized error messages with:
 
-- CWE references for vulnerability classification
-- CVE references for known vulnerabilities
-- Severity levels (CRITICAL, HIGH, MEDIUM, LOW)
-- Direct fix suggestions with code examples
-- Documentation links
+This plugin is optimized for ESLint's [Model Context Protocol (MCP)](https://eslint.org/docs/latest/use/mcp), enabling AI assistants like **Cursor**, **GitHub Copilot**, and **Claude** to:
 
-## 🗂️ OWASP Top 10 2021 Coverage
-| OWASP Category                         | Rule | CWE | OWASP | CVSS | Description | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
-| :------------------------------------- | :--: | :-: | :---: | :--- | :---------: | :-: | :-: | :-: | :-: | --- |
-| **A02:2021 Cryptographic Failures**    |      |     |       |      |             |     |     |     |     |
-| **A03:2021 Injection**                 |      |     |       |      |             |     |     |     |     |
-| **A04:2021 Insecure Design**           |      |     |       |      |             |     |     |     |     |
-| **A05:2021 Security Misconfiguration** |      |     |       |      |             |     |     |     |     |
-| **A07:2021 Identification Failures**   |      |     |       |      |             |     |     |     |     |
+- Understand the exact vulnerability type via CWE references
+- Apply the correct fix using structured guidance
+- Provide educational context to developers
+
+```json
+// .cursor/mcp.json
+{
+  "mcpServers": {
+    "eslint": {
+      "command": "npx",
+      "args": ["@eslint/mcp@latest"]
+    }
+  }
+}
+```
+
+By providing this structured context (CWE, OWASP, Fix), we enable AI tools to **reason** about the security flaw rather than hallucinating. This allows Copilot/Cursor to suggest the _exact_ correct fix immediately.
 
 ## Rules
 
 **Legend**
 
-| Icon | Description |
-| :---: | :--- |
-| 💼 | **Recommended**: Included in the recommended preset. |
-| ⚠️ | **Warns**: Set towarn in recommended preset. |
-| 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
-| 💡 | **Suggestions**: Providing code suggestions in IDE. |
-| 🚫 | **Deprecated**: This rule is deprecated. |
+| Icon | Description                                                        |
+| :--: | :----------------------------------------------------------------- |
+|  💼  | **Recommended**: Included in the recommended preset.               |
+|  ⚠️  | **Warns**: Set towarn in recommended preset.                       |
+|  🔧  | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
+|  💡  | **Suggestions**: Providing code suggestions in IDE.                |
+|  🚫  | **Deprecated**: This rule is deprecated.                           |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [no-weak-hash-algorithm](https://eslint.interlace.tools/docs/crypto/rules/no-weak-hash-algorithm) | CWE-327 | A02:2025 | 7.5 | [no-weak-hash-algorithm](docs/rules/no-weak-hash-algorithm.md) | 💼 |  |  | 💡 |  |
-| [no-weak-cipher-algorithm](https://eslint.interlace.tools/docs/crypto/rules/no-weak-cipher-algorithm) | CWE-327 | A02:2025 | 7.5 | [no-weak-cipher-algorithm](docs/rules/no-weak-cipher-algorithm.md) | 💼 |  |  | 💡 |  |
-| [no-deprecated-cipher-method](https://eslint.interlace.tools/docs/crypto/rules/no-deprecated-cipher-method) | CWE-327 | A02:2025 | 5.0 | [no-deprecated-cipher-method](docs/rules/no-deprecated-cipher-method.md) | 💼 |  |  | 💡 |  |
-| [no-static-iv](https://eslint.interlace.tools/docs/crypto/rules/no-static-iv) | CWE-329 | A02:2025 | 7.5 | [no-static-iv](docs/rules/no-static-iv.md) | 💼 |  |  | 💡 |  |
-| [no-ecb-mode](https://eslint.interlace.tools/docs/crypto/rules/no-ecb-mode) | CWE-327 | A02:2025 | 7.5 | [no-ecb-mode](docs/rules/no-ecb-mode.md) | 💼 |  |  | 💡 |  |
-| [no-insecure-key-derivation](https://eslint.interlace.tools/docs/crypto/rules/no-insecure-key-derivation) | CWE-916 | A02:2025 | 7.5 | [no-insecure-key-derivation](docs/rules/no-insecure-key-derivation.md) | 💼 |  |  | 💡 |  |
-| [no-hardcoded-crypto-key](https://eslint.interlace.tools/docs/crypto/rules/no-hardcoded-crypto-key) | CWE-321 | A02:2025 | 9.8 | [no-hardcoded-crypto-key](docs/rules/no-hardcoded-crypto-key.md) | 💼 |  |  | 💡 |  |
-| [require-random-iv](https://eslint.interlace.tools/docs/crypto/rules/require-random-iv) | CWE-329 | A02:2025 | 7.5 | [require-random-iv](docs/rules/require-random-iv.md) | 💼 |  |  | 💡 |  |
-| [no-insecure-rsa-padding](https://eslint.interlace.tools/docs/crypto/rules/no-insecure-rsa-padding) | CWE-327 | A02:2025 | 7.4 | [no-insecure-rsa-padding](docs/rules/no-insecure-rsa-padding.md) | 💼 |  |  | 💡 |  |
-| [no-cryptojs-weak-random](https://eslint.interlace.tools/docs/crypto/rules/no-cryptojs-weak-random) | CWE-338 | A02:2025 | 5.3 | [no-cryptojs-weak-random](docs/rules/no-cryptojs-weak-random.md) | 💼 |  |  | 💡 |  |
-| [require-secure-pbkdf2-digest](https://eslint.interlace.tools/docs/crypto/rules/require-secure-pbkdf2-digest) | CWE-916 | A02:2025 | 9.1 | [require-secure-pbkdf2-digest](docs/rules/require-secure-pbkdf2-digest.md) | 💼 |  |  | 💡 |  |
-| [no-math-random-crypto](https://eslint.interlace.tools/docs/crypto/rules/no-math-random-crypto) | CWE-338 | A07:2025 | 5.3 | [no-math-random-crypto](docs/rules/no-math-random-crypto.md) | 💼 |  |  | 💡 |  |
-| [no-predictable-salt](https://eslint.interlace.tools/docs/crypto/rules/no-predictable-salt) | CWE-331 | A07:2025 | 7.5 | [no-predictable-salt](docs/rules/no-predictable-salt.md) | 💼 |  |  | 💡 |  |
-| [require-authenticated-encryption](https://eslint.interlace.tools/docs/crypto/rules/require-authenticated-encryption) | CWE-327 | A04:2025 | 6.5 | [require-authenticated-encryption](docs/rules/require-authenticated-encryption.md) | 💼 |  |  | 💡 |  |
-| [no-key-reuse](https://eslint.interlace.tools/docs/crypto/rules/no-key-reuse) | CWE-323 | A02:2025 | 7.5 | [no-key-reuse](docs/rules/no-key-reuse.md) | 💼 |  |  | 💡 |  |
-| [no-self-signed-certs](https://eslint.interlace.tools/docs/crypto/rules/no-self-signed-certs) | CWE-295 | A05:2025 | 7.5 | [no-self-signed-certs](docs/rules/no-self-signed-certs.md) | 💼 |  |  | 💡 |  |
-| [no-timing-unsafe-compare](https://eslint.interlace.tools/docs/crypto/rules/no-timing-unsafe-compare) | CWE-208 | A02:2025 | 5.9 | [no-timing-unsafe-compare](docs/rules/no-timing-unsafe-compare.md) | 💼 |  |  | 💡 |  |
-| [require-key-length](https://eslint.interlace.tools/docs/crypto/rules/require-key-length) | CWE-326 | A02:2025 | 7.5 | [require-key-length](docs/rules/require-key-length.md) | 💼 |  |  | 💡 |  |
-| [no-web-crypto-export](https://eslint.interlace.tools/docs/crypto/rules/no-web-crypto-export) | CWE-321 | A02:2025 | 5.0 | [no-web-crypto-export](docs/rules/no-web-crypto-export.md) | 💼 |  |  | 💡 |  |
-| [no-sha1-hash](https://eslint.interlace.tools/docs/crypto/rules/no-sha1-hash) | CWE-327 | A02:2025 | 7.5 | [no-sha1-hash](docs/rules/no-sha1-hash.md) | 💼 |  |  | 💡 |  |
-| [require-sufficient-length](https://eslint.interlace.tools/docs/crypto/rules/require-sufficient-length) | CWE-326 | A02:2025 | 7.5 | [require-sufficient-length](docs/rules/require-sufficient-length.md) | 💼 |  |  | 💡 |  |
-| [no-numeric-only-tokens](https://eslint.interlace.tools/docs/crypto/rules/no-numeric-only-tokens) | CWE-330 | A07:2025 | 5.3 | [no-numeric-only-tokens](docs/rules/no-numeric-only-tokens.md) | 💼 |  |  | 💡 |  |
-| [no-cryptojs](https://eslint.interlace.tools/docs/crypto/rules/no-cryptojs) | CWE-327 | A02:2025 | 5.0 | [no-cryptojs](docs/rules/no-cryptojs.md) |  |  |  | 💡 |  |
-| [prefer-native-crypto](https://eslint.interlace.tools/docs/crypto/rules/prefer-native-crypto) | CWE-327 | A05:2025 | 5.0 | [prefer-native-crypto](docs/rules/prefer-native-crypto.md) |  |  |  | 💡 |  |
+| Rule                                                                                                                  |   CWE   |  OWASP   | CVSS | Description                                                                        | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
+| :-------------------------------------------------------------------------------------------------------------------- | :-----: | :------: | :--: | :--------------------------------------------------------------------------------- | :-: | :-: | :-: | :-: | :-: |
+| [no-weak-hash-algorithm](https://eslint.interlace.tools/docs/crypto/rules/no-weak-hash-algorithm)                     | CWE-327 | A02:2025 | 7.5  | [no-weak-hash-algorithm](docs/rules/no-weak-hash-algorithm.md)                     | 💼  |     |     | 💡  |     |
+| [no-weak-cipher-algorithm](https://eslint.interlace.tools/docs/crypto/rules/no-weak-cipher-algorithm)                 | CWE-327 | A02:2025 | 7.5  | [no-weak-cipher-algorithm](docs/rules/no-weak-cipher-algorithm.md)                 | 💼  |     |     | 💡  |     |
+| [no-deprecated-cipher-method](https://eslint.interlace.tools/docs/crypto/rules/no-deprecated-cipher-method)           | CWE-327 | A02:2025 | 5.0  | [no-deprecated-cipher-method](docs/rules/no-deprecated-cipher-method.md)           | 💼  |     |     | 💡  |     |
+| [no-static-iv](https://eslint.interlace.tools/docs/crypto/rules/no-static-iv)                                         | CWE-329 | A02:2025 | 7.5  | [no-static-iv](docs/rules/no-static-iv.md)                                         | 💼  |     |     | 💡  |     |
+| [no-ecb-mode](https://eslint.interlace.tools/docs/crypto/rules/no-ecb-mode)                                           | CWE-327 | A02:2025 | 7.5  | [no-ecb-mode](docs/rules/no-ecb-mode.md)                                           | 💼  |     |     | 💡  |     |
+| [no-insecure-key-derivation](https://eslint.interlace.tools/docs/crypto/rules/no-insecure-key-derivation)             | CWE-916 | A02:2025 | 7.5  | [no-insecure-key-derivation](docs/rules/no-insecure-key-derivation.md)             | 💼  |     |     | 💡  |     |
+| [no-hardcoded-crypto-key](https://eslint.interlace.tools/docs/crypto/rules/no-hardcoded-crypto-key)                   | CWE-321 | A02:2025 | 9.8  | [no-hardcoded-crypto-key](docs/rules/no-hardcoded-crypto-key.md)                   | 💼  |     |     | 💡  |     |
+| [require-random-iv](https://eslint.interlace.tools/docs/crypto/rules/require-random-iv)                               | CWE-329 | A02:2025 | 7.5  | [require-random-iv](docs/rules/require-random-iv.md)                               | 💼  | ⚠️  |     | 💡  |     |
+| [no-insecure-rsa-padding](https://eslint.interlace.tools/docs/crypto/rules/no-insecure-rsa-padding)                   | CWE-327 | A02:2025 | 7.4  | [no-insecure-rsa-padding](docs/rules/no-insecure-rsa-padding.md)                   | 💼  |     |     | 💡  |     |
+| [no-cryptojs-weak-random](https://eslint.interlace.tools/docs/crypto/rules/no-cryptojs-weak-random)                   | CWE-338 | A02:2025 | 5.3  | [no-cryptojs-weak-random](docs/rules/no-cryptojs-weak-random.md)                   | 💼  |     |     | 💡  |     |
+| [require-secure-pbkdf2-digest](https://eslint.interlace.tools/docs/crypto/rules/require-secure-pbkdf2-digest)         | CWE-916 | A02:2025 | 9.1  | [require-secure-pbkdf2-digest](docs/rules/require-secure-pbkdf2-digest.md)         | 💼  |     |     | 💡  |     |
+| [no-math-random-crypto](https://eslint.interlace.tools/docs/crypto/rules/no-math-random-crypto)                       | CWE-338 | A07:2025 | 5.3  | [no-math-random-crypto](docs/rules/no-math-random-crypto.md)                       | 💼  |     |     | 💡  |     |
+| [no-predictable-salt](https://eslint.interlace.tools/docs/crypto/rules/no-predictable-salt)                           | CWE-331 | A07:2025 | 7.5  | [no-predictable-salt](docs/rules/no-predictable-salt.md)                           | 💼  |     |     | 💡  |     |
+| [require-authenticated-encryption](https://eslint.interlace.tools/docs/crypto/rules/require-authenticated-encryption) | CWE-327 | A04:2025 | 6.5  | [require-authenticated-encryption](docs/rules/require-authenticated-encryption.md) | 💼  | ⚠️  |     | 💡  |     |
+| [no-key-reuse](https://eslint.interlace.tools/docs/crypto/rules/no-key-reuse)                                         | CWE-323 | A02:2025 | 7.5  | [no-key-reuse](docs/rules/no-key-reuse.md)                                         | 💼  | ⚠️  |     | 💡  |     |
+| [no-self-signed-certs](https://eslint.interlace.tools/docs/crypto/rules/no-self-signed-certs)                         | CWE-295 | A05:2025 | 7.5  | [no-self-signed-certs](docs/rules/no-self-signed-certs.md)                         | 💼  |     |     | 💡  |     |
+| [no-timing-unsafe-compare](https://eslint.interlace.tools/docs/crypto/rules/no-timing-unsafe-compare)                 | CWE-208 | A02:2025 | 5.9  | [no-timing-unsafe-compare](docs/rules/no-timing-unsafe-compare.md)                 | 💼  | ⚠️  |     | 💡  |     |
+| [require-key-length](https://eslint.interlace.tools/docs/crypto/rules/require-key-length)                             | CWE-326 | A02:2025 | 7.5  | [require-key-length](docs/rules/require-key-length.md)                             | 💼  | ⚠️  |     | 💡  |     |
+| [no-web-crypto-export](https://eslint.interlace.tools/docs/crypto/rules/no-web-crypto-export)                         | CWE-321 | A02:2025 | 5.0  | [no-web-crypto-export](docs/rules/no-web-crypto-export.md)                         | 💼  | ⚠️  |     | 💡  |     |
+| [no-sha1-hash](https://eslint.interlace.tools/docs/crypto/rules/no-sha1-hash)                                         | CWE-327 | A02:2025 | 7.5  | [no-sha1-hash](docs/rules/no-sha1-hash.md)                                         | 💼  |     |     | 💡  |     |
+| [require-sufficient-length](https://eslint.interlace.tools/docs/crypto/rules/require-sufficient-length)               | CWE-326 | A02:2025 | 7.5  | [require-sufficient-length](docs/rules/require-sufficient-length.md)               | 💼  | ⚠️  |     | 💡  |     |
+| [no-numeric-only-tokens](https://eslint.interlace.tools/docs/crypto/rules/no-numeric-only-tokens)                     | CWE-330 | A07:2025 | 5.3  | [no-numeric-only-tokens](docs/rules/no-numeric-only-tokens.md)                     | 💼  | ⚠️  |     | 💡  |     |
+| [no-cryptojs](https://eslint.interlace.tools/docs/crypto/rules/no-cryptojs)                                           | CWE-327 | A02:2025 | 5.0  | [no-cryptojs](docs/rules/no-cryptojs.md)                                           | 💼  | ⚠️  |     | 💡  |     |
+| [prefer-native-crypto](https://eslint.interlace.tools/docs/crypto/rules/prefer-native-crypto)                         | CWE-327 | A05:2025 | 5.0  | [prefer-native-crypto](docs/rules/prefer-native-crypto.md)                         | 💼  | ⚠️  |     | 💡  |     |
 
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin | NPM | Downloads | License | Description |
-| :--- | :---: | :---: | :---: | :--- |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![npm](https://img.shields.io/npm/v/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![license](https://img.shields.io/npm/l/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) | [![npm](https://img.shields.io/npm/v/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | [![license](https://img.shields.io/npm/l/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![npm](https://img.shields.io/npm/v/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | [![license](https://img.shields.io/npm/l/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![npm](https://img.shields.io/npm/v/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | [![license](https://img.shields.io/npm/l/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security rules. |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
-| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | AWS Lambda security best practices. |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | NestJS security rules & patterns. |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![npm](https://img.shields.io/npm/v/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | [![license](https://img.shields.io/npm/l/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
+| Plugin                                                                                               |                                                                              Downloads                                                                               | Description                                 |
+| :--------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------ |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)           |      [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding)      | General security rules & OWASP guidelines.  |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                                 |                 [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg)                 | PostgreSQL security & best practices.       |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               |                [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt)                | JWT security & best practices.              |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)     |   [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security)   | Browser-specific security & XSS prevention. |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security rules.               |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)     |   [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security)   | Express.js security hardening rules.        |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)       |    [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security)    | AWS Lambda security best practices.         |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)       |    [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security)    | NestJS security rules & patterns.           |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)               |        [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next)        | Next-gen import sorting & architecture.     |
 
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/docs/crypto"><img src="https://eslint.interlace.tools/images/og-crypto.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+  <a href="https://eslint.interlace.tools/docs/crypto"><img src="https://eslint.interlace.tools/images/og-crypto.png" alt="ESLint Interlace Plugin" width="300" /></a>
 </p>
