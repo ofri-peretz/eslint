@@ -24,6 +24,10 @@ This rule detects security violations related to Require secure WebSocket connec
 // TODO: Add specific examples based on implementation
 ```
 
+## ⚙️ Configuration
+
+This rule has no configuration options.
+
 ## Known False Negatives
 
 ### Values from Variables

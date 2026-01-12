@@ -71,6 +71,10 @@ window.location.href = authUrl.toString();
 document.cookie = `session=${sessionToken}; Secure; HttpOnly; SameSite=Strict`; // ✅ Cookie, not URL
 ```
 
+## ⚙️ Configuration
+
+This rule has no configuration options.
+
 ## Known False Negatives
 
 ### Passwords in Dynamically Constructed URLs

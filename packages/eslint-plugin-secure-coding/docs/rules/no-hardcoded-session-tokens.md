@@ -63,6 +63,10 @@ const tokenResponse = await oauth2Client.getToken(authCode);
 const accessToken = tokenResponse.tokens.access_token; // ✅ OAuth flow
 ```
 
+## ⚙️ Configuration
+
+This rule has no configuration options.
+
 ## Known False Negatives
 
 ### Tokens from Configuration Files

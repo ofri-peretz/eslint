@@ -71,6 +71,10 @@ analytics.track('Payment Completed', {
 });
 ```
 
+## ⚙️ Configuration
+
+This rule has no configuration options.
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
