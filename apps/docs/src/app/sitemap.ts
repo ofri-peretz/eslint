@@ -27,12 +27,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly',
       priority: 0.9,
     },
-    {
-      url: `${baseUrl}/articles`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.85,
-    },
     // AI Crawling Entry Points
     {
       url: `${baseUrl}/llms.txt`,

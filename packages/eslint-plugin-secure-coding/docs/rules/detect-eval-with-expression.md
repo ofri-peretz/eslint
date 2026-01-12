@@ -42,7 +42,7 @@ This rule detects dangerous use of `eval()` and `Function()` constructor with dy
   }
 }}%%
 flowchart TD
-    A[📝 Detect eval() Call] --> B{Contains Dynamic Expression?}
+    A["📝 Detect eval() Call"] --> B{Contains Dynamic Expression?}
     B -->|Yes| C[🔍 Analyze Pattern]
     B -->|No| D[✅ Safe - Skip]
 
@@ -71,13 +71,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-95](https://cwe.mitre.org/data/definitions/95.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description** | Specific vulnerability | `Eval Injection detected` |
-| **Severity & Compliance** | Impact assessment | `CRITICAL [SOC2,PCI-DSS,ISO27001]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                       |
+| :------------------------ | :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Risk Standards**        | Security benchmarks    | [CWE-95](https://cwe.mitre.org/data/definitions/95.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description**     | Specific vulnerability | `Eval Injection detected`                                                                                                                                                                                                     |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,ISO27001]`                                                                                                                                                                                            |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                          |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/)                                                                                                                                                                   |
 
 ## Configuration
 

@@ -32,13 +32,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-400](https://cwe.mitre.org/data/definitions/400.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description** | Specific vulnerability | `Uncontrolled Resource Consumption (ReDoS) detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                         |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-400](https://cwe.mitre.org/data/definitions/400.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description**     | Specific vulnerability | `Uncontrolled Resource Consumption (ReDoS) detected`                                                                                                                                                                            |
+| **Severity & Compliance** | Impact assessment      | `HIGH`                                                                                                                                                                                                                          |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                            |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/)                                                                                                                                                                     |
 
 ## Rule Details
 
@@ -68,9 +68,9 @@ When these patterns are applied to a long string that _almost_ matches but fails
 }}%%
 flowchart TD
     Start[User Input String] --> Regex{Regex Engine}
-    Regex -->|Safe Pattern| Match[Match/No Match (Fast)]
+    Regex -->|Safe Pattern| Match["Match/No Match (Fast)"]
     Regex -->|Vulnerable Pattern| Backtrack{Catastrophic Backtracking?}
-    Backtrack -->|Yes| Freeze[💥 CPU Spike / Denial of Service]
+    Backtrack -->|Yes| Freeze["💥 CPU Spike / Denial of Service"]
     Backtrack -->|No| Match
 
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
