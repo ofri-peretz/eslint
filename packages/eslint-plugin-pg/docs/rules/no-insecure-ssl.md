@@ -1,6 +1,7 @@
 # no-insecure-ssl
 
 > **Keywords:** SSL, TLS, CWE-295, pg, node-postgres, security, certificate validation
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Prevents disabling SSL certificate validation in PostgreSQL connections.
 

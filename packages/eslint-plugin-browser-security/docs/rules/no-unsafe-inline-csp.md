@@ -1,5 +1,7 @@
 # no-unsafe-inline-csp
 
+> No Unsafe Inline Csp
+
 Disallow 'unsafe-inline' in Content Security Policy directives.
 
 ## ⚠️ Security Issue

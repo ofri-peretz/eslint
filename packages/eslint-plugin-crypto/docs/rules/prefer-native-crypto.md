@@ -1,5 +1,7 @@
 # prefer-native-crypto
 
+> Prefer Native Crypto
+
 ## Description
 
 TODO: Add description for this rule.

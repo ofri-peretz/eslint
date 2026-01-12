@@ -1,5 +1,7 @@
 # no-weak-cipher-algorithm
 
+> No Weak Cipher Algorithm
+
 ## Description
 
 TODO: Add description for this rule.

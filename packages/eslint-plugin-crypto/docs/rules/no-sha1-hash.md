@@ -1,5 +1,7 @@
 # no-sha1-hash
 
+> No Sha1 Hash
+
 ## Description
 
 TODO: Add description for this rule.

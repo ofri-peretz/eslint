@@ -1,6 +1,8 @@
 # browser-security/no-jwt-in-storage
 
 > 🔒 Disallow storing JWT tokens in localStorage or sessionStorage
+**CWE:** [CWE-311](https://cwe.mitre.org/data/definitions/311.html)  
+**OWASP Mobile:** [M9: Insecure Data Storage](https://owasp.org/www-project-mobile-top-10/)
 
 ## Rule Details
 

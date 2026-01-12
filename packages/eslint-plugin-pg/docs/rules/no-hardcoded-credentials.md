@@ -1,6 +1,7 @@
 # no-hardcoded-credentials
 
 > **Keywords:** credentials, passwords, secrets, CWE-798, pg, node-postgres, security
+**CWE:** [CWE-522](https://cwe.mitre.org/data/definitions/522.html)
 
 Prevents hardcoded passwords and connection strings in PostgreSQL client initialization.
 

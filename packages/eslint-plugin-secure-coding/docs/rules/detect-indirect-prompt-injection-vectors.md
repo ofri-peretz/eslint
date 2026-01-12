@@ -1,5 +1,7 @@
 # detect-indirect-prompt-injection-vectors
 
+> Detect Indirect Prompt Injection Vectors
+
 Detect external content (emails, documents, APIs) reaching LLM without validation.
 
 **OWASP LLM Top 10 2025**: LLM01 - Prompt Injection  

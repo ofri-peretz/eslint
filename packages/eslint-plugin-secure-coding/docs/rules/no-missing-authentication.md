@@ -1,6 +1,8 @@
 # no-missing-authentication
 
 > **Keywords:** missing authentication, CWE-287, security, ESLint rule, authentication middleware, route handlers, Express, Fastify, API security, access control, LLM-optimized, code security
+**CWE:** [CWE-287](https://cwe.mitre.org/data/definitions/287.html)  
+**OWASP Mobile:** [M3: Insecure Authentication/Authorization](https://owasp.org/www-project-mobile-top-10/)
 
 Detects missing authentication checks in route handlers. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 

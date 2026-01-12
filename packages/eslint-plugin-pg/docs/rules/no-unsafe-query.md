@@ -1,6 +1,7 @@
 # no-unsafe-query
 
 > **Keywords:** SQL injection, CWE-89, pg, node-postgres, security, parameterized queries, prepared statements
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Prevents SQL injection by detecting string concatenation or template literals with variables in `client.query()` calls.
 

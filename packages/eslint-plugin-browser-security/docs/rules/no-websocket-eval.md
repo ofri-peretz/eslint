@@ -1,6 +1,8 @@
 # browser-security/no-websocket-eval
 
 > 🔒 Disallow using eval() or Function() with WebSocket message data
+**CWE:** [CWE-319](https://cwe.mitre.org/data/definitions/319.html)  
+**OWASP Mobile:** [M5: Insecure Communication](https://owasp.org/www-project-mobile-top-10/)
 
 ## Error Message Format
 

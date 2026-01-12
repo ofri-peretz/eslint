@@ -1,6 +1,8 @@
 # browser-security/no-sensitive-cookie-js
 
 > 🔒 Disallow storing sensitive data (tokens, passwords) in cookies via JavaScript
+**CWE:** [CWE-359](https://cwe.mitre.org/data/definitions/359.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 ## Error Message Format
 

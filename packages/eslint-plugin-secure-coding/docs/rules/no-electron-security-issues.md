@@ -1,6 +1,8 @@
 # no-electron-security-issues
 
 > **Keywords:** Electron, CWE-16, nodeIntegration, contextIsolation, desktop security
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects Electron security vulnerabilities and insecure configurations. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 

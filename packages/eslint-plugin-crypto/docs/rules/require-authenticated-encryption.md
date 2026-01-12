@@ -1,5 +1,7 @@
 # require-authenticated-encryption
 
+> Require Authenticated Encryption
+
 ## Description
 
 TODO: Add description for this rule.

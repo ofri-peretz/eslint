@@ -1,5 +1,7 @@
 # require-secure-pbkdf2-digest
 
+> Require Secure Pbkdf2 Digest
+
 ## Description
 
 TODO: Add description for this rule.

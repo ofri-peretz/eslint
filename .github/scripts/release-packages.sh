@@ -28,6 +28,7 @@ set -euo pipefail
 RELEASED_PACKAGES=""
 FAILED_PACKAGES=""
 SKIPPED_PACKAGES=""
+FAILED_DETAILS=""
 
 echo "═══════════════════════════════════════════════════════════════"
 echo "🚀 RELEASE PIPELINE - Sequential Mode"
@@ -76,10 +77,12 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
   # ──────────────────────────────────────────────────────────────
   PACKAGE_JSON="./packages/$PACKAGE/package.json"
   if [ ! -f "$PACKAGE_JSON" ]; then
+    FAILURE_REASON="package.json not found"
     echo "❌ FAILED: $PACKAGE"
-    echo "   └─ package.json not found at: $PACKAGE_JSON"
+    echo "   └─ $FAILURE_REASON at: $PACKAGE_JSON"
     echo "   └─ Check if package directory exists"
     FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+    FAILED_DETAILS="${FAILED_DETAILS}$PACKAGE: $FAILURE_REASON\n"
     continue
   fi
   
@@ -233,10 +236,12 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
     fi
     
     if [ "$VERSION_FAILED" = "true" ]; then
+      FAILURE_REASON="Version bump failed - check if package is in nx.json release.projects array"
       echo "❌ FAILED: $PACKAGE"
       echo "   └─ Stage: Version bump"
-      echo "   └─ Action: Run 'pnpm nx release version --projects=$PACKAGE' locally"
+      echo "   └─ Action: Verify package is in nx.json release.projects, then run 'pnpm nx release version --projects=$PACKAGE' locally"
       FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+      FAILED_DETAILS="${FAILED_DETAILS}$PACKAGE: $FAILURE_REASON\n"
       continue
     fi
     
@@ -578,15 +583,50 @@ echo ""
 echo "═══════════════════════════════════════════════════════════════"
 echo "📊 RELEASE SUMMARY"
 echo "═══════════════════════════════════════════════════════════════"
-echo "✅ Released: $RELEASED_PACKAGES"
-echo "⏭️ Skipped: $SKIPPED_PACKAGES"
-echo "❌ Failed: $FAILED_PACKAGES"
+
+if [ -n "$RELEASED_PACKAGES" ]; then
+  echo "✅ Released:"
+  for pkg_ver in $RELEASED_PACKAGES; do
+    echo "   - $pkg_ver"
+  done
+else
+  echo "✅ Released: (none)"
+fi
+
+if [ -n "$SKIPPED_PACKAGES" ]; then
+  echo ""
+  echo "⏭️ Skipped:"
+  for pkg in $SKIPPED_PACKAGES; do
+    echo "   - $pkg"
+  done
+fi
+
+if [ -n "$FAILED_PACKAGES" ]; then
+  echo ""
+  echo "❌ Failed:"
+  for pkg in $FAILED_PACKAGES; do
+    echo "   - $pkg"
+  done
+  
+  if [ -n "$FAILED_DETAILS" ]; then
+    echo ""
+    echo "📋 Failure Details:"
+    echo "$FAILED_DETAILS" | while IFS= read -r line; do
+      if [ -n "$line" ]; then
+        echo "   $line"
+      fi
+    done
+  fi
+fi
 
 # Write outputs for GitHub Actions
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
   echo "released=$RELEASED_PACKAGES" >> "$GITHUB_OUTPUT"
   echo "skipped=$SKIPPED_PACKAGES" >> "$GITHUB_OUTPUT"
   echo "failed=$FAILED_PACKAGES" >> "$GITHUB_OUTPUT"
+  # Escape newlines for GitHub Actions multiline output
+  FAILED_DETAILS_ESCAPED="${FAILED_DETAILS//$'\n'/%0A}"
+  echo "failed-details=$FAILED_DETAILS_ESCAPED" >> "$GITHUB_OUTPUT"
 fi
 
 # Fail workflow if any packages failed

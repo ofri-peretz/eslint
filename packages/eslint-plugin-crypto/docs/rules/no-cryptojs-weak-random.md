@@ -1,5 +1,7 @@
 # no-cryptojs-weak-random
 
+> No Cryptojs Weak Random
+
 ## Description
 
 TODO: Add description for this rule.

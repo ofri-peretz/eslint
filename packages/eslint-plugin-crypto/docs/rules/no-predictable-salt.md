@@ -1,5 +1,7 @@
 # no-predictable-salt
 
+> No Predictable Salt
+
 ## Description
 
 TODO: Add description for this rule.

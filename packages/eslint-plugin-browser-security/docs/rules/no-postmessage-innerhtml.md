@@ -1,6 +1,8 @@
 # browser-security/no-postmessage-innerhtml
 
 > 🔒 Disallow using innerHTML with postMessage data
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 ## Error Message Format
 

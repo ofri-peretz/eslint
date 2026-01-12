@@ -1,6 +1,7 @@
 # no-did-update-set-state
 
 > **Keywords:** React, componentDidUpdate, setState, infinite loop, lifecycle, ESLint rule, LLM-optimized
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Prevent calling `setState` in `componentDidUpdate` without a conditional. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
 
@@ -106,6 +107,45 @@ function UserProfile({ userId }) {
 
 - [`no-did-mount-set-state`](./no-did-mount-set-state.md) - Similar for componentDidMount
 - [`react-class-to-hooks`](./react-class-to-hooks.md) - Migrate to hooks
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Values from Variables
+
+**Why**: Static analysis cannot trace values stored in variables.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const value = userInput;
+dangerousOperation(value);
+```
+
+**Mitigation**: Implement runtime validation and review code manually.
+
+### Custom Wrapper Functions
+
+**Why**: Custom wrapper functions are not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom wrapper
+myCustomWrapper(sensitiveData); // Uses insecure API internally
+```
+
+**Mitigation**: Apply this rule's principles to wrapper function implementations.
+
+### Dynamic Property Access
+
+**Why**: Dynamic property access cannot be statically analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic access
+obj[methodName](data);
+```
+
+**Mitigation**: Avoid dynamic method invocation with sensitive operations.
+
 
 ## Further Reading
 

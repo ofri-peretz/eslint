@@ -1,6 +1,7 @@
 # no-transaction-on-pool
 
 > **Keywords:** transactions, race condition, CWE-362, pg, node-postgres, pool
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Prevents running transaction commands directly on pool (must use dedicated client).
 

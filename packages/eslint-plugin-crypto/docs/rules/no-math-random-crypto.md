@@ -1,5 +1,7 @@
 # no-math-random-crypto
 
+> No Math Random Crypto
+
 ## Description
 
 TODO: Add description for this rule.

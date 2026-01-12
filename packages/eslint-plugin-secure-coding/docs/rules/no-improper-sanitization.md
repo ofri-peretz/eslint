@@ -1,6 +1,8 @@
 # no-improper-sanitization
 
 > **Keywords:** improper sanitization, CWE-116, CWE-79, XSS, encoding, escaping, security
+**CWE:** [CWE-20](https://cwe.mitre.org/data/definitions/20.html)  
+**OWASP Mobile:** [M4: Insufficient Input/Output Validation](https://owasp.org/www-project-mobile-top-10/)
 
 Detects improper sanitization of user input. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 

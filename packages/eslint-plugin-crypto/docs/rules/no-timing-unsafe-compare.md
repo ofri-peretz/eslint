@@ -1,5 +1,7 @@
 # no-timing-unsafe-compare
 
+> No Timing Unsafe Compare
+
 ## Description
 
 TODO: Add description for this rule.

@@ -1,5 +1,7 @@
 # enforce-llm-tool-least-privilege
 
+> Enforce Llm Tool Least Privilege
+
 Ensure LLM tools have minimal necessary permissions.
 
 **OWASP LLM Top 10 2025**: LLM06 - Excessive Agency  

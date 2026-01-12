@@ -1,5 +1,7 @@
 # require-sufficient-length
 
+> Require Sufficient Length
+
 ## Description
 
 TODO: Add description for this rule.

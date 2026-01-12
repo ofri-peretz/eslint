@@ -1,6 +1,8 @@
 # no-graphql-injection
 
 > **Keywords:** GraphQL injection, CWE-943, CWE-400, security, DoS, introspection, query complexity, LLM-optimized
+**CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects GraphQL injection vulnerabilities and DoS attacks. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages.
 

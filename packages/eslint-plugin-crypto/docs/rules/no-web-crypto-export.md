@@ -1,5 +1,7 @@
 # no-web-crypto-export
 
+> No Web Crypto Export
+
 ## Description
 
 TODO: Add description for this rule.

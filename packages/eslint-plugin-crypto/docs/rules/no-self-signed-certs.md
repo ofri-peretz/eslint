@@ -1,5 +1,7 @@
 # no-self-signed-certs
 
+> No Self Signed Certs
+
 ## Description
 
 TODO: Add description for this rule.

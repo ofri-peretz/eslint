@@ -1,5 +1,7 @@
 # no-ecb-mode
 
+> No Ecb Mode
+
 ## Description
 
 TODO: Add description for this rule.

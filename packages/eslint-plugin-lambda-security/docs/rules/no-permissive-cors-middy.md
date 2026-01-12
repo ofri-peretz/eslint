@@ -1,6 +1,8 @@
 # no-permissive-cors-middy
 
 > **Keywords:** CORS, Middy, Lambda middleware, CWE-942, security, wildcard origin
+**CWE:** [CWE-942](https://cwe.mitre.org/data/definitions/942.html)  
+**OWASP Mobile:** [M8: Security Misconfiguration](https://owasp.org/www-project-mobile-top-10/)
 
 Detects permissive CORS configurations in Middy middleware. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security).
 

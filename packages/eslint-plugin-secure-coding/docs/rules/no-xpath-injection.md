@@ -1,6 +1,8 @@
 # no-xpath-injection
 
 > **Keywords:** XPath injection, CWE-643, XML, security, data extraction, authentication bypass
+**CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects XPath injection vulnerabilities. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 

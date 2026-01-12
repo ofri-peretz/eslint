@@ -1,5 +1,7 @@
 # no-insecure-key-derivation
 
+> No Insecure Key Derivation
+
 ## Description
 
 TODO: Add description for this rule.

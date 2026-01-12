@@ -1,6 +1,8 @@
 # no-ldap-injection
 
 > **Keywords:** LDAP injection, CWE-90, directory service, authentication bypass, security, Active Directory
+**CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects LDAP injection vulnerabilities. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 

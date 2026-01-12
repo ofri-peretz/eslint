@@ -1,6 +1,8 @@
 # browser-security/require-websocket-wss
 
 > 🔒 Require secure WebSocket connections (wss://) instead of unencrypted (ws://)
+**CWE:** [CWE-319](https://cwe.mitre.org/data/definitions/319.html)  
+**OWASP Mobile:** [M5: Insecure Communication](https://owasp.org/www-project-mobile-top-10/)
 
 ## Rule Details
 

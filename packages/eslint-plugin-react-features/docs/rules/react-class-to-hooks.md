@@ -1,6 +1,7 @@
 # react-class-to-hooks
 
 > **Keywords:** React, hooks, migration, ESLint rule, class components, functional components, React modernization, auto-fix, LLM-optimized, React migration
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Suggest migrating React class components to hooks with detailed migration path. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features) and provides LLM-optimized error messages with fix suggestions.
 
@@ -115,6 +116,45 @@ function UserProfile({ userId }: Props) {
 - [`react-no-inline-functions`](./react-no-inline-functions.md) - Performance optimization
 - [`required-attributes`](./required-attributes.md) - React attribute enforcement
 - [`no-deprecated-api`](./no-deprecated-api.md) - API modernization
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Values from Variables
+
+**Why**: Static analysis cannot trace values stored in variables.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const value = userInput;
+dangerousOperation(value);
+```
+
+**Mitigation**: Implement runtime validation and review code manually.
+
+### Custom Wrapper Functions
+
+**Why**: Custom wrapper functions are not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom wrapper
+myCustomWrapper(sensitiveData); // Uses insecure API internally
+```
+
+**Mitigation**: Apply this rule's principles to wrapper function implementations.
+
+### Dynamic Property Access
+
+**Why**: Dynamic property access cannot be statically analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic access
+obj[methodName](data);
+```
+
+**Mitigation**: Avoid dynamic method invocation with sensitive operations.
+
 
 ## Further Reading
 

@@ -1,5 +1,7 @@
 # detect-llm-generated-sql
 
+> Detect Llm Generated Sql
+
 Detect dangerous LLM-to-SQL patterns.
 
 **OWASP LLM Top 10 2025**: LLM05 - Improper Output Handling  

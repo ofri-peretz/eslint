@@ -1,6 +1,7 @@
 # no-batch-insert-loop
 
 > **Keywords:** N+1 queries, performance, CWE-400, pg, node-postgres, bulk operations
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern).
 

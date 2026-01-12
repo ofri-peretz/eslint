@@ -1,6 +1,8 @@
 # no-weak-password-recovery
 
 > **Keywords:** no weak password recovery, security, ESLint rule, JavaScript, TypeScript, CWE-640, CWE-620, authentication, ATO, tokens
+**CWE:** [CWE-798](https://cwe.mitre.org/data/definitions/798.html)  
+**OWASP Mobile:** [M1: Improper Credential Usage](https://owasp.org/www-project-mobile-top-10/)
 
 ESLint Rule: no-weak-password-recovery with LLM-optimized suggestions and auto-fix capabilities. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 

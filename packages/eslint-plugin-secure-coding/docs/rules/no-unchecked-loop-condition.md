@@ -1,6 +1,8 @@
 # no-unchecked-loop-condition
 
 > **Keywords:** unchecked loop, CWE-400, CWE-835, infinite loop, DoS, security
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects unchecked loop conditions that could cause DoS. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 

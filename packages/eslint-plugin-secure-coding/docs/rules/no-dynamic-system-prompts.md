@@ -1,5 +1,7 @@
 # no-dynamic-system-prompts
 
+> No Dynamic System Prompts
+
 Prevent runtime modification of system prompts without validation.
 
 **OWASP LLM Top 10 2025**: LLM01 - Prompt Injection  

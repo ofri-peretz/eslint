@@ -1,6 +1,8 @@
 # no-env-logging
 
 > **Keywords:** environment variables, logging, Lambda, CWE-532, security, sensitive data exposure
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects logging of environment variables which may contain secrets. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security).
 

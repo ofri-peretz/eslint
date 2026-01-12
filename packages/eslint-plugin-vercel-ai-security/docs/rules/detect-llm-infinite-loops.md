@@ -1,5 +1,7 @@
 # detect-llm-infinite-loops
 
+> Detect Llm Infinite Loops
+
 Detect potential infinite reasoning loops in LLM agents.
 
 **OWASP LLM Top 10 2025**: LLM10 - Unbounded Consumption  

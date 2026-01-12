@@ -1,5 +1,7 @@
 # no-sensitive-indexeddb
 
+> No Sensitive Indexeddb
+
 Prevent storing sensitive data in IndexedDB.
 
 ## ⚠️ Security Issue

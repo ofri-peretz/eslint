@@ -1,5 +1,7 @@
 # require-cookie-secure-attrs
 
+> Require Cookie Secure Attrs
+
 Require Secure and SameSite attributes on cookies.
 
 ## ⚠️ Security Issue

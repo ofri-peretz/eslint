@@ -1,5 +1,7 @@
 # detect-llm-unrestricted-tool-access
 
+> Detect Llm Unrestricted Tool Access
+
 Detect LLM agents with access to all tools without restrictions.
 
 **OWASP LLM Top 10 2025**: LLM06 - Excessive Agency  

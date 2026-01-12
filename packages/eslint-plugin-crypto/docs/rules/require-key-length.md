@@ -1,5 +1,7 @@
 # require-key-length
 
+> Require Key Length
+
 ## Description
 
 TODO: Add description for this rule.

@@ -1,6 +1,8 @@
 # require-postmessage-origin-check
 
 > **Keywords:** postMessage, cross-origin, CWE-346, security, iframe, message validation
+**CWE:** [CWE-494](https://cwe.mitre.org/data/definitions/494.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects postMessage event handlers without origin validation. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 

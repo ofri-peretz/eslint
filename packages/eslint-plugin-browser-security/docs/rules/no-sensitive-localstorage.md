@@ -1,6 +1,8 @@
 # no-sensitive-localstorage
 
 > **Keywords:** localStorage, sessionStorage, tokens, CWE-922, security, XSS, sensitive data
+**CWE:** [CWE-359](https://cwe.mitre.org/data/definitions/359.html)  
+**OWASP Mobile:** [M9: Insecure Data Storage](https://owasp.org/www-project-mobile-top-10/)
 
 Detects storage of sensitive data (tokens, passwords, PII) in localStorage. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 

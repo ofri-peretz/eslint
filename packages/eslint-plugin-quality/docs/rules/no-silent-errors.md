@@ -1,6 +1,7 @@
 # no-silent-errors
 
 > **Keywords:** no silent errors, error-handling, ESLint rule, JavaScript, TypeScript, SonarQube RSPEC-1186
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 ESLint Rule: no-silent-errors with LLM-optimized suggestions and auto-fix capabilities.
 
@@ -94,6 +95,45 @@ export default [
 ## Related Rules
 
 - [`rule-name`](./rule-name.md) - Description
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Values from Variables
+
+**Why**: Static analysis cannot trace values stored in variables.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const value = userInput;
+dangerousOperation(value);
+```
+
+**Mitigation**: Implement runtime validation and review code manually.
+
+### Custom Wrapper Functions
+
+**Why**: Custom wrapper functions are not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom wrapper
+myCustomWrapper(sensitiveData); // Uses insecure API internally
+```
+
+**Mitigation**: Apply this rule's principles to wrapper function implementations.
+
+### Dynamic Property Access
+
+**Why**: Dynamic property access cannot be statically analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic access
+obj[methodName](data);
+```
+
+**Mitigation**: Avoid dynamic method invocation with sensitive operations.
+
 
 ## Further Reading
 

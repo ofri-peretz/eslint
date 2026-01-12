@@ -1,5 +1,7 @@
 # no-cryptojs
 
+> No Cryptojs
+
 ## Description
 
 TODO: Add description for this rule.

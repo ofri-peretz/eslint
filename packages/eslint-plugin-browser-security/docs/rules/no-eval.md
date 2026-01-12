@@ -1,6 +1,8 @@
 # no-eval
 
 > **Keywords:** eval, code injection, CWE-94, security, dynamic code execution, Function constructor
+**CWE:** [CWE-95](https://cwe.mitre.org/data/definitions/95.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects dangerous eval() and similar code execution patterns. This rule is part of [`eslint-plugin-frontend-security`](https://www.npmjs.com/package/eslint-plugin-frontend-security).
 

@@ -1,5 +1,7 @@
 # no-deprecated-cipher-method
 
+> No Deprecated Cipher Method
+
 ## Description
 
 TODO: Add description for this rule.

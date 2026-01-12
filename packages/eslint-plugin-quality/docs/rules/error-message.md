@@ -1,6 +1,7 @@
 # error-message
 
 > **Keywords:** Error, message, debugging, exception, throw, ESLint rule, error handling, LLM-optimized
+**CWE:** [CWE-209](https://cwe.mitre.org/data/definitions/209.html)
 
 Enforce providing a message when creating built-in Error objects for better debugging. This rule is part of [`@eslint/eslint-plugin-quality`](https://www.npmjs.com/package/@eslint/eslint-plugin-quality) and provides LLM-optimized error messages with suggestions.
 
@@ -219,6 +220,45 @@ function processConfig(config: unknown) {
 
 - [`no-silent-errors`](./no-silent-errors.md) - Prevents empty catch blocks
 - [`no-missing-error-context`](./no-missing-error-context.md) - Ensures error context
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Values from Variables
+
+**Why**: Static analysis cannot trace values stored in variables.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const value = userInput;
+dangerousOperation(value);
+```
+
+**Mitigation**: Implement runtime validation and review code manually.
+
+### Custom Wrapper Functions
+
+**Why**: Custom wrapper functions are not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom wrapper
+myCustomWrapper(sensitiveData); // Uses insecure API internally
+```
+
+**Mitigation**: Apply this rule's principles to wrapper function implementations.
+
+### Dynamic Property Access
+
+**Why**: Dynamic property access cannot be statically analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic access
+obj[methodName](data);
+```
+
+**Mitigation**: Avoid dynamic method invocation with sensitive operations.
+
 
 ## Further Reading
 

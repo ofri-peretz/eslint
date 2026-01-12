@@ -1,5 +1,7 @@
 # no-dynamic-service-worker-url
 
+> No Dynamic Service Worker Url
+
 Prevent dynamic URLs in service worker registration.
 
 ## ⚠️ Security Issue

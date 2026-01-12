@@ -1,5 +1,7 @@
 # no-worker-message-innerhtml
 
+> No Worker Message Innerhtml
+
 Disallow using innerHTML with Web Worker message data.
 
 ## ⚠️ Security Issue

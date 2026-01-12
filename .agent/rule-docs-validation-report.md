@@ -1,39 +1,17 @@
 # Rule Documentation Validation Report
 
-**Generated:** 2026-01-12T07:44:14.689Z
+**Generated:** 2026-01-12T07:59:02.767Z
 **Total Rules:** 397
-**Compliant:** 137
-**Issues:** 260
+**Compliant:** 297
+**Issues:** 100
 
 ## 🔴 HIGH PRIORITY - Stub/Placeholder Content (0)
 
 
 
-## 🟡 MEDIUM PRIORITY - Formatting/Structure (260)
+## 🟡 MEDIUM PRIORITY - Formatting/Structure (100)
 
-- **quality/prefer-dependency-version-strategy**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **quality/cognitive-complexity**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **quality/error-message**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **quality/max-parameters**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **quality/no-console-spaces**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **quality/no-unhandled-promise**: Missing "Known False Negatives" section
-- **quality/nested-complexity-hotspots**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **quality/no-nested-ternary**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **quality/no-silent-errors**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **quality/no-unsafe-type-narrowing**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **quality/no-process-exit**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **quality/no-deprecated-api**: Missing "Known False Negatives" section
-- **quality/no-lonely-if**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **quality/prefer-code-point**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **quality/no-missing-error-context**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **quality/no-commented-code**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **quality/expiring-todo-comments**: Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **quality/prefer-dom-node-text-content**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **quality/no-missing-null-checks**: Missing "Known False Negatives" section
-- **quality/no-console-log**: Missing "Known False Negatives" section
-- **quality/identical-functions**: Missing "Known False Negatives" section
-- **vercel-ai-security/detect-llm-unrestricted-tool-access**: Missing description blockquote
-- **vercel-ai-security/detect-rag-injection-risks**: Missing description blockquote
+- **quality/expiring-todo-comments**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
 - **vercel-ai-security/no-hardcoded-api-keys**: Title mismatch or missing
 - **vercel-ai-security/require-validated-prompt**: Title mismatch or missing
 - **vercel-ai-security/require-output-validation**: Title mismatch or missing
@@ -47,45 +25,20 @@
 - **vercel-ai-security/require-tool-confirmation**: Title mismatch or missing
 - **vercel-ai-security/require-output-filtering**: Title mismatch or missing
 - **vercel-ai-security/require-error-handling**: Title mismatch or missing
-- **vercel-ai-security/detect-llm-generated-sql**: Missing description blockquote
 - **vercel-ai-security/require-tool-schema**: Title mismatch or missing
-- **vercel-ai-security/detect-llm-infinite-loops**: Missing description blockquote
 - **vercel-ai-security/no-unsafe-output-handling**: Title mismatch or missing
 - **vercel-ai-security/require-abort-signal**: Title mismatch or missing
 - **vercel-ai-security/no-training-data-exposure**: Title mismatch or missing
 - **vercel-ai-security/require-max-tokens**: Title mismatch or missing
 - **vercel-ai-security/require-request-timeout**: Title mismatch or missing
-- **architecture/no-instanceof-array**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **architecture/no-unreadable-iife**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **architecture/consistent-existence-index-check**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **architecture/no-await-in-loop**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **architecture/filename-case**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **architecture/no-external-api-calls-in-utils**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **architecture/consistent-function-scoping**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **architecture/prefer-event-target**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **architecture/no-dynamic-require**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **architecture/ddd-value-object-immutability**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **architecture/enforce-rest-conventions**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **architecture/enforce-naming**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **architecture/ddd-anemic-domain-model**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **architecture/prefer-at**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
 - **browser-security/no-postmessage-wildcard-origin**: Title mismatch or missing
 - **browser-security/no-filereader-innerhtml**: Title mismatch or missing
-- **browser-security/no-unsafe-inline-csp**: Missing description blockquote
 - **browser-security/no-websocket-eval**: Title mismatch or missing
-- **browser-security/require-blob-url-revocation**: Missing description blockquote
 - **browser-security/require-websocket-wss**: Title mismatch or missing
-- **browser-security/no-unsafe-eval-csp**: Missing description blockquote
-- **browser-security/no-worker-message-innerhtml**: Missing description blockquote
-- **browser-security/no-cookie-auth-tokens**: Missing description blockquote
 - **browser-security/no-postmessage-innerhtml**: Title mismatch or missing
 - **browser-security/no-websocket-innerhtml**: Title mismatch or missing
-- **browser-security/no-sensitive-sessionstorage**: Missing description blockquote
-- **browser-security/no-sensitive-indexeddb**: Missing description blockquote
 - **browser-security/no-jwt-in-storage**: Title mismatch or missing
-- **browser-security/require-cookie-secure-attrs**: Missing description blockquote
 - **browser-security/no-sensitive-cookie-js**: Title mismatch or missing
-- **browser-security/no-dynamic-service-worker-url**: Missing description blockquote
 - **secure-coding/detect-no-csrf-before-method-override**: Title mismatch or missing, Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+), Missing security standard (CWE/OWASP)
 - **secure-coding/detect-non-literal-regexp**: Title mismatch or missing, Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+), Missing security standard (CWE/OWASP)
 - **secure-coding/detect-bidi-characters**: Title mismatch or missing, Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+), Missing security standard (CWE/OWASP)
@@ -100,174 +53,61 @@
 - **secure-coding/detect-unsafe-regex**: Title mismatch or missing, Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+), Missing security standard (CWE/OWASP)
 - **secure-coding/detect-new-buffer**: Title mismatch or missing, Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+), Missing security standard (CWE/OWASP)
 - **secure-coding/detect-pseudoRandomBytes**: Title mismatch or missing, Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **secure-coding/detect-llm-unrestricted-tool-access**: Missing description blockquote
-- **secure-coding/detect-rag-injection-risks**: Missing description blockquote
-- **secure-coding/detect-indirect-prompt-injection-vectors**: Missing description blockquote
-- **secure-coding/no-dynamic-system-prompts**: Missing description blockquote
-- **secure-coding/detect-llm-generated-sql**: Missing description blockquote
-- **secure-coding/enforce-llm-tool-least-privilege**: Missing description blockquote
-- **secure-coding/detect-llm-infinite-loops**: Missing description blockquote
-- **pg/prefer-pool-query**: Missing security standard (CWE/OWASP)
-- **pg/no-select-all**: Missing security standard (CWE/OWASP)
-- **react-a11y/no-access-key**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/no-distracting-elements**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/html-has-lang**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/anchor-ambiguous-text**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/no-redundant-roles**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/aria-props**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/aria-role**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/scope**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/anchor-has-content**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/iframe-has-title**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/img-requires-alt**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/no-noninteractive-element-to-interactive-role**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/no-autofocus**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/no-noninteractive-element-interactions**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/prefer-tag-over-role**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/mouse-events-have-key-events**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/click-events-have-key-events**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/no-interactive-element-to-noninteractive-role**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/aria-activedescendant-has-tabindex**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/lang**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/media-has-caption**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/no-noninteractive-tabindex**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/no-aria-hidden-on-focusable**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/role-supports-aria-props**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/tabindex-no-positive**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/role-has-required-aria-props**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/anchor-is-valid**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/no-keyboard-inaccessible-elements**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/img-redundant-alt**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/heading-has-content**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/control-has-associated-label**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/autocomplete-valid**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/interactive-supports-focus**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/aria-unsupported-elements**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/label-has-associated-control**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/no-static-element-interactions**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-a11y/no-missing-aria-labels**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/no-did-update-set-state**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/require-render-return**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/prefer-es6-class**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/jsx-key**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/state-in-constructor**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/no-unescaped-entities**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/no-render-return-value**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/require-optimization**: Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/no-redundant-should-component-update**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/hooks-exhaustive-deps**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/jsx-max-depth**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/checked-requires-onchange-or-readonly**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/jsx-no-literals**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/no-children-prop**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/no-invalid-html-attribute**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/no-access-state-in-setstate**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/no-unknown-property**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/no-did-mount-set-state**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/react-render-optimization**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/require-default-props**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/no-namespace**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/static-property-placement**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/default-props-match-prop-types**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/no-object-type-as-default-prop**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/react-no-inline-functions**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/no-string-refs**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/no-danger**: Missing "Known False Negatives" section, Only 1 code examples (need 2+)
-- **react-features/jsx-handler-names**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/react-class-to-hooks**: Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/no-adjacent-inline-elements**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/react-in-jsx-scope**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/prop-types**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/required-attributes**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/display-name**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/no-set-state**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/prefer-stateless-function**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/no-arrow-function-lifecycle**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/no-direct-mutation-state**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/no-is-mounted**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/no-this-in-sfc**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/no-typos**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **react-features/no-multi-comp**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/sort-comp**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/no-unnecessary-rerenders**: Missing "Known False Negatives" section, Missing security standard (CWE/OWASP)
-- **react-features/jsx-no-bind**: Missing "Known False Negatives" section, Only 1 code examples (need 2+), Missing security standard (CWE/OWASP)
-- **crypto/no-cryptojs-weak-random**: Missing description blockquote
-- **crypto/require-random-iv**: Missing description blockquote
-- **crypto/no-deprecated-cipher-method**: Missing description blockquote
-- **crypto/no-cryptojs**: Missing description blockquote
-- **crypto/require-secure-pbkdf2-digest**: Missing description blockquote
-- **crypto/require-sufficient-length**: Missing description blockquote
-- **crypto/no-timing-unsafe-compare**: Missing description blockquote
-- **crypto/no-key-reuse**: Missing description blockquote
-- **crypto/require-key-length**: Missing description blockquote
-- **crypto/no-ecb-mode**: Missing description blockquote
-- **crypto/no-sha1-hash**: Missing description blockquote
-- **crypto/require-authenticated-encryption**: Missing description blockquote
-- **crypto/prefer-native-crypto**: Missing description blockquote
-- **crypto/no-predictable-salt**: Missing description blockquote
-- **crypto/no-math-random-crypto**: Missing description blockquote
-- **crypto/no-hardcoded-crypto-key**: Missing description blockquote
-- **crypto/no-static-iv**: Missing description blockquote
-- **crypto/no-insecure-key-derivation**: Missing description blockquote
-- **crypto/no-numeric-only-tokens**: Missing description blockquote
-- **crypto/no-insecure-rsa-padding**: Missing description blockquote
-- **crypto/no-web-crypto-export**: Missing description blockquote
-- **crypto/no-self-signed-certs**: Missing description blockquote
-- **crypto/no-weak-hash-algorithm**: Missing description blockquote
-- **crypto/no-weak-cipher-algorithm**: Missing description blockquote
-- **import-next/no-named-as-default**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/newline-after-import**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-cross-domain-imports**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/prefer-default-export**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/unambiguous**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-self-import**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/exports-last**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/default**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/extensions**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/enforce-dependency-direction**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-import-module-exports**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/first**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-named-default**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-internal-modules**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/named**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-default-export**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-named-export**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-commonjs**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/enforce-team-boundaries**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-namespace**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/prefer-direct-import**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-legacy-imports**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/dynamic-import-chunkname**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-cycle**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-useless-path-segments**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/max-dependencies**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/prefer-tree-shakeable-imports**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/namespace**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-unassigned-import**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/require-import-approval**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-duplicates**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-full-package-import**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/prefer-modern-api**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-restricted-paths**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-amd**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-absolute-path**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-empty-named-blocks**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-extraneous-dependencies**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-dynamic-require**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/group-exports**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/enforce-import-order**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-anonymous-default-export**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-unused-modules**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-unresolved**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-deprecated**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-relative-packages**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/prefer-node-protocol**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-barrel-file**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/export**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/consistent-type-specifier-style**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-barrel-import**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-mutable-exports**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-nodejs-modules**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/order**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-named-as-default-member**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
-- **import-next/no-relative-parent-imports**: Missing description blockquote, Missing "❌ Incorrect" section, Missing "✅ Correct" section, Missing "Known False Negatives" section, Only 0 code examples (need 2+)
+- **react-features/require-optimization**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **react-features/react-class-to-hooks**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-named-as-default**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/newline-after-import**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-cross-domain-imports**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/prefer-default-export**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/unambiguous**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-self-import**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/exports-last**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/default**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/extensions**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/enforce-dependency-direction**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-import-module-exports**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/first**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-named-default**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-internal-modules**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/named**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-default-export**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-named-export**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-commonjs**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/enforce-team-boundaries**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-namespace**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/prefer-direct-import**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-legacy-imports**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/dynamic-import-chunkname**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-cycle**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-useless-path-segments**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/max-dependencies**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/prefer-tree-shakeable-imports**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/namespace**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-unassigned-import**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/require-import-approval**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-duplicates**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-full-package-import**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/prefer-modern-api**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-restricted-paths**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-amd**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-absolute-path**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-empty-named-blocks**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-extraneous-dependencies**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-dynamic-require**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/group-exports**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/enforce-import-order**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-anonymous-default-export**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-unused-modules**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-unresolved**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-deprecated**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-relative-packages**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/prefer-node-protocol**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-barrel-file**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/export**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/consistent-type-specifier-style**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-barrel-import**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-mutable-exports**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-nodejs-modules**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/order**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-named-as-default-member**: Missing "❌ Incorrect" section, Missing "✅ Correct" section
+- **import-next/no-relative-parent-imports**: Missing "❌ Incorrect" section, Missing "✅ Correct" section

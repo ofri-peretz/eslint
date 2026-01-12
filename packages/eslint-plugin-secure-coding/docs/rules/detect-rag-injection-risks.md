@@ -1,5 +1,7 @@
 # detect-rag-injection-risks
 
+> Detect Rag Injection Risks
+
 Detect RAG/document inputs reaching LLM without content scanning.
 
 **OWASP LLM Top 10 2025**: LLM01 - Prompt Injection  

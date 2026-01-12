@@ -1,6 +1,8 @@
 # no-directive-injection
 
 > **Keywords:** directive injection, CWE-94, template injection, Angular, Vue, React, SSTI, XSS
+**CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects directive injection vulnerabilities in template systems. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 

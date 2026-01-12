@@ -1,6 +1,7 @@
 # jsx-key
 
 > **Keywords:** React, JSX, key prop, reconciliation, lists, map, iteration, ESLint rule, performance, LLM-optimized
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Detect missing or problematic React keys that could break reconciliation. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features) and provides LLM-optimized error messages with suggestions.
 
@@ -231,6 +232,45 @@ function NestedList({ categories }) {
 
 - [`react-no-inline-functions`](./react-no-inline-functions.md) - Performance optimization
 - [`react-render-optimization`](./react-render-optimization.md) - Render performance
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Values from Variables
+
+**Why**: Static analysis cannot trace values stored in variables.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const value = userInput;
+dangerousOperation(value);
+```
+
+**Mitigation**: Implement runtime validation and review code manually.
+
+### Custom Wrapper Functions
+
+**Why**: Custom wrapper functions are not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom wrapper
+myCustomWrapper(sensitiveData); // Uses insecure API internally
+```
+
+**Mitigation**: Apply this rule's principles to wrapper function implementations.
+
+### Dynamic Property Access
+
+**Why**: Dynamic property access cannot be statically analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic access
+obj[methodName](data);
+```
+
+**Mitigation**: Avoid dynamic method invocation with sensitive operations.
+
 
 ## Further Reading
 

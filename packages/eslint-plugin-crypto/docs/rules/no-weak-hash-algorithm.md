@@ -1,5 +1,7 @@
 # no-weak-hash-algorithm
 
+> No Weak Hash Algorithm
+
 ## Description
 
 TODO: Add description for this rule.

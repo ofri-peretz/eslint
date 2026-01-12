@@ -1,6 +1,7 @@
 # no-select-all
 
 > **Keywords:** SELECT \*, performance, quality, pg, node-postgres
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Discourages `SELECT *` in favor of explicit column lists.
 

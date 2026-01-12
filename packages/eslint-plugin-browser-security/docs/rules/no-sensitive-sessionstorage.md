@@ -1,5 +1,7 @@
 # no-sensitive-sessionstorage
 
+> No Sensitive Sessionstorage
+
 Prevent storing sensitive data in sessionStorage.
 
 ## ⚠️ Security Issue

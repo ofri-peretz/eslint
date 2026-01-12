@@ -1,5 +1,7 @@
 # no-hardcoded-crypto-key
 
+> No Hardcoded Crypto Key
+
 ## Description
 
 TODO: Add description for this rule.

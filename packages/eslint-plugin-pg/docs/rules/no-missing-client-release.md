@@ -1,6 +1,7 @@
 # no-missing-client-release
 
 > **Keywords:** connection leak, resource management, CWE-772, pg, node-postgres, pool
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Ensures acquired pool clients are released back to the pool.
 

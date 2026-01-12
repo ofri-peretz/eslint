@@ -1,6 +1,8 @@
 # no-missing-security-headers
 
 > **Keywords:** no missing security headers, security, ESLint rule, JavaScript, TypeScript, CWE-693
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 ESLint Rule: no-missing-security-headers. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 

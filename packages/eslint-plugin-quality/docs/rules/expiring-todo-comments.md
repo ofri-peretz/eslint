@@ -1,6 +1,7 @@
 # expiring-todo-comments
 
 > **Keywords:** TODO, FIXME, XXX, expiration, comments, technical debt, code quality, ESLint rule, version, date, LLM-optimized
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Add expiration conditions to TODO comments to prevent forgotten tasks. This rule is part of [`@eslint/eslint-plugin-quality`](https://www.npmjs.com/package/@eslint/eslint-plugin-quality) and provides LLM-optimized error messages.
 
@@ -219,6 +220,45 @@ function validateManually(data: unknown) { }
 
 - [`no-commented-code`](./no-commented-code.md) - Prevents commented-out code
 - [`cognitive-complexity`](./cognitive-complexity.md) - Code complexity limits
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Values from Variables
+
+**Why**: Static analysis cannot trace values stored in variables.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const value = userInput;
+dangerousOperation(value);
+```
+
+**Mitigation**: Implement runtime validation and review code manually.
+
+### Custom Wrapper Functions
+
+**Why**: Custom wrapper functions are not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom wrapper
+myCustomWrapper(sensitiveData); // Uses insecure API internally
+```
+
+**Mitigation**: Apply this rule's principles to wrapper function implementations.
+
+### Dynamic Property Access
+
+**Why**: Dynamic property access cannot be statically analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic access
+obj[methodName](data);
+```
+
+**Mitigation**: Avoid dynamic method invocation with sensitive operations.
+
 
 ## Further Reading
 

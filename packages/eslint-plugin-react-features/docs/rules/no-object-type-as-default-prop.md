@@ -1,6 +1,7 @@
 # no-object-type-as-default-prop
 
 > **Keywords:** React, defaultProps, object, reference equality, re-renders, performance, ESLint rule, LLM-optimized
+**CWE:** [CWE-276](https://cwe.mitre.org/data/definitions/276.html)
 
 Prevent object types as default prop values. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
 
@@ -94,6 +95,45 @@ function UserCard({ user, style, options }) {
 
 - [`react-render-optimization`](./react-render-optimization.md) - Render performance
 - [`no-unnecessary-rerenders`](./no-unnecessary-rerenders.md) - Re-render prevention
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Values from Variables
+
+**Why**: Static analysis cannot trace values stored in variables.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const value = userInput;
+dangerousOperation(value);
+```
+
+**Mitigation**: Implement runtime validation and review code manually.
+
+### Custom Wrapper Functions
+
+**Why**: Custom wrapper functions are not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom wrapper
+myCustomWrapper(sensitiveData); // Uses insecure API internally
+```
+
+**Mitigation**: Apply this rule's principles to wrapper function implementations.
+
+### Dynamic Property Access
+
+**Why**: Dynamic property access cannot be statically analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic access
+obj[methodName](data);
+```
+
+**Mitigation**: Avoid dynamic method invocation with sensitive operations.
+
 
 ## Further Reading
 

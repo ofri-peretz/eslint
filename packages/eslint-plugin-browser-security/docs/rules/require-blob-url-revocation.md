@@ -1,5 +1,7 @@
 # require-blob-url-revocation
 
+> Require Blob Url Revocation
+
 Require revoking Blob URLs after use to prevent memory leaks.
 
 ## ⚠️ Security Issue

@@ -1,6 +1,7 @@
 # prefer-pool-query
 
 > **Keywords:** pool, simplicity, quality, pg, node-postgres
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Suggests using `pool.query()` for single-shot queries instead of manual connect/release.
 

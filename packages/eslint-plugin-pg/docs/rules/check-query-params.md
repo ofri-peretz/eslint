@@ -1,6 +1,7 @@
 # check-query-params
 
 > **Keywords:** query parameters, CWE-89, pg, node-postgres, quality, parameterized queries
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Ensures the number of placeholders in SQL queries matches the provided parameters.
 

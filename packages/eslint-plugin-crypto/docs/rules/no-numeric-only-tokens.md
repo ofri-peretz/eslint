@@ -1,5 +1,7 @@
 # no-numeric-only-tokens
 
+> No Numeric Only Tokens
+
 ## Description
 
 TODO: Add description for this rule.

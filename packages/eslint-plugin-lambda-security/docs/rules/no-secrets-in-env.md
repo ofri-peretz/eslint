@@ -1,6 +1,8 @@
 # no-secrets-in-env
 
 > **Keywords:** secrets, environment variables, Lambda, CWE-798, security, hardcoded secrets
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects secrets defined directly in environment variable configurations. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security).
 

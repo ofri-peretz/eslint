@@ -1,5 +1,7 @@
 # no-key-reuse
 
+> No Key Reuse
+
 ## Description
 
 TODO: Add description for this rule.

@@ -1,6 +1,8 @@
 # no-zip-slip
 
 > **Keywords:** zip slip, CWE-22, path traversal, archive extraction, tar, security
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects zip slip/archive extraction vulnerabilities. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 

@@ -1,6 +1,8 @@
 # no-hardcoded-credentials
 
 > **Keywords:** hardcoded credentials, CWE-798, security, ESLint rule, API keys, passwords, tokens, secrets, environment variables, secret management, OWASP, credential security, auto-fix, LLM-optimized, code security
+**CWE:** [CWE-522](https://cwe.mitre.org/data/definitions/522.html)  
+**OWASP Mobile:** [M1: Improper Credential Usage](https://owasp.org/www-project-mobile-top-10/)
 
 Detects hardcoded passwords, API keys, tokens, and other sensitive credentials in source code. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 

@@ -1,6 +1,8 @@
 # no-improper-type-validation
 
 > **Keywords:** type validation, CWE-1287, type confusion, typeof, instanceof, security
+**CWE:** [CWE-20](https://cwe.mitre.org/data/definitions/20.html)  
+**OWASP Mobile:** [M4: Insufficient Input/Output Validation](https://owasp.org/www-project-mobile-top-10/)
 
 Detects improper type validation in user input handling. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 

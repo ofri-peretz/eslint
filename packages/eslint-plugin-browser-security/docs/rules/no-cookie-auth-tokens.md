@@ -1,5 +1,7 @@
 # no-cookie-auth-tokens
 
+> No Cookie Auth Tokens
+
 Prevent storing authentication tokens in JavaScript-accessible cookies.
 
 ## ⚠️ Security Issue

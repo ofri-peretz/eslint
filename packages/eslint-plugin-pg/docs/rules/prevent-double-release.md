@@ -1,6 +1,7 @@
 # prevent-double-release
 
 > **Keywords:** double release, connection pool, CWE-415, pg, node-postgres, pool corruption
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Prevents calling `client.release()` multiple times on the same client.
 

@@ -1,6 +1,8 @@
 # no-unsafe-dynamic-require
 
 > **Keywords:** require, code injection, security, ESLint rule, dynamic require, path traversal, arbitrary code execution, module loading, auto-fix, LLM-optimized, code security
+**CWE:** [CWE-494](https://cwe.mitre.org/data/definitions/494.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Disallows dynamic `require()` calls with non-literal arguments that could lead to security vulnerabilities. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages with fix suggestions.
 
