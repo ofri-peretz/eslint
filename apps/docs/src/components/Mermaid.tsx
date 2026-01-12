@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useId, useSyncExternalStore, useEffect, useRef, useState } from 'react';
+import { use, useId, useSyncExternalStore, useEffect, useRef, useState, useCallback } from 'react';
 import { useTheme } from 'next-themes';
 
 // Use useSyncExternalStore for hydration-safe client detection
@@ -140,27 +140,27 @@ function MermaidContent({ chart }: { chart: string }) {
     });
   }, [svg]);
   
-  const handleZoomIn = () => {
+  const handleZoomIn = useCallback(() => {
     if (panZoom) {
       panZoom.smoothZoom(0, 0, 1.2);
     }
-  };
+  }, [panZoom]);
   
-  const handleZoomOut = () => {
+  const handleZoomOut = useCallback(() => {
     if (panZoom) {
       panZoom.smoothZoom(0, 0, 0.8);
     }
-  };
+  }, [panZoom]);
   
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     if (panZoom) {
       panZoom.moveTo(0, 0);
       panZoom.zoomAbs(0, 0, 1);
       setZoomLevel(1);
     }
-  };
+  }, [panZoom]);
   
-  const handleFit = () => {
+  const handleFit = useCallback(() => {
     if (panZoom && svgContainerRef.current) {
       const svg = svgContainerRef.current.querySelector('svg');
       if (!svg) return;
@@ -177,7 +177,7 @@ function MermaidContent({ chart }: { chart: string }) {
       panZoom.zoomAbs(0, 0, scale);
       setZoomLevel(scale);
     }
-  };
+  }, [panZoom]);
   
   // Keyboard shortcuts
   useEffect(() => {
@@ -198,7 +198,7 @@ function MermaidContent({ chart }: { chart: string }) {
     
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [panZoom]);
+  }, [handleZoomIn, handleZoomOut, handleReset]);
   
   const ControlButton = ({ onClick, title, children }: { onClick: () => void; title: string; children: React.ReactNode }) => (
     <button
