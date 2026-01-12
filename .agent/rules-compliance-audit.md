@@ -329,23 +329,39 @@ All rule documentation files **MUST** follow this exact section order:
 
 **✅ Required:**
 
-- Clear explanation of what the rule detects
-- May include a table with metadata (Type, CVSS, Config Default)
+- Clear explanation of what the rule detects and why it matters
+- **Format options:**
+  - **Option A: Prose format** (most common) - Explain detection logic in 2-3 paragraphs
+  - **Option B: Table format** (for complex rules) - Include Type, Severity, CWE, CVSS, Config Default
 - Optional: Mermaid diagram for complex flows
-- Optional: "Why This Matters" subsection
+- Optional: "Why This Matters" subsection (can be separate H3 or part of Rule Details)
 
 **Examples:**
 
-```markdown
-## 🔍 What This Rule Detects
-
-This rule identifies code patterns where system prompts contain dynamic or user-controlled content. Dynamic system prompts can lead to agent confusion attacks where the AI's core behavior can be manipulated.
-```
+**Option A - Prose (Preferred for most rules):**
 
 ```markdown
 ## Rule Details
 
-SQL injection is one of the most critical security vulnerabilities. This rule detects potentially unsafe SQL query construction in `pg` driver calls.
+This rule detects when sensitive user data (email, SSN, credit card, password, phone, address) is passed to analytics tracking calls like `analytics.track()`. Analytics platforms may not provide adequate security for sensitive data.
+
+### Why This Matters
+
+Analytics platforms are third-party services. Sending PII violates GDPR Article 6 and creates regulatory risks.
+```
+
+**Option B - Table (For rules with many metadata fields):**
+
+```markdown
+## 📊 Rule Details
+
+| Property          | Value                                                                             |
+| ----------------- | --------------------------------------------------------------------------------- |
+| **Type**          | problem                                                                           |
+| **Severity**      | 🔴 HIGH                                                                           |
+| **OWASP Agentic** | [ASI01: Agent Confusion](https://owasp.org)                                       |
+| **CWE**           | [CWE-74: Improper Neutralization](https://cwe.mitre.org/data/definitions/74.html) |
+| **CVSS**          | 8.0                                                                               |
 ```
 
 **❌ Invalid:**
@@ -360,10 +376,12 @@ SQL injection is one of the most critical security vulnerabilities. This rule de
 
 **✅ Required:**
 
-- Both `❌ Incorrect` and `✅ Correct` sections
+- Both `❌ Incorrect` and `✅ Correct` sections **MUST have real, concrete examples**
 - At least 2 examples per section
 - TypeScript/JavaScript code blocks
 - Inline comments explaining the issue/fix
+- **NO TODO placeholders** - examples must be based on actual rule implementation
+- **NO generic placeholders** like `// Insecure pattern` or `// Secure pattern`
 
 **Formatting Standards:**
 
@@ -409,6 +427,8 @@ await generateText({
 - Examples without comments
 - JavaScript-only (should prefer TypeScript)
 - Missing security context
+- **TODO placeholders** (`// TODO: Add examples`)
+- **Generic placeholders** (`// Insecure pattern`, `// Secure pattern`)
 
 ---
 
