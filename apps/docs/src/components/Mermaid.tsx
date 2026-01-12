@@ -124,8 +124,8 @@ function MermaidContent({ chart }: { chart: string }) {
         },
       });
       
-      instance.on('zoom', (e) => {
-        setZoomLevel(e.getTransform().scale);
+      instance.on('zoom', (pz: typeof instance) => {
+        setZoomLevel(pz.getTransform().scale);
       });
       
       instance.on('pan', () => {
