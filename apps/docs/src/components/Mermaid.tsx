@@ -30,8 +30,9 @@ function MermaidContent({ chart }: { chart: string }) {
   const id = useId();
   const { resolvedTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
+  const svgContainerRef = useRef<HTMLDivElement>(null);
   const [panZoom, setPanZoom] = useState<any>(null);
-  const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
   
   const { default: mermaid } = use(
     cachePromise('mermaid', () => import('mermaid'))
@@ -104,23 +105,31 @@ function MermaidContent({ chart }: { chart: string }) {
   
   // Initialize pan-zoom functionality
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!svgContainerRef.current) return;
     
-    const svgElement = containerRef.current.querySelector('svg');
+    const svgElement = svgContainerRef.current.querySelector('svg');
     if (!svgElement) return;
     
     // Dynamic import of panzoom
     import('panzoom').then(({ default: panzoom }) => {
       const instance = panzoom(svgElement, {
-        maxZoom: 4,
-        minZoom: 0.5,
+        maxZoom: 5,
+        minZoom: 0.3,
         bounds: true,
         boundsPadding: 0.1,
         zoomDoubleClickSpeed: 1,
+        beforeWheel: (e) => {
+          // Prevent scroll interference
+          return true;
+        },
       });
       
-      instance.on('zoom', () => {
-        setIsZoomed(true);
+      instance.on('zoom', (e) => {
+        setZoomLevel(e.getTransform().scale);
+      });
+      
+      instance.on('pan', () => {
+        setZoomLevel(instance.getTransform().scale);
       });
       
       setPanZoom(instance);
@@ -131,51 +140,134 @@ function MermaidContent({ chart }: { chart: string }) {
     });
   }, [svg]);
   
+  const handleZoomIn = () => {
+    if (panZoom) {
+      panZoom.smoothZoom(0, 0, 1.2);
+    }
+  };
+  
+  const handleZoomOut = () => {
+    if (panZoom) {
+      panZoom.smoothZoom(0, 0, 0.8);
+    }
+  };
+  
   const handleReset = () => {
     if (panZoom) {
       panZoom.moveTo(0, 0);
       panZoom.zoomAbs(0, 0, 1);
-      setIsZoomed(false);
+      setZoomLevel(1);
     }
   };
   
+  const handleFit = () => {
+    if (panZoom && svgContainerRef.current) {
+      const svg = svgContainerRef.current.querySelector('svg');
+      if (!svg) return;
+      
+      const container = svgContainerRef.current;
+      const svgRect = svg.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      
+      const scaleX = (containerRect.width * 0.9) / svgRect.width;
+      const scaleY = (containerRect.height * 0.9) / svgRect.height;
+      const scale = Math.min(scaleX, scaleY, 1);
+      
+      panZoom.moveTo(0, 0);
+      panZoom.zoomAbs(0, 0, scale);
+      setZoomLevel(scale);
+    }
+  };
+  
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (!containerRef.current?.contains(document.activeElement)) return;
+      
+      if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        handleZoomIn();
+      } else if (e.key === '-' || e.key === '_') {
+        e.preventDefault();
+        handleZoomOut();
+      } else if (e.key === '0') {
+        e.preventDefault();
+        handleReset();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [panZoom]);
+  
+  const ControlButton = ({ onClick, title, children }: { onClick: () => void; title: string; children: React.ReactNode }) => (
+    <button
+      onClick={onClick}
+      title={title}
+      className="p-1.5 rounded bg-fd-background hover:bg-violet-500/10 border border-violet-500/20 transition-colors flex items-center justify-center"
+    >
+      {children}
+    </button>
+  );
+  
   return (
-    <div className="hidden sm:block my-6 rounded-xl border border-violet-500/20 bg-fd-card overflow-hidden">
-      {/* Control buttons */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-violet-500/10 bg-violet-500/5">
+    <div ref={containerRef} className="hidden sm:block my-6 rounded-xl border border-violet-500/20 bg-fd-card overflow-hidden">
+      {/* Control bar */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-violet-500/10 bg-violet-500/5">
         <div className="text-xs text-muted-foreground flex items-center gap-2">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
           </svg>
-          <span>Drag to pan • Scroll to zoom</span>
+          <span>Drag • Scroll • Zoom</span>
+          <span className="text-violet-500 ml-2">{Math.round(zoomLevel * 100)}%</span>
         </div>
-        {isZoomed && (
-          <button
-            onClick={handleReset}
-            className="ml-auto text-xs px-2 py-1 rounded bg-violet-500/10 hover:bg-violet-500/20 text-violet-600 dark:text-violet-400 transition-colors"
-          >
-            Reset View
-          </button>
-        )}
+        
+        {/* Control buttons */}
+        <div className="flex items-center gap-1">
+          <ControlButton onClick={handleZoomOut} title="Zoom out (-)">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+            </svg>
+          </ControlButton>
+          
+          <ControlButton onClick={handleZoomIn} title="Zoom in (+)">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </ControlButton>
+          
+          <ControlButton onClick={handleFit} title="Fit to window">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+            </svg>
+          </ControlButton>
+          
+          <ControlButton onClick={handleReset} title="Reset (0)">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </ControlButton>
+        </div>
       </div>
       
       {/* Mermaid diagram container */}
-      <div className="p-4 overflow-hidden">
+      <div className="p-4 overflow-hidden bg-fd-background/50" style={{ height: '500px' }}>
         <div
           ref={(container) => {
             if (container) {
               bindFunctions?.(container);
-              containerRef.current = container;
+              svgContainerRef.current = container;
             }
           }}
           dangerouslySetInnerHTML={{ __html: svg }}
-          className="flex justify-center min-w-fit [&_svg]:max-w-none [&_svg]:cursor-move"
+          className="h-full flex items-center justify-center [&_svg]:max-w-none [&_svg]:cursor-grab [&_svg:active]:cursor-grabbing"
         />
       </div>
       
-      {/* Mobile fallback message */}
+      {/* Mobile fallback */}
       <div className="sm:hidden p-4 text-center text-sm text-muted-foreground bg-amber-500/10 border-l-4 border-amber-500">
-        📱 Interactive diagram hidden on mobile. View on desktop for zoom/pan controls.
+        📱 Interactive diagram hidden on mobile. View on desktop for full controls.
       </div>
     </div>
   );
