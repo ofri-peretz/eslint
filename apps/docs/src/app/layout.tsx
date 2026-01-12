@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { RootProvider } from 'fumadocs-ui/provider/next';
+import { Analytics } from '@vercel/analytics/next';
 import './global.css';
 import { Space_Grotesk } from 'next/font/google';
 import { Providers } from '@/components/Providers';
@@ -142,6 +143,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         <Providers>
           <RootProvider>{children}</RootProvider>
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
