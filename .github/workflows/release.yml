@@ -516,30 +516,90 @@ jobs:
             RELEASED="${{ steps.release-all.outputs.released }}"
             SKIPPED="${{ steps.release-all.outputs.skipped }}"
             FAILED="${{ steps.release-all.outputs.failed }}"
+            FAILED_DETAILS="${{ steps.release-all.outputs.failed-details }}"
+            
+            # Count results
+            RELEASED_COUNT=0
+            SKIPPED_COUNT=0
+            FAILED_COUNT=0
             
             if [ -n "$RELEASED" ]; then
-              echo "### ✅ Released" >> $GITHUB_STEP_SUMMARY
+              RELEASED_COUNT=$(echo "$RELEASED" | wc -w | tr -d ' ')
+            fi
+            if [ -n "$SKIPPED" ]; then
+              SKIPPED_COUNT=$(echo "$SKIPPED" | wc -w | tr -d ' ')
+            fi
+            if [ -n "$FAILED" ]; then
+              FAILED_COUNT=$(echo "$FAILED" | wc -w | tr -d ' ')
+            fi
+            
+            TOTAL=$(($RELEASED_COUNT + $SKIPPED_COUNT + $FAILED_COUNT))
+            
+            echo "**Total Packages Processed:** $TOTAL" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Status | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| ✅ Published | $RELEASED_COUNT |" >> $GITHUB_STEP_SUMMARY
+            echo "| ⏭️ Skipped | $SKIPPED_COUNT |" >> $GITHUB_STEP_SUMMARY
+            echo "| ❌ Failed | $FAILED_COUNT |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            if [ -n "$RELEASED" ]; then
+              echo "### ✅ Successfully Published" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
-              for pkg in $RELEASED; do
-                echo "- \`$pkg\`" >> $GITHUB_STEP_SUMMARY
+              echo "| Package | Version | NPM Link |" >> $GITHUB_STEP_SUMMARY
+              echo "|---------|---------|----------|" >> $GITHUB_STEP_SUMMARY
+              for pkg_ver in $RELEASED; do
+                # Extract package and version
+                PKG="${pkg_ver%@*}"
+                VER="${pkg_ver##*@}"
+                
+                # Resolve NPM name
+                case "$PKG" in
+                  eslint-devkit) NPM_NAME="@interlace/eslint-devkit" ;;
+                  cli) NPM_NAME="@interlace/cli" ;;
+                  *) NPM_NAME="$PKG" ;;
+                esac
+                
+                echo "| \`$PKG\` | \`$VER\` | [npm](https://www.npmjs.com/package/$NPM_NAME/v/$VER) |" >> $GITHUB_STEP_SUMMARY
               done
+              echo "" >> $GITHUB_STEP_SUMMARY
             fi
             
             if [ -n "$SKIPPED" ]; then
-              echo "" >> $GITHUB_STEP_SUMMARY
-              echo "### ⏭️ Skipped (already released)" >> $GITHUB_STEP_SUMMARY
+              echo "### ⏭️ Skipped" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
               for pkg in $SKIPPED; do
-                echo "- \`$pkg\`" >> $GITHUB_STEP_SUMMARY
+                # Check if it contains a reason (format: package(reason))
+                if echo "$pkg" | grep -q '('; then
+                  PKG="${pkg%%(*}"
+                  REASON="${pkg#*'('}"
+                  REASON="${REASON%')'}"
+                  echo "- \`$PKG\` - $REASON" >> $GITHUB_STEP_SUMMARY
+                else
+                  echo "- \`$pkg\`" >> $GITHUB_STEP_SUMMARY
+                fi
               done
+              echo "" >> $GITHUB_STEP_SUMMARY
             fi
             
             if [ -n "$FAILED" ]; then
+              echo "### ❌ Failed Packages" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
-              echo "### ❌ Failed" >> $GITHUB_STEP_SUMMARY
-              echo "" >> $GITHUB_STEP_SUMMARY
+              
               for pkg in $FAILED; do
                 echo "- \`$pkg\`" >> $GITHUB_STEP_SUMMARY
               done
+              
+              if [ -n "$FAILED_DETAILS" ]; then
+                echo "" >> $GITHUB_STEP_SUMMARY
+                echo "<details>" >> $GITHUB_STEP_SUMMARY
+                echo "<summary>📋 Failure Details</summary>" >> $GITHUB_STEP_SUMMARY
+                echo "" >> $GITHUB_STEP_SUMMARY
+                echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+                echo "$FAILED_DETAILS" | sed 's/%0A/\n/g' >> $GITHUB_STEP_SUMMARY
+                echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+                echo "</details>" >> $GITHUB_STEP_SUMMARY
+              fi
             fi
           fi
