@@ -119,9 +119,12 @@ function MermaidContent({ chart }: { chart: string }) {
         boundsPadding: 0.1,
         zoomDoubleClickSpeed: 1,
         beforeWheel: (e) => {
-          // Prevent scroll interference
-          return true;
+          // Allow wheel events for zooming but prevent page scroll
+          const target = e.target as HTMLElement;
+          return !target || svgElement.contains(target);
         },
+        zoomSpeed: 0.065,
+        smoothScroll: false,
       });
       
       instance.on('zoom', (pz: typeof instance) => {
