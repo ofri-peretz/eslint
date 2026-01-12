@@ -1,10 +1,10 @@
 ---
-title: "no-unsafe-regex-construction"
-description: "ESLint Rule: no-unsafe-regex-construction with LLM-optimized suggestions and auto-fix capabilities. This rule is part of [`eslint-plugin-secure-coding`](https:/"
+title: 'no-unsafe-regex-construction'
+description: 'ESLint Rule: no-unsafe-regex-construction with LLM-optimized suggestions and auto-fix capabilities. This rule is part of [`eslint-plugin-secure-coding`](https:/'
 copyright: (c) 2025 Ofri Peretz. All rights reserved.
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
+import { FalseNegativeCTA, WhenNotToUse } from '@/components/RuleComponents';
 
 > **Keywords:** no unsafe regex construction, security, ESLint rule, JavaScript, TypeScript, CWE-400, CWE-185, ReDoS, injection
 
@@ -39,13 +39,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-400](https://cwe.mitre.org/data/definitions/400.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description** | Specific vulnerability | `Uncontrolled Resource Consumption (ReDoS) detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                         |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-400](https://cwe.mitre.org/data/definitions/400.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description**     | Specific vulnerability | `Uncontrolled Resource Consumption (ReDoS) detected`                                                                                                                                                                            |
+| **Severity & Compliance** | Impact assessment      | `HIGH`                                                                                                                                                                                                                          |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                            |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/)                                                                                                                                                                     |
 
 ## Rule Details
 
@@ -69,11 +69,11 @@ This rule detects the creation of `RegExp` objects using user-controlled input. 
   }
 }}%%
 flowchart TD
-    Start[User Input] --> Construct{new RegExp(input)}
-    Construct -->"|Unescaped| Risk[🚨 ReDoS / Injection Risk"]
-    Construct -->"|Escaped| Safe[✅ Safe Pattern"]
+    Start[User Input] --> Construct{new RegExp input}
+    Construct -->|Unescaped| Risk[🚨 ReDoS / Injection Risk]
+    Construct -->|Escaped| Safe[✅ Safe Pattern]
 
-    Risk -->"|Attacker Input| Crash[💥 App Crash/Dos"]
+    Risk -->|Attacker Input| Crash[💥 App Crash/Dos]
 
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
@@ -84,7 +84,6 @@ flowchart TD
     class Risk warnNode
 
 ```
-
 
 ### Why This Matters
 

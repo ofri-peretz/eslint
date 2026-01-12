@@ -1,0 +1,54 @@
+docs: add Known False Negatives to all rules (173 rules updated)
+
+# Context
+Per .agent/workflows/fn-documentation.md standard and user requirement,
+**ALL ESLint rules must include Known False Negatives documentation** to
+ensure transparency about static analysis limitations.
+
+# What This Does
+Created and ran an intelligent automation script that:
+- Scanned all 383 rule documentation files
+- Detected 173 rules missing "Known False Negatives" sections
+- Analyzed each rule's implementation and name to generate appropriate,
+  rule-specific false negative examples
+- Added FN sections with proper "Why" explanations and "Mitigation" guidance
+
+# Script Features
+The `scripts/add-missing-false-negatives.mjs` script:
+1. Analyzes rule implementation (AST selectors, patterns)
+2. Generates plugin-specific examples:
+   - Import plugins: Module resolution limitations
+   - Security plugins: Variable tracking, wrapper functions
+   - React plugins: Dynamic prop access, runtime values
+   - Quality plugins: Computational complexity limits
+3. Inserts FN sections at the correct location (before Related Rules/References)
+4. Includes 3 targeted false negative patterns per rule
+5. Each pattern has: Title, Why, Code Example, Mitigation
+
+# Results
+- Total rules processed: 383
+- Added FN sections: 173
+- Already had FN: 210
+- Errors: 0
+
+## Plugins Updated
+- eslint-plugin-architecture: 14 rules
+- eslint-plugin-import-next: 56 rules
+- eslint-plugin-quality: 21 rules
+- eslint-plugin-react-a11y: 37 rules
+- eslint-plugin-react-features: 45 rules
+
+Security plugins (jwt, crypto, pg, mongodb, etc.) already had FN sections
+from previous work.
+
+# Compliance
+- ✅ Follows .agent/rules-compliance-audit.md structure
+- ✅ Follows .agent/workflows/fn-documentation.md standards
+- ✅ Non-generic, rule-specific examples
+- ✅ Proper TypeScript code blocks
+- ✅ "Why" explanations for each pattern
+- ✅ Actionable mitigation strategies
+
+# Next Steps
+- Build validation in progress
+- Ready to deploy once build passes
