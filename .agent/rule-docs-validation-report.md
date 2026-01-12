@@ -1,11 +1,11 @@
 # Rule Documentation Validation Report
 
-**Generated:** 2026-01-12T07:10:39.834Z
+**Generated:** 2026-01-12T07:21:33.771Z
 **Total Rules:** 397
-**Compliant:** 110
-**Issues:** 287
+**Compliant:** 111
+**Issues:** 286
 
-## 🔴 HIGH PRIORITY - Stub/Placeholder Content (27)
+## 🔴 HIGH PRIORITY - Stub/Placeholder Content (26)
 
 ### secure-coding/no-sensitive-data-in-analytics
 
@@ -162,14 +162,6 @@
 ### secure-coding/no-unvalidated-deeplinks
 
 **File:** `packages/eslint-plugin-secure-coding/docs/rules/no-unvalidated-deeplinks.md`
-
-**Issues:**
-- Contains placeholder/stub content
-
-
-### secure-coding/require-data-minimization
-
-**File:** `packages/eslint-plugin-secure-coding/docs/rules/require-data-minimization.md`
 
 **Issues:**
 - Contains placeholder/stub content
