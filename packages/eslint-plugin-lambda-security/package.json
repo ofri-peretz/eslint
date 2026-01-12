@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-lambda-security",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Security-focused ESLint plugin for AWS Lambda and Middy applications. Detects insecure API Gateway responses, missing security headers, CORS misconfigurations, input validation issues, and more.",
   "type": "commonjs",
   "main": "./src/index.js",
