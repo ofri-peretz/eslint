@@ -1,10 +1,7 @@
 ---
-title: "require-issuer-validation"
-description: "**Severity:** \udfe1 Medium"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: require-issuer-validation
+description: Require issuer (iss) claim validation in JWT verify operations
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Require issuer (iss) claim validation in JWT verify operations
 
@@ -16,7 +13,7 @@ import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-287 OWASP:A07 CVSS:9.8 | Improper Authentication detected | CRITICAL
+🔒 [CWE-287](https://cwe.mitre.org/data/definitions/287.html) OWASP:A07 CVSS:9.8 | Improper Authentication detected | CRITICAL
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A07_2021/
 ```
 
@@ -52,10 +49,6 @@ jwt.verify(token, secret, {
   issuer: 'https://auth.example.com',
 });
 ```
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

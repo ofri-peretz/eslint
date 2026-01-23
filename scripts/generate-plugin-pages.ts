@@ -81,6 +81,30 @@ const PLUGINS: Record<string, PluginInfo> = {
     ruleCount: 56,
     codecovComponent: 'import_next',
   },
+  'architecture': {
+    name: 'eslint-plugin-architecture',
+    description: 'ESLint architecture rules enforcing DDD, API boundaries, and project structure',
+    ruleCount: 13,
+    codecovComponent: 'architecture',
+  },
+  'quality': {
+    name: 'eslint-plugin-quality',
+    description: 'ESLint quality rules for code health, error handling, and complexity management',
+    ruleCount: 21,
+    codecovComponent: 'quality',
+  },
+  'react-a11y': {
+    name: 'eslint-plugin-react-a11y',
+    description: 'React accessibility ESLint plugin with 37 LLM-optimized rules for WCAG 2',
+    ruleCount: 39,
+    codecovComponent: 'react_a11y',
+  },
+  'react-features': {
+    name: 'eslint-plugin-react-features',
+    description: 'ESLint React rules for modern react features, hooks, and patterns',
+    ruleCount: 44,
+    codecovComponent: 'react_features',
+  },
 };
 
 const ROOT_DIR = path.join(__dirname, '..');

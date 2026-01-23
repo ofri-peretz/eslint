@@ -1,111 +1,73 @@
 ---
-title: "require-package-lock"
-description: "The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: require-package-lock
+description: Ensure package-lock.json or yarn.lock exists
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
+> Ensure package-lock.json or yarn.lock exists
 
-> Security rule for mobile applications
-
-## Error Message Format
-
-The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
-
-```text
-🔒 CWE-829 OWASP:A03 CVSS:7.5 | Untrusted Control Sphere Inclusion detected | HIGH
-   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A03_2021/
-```
-
-### Message Components
-
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-829](https://cwe.mitre.org/data/definitions/829.html) [OWASP:A03](https://owasp.org/Top10/A03_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description** | Specific vulnerability | `Untrusted Control Sphere Inclusion detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A03_2021-Injection/) |
+**Severity:** 🟠 HIGH  
+**CWE:** [CWE-829](https://cwe.mitre.org/data/definitions/829.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10 M2](https://owasp.org/www-project-mobile-top-10/)
 
 ## Rule Details
 
-This rule security rule for mobile applications.
+This rule detects security violations related to Ensure package-lock.json or yarn.lock exists.
 
-**OWASP Mobile Top 10:** Mobile  
-**CWE:** [CWE-829](https://cwe.mitre.org/data/definitions/000.html)  
-**Severity:** error
+## ❌ Incorrect
 
-## Examples
-
-### ❌ Incorrect
-
-```javascript
-// Insecure pattern
+```typescript
+// Example of insecure pattern detected by this rule
+// TODO: Add specific examples based on implementation
 ```
 
-### ✅ Correct
+## ✅ Correct
 
-```javascript
-// Secure pattern
+```typescript
+// Example of secure pattern  
+// TODO: Add specific examples based on implementation
 ```
 
-## When Not To Use It
+## ⚙️ Configuration
 
-This rule should be enabled for all mobile and web applications to ensure security best practices.
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
+This rule has no configuration options.
 
 ## Known False Negatives
-
-The following patterns are **not detected** due to static analysis limitations:
 
 ### Values from Variables
 
 **Why**: Values stored in variables are not traced.
 
 ```typescript
-// ❌ NOT DETECTED - Value from variable
+// ❌ NOT DETECTED
 const value = userInput;
-dangerousOperation(value);
+operation(value);
 ```
 
-**Mitigation**: Validate all user inputs.
+**Mitigation**: Review code manually for security patterns.
 
-### Wrapper Functions
+### Dynamic Patterns
 
-**Why**: Custom wrappers not recognized.
+**Why**: Dynamic code paths cannot be statically analyzed.
 
 ```typescript
-// ❌ NOT DETECTED - Wrapper
-myWrapper(userInput); // Uses dangerous API internally
+// ❌ NOT DETECTED
+obj[method](data);
 ```
 
-**Mitigation**: Apply rule to wrapper implementations.
+**Mitigation**: Avoid dynamic invocation with sensitive data.
 
-### Dynamic Invocation
+### Third-Party Libraries
 
-**Why**: Dynamic calls not analyzed.
+**Why**: External library implementations are not analyzed.
 
 ```typescript
-// ❌ NOT DETECTED - Dynamic
-obj[method](userInput);
+// ❌ NOT DETECTED
+library.operation(sensitiveData);
 ```
 
-**Mitigation**: Avoid dynamic method invocation.
+**Mitigation**: Review third-party library security documentation.
 
-## Further Reading
+## References
 
+- [CWE-829](https://cwe.mitre.org/data/definitions/829.html)
 - [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
-- [CWE-829 Details](https://cwe.mitre.org/data/definitions/000.html)
-
-## Related Rules
-
-- See other mobile security rules in this plugin
-
----
-
-**Category:** Mobile Security  
-**Type:** Problem  
-**Recommended:** Yes

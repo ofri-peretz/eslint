@@ -1,12 +1,11 @@
 ---
-title: "no-permissive-cors-response"
-description: "Detects permissive CORS headers in Lambda API Gateway responses. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plu"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-permissive-cors-response
+description: "CWE: [CWE-942](https://cwe.mitre.org/data/definitions/942.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** CORS, Lambda, API Gateway, CWE-942, security, Access-Control-Allow-Origin, wildcard, auto-fix
+> **Keywords:** CORS, Lambda, API Gateway, [CWE-942](https://cwe.mitre.org/data/definitions/942.html), security, Access-Control-Allow-Origin, wildcard, auto-fix
+**CWE:** [CWE-942](https://cwe.mitre.org/data/definitions/942.html)  
+**OWASP Mobile:** [M8: Security Misconfiguration](https://owasp.org/www-project-mobile-top-10/)
 
 Detects permissive CORS headers in Lambda API Gateway responses. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security).
 
@@ -16,7 +15,7 @@ Detects permissive CORS headers in Lambda API Gateway responses. This rule is pa
 
 | Aspect            | Details                                          |
 | ----------------- | ------------------------------------------------ |
-| **CWE Reference** | CWE-942 (Permissive Cross-domain Policy)         |
+| **CWE Reference** | [CWE-942](https://cwe.mitre.org/data/definitions/942.html) (Permissive Cross-domain Policy)         |
 | **Severity**      | 🔴 High                                          |
 | **Auto-Fix**      | ✅ Yes                                           |
 | **Category**      | Security                                         |
@@ -41,17 +40,17 @@ Detects permissive CORS headers in Lambda API Gateway responses. This rule is pa
   }
 }}%%
 flowchart TD
-    A["🔍 Return Statement Found"] --> B{"Returns object?"}
-    B -->|No| C["✅ Skip"]
-    B -->|Yes| D{"Has statusCode property?"}
+    A[🔍 Return Statement Found] --> B{Returns object?}
+    B -->|No| C[✅ Skip]
+    B -->|Yes| D{Has statusCode property?}
     D -->|No| C
-    D -->|Yes| E{"Has headers property?"}
+    D -->|Yes| E{Has headers property?}
     E -->|No| C
-    E -->|Yes| F{"Check CORS headers"}
-    F --> G{"Access-Control-Allow-Origin: '*'?"}
-    G -->|Yes| H["🚨 Report Error"]
+    E -->|Yes| F{Check CORS headers}
+    F --> G{Access-Control-Allow-Origin: '*'?}
+    G -->|Yes| H[🚨 Report Error]
     G -->|No| C
-    H --> I["💡 Suggest specific origin"]
+    H --> I[💡 Suggest specific origin]
 
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px
@@ -62,9 +61,7 @@ flowchart TD
     class H errorNode
     class D,E,F,G processNode
     class C skipNode
-
 ```
-
 
 ## Examples
 
@@ -176,10 +173,6 @@ headers: {
 
 - [`no-permissive-cors-middy`](./no-permissive-cors-middy.md) - CORS in Middy middleware
 
-<WhenNotToUse />
-
-<FalseNegativeCTA />
-
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -248,7 +241,7 @@ return { statusCode: 200, body: '...' };
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-942 OWASP:A01 CVSS:7.5 | CORS Misconfiguration detected | HIGH
+🔒 [CWE-942](https://cwe.mitre.org/data/definitions/942.html) OWASP:A01 CVSS:7.5 | CORS Misconfiguration detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
 ```
 

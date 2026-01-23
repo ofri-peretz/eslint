@@ -27,6 +27,10 @@ const PLUGIN_MAPPING: Record<string, string> = {
   'eslint-plugin-mongodb-security': 'mongodb-security',
   'eslint-plugin-vercel-ai-security': 'vercel-ai-security',
   'eslint-plugin-import-next': 'import-next',
+  'eslint-plugin-architecture': 'architecture',
+  'eslint-plugin-quality': 'quality',
+  'eslint-plugin-react-a11y': 'react-a11y',
+  'eslint-plugin-react-features': 'react-features',
 };
 
 const ROOT_DIR = path.join(__dirname, '..');

@@ -1,12 +1,11 @@
 ---
-title: "no-missing-cors-check"
-description: "Detects missing CORS validation (wildcard CORS, missing origin check) that can allow unauthorized cross-origin requests. This rule is part of [`eslint-plugin-se"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-missing-cors-check
+description: "CWE: [CWE-942](https://cwe.mitre.org/data/definitions/942.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** CORS, cross-origin resource sharing, CWE-346, security, ESLint rule, origin validation, wildcard CORS, Access-Control-Allow-Origin, auto-fix, LLM-optimized, code security
+> **Keywords:** CORS, cross-origin resource sharing, [CWE-346](https://cwe.mitre.org/data/definitions/346.html), security, ESLint rule, origin validation, wildcard CORS, Access-Control-Allow-Origin, auto-fix, LLM-optimized, code security
+**CWE:** [CWE-942](https://cwe.mitre.org/data/definitions/942.html)  
+**OWASP Mobile:** [M8: Security Misconfiguration](https://owasp.org/www-project-mobile-top-10/)
 
 Detects missing CORS validation (wildcard CORS, missing origin check) that can allow unauthorized cross-origin requests. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
@@ -16,7 +15,7 @@ Detects missing CORS validation (wildcard CORS, missing origin check) that can a
 
 | Aspect            | Details                                                               |
 | ----------------- | --------------------------------------------------------------------- |
-| **CWE Reference** | CWE-346 (Origin Validation Error)                                     |
+| **CWE Reference** | [CWE-346](https://cwe.mitre.org/data/definitions/346.html) (Origin Validation Error)                                     |
 | **Severity**      | High (security vulnerability)                                         |
 | **Auto-Fix**      | ✅ Yes (suggests origin validation)                                   |
 | **Category**      | Security                                                              |
@@ -164,23 +163,23 @@ app.use(
   }
 }}%%
 flowchart TD
-    A["🔍 Literal/CallExpression/MemberExpression Found"] --> B{"In Test File?"}
-    B -->|Yes & allowInTests| C["✅ Skip"]
-    B -->|No| D{"Matches Ignore Pattern?"}
+    A[🔍 Literal/CallExpression/MemberExpression Found] --> B{In Test File?}
+    B -->|Yes & allowInTests| C[✅ Skip]
+    B -->|No| D{Matches Ignore Pattern?}
     D -->|Yes| C
-    D -->|No| E{"Check Pattern"}
-    E --> F{"Wildcard Origin?"}
-    F -->|Yes| G{"Inside CORS Config?"}
-    F -->|No| H{"Wildcard Header?"}
-    H -->|Yes| I{"Access-Control-Allow-Origin?"}
+    D -->|No| E{Check Pattern}
+    E --> F{Wildcard Origin?}
+    F -->|Yes| G{Inside CORS Config?}
+    F -->|No| H{Wildcard Header?}
+    H -->|Yes| I{Access-Control-Allow-Origin?}
     H -->|No| C
-    G -->|Yes| J["🚨 Report Error"]
+    G -->|Yes| J[🚨 Report Error]
     G -->|No| C
     I -->|Yes| J
     I -->|No| C
-    J --> K["💡 Suggest Fixes"]
-    K --> L["Use Origin Validation"]
-    K --> M["Use CORS Middleware"]
+    J --> K[💡 Suggest Fixes]
+    K --> L[Use Origin Validation]
+    K --> M[Use CORS Middleware]
 
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
@@ -191,9 +190,7 @@ flowchart TD
     class J errorNode
     class E,F,G,H,I processNode
     class C skipNode
-
 ```
-
 
 ## Best Practices
 
@@ -300,10 +297,6 @@ app.use(
   }),
 );
 ```
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

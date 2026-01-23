@@ -20,16 +20,28 @@ import { EcosystemStats } from '@/components/EcosystemStats';
 import { LLMErrorDemo } from '@/components/LLMErrorDemo';
 import { Tree, Folder, File } from '@/components/ui/file-tree';
 import { ReadmeRulesTable } from '@/components/ReadmeRulesTable';
+import { PluginHeader } from '@/components/PluginHeader';
+import { RulesNavigator } from '@/components/RulesNavigator';
+import { RuleCount } from '@/components/RuleCount';
 
 export function getMDXComponents(components?: MDXComponents): MDXComponents {
   return {
     ...defaultMdxComponents,
     // Proper code block wrapper as per Fumadocs docs
-    pre: (props) => (
-      <CodeBlock>
-        <Pre>{props.children}</Pre>
-      </CodeBlock>
-    ),
+    pre: (props: any) => {
+      // Handle Mermaid charts explicitly by checking code children
+      const child = props.children;
+      if (child && child.props && child.props.className === 'language-mermaid') {
+        const chart = child.props.children;
+        return <Mermaid>{chart}</Mermaid>;
+      }
+
+      return (
+        <CodeBlock>
+          <Pre>{props.children}</Pre>
+        </CodeBlock>
+      );
+    },
     Callout,
     Card,
     Cards,
@@ -58,6 +70,9 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     Folder,
     File,
     ReadmeRulesTable,
+    PluginHeader,
+    RulesNavigator,
+    RuleCount,
     ...components,
   };
 }

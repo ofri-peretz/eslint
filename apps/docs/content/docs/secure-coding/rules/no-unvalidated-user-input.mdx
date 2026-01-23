@@ -1,12 +1,11 @@
 ---
-title: "no-unvalidated-user-input"
-description: "Detects unvalidated user input usage (req.body, req.query, etc.) in Express, Fastify, and Next.js applications. This rule is part of [`eslint-plugin-secure-codi"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-unvalidated-user-input
+description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** input validation, CWE-20, security, ESLint rule, user input, req.body, req.query, validation library, Zod, Joi, Yup, class-validator, OWASP, input security, auto-fix, LLM-optimized, code security
+> **Keywords:** input validation, [CWE-20](https://cwe.mitre.org/data/definitions/20.html), security, ESLint rule, user input, req.body, req.query, validation library, Zod, Joi, Yup, class-validator, OWASP, input security, auto-fix, LLM-optimized, code security
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects unvalidated user input usage (req.body, req.query, etc.) in Express, Fastify, and Next.js applications. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
@@ -33,7 +32,7 @@ Detects unvalidated user input usage (req.body, req.query, etc.) in Express, Fas
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-20 OWASP:A06 CVSS:7.5 | Improper Input Validation detected | HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]
+🔒 [CWE-20](https://cwe.mitre.org/data/definitions/20.html) OWASP:A06 CVSS:7.5 | Improper Input Validation detected | HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
 ```
 
@@ -175,21 +174,21 @@ app.get('/api/users/:id', (req, res) => {
   }
 }}%%
 flowchart TD
-    A["🔍 MemberExpression/Identifier Found"] --> B{"In Test File?"}
-    B -->|Yes & allowInTests| C["✅ Skip"]
-    B -->|No| D{"Matches Ignore Pattern?"}
+    A[🔍 MemberExpression/Identifier Found] --> B{In Test File?}
+    B -->|Yes & allowInTests| C[✅ Skip]
+    B -->|No| D{Matches Ignore Pattern?}
     D -->|Yes| C
-    D -->|No| E{"Check Input Patterns"}
-    E --> F{"req.body/query/params?"}
-    F -->|Yes| G{"Inside Validation Call?"}
-    F -->|No| H{"userInput/input?"}
+    D -->|No| E{Check Input Patterns}
+    E --> F{req.body/query/params?}
+    F -->|Yes| G{Inside Validation Call?}
+    F -->|No| H{userInput/input?}
     H -->|Yes| G
     H -->|No| C
     G -->|Yes| C
-    G -->|No| I["🚨 Report Error"]
-    I --> J["💡 Suggest Fixes"]
-    J --> K["Use Zod"]
-    J --> L["Use Joi"]
+    G -->|No| I[🚨 Report Error]
+    I --> J[💡 Suggest Fixes]
+    J --> K[Use Zod]
+    J --> L[Use Joi]
 
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
@@ -200,9 +199,7 @@ flowchart TD
     class I errorNode
     class E,F,G,H processNode
     class C skipNode
-
 ```
-
 
 ## Best Practices
 
@@ -270,10 +267,6 @@ app.post('/api/users', async (req, res) => {
   // Use validated dto
 });
 ```
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

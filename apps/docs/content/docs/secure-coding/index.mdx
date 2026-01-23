@@ -1,15 +1,18 @@
 ---
 title: Overview
-description: Comprehensive security rules with full OWASP Top 10 Web & Mobile coverage
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+description: "General secure coding practices and OWASP compliance for JavaScript/TypeScript."
 ---
 
-# eslint-plugin-secure-coding
 
-[![npm version](https://img.shields.io/npm/v/eslint-plugin-secure-coding.svg)](https://www.npmjs.com/package/eslint-plugin-secure-coding) [![npm downloads](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://www.npmjs.com/package/eslint-plugin-secure-coding) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=secure_coding)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=secure_coding)
+<PluginHeader plugin="secure-coding" />
+
+## Description
+
+This plugin provides a comprehensive set of security rules for JavaScript and TypeScript, ensuring alignment with OWASP compliance standards. It covers a wide range of vulnerabilities, from injection attacks to insecure data handling, offering a solid foundation for secure application development. By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
 
 <Callout type="info">
-  **75 specialized rules** — LLM-optimized error messages with CWE, OWASP, and CVSS metadata.
+  **<RuleCount plugin="secure-coding" /> specialized rules** — LLM-optimized error messages with CWE, OWASP, and
+  CVSS metadata.
 </Callout>
 
 ## Installation
@@ -28,16 +31,13 @@ export default [securecoding.configs.recommended];
 
 ## Available Presets
 
-| Preset | Description |
-|--------|-------------|
-| `recommended` | Balanced security for most projects |
-| `strict` | Maximum enforcement (all rules as errors) |
+| Preset        | Description                               |
+| ------------- | ----------------------------------------- |
+| `recommended` | Balanced security for most projects       |
+| `strict`      | Maximum enforcement (all rules as errors) |
 
 ## Rules
 
-Browse all rules with CWE and OWASP references:
-
-<ReadmeRulesTable plugin="secure-coding" />
-## Related Articles
+<RulesNavigator plugin="secure-coding" />
 
 <RelatedArticles plugin="secure-coding" limit={3} />

@@ -1,12 +1,11 @@
 ---
-title: "no-xxe-injection"
-description: "Detects XML External Entity (XXE) injection vulnerabilities. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-se"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-xxe-injection
+description: "CWE: [CWE-74](https://cwe.mitre.org/data/definitions/74.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** XXE, XML External Entity, CWE-611, SSRF, file disclosure, security, XML parsing
+> **Keywords:** XXE, XML External Entity, [CWE-611](https://cwe.mitre.org/data/definitions/611.html), SSRF, file disclosure, security, XML parsing
+**CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects XML External Entity (XXE) injection vulnerabilities. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
@@ -109,7 +108,7 @@ const data = JSON.parse(userInput);
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-611 OWASP:A05 CVSS:9.1 | XXE (XML External Entity) detected | CRITICAL
+🔒 [CWE-611](https://cwe.mitre.org/data/definitions/611.html) OWASP:A05 CVSS:9.1 | XXE (XML External Entity) detected | CRITICAL
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 
@@ -122,10 +121,6 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 | **Severity & Compliance** | Impact assessment | `CRITICAL` |
 | **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
 | **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/) |
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

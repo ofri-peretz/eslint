@@ -1,12 +1,9 @@
 ---
-title: "detect-mixed-content"
+title: detect-mixed-content
 description: "Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulnerabilities."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** mixed content, HTTPS, HTTP, CWE-311, insecure resource, TLS, web security
+> **Keywords:** mixed content, HTTPS, HTTP, [CWE-311](https://cwe.mitre.org/data/definitions/311.html), insecure resource, TLS, web security
 
 Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulnerabilities.
 
@@ -65,7 +62,7 @@ const cdnUrl = '//cdn.example.com/asset.js';
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-311 OWASP:A04 CVSS:7.5 | Missing Encryption of Sensitive Data detected | HIGH
+🔒 [CWE-311](https://cwe.mitre.org/data/definitions/311.html) OWASP:A04 CVSS:7.5 | Missing Encryption of Sensitive Data detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A04_2021/
 ```
 
@@ -78,10 +75,6 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 | **Severity & Compliance** | Impact assessment | `HIGH` |
 | **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
 | **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/) |
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

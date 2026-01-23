@@ -1,12 +1,11 @@
 ---
-title: "no-unescaped-url-parameter"
-description: "Detects unescaped URL parameters that can lead to Cross-Site Scripting (XSS) or open redirect vulnerabilities. This rule is part of [`eslint-plugin-secure-codin"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-unescaped-url-parameter
+description: "CWE: [CWE-116](https://cwe.mitre.org/data/definitions/116.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** URL encoding, CWE-79, security, ESLint rule, URL parameters, encodeURIComponent, URLSearchParams, XSS, open redirect, auto-fix, LLM-optimized, code security
+> **Keywords:** URL encoding, [CWE-79](https://cwe.mitre.org/data/definitions/79.html), security, ESLint rule, URL parameters, encodeURIComponent, URLSearchParams, XSS, open redirect, auto-fix, LLM-optimized, code security
+**CWE:** [CWE-116](https://cwe.mitre.org/data/definitions/116.html)  
+**OWASP Mobile:** [M4: Insufficient Input/Output Validation](https://owasp.org/www-project-mobile-top-10/)
 
 Detects unescaped URL parameters that can lead to Cross-Site Scripting (XSS) or open redirect vulnerabilities. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
@@ -38,7 +37,7 @@ Detects unescaped URL parameters that can lead to Cross-Site Scripting (XSS) or 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-⚠️ CWE-79 OWASP:A05 CVSS:6.1 | Cross-site Scripting (XSS) detected | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
+⚠️ [CWE-79](https://cwe.mitre.org/data/definitions/79.html) OWASP:A05 CVSS:6.1 | Cross-site Scripting (XSS) detected | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 
@@ -154,21 +153,21 @@ const url = `https://example.com?${params}`; // ✅ Safe
   }
 }}%%
 flowchart TD
-    A["🔍 TemplateLiteral/BinaryExpression Found"] --> B{"In Test File?"}
-    B -->|Yes & allowInTests| C["✅ Skip"]
-    B -->|No| D{"Matches Ignore Pattern?"}
+    A[🔍 TemplateLiteral/BinaryExpression Found] --> B{In Test File?}
+    B -->|Yes & allowInTests| C[✅ Skip]
+    B -->|No| D{Matches Ignore Pattern?}
     D -->|Yes| C
-    D -->|No| E{"Is URL Construction?"}
+    D -->|No| E{Is URL Construction?}
     E -->|No| C
-    E -->|Yes| F{"Check Expressions"}
-    F --> G{"User Input Pattern?"}
+    E -->|Yes| F{Check Expressions}
+    F --> G{User Input Pattern?}
     G -->|No| C
-    G -->|Yes| H{"Inside Encoding Call?"}
+    G -->|Yes| H{Inside Encoding Call?}
     H -->|Yes| C
-    H -->|No| I["🚨 Report Error"]
-    I --> J["💡 Suggest Fixes"]
-    J --> K["Use encodeURIComponent"]
-    J --> L["Use URLSearchParams"]
+    H -->|No| I[🚨 Report Error]
+    I --> J[💡 Suggest Fixes]
+    J --> K[Use encodeURIComponent]
+    J --> L[Use URLSearchParams]
 
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
@@ -179,9 +178,7 @@ flowchart TD
     class I errorNode
     class E,F,G,H processNode
     class C skipNode
-
 ```
-
 
 ## Best Practices
 
@@ -242,10 +239,6 @@ url.searchParams.set('q', userInput);
 url.searchParams.set('page', '1');
 const finalUrl = url.toString(); // Automatically encoded
 ```
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

@@ -1,12 +1,11 @@
 ---
-title: "browser-security/no-jwt-in-storage"
-description: "This rule prevents storing JWT tokens in browser storage (localStorage/sessionStorage). JWTs stored in these locations are fully accessible to JavaScript, makin"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: browser-security/no-jwt-in-storage
+description: 🔒 Disallow storing JWT tokens in localStorage or sessionStorage
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
 > 🔒 Disallow storing JWT tokens in localStorage or sessionStorage
+**CWE:** [CWE-311](https://cwe.mitre.org/data/definitions/311.html)  
+**OWASP Mobile:** [M9: Insecure Data Storage](https://owasp.org/www-project-mobile-top-10/)
 
 ## Rule Details
 
@@ -16,17 +15,15 @@ This rule prevents storing JWT tokens in browser storage (localStorage/sessionSt
 
 ```mermaid
 flowchart TD
-    A["XSS Attack Injected"] --> B{"Where is JWT?"}
-    B -->|localStorage/sessionStorage| C["document.cookie or Storage API"]
-    C --> D["Token Stolen!"]
-    B -->|HttpOnly Cookie| E["Not accessible via JS"]
-    E --> F["Token Safe ✓"]
+    A[XSS Attack Injected] --> B{Where is JWT?}
+    B -->|localStorage/sessionStorage| C[document.cookie or Storage API]
+    C --> D[Token Stolen!]
+    B -->|HttpOnly Cookie| E[Not accessible via JS]
+    E --> F[Token Safe ✓]
 
     style D fill:#ff6b6b
     style F fill:#51cf66
-
 ```
-
 
 When you store JWTs in browser storage:
 
@@ -169,10 +166,6 @@ class TokenService {
 - [Auth0: Token Storage](https://auth0.com/docs/secure/security-guidance/data-security/token-storage)
 - [`browser-security/no-sensitive-localstorage`](./no-sensitive-localstorage.md) - General sensitive data detection
 
-<WhenNotToUse />
-
-<FalseNegativeCTA />
-
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -226,6 +219,6 @@ localStorage.setItem('data', encrypt(jwt)); // Pattern broken
 
 | Category          | ID                                |
 | ----------------- | --------------------------------- |
-| OWASP Top 10 2021 | A02:2021 - Cryptographic Failures |
-| CWE               | CWE-922                           |
+| OWASP Top 10 2021 | [A02:2021](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/) - Cryptographic Failures |
+| CWE               | [CWE-922](https://cwe.mitre.org/data/definitions/922.html)                           |
 | CVSS              | 8.1 (High)                        |

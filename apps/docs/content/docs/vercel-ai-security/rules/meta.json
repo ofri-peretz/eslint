@@ -1,6 +1,10 @@
 {
   "title": "Rules",
   "pages": [
+    "detect-llm-generated-sql",
+    "detect-llm-infinite-loops",
+    "detect-llm-unrestricted-tool-access",
+    "detect-rag-injection-risks",
     "no-dynamic-system-prompt",
     "no-hardcoded-api-keys",
     "no-sensitive-in-prompt",

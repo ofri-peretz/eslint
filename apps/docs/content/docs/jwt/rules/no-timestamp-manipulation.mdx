@@ -1,10 +1,7 @@
 ---
-title: "no-timestamp-manipulation"
-description: "**Severity:** \udfe0 High"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-timestamp-manipulation
+description: Prevent disabling automatic timestamp generation which enables replay attacks
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Prevent disabling automatic timestamp generation which enables replay attacks
 
@@ -43,10 +40,6 @@ From LightSEC 2025 research:
 2. Device signs tokens with future `iat` timestamps
 3. Tokens are stored for later use
 4. Years later, the tokens become valid and can impersonate the device
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

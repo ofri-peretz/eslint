@@ -1,10 +1,9 @@
 ---
-title: "no-unsafe-eval-csp"
-description: "Disallow 'unsafe-eval' in Content Security Policy directives."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-unsafe-eval-csp
+description: No Unsafe Eval Csp
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
+> No Unsafe Eval Csp
 
 Disallow 'unsafe-eval' in Content Security Policy directives.
 
@@ -13,7 +12,7 @@ Disallow 'unsafe-eval' in Content Security Policy directives.
 | Property     | Value                                                                    |
 | ------------ | ------------------------------------------------------------------------ |
 | **CWE**      | [CWE-95: Code Injection](https://cwe.mitre.org/data/definitions/95.html) |
-| **OWASP**    | A03:2021 - Injection                                                     |
+| **OWASP**    | [A03:2021](https://owasp.org/Top10/A03_2021-Injection/) - Injection                                                     |
 | **CVSS**     | 8.1 (High)                                                               |
 | **Severity** | HIGH                                                                     |
 
@@ -25,14 +24,12 @@ The `'unsafe-eval'` CSP directive allows the use of `eval()`, `Function()`, and 
 
 ```mermaid
 flowchart TD
-    A["CSP String Detected"] --> B{"Contains 'unsafe-eval'?"}
-    B -->|Yes| C["🔒 Security Warning"]
-    B -->|No| D["✅ Safe CSP"]
-    C --> E["eval/Function allowed"]
-    E --> F["Code injection possible"]
-
+    A[CSP String Detected] --> B{Contains 'unsafe-eval'?}
+    B -->|Yes| C[🔒 Security Warning]
+    B -->|No| D[✅ Safe CSP]
+    C --> E[eval/Function allowed]
+    E --> F[Code injection possible]
 ```
-
 
 ## ❌ Incorrect
 
@@ -92,10 +89,6 @@ const csp = "script-src 'self' 'wasm-unsafe-eval'";
 2. **Template engines**: Use precompiled templates
 3. **Third-party libraries**: Consider alternatives or sandbox them
 
-<WhenNotToUse />
-
-<FalseNegativeCTA />
-
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -145,7 +138,7 @@ helmet.contentSecurityPolicy({ directives: { scriptSrc: ["'unsafe-eval'"] } });
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-95 OWASP:A05 CVSS:9.8 | Eval Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
+🔒 [CWE-95](https://cwe.mitre.org/data/definitions/95.html) OWASP:A05 CVSS:9.8 | Eval Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 

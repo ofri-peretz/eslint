@@ -2,8 +2,18 @@
 
 > Disallow hardcoded secrets in JWT sign/verify operations
 
-**Severity:** 🟠 High  
-**CWE:** [CWE-798](https://cwe.mitre.org/data/definitions/798.html)
+**🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
+
+## Quick Summary
+
+| Aspect            | Details                                                    |
+| ----------------- | ---------------------------------------------------------- |
+| **CWE Reference** | [CWE-798](https://cwe.mitre.org/data/definitions/798.html) |
+| **Severity**      | Critical                                                   |
+| **Auto-Fix**      | ❌ No auto-fix available                                   |
+| **Category**      | Security                                                   |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                    |
+| **Best For**      | Protecting JWT secrets from source code exposure           |
 
 ## Error Message Format
 
@@ -16,13 +26,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-798](https://cwe.mitre.org/data/definitions/798.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description** | Specific vulnerability | `Hardcoded Credentials detected` |
-| **Severity & Compliance** | Impact assessment | `CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001,NIST-CSF]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                         |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-798](https://cwe.mitre.org/data/definitions/798.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description**     | Specific vulnerability | `Hardcoded Credentials detected`                                                                                                                                                                                                |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001,NIST-CSF]`                                                                                                                                                                          |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                            |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/)                                                                                                                                                                     |
 
 ## Rule Details
 

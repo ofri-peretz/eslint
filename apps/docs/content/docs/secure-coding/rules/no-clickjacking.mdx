@@ -1,12 +1,11 @@
 ---
-title: "no-clickjacking"
-description: "Detects clickjacking vulnerabilities and missing frame protections. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-pl"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-clickjacking
+description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** clickjacking, CWE-1021, iframe, X-Frame-Options, CSP, UI redressing
+> **Keywords:** clickjacking, [CWE-1021](https://cwe.mitre.org/data/definitions/1021.html), iframe, X-Frame-Options, CSP, UI redressing
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects clickjacking vulnerabilities and missing frame protections. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
@@ -119,13 +118,9 @@ app.use(helmet.frameguard({ action: 'deny' }));
 ## Error Message Format
 
 ```
-🔒 CWE-1021 OWASP:A05-Misconfig CVSS:6.1 | Clickjacking Vulnerability | MEDIUM [SOC2,PCI-DSS]
+🔒 [CWE-1021](https://cwe.mitre.org/data/definitions/1021.html) OWASP:A05-Misconfig CVSS:6.1 | Clickjacking Vulnerability | MEDIUM [SOC2,PCI-DSS]
    Fix: Add X-Frame-Options: DENY or CSP frame-ancestors | https://cheatsheetseries.owasp.org/...
 ```
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

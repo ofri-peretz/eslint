@@ -113,7 +113,7 @@ obj[method](userInput);
 
 ## Related Rules
 
-- [`require-package-lock`](./require-package-lock.md) - Ensure dependency versions are locked
+- [`lock-file`](./lock-file.md) - Ensure dependency versions are locked
 - [`require-dependency-integrity`](./require-dependency-integrity.md) - Verify package integrity
 - [`no-dynamic-dependency-loading`](./no-dynamic-dependency-loading.md) - Prevent dynamic package loading
 

@@ -123,6 +123,7 @@ describe('DevToArticleCard - Fallback Image Behavior', () => {
     it('should render title in gradient with proper text styling', () => {
       const article = createMockArticle({
         cover_image: null,
+        social_image: null,
         title: 'This is a Long Article Title That Should Be Visible',
       });
 
@@ -179,9 +180,10 @@ describe('DevToArticleCard - Fallback Image Behavior', () => {
     });
 
     it('should preserve gradient across different article lengths', () => {
-      const shortTitle = createMockArticle({ cover_image: null, title: 'Short' });
+      const shortTitle = createMockArticle({ cover_image: null, social_image: null, title: 'Short' });
       const longTitle = createMockArticle({ 
         cover_image: null, 
+        social_image: null,
         title: 'This is an extremely long article title that should still be visible in the gradient background with proper line clamping'
       });
 

@@ -4,17 +4,44 @@ export const revalidate = false;
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://interlace-eslint.vercel.app';
 
+import pluginData from '@/data/plugin-stats.json';
+
+const currentYear = new Date().getFullYear();
+
 export async function GET() {
   const pages = source.getPages();
   const scan = pages.map(getLLMText);
   const scanned = await Promise.all(scan);
+
+  const publishedPlugins = pluginData.plugins.filter(p => p.published);
+  const pipelinePlugins = pluginData.plugins.filter(p => !p.published);
+  
+  const securityPlugins = publishedPlugins.filter(p => p.category === 'security');
+  const frameworkPlugins = publishedPlugins.filter(p => p.category === 'framework');
+  const otherPlugins = publishedPlugins.filter(p => !['security', 'framework'].includes(p.category));
+
+  const securityList = securityPlugins
+    .map(p => `- [${p.name}](${baseUrl}/docs/${p.name.replace('eslint-plugin-', '')}) - ${p.description} (${p.rules} rules)`)
+    .join('\n');
+
+  const frameworkList = frameworkPlugins
+    .map(p => `- [${p.name}](${baseUrl}/docs/${p.name.replace('eslint-plugin-', '')}) - ${p.description} (${p.rules} rules)`)
+    .join('\n');
+
+  const otherList = otherPlugins
+    .map(p => `- [${p.name}](${baseUrl}/docs/${p.name.replace('eslint-plugin-', '')}) - ${p.description} (${p.rules} rules)`)
+    .join('\n');
+
+  const pipelineList = pipelinePlugins
+    .map(p => `- ${p.name} - ${p.description} (${p.rules} rules) [Coming Soon]`)
+    .join('\n');
 
   // Generate structured llms.txt format
   const header = `# Interlace ESLint Ecosystem - Documentation
 > ${baseUrl}
 
 ## About This Site
-Official documentation for the Interlace ESLint Ecosystem - 272 security rules across 11 specialized plugins. Provides comprehensive coverage for OWASP Top 10 (Web, Mobile, LLM, Agentic).
+Official documentation for the Interlace ESLint Ecosystem - ${pluginData.totalRules} security and quality rules across ${pluginData.totalPlugins} specialized plugins. Provides comprehensive coverage for OWASP Top 10 (Web, Mobile, LLM, Agentic).
 
 ## Key Documentation Sections
 
@@ -23,22 +50,12 @@ Official documentation for the Interlace ESLint Ecosystem - 272 security rules a
 - [Presets & Configuration](${baseUrl}/docs/presets) - Flat config presets
 - [Benchmarks](${baseUrl}/docs/benchmarks) - Performance analysis
 
-### Security Plugins
-- [eslint-plugin-secure-coding](${baseUrl}/docs/secure-coding) - 75 framework-agnostic rules
-- [eslint-plugin-pg](${baseUrl}/docs/pg) - PostgreSQL security (13 rules)
-- [eslint-plugin-jwt](${baseUrl}/docs/jwt) - JWT security (8 rules)
-- [eslint-plugin-crypto](${baseUrl}/docs/crypto) - Cryptography rules (12 rules)
-- [eslint-plugin-browser-security](${baseUrl}/docs/browser-security) - Browser security (11 rules)
-- [eslint-plugin-mongodb-security](${baseUrl}/docs/mongodb-security) - MongoDB/Mongoose security (20 rules)
-- [eslint-plugin-vercel-ai-security](${baseUrl}/docs/vercel-ai-security) - AI SDK security (17 rules)
-- [eslint-plugin-express-security](${baseUrl}/docs/express-security) - Express.js security (12 rules)
-- [eslint-plugin-nestjs-security](${baseUrl}/docs/nestjs-security) - NestJS security (18 rules)
-- [eslint-plugin-lambda-security](${baseUrl}/docs/lambda-security) - AWS Lambda security (12 rules)
+${securityList ? `### Security Plugins\n${securityList}\n` : ''}
+${frameworkList ? `### Framework Plugins\n${frameworkList}\n` : ''}
+${otherList ? `### Published Extras\n${otherList}\n` : ''}
 
-### Quality & Architecture
-- [eslint-plugin-architecture](${baseUrl}/docs/architecture) - Architecture patterns
-- [eslint-plugin-quality](${baseUrl}/docs/quality) - Code quality rules
-- [eslint-plugin-import-next](${baseUrl}/docs/import-next) - Modern import analysis
+## In the Pipeline (Under Development)
+${pipelineList}
 
 ## OWASP Coverage
 - OWASP Top 10 2021 (Web Security)
@@ -58,7 +75,7 @@ npx interlace-eslint init
 - Website: https://ofriperetz.dev
 
 ## For LLMs
-This documentation is open to AI indexing and citation.
+This documentation is open to AI indexing and citation. Generated at: ${pluginData.generatedAt}
 
 ---
 

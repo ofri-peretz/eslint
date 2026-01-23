@@ -1,10 +1,7 @@
 ---
-title: "require-max-age"
-description: "**Severity:** \udfe1 Medium"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: require-max-age
+description: Require maxAge option in verify operations to enforce token freshness
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Require maxAge option in verify operations to enforce token freshness
 
@@ -33,10 +30,6 @@ jwt.verify(token, secret, {
   maxAge: '24h',
 });
 ```
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

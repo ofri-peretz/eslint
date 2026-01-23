@@ -46,24 +46,30 @@ const EcosystemStats = dynamic(() => import('@/components/EcosystemStats').then(
 // Import plugin data from generated JSON (synced via GitHub Action)
 import pluginData from '@/data/plugin-stats.json';
 
-// Filter to show main plugins on homepage (subset of all 15 plugins)
+// Filter published plugins for principal display
 const plugins = pluginData.plugins
-  .filter(p => 
-    // Show security, framework, and main architecture plugins
-    p.category === 'security' || 
-    p.category === 'framework' ||
-    p.name === 'eslint-plugin-import-next'
-  )
-  .slice(0, 11)
+  .filter(p => p.published)
   .map(p => ({
     name: p.name,
     rules: p.rules,
     description: p.description,
-    category: p.category as 'security' | 'framework' | 'architecture',
+    category: p.category as 'security' | 'framework' | 'architecture' | 'quality' | 'react',
+  }));
+
+// Extract unpublished plugins for the "In the Pipeline" section
+const pipeline = pluginData.plugins
+  .filter(p => !p.published)
+  .map(p => ({
+    name: p.name,
+    rules: p.rules,
+    description: p.description,
+    category: p.category as 'security' | 'framework' | 'architecture' | 'quality' | 'react',
   }));
 
 const totalRules = pluginData.totalRules;
 const totalPlugins = pluginData.totalPlugins;
+const pipelineRules = pluginData.plugins.filter(p => !p.published).reduce((acc, p) => acc + p.rules, 0);
+const pipelinePlugins = pluginData.allPluginsCount - pluginData.totalPlugins;
 
 const stats = [
   { label: 'Security Rules', value: totalRules, icon: Shield, suffix: '+' },
@@ -94,7 +100,15 @@ export default function HomePage() {
           <div className="flex items-center justify-center gap-3 mb-6 animate-fade-in">
             <div className="relative">
               <div className="absolute inset-0 bg-purple-500 blur-xl opacity-20" />
-              <Image src="/eslint-interlace-logo.svg" alt="ESLint Interlace" width={64} height={64} className="relative" />
+              <Image 
+                src="/eslint-interlace-logo.svg" 
+                alt="ESLint Interlace" 
+                width={64} 
+                height={64} 
+                className="relative" 
+                priority
+                suppressHydrationWarning
+              />
             </div>
           </div>
           
@@ -110,7 +124,10 @@ export default function HomePage() {
           </p>
           
           {/* Quick Install - Hidden on mobile for better UX */}
-          <div className="mt-10 hidden sm:block rounded-2xl bg-linear-to-b from-white/10 to-transparent p-px max-w-xl mx-auto backdrop-blur-md">
+          <div 
+            className="mt-10 hidden sm:block rounded-2xl bg-linear-to-b from-white/10 to-transparent p-px max-w-xl mx-auto backdrop-blur-md"
+            suppressHydrationWarning
+          >
             <div className="rounded-2xl bg-fd-card/40 border border-white/5 relative overflow-hidden">
               <BorderBeam size={250} duration={12} colorFrom="#8b5cf6" colorTo="#a855f7" delay={0} />
               <div className="px-6 py-4 flex items-center justify-between gap-4 overflow-x-auto">
@@ -279,6 +296,55 @@ export default function HomePage() {
       <section className="py-24 px-6">
         <div className="max-w-6xl mx-auto">
           <RelatedArticles plugin="all" limit={3} />
+        </div>
+      </section>
+
+      {/* In the Pipeline */}
+      <section className="py-24 px-6 bg-fd-card/50 border-y border-fd-border/50">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+            <div>
+              <h2 className="text-3xl font-bold mb-4">In the Pipeline</h2>
+              <p className="text-fd-muted-foreground text-lg max-w-2xl mb-4">
+                Upcoming security and quality standards. {pipelineRules} additional rules across {pipelinePlugins} specialized plugins currently in development.
+              </p>
+              <Link 
+                href="/docs/roadmap" 
+                className="inline-flex items-center gap-2 text-sm font-semibold text-purple-400 hover:text-purple-300 transition-colors group"
+              >
+                View Full Strategic Roadmap
+                <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-sm font-bold animate-pulse">
+              <Activity className="size-4" />
+              Active Development
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {pipeline.map((p) => (
+              <div 
+                key={p.name}
+                className="group p-6 rounded-2xl bg-fd-background/50 border border-fd-border/50 hover:border-violet-500/30 transition-all duration-300"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 rounded-lg bg-fd-accent/50 group-hover:bg-violet-500/10 group-hover:text-violet-400 transition-colors">
+                    {p.category === 'architecture' ? <Terminal className="size-5" /> : 
+                     p.category === 'quality' ? <CheckCircle2 className="size-5" /> :
+                     <LayoutIcon className="size-5" />}
+                  </div>
+                  <span className="text-xs font-mono text-fd-muted-foreground">{p.rules} Rules</span>
+                </div>
+                <h4 className="font-bold mb-2 group-hover:text-violet-400 transition-colors">
+                  {p.name.replace('eslint-plugin-', '')}
+                </h4>
+                <p className="text-xs text-fd-muted-foreground line-clamp-2 leading-relaxed">
+                  {p.description}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

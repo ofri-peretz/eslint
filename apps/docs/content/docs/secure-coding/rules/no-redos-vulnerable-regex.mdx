@@ -1,12 +1,11 @@
 ---
-title: 'no-redos-vulnerable-regex'
-description: 'ESLint Rule: no-redos-vulnerable-regex. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).'
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-redos-vulnerable-regex
+description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from '@/components/RuleComponents';
-
-> **Keywords:** no redos vulnerable regex, security, ESLint rule, JavaScript, TypeScript, CWE-400, CWE-1333, DoS, catastrophic backtracking
+> **Keywords:** no redos vulnerable regex, security, ESLint rule, JavaScript, TypeScript, [CWE-400](https://cwe.mitre.org/data/definitions/400.html), [CWE-1333](https://cwe.mitre.org/data/definitions/1333.html), DoS, catastrophic backtracking
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 ESLint Rule: no-redos-vulnerable-regex. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
@@ -32,7 +31,7 @@ ESLint Rule: no-redos-vulnerable-regex. This rule is part of [`eslint-plugin-sec
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-400 OWASP:A06 CVSS:7.5 | Uncontrolled Resource Consumption (ReDoS) detected | HIGH
+🔒 [CWE-400](https://cwe.mitre.org/data/definitions/400.html) OWASP:A06 CVSS:7.5 | Uncontrolled Resource Consumption (ReDoS) detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
 ```
 
@@ -74,9 +73,9 @@ When these patterns are applied to a long string that _almost_ matches but fails
 }}%%
 flowchart TD
     Start[User Input String] --> Regex{Regex Engine}
-    Regex -->|Safe Pattern| Match[Match/No Match Fast]
+    Regex -->|Safe Pattern| Match["Match/No Match (Fast)"]
     Regex -->|Vulnerable Pattern| Backtrack{Catastrophic Backtracking?}
-    Backtrack -->|Yes| Freeze[💥 CPU Spike / Denial of Service]
+    Backtrack -->|Yes| Freeze["💥 CPU Spike / Denial of Service"]
     Backtrack -->|No| Match
 
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
@@ -86,7 +85,6 @@ flowchart TD
     class Start startNode
     class Freeze errorNode
     class Backtrack warnNode
-
 ```
 
 ### Why This Matters
@@ -154,10 +152,6 @@ The rule provides guidance on how to fix detected patterns:
 - **"Use Atomic Groups"**: Suggests simulating atomic groups or using `re2`.
 - **"Restructure Regex"**: Recommends removing nesting or overlaps.
 - **"Use Safe Library"**: Suggests using `validator` or `zod` for common patterns like emails.
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

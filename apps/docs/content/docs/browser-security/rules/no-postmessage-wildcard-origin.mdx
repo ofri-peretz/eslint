@@ -1,12 +1,11 @@
 ---
-title: "browser-security/no-postmessage-wildcard-origin"
-description: "This rule prevents using `\"*\"` as the `targetOrigin` parameter in `postMessage()` calls. Using a wildcard allows **any window** to receive the message, potentia"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: browser-security/no-postmessage-wildcard-origin
+description: "🔒 Disallow using wildcard (*) as targetOrigin in postMessage calls"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
 > 🔒 Disallow using wildcard (\*) as targetOrigin in postMessage calls
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 ## Rule Details
 
@@ -24,9 +23,7 @@ sequenceDiagram
     V->>M: postMessage(sensitiveData, "*")
     Note over M: Malicious site receives<br/>your sensitive data!
     M->>M: Exfiltrate user data
-
 ```
-
 
 When you use `postMessage(data, "*")`:
 
@@ -107,10 +104,6 @@ However, it's generally recommended to **always specify the exact target origin*
 - [MDN: postMessage Security Concerns](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage#security_concerns)
 - [`browser-security/require-postmessage-origin-check`](./require-postmessage-origin-check.md) - Validates origin on message receipt
 
-<WhenNotToUse />
-
-<FalseNegativeCTA />
-
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -154,6 +147,6 @@ sendMessage(data, '*'); // Uses postMessage internally
 
 | Category          | ID                               |
 | ----------------- | -------------------------------- |
-| OWASP Top 10 2021 | A01:2021 - Broken Access Control |
-| CWE               | CWE-346                          |
+| OWASP Top 10 2021 | [A01:2021](https://owasp.org/Top10/A01_2021-Broken_Access_Control/) - Broken Access Control |
+| CWE               | [CWE-346](https://cwe.mitre.org/data/definitions/346.html)                          |
 | CVSS              | 7.5 (High)                       |

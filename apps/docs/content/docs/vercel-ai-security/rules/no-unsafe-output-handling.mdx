@@ -1,10 +1,7 @@
 ---
-title: "no-unsafe-output-handling"
-description: "This rule identifies code patterns where AI-generated output is passed directly to dangerous functions that can execute code, manipulate the DOM, or run databas"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: "`no-unsafe-output-handling`"
+description: "Prevents using AI-generated content in dangerous operations like eval, SQL, or innerHTML."
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Prevents using AI-generated content in dangerous operations like eval, SQL, or innerHTML.
 
@@ -84,10 +81,6 @@ Passing AI output to dangerous functions enables:
 - [`require-validated-prompt`](./require-validated-prompt.md) - Validate input prompts
 - [`require-output-filtering`](./require-output-filtering.md) - Filter tool output
 
-<WhenNotToUse />
-
-<FalseNegativeCTA />
-
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -150,7 +143,7 @@ window[method](result.text); // Dynamic access
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-94 OWASP:A05 CVSS:9.8 | Code Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
+🔒 [CWE-94](https://cwe.mitre.org/data/definitions/94.html) OWASP:A05 CVSS:9.8 | Code Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 

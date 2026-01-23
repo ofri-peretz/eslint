@@ -1,10 +1,9 @@
 ---
-title: "no-insecure-rsa-padding"
-description: "TODO: Add description for this rule."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-insecure-rsa-padding
+description: No Insecure Rsa Padding
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
+> No Insecure Rsa Padding
 
 ## Description
 
@@ -12,15 +11,15 @@ TODO: Add description for this rule.
 
 ## OWASP Mapping
 
-- **OWASP Top 10**: A02:2021 - Cryptographic Failures
-- **CWE**: CWE-327 - Use of a Broken or Risky Cryptographic Algorithm
+- **OWASP Top 10**: [A02:2021](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/) - Cryptographic Failures
+- **CWE**: [CWE-327](https://cwe.mitre.org/data/definitions/327.html) - Use of a Broken or Risky Cryptographic Algorithm
 
 ## Error Message Format
 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-327 OWASP:A04 CVSS:7.5 | Broken Cryptographic Algorithm detected | HIGH [PCI-DSS,HIPAA,ISO27001,NIST-CSF]
+🔒 [CWE-327](https://cwe.mitre.org/data/definitions/327.html) OWASP:A04 CVSS:7.5 | Broken Cryptographic Algorithm detected | HIGH [PCI-DSS,HIPAA,ISO27001,NIST-CSF]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A04_2021/
 ```
 
@@ -59,10 +58,6 @@ This rule has no options.
 ## When Not To Use It
 
 TODO: Add when not to use.
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

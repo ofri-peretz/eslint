@@ -1,10 +1,7 @@
 ---
-title: "require-audit-logging"
-description: "This rule identifies AI SDK calls that aren't preceded by logging statements. Audit logging is important for security monitoring and debugging."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: "`require-audit-logging`"
+description: Suggests audit logging for AI SDK operations.
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Suggests audit logging for AI SDK operations.
 
@@ -89,10 +86,6 @@ Insufficient logging makes it impossible to:
 - [`require-error-handling`](./require-error-handling.md) - Handle errors
 - [`require-tool-confirmation`](./require-tool-confirmation.md) - Log destructive operations
 
-<WhenNotToUse />
-
-<FalseNegativeCTA />
-
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -153,7 +146,7 @@ queueAuditLog({ prompt, result }); // Async logging
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-⚠️ CWE-778 OWASP:A09 CVSS:5.3 | Insufficient Logging detected | MEDIUM [SOC2,ISO27001,PCI-DSS,NIST-CSF]
+⚠️ [CWE-778](https://cwe.mitre.org/data/definitions/778.html) OWASP:A09 CVSS:5.3 | Insufficient Logging detected | MEDIUM [SOC2,ISO27001,PCI-DSS,NIST-CSF]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A09_2021/
 ```
 

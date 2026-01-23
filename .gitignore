@@ -10,6 +10,7 @@ build/
 out/
 .next/
 .cache/
+_next/
 
 # Environment variables
 .env
@@ -75,18 +76,42 @@ Thumbs.db
 .nx/cache
 .nx/workspace-data
 
-
-
-
-.nx/cache
-.nx/workspace-data
+# Project Specific
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
-**/test-report.junit.xmltest-results/
-
-# Test reports
+**/test-report.junit.xml
 test-results/
 *.junit.xml
 test-report.junit.xml
+
+# Antigravity Stability (High Churn & Large Artifacts)
+# Rationale: Prevents FSEvents buffer overflows in the monorepo.
+**/.nx/**
+**/.next/**
+**/.parcel-cache/**
+**/.vercel/**
+**/dist/**
+**/build/**
+**/out/**
+**/coverage/**
+**/.nyc_output/**
+**/test-results/**
+**/tmp/**
+**/.cache/**
+**/.pnpm-store/**
+**/.contentlayer/**
+**/.eslintcache
+**/*.tsbuildinfo
+**/*.log
+**/graph.json
+**/pnpm-lock.yaml
+**/package-lock.json
+**/.DS_Store
+**/ehthumbs.db
+**/Thumbs.db
+**/_next/**
+**/public/video_frames/**
+**/artifacts/recordings/**
+**/recordings/**

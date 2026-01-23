@@ -1,12 +1,11 @@
 ---
-title: "no-directive-injection"
-description: "Detects directive injection vulnerabilities in template systems. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugi"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-directive-injection
+description: "CWE: [CWE-74](https://cwe.mitre.org/data/definitions/74.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** directive injection, CWE-94, template injection, Angular, Vue, React, SSTI, XSS
+> **Keywords:** directive injection, [CWE-94](https://cwe.mitre.org/data/definitions/94.html), template injection, Angular, Vue, React, SSTI, XSS
+**CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects directive injection vulnerabilities in template systems. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
@@ -113,7 +112,7 @@ if (allowedDirectives.includes(directive)) {
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-94 OWASP:A05 CVSS:9.8 | Code Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
+🔒 [CWE-94](https://cwe.mitre.org/data/definitions/94.html) OWASP:A05 CVSS:9.8 | Code Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 
@@ -126,10 +125,6 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 | **Severity & Compliance** | Impact assessment | `CRITICAL [SOC2,PCI-DSS,ISO27001]` |
 | **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
 | **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/) |
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

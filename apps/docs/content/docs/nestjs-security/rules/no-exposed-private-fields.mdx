@@ -1,10 +1,7 @@
 ---
-title: "no-exposed-private-fields"
-description: "This rule detects sensitive fields (like passwords, tokens, secrets) in entity or DTO classes that are not excluded from serialization, which can lead to accide"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-exposed-private-fields
+description: Detect exposed sensitive fields in DTOs/entities
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Detect exposed sensitive fields in DTOs/entities
 
@@ -14,8 +11,8 @@ This rule detects sensitive fields (like passwords, tokens, secrets) in entity o
 
 ## OWASP Mapping
 
-- **OWASP Top 10 2021**: A01:2021 - Broken Access Control
-- **CWE**: CWE-200 - Exposure of Sensitive Information to an Unauthorized Actor
+- **OWASP Top 10 2021**: [A01:2021](https://owasp.org/Top10/A01_2021-Broken_Access_Control/) - Broken Access Control
+- **CWE**: [CWE-200](https://cwe.mitre.org/data/definitions/200.html) - Exposure of Sensitive Information to an Unauthorized Actor
 - **CVSS**: 7.5 (High)
 
 ## ❌ Incorrect
@@ -76,10 +73,6 @@ class UsersController {
 
 - For internal DTOs not used in API responses
 - For DTOs that are explicitly mapped before sending to clients
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

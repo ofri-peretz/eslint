@@ -2,94 +2,100 @@
 
 > No Insecure Key Derivation
 
+**🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
+
+## Quick Summary
+
+| Aspect            | Details                                                          |
+| ----------------- | ---------------------------------------------------------------- |
+| **CWE Reference** | [CWE-916](https://cwe.mitre.org/data/definitions/916.html)       |
+| **Severity**      | Critical (security risk)                                         |
+| **Auto-Fix**      | ✅ Auto-fix available (iterations)                               |
+| **Category**      | Security                                                         |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                          |
+| **Best For**      | Protecting passwords and sensitive keys from brute-force attacks |
+
 ## Description
 
-TODO: Add description for this rule.
+Disallow the use of insecure key derivation parameters, specifically insufficient iterations in PBKDF2. Low iteration counts make it significantly easier for attackers to crack passwords via brute-force or rainbow table attacks.
 
 ## OWASP Mapping
 
 - **OWASP Top 10**: A02:2021 - Cryptographic Failures
-- **CWE**: CWE-327 - Use of a Broken or Risky Cryptographic Algorithm
+- **CWE**: CWE-916 - Use of Password Hash with Insufficient Computational Effort
 
 ## Error Message Format
 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-327 OWASP:A04 CVSS:7.5 | Broken Cryptographic Algorithm detected | HIGH [PCI-DSS,HIPAA,ISO27001,NIST-CSF]
-   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A04_2021/
+🔒 CWE-916 OWASP:A04 CVSS:9.1 | Insecure Key Derivation detected | CRITICAL [SOC2,PCI-DSS,HIPAA,ISO27001,NIST-CSF]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A02_2021/
 ```
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-327](https://cwe.mitre.org/data/definitions/327.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description** | Specific vulnerability | `Broken Cryptographic Algorithm detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH [PCI-DSS,HIPAA,ISO27001,NIST-CSF]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                         |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-916](https://cwe.mitre.org/data/definitions/916.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:9.1](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description**     | Specific vulnerability | `Insecure Key Derivation detected`                                                                                                                                                                                              |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,HIPAA,ISO27001,NIST-CSF]`                                                                                                                                                                               |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                            |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A02_2021-Injection/)                                                                                                                                                                     |
 
 ## Rule Details
 
-TODO: Add rule details.
+Enforces a minimum iteration count for `pbkdf2` and `pbkdf2Sync` (default: 100,000 for SHA-256).
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```javascript
-// TODO: Add incorrect example
+crypto.pbkdf2(password, salt, 1000, 32, 'sha256', callback);
+crypto.pbkdf2Sync(password, salt, 5000, 32, 'sha256');
 ```
 
 ### ✅ Correct
 
 ```javascript
-// TODO: Add correct example
+crypto.pbkdf2(password, salt, 100000, 32, 'sha256', callback);
+crypto.pbkdf2Sync(password, salt, 600000, 32, 'sha256');
 ```
 
 ## Options
 
-This rule has no options.
+| Option          | Type     | Default   | Description                             |
+| --------------- | -------- | --------- | --------------------------------------- |
+| `minIterations` | `number` | `100,000` | Minimum iterations for PBKDF2 (SHA-256) |
 
 ## When Not To Use It
 
-TODO: Add when not to use.
+Only if you are using an extremely slow hashing algorithm where lower iterations are equivalent in effort (highly uncommon for web apps).
 
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Values from Variables
+### Iterations from Variable
 
-**Why**: Values stored in variables are not traced.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = userInput;
-dangerousOperation(value);
-```
-
-**Mitigation**: Validate all user inputs.
-
-### Wrapper Functions
-
-**Why**: Custom wrappers not recognized.
+**Why**: Iteration counts from variables not resolved.
 
 ```typescript
-// ❌ NOT DETECTED - Wrapper
-myWrapper(userInput); // Uses dangerous API internally
+// ❌ NOT DETECTED
+const iterations = 100;
+crypto.pbkdf2(pw, salt, iterations, 32, 'sha256', cb);
 ```
 
-**Mitigation**: Apply rule to wrapper implementations.
+**Mitigation**: Hardcode iteration counts as constants.
 
-### Dynamic Invocation
+### Custom PBKDF2 Wrappers
 
-**Why**: Dynamic calls not analyzed.
+**Why**: Custom functions wrapping crypto calls are not traced.
 
 ```typescript
-// ❌ NOT DETECTED - Dynamic
-obj[method](userInput);
+// ❌ NOT DETECTED
+myHashPass(pw, salt, 100);
 ```
 
-**Mitigation**: Avoid dynamic method invocation.
+**Mitigation**: Apply the rule to wrapper implementations.

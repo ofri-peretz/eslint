@@ -1,10 +1,7 @@
 ---
-title: "require-throttler"
-description: "This rule detects NestJS controllers and route handlers that lack rate limiting, which can make the application vulnerable to brute-force and denial-of-service "
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: require-throttler
+description: "Require ThrottlerGuard or @Throttle decorator for rate limiting"
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Require ThrottlerGuard or @Throttle decorator for rate limiting
 
@@ -14,8 +11,8 @@ This rule detects NestJS controllers and route handlers that lack rate limiting,
 
 ## OWASP Mapping
 
-- **OWASP Top 10 2021**: A05:2021 - Security Misconfiguration
-- **CWE**: CWE-770 - Allocation of Resources Without Limits or Throttling
+- **OWASP Top 10 2021**: [A05:2021](https://owasp.org/Top10/A05_2021-Security_Misconfiguration/) - Security Misconfiguration
+- **CWE**: [CWE-770](https://cwe.mitre.org/data/definitions/770.html) - Allocation of Resources Without Limits or Throttling
 - **CVSS**: 7.5 (High)
 
 ## ❌ Incorrect
@@ -70,10 +67,6 @@ export class AppModule {}
 
 - If you have `ThrottlerModule.forRoot()` in `app.module.ts`, set `assumeGlobalThrottler: true`
 - For endpoints that intentionally skip throttling, use `@SkipThrottle()` decorator
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

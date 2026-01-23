@@ -1,10 +1,7 @@
 ---
-title: "require-rate-limiting"
-description: "**Severity:** \udfe1 Warning"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: require-rate-limiting
+description: Require rate limiting middleware to prevent DDoS and brute-force attacks
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Require rate limiting middleware to prevent DDoS and brute-force attacks
 
@@ -86,10 +83,6 @@ app.post('/login', loginLimiter, (req, res) => {
 
 - Internal microservices behind a load balancer with rate limiting
 - Development environments (use `allowInTests`)
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

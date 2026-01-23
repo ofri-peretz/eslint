@@ -1,10 +1,9 @@
 ---
-title: "no-unsafe-inline-csp"
-description: "Disallow 'unsafe-inline' in Content Security Policy directives."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-unsafe-inline-csp
+description: No Unsafe Inline Csp
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
+> No Unsafe Inline Csp
 
 Disallow 'unsafe-inline' in Content Security Policy directives.
 
@@ -13,7 +12,7 @@ Disallow 'unsafe-inline' in Content Security Policy directives.
 | Property     | Value                                                                          |
 | ------------ | ------------------------------------------------------------------------------ |
 | **CWE**      | [CWE-79: Cross-site Scripting](https://cwe.mitre.org/data/definitions/79.html) |
-| **OWASP**    | A03:2021 - Injection                                                           |
+| **OWASP**    | [A03:2021](https://owasp.org/Top10/A03_2021-Injection/) - Injection                                                           |
 | **CVSS**     | 7.5 (High)                                                                     |
 | **Severity** | HIGH                                                                           |
 
@@ -25,14 +24,12 @@ The `'unsafe-inline'` CSP directive allows inline JavaScript and CSS, completely
 
 ```mermaid
 flowchart TD
-    A["CSP String Detected"] --> B{"Contains 'unsafe-inline'?"}
-    B -->|Yes| C["🔒 Security Warning"]
-    B -->|No| D["✅ Safe CSP"]
-    C --> E["Inline scripts can execute"]
-    E --> F["XSS protection bypassed"]
-
+    A[CSP String Detected] --> B{Contains 'unsafe-inline'?}
+    B -->|Yes| C[🔒 Security Warning]
+    B -->|No| D[✅ Safe CSP]
+    C --> E[Inline scripts can execute]
+    E --> F[XSS protection bypassed]
 ```
-
 
 ## ❌ Incorrect
 
@@ -92,10 +89,6 @@ CSP is one of the most effective defenses against XSS attacks. Using `'unsafe-in
 2. **Hashes**: Calculate SHA hashes of allowed inline scripts
 3. **External scripts**: Move inline scripts to external files
 
-<WhenNotToUse />
-
-<FalseNegativeCTA />
-
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -145,7 +138,7 @@ helmet({ contentSecurityPolicy: { scriptSrc: ["'unsafe-inline'"] } });
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-⚠️ CWE-79 OWASP:A05 CVSS:6.1 | Cross-site Scripting (XSS) detected | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
+⚠️ [CWE-79](https://cwe.mitre.org/data/definitions/79.html) OWASP:A05 CVSS:6.1 | Cross-site Scripting (XSS) detected | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 

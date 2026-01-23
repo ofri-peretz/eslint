@@ -72,8 +72,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^1.2.1",
-    "tslib": "^2.8.1"
+    "@interlace/eslint-devkit": "^1.2.1"
   },
   "peerDependencies": {},
   "devDependencies": {

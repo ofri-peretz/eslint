@@ -7,13 +7,19 @@ import { Space_Grotesk } from 'next/font/google';
 import { Providers } from '@/components/Providers';
 
 
+// Build trigger: 2026-01-17T21:20
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-space-grotesk',
 });
 
+import pluginData from '@/data/plugin-stats.json';
+
 // Base URL for canonical URLs and OG images
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://interlace-eslint.vercel.app';
+
+const totalRules = pluginData.totalRules;
+const totalPlugins = pluginData.totalPlugins;
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
@@ -22,7 +28,7 @@ export const metadata: Metadata = {
     template: '%s | ESLint Interlace',
   },
   description:
-    '416+ security rules across 15 specialized ESLint plugins. LLM-optimized error messages with CWE, OWASP, and CVSS metadata. Full OWASP Top 10 coverage.',
+    `${totalRules}+ security rules across ${totalPlugins} specialized ESLint plugins. LLM-optimized error messages with CWE, OWASP, and CVSS metadata. Full OWASP Top 10 coverage.`,
   keywords: [
     'eslint',
     'eslint-plugin',
@@ -58,7 +64,7 @@ export const metadata: Metadata = {
     siteName: 'ESLint Interlace',
     title: 'Interlace ESLint | Security-First ESLint Plugins',
     description:
-      '416+ security rules across 15 specialized ESLint plugins. LLM-optimized error messages with CWE, OWASP, and CVSS metadata.',
+      `${totalRules}+ security rules across ${totalPlugins} specialized ESLint plugins. LLM-optimized error messages with CWE, OWASP, and CVSS metadata.`,
     images: [
       {
         url: '/og-image.png',
@@ -72,7 +78,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Interlace ESLint | Security-First ESLint Plugins',
     description:
-      '416+ security rules across 15 specialized ESLint plugins. LLM-optimized with CWE, OWASP, CVSS metadata.',
+      `${totalRules}+ security rules across ${totalPlugins} specialized ESLint plugins. LLM-optimized with CWE, OWASP, CVSS metadata.`,
     images: ['/og-image.png'],
     creator: '@AnyWayPod',
   },
@@ -124,7 +130,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               applicationCategory: 'DeveloperApplication',
               operatingSystem: 'Any',
               description:
-                '416+ security rules across 15 specialized ESLint plugins with LLM-optimized error messages.',
+                `${totalRules}+ security rules across ${totalPlugins} specialized ESLint plugins with LLM-optimized error messages.`,
               offers: {
                 '@type': 'Offer',
                 price: '0',

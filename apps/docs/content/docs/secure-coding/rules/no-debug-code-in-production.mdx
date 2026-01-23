@@ -1,12 +1,9 @@
 ---
-title: "no-debug-code-in-production"
-description: "Detects debug code that should not be present in production builds."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-debug-code-in-production
+description: Detects debug code that should not be present in production builds.
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** console.log, DEBUG, **DEV**, CWE-489, leftover debug, production security
+> **Keywords:** console.log, DEBUG, **DEV**, [CWE-489](https://cwe.mitre.org/data/definitions/489.html), leftover debug, production security
 
 Detects debug code that should not be present in production builds.
 
@@ -76,13 +73,9 @@ if (process.env.NODE_ENV !== 'production') {
 When triggered, this rule produces:
 
 ```
-🔒 CWE-489 | Debug Code in Production detected - DEBUG, __DEV__, console | HIGH
+🔒 [CWE-489](https://cwe.mitre.org/data/definitions/489.html) | Debug Code in Production detected - DEBUG, __DEV__, console | HIGH
    Fix: Review and apply secure practices | https://cwe.mitre.org/data/definitions/489.html
 ```
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

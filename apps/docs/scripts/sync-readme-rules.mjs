@@ -27,7 +27,6 @@ export const PLUGIN_MAPPINGS = {
   'pg': 'eslint-plugin-pg',
   'secure-coding': 'eslint-plugin-secure-coding',
   'vercel-ai-security': 'eslint-plugin-vercel-ai-security',
-  'import-next': 'eslint-plugin-import-next',
 };
 
 /**

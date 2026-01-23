@@ -1,10 +1,7 @@
 ---
-title: "require-express-body-parser-limits"
-description: "**Severity:** \udfe1 Warning"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: require-express-body-parser-limits
+description: Require size limits on body parser middleware to prevent DoS attacks
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Require size limits on body parser middleware to prevent DoS attacks
 
@@ -16,7 +13,7 @@ import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-400 OWASP:A06 CVSS:7.5 | Uncontrolled Resource Consumption (ReDoS) detected | HIGH
+🔒 [CWE-400](https://cwe.mitre.org/data/definitions/400.html) OWASP:A06 CVSS:7.5 | Uncontrolled Resource Consumption (ReDoS) detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
 ```
 
@@ -91,10 +88,6 @@ app.use(bodyParser.urlencoded({ limit: '1mb', extended: true }));
 ## When Not To Use It
 
 Never disable in production. Always set appropriate request size limits.
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

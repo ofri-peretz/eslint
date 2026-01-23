@@ -4,17 +4,17 @@
 
 Enforces a maximum cognitive complexity threshold with refactoring guidance. This rule is part of [`@eslint/eslint-plugin-quality`](https://www.npmjs.com/package/@eslint/eslint-plugin-quality) and provides LLM-optimized error messages with fix suggestions.
 
-**🎨 SonarQube-inspired** | **💡 Provides suggestions** | **⚠️ Set to warn in `recommended`**
+**💡 Provides suggestions** | **⚠️ Set to warn in `recommended`**
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **Severity** | Warning (code quality) |
-| **Auto-Fix** | ⚠️ Suggests fixes (manual application) |
-| **Category** | Code Quality |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
-| **Best For** | All projects, especially large codebases requiring maintainability |
+| Aspect         | Details                                                            |
+| -------------- | ------------------------------------------------------------------ |
+| **Severity**   | Warning (code quality)                                             |
+| **Auto-Fix**   | ⚠️ Suggests fixes (manual application)                             |
+| **Category**   | Code Quality                                                       |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration                            |
+| **Best For**   | All projects, especially large codebases requiring maintainability |
 
 ## Rule Details
 
@@ -348,13 +348,13 @@ function calculateShipping(order: Order) {
 
 ## Comparison with Alternatives
 
-| Feature | cognitive-complexity | eslint-plugin-complexity | SonarQube |
-|---------|---------------------|-------------------------|-----------|
-| **Cognitive Complexity** | ✅ Yes | ❌ Cyclomatic only | ✅ Yes |
-| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
-| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
-| **Fix Suggestions** | ✅ Detailed | ⚠️ Basic | ⚠️ Basic |
-| **ESLint Integration** | ✅ Native | ✅ Native | ❌ External |
+| Feature                  | cognitive-complexity | eslint-plugin-complexity | SonarQube   |
+| ------------------------ | -------------------- | ------------------------ | ----------- |
+| **Cognitive Complexity** | ✅ Yes               | ❌ Cyclomatic only       | ✅ Yes      |
+| **LLM-Optimized**        | ✅ Yes               | ❌ No                    | ❌ No       |
+| **ESLint MCP**           | ✅ Optimized         | ❌ No                    | ❌ No       |
+| **Fix Suggestions**      | ✅ Detailed          | ⚠️ Basic                 | ⚠️ Basic    |
+| **ESLint Integration**   | ✅ Native            | ✅ Native                | ❌ External |
 
 ## Related Rules
 
@@ -372,6 +372,7 @@ function calculateShipping(order: Order) {
 ## References
 
 Inspired by **SonarQube RSPEC-3776**
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -399,5 +400,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

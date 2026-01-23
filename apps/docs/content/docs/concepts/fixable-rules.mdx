@@ -111,7 +111,7 @@ flowchart LR
 Interlace rules are designed to be **LLM-optimized**. Every error message includes structured information that AI coding assistants can parse:
 
 ```
-error 🔒 CWE-89 OWASP:A03 CVSS:9.8 | SQL Injection | CRITICAL
+error 🔒 [CWE-89](https://cwe.mitre.org/data/definitions/89.html) OWASP:A03 CVSS:9.8 | SQL Injection | CRITICAL
   → Untrusted input in query string at line 42
   💡 Fix: Use parameterized queries: db.query($1, [value])
   📚 See: https://interlace.dev/docs/pg/rules/no-sql-injection
@@ -187,7 +187,7 @@ With LLM coding assistants (GitHub Copilot, Claude, Cursor), the line between "f
   <Step>
     ### AI Understands Context
     
-    The LLM reads the error message, understands it's a CWE-89 SQL Injection with CVSS 9.8.
+    The LLM reads the error message, understands it's a [CWE-89](https://cwe.mitre.org/data/definitions/89.html) SQL Injection with CVSS 9.8.
   </Step>
   <Step>
     ### AI Proposes Fix

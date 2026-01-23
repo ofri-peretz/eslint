@@ -1,12 +1,9 @@
 ---
-title: "require-lean-queries"
-description: "Suggests using `.lean()` for read-only Mongoose queries to reduce memory usage."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: require-lean-queries
+description: Suggests using .lean() for read-only Mongoose queries to reduce memory usage.
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** CWE-400, lean, performance, Mongoose, memory
+> **Keywords:** [CWE-400](https://cwe.mitre.org/data/definitions/400.html), lean, performance, Mongoose, memory
 
 Suggests using `.lean()` for read-only Mongoose queries to reduce memory usage.
 
@@ -16,8 +13,8 @@ Suggests using `.lean()` for read-only Mongoose queries to reduce memory usage.
 
 | Aspect            | Details                       |
 | ----------------- | ----------------------------- |
-| **CWE Reference** | CWE-400 (Resource Exhaustion) |
-| **OWASP**         | A04:2021 - Insecure Design    |
+| **CWE Reference** | [CWE-400](https://cwe.mitre.org/data/definitions/400.html) (Resource Exhaustion) |
+| **OWASP**         | [A04:2021](https://owasp.org/Top10/A04_2021-Insecure_Design/) - Insecure Design    |
 | **Severity**      | Low (CVSS: 4.3)               |
 | **Category**      | Performance                   |
 
@@ -26,7 +23,7 @@ Suggests using `.lean()` for read-only Mongoose queries to reduce memory usage.
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-400 OWASP:A06 CVSS:7.5 | Uncontrolled Resource Consumption (ReDoS) detected | HIGH
+🔒 [CWE-400](https://cwe.mitre.org/data/definitions/400.html) OWASP:A06 CVSS:7.5 | Uncontrolled Resource Consumption (ReDoS) detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
 ```
 
@@ -79,10 +76,6 @@ await user.save();
 - When documents need to be modified and saved
 - When virtuals or instance methods are required
 - For small result sets where overhead is negligible
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

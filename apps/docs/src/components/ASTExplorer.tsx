@@ -213,7 +213,7 @@ export function ASTExplorer() {
       setCopied(type);
       setTimeout(() => setCopied(null), 2000);
     } catch (err) {
-      console.error('Failed to copy:', err);
+      console.warn('Clipboard copy failed');
     }
   };
   

@@ -29,6 +29,7 @@ import { requireThrottler } from './rules/require-throttler';
 // P1 Rules
 import { requireClassValidator } from './rules/require-class-validator';
 import { noExposedPrivateFields } from './rules/no-exposed-private-fields';
+import { noExposedDebugEndpoints } from './rules/no-exposed-debug-endpoints';
 
 /**
  * Collection of all NestJS security ESLint rules
@@ -45,6 +46,7 @@ export const rules: Record<
   // P1 - Data Validation & Exposure
   'require-class-validator': requireClassValidator,
   'no-exposed-private-fields': noExposedPrivateFields,
+  'no-exposed-debug-endpoints': noExposedDebugEndpoints,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -70,6 +72,7 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // P1 - Data Validation
   'nestjs-security/require-class-validator': 'warn',
   'nestjs-security/no-exposed-private-fields': 'warn',
+  'nestjs-security/no-exposed-debug-endpoints': 'error',
 };
 
 /**

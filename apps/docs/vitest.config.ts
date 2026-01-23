@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import { resolve } from 'path';
 
 /**
  * Vitest configuration for docs app
@@ -12,6 +13,11 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   root: __dirname,
   plugins: [],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, './src'),
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom', // Changed from 'node' to support React component testing

@@ -1,110 +1,73 @@
 ---
-title: "require-backend-authorization"
-description: "The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: require-backend-authorization
+description: Require server-side authorization checks
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
+> Require server-side authorization checks
 
-> Security rule for mobile applications
-
-## Error Message Format
-
-The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
-
-```text
-⚠️ CWE-602 OWASP:A06 CVSS:6.5 | Client-Side Enforcement of Server-Side Security detected | MEDIUM
-   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
-```
-
-### Message Components
-
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-602](https://cwe.mitre.org/data/definitions/602.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:6.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description** | Specific vulnerability | `Client-Side Enforcement of Server-Side Security detected` |
-| **Severity & Compliance** | Impact assessment | `MEDIUM` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/) |
+**Severity:** 🟠 HIGH  
+**CWE:** [CWE-602](https://cwe.mitre.org/data/definitions/602.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10 M3](https://owasp.org/www-project-mobile-top-10/)
 
 ## Rule Details
 
-This rule security rule for mobile applications.
+This rule detects security violations related to Require server-side authorization checks.
 
-**OWASP Mobile Top 10:** Mobile  
-**CWE:** [CWE-602](https://cwe.mitre.org/data/definitions/000.html)  
-**Severity:** error
+## ❌ Incorrect
 
-## Examples
-
-### ❌ Incorrect
-
-```javascript
-// Insecure pattern
+```typescript
+// Example of insecure pattern detected by this rule
+// TODO: Add specific examples based on implementation
 ```
 
-### ✅ Correct
+## ✅ Correct
 
-```javascript
-// Secure pattern
+```typescript
+// Example of secure pattern  
+// TODO: Add specific examples based on implementation
 ```
 
-## When Not To Use It
+## ⚙️ Configuration
 
-This rule should be enabled for all mobile and web applications to ensure security best practices.
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
+This rule has no configuration options.
 
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
+### Values from Variables
 
-### Credentials from Config
-
-**Why**: Config values not traced.
+**Why**: Values stored in variables are not traced.
 
 ```typescript
-// ❌ NOT DETECTED - From config
-const password = config.dbPassword;
+// ❌ NOT DETECTED
+const value = userInput;
+operation(value);
 ```
 
-**Mitigation**: Use proper secrets management.
+**Mitigation**: Review code manually for security patterns.
 
-### Environment Variables
+### Dynamic Patterns
 
-**Why**: Env var content not analyzed.
+**Why**: Dynamic code paths cannot be statically analyzed.
 
 ```typescript
-// ❌ NOT DETECTED - Env var
-const secret = process.env.API_KEY;
+// ❌ NOT DETECTED
+obj[method](data);
 ```
 
-**Mitigation**: Never hardcode or expose secrets.
+**Mitigation**: Avoid dynamic invocation with sensitive data.
 
-### Dynamic Credential Access
+### Third-Party Libraries
 
-**Why**: Dynamic property access not traced.
+**Why**: External library implementations are not analyzed.
 
 ```typescript
-// ❌ NOT DETECTED - Dynamic
-const cred = credentials[type];
+// ❌ NOT DETECTED
+library.operation(sensitiveData);
 ```
 
-**Mitigation**: Audit all credential access patterns.
+**Mitigation**: Review third-party library security documentation.
 
-## Further Reading
+## References
 
+- [CWE-602](https://cwe.mitre.org/data/definitions/602.html)
 - [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
-- [CWE-602 Details](https://cwe.mitre.org/data/definitions/000.html)
-
-## Related Rules
-
-- See other mobile security rules in this plugin
-
----
-
-**Category:** Mobile Security  
-**Type:** Problem  
-**Recommended:** Yes

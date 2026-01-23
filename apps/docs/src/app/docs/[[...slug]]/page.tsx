@@ -14,8 +14,8 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
   const MDX = page.data.body;
 
   return (
-    <DocsPage toc={page.data.toc} full={page.data.full}>
-      <Breadcrumb />
+    <DocsPage toc={page.data.toc} full={page.data.full} breadcrumb={{ enabled: false }}>
+      <Breadcrumb tree={source.pageTree} />
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription>{page.data.description}</DocsDescription>
       <DocsBody>

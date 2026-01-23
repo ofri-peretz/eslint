@@ -1,12 +1,9 @@
 ---
-title: "no-hardcoded-connection-string"
-description: "Detects hardcoded MongoDB connection strings containing credentials in source code."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-hardcoded-connection-string
+description: Detects hardcoded MongoDB connection strings containing credentials in source code.
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** CWE-798, hardcoded credentials, MongoDB, connection string, secrets, security
+> **Keywords:** [CWE-798](https://cwe.mitre.org/data/definitions/798.html), hardcoded credentials, MongoDB, connection string, secrets, security
 
 Detects hardcoded MongoDB connection strings containing credentials in source code.
 
@@ -16,8 +13,8 @@ Detects hardcoded MongoDB connection strings containing credentials in source co
 
 | Aspect            | Details                                   |
 | ----------------- | ----------------------------------------- |
-| **CWE Reference** | CWE-798 (Hardcoded Credentials)           |
-| **OWASP**         | A07:2021 - Identification/Auth Failures   |
+| **CWE Reference** | [CWE-798](https://cwe.mitre.org/data/definitions/798.html) (Hardcoded Credentials)           |
+| **OWASP**         | [A07:2021](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/) - Identification/Auth Failures   |
 | **Severity**      | High (CVSS: 7.5)                          |
 | **Category**      | Security                                  |
 | **ESLint MCP**    | ✅ Optimized for AI assistant integration |
@@ -27,7 +24,7 @@ Detects hardcoded MongoDB connection strings containing credentials in source co
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-798 OWASP:A04 CVSS:9.8 | Hardcoded Credentials detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001,NIST-CSF]
+🔒 [CWE-798](https://cwe.mitre.org/data/definitions/798.html) OWASP:A04 CVSS:9.8 | Hardcoded Credentials detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001,NIST-CSF]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A04_2021/
 ```
 
@@ -105,10 +102,6 @@ const testUri = 'mongodb://test:test@localhost:27017/testdb';
 ```
 
 **Workaround**: Rule should not flag strings in comments (not implemented).
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

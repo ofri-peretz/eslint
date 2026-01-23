@@ -20,9 +20,6 @@
  */
 
 // Injection Rules
-import type { Options as DetectEvalWithExpressionOptions } from '../rules/detect-eval-with-expression';
-import type { Options as DetectChildProcessOptions } from '../rules/detect-child-process';
-import type { Options as NoUnsafeDynamicRequireOptions } from '../rules/no-unsafe-dynamic-require';
 import type { Options as NoGraphqlInjectionOptions } from '../rules/no-graphql-injection';
 import type { Options as NoXxeInjectionOptions } from '../rules/no-xxe-injection';
 import type { Options as NoXpathInjectionOptions } from '../rules/no-xpath-injection';
@@ -31,9 +28,6 @@ import type { Options as NoDirectiveInjectionOptions } from '../rules/no-directi
 import type { Options as NoFormatStringInjectionOptions } from '../rules/no-format-string-injection';
 
 // Path & File Rules
-import type { Options as DetectNonLiteralFsFilenameOptions } from '../rules/detect-non-literal-fs-filename';
-import type { Options as NoZipSlipOptions } from '../rules/no-zip-slip';
-import type { Options as NoToctouVulnerabilityOptions } from '../rules/no-toctou-vulnerability';
 
 // Regex Rules
 import type { Options as DetectNonLiteralRegexpOptions } from '../rules/detect-non-literal-regexp';
@@ -73,7 +67,6 @@ import type { Options as NoClickjackingOptions } from '../rules/no-clickjacking'
 import type { Options as NoSensitiveDataExposureOptions } from '../rules/no-sensitive-data-exposure';
 
 // Buffer & Memory Rules
-import type { Options as NoBufferOverreadOptions } from '../rules/no-buffer-overread';
 
 // Resource & DoS Rules
 import type { Options as NoUnlimitedResourceAllocationOptions } from '../rules/no-unlimited-resource-allocation';
@@ -85,19 +78,7 @@ import type { Options as NoElectronSecurityIssuesOptions } from '../rules/no-ele
 // Export all types with consistent naming
 export type {
   // Injection
-  DetectEvalWithExpressionOptions,
-  DetectChildProcessOptions,
-  NoUnsafeDynamicRequireOptions,
-  NoGraphqlInjectionOptions,
-  NoXxeInjectionOptions,
-  NoXpathInjectionOptions,
-  NoLdapInjectionOptions,
-  NoDirectiveInjectionOptions,
-  NoFormatStringInjectionOptions,
   // Path & File
-  DetectNonLiteralFsFilenameOptions,
-  NoZipSlipOptions,
-  NoToctouVulnerabilityOptions,
   // Regex
   DetectNonLiteralRegexpOptions,
   NoRedosVulnerableRegexOptions,
@@ -128,7 +109,6 @@ export type {
   // Data Exposure
   NoSensitiveDataExposureOptions,
   // Buffer & Memory
-  NoBufferOverreadOptions,
   // Resource & DoS
   NoUnlimitedResourceAllocationOptions,
   NoUncheckedLoopConditionOptions,
@@ -151,9 +131,6 @@ export type {
  */
 export type AllSecurityRulesOptions = {
   // Injection
-  'detect-eval-with-expression'?: DetectEvalWithExpressionOptions;
-  'detect-child-process'?: DetectChildProcessOptions;
-  'no-unsafe-dynamic-require'?: NoUnsafeDynamicRequireOptions;
   'no-graphql-injection'?: NoGraphqlInjectionOptions;
   'no-xxe-injection'?: NoXxeInjectionOptions;
   'no-xpath-injection'?: NoXpathInjectionOptions;
@@ -161,9 +138,6 @@ export type AllSecurityRulesOptions = {
   'no-directive-injection'?: NoDirectiveInjectionOptions;
   'no-format-string-injection'?: NoFormatStringInjectionOptions;
   // Path & File
-  'detect-non-literal-fs-filename'?: DetectNonLiteralFsFilenameOptions;
-  'no-zip-slip'?: NoZipSlipOptions;
-  'no-toctou-vulnerability'?: NoToctouVulnerabilityOptions;
   // Regex
   'detect-non-literal-regexp'?: DetectNonLiteralRegexpOptions;
   'no-redos-vulnerable-regex'?: NoRedosVulnerableRegexOptions;
@@ -193,8 +167,6 @@ export type AllSecurityRulesOptions = {
   'no-clickjacking'?: NoClickjackingOptions;
   // Data Exposure
   'no-sensitive-data-exposure'?: NoSensitiveDataExposureOptions;
-  // Buffer & Memory
-  'no-buffer-overread'?: NoBufferOverreadOptions;
   // Resource & DoS
   'no-unlimited-resource-allocation'?: NoUnlimitedResourceAllocationOptions;
   'no-unchecked-loop-condition'?: NoUncheckedLoopConditionOptions;

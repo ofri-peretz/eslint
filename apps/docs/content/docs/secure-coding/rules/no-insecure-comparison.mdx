@@ -1,12 +1,11 @@
 ---
-title: "no-insecure-comparison"
-description: "Detects insecure comparison operators (`==`, `!=`) that can lead to type coercion vulnerabilities. This rule is part of [`eslint-plugin-secure-coding`](https://"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-insecure-comparison
+description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** insecure comparison, CWE-697, security, ESLint rule, loose equality, type coercion, == vs ===, strict equality, JavaScript security, auto-fix, LLM-optimized, code security
+> **Keywords:** insecure comparison, [CWE-697](https://cwe.mitre.org/data/definitions/697.html), security, ESLint rule, loose equality, type coercion, == vs ===, strict equality, JavaScript security, auto-fix, LLM-optimized, code security
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects insecure comparison operators (`==`, `!=`) that can lead to type coercion vulnerabilities. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
@@ -16,7 +15,7 @@ Detects insecure comparison operators (`==`, `!=`) that can lead to type coercio
 
 | Aspect            | Details                                                                    |
 | ----------------- | -------------------------------------------------------------------------- |
-| **CWE Reference** | CWE-697 (Incorrect Comparison)                                             |
+| **CWE Reference** | [CWE-697](https://cwe.mitre.org/data/definitions/697.html) (Incorrect Comparison)                                             |
 | **Severity**      | High (security vulnerability)                                              |
 | **Auto-Fix**      | ✅ Yes (replaces == with ===, != with !==)                                 |
 | **Category**      | Security                                                                   |
@@ -34,7 +33,7 @@ Detects insecure comparison operators (`==`, `!=`) that can lead to type coercio
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-⚠️ CWE-697 OWASP:A06 CVSS:5.3 | Incorrect Comparison detected | MEDIUM
+⚠️ [CWE-697](https://cwe.mitre.org/data/definitions/697.html) OWASP:A06 CVSS:5.3 | Incorrect Comparison detected | MEDIUM
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
 ```
 
@@ -145,10 +144,6 @@ const result = a === b ? 1 : 0; // ✅ Type and value match
 2. **Explicit null checks**: Use `value !== null && value !== undefined` instead of `value != null`
 3. **Type safety**: Strict equality prevents accidental type coercion bugs
 4. **Consistency**: Use strict equality throughout the codebase
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

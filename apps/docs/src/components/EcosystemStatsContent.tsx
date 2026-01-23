@@ -14,6 +14,8 @@ interface EcosystemStatsData {
   plugins: number;
   coverage: number;
   owaspCoverage: number;
+  pipelineRules: number;
+  pipelinePlugins: number;
 }
 
 export function EcosystemStats() {
@@ -30,7 +32,9 @@ export function EcosystemStats() {
     rules: pluginStats?.totalRules ?? 0,
     plugins: pluginStats?.totalPlugins ?? 0,
     coverage: repoData?.totals?.coverage ?? 81.65,
-    owaspCoverage: 100
+    owaspCoverage: 100,
+    pipelineRules: pluginStats ? (pluginStats.plugins.filter(p => !p.published).reduce((acc, p) => acc + p.rules, 0)) : 0,
+    pipelinePlugins: pluginStats ? (pluginStats.allPluginsCount - pluginStats.totalPlugins) : 0,
   };
 
   const displayStats = [
@@ -41,6 +45,7 @@ export function EcosystemStats() {
       color: 'text-violet-500',
       bg: 'bg-violet-500/10',
       borderColor: 'border-violet-500/20',
+      sublabel: `+${stats.pipelineRules} upcoming`,
       href: '/docs/secure-coding',
       ctaLabel: 'View Rules'
     },
@@ -51,6 +56,7 @@ export function EcosystemStats() {
       color: 'text-cyan-500',
       bg: 'bg-cyan-500/10',
       borderColor: 'border-cyan-500/20',
+      sublabel: `+${stats.pipelinePlugins} in pipeline`,
       href: '/docs/secure-coding',
       ctaLabel: 'See Plugins'
     },

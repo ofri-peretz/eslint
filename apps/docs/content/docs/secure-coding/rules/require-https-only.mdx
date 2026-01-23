@@ -1,92 +1,140 @@
 ---
-title: "require-https-only"
-description: "This rule security rule for mobile applications."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: require-https-only
+description: Enforces HTTPS for all external requests
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
+> Enforces HTTPS for all external requests
 
-> Security rule for mobile applications
+**Severity:** 🔴 CRITICAL  
+**CWE:** [CWE-319: Cleartext Transmission of Sensitive Information](https://cwe.mitre.org/data/definitions/319.html)  
+**OWASP Mobile:** [M5: Insecure Communication](https://owasp.org/www-project-mobile-top-10/)
 
 ## Rule Details
 
-This rule security rule for mobile applications.
+This rule detects HTTP (unencrypted) URLs in `fetch()` and `axios` requests. HTTP transmits data in plaintext, allowing man-in-the-middle (MITM) attacks where attackers can intercept, read, and modify data in transit.
 
-**OWASP Mobile Top 10:** Mobile  
-**CWE:** [CWE-319](https://cwe.mitre.org/data/definitions/000.html)  
-**Severity:** error
+### Why This Matters
 
-## Examples
+Using HTTP instead of HTTPS exposes all transmitted data:
 
-### ❌ Incorrect
+- **Credentials theft**: Login credentials sent in plaintext
+- **Session hijacking**: Auth tokens intercepted by attackers
+- **Data tampering**: Responses modified to inject malicious code
+- **Compliance violations**: PCI-DSS requires TLS 1.2+ for payment data
 
-```javascript
-// Insecure pattern
+HTTPS is **mandatory** for:
+
+- Authentication and authorization
+- Any PII or sensitive data
+- API requests with auth tokens
+- Payment processing (PCI-DSS requirement)
+
+## ❌ Incorrect
+
+```typescript
+// HTTP fetch() requests
+fetch('http://api.example.com/users'); // ❌ Unencrypted
+
+// HTTP axios requests
+axios.get('http://api.example.com/data'); // ❌ Plaintext transmission
+
+// HTTP POST with credentials
+fetch('http://api.example.com/login', {
+  method: 'POST',
+  body: JSON.stringify({ username, password }), // ❌ Credentials in plaintext!
+});
+
+// Mixed content (HTTPS page loading HTTP resources)
+fetch('http://cdn.example.com/script.js'); // ❌ Mixed content vulnerability
 ```
 
-### ✅ Correct
+## ✅ Correct
 
-```javascript
-// Secure pattern
+```typescript
+// HTTPS fetch() requests
+fetch('https://api.example.com/users'); // ✅ Encrypted with TLS
+
+// HTTPS axios requests
+axios.get('https://api.example.com/data'); // ✅ Secure transmission
+
+// HTTPS POST with credentials
+fetch('https://api.example.com/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ username, password }), // ✅ Encrypted
+});
+
+// Environment-based URLs (with HTTPS enforcement)
+const API_URL = process.env.API_URL; // Must be HTTPS in production
+if (!API_URL.startsWith('https://')) {
+  throw new Error('API_URL must use HTTPS');
+}
+fetch(API_URL);
+
+// Localhost exception (development only)
+const isDev = process.env.NODE_ENV === 'development';
+const url = isDev ? 'http://localhost:3000' : 'https://api.prod.com'; // ✅ Conditional
 ```
-
-## When Not To Use It
-
-This rule should be enabled for all mobile and web applications to ensure security best practices.
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Values from Variables
+### URLs from Variables or Environment
 
-**Why**: Values stored in variables are not traced.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = userInput;
-dangerousOperation(value);
-```
-
-**Mitigation**: Validate all user inputs.
-
-### Wrapper Functions
-
-**Why**: Custom wrappers not recognized.
+**Why**: We only detect literal HTTP URL strings. URLs from variables or `process.env` are not analyzed.
 
 ```typescript
-// ❌ NOT DETECTED - Wrapper
-myWrapper(userInput); // Uses dangerous API internally
+// ❌ NOT DETECTED - URL from variable
+const apiUrl = getApiUrl(); // Returns 'http://...'
+fetch(apiUrl);
 ```
 
-**Mitigation**: Apply rule to wrapper implementations.
-
-### Dynamic Invocation
-
-**Why**: Dynamic calls not analyzed.
+**Mitigation**: Validate URLs at runtime. Use URL parsing libraries to enforce HTTPS.
 
 ```typescript
-// ❌ NOT DETECTED - Dynamic
-obj[method](userInput);
+// Runtime validation
+const url = new URL(apiUrl);
+if (url.protocol !== 'https:' && !isDevelopment) {
+  throw new Error('Only HTTPS URLs allowed in production');
+}
 ```
 
-**Mitigation**: Avoid dynamic method invocation.
+### Template Literals with Expressions
 
-## Further Reading
+**Why**: Template literals with variable interpolation cannot be statically analyzed.
 
-- [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
-- [CWE-319 Details](https://cwe.mitre.org/data/definitions/000.html)
+```typescript
+// ❌ NOT DETECTED - Template literal
+const protocol = 'http'; // Insecure!
+fetch(`${protocol}://api.example.com/data`);
+```
 
-## Related Rules
+**Mitigation**: Use constant HTTPS URLs. Avoid dynamic protocol construction.
 
-- See other mobile security rules in this plugin
+### Redirects and Location Headers
 
----
+**Why**: Server-side redirects from HTTPS to HTTP are not detected at the client level.
 
-**Category:** Mobile Security  
-**Type:** Problem  
-**Recommended:** Yes
+```typescript
+// ❌ NOT DETECTED - Server redirects to HTTP
+fetch('https://api.example.com/redirect'); // Server returns HTTP redirect
+```
+
+**Mitigation**: Configure servers to never redirect HTTPS to HTTP. Use HSTS headers.
+
+## ⚙️ Configuration
+
+This rule has no configuration options. It flags all HTTP URLs in `fetch()` and `axios.get/post/put/delete/patch/head/options()` calls.
+
+## 🔗 Related Rules
+
+- [`no-disabled-certificate-validation`](./no-disabled-certificate-validation.md) - Prevent SSL bypass
+- [`no-insecure-websocket`](./no-insecure-websocket.md) - Require WSS (secure WebSocket)
+
+## 📚 References
+
+- [CWE-319: Cleartext Transmission](https://cwe.mitre.org/data/definitions/319.html)
+- [OWASP Mobile M5: Insecure Communication](https://owasp.org/www-project-mobile-top-10/)
+- [PCI-DSS Requirement 4.1: Use Strong Cryptography](https://www.pcisecuritystandards.org/)
+- [HSTS Specification](https://tools.ietf.org/html/rfc6797)

@@ -1,8 +1,8 @@
 {
-  "title": "JWT",
+  "title": "jwt",
   "pages": [
-    "index",
-    "rules",
-    "changelog"
+    "README",
+    "changelog",
+    "rules"
   ]
 }

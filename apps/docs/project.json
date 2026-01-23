@@ -18,7 +18,11 @@
         "eslint-plugin-browser-security",
         "eslint-plugin-mongodb-security",
         "eslint-plugin-vercel-ai-security",
-        "eslint-plugin-import-next"
+        "eslint-plugin-import-next",
+        "eslint-plugin-architecture",
+        "eslint-plugin-quality",
+        "eslint-plugin-react-features",
+        "eslint-plugin-react-a11y"
     ],
     "targets": {
         "validate-mermaid": {

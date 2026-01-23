@@ -1,12 +1,10 @@
 ---
-title: "check-query-params"
-description: "Ensures the number of placeholders in SQL queries matches the provided parameters."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: check-query-params
+description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** query parameters, CWE-89, pg, node-postgres, quality, parameterized queries
+> **Keywords:** query parameters, [CWE-89](https://cwe.mitre.org/data/definitions/89.html), pg, node-postgres, quality, parameterized queries
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Ensures the number of placeholders in SQL queries matches the provided parameters.
 
@@ -16,7 +14,7 @@ Ensures the number of placeholders in SQL queries matches the provided parameter
 
 | Aspect            | Details                           |
 | ----------------- | --------------------------------- |
-| **CWE Reference** | CWE-89 (SQL Injection Prevention) |
+| **CWE Reference** | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) (SQL Injection Prevention) |
 | **Severity**      | Medium (CVSS: 5.0)                |
 | **Category**      | Quality                           |
 
@@ -54,7 +52,7 @@ await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-89 OWASP:A05 CVSS:9.8 | SQL Injection detected | CRITICAL [SOC2,PCI-DSS,HIPAA,ISO27001]
+🔒 [CWE-89](https://cwe.mitre.org/data/definitions/89.html) OWASP:A05 CVSS:9.8 | SQL Injection detected | CRITICAL [SOC2,PCI-DSS,HIPAA,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 
@@ -72,10 +70,6 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 - Only checks static string literals
 - Cannot analyze dynamic query construction
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

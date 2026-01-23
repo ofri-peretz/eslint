@@ -1,10 +1,7 @@
 ---
-title: "require-error-handling"
-description: "This rule identifies AI SDK calls that aren't wrapped in try-catch blocks. AI calls can fail due to rate limits, network issues, or content filtering."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: "`require-error-handling`"
+description: Ensures AI SDK calls are wrapped in try-catch to prevent cascading failures.
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Ensures AI SDK calls are wrapped in try-catch to prevent cascading failures.
 
@@ -92,10 +89,6 @@ Unhandled AI errors can cause:
 - [`require-audit-logging`](./require-audit-logging.md) - Log AI operations
 - [`require-abort-signal`](./require-abort-signal.md) - Enable cancellation
 
-<WhenNotToUse />
-
-<FalseNegativeCTA />
-
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -161,7 +154,7 @@ generateText({ prompt: 'Hello' })
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-755 OWASP:A10 CVSS:7.5 | Improper Handling of Exceptional Conditions detected | HIGH
+🔒 [CWE-755](https://cwe.mitre.org/data/definitions/755.html) OWASP:A10 CVSS:7.5 | Improper Handling of Exceptional Conditions detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A10_2021/
 ```
 

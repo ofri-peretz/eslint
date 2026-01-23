@@ -1,12 +1,9 @@
 ---
-title: "no-bypass-middleware"
-description: "Detects Mongoose operations that bypass middleware hooks (pre/post hooks)."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-bypass-middleware
+description: Detects Mongoose operations that bypass middleware hooks (pre/post hooks).
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** CWE-284, middleware, hooks, Mongoose, pre, post, security
+> **Keywords:** [CWE-284](https://cwe.mitre.org/data/definitions/284.html), middleware, hooks, Mongoose, pre, post, security
 
 Detects Mongoose operations that bypass middleware hooks (pre/post hooks).
 
@@ -16,8 +13,8 @@ Detects Mongoose operations that bypass middleware hooks (pre/post hooks).
 
 | Aspect            | Details                           |
 | ----------------- | --------------------------------- |
-| **CWE Reference** | CWE-284 (Improper Access Control) |
-| **OWASP**         | A01:2021 - Broken Access Control  |
+| **CWE Reference** | [CWE-284](https://cwe.mitre.org/data/definitions/284.html) (Improper Access Control) |
+| **OWASP**         | [A01:2021](https://owasp.org/Top10/A01_2021-Broken_Access_Control/) - Broken Access Control  |
 | **Severity**      | Medium (CVSS: 5.3)                |
 | **Category**      | Security                          |
 
@@ -26,7 +23,7 @@ Detects Mongoose operations that bypass middleware hooks (pre/post hooks).
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-284 OWASP:A01 CVSS:7.5 | Improper Access Control detected | HIGH
+🔒 [CWE-284](https://cwe.mitre.org/data/definitions/284.html) OWASP:A01 CVSS:7.5 | Improper Access Control detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
 ```
 
@@ -82,10 +79,6 @@ userSchema.pre('findOneAndUpdate', function () {
   // Hash password here if modified
 });
 ```
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

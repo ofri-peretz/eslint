@@ -20,6 +20,20 @@
         ]
       }
     },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": [
+        "{projectRoot}/coverage"
+      ],
+      "options": {
+        "configFile": "packages/eslint-plugin-browser-security/vitest.config.mts"
+      },
+      "configurations": {
+        "ci": {
+          "coverage": true
+        }
+      }
+    },
     "nx-release-publish": {
       "executor": "@nx/js:release-publish",
       "options": {

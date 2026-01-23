@@ -2,50 +2,67 @@
 
 > No Hardcoded Crypto Key
 
+**🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
+
+## Quick Summary
+
+| Aspect            | Details                                                    |
+| ----------------- | ---------------------------------------------------------- |
+| **CWE Reference** | [CWE-321](https://cwe.mitre.org/data/definitions/321.html) |
+| **Severity**      | Critical (security risk)                                   |
+| **Auto-Fix**      | ❌ No auto-fix available                                   |
+| **Category**      | Security                                                   |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                    |
+| **Best For**      | Protecting cryptographic keys from source code exposure    |
+
 ## Description
 
-TODO: Add description for this rule.
+Disallow the use of hardcoded cryptographic keys in `crypto.createCipheriv()` and `crypto.createDecipheriv()` calls. Hardcoding keys in source code makes them easily discoverable by attackers.
 
 ## OWASP Mapping
 
 - **OWASP Top 10**: A02:2021 - Cryptographic Failures
-- **CWE**: CWE-327 - Use of a Broken or Risky Cryptographic Algorithm
+- **CWE**: CWE-321 - Use of Hard-coded Cryptographic Key
 
 ## Error Message Format
 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-327 OWASP:A04 CVSS:7.5 | Broken Cryptographic Algorithm detected | HIGH [PCI-DSS,HIPAA,ISO27001,NIST-CSF]
+🔒 CWE-321 OWASP:A04 CVSS:9.1 | Hardcoded Cryptographic Key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001,NIST-CSF]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A04_2021/
 ```
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-327](https://cwe.mitre.org/data/definitions/327.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description** | Specific vulnerability | `Broken Cryptographic Algorithm detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH [PCI-DSS,HIPAA,ISO27001,NIST-CSF]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                         |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-321](https://cwe.mitre.org/data/definitions/321.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:9.1](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description**     | Specific vulnerability | `Hardcoded Cryptographic Key detected`                                                                                                                                                                                          |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001,NIST-CSF]`                                                                                                                                                                          |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                            |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/)                                                                                                                                                                     |
 
 ## Rule Details
 
-TODO: Add rule details.
+Detects string literals or hardcoded byte arrays used as keys in cryptographic operations.
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```javascript
-// TODO: Add incorrect example
+crypto.createCipheriv('aes-256-gcm', 'my-secret-key-123456', iv);
+crypto.createCipheriv('aes-256-gcm', Buffer.from('hardcodedkey'), iv);
+crypto.createDecipheriv('aes-256-gcm', 'hardcoded-key', iv);
 ```
 
 ### ✅ Correct
 
 ```javascript
-// TODO: Add correct example
+crypto.createCipheriv('aes-256-gcm', process.env.KEY, iv);
+crypto.createCipheriv('aes-256-gcm', keyFromKms, iv);
+crypto.createCipheriv('aes-256-gcm', Buffer.from(envKey), iv);
 ```
 
 ## Options
@@ -54,42 +71,32 @@ This rule has no options.
 
 ## When Not To Use It
 
-TODO: Add when not to use.
+Never. Cryptographic keys should never be hardcoded in production code.
 
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Algorithm from Variable
+### Key from External Module
 
-**Why**: Algorithm names from variables not traced.
-
-```typescript
-// ❌ NOT DETECTED - Algorithm from variable
-const algo = config.hashAlgorithm; // May be weak
-crypto.createHash(algo);
-```
-
-**Mitigation**: Hardcode secure algorithms.
-
-### Third-party Crypto Libraries
-
-**Why**: Non-standard crypto APIs not recognized.
+**Why**: Keys imported from other modules are not traceable as "hardcoded" if they are identifiers.
 
 ```typescript
-// ❌ NOT DETECTED - Third-party
-customCrypto.encrypt(data, key);
+// ❌ NOT DETECTED - if keys.ts has a hardcoded string
+import { JWT_KEY } from './keys';
+crypto.createCipheriv('aes-256-gcm', JWT_KEY, iv);
 ```
 
-**Mitigation**: Review all crypto implementations.
+**Mitigation**: Run the rule across the entire project.
 
-### Configuration-based Security
+### Computed Keys
 
-**Why**: Config-driven security not analyzed.
+**Why**: Keys built via complex string manipulation are not resolved.
 
 ```typescript
-// ❌ NOT DETECTED - Config-based
-const options = getSecurityOptions(); // May be weak
+// ❌ NOT DETECTED
+const key = 'part1' + 'part2';
+crypto.createCipheriv('aes-256-gcm', key, iv);
 ```
 
-**Mitigation**: Validate security configurations.
+**Mitigation**: Avoid building keys via concatenation.

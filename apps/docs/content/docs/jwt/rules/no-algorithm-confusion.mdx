@@ -1,10 +1,7 @@
 ---
-title: "no-algorithm-confusion"
-description: "**Severity:** \udd34 Critical"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-algorithm-confusion
+description: Prevent algorithm confusion attacks using symmetric algorithms with asymmetric keys
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Prevent algorithm confusion attacks using symmetric algorithms with asymmetric keys
 
@@ -51,10 +48,6 @@ jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
 ## When Not To Use It
 
 Never disable this rule. Algorithm confusion is a critical vulnerability.
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

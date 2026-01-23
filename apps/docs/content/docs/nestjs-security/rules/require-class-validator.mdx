@@ -1,10 +1,7 @@
 ---
-title: "require-class-validator"
-description: "The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: require-class-validator
+description: Require class-validator decorators on DTO properties
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Require class-validator decorators on DTO properties
 
@@ -13,7 +10,7 @@ import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-20 OWASP:A06 CVSS:7.5 | Improper Input Validation detected | HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]
+🔒 [CWE-20](https://cwe.mitre.org/data/definitions/20.html) OWASP:A06 CVSS:7.5 | Improper Input Validation detected | HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
 ```
 
@@ -33,8 +30,8 @@ This rule detects DTO classes with properties that lack class-validator decorato
 
 ## OWASP Mapping
 
-- **OWASP Top 10 2021**: A03:2021 - Injection
-- **CWE**: CWE-20 - Improper Input Validation
+- **OWASP Top 10 2021**: [A03:2021](https://owasp.org/Top10/A03_2021-Injection/) - Injection
+- **CWE**: [CWE-20](https://cwe.mitre.org/data/definitions/20.html) - Improper Input Validation
 - **CVSS**: 7.5 (High)
 
 ## ❌ Incorrect
@@ -90,10 +87,6 @@ class CreateUserDto {
 
 - For internal DTOs that don't accept external input
 - For DTOs used only in tests
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

@@ -1,111 +1,143 @@
 ---
-title: "no-dynamic-dependency-loading"
-description: "The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-dynamic-dependency-loading
+description: Prevents runtime dependency injection with dynamic paths
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
+> Prevents runtime dependency injection with dynamic paths
 
-> Security rule for mobile applications
-
-## Error Message Format
-
-The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
-
-```text
-🔒 CWE-494 OWASP:A08 CVSS:8.1 | Download of Code Without Integrity Check detected | HIGH
-   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A08_2021/
-```
-
-### Message Components
-
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-494](https://cwe.mitre.org/data/definitions/494.html) [OWASP:A08](https://owasp.org/Top10/A08_2021-Injection/) [CVSS:8.1](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description** | Specific vulnerability | `Download of Code Without Integrity Check detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A08_2021-Injection/) |
+**Severity:** 🟠 HIGH  
+**CWE:** [CWE-1104: Use of Unmaintained Third Party Components](https://cwe.mitre.org/data/definitions/1104.html)  
+**OWASP Mobile:** [M2: Inadequate Supply Chain Security](https://owasp.org/www-project-mobile-top-10/)
 
 ## Rule Details
 
-This rule security rule for mobile applications.
+This rule detects dynamically constructed paths in `require()` and `import()` statements. Dynamic dependency loading bypasses static analysis and package lock integrity checks, enabling dependency confusion and supply chain attacks.
 
-**OWASP Mobile Top 10:** Mobile  
-**CWE:** [CWE-494](https://cwe.mitre.org/data/definitions/000.html)  
-**Severity:** error
+### Why This Matters
 
-## Examples
+Dynamic imports create security vulnerabilities:
 
-### ❌ Incorrect
+- **Dependency confusion**: Attackers publish malicious packages with similar names
+- **Supply chain attacks**: Runtime code injection through compromised dynamic imports
+- **No integrity checks**: Dynamic paths bypass lock file validation
+- **Code execution**: Attackers can execute arbitrary code by controlling the import path
 
-```javascript
-// Insecure pattern
+## ❌ Incorrect
+
+```typescript
+// Dynamic require() with variable
+const moduleName = req.query.module; // User-controlled!
+const plugin = require(moduleName); // ❌ Code injection vulnerability
+
+// Dynamic import() with template literal
+const feature = userInput;
+const module = await import(`./${feature}/index.js`); // ❌ Path traversal risk
+
+// Dynamic require() from config
+const config = JSON.parse(fs.readFileSync('config.json'));
+const handler = require(config.handlerPath); // ❌ Config-based injection
+
+// Conditional dynamic import
+const libName = process.env.USE_ALT_LIB ? 'alt-lib' : 'main-lib';
+const lib = require(libName); // ❌ Environment-controlled dependency
 ```
 
-### ✅ Correct
+## ✅ Correct
 
-```javascript
-// Secure pattern
+```typescript
+// Static imports (preferred)
+import express from 'express'; // ✅ Static, lock file verified
+import { Router } from './router'; // ✅ Static relative import
+
+// Static require()
+const fs = require('fs'); // ✅ Static
+
+// Plugin system with allow list
+const ALLOWED_PLUGINS = ['auth', 'logging', 'metrics'] as const;
+type AllowedPlugin = (typeof ALLOWED_PLUGINS)[number];
+
+function loadPlugin(name: string) {
+  if (!ALLOWED_PLUGINS.includes(name as AllowedPlugin)) {
+    throw new Error(`Plugin ${name} not in allow list`);
+  }
+
+  // Static switch instead of dynamic require
+  switch (name) {
+    case 'auth':
+      return require('./plugins/auth'); // ✅ Static path
+    case 'logging':
+      return require('./plugins/logging'); // ✅ Static path
+    case 'metrics':
+      return require('./plugins/metrics'); // ✅ Static path
+    default:
+      throw new Error('Invalid plugin');
+  }
+}
+
+// Code splitting with static imports
+async function loadFeature(feature: 'admin' | 'user') {
+  if (feature === 'admin') {
+    return import('./features/admin'); // ✅ Static path
+  } else {
+    return import('./features/user'); // ✅ Static path
+  }
+}
 ```
-
-## When Not To Use It
-
-This rule should be enabled for all mobile and web applications to ensure security best practices.
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Values from Variables
+### Nested Dynamic Imports
 
-**Why**: Values stored in variables are not traced.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = userInput;
-dangerousOperation(value);
-```
-
-**Mitigation**: Validate all user inputs.
-
-### Wrapper Functions
-
-**Why**: Custom wrappers not recognized.
+**Why**: We only detect top-level dynamic `require()` and `import()`. Nested or indirect dynamic imports are not traced.
 
 ```typescript
-// ❌ NOT DETECTED - Wrapper
-myWrapper(userInput); // Uses dangerous API internally
+// ❌ NOT DETECTED - Indirect dynamic import
+function loader(path: string) {
+  return import(path); // Dynamic import hidden in function
+}
+loader(userInput);
 ```
 
-**Mitigation**: Apply rule to wrapper implementations.
+**Mitigation**: Review all code paths that load dependencies. Enforce static imports via code review.
 
-### Dynamic Invocation
+### Eval-based Loading
 
-**Why**: Dynamic calls not analyzed.
+**Why**: `eval()` and `Function()` constructor can dynamically load code, but are not import-specific.
 
 ```typescript
-// ❌ NOT DETECTED - Dynamic
-obj[method](userInput);
+// ❌ NOT DETECTED - Eval-based loading
+eval(`const lib = require('${userInput}')`); // Use detect-eval-with-expression rule
 ```
 
-**Mitigation**: Avoid dynamic method invocation.
+**Mitigation**: Enable `detect-eval-with-expression` rule. Never use `eval()` for imports.
 
-## Further Reading
+### Native Module Loading
 
-- [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
-- [CWE-494 Details](https://cwe.mitre.org/data/definitions/000.html)
+**Way**: Native Node.js `Module` API dynamic loading is not detected.
 
-## Related Rules
+```typescript
+// ❌ NOT DETECTED - Module._load
+const Module = require('module');
+Module._load(dynamicPath); // Low-level dynamic loading
+```
 
-- See other mobile security rules in this plugin
+**Mitigation**: Avoid `Module._load` and other low-level APIs. Use static imports only.
 
----
+## ⚙️ Configuration
 
-**Category:** Mobile Security  
-**Type:** Problem  
-**Recommended:** Yes
+This rule has no configuration options. It flags all non-literal arguments to `require()` and all non-literal `import()` sources.
+
+## 🔗 Related Rules
+
+- [`require-dependency-integrity`](./require-dependency-integrity.md) - SRI for CDN resources
+- [`require-package-lock`](./require-package-lock.md) - Enforce lock files
+- [`detect-suspicious-dependencies`](./detect-suspicious-dependencies.md) - Dependency confusion
+
+## 📚 References
+
+- [CWE-1104: Unmaintained Third Party Components](https://cwe.mitre.org/data/definitions/1104.html)
+- [OWASP Mobile M2: Inadequate Supply Chain Security](https://owasp.org/www-project-mobile-top-10/)
+- [Dependency Confusion Attack](https://medium.com/@alex.birsan/dependency-confusion-4a5d60fec610)
+- [npm Security Best Practices](https://docs.npmjs.com/security-best-practices)

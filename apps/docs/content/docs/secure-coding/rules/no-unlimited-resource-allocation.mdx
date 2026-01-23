@@ -1,12 +1,11 @@
 ---
-title: "no-unlimited-resource-allocation"
-description: "Detects unlimited resource allocation that could cause DoS. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-sec"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-unlimited-resource-allocation
+description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** resource allocation, CWE-770, DoS, memory exhaustion, security, rate limiting
+> **Keywords:** resource allocation, [CWE-770](https://cwe.mitre.org/data/definitions/770.html), DoS, memory exhaustion, security, rate limiting
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects unlimited resource allocation that could cause DoS. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
@@ -120,13 +119,9 @@ const results = await Promise.all(urls.map((url) => limit(() => fetch(url))));
 ## Error Message Format
 
 ```
-🔒 CWE-770 OWASP:A05-Misconfig CVSS:7.5 | Unlimited Resource Allocation | HIGH [SOC2,PCI-DSS]
+🔒 [CWE-770](https://cwe.mitre.org/data/definitions/770.html) OWASP:A05-Misconfig CVSS:7.5 | Unlimited Resource Allocation | HIGH [SOC2,PCI-DSS]
    Fix: Add size limits and validate user input before allocation | https://cwe.mitre.org/...
 ```
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

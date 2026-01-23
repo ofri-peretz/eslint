@@ -1,0 +1,42 @@
+---
+title: Overview
+description: "Architectural boundaries, circular dependency detection, and module structure."
+---
+
+
+<PluginHeader plugin="architecture" />
+
+## Description
+
+This plugin helps maintain clean code architecture by enforcing strict boundaries and detecting circular dependencies within your project. It aims to prevent spaghetti code and ensures that your module structure remains scalable and maintainable as your codebase grows. By visualizing and enforcing these architectural constraints, teams can collaborate more effectively on large-scale applications.
+
+<Callout type="info">
+  **<RuleCount plugin="architecture" /> specialized rules** — LLM-optimized error messages with CWE, OWASP, and CVSS metadata.
+</Callout>
+
+## Installation
+
+```bash
+npm install --save-dev eslint-plugin-architecture
+```
+
+## Configuration
+
+```js title="eslint.config.js"
+import architecture from 'eslint-plugin-architecture';
+
+export default [architecture.configs.recommended];
+```
+
+## Available Presets
+
+| Preset | Description |
+|--------|-------------|
+| `recommended` | Balanced security for most projects |
+| `strict` | Maximum enforcement (all rules as errors) |
+
+## Rules
+
+<RulesNavigator plugin="architecture" />
+
+<RelatedArticles plugin="architecture" limit={3} />

@@ -1,12 +1,11 @@
 ---
-title: "no-improper-sanitization"
-description: "Detects improper sanitization of user input. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-improper-sanitization
+description: "CWE: [CWE-20](https://cwe.mitre.org/data/definitions/20.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** improper sanitization, CWE-116, CWE-79, XSS, encoding, escaping, security
+> **Keywords:** improper sanitization, [CWE-116](https://cwe.mitre.org/data/definitions/116.html), [CWE-79](https://cwe.mitre.org/data/definitions/79.html), XSS, encoding, escaping, security
+**CWE:** [CWE-20](https://cwe.mitre.org/data/definitions/20.html)  
+**OWASP Mobile:** [M4: Insufficient Input/Output Validation](https://owasp.org/www-project-mobile-top-10/)
 
 Detects improper sanitization of user input. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
@@ -112,13 +111,9 @@ db.query('SELECT * FROM users WHERE name = ?', [userInput]);
 ## Error Message Format
 
 ```
-🔒 CWE-116 OWASP:A03-Injection CVSS:7.5 | Improper Sanitization | HIGH [SOC2,PCI-DSS]
+🔒 [CWE-116](https://cwe.mitre.org/data/definitions/116.html) OWASP:A03-Injection CVSS:7.5 | Improper Sanitization | HIGH [SOC2,PCI-DSS]
    Fix: Use DOMPurify.sanitize() or context-aware encoding | https://cwe.mitre.org/...
 ```
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

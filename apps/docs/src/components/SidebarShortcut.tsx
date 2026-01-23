@@ -13,30 +13,35 @@ export function useSidebarShortcut() {
       if ((e.metaKey || e.ctrlKey) && e.key === '[') {
         e.preventDefault();
         
-        // Fumadocs uses a button with aria-label="Toggle Sidebar" or similar
-        // Try to find and click the sidebar toggle button
+        // Fumadocs exact selectors and common patterns
+        const collapseBtn = document.querySelector('button[aria-label*="Collapse Sidebar"]');
+        const expandBtn = document.querySelector('button[aria-label*="Expand Sidebar"]');
+        const menuBtn = document.querySelector('button[aria-label*="Menu"]');
+        
+        if (collapseBtn instanceof HTMLElement) {
+            collapseBtn.click();
+            return;
+        }
+        
+        if (expandBtn instanceof HTMLElement) {
+            expandBtn.click();
+            return;
+        }
+
+        if (menuBtn instanceof HTMLElement && window.innerWidth < 1024) {
+            menuBtn.click();
+            return;
+        }
+
+        // Generic fallback with refined heuristic
         const toggleButtons = document.querySelectorAll('button');
         for (const btn of toggleButtons) {
           const ariaLabel = btn.getAttribute('aria-label')?.toLowerCase() || '';
-          const className = btn.className.toLowerCase();
-          
-          // Look for sidebar toggle button patterns
-          if (ariaLabel.includes('sidebar') || 
-              ariaLabel.includes('menu') ||
-              className.includes('sidebar') ||
-              className.includes('fd-sidebar')) {
+          const title = btn.getAttribute('title')?.toLowerCase() || '';
+          if (ariaLabel.includes('sidebar') || ariaLabel.includes('menu') || title.includes('sidebar')) {
             btn.click();
             return;
           }
-        }
-        
-        // Fallback: try to find the Fumadocs sidebar toggle by its icon container
-        const sidebarToggle = document.querySelector('[data-sidebar-toggle]') ||
-          document.querySelector('button:has(svg[data-lucide="panel-left"])') ||
-          document.querySelector('button:has(svg[data-lucide="menu"])');
-        
-        if (sidebarToggle instanceof HTMLElement) {
-          sidebarToggle.click();
         }
       }
     };

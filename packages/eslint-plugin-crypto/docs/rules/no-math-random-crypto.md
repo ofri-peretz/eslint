@@ -2,94 +2,105 @@
 
 > No Math Random Crypto
 
+**🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
+
+## Quick Summary
+
+| Aspect            | Details                                                                  |
+| ----------------- | ------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-338](https://cwe.mitre.org/data/definitions/338.html)               |
+| **Severity**      | Critical                                                                 |
+| **Auto-Fix**      | ❌ No auto-fix available                                                 |
+| **Category**      | Security                                                                 |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                  |
+| **Best For**      | Protecting security-sensitive tokens and identifiers from predictability |
+
 ## Description
 
-TODO: Add description for this rule.
+Disallow the use of `Math.random()` for generating values tagged with security-related keywords (e.g., `token`, `secret`, `password`). `Math.random()` is a PRNG that is not cryptographically secure and its output can be predicted.
 
 ## OWASP Mapping
 
 - **OWASP Top 10**: A02:2021 - Cryptographic Failures
-- **CWE**: CWE-327 - Use of a Broken or Risky Cryptographic Algorithm
+- **CWE**: CWE-338 - Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG)
 
 ## Error Message Format
 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-327 OWASP:A04 CVSS:7.5 | Broken Cryptographic Algorithm detected | HIGH [PCI-DSS,HIPAA,ISO27001,NIST-CSF]
+🔒 CWE-338 OWASP:A04 CVSS:9.1 | Weak PRNG for Security Context detected | CRITICAL [SOC2,PCI-DSS,HIPAA,ISO27001,NIST-CSF]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A04_2021/
 ```
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-327](https://cwe.mitre.org/data/definitions/327.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description** | Specific vulnerability | `Broken Cryptographic Algorithm detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH [PCI-DSS,HIPAA,ISO27001,NIST-CSF]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                         |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-338](https://cwe.mitre.org/data/definitions/338.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:9.1](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description**     | Specific vulnerability | `Weak PRNG for Security Context detected`                                                                                                                                                                                       |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,HIPAA,ISO27001,NIST-CSF]`                                                                                                                                                                               |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                            |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/)                                                                                                                                                                     |
 
 ## Rule Details
 
-TODO: Add rule details.
+Detects assignments of `Math.random()` to variables or object properties with names containing security keywords like `token`, `secret`, `password`, `key`, `salt`, `iv`, `nonce`, `csrf`, etc.
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```javascript
-// TODO: Add incorrect example
+const token = Math.random().toString(36);
+const password = Math.random().toString(36);
+const secret = Math.random();
+const obj = { sessionKey: Math.random() };
 ```
 
 ### ✅ Correct
 
 ```javascript
-// TODO: Add correct example
+const count = Math.random() * 10; // Non-security context
+const position = Math.random(); // Non-security context
+const token = crypto.randomBytes(32).toString('hex'); // Secure alternative
 ```
 
 ## Options
 
-This rule has no options.
+| Option           | Type       | Default | Description                         |
+| ---------------- | ---------- | ------- | ----------------------------------- |
+| `allowInTests`   | `boolean`  | `true`  | Allow insecure random in test files |
+| `customKeywords` | `string[]` | `[]`    | Additional keywords to flag         |
 
 ## When Not To Use It
 
-TODO: Add when not to use.
+Only for purely non-security contexts like UI positions, game mechanics, or mathematical simulations where predictability is not a concern.
 
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Algorithm from Variable
+### Generic Variable Names
 
-**Why**: Algorithm names from variables not traced.
-
-```typescript
-// ❌ NOT DETECTED - Algorithm from variable
-const algo = config.hashAlgorithm; // May be weak
-crypto.createHash(algo);
-```
-
-**Mitigation**: Hardcode secure algorithms.
-
-### Third-party Crypto Libraries
-
-**Why**: Non-standard crypto APIs not recognized.
+**Why**: If a security value is stored in a variable named `x` or `data`, it won't be flagged.
 
 ```typescript
-// ❌ NOT DETECTED - Third-party
-customCrypto.encrypt(data, key);
+// ❌ NOT DETECTED
+const x = Math.random();
+sendToken(x);
 ```
 
-**Mitigation**: Review all crypto implementations.
+**Mitigation**: Use descriptive names.
 
-### Configuration-based Security
+### Complex Data Structures
 
-**Why**: Config-driven security not analyzed.
+**Why**: Values nested deep in arrays or dynamic objects may be missed.
 
 ```typescript
-// ❌ NOT DETECTED - Config-based
-const options = getSecurityOptions(); // May be weak
+// ❌ NOT DETECTED
+const list = [Math.random()];
+const token = list[0];
 ```
 
-**Mitigation**: Validate security configurations.
+**Mitigation**: Audit all random value usage.

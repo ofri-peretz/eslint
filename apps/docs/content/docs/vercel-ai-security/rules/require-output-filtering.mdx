@@ -1,10 +1,7 @@
 ---
-title: "require-output-filtering"
-description: "This rule identifies tool execute functions that return raw data from data sources (databases, APIs, file systems) without filtering potentially sensitive infor"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: "`require-output-filtering`"
+description: Requires filtering of sensitive data returned by AI tools.
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Requires filtering of sensitive data returned by AI tools.
 
@@ -96,10 +93,6 @@ Unfiltered tool output can expose:
 
 - [`no-sensitive-in-prompt`](./no-sensitive-in-prompt.md) - Prevent sensitive input
 - [`require-tool-schema`](./require-tool-schema.md) - Validate tool inputs
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

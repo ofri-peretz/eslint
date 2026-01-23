@@ -1,20 +1,19 @@
 # no-unsafe-query
 
-> **Keywords:** SQL injection, CWE-89, pg, node-postgres, security, parameterized queries, prepared statements
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
+> Prevents SQL injection by detecting string concatenation or template literals with variables in `client.query()` calls.
 
-Prevents SQL injection by detecting string concatenation or template literals with variables in `client.query()` calls.
-
-⚠️ This rule **errors** by default in the `recommended` config.
+**🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
 
 ## Quick Summary
 
-| Aspect            | Details                                   |
-| ----------------- | ----------------------------------------- |
-| **CWE Reference** | CWE-89 (SQL Injection)                    |
-| **Severity**      | Critical (CVSS: 9.8)                      |
-| **Category**      | Security                                  |
-| **ESLint MCP**    | ✅ Optimized for AI assistant integration |
+| Aspect            | Details                                                                  |
+| ----------------- | ------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) (SQL Injection) |
+| **Severity**      | Critical (CVSS: 9.8)                                                     |
+| **Auto-Fix**      | ❌ No auto-fix available                                                 |
+| **Category**      | Security                                                                 |
+| **ESLint MCP**    | ✅ Optimized for AI assistant integration                                |
+| **Best For**      | Protecting database operations from SQL injection vulnerabilities        |
 
 ## Rule Details
 
@@ -57,13 +56,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description** | Specific vulnerability | `SQL Injection detected` |
-| **Severity & Compliance** | Impact assessment | `CRITICAL [SOC2,PCI-DSS,HIPAA,ISO27001]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                       |
+| :------------------------ | :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Risk Standards**        | Security benchmarks    | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description**     | Specific vulnerability | `SQL Injection detected`                                                                                                                                                                                                      |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,HIPAA,ISO27001]`                                                                                                                                                                                      |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                          |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/)                                                                                                                                                                   |
 
 ## Known False Negatives
 
@@ -80,6 +79,8 @@ await client.query(sql`SELECT * FROM users WHERE id = ${userId}`);
 // If 'sql' doesn't properly escape, this is vulnerable!
 ```
 
+**Mitigation**: Use a library verified to properly escape tagged templates.
+
 ### Dynamic Query Variables
 
 **Why**: When the query is stored in a variable, we can't analyze its construction.
@@ -89,6 +90,8 @@ await client.query(sql`SELECT * FROM users WHERE id = ${userId}`);
 const unsafeQuery = buildQuery(userInput); // May concatenate strings internally
 await client.query(unsafeQuery);
 ```
+
+**Mitigation**: Always use parameterized queries `($1, $2)` directly in literals.
 
 ### Nested Function Calls
 
@@ -102,6 +105,8 @@ function executeQuery(query: string) {
 executeQuery(`SELECT * FROM users WHERE id = ${userId}`);
 ```
 
+**Mitigation**: Apply the rule to helper functions that execute queries.
+
 ### Format Functions with User Input
 
 **Why**: The rule doesn't track data flow through `pg-format` or similar.
@@ -113,7 +118,7 @@ await client.query(format('SELECT * FROM %I.users', userSchema));
 // Safe if format() escapes, but rule can't verify
 ```
 
-> **Workaround**: Always use parameterized queries `($1, $2)` directly in literals.
+**Mitigation**: Use parameterized queries for values; use verified formatters only for identifiers.
 
 ## When Not To Use It
 

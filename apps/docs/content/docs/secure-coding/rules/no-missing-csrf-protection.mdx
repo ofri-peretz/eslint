@@ -1,12 +1,11 @@
 ---
-title: "no-missing-csrf-protection"
-description: "Detects missing CSRF token validation in POST/PUT/DELETE requests. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plu"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-missing-csrf-protection
+description: "CWE: [CWE-352](https://cwe.mitre.org/data/definitions/352.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** CSRF, CWE-352, security, ESLint rule, CSRF protection, token validation, middleware, Express, Fastify, LLM-optimized, code security
+> **Keywords:** CSRF, [CWE-352](https://cwe.mitre.org/data/definitions/352.html), security, ESLint rule, CSRF protection, token validation, middleware, Express, Fastify, LLM-optimized, code security
+**CWE:** [CWE-352](https://cwe.mitre.org/data/definitions/352.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects missing CSRF token validation in POST/PUT/DELETE requests. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
@@ -16,7 +15,7 @@ Detects missing CSRF token validation in POST/PUT/DELETE requests. This rule is 
 
 | Aspect            | Details                                                               |
 | ----------------- | --------------------------------------------------------------------- |
-| **CWE Reference** | CWE-352 (Cross-Site Request Forgery)                                  |
+| **CWE Reference** | [CWE-352](https://cwe.mitre.org/data/definitions/352.html) (Cross-Site Request Forgery)                                  |
 | **Severity**      | HIGH (security vulnerability)                                         |
 | **Auto-Fix**      | ❌ No (requires manual CSRF middleware setup)                         |
 | **Category**      | Security                                                              |
@@ -42,23 +41,21 @@ Detects missing CSRF token validation in POST/PUT/DELETE requests. This rule is 
   }
 }}%%
 flowchart TD
-    A["🔍 Analyze Route Handler"] --> B{"Is POST/PUT/DELETE/PATCH?"}
-    B -->|No| C["✅ Valid: GET/HEAD/OPTIONS"]
-    B -->|Yes| D{"Has CSRF Middleware?"}
-    D -->|Yes| E["✅ Valid: CSRF protected"]
-    D -->|No| F{"Check Route Arguments"}
-    F --> G{"CSRF in Arguments?"}
+    A[🔍 Analyze Route Handler] --> B{Is POST/PUT/DELETE/PATCH?}
+    B -->|No| C[✅ Valid: GET/HEAD/OPTIONS]
+    B -->|Yes| D{Has CSRF Middleware?}
+    D -->|Yes| E[✅ Valid: CSRF protected]
+    D -->|No| F{Check Route Arguments}
+    F --> G{CSRF in Arguments?}
     G -->|Yes| E
-    G -->|No| H{"Global CSRF?"}
+    G -->|No| H{Global CSRF?}
     H -->|Yes| E
-    H -->|No| I["❌ Report: Missing CSRF"]
+    H -->|No| I[❌ Report: Missing CSRF]
 
     style C fill:#d1fae5,stroke:#059669,stroke-width:2px
     style E fill:#d1fae5,stroke:#059669,stroke-width:2px
     style I fill:#fee2e2,stroke:#dc2626,stroke-width:2px
-
 ```
-
 
 ## Why This Matters
 
@@ -130,7 +127,7 @@ app.get('/api/users', (req, res) => {
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-352 OWASP:A01 CVSS:8.8 | Cross-Site Request Forgery (CSRF) detected | HIGH
+🔒 [CWE-352](https://cwe.mitre.org/data/definitions/352.html) OWASP:A01 CVSS:8.8 | Cross-Site Request Forgery (CSRF) detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
 ```
 
@@ -186,10 +183,6 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 3. **Global protection**: Apply CSRF middleware globally when possible
 4. **Token validation**: Validate CSRF tokens on every protected request
 5. **GET requests**: Don't require CSRF (idempotent operations)
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

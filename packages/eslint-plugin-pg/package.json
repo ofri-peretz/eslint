@@ -55,8 +55,7 @@
     }
   },
   "dependencies": {
-    "@interlace/eslint-devkit": "^1.2.1",
-    "tslib": "^2.3.0"
+    "@interlace/eslint-devkit": "^1.2.1"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",

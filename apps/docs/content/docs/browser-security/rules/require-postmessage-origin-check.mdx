@@ -1,12 +1,11 @@
 ---
-title: "require-postmessage-origin-check"
-description: "Detects postMessage event handlers without origin validation. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugi"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: require-postmessage-origin-check
+description: "CWE: [CWE-494](https://cwe.mitre.org/data/definitions/494.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** postMessage, cross-origin, CWE-346, security, iframe, message validation
+> **Keywords:** postMessage, cross-origin, [CWE-346](https://cwe.mitre.org/data/definitions/346.html), security, iframe, message validation
+**CWE:** [CWE-494](https://cwe.mitre.org/data/definitions/494.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects postMessage event handlers without origin validation. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 
@@ -16,7 +15,7 @@ Detects postMessage event handlers without origin validation. This rule is part 
 
 | Aspect            | Details                                        |
 | ----------------- | ---------------------------------------------- |
-| **CWE Reference** | CWE-346 (Origin Validation Error)              |
+| **CWE Reference** | [CWE-346](https://cwe.mitre.org/data/definitions/346.html) (Origin Validation Error)              |
 | **Severity**      | 🔴 High                                        |
 | **Auto-Fix**      | ✅ Yes (suggests origin check)                 |
 | **Category**      | Security                                       |
@@ -55,9 +54,7 @@ sequenceDiagram
     Target App (iframe)->>Target App (iframe): Executes malicious action
 
     Note over Attacker Site,Target App (iframe): Attack succeeds because origin wasn't validated
-
 ```
-
 
 ## Examples
 
@@ -168,10 +165,6 @@ window.addEventListener('message', (event) => {
 
 - [`no-innerhtml`](./no-innerhtml.md) - XSS prevention
 - [`no-sensitive-localstorage`](./no-sensitive-localstorage.md) - Storage security
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

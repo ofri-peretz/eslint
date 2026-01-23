@@ -1,8 +1,8 @@
 {
-  "title": "PostgreSQL",
+  "title": "pg",
   "pages": [
-    "index",
-    "rules",
-    "changelog"
+    "README",
+    "changelog",
+    "rules"
   ]
 }

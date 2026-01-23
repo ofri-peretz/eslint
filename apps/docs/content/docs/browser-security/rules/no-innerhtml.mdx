@@ -1,12 +1,11 @@
 ---
-title: "no-innerhtml"
-description: "Detects dangerous innerHTML/outerHTML assignments that can lead to Cross-Site Scripting (XSS). This rule is part of [`eslint-plugin-frontend-security`](https://"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-innerhtml
+description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** XSS, innerHTML, outerHTML, CWE-79, security, DOM manipulation, sanitization, DOMPurify
+> **Keywords:** XSS, innerHTML, outerHTML, [CWE-79](https://cwe.mitre.org/data/definitions/79.html), security, DOM manipulation, sanitization, DOMPurify
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects dangerous innerHTML/outerHTML assignments that can lead to Cross-Site Scripting (XSS). This rule is part of [`eslint-plugin-frontend-security`](https://www.npmjs.com/package/eslint-plugin-frontend-security).
 
@@ -16,7 +15,7 @@ Detects dangerous innerHTML/outerHTML assignments that can lead to Cross-Site Sc
 
 | Aspect            | Details                                            |
 | ----------------- | -------------------------------------------------- |
-| **CWE Reference** | CWE-79 (Cross-site Scripting)                      |
+| **CWE Reference** | [CWE-79](https://cwe.mitre.org/data/definitions/79.html) (Cross-site Scripting)                      |
 | **Severity**      | 🔴 Critical                                        |
 | **Auto-Fix**      | ✅ Yes (suggests DOMPurify)                        |
 | **Category**      | Security                                           |
@@ -59,9 +58,7 @@ sequenceDiagram
     Victim->>AttackerServer: Session cookie stolen!
 
     Note over Attacker,AttackerServer: Attacker now has victim's session
-
 ```
-
 
 ## Examples
 
@@ -172,10 +169,6 @@ function createComment(user, text) {
 - [`no-eval`](./no-eval.md) - Detects dangerous eval usage
 - [`no-sensitive-localstorage`](./no-sensitive-localstorage.md) - Detects sensitive data in localStorage
 
-<WhenNotToUse />
-
-<FalseNegativeCTA />
-
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -240,7 +233,7 @@ element[prop] = userInput;
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-⚠️ CWE-79 OWASP:A05 CVSS:6.1 | Cross-site Scripting (XSS) detected | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
+⚠️ [CWE-79](https://cwe.mitre.org/data/definitions/79.html) OWASP:A05 CVSS:6.1 | Cross-site Scripting (XSS) detected | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 

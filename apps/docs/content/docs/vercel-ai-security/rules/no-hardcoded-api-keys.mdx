@@ -1,10 +1,7 @@
 ---
-title: "no-hardcoded-api-keys"
-description: "This rule identifies hardcoded API keys, tokens, and secrets in your codebase that are used with AI SDK providers. Hardcoded credentials in source code can be e"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: "`no-hardcoded-api-keys`"
+description: Detects hardcoded API keys and secrets in AI SDK configuration.
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Detects hardcoded API keys and secrets in AI SDK configuration.
 
@@ -89,10 +86,6 @@ Hardcoded API keys can be:
 
 - [`no-sensitive-in-prompt`](./no-sensitive-in-prompt.md) - Prevent sensitive data in prompts
 
-<WhenNotToUse />
-
-<FalseNegativeCTA />
-
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -157,7 +150,7 @@ const openai = createOpenAI({
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-798 OWASP:A04 CVSS:9.8 | Hardcoded Credentials detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001,NIST-CSF]
+🔒 [CWE-798](https://cwe.mitre.org/data/definitions/798.html) OWASP:A04 CVSS:9.8 | Hardcoded Credentials detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001,NIST-CSF]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A04_2021/
 ```
 

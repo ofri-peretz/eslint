@@ -79,6 +79,10 @@ export default [
             'eslint', // Peer dependency - provided by consuming projects
             'vitest', // Dev dependency - used for testing only
             '@nx/vite', // Dev dependency - Nx plugin for Vite/Vitest
+            'chalk', // Used in CLI but sometimes misdetected
+            'commander', // Used in CLI but sometimes misdetected
+            'ora', // Used in CLI but sometimes misdetected
+            'tslib', // Usually an internal TSC helper
           ],
         },
       ],

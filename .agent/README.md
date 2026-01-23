@@ -1,156 +1,51 @@
-# Agent Pipeline System
+# Antigravity Orchestration System 🚀
 
-A multi-agent orchestration system for AI-assisted development.
+**Date:** Jan 16, 2026  
+**Status:** Unified & Optimized
 
-## Quick Start
+This directory defines the automated orchestration system for the Interlace ESLint ecosystem.
 
-```bash
-# Three-phase pipeline (recommended for complex tasks)
-/pipeline design: <describe your goal>
-/pipeline breakdown: design-<slug>.md
-/pipeline execute: tasks-<slug>.md
+## 📂 Structure (Jan 2026 Standards)
 
-# Direct agent access (for quick tasks)
-/pipeline eslint: <eslint task>
-/pipeline security: <security research>
-/pipeline release: <package to release>
-```
+- **`rules/`**: Permanent guidelines (Always On). Max 12k chars per file.
+- **`workflows/`**: Repeatable processes via `/command`. Max 12k chars per file.
+- **`skills/`**: Atomic, high-fidelity scripts for specific tasks.
+- **`agents/`**: Expert personas and domain-specific instructions.
+- **`orchestrators/`**: Multi-agent coordination logic.
+- **`reports/`**: Historical audits and validation logs.
+- **`archive/`**: Retired sessions and old debug data.
 
----
+## 🚀 Quick Start
 
-## Three-Phase Pipeline
+| Command                  | Action                                  |
+| :----------------------- | :-------------------------------------- |
+| `/pipeline orchestrate:` | Full design → breakdown → execute flow. |
+| `/pipeline design:`      | 8-agent architectural review.           |
+| `/pipeline qa-stress:`   | FP/FN/Performance stress testing.       |
+| `/pipeline release:`     | Automated npm release flow.             |
 
-### Phase 1: Design
+## 🛠️ Best Practices
 
-Multi-agent architectural review with 8 specialists.
-
-```bash
-/pipeline design: Build real-time notification system for mobile apps
-```
-
-**Agents consulted**: Architect → Security → Cost → Patterns → Testing → UX → Performance → Tech-Specific
-
-**Output**: `design-<slug>.md` with reviewed architecture
-
-### Phase 2: Breakdown
-
-Decompose approved design into small, parallelizable tasks.
-
-```bash
-/pipeline breakdown: design-notifications.md
-```
-
-**Output**: `tasks-<slug>.md` with wave-based task grouping
-
-### Phase 3: Execute
-
-Run tasks with parallel optimization.
-
-```bash
-/pipeline execute: tasks-notifications.md mode:wave
-```
-
-**Modes**: `sequential` | `parallel` | `wave`
+1. **Be Specific**: Provide detailed specifications in prompts (Visual Hierarchy, CSS constraints).
+2. **Atomic Skills**: Each skill script should do ONLY one thing perfectly.
+3. **Trust but Verify**: Always review implementation plans before code generation.
+4. **12k Limit**: No rule or workflow file may exceed 12,000 characters.
+5. **Turbo Mode**: Use `// turbo` in workflows for approved auto-execution.
 
 ---
 
-## Quick Commands
+## Workspace Directory
 
-| Command                 | Agent           | Use For                                |
-| ----------------------- | --------------- | -------------------------------------- |
-| `/pipeline eslint:`     | ESLint Dev      | Rule implementation, fixes             |
-| `/pipeline security:`   | Security        | OWASP research, vulnerability analysis |
-| `/pipeline release:`    | Release Manager | npm publishing flow                    |
-| `/pipeline article:`    | Content Writer  | DEV.to, Medium, Substack posts         |
-| `/pipeline distribute:` | Distribution    | Marketing strategy, promotions         |
-
----
-
-## Examples
-
-### Create a New ESLint Rule
-
-```bash
-/pipeline design: Add rule to detect hardcoded JWT secrets
-# Review design, then:
-/pipeline breakdown: design-jwt-secrets.md
-/pipeline execute: tasks-jwt-secrets.md
-```
-
-### Quick Rule Fix
-
-```bash
-/pipeline eslint: Fix false positive in no-sql-injection rule
-```
-
-### Security Research
-
-```bash
-/pipeline security: Analyze OWASP LLM Top 10 for AI plugin coverage gaps
-```
-
-### Release Package
-
-```bash
-/pipeline release: Publish eslint-plugin-pg version 1.0.2
-```
-
----
-
-## Directory Structure
-
-```
+```text
 .agent/
-├── workflows/
-│   └── pipeline.md               # Entry point (/pipeline)
-├── agents/
-│   ├── architect.md              # System design
-│   ├── eslint.md                 # ESLint development
-│   ├── security.md               # Security research
-│   ├── performance.md            # Optimization
-│   ├── content.md                # Article writing
-│   ├── documentation-ux-expert.md    # Low-cognitive-load docs
-│   └── accessibility-expert.md   # WCAG AAA compliance
-├── skills/
-│   ├── rule-implementation.md
-│   ├── benchmark.md
-│   └── docs-ux-patterns.md       # High-engagement doc patterns
-├── orchestrators/
-│   ├── design-pipeline.md        # 8-agent review
-│   ├── breakdown-pipeline.md     # Task decomposition
-│   ├── execute-pipeline.md       # Parallel execution
-│   ├── release-pipeline.md       # npm publishing
-│   └── new-rule-pipeline.md      # Rule creation flow
-├── REFERENCES.md                 # Industry framework links
-└── README.md                     # This file
+├── rules/             # Guidelines (@reference or Always On)
+├── workflows/         # Repeatable processes (/command)
+├── skills/            # Executable scripts & logic
+├── agents/             # Specialist personas
+├── orchestrators/      # Multi-agent coordination
+├── reports/           # Active audits
+├── archive/           # History
+└── README.md
 ```
 
----
-
-## Design Pipeline Specialists
-
-| Agent             | Reviews For                               |
-| ----------------- | ----------------------------------------- |
-| **Architect**     | System design, components, APIs           |
-| **Security**      | Auth, OWASP, data protection              |
-| **Cost**          | Infrastructure, scaling costs             |
-| **Patterns**      | Design patterns, maintainability          |
-| **Testing**       | Test strategy, coverage                   |
-| **UX**            | User flows, error handling                |
-| **Performance**   | Algorithms, caching, queries              |
-| **Tech-Specific** | Domain expertise (ESLint, React, etc.)    |
-| **Documentation** | Low-cognitive-load, "Fix It Now" patterns |
-| **Accessibility** | WCAG AAA, contrast, theme compatibility   |
-
----
-
-## References
-
-Inspired by industry frameworks:
-
-- [wshobson/agents](https://github.com/wshobson/agents) — Claude Code plugins
-- [Microsoft AutoGen](https://github.com/microsoft/autogen) — Multi-agent conversations
-- [LangGraph](https://github.com/langchain-ai/langgraph) — Graph-based workflows
-- [CrewAI](https://github.com/crewAIInc/crewAI) — Agent crews
-
-See [REFERENCES.md](REFERENCES.md) for full details.
+**Owner**: @interlace-dev

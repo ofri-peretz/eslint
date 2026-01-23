@@ -1,10 +1,7 @@
 ---
-title: "require-tool-confirmation"
-description: "This rule identifies destructive tools (delete, transfer, execute, etc.) that don't require human confirmation before execution."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: "`require-tool-confirmation`"
+description: Requires human confirmation for destructive tool operations.
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Requires human confirmation for destructive tool operations.
 
@@ -97,10 +94,6 @@ Unconfirmed destructive operations can cause:
 - [`require-tool-schema`](./require-tool-schema.md) - Validate tool inputs
 - [`require-audit-logging`](./require-audit-logging.md) - Log AI operations
 
-<WhenNotToUse />
-
-<FalseNegativeCTA />
-
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -170,7 +163,7 @@ const tools = createConfirmableTools({ deleteFile: deleteFn });
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-862 OWASP:A01 CVSS:8.1 | Missing Authorization detected | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]
+🔒 [CWE-862](https://cwe.mitre.org/data/definitions/862.html) OWASP:A01 CVSS:8.1 | Missing Authorization detected | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
 ```
 

@@ -1,12 +1,11 @@
 ---
-title: "no-privilege-escalation"
-description: "Detects potential privilege escalation vulnerabilities where user input is used to assign roles or permissions without proper validation. This rule is part of ["
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-privilege-escalation
+description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** privilege escalation, CWE-269, security, ESLint rule, role assignment, permission bypass, access control, user input, role checks, LLM-optimized, code security
+> **Keywords:** privilege escalation, [CWE-269](https://cwe.mitre.org/data/definitions/269.html), security, ESLint rule, role assignment, permission bypass, access control, user input, role checks, LLM-optimized, code security
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects potential privilege escalation vulnerabilities where user input is used to assign roles or permissions without proper validation. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
@@ -16,7 +15,7 @@ Detects potential privilege escalation vulnerabilities where user input is used 
 
 | Aspect            | Details                                                                  |
 | ----------------- | ------------------------------------------------------------------------ |
-| **CWE Reference** | CWE-269 (Improper Privilege Management)                                  |
+| **CWE Reference** | [CWE-269](https://cwe.mitre.org/data/definitions/269.html) (Improper Privilege Management)                                  |
 | **Severity**      | High (security vulnerability)                                            |
 | **Auto-Fix**      | ❌ No (requires manual role check implementation)                        |
 | **Category**      | Security                                                                 |
@@ -34,7 +33,7 @@ Detects potential privilege escalation vulnerabilities where user input is used 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-269 OWASP:A01 CVSS:8.8 | Improper Privilege Management detected | HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]
+🔒 [CWE-269](https://cwe.mitre.org/data/definitions/269.html) OWASP:A01 CVSS:8.8 | Improper Privilege Management detected | HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
 ```
 
@@ -169,10 +168,6 @@ app.post('/api/grant', (req, res) => {
 3. **Principle of least privilege**: Only allow necessary privilege changes
 4. **Audit logs**: Log all privilege changes for security auditing
 5. **Separate concerns**: Keep role assignment logic separate from user input handling
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

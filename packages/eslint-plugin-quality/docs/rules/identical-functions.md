@@ -4,18 +4,18 @@
 
 Detects duplicate function implementations with DRY refactoring suggestions. This rule is part of [`@eslint/eslint-plugin-quality`](https://www.npmjs.com/package/@eslint/eslint-plugin-quality) and provides LLM-optimized error messages with fix suggestions.
 
-**🎨 SonarQube-inspired** | **💡 Provides suggestions**
+**💡 Provides suggestions**
 
 ## Quick Summary
 
-| Aspect | Details |
-|--------|---------|
-| **CWE Reference** | CWE-1104 (Code Duplication) |
-| **Severity** | Medium (code quality) |
-| **Auto-Fix** | ⚠️ Suggests fixes (manual application) |
-| **Category** | Code Quality |
-| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
-| **Best For** | Large codebases, teams refactoring legacy code |
+| Aspect            | Details                                        |
+| ----------------- | ---------------------------------------------- |
+| **CWE Reference** | CWE-1104 (Code Duplication)                    |
+| **Severity**      | Medium (code quality)                          |
+| **Auto-Fix**      | ⚠️ Suggests fixes (manual application)         |
+| **Category**      | Code Quality                                   |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration        |
+| **Best For**      | Large codebases, teams refactoring legacy code |
 
 ## Error Message Format
 
@@ -28,13 +28,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-1104](https://cwe.mitre.org/data/definitions/1104.html) [OWASP:A03](https://owasp.org/Top10/A03_2021-Injection/) [CVSS:5.3](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description** | Specific vulnerability | `Unmaintainable Third-Party Components detected` |
-| **Severity & Compliance** | Impact assessment | `MEDIUM` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A03_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                           |
+| :------------------------ | :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Risk Standards**        | Security benchmarks    | [CWE-1104](https://cwe.mitre.org/data/definitions/1104.html) [OWASP:A03](https://owasp.org/Top10/A03_2021-Injection/) [CVSS:5.3](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description**     | Specific vulnerability | `Unmaintainable Third-Party Components detected`                                                                                                                                                                                  |
+| **Severity & Compliance** | Impact assessment      | `MEDIUM`                                                                                                                                                                                                                          |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                              |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A03_2021-Injection/)                                                                                                                                                                       |
 
 ## Rule Details
 
@@ -55,15 +55,15 @@ flowchart TD
     B --> C{Compare Functions}
     C -->|Similarity > Threshold| D[🔄 Report Duplication]
     C -->|Unique| E[✅ Pass]
-    
+
     D --> F[Suggest extract method]
     D --> G[Suggest higher-order function]
     D --> H[Suggest inheritance/composition]
-    
+
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px
     classDef processNode fill:#eff6ff,stroke:#2563eb,stroke-width:2px
-    
+
     class A startNode
     class D errorNode
     class E,F,G,H processNode
@@ -71,11 +71,11 @@ flowchart TD
 
 ## Configuration
 
-| Option                 | Type      | Default | Description                                      |
-| ---------------------- | --------- | ------- | ------------------------------------------------ |
-| `minLines`             | `number`  | `3`     | Minimum lines to consider for duplication        |
-| `similarityThreshold`  | `number`  | `0.85`  | Similarity threshold (0.5-1.0)                   |
-| `ignoreTestFiles`      | `boolean` | `true`  | Ignore test files (*.test.ts, *.spec.ts)         |
+| Option                | Type      | Default | Description                               |
+| --------------------- | --------- | ------- | ----------------------------------------- |
+| `minLines`            | `number`  | `3`     | Minimum lines to consider for duplication |
+| `similarityThreshold` | `number`  | `0.85`  | Similarity threshold (0.5-1.0)            |
+| `ignoreTestFiles`     | `boolean` | `true`  | Ignore test files (_.test.ts, _.spec.ts)  |
 
 ## Examples
 
@@ -87,15 +87,15 @@ function processUserOrder(order: UserOrder) {
   if (!order.items || order.items.length === 0) {
     throw new Error('Order has no items');
   }
-  
+
   const total = order.items.reduce((sum, item) => {
-    return sum + (item.price * item.quantity);
+    return sum + item.price * item.quantity;
   }, 0);
-  
+
   return {
     orderId: order.id,
     total: total,
-    status: 'processed'
+    status: 'processed',
   };
 }
 
@@ -103,15 +103,15 @@ function processGuestOrder(order: GuestOrder) {
   if (!order.items || order.items.length === 0) {
     throw new Error('Order has no items');
   }
-  
+
   const total = order.items.reduce((sum, item) => {
-    return sum + (item.price * item.quantity);
+    return sum + item.price * item.quantity;
   }, 0);
-  
+
   return {
     orderId: order.id,
     total: total,
-    status: 'processed'
+    status: 'processed',
   };
 }
 ```
@@ -124,15 +124,15 @@ function processOrder<T extends BaseOrder>(order: T) {
   if (!order.items || order.items.length === 0) {
     throw new Error('Order has no items');
   }
-  
+
   const total = order.items.reduce((sum, item) => {
-    return sum + (item.price * item.quantity);
+    return sum + item.price * item.quantity;
   }, 0);
-  
+
   return {
     orderId: order.id,
     total: total,
-    status: 'processed'
+    status: 'processed',
   };
 }
 
@@ -228,17 +228,17 @@ function validatePhone(phone: string) {
 function createValidator<T>(
   fieldName: string,
   validators: Array<(value: T) => boolean>,
-  errorMessages: string[]
+  errorMessages: string[],
 ) {
   return (value: T): T => {
     if (!value) throw new Error(`${fieldName} required`);
-    
+
     validators.forEach((validator, index) => {
       if (!validator(value)) {
         throw new Error(errorMessages[index]);
       }
     });
-    
+
     return value;
   };
 }
@@ -246,13 +246,13 @@ function createValidator<T>(
 const validateEmail = createValidator<string>(
   'Email',
   [(email) => email.includes('@')],
-  ['Invalid email']
+  ['Invalid email'],
 );
 
 const validatePhone = createValidator<string>(
   'Phone',
   [(phone) => phone.length >= 10],
-  ['Invalid phone']
+  ['Invalid phone'],
 );
 ```
 
@@ -289,13 +289,13 @@ function calculateShipping(type: string, weight: number) {
 
 ## Why This Matters
 
-| Issue                   | Impact                                | Solution                      |
-| ----------------------- | ------------------------------------- | ----------------------------- |
-| 🔄 **Maintenance**      | Fix bugs in multiple places           | Single source of truth        |
-| 🐛 **Bug Propagation**  | Same bug exists in all copies         | Fix once, fix everywhere      |
-| 📈 **Code Growth**      | Codebase grows unnecessarily          | Extract common logic          |
-| 🧪 **Testing**          | Must test same logic multiple times   | Test once, reuse everywhere   |
-| 🔍 **Refactoring**      | Changes require updating many places  | Change in one place           |
+| Issue                  | Impact                               | Solution                    |
+| ---------------------- | ------------------------------------ | --------------------------- |
+| 🔄 **Maintenance**     | Fix bugs in multiple places          | Single source of truth      |
+| 🐛 **Bug Propagation** | Same bug exists in all copies        | Fix once, fix everywhere    |
+| 📈 **Code Growth**     | Codebase grows unnecessarily         | Extract common logic        |
+| 🧪 **Testing**         | Must test same logic multiple times  | Test once, reuse everywhere |
+| 🔍 **Refactoring**     | Changes require updating many places | Change in one place         |
 
 ## Similarity Calculation
 
@@ -308,14 +308,14 @@ The rule uses normalized AST comparison:
 
 ## Comparison with Alternatives
 
-| Feature | identical-functions | eslint-plugin-sonarjs | jscpd (copy-paste detector) |
-|---------|---------------------|----------------------|----------------------------|
-| **Code Duplication Detection** | ✅ Yes | ⚠️ Limited | ✅ Yes |
-| **CWE Reference** | ✅ CWE-1104 included | ⚠️ Limited | ❌ No |
-| **LLM-Optimized** | ✅ Yes | ❌ No | ❌ No |
-| **ESLint MCP** | ✅ Optimized | ❌ No | ❌ No |
-| **Fix Suggestions** | ✅ Detailed | ⚠️ Basic | ❌ No |
-| **ESLint Integration** | ✅ Native | ✅ Native | ❌ External tool |
+| Feature                        | identical-functions  | eslint-plugin-sonarjs | jscpd (copy-paste detector) |
+| ------------------------------ | -------------------- | --------------------- | --------------------------- |
+| **Code Duplication Detection** | ✅ Yes               | ⚠️ Limited            | ✅ Yes                      |
+| **CWE Reference**              | ✅ CWE-1104 included | ⚠️ Limited            | ❌ No                       |
+| **LLM-Optimized**              | ✅ Yes               | ❌ No                 | ❌ No                       |
+| **ESLint MCP**                 | ✅ Optimized         | ❌ No                 | ❌ No                       |
+| **Fix Suggestions**            | ✅ Detailed          | ⚠️ Basic              | ❌ No                       |
+| **ESLint Integration**         | ✅ Native            | ✅ Native             | ❌ External tool            |
 
 ## Related Rules
 
@@ -333,7 +333,9 @@ The rule uses normalized AST comparison:
 ## References
 
 Inspired by **SonarQube RSPEC-4144**
+
 - [DRY Principle](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself)
+
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -361,5 +363,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

@@ -1,12 +1,11 @@
 ---
-title: "no-eval"
-description: "Detects dangerous eval() and similar code execution patterns. This rule is part of [`eslint-plugin-frontend-security`](https://www.npmjs.com/package/eslint-plug"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-eval
+description: "CWE: [CWE-95](https://cwe.mitre.org/data/definitions/95.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** eval, code injection, CWE-94, security, dynamic code execution, Function constructor
+> **Keywords:** eval, code injection, [CWE-94](https://cwe.mitre.org/data/definitions/94.html), security, dynamic code execution, Function constructor
+**CWE:** [CWE-95](https://cwe.mitre.org/data/definitions/95.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects dangerous eval() and similar code execution patterns. This rule is part of [`eslint-plugin-frontend-security`](https://www.npmjs.com/package/eslint-plugin-frontend-security).
 
@@ -16,7 +15,7 @@ Detects dangerous eval() and similar code execution patterns. This rule is part 
 
 | Aspect            | Details                      |
 | ----------------- | ---------------------------- |
-| **CWE Reference** | CWE-94 (Code Injection)      |
+| **CWE Reference** | [CWE-94](https://cwe.mitre.org/data/definitions/94.html) (Code Injection)      |
 | **Severity**      | 🔴 Critical                  |
 | **Auto-Fix**      | ❌ No (requires refactoring) |
 | **Category**      | Security                     |
@@ -46,14 +45,14 @@ Detects dangerous eval() and similar code execution patterns. This rule is part 
   }
 }}%%
 flowchart TD
-    A["🔍 CallExpression Found"] --> B{"Is eval?"}
-    B -->|Yes| C["🚨 Report Error"]
-    B -->|No| D{"Is new Function?"}
-    D -->|Yes| E{"Has dynamic args?"}
+    A[🔍 CallExpression Found] --> B{Is eval?}
+    B -->|Yes| C[🚨 Report Error]
+    B -->|No| D{Is new Function?}
+    D -->|Yes| E{Has dynamic args?}
     E -->|Yes| C
-    E -->|No| F["✅ Skip"]
-    D -->|No| G{"Is setTimeout/setInterval?"}
-    G -->|Yes| H{"String argument?"}
+    E -->|No| F[✅ Skip]
+    D -->|No| G{Is setTimeout/setInterval?}
+    G -->|Yes| H{String argument?}
     H -->|Yes| C
     H -->|No| F
     G -->|No| F
@@ -67,9 +66,7 @@ flowchart TD
     class C errorNode
     class B,D,E,G,H processNode
     class F skipNode
-
 ```
-
 
 ## Examples
 
@@ -133,10 +130,6 @@ const result = parser.evaluate(expression);
 
 - [`no-innerhtml`](./no-innerhtml.md) - XSS via innerHTML
 
-<WhenNotToUse />
-
-<FalseNegativeCTA />
-
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -197,7 +190,7 @@ new Worker(`data:,${userCode}`);
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-94 OWASP:A05 CVSS:9.8 | Code Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
+🔒 [CWE-94](https://cwe.mitre.org/data/definitions/94.html) OWASP:A05 CVSS:9.8 | Code Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 

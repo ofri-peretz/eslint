@@ -1,12 +1,9 @@
 ---
-title: "require-projection"
-description: "Requires field projection on queries to minimize data exposure."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: require-projection
+description: Requires field projection on queries to minimize data exposure.
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** CWE-200, projection, field selection, MongoDB, information exposure
+> **Keywords:** [CWE-200](https://cwe.mitre.org/data/definitions/200.html), projection, field selection, MongoDB, information exposure
 
 Requires field projection on queries to minimize data exposure.
 
@@ -16,8 +13,8 @@ Requires field projection on queries to minimize data exposure.
 
 | Aspect            | Details                          |
 | ----------------- | -------------------------------- |
-| **CWE Reference** | CWE-200 (Information Exposure)   |
-| **OWASP**         | A01:2021 - Broken Access Control |
+| **CWE Reference** | [CWE-200](https://cwe.mitre.org/data/definitions/200.html) (Information Exposure)   |
+| **OWASP**         | [A01:2021](https://owasp.org/Top10/A01_2021-Broken_Access_Control/) - Broken Access Control |
 | **Severity**      | Low (CVSS: 3.7)                  |
 | **Category**      | Security / Performance           |
 
@@ -58,10 +55,6 @@ const user = await User.findById(id).select('-password -internalNotes');
 - For admin interfaces that need full document access
 - When using lean() with full document transformation
 - Development/debugging scenarios
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

@@ -4,11 +4,8 @@ import { describe, it, afterAll } from 'vitest';
 import parser from '@typescript-eslint/parser';
 
 // Rules
-import { detectChildProcess } from '../detect-child-process';
 import { noDirectiveInjection } from '../no-directive-injection';
-import { noToctouVulnerability } from '../no-toctou-vulnerability';
 import { noRedosVulnerableRegex } from '../no-redos-vulnerable-regex';
-import { noBufferOverread } from '../no-buffer-overread';
 import { noInsecureComparison } from '../no-insecure-comparison';
 import { noUnescapedUrlParameter } from '../no-unescaped-url-parameter';
 import { noImproperSanitization } from '../no-improper-sanitization';
@@ -49,46 +46,6 @@ describe('Demo Gaps Reproduction', () => {
     });
   });
 
-  describe('detect-child-process', () => {
-    ruleTester.run('demo-repro', detectChildProcess, {
-      valid: [],
-      invalid: [
-        {
-          code: `
-            import * as child_process from 'child_process';
-            export function insecure_detectChildProcess(filename: string) {
-              child_process.exec(\`cat \${filename}\`, (error, stdout) => {
-                if (error) throw error;
-                return stdout;
-              });
-            }
-          `,
-          errors: [{ messageId: 'childProcessCommandInjection' }]
-        }
-      ]
-    });
-  });
-
-  describe('no-toctou-vulnerability', () => {
-    ruleTester.run('demo-repro', noToctouVulnerability, {
-      valid: [],
-      invalid: [
-        {
-          code: `
-            import * as fs from 'fs';
-            export function insecure_noToctouVulnerability(_filePath: string) {
-              const tempPath = '/tmp/report.txt';
-              if (fs.existsSync(tempPath)) {
-                return fs.readFileSync(tempPath, 'utf-8');
-              }
-              return null;
-            }
-          `,
-          errors: [{ messageId: 'toctouVulnerability' }]
-        }
-      ]
-    });
-  });
 
   describe('no-redos-vulnerable-regex', () => {
     ruleTester.run('demo-repro', noRedosVulnerableRegex, {
@@ -107,22 +64,6 @@ describe('Demo Gaps Reproduction', () => {
     });
   });
 
-  describe('no-buffer-overread', () => {
-    ruleTester.run('demo-repro', noBufferOverread, {
-      valid: [],
-      invalid: [
-        {
-          code: `
-            export function insecure_noBufferOverread(buffer: Buffer, req: { query: { index: string } }) {
-              const userIndex = Number(req.query.index);
-              return buffer.readUInt8(userIndex);
-            }
-          `,
-          errors: [{ messageId: 'missingBoundsCheck' }]
-        }
-      ]
-    });
-  });
 
   describe('no-insecure-comparison', () => {
     ruleTester.run('demo-repro', noInsecureComparison, {

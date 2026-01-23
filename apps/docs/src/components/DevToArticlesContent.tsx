@@ -1,7 +1,7 @@
 'use client';
 // REFACTORED: 2026-01-10T21:24:00Z - Simplified card structure
 
-import React from 'react';
+import Link from 'next/link';
 import { ArrowUpRight, Loader2, AlertCircle, Eye, Heart, MessageCircle, Clock } from 'lucide-react';
 import { type DevToArticle, useDevToArticles } from '@/lib/api';
 
@@ -162,7 +162,28 @@ export function RelatedArticles({ plugin, limit = 3 }: RelatedArticlesProps) {
   }
 
   if (!articles || articles.length === 0) {
-    return null;
+    if (plugin === 'all') return null; // Don't show anything on home if no articles
+    
+    return (
+      <div className="mt-16 pt-12 border-t border-fd-border relative">
+        <div className="absolute -top-px left-0 w-24 h-px bg-fd-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-2xl font-black flex items-center gap-3 tracking-tight">
+            <ArrowUpRight className="w-6 h-6 text-fd-primary" />
+            Related Articles
+          </h2>
+        </div>
+        <div className="rounded-2xl border border-fd-border border-dashed p-8 text-center bg-fd-card/30">
+          <p className="text-fd-muted-foreground mb-4 italic">We&apos;re currently drafting deep-dive articles for the {plugin} plugin ecosystem.</p>
+          <Link
+            href="/docs/articles"
+            className="inline-flex items-center gap-2 text-sm font-bold text-fd-primary hover:underline transition-all"
+          >
+            Browse all technical articles <ArrowUpRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -174,14 +195,12 @@ export function RelatedArticles({ plugin, limit = 3 }: RelatedArticlesProps) {
           <ArrowUpRight className="w-6 h-6 text-fd-primary" />
           Related Articles on Dev.to
         </h2>
-        <a
-          href="https://dev.to/ofri-peretz"
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          href="/docs/articles"
           className="text-xs font-bold uppercase tracking-widest text-fd-muted-foreground hover:text-fd-primary transition-colors border-b border-fd-border hover:border-fd-primary pb-1"
         >
-          See all articles →
-        </a>
+          Technical Articles →
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

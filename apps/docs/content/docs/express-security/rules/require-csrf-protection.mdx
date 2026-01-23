@@ -1,10 +1,7 @@
 ---
-title: "require-csrf-protection"
-description: "**Severity:** \udd34 High"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: require-csrf-protection
+description: Require CSRF protection middleware for state-changing HTTP methods
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Require CSRF protection middleware for state-changing HTTP methods
 
@@ -16,7 +13,7 @@ import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-352 OWASP:A01 CVSS:8.8 | Cross-Site Request Forgery (CSRF) detected | HIGH
+🔒 [CWE-352](https://cwe.mitre.org/data/definitions/352.html) OWASP:A01 CVSS:8.8 | Cross-Site Request Forgery (CSRF) detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
 ```
 
@@ -98,10 +95,6 @@ Disable for:
 - Stateless API-only backends using token-based auth (JWT)
 - Webhook endpoints that use signature verification
 - Public APIs without session-based authentication
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

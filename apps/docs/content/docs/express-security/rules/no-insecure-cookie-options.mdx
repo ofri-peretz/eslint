@@ -1,10 +1,7 @@
 ---
-title: "no-insecure-cookie-options"
-description: "**Severity:** \udd34 High"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-insecure-cookie-options
+description: "Require secure cookie flags (httpOnly, secure, sameSite)"
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Require secure cookie flags (httpOnly, secure, sameSite)
 
@@ -16,7 +13,7 @@ import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-⚠️ CWE-614 OWASP:A02 CVSS:5.3 | Sensitive Cookie in HTTPS without Secure detected | MEDIUM
+⚠️ [CWE-614](https://cwe.mitre.org/data/definitions/614.html) OWASP:A02 CVSS:5.3 | Sensitive Cookie in HTTPS without Secure detected | MEDIUM
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A02_2021/
 ```
 
@@ -105,10 +102,6 @@ res.cookie('session', token, {
 ## When Not To Use It
 
 Never disable for session cookies or cookies containing sensitive data.
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

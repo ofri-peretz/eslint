@@ -1,10 +1,7 @@
 ---
-title: "no-system-prompt-leak"
-description: "This rule identifies code patterns where system prompts or AI instructions are returned in API responses, logged, or otherwise exposed to clients. System prompt"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: "`no-system-prompt-leak`"
+description: Prevents system prompts from being exposed in API responses or client code.
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Prevents system prompts from being exposed in API responses or client code.
 
@@ -86,10 +83,6 @@ Exposing system prompts allows attackers to:
 ## 🔗 Related Rules
 
 - [`no-dynamic-system-prompt`](./no-dynamic-system-prompt.md) - Prevent dynamic system prompts
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

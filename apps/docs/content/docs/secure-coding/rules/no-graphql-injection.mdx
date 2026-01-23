@@ -1,12 +1,11 @@
 ---
-title: "no-graphql-injection"
-description: "Detects GraphQL injection vulnerabilities and DoS attacks. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secu"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-graphql-injection
+description: "CWE: [CWE-74](https://cwe.mitre.org/data/definitions/74.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** GraphQL injection, CWE-943, CWE-400, security, DoS, introspection, query complexity, LLM-optimized
+> **Keywords:** GraphQL injection, [CWE-943](https://cwe.mitre.org/data/definitions/943.html), [CWE-400](https://cwe.mitre.org/data/definitions/400.html), security, DoS, introspection, query complexity, LLM-optimized
+**CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects GraphQL injection vulnerabilities and DoS attacks. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages.
 
@@ -111,13 +110,9 @@ const safeQuery = buildQuery({ user: { id: userId } });
 ## Error Message Format
 
 ```
-🔒 CWE-943 OWASP:A03-Injection CVSS:8.6 | GraphQL Injection detected | CRITICAL [SOC2,PCI-DSS]
+🔒 [CWE-943](https://cwe.mitre.org/data/definitions/943.html) OWASP:A03-Injection CVSS:8.6 | GraphQL Injection detected | CRITICAL [SOC2,PCI-DSS]
    Fix: Use GraphQL variables instead of string interpolation | https://owasp.org/...
 ```
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

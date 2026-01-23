@@ -1,12 +1,10 @@
 ---
-title: "no-select-all"
-description: "Discourages `SELECT *` in favor of explicit column lists."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-select-all
+description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
 > **Keywords:** SELECT \*, performance, quality, pg, node-postgres
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Discourages `SELECT *` in favor of explicit column lists.
 
@@ -55,10 +53,6 @@ await pool.query('SELECT COUNT(*) FROM users');
 
 - In development/debugging scripts
 - When schema is stable and all columns are needed
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

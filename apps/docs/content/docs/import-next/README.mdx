@@ -1,0 +1,42 @@
+---
+title: Overview
+description: "Next-generation import sorting, validation, and architectural boundaries."
+---
+
+
+<PluginHeader plugin="import-next" />
+
+## Description
+
+This plugin represents the next evolution of import validation, offering advanced features like granular import sorting and strictly enforced architectural boundaries. It is designed to modernize your development workflow by providing tools that prevent circular dependencies and enforce clean module structures. By integrating these rules, you can maintain a scalable and organized codebase that is easy to navigate and refactor.
+
+<Callout type="info">
+  **<RuleCount plugin="import-next" /> specialized rules** — LLM-optimized error messages with CWE, OWASP, and CVSS metadata.
+</Callout>
+
+## Installation
+
+```bash
+npm install --save-dev eslint-plugin-import-next
+```
+
+## Configuration
+
+```js title="eslint.config.js"
+import importnext from 'eslint-plugin-import-next';
+
+export default [importnext.configs.recommended];
+```
+
+## Available Presets
+
+| Preset | Description |
+|--------|-------------|
+| `recommended` | Balanced security for most projects |
+| `strict` | Maximum enforcement (all rules as errors) |
+
+## Rules
+
+<RulesNavigator plugin="import-next" />
+
+<RelatedArticles plugin="import-next" limit={3} />

@@ -1,12 +1,9 @@
 ---
-title: "no-permissive-cors"
-description: "Detects overly permissive CORS configurations in Express.js applications. This rule is part of [`eslint-plugin-express-security`](https://www.npmjs.com/package/"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-permissive-cors
+description: Detects overly permissive CORS configurations in Express.js applications. This rule is part of eslint-plugin-express-security and provides LLM-optimized error m
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** CORS, cross-origin resource sharing, CWE-942, security, ESLint rule, origin validation, wildcard CORS, Access-Control-Allow-Origin, auto-fix, LLM-optimized
+> **Keywords:** CORS, cross-origin resource sharing, [CWE-942](https://cwe.mitre.org/data/definitions/942.html), security, ESLint rule, origin validation, wildcard CORS, Access-Control-Allow-Origin, auto-fix, LLM-optimized
 
 Detects overly permissive CORS configurations in Express.js applications. This rule is part of [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) and provides LLM-optimized error messages.
 
@@ -16,7 +13,7 @@ Detects overly permissive CORS configurations in Express.js applications. This r
 
 | Aspect            | Details                                          |
 | ----------------- | ------------------------------------------------ |
-| **CWE Reference** | CWE-942 (Permissive Cross-domain Policy)         |
+| **CWE Reference** | [CWE-942](https://cwe.mitre.org/data/definitions/942.html) (Permissive Cross-domain Policy)         |
 | **Severity**      | 🔴 High                                          |
 | **Auto-Fix**      | ✅ Yes (suggests origin whitelist)               |
 | **Category**      | Security                                         |
@@ -54,9 +51,7 @@ sequenceDiagram
     Victim->>Attacker: Attacker's JS reads response!
 
     Note over Attacker: Attacker now has victim's data
-
 ```
-
 
 ## Rule Logic Flow
 
@@ -71,17 +66,17 @@ sequenceDiagram
   }
 }}%%
 flowchart TD
-    A["🔍 CallExpression Found"] --> B{"Is cors() call?"}
-    B -->|No| C["✅ Skip"]
-    B -->|Yes| D{"Has arguments?"}
-    D -->|No| E["🚨 Report: Default is permissive"]
-    D -->|Yes| F{"Check origin config"}
-    F --> G{"origin: '*'?"}
-    G -->|Yes| H["🚨 Report: Wildcard origin"]
-    G -->|No| I{"origin: true?"}
-    I -->|Yes & not allowed| J["🚨 Report: Origin reflection"]
+    A[🔍 CallExpression Found] --> B{Is cors() call?}
+    B -->|No| C[✅ Skip]
+    B -->|Yes| D{Has arguments?}
+    D -->|No| E[🚨 Report: Default is permissive]
+    D -->|Yes| F{Check origin config}
+    F --> G{origin: '*'?}
+    G -->|Yes| H[🚨 Report: Wildcard origin]
+    G -->|No| I{origin: true?}
+    I -->|Yes & not allowed| J[🚨 Report: Origin reflection]
     I -->|No| C
-    H --> K["💡 Suggest whitelist"]
+    H --> K[💡 Suggest whitelist]
     J --> K
     E --> K
 
@@ -94,9 +89,7 @@ flowchart TD
     class E,H,J errorNode
     class B,D,F,G,I processNode
     class C skipNode
-
 ```
-
 
 ## Detection Patterns
 
@@ -175,7 +168,7 @@ app.use(
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-942 OWASP:A01 CVSS:7.5 | CORS Misconfiguration detected | HIGH
+🔒 [CWE-942](https://cwe.mitre.org/data/definitions/942.html) OWASP:A01 CVSS:7.5 | CORS Misconfiguration detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
 ```
 
@@ -260,10 +253,6 @@ app.use(cors({ origin: allowedOrigins }));
 
 - [`no-cors-credentials-wildcard`](./no-cors-credentials-wildcard.md) - Credentials with wildcard origin
 - [`require-helmet`](./require-helmet.md) - Security headers
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

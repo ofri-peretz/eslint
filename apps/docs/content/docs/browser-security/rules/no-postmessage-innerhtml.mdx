@@ -1,19 +1,18 @@
 ---
-title: "browser-security/no-postmessage-innerhtml"
-description: "The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: browser-security/no-postmessage-innerhtml
+description: 🔒 Disallow using innerHTML with postMessage data
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
 > 🔒 Disallow using innerHTML with postMessage data
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 ## Error Message Format
 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-⚠️ CWE-79 OWASP:A05 CVSS:6.1 | Cross-site Scripting (XSS) detected | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
+⚠️ [CWE-79](https://cwe.mitre.org/data/definitions/79.html) OWASP:A05 CVSS:6.1 | Cross-site Scripting (XSS) detected | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 
@@ -43,9 +42,7 @@ sequenceDiagram
     V->>V: element.innerHTML = event.data.html
     Note over V: XSS Executed!
     V->>A: Stolen cookies/data
-
 ```
-
 
 When you use innerHTML with postMessage data:
 
@@ -147,10 +144,6 @@ However, **always sanitize postMessage data** before rendering as HTML.
 - [`browser-security/no-postmessage-wildcard-origin`](./no-postmessage-wildcard-origin.md) - Prevent wildcard targetOrigin
 - [`browser-security/no-innerhtml`](./no-innerhtml.md) - General innerHTML prevention
 
-<WhenNotToUse />
-
-<FalseNegativeCTA />
-
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -195,6 +188,6 @@ element.innerHTML = mySanitizeFunc(event.data);
 
 | Category          | ID                   |
 | ----------------- | -------------------- |
-| OWASP Top 10 2021 | A03:2021 - Injection |
-| CWE               | CWE-79               |
+| OWASP Top 10 2021 | [A03:2021](https://owasp.org/Top10/A03_2021-Injection/) - Injection |
+| CWE               | [CWE-79](https://cwe.mitre.org/data/definitions/79.html)               |
 | CVSS              | 8.8 (High)           |

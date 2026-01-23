@@ -1,12 +1,9 @@
 ---
-title: "no-unsafe-where"
-description: "Prevents use of the dangerous `$where` operator which executes JavaScript on the MongoDB server, enabling Remote Code Execution (RCE)."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-unsafe-where
+description: "Prevents use of the dangerous $where operator which executes JavaScript on the MongoDB server, enabling Remote Code Execution (RCE)."
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** NoSQL injection, CWE-943, MongoDB, $where, RCE, CVE-2025-23061, CVE-2024-53900, Mongoose
+> **Keywords:** NoSQL injection, [CWE-943](https://cwe.mitre.org/data/definitions/943.html), MongoDB, $where, RCE, CVE-2025-23061, CVE-2024-53900, Mongoose
 
 Prevents use of the dangerous `$where` operator which executes JavaScript on the MongoDB server, enabling Remote Code Execution (RCE).
 
@@ -16,9 +13,9 @@ Prevents use of the dangerous `$where` operator which executes JavaScript on the
 
 | Aspect            | Details                                   |
 | ----------------- | ----------------------------------------- |
-| **CWE Reference** | CWE-943 (NoSQL Injection)                 |
+| **CWE Reference** | [CWE-943](https://cwe.mitre.org/data/definitions/943.html) (NoSQL Injection)                 |
 | **CVE**           | CVE-2025-23061, CVE-2024-53900            |
-| **OWASP**         | A01:2021 - Broken Access Control          |
+| **OWASP**         | [A01:2021](https://owasp.org/Top10/A01_2021-Broken_Access_Control/) - Broken Access Control          |
 | **Severity**      | Critical (CVSS: 9.0)                      |
 | **Category**      | Security                                  |
 | **ESLint MCP**    | ✅ Optimized for AI assistant integration |
@@ -68,10 +65,6 @@ User.aggregate([
   { $match: { isActive: true } },
 ]);
 ```
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

@@ -1,8 +1,8 @@
 {
-  "title": "Import Next",
+  "title": "import-next",
   "pages": [
-    "index",
-    "rules",
-    "changelog"
+    "README",
+    "changelog",
+    "rules"
   ]
 }

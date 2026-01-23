@@ -2,9 +2,22 @@
 
 > No Ecb Mode
 
+**🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
+
+## Quick Summary
+
+| Aspect            | Details                                                             |
+| ----------------- | ------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-327](https://cwe.mitre.org/data/definitions/327.html)          |
+| **Severity**      | Critical (security risk)                                            |
+| **Auto-Fix**      | ✅ Auto-fix available                                               |
+| **Category**      | Security                                                            |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                             |
+| **Best For**      | Any application performing encryption, ensuring secure cipher modes |
+
 ## Description
 
-TODO: Add description for this rule.
+Disallow the use of Electronic Codebook (ECB) mode for encryption. ECB mode encrypts identical plaintext blocks into identical ciphertext blocks, which can leak patterns in the data and is susceptible to various attacks.
 
 ## OWASP Mapping
 
@@ -22,30 +35,32 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-327](https://cwe.mitre.org/data/definitions/327.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description** | Specific vulnerability | `Broken Cryptographic Algorithm detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH [PCI-DSS,HIPAA,ISO27001,NIST-CSF]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                         |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-327](https://cwe.mitre.org/data/definitions/327.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description**     | Specific vulnerability | `Broken Cryptographic Algorithm detected`                                                                                                                                                                                       |
+| **Severity & Compliance** | Impact assessment      | `HIGH [PCI-DSS,HIPAA,ISO27001,NIST-CSF]`                                                                                                                                                                                        |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                            |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/)                                                                                                                                                                     |
 
 ## Rule Details
 
-TODO: Add rule details.
+Detects the use of cipher modes ending in `-ecb` (e.g., `aes-256-ecb`) in `createCipheriv` and `createDecipheriv` calls.
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```javascript
-// TODO: Add incorrect example
+crypto.createCipheriv('aes-256-ecb', key, iv);
+crypto.createDecipheriv('aes-128-ecb', key, iv);
 ```
 
 ### ✅ Correct
 
 ```javascript
-// TODO: Add correct example
+crypto.createCipheriv('aes-256-gcm', key, iv);
+crypto.createCipheriv('aes-256-cbc', key, iv);
 ```
 
 ## Options
@@ -54,42 +69,42 @@ This rule has no options.
 
 ## When Not To Use It
 
-TODO: Add when not to use.
+Only in very specific cases where ECB is required for compatibility with an existing system that cannot be updated (though GCM or CBC should always be preferred).
 
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Values from Variables
+### Algorithm from Variable
 
-**Why**: Values stored in variables are not traced.
-
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = userInput;
-dangerousOperation(value);
-```
-
-**Mitigation**: Validate all user inputs.
-
-### Wrapper Functions
-
-**Why**: Custom wrappers not recognized.
+**Why**: Algorithm names from variables not traced.
 
 ```typescript
-// ❌ NOT DETECTED - Wrapper
-myWrapper(userInput); // Uses dangerous API internally
+// ❌ NOT DETECTED - Algorithm from variable
+const algo = config.hashAlgorithm; // May be weak
+crypto.createHash(algo);
 ```
 
-**Mitigation**: Apply rule to wrapper implementations.
+**Mitigation**: Hardcode secure algorithms.
 
-### Dynamic Invocation
+### Third-party Crypto Libraries
 
-**Why**: Dynamic calls not analyzed.
+**Why**: Non-standard crypto APIs not recognized.
 
 ```typescript
-// ❌ NOT DETECTED - Dynamic
-obj[method](userInput);
+// ❌ NOT DETECTED - Third-party
+customCrypto.encrypt(data, key);
 ```
 
-**Mitigation**: Avoid dynamic method invocation.
+**Mitigation**: Review all crypto implementations.
+
+### Configuration-based Security
+
+**Why**: Config-driven security not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Config-based
+const options = getSecurityOptions(); // May be weak
+```
+
+**Mitigation**: Validate security configurations.

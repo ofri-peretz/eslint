@@ -135,7 +135,7 @@ Line 15, Column 10
   </Tab>
   <Tab value="Interlace Format">
 ```
-🚨 [CRITICAL] XSS via innerHTML (CWE-79)
+🚨 [CRITICAL] XSS via innerHTML ([CWE-79](https://cwe.mitre.org/data/definitions/79.html))
 └─ Fix: Use textContent or sanitize with DOMPurify.sanitize()
 ```
   </Tab>
@@ -146,7 +146,7 @@ Line 15, Column 10
 | Element | Purpose | Example |
 | ------- | ------- | ------- |
 | **Severity emoji** | Quick triage | 🚨 CRITICAL, ⚠️ WARNING |
-| **CWE ID** | Standardized vulnerability type | CWE-79 (XSS) |
+| **CWE ID** | Standardized vulnerability type | [CWE-79](https://cwe.mitre.org/data/definitions/79.html) (XSS) |
 | **Fix instruction** | Actionable guidance | "Use parameterized queries" |
 | **Safe pattern** | Code example | `textContent` instead of `innerHTML` |
 
@@ -259,7 +259,7 @@ Here's how the full flow works for a SQL injection vulnerability:
     ```json
     {
       "ruleId": "pg/no-sql-injection",
-      "message": "🚨 [CRITICAL] SQL Injection (CWE-89)\n└─ Fix: Use parameterized queries: db.query('SELECT...', [id])",
+      "message": "🚨 [CRITICAL] SQL Injection ([CWE-89](https://cwe.mitre.org/data/definitions/89.html))\n└─ Fix: Use parameterized queries: db.query('SELECT...', [id])",
       "severity": 2,
       "line": 2
     }

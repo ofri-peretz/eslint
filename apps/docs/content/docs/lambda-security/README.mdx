@@ -1,0 +1,42 @@
+---
+title: Overview
+description: "Security best practices for AWS Lambda functions (IAM, timeouts, environment)."
+---
+
+
+<PluginHeader plugin="lambda-security" />
+
+## Description
+
+This plugin secures your AWS Lambda functions by enforcing best practices related to IAM permissions, timeout configurations, and environment variable management. It proactively detects vulnerabilities such as over-permissive policies and insecure logging practices, helping you adhere to the Principle of Least Privilege. Implementing these checks ensures that your serverless architecture remains resilient and compliant with strict security standards.
+
+<Callout type="info">
+  **<RuleCount plugin="lambda-security" /> specialized rules** — LLM-optimized error messages with CWE, OWASP, and CVSS metadata.
+</Callout>
+
+## Installation
+
+```bash
+npm install --save-dev eslint-plugin-lambda-security
+```
+
+## Configuration
+
+```js title="eslint.config.js"
+import lambdasecurity from 'eslint-plugin-lambda-security';
+
+export default [lambdasecurity.configs.recommended];
+```
+
+## Available Presets
+
+| Preset | Description |
+|--------|-------------|
+| `recommended` | Balanced security for most projects |
+| `strict` | Maximum enforcement (all rules as errors) |
+
+## Rules
+
+<RulesNavigator plugin="lambda-security" />
+
+<RelatedArticles plugin="lambda-security" limit={3} />

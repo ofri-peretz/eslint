@@ -32,7 +32,7 @@ import { SecurityStandardsExplorer } from '@/components/ui/security-standards-ex
     <h3 className="text-lg font-semibold mb-2">🏷️ What CWE Does</h3>
     <ul className="text-sm text-fd-muted-foreground space-y-1">
       <li> Classifies **types** of vulnerabilities</li>
-      <li> Hierarchical (CWE-74 → CWE-89)</li>
+      <li> Hierarchical ([CWE-74](https://cwe.mitre.org/data/definitions/74.html) → [CWE-89](https://cwe.mitre.org/data/definitions/89.html))</li>
       <li> Language/platform agnostic</li>
       <li> Maintained by MITRE</li>
     </ul>
@@ -40,10 +40,10 @@ import { SecurityStandardsExplorer } from '@/components/ui/security-standards-ex
   <div className="p-4 rounded-lg border border-fd-border bg-fd-card">
     <h3 className="text-lg font-semibold mb-2">📊 Common CWEs</h3>
     <ul className="text-sm text-fd-muted-foreground space-y-1">
-      <li> **CWE-79**: Cross-site Scripting (XSS)</li>
-      <li> **CWE-89**: SQL Injection</li>
-      <li> **CWE-22**: Path Traversal</li>
-      <li> **CWE-798**: Hardcoded Credentials</li>
+      <li> **[CWE-79](https://cwe.mitre.org/data/definitions/79.html)**: Cross-site Scripting (XSS)</li>
+      <li> **[CWE-89](https://cwe.mitre.org/data/definitions/89.html)**: SQL Injection</li>
+      <li> **[CWE-22](https://cwe.mitre.org/data/definitions/22.html)**: Path Traversal</li>
+      <li> **[CWE-798](https://cwe.mitre.org/data/definitions/798.html)**: Hardcoded Credentials</li>
     </ul>
   </div>
 </div>
@@ -52,7 +52,7 @@ import { SecurityStandardsExplorer } from '@/components/ui/security-standards-ex
 
 ```tsx
 // Rule: no-sql-injection
-// CWE: CWE-89 (Improper Neutralization of Special Elements in SQL Command)
+// CWE: [CWE-89](https://cwe.mitre.org/data/definitions/89.html) (Improper Neutralization of Special Elements in SQL Command)
 const query = `SELECT * FROM users WHERE id = ${userId}`; // ❌ Flagged
 ```
 
@@ -123,7 +123,7 @@ CVSS scores are calculated based on three metric groups:
     <span className="text-sm text-fd-muted-foreground">
       A01-A10 (2021 edition)
       <br />
-      e.g., A03:2021 Injection
+      e.g., [A03:2021](https://owasp.org/Top10/A03_2021-Injection/) Injection
     </span>
   </div>
   <div className="p-4 rounded-lg border border-fd-border bg-cyan-500/5">
@@ -239,7 +239,7 @@ The [NVD API 2.0](https://nvd.nist.gov/developers/vulnerabilities) allows progra
 
 ```bash
 # Fetch CVEs for a specific CWE
-curl "https://services.nvd.nist.gov/rest/json/cves/2.0?cweId=CWE-89"
+curl "https://services.nvd.nist.gov/rest/json/cves/2.0?cweId=[CWE-89](https://cwe.mitre.org/data/definitions/89.html)"
 
 # Fetch a specific CVE
 curl "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=CVE-2023-46132"
@@ -283,9 +283,9 @@ Every Interlace rule is enriched with security metadata:
 
 For example:
 
-- **SQL Injection (CWE-89)**: 9.8 — arbitrary database queries can lead to complete data breach
-- **Hardcoded Secrets (CWE-798)**: 9.8 — exposed credentials enable direct system access
-- **Missing Auth Check (CWE-862)**: 7.5 — unauthorized access to protected resources
+- **SQL Injection ([CWE-89](https://cwe.mitre.org/data/definitions/89.html))**: 9.8 — arbitrary database queries can lead to complete data breach
+- **Hardcoded Secrets ([CWE-798](https://cwe.mitre.org/data/definitions/798.html))**: 9.8 — exposed credentials enable direct system access
+- **Missing Auth Check ([CWE-862](https://cwe.mitre.org/data/definitions/862.html))**: 7.5 — unauthorized access to protected resources
 
 ## Coming Soon: @interlace/sync Engine
 

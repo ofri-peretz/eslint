@@ -1,10 +1,7 @@
 ---
-title: "require-embedding-validation"
-description: "This rule identifies code patterns where embeddings are stored in vector databases without validation."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: "`require-embedding-validation`"
+description: Requires validation of embeddings before storage or similarity search.
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Requires validation of embeddings before storage or similarity search.
 
@@ -69,10 +66,6 @@ Unvalidated embeddings can:
 - **Enable jailbreaks** - Crafted embeddings bypass safety
 - **Leak information** - Embedding inversion attacks
 
-<WhenNotToUse />
-
-<FalseNegativeCTA />
-
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -122,7 +115,7 @@ await vectorStore.batchUpsert(embeddings); // Are all validated?
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-20 OWASP:A06 CVSS:7.5 | Improper Input Validation detected | HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]
+🔒 [CWE-20](https://cwe.mitre.org/data/definitions/20.html) OWASP:A06 CVSS:7.5 | Improper Input Validation detected | HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
 ```
 

@@ -1,12 +1,9 @@
 ---
-title: "no-client-side-auth-logic"
-description: "Detects authentication logic in client-side code that can be easily bypassed."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-client-side-auth-logic
+description: Detects authentication logic in client-side code that can be easily bypassed.
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** client-side auth, CWE-602, localStorage auth, security bypass, authentication, JavaScript security
+> **Keywords:** client-side auth, [CWE-602](https://cwe.mitre.org/data/definitions/602.html), localStorage auth, security bypass, authentication, JavaScript security
 
 Detects authentication logic in client-side code that can be easily bypassed.
 
@@ -88,7 +85,7 @@ await verifyPermission('admin:read');
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-⚠️ CWE-602 OWASP:A06 CVSS:6.5 | Client-Side Enforcement of Server-Side Security detected | MEDIUM
+⚠️ [CWE-602](https://cwe.mitre.org/data/definitions/602.html) OWASP:A06 CVSS:6.5 | Client-Side Enforcement of Server-Side Security detected | MEDIUM
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
 ```
 
@@ -101,10 +98,6 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 | **Severity & Compliance** | Impact assessment | `MEDIUM` |
 | **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
 | **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/) |
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

@@ -1,12 +1,11 @@
 ---
-title: "detect-object-injection"
-description: "Detects `variable[key]` as a left- or right-hand assignment operand (prototype pollution). This rule is part of [`eslint-plugin-secure-coding`](https://www.npmj"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: detect-object-injection
+description: "CWE: [CWE-74](https://cwe.mitre.org/data/definitions/74.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** prototype pollution, CWE-915, security, ESLint rule, object injection, bracket notation, property injection, auto-fix, LLM-optimized, code security
+> **Keywords:** prototype pollution, [CWE-915](https://cwe.mitre.org/data/definitions/915.html), security, ESLint rule, object injection, bracket notation, property injection, auto-fix, LLM-optimized, code security
+**CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects `variable[key]` as a left- or right-hand assignment operand (prototype pollution). This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages with fix suggestions.
 
@@ -48,31 +47,29 @@ This rule detects dangerous use of bracket notation with dynamic property names 
   }
 }}%%
 flowchart TD
-    A["🔍 Detect Bracket Notation"] --> B{"Dynamic Property?"}
-    B -->|Yes| C["🚨 Prototype Pollution Risk"]
-    B -->|No| D["✅ Literal Property - Safe"]
+    A[🔍 Detect Bracket Notation] --> B{Dynamic Property?}
+    B -->|Yes| C[🚨 Prototype Pollution Risk]
+    B -->|No| D[✅ Literal Property - Safe]
 
-    C --> E{"Dangerous Property?"}
-    E -->|__proto__| F["⚠️ Prototype Pollution"]
-    E -->|constructor| G["⚠️ Method Injection"]
-    E -->|Other| H["⚠️ Property Injection"]
+    C --> E{Dangerous Property?}
+    E -->|__proto__| F[⚠️ Prototype Pollution]
+    E -->|constructor| G[⚠️ Method Injection]
+    E -->|Other| H[⚠️ Property Injection]
 
-    F --> I["💡 Suggest Map/Object.create"]
+    F --> I[💡 Suggest Map/Object.create]
     G --> I
-    H --> J["💡 Suggest whitelisting"]
+    H --> J[💡 Suggest whitelisting]
 
-    I --> K["📝 LLM-Optimized Guidance"]
+    I --> K[📝 LLM-Optimized Guidance]
     J --> K
-
 ```
-
 
 ## Error Message Format
 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-915 OWASP:A01 CVSS:9.8 | Object Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
+🔒 [CWE-915](https://cwe.mitre.org/data/definitions/915.html) OWASP:A01 CVSS:9.8 | Object Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
 ```
 
@@ -291,7 +288,7 @@ for (const prop of pollutionAttempts) {
 | Feature                           | detect-object-injection | eslint-plugin-security | eslint-plugin-sonarjs |
 | --------------------------------- | ----------------------- | ---------------------- | --------------------- |
 | **Prototype Pollution Detection** | ✅ Yes                  | ⚠️ Limited             | ⚠️ Limited            |
-| **CWE Reference**                 | ✅ CWE-915 included     | ⚠️ Limited             | ⚠️ Limited            |
+| **CWE Reference**                 | ✅ [CWE-915](https://cwe.mitre.org/data/definitions/915.html) included     | ⚠️ Limited             | ⚠️ Limited            |
 | **LLM-Optimized**                 | ✅ Yes                  | ❌ No                  | ❌ No                 |
 | **ESLint MCP**                    | ✅ Optimized            | ❌ No                  | ❌ No                 |
 | **Fix Suggestions**               | ✅ Detailed             | ⚠️ Basic               | ⚠️ Basic              |
@@ -303,10 +300,6 @@ for (const prop of pollutionAttempts) {
 - [`detect-non-literal-fs-filename`](./detect-non-literal-fs-filename.md) - Prevents path traversal
 - [`no-unsafe-dynamic-require`](./no-unsafe-dynamic-require.md) - Prevents unsafe module loading
 - [`detect-non-literal-regexp`](./detect-non-literal-regexp.md) - Prevents ReDoS attacks
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

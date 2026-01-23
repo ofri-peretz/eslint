@@ -1,10 +1,7 @@
 ---
-title: "no-sensitive-payload"
-description: "**Severity:** \udfe1 Medium"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-sensitive-payload
+description: Prevent storing sensitive data in JWT payload which is only base64-encoded
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Prevent storing sensitive data in JWT payload which is only base64-encoded
 
@@ -51,10 +48,6 @@ jwt.sign({ userId: 'abc123', permissions: ['read'] }, secret);
   }]
 }
 ```
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

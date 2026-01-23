@@ -1,19 +1,18 @@
 ---
-title: "browser-security/no-websocket-eval"
-description: "The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: browser-security/no-websocket-eval
+description: 🔒 Disallow using eval() or Function() with WebSocket message data
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
 > 🔒 Disallow using eval() or Function() with WebSocket message data
+**CWE:** [CWE-319](https://cwe.mitre.org/data/definitions/319.html)  
+**OWASP Mobile:** [M5: Insecure Communication](https://owasp.org/www-project-mobile-top-10/)
 
 ## Error Message Format
 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-95 OWASP:A05 CVSS:9.8 | Eval Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
+🔒 [CWE-95](https://cwe.mitre.org/data/definitions/95.html) OWASP:A05 CVSS:9.8 | Eval Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 
@@ -44,9 +43,7 @@ sequenceDiagram
     C->>C: eval(event.data.code)
     Note over C: REMOTE CODE EXECUTION!
     C->>A: Cookies, passwords, data exfiltrated
-
 ```
-
 
 When you use eval with WebSocket data:
 
@@ -147,10 +144,6 @@ The only acceptable scenario is in development tools or REPLs where code executi
 - [`browser-security/no-websocket-innerhtml`](./no-websocket-innerhtml.md) - XSS prevention
 - [`browser-security/require-websocket-wss`](./require-websocket-wss.md) - Require encrypted connections
 
-<WhenNotToUse />
-
-<FalseNegativeCTA />
-
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -195,6 +188,6 @@ setupHandler(ws, (data) => eval(data.code));
 
 | Category          | ID                   |
 | ----------------- | -------------------- |
-| OWASP Top 10 2021 | A03:2021 - Injection |
-| CWE               | CWE-95               |
+| OWASP Top 10 2021 | [A03:2021](https://owasp.org/Top10/A03_2021-Injection/) - Injection |
+| CWE               | [CWE-95](https://cwe.mitre.org/data/definitions/95.html)               |
 | CVSS              | **9.8 (Critical)**   |

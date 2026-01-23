@@ -1,8 +1,8 @@
 {
-  "title": "AWS Lambda",
+  "title": "lambda-security",
   "pages": [
-    "index",
-    "rules",
-    "changelog"
+    "README",
+    "changelog",
+    "rules"
   ]
 }

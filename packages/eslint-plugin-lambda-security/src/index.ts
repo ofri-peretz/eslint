@@ -25,6 +25,8 @@
  * - SAS-10: Improper Crypto ➡️ (Use eslint-plugin-crypto)
  */
 
+import type { TSESLint } from '@interlace/eslint-devkit';
+
 // Original P0 Critical Rules
 import { noHardcodedCredentialsSdk } from './rules/no-hardcoded-credentials-sdk';
 import { noPermissiveCorsResponse } from './rules/no-permissive-cors-response';
@@ -51,8 +53,9 @@ import { noUserControlledRequests } from './rules/no-user-controlled-requests';
 
 // SAS-9: Functions Misconfiguration
 import { noExposedErrorDetails } from './rules/no-exposed-error-details';
+import { noExposedDebugEndpoints } from './rules/no-exposed-debug-endpoints';
 
-const rules = {
+export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[]>> = {
   // Original rules
   'no-hardcoded-credentials-sdk': noHardcodedCredentialsSdk,
   'no-permissive-cors-response': noPermissiveCorsResponse,
@@ -79,13 +82,21 @@ const rules = {
 
   // SAS-9: Functions Misconfiguration
   'no-exposed-error-details': noExposedErrorDetails,
+  'no-exposed-debug-endpoints': noExposedDebugEndpoints,
 };
 
-const configs = {
+export const plugin: TSESLint.FlatConfig.Plugin = {
+  meta: {
+    name: 'eslint-plugin-lambda-security',
+    version: '1.1.0',
+  },
+  rules,
+} satisfies TSESLint.FlatConfig.Plugin;
+
+export const configs: Record<string, TSESLint.FlatConfig.Config> = {
   recommended: {
-    name: 'lambda-security/recommended',
     plugins: {
-      'lambda-security': { rules },
+      'lambda-security': plugin,
     },
     rules: {
       // Critical: Always error
@@ -100,6 +111,7 @@ const configs = {
       'lambda-security/no-unvalidated-event-body': 'warn',
       'lambda-security/no-missing-authorization-check': 'warn',
       'lambda-security/no-exposed-error-details': 'warn',
+      'lambda-security/no-exposed-debug-endpoints': 'error',
 
       // Medium: Warn in recommended
       'lambda-security/no-env-logging': 'warn',
@@ -109,9 +121,8 @@ const configs = {
     },
   },
   strict: {
-    name: 'lambda-security/strict',
     plugins: {
-      'lambda-security': { rules },
+      'lambda-security': plugin,
     },
     rules: {
       // All rules as errors in strict mode
@@ -128,15 +139,10 @@ const configs = {
       'lambda-security/no-unbounded-batch-processing': 'error',
       'lambda-security/no-user-controlled-requests': 'error',
       'lambda-security/no-exposed-error-details': 'error',
+      'lambda-security/no-exposed-debug-endpoints': 'error',
     },
   },
 };
 
-export = {
-  rules,
-  configs,
-  meta: {
-    name: 'eslint-plugin-lambda-security',
-    version: '1.1.0',
-  },
-};
+export default plugin;
+

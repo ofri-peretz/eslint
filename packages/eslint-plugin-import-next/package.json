@@ -63,11 +63,8 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "peerDependencies": {
-    "typescript": "^5.9.3"
-  },
+  "peerDependencies": {},
   "dependencies": {
-    "tslib": "^2.3.0",
     "@interlace/eslint-devkit": "^1.2.1"
   },
   "devDependencies": {

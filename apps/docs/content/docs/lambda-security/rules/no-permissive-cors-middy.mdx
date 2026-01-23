@@ -1,12 +1,11 @@
 ---
-title: "no-permissive-cors-middy"
-description: "Detects permissive CORS configurations in Middy middleware. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-l"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-permissive-cors-middy
+description: "CWE: [CWE-942](https://cwe.mitre.org/data/definitions/942.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** CORS, Middy, Lambda middleware, CWE-942, security, wildcard origin
+> **Keywords:** CORS, Middy, Lambda middleware, [CWE-942](https://cwe.mitre.org/data/definitions/942.html), security, wildcard origin
+**CWE:** [CWE-942](https://cwe.mitre.org/data/definitions/942.html)  
+**OWASP Mobile:** [M8: Security Misconfiguration](https://owasp.org/www-project-mobile-top-10/)
 
 Detects permissive CORS configurations in Middy middleware. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security).
 
@@ -16,7 +15,7 @@ Detects permissive CORS configurations in Middy middleware. This rule is part of
 
 | Aspect            | Details                                  |
 | ----------------- | ---------------------------------------- |
-| **CWE Reference** | CWE-942 (Permissive Cross-domain Policy) |
+| **CWE Reference** | [CWE-942](https://cwe.mitre.org/data/definitions/942.html) (Permissive Cross-domain Policy) |
 | **Severity**      | 🔴 High                                  |
 | **Auto-Fix**      | ✅ Yes                                   |
 | **Category**      | Security                                 |
@@ -100,10 +99,6 @@ export const handler = middy(baseHandler).use(
 
 - [`no-permissive-cors-response`](./no-permissive-cors-response.md) - CORS in direct responses
 
-<WhenNotToUse />
-
-<FalseNegativeCTA />
-
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -167,7 +162,7 @@ export const handler = middy(baseHandler).use(corsMiddleware);
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-942 OWASP:A01 CVSS:7.5 | CORS Misconfiguration detected | HIGH
+🔒 [CWE-942](https://cwe.mitre.org/data/definitions/942.html) OWASP:A01 CVSS:7.5 | CORS Misconfiguration detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
 ```
 

@@ -1,19 +1,18 @@
 ---
-title: "browser-security/no-sensitive-cookie-js"
-description: "The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: browser-security/no-sensitive-cookie-js
+description: "🔒 Disallow storing sensitive data (tokens, passwords) in cookies via JavaScript"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
 > 🔒 Disallow storing sensitive data (tokens, passwords) in cookies via JavaScript
+**CWE:** [CWE-359](https://cwe.mitre.org/data/definitions/359.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 ## Error Message Format
 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-⚠️ CWE-1004 OWASP:A02 CVSS:5.3 | Sensitive Cookie Without HttpOnly detected | MEDIUM
+⚠️ [CWE-1004](https://cwe.mitre.org/data/definitions/1004.html) OWASP:A02 CVSS:5.3 | Sensitive Cookie Without HttpOnly detected | MEDIUM
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A02_2021/
 ```
 
@@ -35,17 +34,15 @@ This rule prevents setting sensitive cookies (authentication tokens, session IDs
 
 ```mermaid
 flowchart TD
-    A["Attacker injects XSS"] --> B{"Cookie type?"}
-    B -->|JavaScript cookie| C["document.cookie accessible"]
-    C --> D["Token stolen!"]
-    B -->|HttpOnly cookie| E["document.cookie blocked"]
-    E --> F["Token safe ✓"]
+    A[Attacker injects XSS] --> B{Cookie type?}
+    B -->|JavaScript cookie| C[document.cookie accessible]
+    C --> D[Token stolen!]
+    B -->|HttpOnly cookie| E[document.cookie blocked]
+    E --> F[Token safe ✓]
 
     style D fill:#ff6b6b
     style F fill:#51cf66
-
 ```
-
 
 When you set cookies via JavaScript:
 
@@ -198,10 +195,6 @@ login(@Res() res: Response) {
 - [MDN: Cookie Security](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#security)
 - [OWASP: Session Management Cheat Sheet](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/06-Session_Management_Testing/02-Testing_for_Cookies_Attributes)
 
-<WhenNotToUse />
-
-<FalseNegativeCTA />
-
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -245,6 +238,6 @@ js - cookie.set('token', jwt);
 
 | Category          | ID                                |
 | ----------------- | --------------------------------- |
-| OWASP Top 10 2021 | A02:2021 - Cryptographic Failures |
-| CWE               | CWE-1004                          |
+| OWASP Top 10 2021 | [A02:2021](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/) - Cryptographic Failures |
+| CWE               | [CWE-1004](https://cwe.mitre.org/data/definitions/1004.html)                          |
 | CVSS              | 8.1 (High)                        |

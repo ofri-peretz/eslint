@@ -1,0 +1,42 @@
+---
+title: Overview
+description: "Cryptographic security rules enforcing best practices and modern standards (Node.js crypto)."
+---
+
+
+<PluginHeader plugin="crypto" />
+
+## Description
+
+This plugin enforces cryptographic best practices and modern security standards specifically for Node.js environments. It assists developers in avoiding weak algorithms and insecure implementations by flagging potential risks directly in the code. By integrating these checks, you can ensure that your application's data protection measures are robust and compliant with industry standards.
+
+<Callout type="info">
+  **<RuleCount plugin="crypto" /> specialized rules** — LLM-optimized error messages with CWE, OWASP, and CVSS metadata.
+</Callout>
+
+## Installation
+
+```bash
+npm install --save-dev eslint-plugin-crypto
+```
+
+## Configuration
+
+```js title="eslint.config.js"
+import crypto from 'eslint-plugin-crypto';
+
+export default [crypto.configs.recommended];
+```
+
+## Available Presets
+
+| Preset | Description |
+|--------|-------------|
+| `recommended` | Balanced security for most projects |
+| `strict` | Maximum enforcement (all rules as errors) |
+
+## Rules
+
+<RulesNavigator plugin="crypto" />
+
+<RelatedArticles plugin="crypto" limit={3} />

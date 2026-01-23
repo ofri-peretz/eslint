@@ -1,12 +1,11 @@
 ---
-title: 'no-unsafe-regex-construction'
-description: 'ESLint Rule: no-unsafe-regex-construction with LLM-optimized suggestions and auto-fix capabilities. This rule is part of [`eslint-plugin-secure-coding`](https:/'
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-unsafe-regex-construction
+description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from '@/components/RuleComponents';
-
-> **Keywords:** no unsafe regex construction, security, ESLint rule, JavaScript, TypeScript, CWE-400, CWE-185, ReDoS, injection
+> **Keywords:** no unsafe regex construction, security, ESLint rule, JavaScript, TypeScript, [CWE-400](https://cwe.mitre.org/data/definitions/400.html), [CWE-185](https://cwe.mitre.org/data/definitions/185.html), ReDoS, injection
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 ESLint Rule: no-unsafe-regex-construction with LLM-optimized suggestions and auto-fix capabilities. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
@@ -33,19 +32,19 @@ ESLint Rule: no-unsafe-regex-construction with LLM-optimized suggestions and aut
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-400 OWASP:A06 CVSS:7.5 | Uncontrolled Resource Consumption (ReDoS) detected | HIGH
+🔒 [CWE-400](https://cwe.mitre.org/data/definitions/400.html) OWASP:A06 CVSS:7.5 | Uncontrolled Resource Consumption (ReDoS) detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
 ```
 
 ### Message Components
 
-| Component                 | Purpose                | Example                                                                                                                                                                                                                         |
-| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Risk Standards**        | Security benchmarks    | [CWE-400](https://cwe.mitre.org/data/definitions/400.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description**     | Specific vulnerability | `Uncontrolled Resource Consumption (ReDoS) detected`                                                                                                                                                                            |
-| **Severity & Compliance** | Impact assessment      | `HIGH`                                                                                                                                                                                                                          |
-| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                            |
-| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/)                                                                                                                                                                     |
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-400](https://cwe.mitre.org/data/definitions/400.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Uncontrolled Resource Consumption (ReDoS) detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/) |
 
 ## Rule Details
 
@@ -69,7 +68,7 @@ This rule detects the creation of `RegExp` objects using user-controlled input. 
   }
 }}%%
 flowchart TD
-    Start[User Input] --> Construct{new RegExp input}
+    Start[User Input] --> Construct{new RegExp(input)}
     Construct -->|Unescaped| Risk[🚨 ReDoS / Injection Risk]
     Construct -->|Escaped| Safe[✅ Safe Pattern]
 
@@ -82,7 +81,6 @@ flowchart TD
     class Start startNode
     class Crash errorNode
     class Risk warnNode
-
 ```
 
 ### Why This Matters
@@ -146,10 +144,6 @@ The rule provides guidance on how to fix detected patterns:
 
 - **"Escape User Input"**: Suggests using a library like `escape-string-regexp` to neutralize special characters.
 - **"Use Literal"**: Suggests converting `new RegExp("constant")` to `/constant/` if possible.
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

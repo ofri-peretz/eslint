@@ -46,6 +46,7 @@ export function getPackageMetadata(packagePath) {
     description: pkgJson.description,
     version: pkgJson.version,
     private: pkgJson.private,
+    interlace: pkgJson.interlace,
   };
 }
 
@@ -80,16 +81,27 @@ async function main() {
 
   const UNPUBLISHED_PLUGINS = [
     'eslint-plugin-react-features',
-    'eslint-plugin-architecture', 
     'eslint-plugin-react-a11y',
+    'eslint-plugin-architecture',
     'eslint-plugin-quality'
   ];
 
   for (const packagePath of packages) {
     const metadata = getPackageMetadata(packagePath);
     if (!metadata) continue;
-    if (metadata.private === true) continue;
-    if (UNPUBLISHED_PLUGINS.includes(metadata.name)) continue;
+    
+    // Logic for 'published' status
+    let published = true;
+    
+    if (metadata.interlace?.docs === true) {
+      published = true;
+    } else if (metadata.interlace?.docs === false) {
+      published = false;
+    } else if (UNPUBLISHED_PLUGINS.includes(metadata.name)) {
+      published = false;
+    } else if (metadata.private === true) {
+      published = false;
+    }
 
     const ruleCount = countRulesInPackage(packagePath);
     const category = getCategory(metadata.name);
@@ -100,11 +112,14 @@ async function main() {
       description: metadata.description?.split('.')[0] || '',
       category,
       version: metadata.version,
+      published,
     });
 
-    totalRules += ruleCount;
-    console.log(`  ✓ ${metadata.name}: ${ruleCount} rules`);
-
+    if (published) {
+      totalRules += ruleCount;
+    }
+    
+    console.log(`  ${published ? '✓' : '◌' } ${metadata.name}: ${ruleCount} rules ${published ? '' : '(unpublished)'}`);
   }
 
   // Sort by category then by rule count
@@ -118,8 +133,9 @@ async function main() {
 
   const output = {
     plugins: stats,
-    totalRules,
-    totalPlugins: stats.length,
+    totalRules, // Reflects only published rules for backward compatibility
+    totalPlugins: stats.filter(p => p.published).length, // Reflects only published plugins
+    allPluginsCount: stats.length,
     generatedAt: new Date().toISOString(),
   };
 
@@ -133,7 +149,8 @@ async function main() {
   writeFileSync(OUTPUT_FILE, JSON.stringify(output, null, 2));
 
   console.log(`\n✅ Generated plugin-stats.json`);
-  console.log(`   Total: ${totalRules} rules across ${stats.length} plugins`);
+  console.log(`   Published: ${totalRules} rules across ${output.totalPlugins} plugins`);
+  console.log(`   Total (incl. unpublished): ${stats.reduce((acc, p) => acc + p.rules, 0)} rules across ${stats.length} plugins`);
 }
 
 

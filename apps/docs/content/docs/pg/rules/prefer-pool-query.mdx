@@ -1,12 +1,10 @@
 ---
-title: "prefer-pool-query"
-description: "Suggests using `pool.query()` for single-shot queries instead of manual connect/release."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: prefer-pool-query
+description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
 > **Keywords:** pool, simplicity, quality, pg, node-postgres
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Suggests using `pool.query()` for single-shot queries instead of manual connect/release.
 
@@ -82,10 +80,6 @@ async function transferFunds(from: string, to: string, amount: number) {
 
 - When you need session variables or prepared statements
 - When connection reuse is critical for performance
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

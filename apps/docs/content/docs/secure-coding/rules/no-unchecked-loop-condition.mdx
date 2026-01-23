@@ -1,12 +1,11 @@
 ---
-title: "no-unchecked-loop-condition"
-description: "Detects unchecked loop conditions that could cause DoS. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-unchecked-loop-condition
+description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** unchecked loop, CWE-400, CWE-835, infinite loop, DoS, security
+> **Keywords:** unchecked loop, [CWE-400](https://cwe.mitre.org/data/definitions/400.html), [CWE-835](https://cwe.mitre.org/data/definitions/835.html), infinite loop, DoS, security
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects unchecked loop conditions that could cause DoS. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
@@ -16,7 +15,7 @@ Detects unchecked loop conditions that could cause DoS. This rule is part of [`e
 
 | Aspect            | Details                                                              |
 | ----------------- | -------------------------------------------------------------------- |
-| **CWE Reference** | CWE-400 (Uncontrolled Resource Consumption), CWE-835 (Infinite Loop) |
+| **CWE Reference** | [CWE-400](https://cwe.mitre.org/data/definitions/400.html) (Uncontrolled Resource Consumption), [CWE-835](https://cwe.mitre.org/data/definitions/835.html) (Infinite Loop) |
 | **Severity**      | High (CVSS 7.5)                                                      |
 | **Auto-Fix**      | 💡 Suggestions available                                             |
 | **Category**      | Buffer, Memory & DoS                                                 |
@@ -137,7 +136,7 @@ function recurse(data, depth = 0, maxDepth = 100) {
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-400 OWASP:A06 CVSS:7.5 | Uncontrolled Resource Consumption (ReDoS) detected | HIGH
+🔒 [CWE-400](https://cwe.mitre.org/data/definitions/400.html) OWASP:A06 CVSS:7.5 | Uncontrolled Resource Consumption (ReDoS) detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
 ```
 
@@ -150,10 +149,6 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 | **Severity & Compliance** | Impact assessment | `HIGH` |
 | **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
 | **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/) |
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

@@ -1,10 +1,7 @@
 ---
-title: "no-http-urls"
-description: "This rule disallow hardcoded http urls (require https)."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-http-urls
+description: Disallow hardcoded HTTP URLs (require HTTPS)
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Disallow hardcoded HTTP URLs (require HTTPS)
 
@@ -39,10 +36,6 @@ const devUrl = 'http://localhost:3000'
 ## When Not To Use It
 
 This rule should be enabled for all mobile and web applications to ensure security best practices.
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

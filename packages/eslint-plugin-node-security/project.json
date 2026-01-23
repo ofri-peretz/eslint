@@ -1,0 +1,77 @@
+{
+  "name": "eslint-plugin-node-security",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/eslint-plugin-node-security/src",
+  "projectType": "library",
+  "tags": [
+    "npm:public",
+    "npm:eslint",
+    "npm:eslint-plugin",
+    "npm:typescript",
+    "npm:linting",
+    "npm:security",
+    "npm:node-security",
+    "npm:owasp",
+    "npm:cwe",
+    "npm:llm-optimized",
+    "npm:code-quality",
+    "npm:ast",
+    "npm:static-analysis"
+  ],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "dependsOn": [
+        "^build",
+        "test"
+      ],
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "outputPath": "dist/packages/eslint-plugin-node-security",
+        "main": "packages/eslint-plugin-node-security/src/index.ts",
+        "tsConfig": "packages/eslint-plugin-node-security/tsconfig.lib.json",
+        "assets": [
+          "packages/eslint-plugin-node-security/README.md",
+          "packages/eslint-plugin-node-security/CHANGELOG.md",
+          "packages/eslint-plugin-node-security/LICENSE",
+          "packages/eslint-plugin-node-security/AGENTS.md",
+          "packages/eslint-plugin-node-security/.npmignore"
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": [
+        "{projectRoot}/coverage"
+      ],
+      "options": {
+        "configFile": "packages/eslint-plugin-node-security/vitest.config.mts"
+      },
+      "configurations": {
+        "ci": {
+          "coverage": true
+        }
+      }
+    },
+    "build:minimal": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "commands": [
+          "find dist/packages/eslint-plugin-node-security -name '*.js.map' -delete"
+        ],
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "nx-release-publish": {
+      "executor": "@nx/js:release-publish",
+      "options": {
+        "packageRoot": "dist/{projectRoot}"
+      }
+    }
+  }
+}

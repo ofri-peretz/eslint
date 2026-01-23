@@ -1,8 +1,8 @@
 {
-  "title": "Secure Coding",
+  "title": "secure-coding",
   "pages": [
     "index",
-    "rules",
-    "changelog"
+    "changelog",
+    "rules"
   ]
 }

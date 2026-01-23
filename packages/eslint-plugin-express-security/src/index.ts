@@ -39,6 +39,7 @@ import { noGraphqlIntrospectionProduction } from './rules/no-graphql-introspecti
 import { noCorsCredentialsWildcard } from './rules/no-cors-credentials-wildcard';
 import { requireExpressBodyParserLimits } from './rules/require-express-body-parser-limits';
 import { noExpressUnsafeRegexRoute } from './rules/no-express-unsafe-regex-route';
+import { noExposedDebugEndpoints } from './rules/no-exposed-debug-endpoints';
 
 /**
  * Collection of all Express security ESLint rules
@@ -65,6 +66,7 @@ export const rules: Record<
   'no-cors-credentials-wildcard': noCorsCredentialsWildcard,
   'require-express-body-parser-limits': requireExpressBodyParserLimits,
   'no-express-unsafe-regex-route': noExpressUnsafeRegexRoute,
+  'no-exposed-debug-endpoints': noExposedDebugEndpoints,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -100,6 +102,7 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'express-security/no-cors-credentials-wildcard': 'error',
   'express-security/require-express-body-parser-limits': 'warn',
   'express-security/no-express-unsafe-regex-route': 'error',
+  'express-security/no-exposed-debug-endpoints': 'error',
 };
 
 /**

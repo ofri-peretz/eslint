@@ -1,0 +1,42 @@
+---
+title: Overview
+description: "Security rules for MongoDB queries and interactions (NoSQL injection)."
+---
+
+
+<PluginHeader plugin="mongodb-security" />
+
+## Description
+
+This plugin is essential for securing specific MongoDB interactions, primarily focusing on preventing NoSQL injection attacks. It analyzes your queries and database operations to flag potentially unsafe patterns that could be exploited by malicious actors. By adopting these rules, you can safeguard your data integrity and prevent unauthorized access through injection vulnerabilities.
+
+<Callout type="info">
+  **<RuleCount plugin="mongodb-security" /> specialized rules** — LLM-optimized error messages with CWE, OWASP, and CVSS metadata.
+</Callout>
+
+## Installation
+
+```bash
+npm install --save-dev eslint-plugin-mongodb-security
+```
+
+## Configuration
+
+```js title="eslint.config.js"
+import mongodbsecurity from 'eslint-plugin-mongodb-security';
+
+export default [mongodbsecurity.configs.recommended];
+```
+
+## Available Presets
+
+| Preset | Description |
+|--------|-------------|
+| `recommended` | Balanced security for most projects |
+| `strict` | Maximum enforcement (all rules as errors) |
+
+## Rules
+
+<RulesNavigator plugin="mongodb-security" />
+
+<RelatedArticles plugin="mongodb-security" limit={3} />

@@ -1,10 +1,7 @@
 ---
-title: "require-issued-at"
-description: "**Severity:** \udfe1 Medium"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: require-issued-at
+description: Require iat (issued at) claim for token freshness validation
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Require iat (issued at) claim for token freshness validation
 
@@ -33,10 +30,6 @@ jwt.sign(payload, secret);
 // Explicit iat in payload
 jwt.sign({ sub: 'user', iat: Math.floor(Date.now() / 1000) }, secret);
 ```
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

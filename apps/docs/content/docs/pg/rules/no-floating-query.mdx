@@ -1,12 +1,10 @@
 ---
-title: "no-floating-query"
-description: "Ensures query promises are awaited or handled."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-floating-query
+description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** unhandled promise, CWE-252, pg, node-postgres, async
+> **Keywords:** unhandled promise, [CWE-252](https://cwe.mitre.org/data/definitions/252.html), pg, node-postgres, async
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Ensures query promises are awaited or handled.
 
@@ -16,7 +14,7 @@ Ensures query promises are awaited or handled.
 
 | Aspect            | Details                          |
 | ----------------- | -------------------------------- |
-| **CWE Reference** | CWE-252 (Unchecked Return Value) |
+| **CWE Reference** | [CWE-252](https://cwe.mitre.org/data/definitions/252.html) (Unchecked Return Value) |
 | **Severity**      | Medium (CVSS: 5.0)               |
 | **Category**      | Correctness                      |
 
@@ -55,7 +53,7 @@ await promise;
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-⚠️ CWE-252 OWASP:A10 CVSS:5.3 | Unchecked Return Value detected | MEDIUM
+⚠️ [CWE-252](https://cwe.mitre.org/data/definitions/252.html) OWASP:A10 CVSS:5.3 | Unchecked Return Value detected | MEDIUM
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A10_2021/
 ```
 
@@ -68,10 +66,6 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 | **Severity & Compliance** | Impact assessment | `MEDIUM` |
 | **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
 | **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A10_2021-Injection/) |
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

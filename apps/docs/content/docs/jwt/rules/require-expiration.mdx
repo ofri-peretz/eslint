@@ -1,10 +1,7 @@
 ---
-title: "require-expiration"
-description: "**Severity:** \udfe1 Medium"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: require-expiration
+description: Require expiration claim (exp) or expiresIn option in JWT signing
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Require expiration claim (exp) or expiresIn option in JWT signing
 
@@ -16,7 +13,7 @@ import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-⚠️ CWE-613 OWASP:A07 CVSS:5.4 | Insufficient Session Expiration detected | MEDIUM
+⚠️ [CWE-613](https://cwe.mitre.org/data/definitions/613.html) OWASP:A07 CVSS:5.4 | Insufficient Session Expiration detected | MEDIUM
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A07_2021/
 ```
 
@@ -63,10 +60,6 @@ jwt.sign({ sub: 'user', exp: Math.floor(Date.now() / 1000) + 3600 }, secret);
   }]
 }
 ```
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

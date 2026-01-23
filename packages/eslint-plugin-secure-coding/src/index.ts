@@ -21,9 +21,6 @@
 
 
 // Security rules - Injection
-import { detectEvalWithExpression } from './rules/detect-eval-with-expression';
-import { detectChildProcess } from './rules/detect-child-process';
-import { noUnsafeDynamicRequire } from './rules/no-unsafe-dynamic-require';
 import { noGraphqlInjection } from './rules/no-graphql-injection';
 import { noXxeInjection } from './rules/no-xxe-injection';
 import { noXpathInjection } from './rules/no-xpath-injection';
@@ -32,9 +29,6 @@ import { noDirectiveInjection } from './rules/no-directive-injection';
 import { noFormatStringInjection } from './rules/no-format-string-injection';
 
 // Security rules - Path & File
-import { detectNonLiteralFsFilename } from './rules/detect-non-literal-fs-filename';
-import { noZipSlip } from './rules/no-zip-slip';
-import { noToctouVulnerability } from './rules/no-toctou-vulnerability';
 
 // Security rules - Regex
 import { detectNonLiteralRegexp } from './rules/detect-non-literal-regexp';
@@ -74,7 +68,6 @@ import { noClickjacking } from './rules/no-clickjacking';
 import { noSensitiveDataExposure } from './rules/no-sensitive-data-exposure';
 
 // Security rules - Buffer & Memory
-import { noBufferOverread } from './rules/no-buffer-overread';
 
 // Security rules - Resource & DoS
 import { noUnlimitedResourceAllocation } from './rules/no-unlimited-resource-allocation';
@@ -93,7 +86,7 @@ import { requireSecureCredentialStorage } from './rules/require-secure-credentia
 import { requireDependencyIntegrity } from './rules/require-dependency-integrity';
 import { detectSuspiciousDependencies } from './rules/detect-suspicious-dependencies';
 import { noDynamicDependencyLoading } from './rules/no-dynamic-dependency-loading';
-import { requirePackageLock } from './rules/require-package-lock';
+import { lockFile } from './rules/lock-file';
 
 // M3: Insecure Authentication/Authorization (5 rules)
 import { noClientSideAuthLogic } from './rules/no-client-side-auth-logic';
@@ -105,7 +98,6 @@ import { noPasswordInUrl } from './rules/no-password-in-url';
 // M4: Insufficient Input/Output Validation (6 rules)
 import { noUnvalidatedDeeplinks } from './rules/no-unvalidated-deeplinks';
 import { requireUrlValidation } from './rules/require-url-validation';
-import { noArbitraryFileAccess } from './rules/no-arbitrary-file-access';
 import { requireMimeTypeValidation } from './rules/require-mime-type-validation';
 import { requireCspHeaders } from './rules/require-csp-headers';
 
@@ -122,6 +114,7 @@ import { requireNetworkTimeout } from './rules/require-network-timeout';
 import { noPiiInLogs } from './rules/no-pii-in-logs';
 import { noTrackingWithoutConsent } from './rules/no-tracking-without-consent';
 import { requireDataMinimization } from './rules/require-data-minimization';
+import { noSensitiveDataInCache } from './rules/no-sensitive-data-in-cache';
 import { noSensitiveDataInAnalytics } from './rules/no-sensitive-data-in-analytics';
 
 // M7: Insufficient Binary Protections (2 rules)
@@ -130,14 +123,11 @@ import { requireCodeMinification } from './rules/require-code-minification';
 
 // M8: Security Misconfiguration (4 rules)
 import { noVerboseErrorMessages } from './rules/no-verbose-error-messages';
-import { noExposedDebugEndpoints } from './rules/no-exposed-debug-endpoints';
 import { requireSecureDefaults } from './rules/require-secure-defaults';
 import { noPermissiveCors } from './rules/no-permissive-cors';
 
 // M9: Insecure Data Storage (5 rules)
-import { noSensitiveDataInCache } from './rules/no-sensitive-data-in-cache';
 import { requireStorageEncryption } from './rules/require-storage-encryption';
-import { noDataInTempStorage } from './rules/no-data-in-temp-storage';
 import { requireSecureDeletion } from './rules/require-secure-deletion';
 
 import { TSESLint } from '@interlace/eslint-devkit';
@@ -147,18 +137,12 @@ import { TSESLint } from '@interlace/eslint-devkit';
  */
 export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[]>> = {
   // Flat rule names (recommended usage)
-  'detect-eval-with-expression': detectEvalWithExpression,
-  'detect-child-process': detectChildProcess,
-  'no-unsafe-dynamic-require': noUnsafeDynamicRequire,
   'no-graphql-injection': noGraphqlInjection,
   'no-xxe-injection': noXxeInjection,
   'no-xpath-injection': noXpathInjection,
   'no-ldap-injection': noLdapInjection,
   'no-directive-injection': noDirectiveInjection,
   'no-format-string-injection': noFormatStringInjection,
-  'detect-non-literal-fs-filename': detectNonLiteralFsFilename,
-  'no-zip-slip': noZipSlip,
-  'no-toctou-vulnerability': noToctouVulnerability,
   'detect-non-literal-regexp': detectNonLiteralRegexp,
   'no-redos-vulnerable-regex': noRedosVulnerableRegex,
   'no-unsafe-regex-construction': noUnsafeRegexConstruction,
@@ -180,7 +164,6 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'no-unencrypted-transmission': noUnencryptedTransmission,
   'no-clickjacking': noClickjacking,
   'no-sensitive-data-exposure': noSensitiveDataExposure,
-  'no-buffer-overread': noBufferOverread,
   'no-unlimited-resource-allocation': noUnlimitedResourceAllocation,
   'no-unchecked-loop-condition': noUncheckedLoopCondition,
   'no-electron-security-issues': noElectronSecurityIssues,
@@ -194,7 +177,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'require-dependency-integrity': requireDependencyIntegrity,
   'detect-suspicious-dependencies': detectSuspiciousDependencies,
   'no-dynamic-dependency-loading': noDynamicDependencyLoading,
-  'require-package-lock': requirePackageLock,
+  'lock-file': lockFile,
 
   // M3: Insecure Authentication/Authorization (5 rules)
   'no-client-side-auth-logic': noClientSideAuthLogic,
@@ -206,7 +189,6 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   // M4: Insufficient Input/Output Validation (6 rules)
   'no-unvalidated-deeplinks': noUnvalidatedDeeplinks,
   'require-url-validation': requireUrlValidation,
-  'no-arbitrary-file-access': noArbitraryFileAccess,
   'require-mime-type-validation': requireMimeTypeValidation,
   'require-csp-headers': requireCspHeaders,
 
@@ -231,14 +213,12 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 
   // M8: Security Misconfiguration (4 rules)
   'no-verbose-error-messages': noVerboseErrorMessages,
-  'no-exposed-debug-endpoints': noExposedDebugEndpoints,
   'require-secure-defaults': requireSecureDefaults,
   'no-permissive-cors': noPermissiveCors,
 
   // M9: Insecure Data Storage (5 rules)
   'no-sensitive-data-in-cache': noSensitiveDataInCache,
   'require-storage-encryption': requireStorageEncryption,
-  'no-data-in-temp-storage': noDataInTempStorage,
   'require-secure-deletion': requireSecureDeletion,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
@@ -258,21 +238,6 @@ export const plugin: TSESLint.FlatConfig.Plugin = {
  */
 const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // Critical - Injection vulnerabilities (OWASP A03)
-  'secure-coding/detect-eval-with-expression': 'error',
-  'secure-coding/detect-child-process': 'error',
-  'secure-coding/no-unsafe-dynamic-require': 'error',
-  'secure-coding/no-graphql-injection': 'error',
-  'secure-coding/no-xxe-injection': 'error',
-  'secure-coding/no-xpath-injection': 'error',
-  'secure-coding/no-ldap-injection': 'error',
-  'secure-coding/no-directive-injection': 'error',
-  'secure-coding/no-format-string-injection': 'error',
-
-  // Critical - Path traversal & file operations
-  'secure-coding/detect-non-literal-fs-filename': 'error',
-  'secure-coding/no-zip-slip': 'error',
-  'secure-coding/no-toctou-vulnerability': 'error',
-
   // Critical - Deserialization
   'secure-coding/no-unsafe-deserialization': 'error',
 
@@ -311,9 +276,6 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
 
   // High - Data Exposure (OWASP A01)
   'secure-coding/no-sensitive-data-exposure': 'warn',
-
-  // Medium - Buffer & Memory
-  'secure-coding/no-buffer-overread': 'error',
 
   // Medium - Resource & DoS
   'secure-coding/no-unlimited-resource-allocation': 'error',
@@ -386,8 +348,6 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       'secure-coding/no-sensitive-data-exposure': 'error',
       
       // A03:2021 – Injection
-      'secure-coding/detect-eval-with-expression': 'error',
-      'secure-coding/detect-child-process': 'error',
       'secure-coding/no-graphql-injection': 'error',
       'secure-coding/no-xxe-injection': 'error',
       'secure-coding/no-xpath-injection': 'error',
@@ -410,7 +370,6 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       
       // A08:2021 – Software and Data Integrity Failures
       'secure-coding/no-unsafe-deserialization': 'error',
-      'secure-coding/no-unsafe-dynamic-require': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 
@@ -433,7 +392,7 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       'secure-coding/require-dependency-integrity': 'error',
       'secure-coding/detect-suspicious-dependencies': 'error',
       'secure-coding/no-dynamic-dependency-loading': 'error',
-      'secure-coding/require-package-lock': 'error',
+      'secure-coding/lock-file': 'error',
 
       // M3: Insecure Authentication/Authorization
       'secure-coding/no-client-side-auth-logic': 'error',
@@ -445,7 +404,6 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
       // M4: Insufficient Input/Output Validation
       'secure-coding/no-unvalidated-deeplinks': 'error',
       'secure-coding/require-url-validation': 'error',
-      'secure-coding/no-arbitrary-file-access': 'error',
       'secure-coding/require-mime-type-validation': 'error',
       'secure-coding/require-csp-headers': 'error',
 
@@ -470,14 +428,12 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
 
       // M8: Security Misconfiguration
       'secure-coding/no-verbose-error-messages': 'error',
-      'secure-coding/no-exposed-debug-endpoints': 'error',
       'secure-coding/require-secure-defaults': 'error',
       'secure-coding/no-permissive-cors': 'error',
 
       // M9: Insecure Data Storage
       'secure-coding/no-sensitive-data-in-cache': 'error',
       'secure-coding/require-storage-encryption': 'error',
-      'secure-coding/no-data-in-temp-storage': 'error',
       'secure-coding/require-secure-deletion': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
@@ -493,55 +449,6 @@ export default plugin;
  */
 export type {
   // Injection
-  DetectEvalWithExpressionOptions,
-  DetectChildProcessOptions,
-  NoUnsafeDynamicRequireOptions,
-  NoGraphqlInjectionOptions,
-  NoXxeInjectionOptions,
-  NoXpathInjectionOptions,
-  NoLdapInjectionOptions,
-  NoDirectiveInjectionOptions,
-  NoFormatStringInjectionOptions,
-  // Path & File
-  DetectNonLiteralFsFilenameOptions,
-  NoZipSlipOptions,
-  NoToctouVulnerabilityOptions,
-  // Regex
-  DetectNonLiteralRegexpOptions,
-  NoRedosVulnerableRegexOptions,
-  NoUnsafeRegexConstructionOptions,
-  // Object & Prototype
-  DetectObjectInjectionOptions,
-  NoUnsafeDeserializationOptions,
-  // Credentials & Crypto
-  NoHardcodedCredentialsOptions,
-  NoInsecureComparisonOptions,
-  // Input Validation & XSS
-  NoUnvalidatedUserInputOptions,
-  NoUnescapedUrlParameterOptions,
-  NoImproperSanitizationOptions,
-  NoImproperTypeValidationOptions,
-  // Authentication & Authorization
-  NoMissingAuthenticationOptions,
-  NoPrivilegeEscalationOptions,
-  NoWeakPasswordRecoveryOptions,
-  // Session & Cookies
-  NoMissingCsrfProtectionOptions,
-  // Network & Headers
-  NoMissingCorsCheckOptions,
-  NoMissingSecurityHeadersOptions,
-  NoInsecureRedirectsOptions,
-  NoUnencryptedTransmissionOptions,
-  NoClickjackingOptions,
-  // Data Exposure
-  NoSensitiveDataExposureOptions,
-  // Buffer & Memory
-  NoBufferOverreadOptions,
-  // Resource & DoS
-  NoUnlimitedResourceAllocationOptions,
-  NoUncheckedLoopConditionOptions,
-  // Platform Specific
-  NoElectronSecurityIssuesOptions,
   // Combined type
   AllSecurityRulesOptions,
 } from './types/index';

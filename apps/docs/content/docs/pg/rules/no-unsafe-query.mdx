@@ -1,12 +1,10 @@
 ---
-title: "no-unsafe-query"
-description: "Prevents SQL injection by detecting string concatenation or template literals with variables in `client.query()` calls."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-unsafe-query
+description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** SQL injection, CWE-89, pg, node-postgres, security, parameterized queries, prepared statements
+> **Keywords:** SQL injection, [CWE-89](https://cwe.mitre.org/data/definitions/89.html), pg, node-postgres, security, parameterized queries, prepared statements
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Prevents SQL injection by detecting string concatenation or template literals with variables in `client.query()` calls.
 
@@ -16,7 +14,7 @@ Prevents SQL injection by detecting string concatenation or template literals wi
 
 | Aspect            | Details                                   |
 | ----------------- | ----------------------------------------- |
-| **CWE Reference** | CWE-89 (SQL Injection)                    |
+| **CWE Reference** | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) (SQL Injection)                    |
 | **Severity**      | Critical (CVSS: 9.8)                      |
 | **Category**      | Security                                  |
 | **ESLint MCP**    | ✅ Optimized for AI assistant integration |
@@ -56,7 +54,7 @@ const result = await client.query({
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-89 OWASP:A05 CVSS:9.8 | SQL Injection detected | CRITICAL [SOC2,PCI-DSS,HIPAA,ISO27001]
+🔒 [CWE-89](https://cwe.mitre.org/data/definitions/89.html) OWASP:A05 CVSS:9.8 | SQL Injection detected | CRITICAL [SOC2,PCI-DSS,HIPAA,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 
@@ -69,10 +67,6 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 | **Severity & Compliance** | Impact assessment | `CRITICAL [SOC2,PCI-DSS,HIPAA,ISO27001]` |
 | **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
 | **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A05_2021-Injection/) |
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

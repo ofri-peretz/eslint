@@ -1,0 +1,19 @@
+{
+  "title": "Rules",
+  "pages": [
+    "consistent-existence-index-check",
+    "consistent-function-scoping",
+    "ddd-anemic-domain-model",
+    "ddd-value-object-immutability",
+    "enforce-naming",
+    "enforce-rest-conventions",
+    "filename-case",
+    "no-await-in-loop",
+    "no-dynamic-require",
+    "no-external-api-calls-in-utils",
+    "no-instanceof-array",
+    "no-unreadable-iife",
+    "prefer-at",
+    "prefer-event-target"
+  ]
+}

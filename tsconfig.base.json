@@ -42,6 +42,9 @@
       ],
       "@interlace/cwe-analytics-engine": [
         "tools/cwe-analytics-engine/src/index.ts"
+      ],
+      "eslint-plugin-node-security": [
+        "packages/eslint-plugin-node-security/src/index.ts"
       ]
     }
   },

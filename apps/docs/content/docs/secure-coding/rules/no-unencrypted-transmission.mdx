@@ -1,12 +1,11 @@
 ---
-title: "no-unencrypted-transmission"
-description: "Detects unencrypted data transmission (HTTP vs HTTPS, plain text protocols). This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-unencrypted-transmission
+description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** unencrypted, CWE-319, security, ESLint rule, HTTP, HTTPS, encryption, TLS, SSL, data transmission, LLM-optimized, code security
+> **Keywords:** unencrypted, [CWE-319](https://cwe.mitre.org/data/definitions/319.html), security, ESLint rule, HTTP, HTTPS, encryption, TLS, SSL, data transmission, LLM-optimized, code security
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects unencrypted data transmission (HTTP vs HTTPS, plain text protocols). This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
 
@@ -42,21 +41,21 @@ Detects unencrypted data transmission (HTTP vs HTTPS, plain text protocols). Thi
   }
 }}%%
 flowchart TD
-    A["🔍 Analyze URL/String"] --> B{"Contains Protocol?"}
-    B -->|No| C["✅ Valid: No protocol"]
-    B -->|Yes| D{"Is Insecure Protocol?"}
-    D -->|No| E["✅ Valid: HTTPS/WSS/etc."]
-    D -->|Yes| F{"Protocol Type"}
-    F --> G["HTTP"]
-    F --> H["WS"]
-    F --> I["MongoDB"]
-    F --> J["Redis"]
-    F --> K["MySQL"]
-    G --> L["❌ Report: Use HTTPS"]
-    H --> M["❌ Report: Use WSS"]
-    I --> N["❌ Report: Use MongoDB+srv"]
-    J --> O["❌ Report: Use Redis TLS"]
-    K --> P["❌ Report: Use MySQL SSL"]
+    A[🔍 Analyze URL/String] --> B{Contains Protocol?}
+    B -->|No| C[✅ Valid: No protocol]
+    B -->|Yes| D{Is Insecure Protocol?}
+    D -->|No| E[✅ Valid: HTTPS/WSS/etc.]
+    D -->|Yes| F{Protocol Type}
+    F --> G[HTTP]
+    F --> H[WS]
+    F --> I[MongoDB]
+    F --> J[Redis]
+    F --> K[MySQL]
+    G --> L[❌ Report: Use HTTPS]
+    H --> M[❌ Report: Use WSS]
+    I --> N[❌ Report: Use MongoDB+srv]
+    J --> O[❌ Report: Use Redis TLS]
+    K --> P[❌ Report: Use MySQL SSL]
 
     style C fill:#d1fae5,stroke:#059669,stroke-width:2px
     style E fill:#d1fae5,stroke:#059669,stroke-width:2px
@@ -65,9 +64,7 @@ flowchart TD
     style N fill:#fee2e2,stroke:#dc2626,stroke-width:2px
     style O fill:#fee2e2,stroke:#dc2626,stroke-width:2px
     style P fill:#fee2e2,stroke:#dc2626,stroke-width:2px
-
 ```
-
 
 ## Why This Matters
 
@@ -189,10 +186,6 @@ fetch('https://api.example.com/data');
 3. **Database encryption**: Use TLS/SSL for database connections
 4. **Environment variables**: Store URLs in environment variables
 5. **Test exceptions**: Use `allowInTests: true` for localhost in tests
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

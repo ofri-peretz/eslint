@@ -1,0 +1,91 @@
+---
+title: detect-rag-injection-risks
+description: Detect Rag Injection Risks
+---
+
+> Detect Rag Injection Risks
+
+Detect RAG/document inputs reaching LLM without content scanning.
+
+**OWASP LLM Top 10 2025**: LLM01 - Prompt Injection  
+**CWE**: [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
+**Severity**: 🔴 High
+
+## Rule Details
+
+Flags RAG operations and document retrieval without content scanning or Content Disarm and Reconstruction (CDR).
+
+### ❌ Incorrect
+
+```typescript
+const docs = await retriever.getRelevantDocuments(query);
+await llm.complete(docs);
+
+await vectorStore.addDocuments(documents);
+```
+
+### ✅ Correct
+
+```typescript
+const safe = await scanDocument(retrievedDoc);
+await vectorStore.add(safe);
+
+const clean = await cdr.process(document);
+await embeddings.create(clean);
+```
+
+## Options
+
+```json
+{
+  "vercel-ai-security/detect-rag-injection-risks": [
+    "error",
+    {
+      "ragPatterns": ["retriever", "vectorstore", "embedding"],
+      "trustedSanitizers": ["scanDocument", "cdr", "contentFilter"]
+    }
+  ]
+}
+```
+
+## Version
+
+Introduced in v1.0.0
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Query from Variable
+
+**Why**: Query strings from variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Query from variable
+const query = `SELECT * FROM users WHERE id = ${userId}`;
+db.execute(query);
+```
+
+**Mitigation**: Always use parameterized queries.
+
+### Custom Query Builders
+
+**Why**: Custom ORM/query builders not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom builder
+customQuery.where(userInput).execute();
+```
+
+**Mitigation**: Review all query builder patterns.
+
+### Template Engines
+
+**Why**: Template-based queries not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Template
+executeTemplate('query.sql', { userId });
+```
+
+**Mitigation**: Validate all template variables.

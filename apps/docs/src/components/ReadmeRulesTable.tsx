@@ -243,7 +243,7 @@ export function ReadmeRulesTable({ plugin, limit, compact = false }: ReadmeRules
         const response = await import(`@/data/plugin-rules/${plugin}.json`);
         setData(response.default || response);
       } catch (err) {
-        console.error(`Failed to load rules for ${plugin}:`, err);
+        console.warn(`[RulesTable] Stubs not found for ${plugin}`);
         setError(`Rules data not available for ${plugin}`);
       } finally {
         setIsLoading(false);

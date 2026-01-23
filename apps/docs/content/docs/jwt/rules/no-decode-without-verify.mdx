@@ -1,10 +1,7 @@
 ---
-title: "no-decode-without-verify"
-description: "**Severity:** \udfe0 High"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-decode-without-verify
+description: Disallow trusting decoded JWT payload without signature verification
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Disallow trusting decoded JWT payload without signature verification
 
@@ -16,7 +13,7 @@ import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-345 OWASP:A08 CVSS:7.5 | Insufficient Verification of Data Authenticity detected | HIGH
+🔒 [CWE-345](https://cwe.mitre.org/data/definitions/345.html) OWASP:A08 CVSS:7.5 | Insufficient Verification of Data Authenticity detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A08_2021/
 ```
 
@@ -74,10 +71,6 @@ const { payload } = await jwtVerify(token, key);
 ## When Not To Use It
 
 Use `@decoded-header-only` annotation when inspecting token headers before verification routing.
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

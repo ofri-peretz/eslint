@@ -1,0 +1,26 @@
+{
+  "title": "Rules",
+  "pages": [
+    "cognitive-complexity",
+    "error-message",
+    "expiring-todo-comments",
+    "identical-functions",
+    "max-parameters",
+    "nested-complexity-hotspots",
+    "no-commented-code",
+    "no-console-log",
+    "no-console-spaces",
+    "no-deprecated-api",
+    "no-lonely-if",
+    "no-missing-error-context",
+    "no-missing-null-checks",
+    "no-nested-ternary",
+    "no-process-exit",
+    "no-silent-errors",
+    "no-unhandled-promise",
+    "no-unsafe-type-narrowing",
+    "prefer-code-point",
+    "prefer-dependency-version-strategy",
+    "prefer-dom-node-text-content"
+  ]
+}

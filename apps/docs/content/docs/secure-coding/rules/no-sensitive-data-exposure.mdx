@@ -1,12 +1,11 @@
 ---
-title: "no-sensitive-data-exposure"
-description: "ESLint Rule: no-sensitive-data-exposure. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-sensitive-data-exposure
+description: "CWE: [CWE-359](https://cwe.mitre.org/data/definitions/359.html)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** no sensitive data exposure, security, ESLint rule, JavaScript, TypeScript, CWE-532
+> **Keywords:** no sensitive data exposure, security, ESLint rule, JavaScript, TypeScript, [CWE-532](https://cwe.mitre.org/data/definitions/532.html)
+**CWE:** [CWE-359](https://cwe.mitre.org/data/definitions/359.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 ESLint Rule: no-sensitive-data-exposure. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
@@ -32,7 +31,7 @@ ESLint Rule: no-sensitive-data-exposure. This rule is part of [`eslint-plugin-se
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-⚠️ CWE-532 OWASP:A09 CVSS:5.3 | Log Information Exposure detected | MEDIUM [GDPR,HIPAA,PCI-DSS,SOC2]
+⚠️ [CWE-532](https://cwe.mitre.org/data/definitions/532.html) OWASP:A09 CVSS:5.3 | Log Information Exposure detected | MEDIUM [GDPR,HIPAA,PCI-DSS,SOC2]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A09_2021/
 ```
 
@@ -63,18 +62,16 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
   }
 }}%%
 flowchart TD
-    A["🔍 Detect no sensitive data exposure"] --> B{"Valid pattern?"}
-    B -->|❌ No| C["🚨 Report violation"]
-    B -->|✅ Yes| D["✅ Pass"]
+    A[🔍 Detect no sensitive data exposure] --> B{Valid pattern?}
+    B -->|❌ No| C[🚨 Report violation]
+    B -->|✅ Yes| D[✅ Pass]
 
     classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
     classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
 
     class A startNode
     class C errorNode
-
 ```
-
 
 ### Why This Matters
 
@@ -127,10 +124,6 @@ export default [
 ## Related Rules
 
 - [`rule-name`](./rule-name.md) - Description
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

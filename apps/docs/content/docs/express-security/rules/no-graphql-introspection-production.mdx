@@ -1,10 +1,7 @@
 ---
-title: "no-graphql-introspection-production"
-description: "**Severity:** \udfe1 Warning"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-graphql-introspection-production
+description: Disallow GraphQL introspection in production environments
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Disallow GraphQL introspection in production environments
 
@@ -77,10 +74,6 @@ const server = new ApolloServer({
 
 - Development environments where introspection aids debugging
 - Internal APIs not exposed to the public
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

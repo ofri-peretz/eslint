@@ -1,112 +1,119 @@
 ---
-title: "no-hardcoded-session-tokens"
-description: "The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: no-hardcoded-session-tokens
+description: Detects hardcoded session/JWT tokens in code
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
+> Detects hardcoded session/JWT tokens in code
 
-> Security rule for mobile applications
-
-## Error Message Format
-
-The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
-
-```text
-🔒 CWE-798 OWASP:A04 CVSS:9.8 | Hardcoded Credentials detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001,NIST-CSF]
-   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A04_2021/
-```
-
-### Message Components
-
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-798](https://cwe.mitre.org/data/definitions/798.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description** | Specific vulnerability | `Hardcoded Credentials detected` |
-| **Severity & Compliance** | Impact assessment | `CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001,NIST-CSF]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/) |
+**Severity:** 🔴 CRITICAL  
+**CWE:** [CWE-798: Use of Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html)  
+**OWASP Mobile:** [M1: Improper Credential Usage](https://owasp.org/www-project-mobile-top-10/)
 
 ## Rule Details
 
-This rule security rule for mobile applications.
+This rule detects hardcoded JWT tokens (starting with `eyJ`), Bearer tokens, and session identifiers. Hardcoded tokens in source code are exposed in version control, decompiled apps, and client-side code, leading to unauthorized access.
 
-**OWASP Mobile Top 10:** Mobile  
-**CWE:** [CWE-798](https://cwe.mitre.org/data/definitions/000.html)  
-**Severity:** error
+### Why This Matters
 
-## Examples
+Hardcoded session tokens create critical vulnerabilities:
 
-### ❌ Incorrect
+- **Source control exposure**: Tokens committed to Git are permanently in history
+- **Client-side exposure**: Tokens in JavaScript bundles are visible to all users
+- **Decompilation**: Mobile apps can be reverse-engineered to extract tokens
+- **No rotation**: Hardcoded tokens can't be rotated without code changes
 
-```javascript
-// Insecure pattern
+## ❌ Incorrect
+
+```typescript
+// Hardcoded JWT token
+const authToken =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'; // ❌ CRITICAL
+
+// Hardcoded Bearer token
+fetch('https://api.example.com/data', {
+  headers: {
+    Authorization: 'Bearer sk_live_51H8qL2eZvKYlo2C9S...', // ❌ API key exposed
+  },
+});
+
+// Hardcoded session ID
+const sessionId = 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6'; // ❌ Static session
+localStorage.setItem('session', sessionId);
 ```
 
-### ✅ Correct
+## ✅ Correct
 
-```javascript
-// Secure pattern
+```typescript
+// Token from environment variable
+const authToken = process.env.AUTH_TOKEN; // ✅ From environment
+
+// Token from secure server endpoint
+const response = await fetch('/api/auth/token');
+const { token } = await response.json(); // ✅ Server-generated
+
+// Session from authentication flow
+async function login(username: string, password: string) {
+  const response = await fetch('/api/login', {
+    method: 'POST',
+    body: JSON.stringify({ username, password }),
+  });
+  const { sessionToken } = await response.json();
+  return sessionToken; // ✅ Dynamic, server-issued
+}
+
+// OAuth token exchange
+const tokenResponse = await oauth2Client.getToken(authCode);
+const accessToken = tokenResponse.tokens.access_token; // ✅ OAuth flow
 ```
 
-## When Not To Use It
+## ⚙️ Configuration
 
-This rule should be enabled for all mobile and web applications to ensure security best practices.
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
+This rule has no configuration options.
 
 ## Known False Negatives
 
-The following patterns are **not detected** due to static analysis limitations:
+### Tokens from Configuration Files
 
-### Cookie from Variable
-
-**Why**: Cookie strings from variables not traced.
+**Why**: We only detect tokens in source code literals. Tokens in JSON/YAML config files are not analyzed.
 
 ```typescript
-// ❌ NOT DETECTED - Cookie from variable
-const cookie = buildCookie(name, value);
-res.setHeader('Set-Cookie', cookie);
+// ❌ NOT DETECTED - Token in imported config
+import config from './config.json'; // { "token": "eyJ..." }
+const token = config.token;
 ```
 
-**Mitigation**: Use secure cookie libraries.
+**Mitigation**: Never commit config files with tokens. Use `.gitignore` and environment variables.
 
-### Framework Abstractions
+### Tokens in Template Strings
 
-**Why**: Framework cookie APIs not analyzed.
+**Why**: Template literals with complex expressions are not fully analyzed.
 
 ```typescript
-// ❌ NOT DETECTED - Framework
-app.use(session({ cookie: opts }));
+// ❌ NOT DETECTED - Template literal
+const token = `Bearer ${staticToken}`; // If staticToken is hardcoded elsewhere
 ```
 
-**Mitigation**: Review framework configurations.
+**Mitigation**: Use linters for template literals. Review all token assignments.
 
-### Dynamic Cookie Attributes
+### Base64-Encoded Tokens
 
-**Why**: Dynamic attributes not evaluated.
+**Why**: We detect JWT format (`eyJ...`) but not all Base64-encoded tokens.
 
 ```typescript
-// ❌ NOT DETECTED - Dynamic
-const attrs = getAttributes();
-res.cookie('name', 'value', attrs);
+// ❌ NOT DETECTED - Generic Base64
+const encoded = 'c2VjcmV0LXRva2VuLWhlcmU='; // Base64 but not JWT format
+const token = atob(encoded);
 ```
 
-**Mitigation**: Ensure secure defaults.
+**Mitigation**: Never store tokens in any encoded form in source code.
 
-## Further Reading
+## 🔗 Related Rules
 
-- [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
-- [CWE-798 Details](https://cwe.mitre.org/data/definitions/000.html)
+- [`no-hardcoded-credentials`](./no-hardcoded-credentials.md) - Detect hardcoded passwords
+- [`require-secure-credential-storage`](./require-secure-credential-storage.md) - Secure storage
 
-## Related Rules
+## 📚 References
 
-- See other mobile security rules in this plugin
-
----
-
-**Category:** Mobile Security  
-**Type:** Problem  
-**Recommended:** Yes
+- [CWE-798: Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html)
+- [OWASP M1: Improper Credential Usage](https://owasp.org/www-project-mobile-top-10/)
+- [JWT Best Practices](https://tools.ietf.org/html/rfc8725)

@@ -1,12 +1,11 @@
 ---
-title: "browser-security/require-websocket-wss"
-description: "This rule enforces the use of `wss://` (WebSocket Secure) protocol instead of `ws://` (unencrypted WebSocket). Unencrypted WebSocket connections are vulnerable "
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: browser-security/require-websocket-wss
+description: "🔒 Require secure WebSocket connections (wss://) instead of unencrypted (ws://)"
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
 > 🔒 Require secure WebSocket connections (wss://) instead of unencrypted (ws://)
+**CWE:** [CWE-319](https://cwe.mitre.org/data/definitions/319.html)  
+**OWASP Mobile:** [M5: Insecure Communication](https://owasp.org/www-project-mobile-top-10/)
 
 ## Rule Details
 
@@ -26,9 +25,7 @@ sequenceDiagram
     A->>A: Reads/modifies data
     A->>C: Sends (modified) data
     Note over A: Attacker can read<br/>and modify all traffic!
-
 ```
-
 
 When you use `ws://`:
 
@@ -114,10 +111,6 @@ However, **always use `wss://` in production**. The performance overhead of TLS 
 - [MDN: WebSocket API](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
 - [CVE-2024-37890: WebSocket DoS Vulnerability](https://nvd.nist.gov/vuln/detail/CVE-2024-37890)
 
-<WhenNotToUse />
-
-<FalseNegativeCTA />
-
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
@@ -160,6 +153,6 @@ const ws = new WebSocket(config.wsEndpoint);
 
 | Category          | ID                                |
 | ----------------- | --------------------------------- |
-| OWASP Top 10 2021 | A02:2021 - Cryptographic Failures |
-| CWE               | CWE-319                           |
+| OWASP Top 10 2021 | [A02:2021](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/) - Cryptographic Failures |
+| CWE               | [CWE-319](https://cwe.mitre.org/data/definitions/319.html)                           |
 | CVSS              | 7.5 (High)                        |

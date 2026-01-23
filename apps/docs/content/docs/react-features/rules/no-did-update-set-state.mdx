@@ -1,0 +1,157 @@
+---
+title: no-did-update-set-state
+description: "Prevent calling setState in componentDidUpdate without a conditional. This rule is part of @eslint/eslint-plugin-react-features."
+---
+
+> **Keywords:** React, componentDidUpdate, setState, infinite loop, lifecycle, ESLint rule, LLM-optimized
+
+Prevent calling `setState` in `componentDidUpdate` without a conditional. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+
+## Quick Summary
+
+| Aspect         | Details                                                              |
+| -------------- | -------------------------------------------------------------------- |
+| **Severity**   | Error (correctness)                                                  |
+| **Auto-Fix**   | ❌ No (requires conditional logic)                                   |
+| **Category**   | React                                                                |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration                              |
+| **Best For**   | React class components                                               |
+
+## Rule Details
+
+Calling `setState` unconditionally in `componentDidUpdate` creates an infinite render loop. Always wrap `setState` calls in a condition that compares previous and current props/state.
+
+### Why This Matters
+
+| Issue                         | Impact                              | Solution                        |
+| ----------------------------- | ----------------------------------- | ------------------------------- |
+| 🔄 **Infinite loop**          | Application crash                   | Add conditional check           |
+| 🐛 **Performance**            | Excessive re-renders                | Compare prev/current values     |
+| 🔍 **Memory leak**            | Growing call stack                  | Proper update conditions        |
+
+## Examples
+
+### ❌ Incorrect
+
+```tsx
+class UserProfile extends React.Component {
+  componentDidUpdate() {
+    // BAD: Unconditional setState causes infinite loop!
+    this.setState({ updated: true });
+  }
+  
+  componentDidUpdate(prevProps) {
+    // BAD: No condition check
+    this.setState({ user: this.props.userId });
+  }
+}
+```
+
+### ✅ Correct
+
+```tsx
+class UserProfile extends React.Component {
+  componentDidUpdate(prevProps, prevState) {
+    // GOOD: Conditional check prevents infinite loop
+    if (prevProps.userId !== this.props.userId) {
+      this.setState({ user: null, loading: true });
+      this.fetchUser(this.props.userId);
+    }
+    
+    // GOOD: Check state changes too
+    if (prevState.count !== this.state.count) {
+      this.updateAnalytics(this.state.count);
+    }
+  }
+}
+
+// Better: Use functional components with hooks
+function UserProfile({ userId }) {
+  const [user, setUser] = useState(null);
+  
+  useEffect(() => {
+    fetchUser(userId).then(setUser);
+  }, [userId]); // Dependency array handles the condition
+}
+```
+
+## Options
+
+| Option            | Type    | Default | Description                           |
+| ----------------- | ------- | ------- | ------------------------------------- |
+| `allowInCallback` | boolean | `false` | Allow setState inside async callbacks |
+
+### Configuration with Options
+
+```javascript
+{
+  rules: {
+    'react-features/no-did-update-set-state': ['error', {
+      allowInCallback: true
+    }]
+  }
+}
+```
+
+## Configuration Examples
+
+### Basic Usage
+
+```javascript
+{
+  rules: {
+    'react-features/no-did-update-set-state': 'error'
+  }
+}
+```
+
+## Related Rules
+
+- [`no-did-mount-set-state`](./no-did-mount-set-state.md) - Similar for componentDidMount
+- [`react-class-to-hooks`](./react-class-to-hooks.md) - Migrate to hooks
+
+## Further Reading
+
+- **[componentDidUpdate](https://react.dev/reference/react/Component#componentdidupdate)** - React docs
+- **[Infinite Loop Prevention](https://react.dev/learn/you-might-not-need-an-effect)** - Effect patterns
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Dynamic Variable References
+
+**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
+
+```typescript
+// ❌ NOT DETECTED - Prop from variable
+const propValue = computedValue;
+<Component prop={propValue} /> // Computation not analyzed
+```
+
+**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
+
+### Wrapped or Aliased Functions
+
+**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
+
+```typescript
+// ❌ NOT DETECTED - Custom wrapper
+function myWrapper(data) {
+  return internalApi(data); // Wrapper not analyzed
+}
+myWrapper(unsafeInput);
+```
+
+**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
+
+### Imported Values
+
+**Why**: When values come from imports, the rule cannot analyze their origin or construction.
+
+```typescript
+// ❌ NOT DETECTED - Value from import
+import { getValue } from './helpers';
+processValue(getValue()); // Cross-file not tracked
+```
+
+**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.

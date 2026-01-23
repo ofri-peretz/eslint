@@ -129,7 +129,7 @@ This rule has no configuration options. It flags all non-literal arguments to `r
 ## 🔗 Related Rules
 
 - [`require-dependency-integrity`](./require-dependency-integrity.md) - SRI for CDN resources
-- [`require-package-lock`](./require-package-lock.md) - Enforce lock files
+- [`lock-file`](./lock-file.md) - Enforce lock files
 - [`detect-suspicious-dependencies`](./detect-suspicious-dependencies.md) - Dependency confusion
 
 ## 📚 References

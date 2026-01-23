@@ -1,10 +1,7 @@
 ---
-title: "detect-suspicious-dependencies"
-description: "This rule detects package imports that look like typosquatting attempts on popular npm packages. Typosquatting is a supply chain attack where malicious actors p"
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: detect-suspicious-dependencies
+description: Detect typosquatting attacks in npm package imports
 ---
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
 > Detect typosquatting attacks in npm package imports
 
@@ -72,10 +69,6 @@ If a package name is within 2 edits of a popular package name, it's flagged as s
   }
 }
 ```
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 

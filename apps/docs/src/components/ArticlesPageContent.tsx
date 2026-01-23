@@ -1,8 +1,8 @@
 'use client';
-// CACHE-BUSTER: 2026-01-10T20:42:00Z
+// CACHE-BUSTER: 2026-01-15T23:45:00Z
 
 import React, { useState, useMemo } from 'react';
-import { useDevToArticles, type DevToArticle } from '@/lib/api';
+import { useDevToArticles } from '@/lib/api';
 import { 
   Search, 
   ArrowUpRight, 
@@ -50,10 +50,12 @@ export function ArticlesPageContent() {
 
   const { data: articles, isLoading, error } = useDevToArticles('', 100);
 
-  // Get all unique tags, excluding 'eslint' since all articles have it
-  const allTags = Array.from(
-    new Set(articles?.flatMap((a) => a.tag_list) || [])
-  ).filter(tag => tag.toLowerCase() !== 'eslint').sort();
+  // Get all unique tags (redundant 'eslint' removal now handled in useDevToArticles)
+  const allTags = useMemo(() => {
+    return Array.from(
+      new Set(articles?.flatMap((a) => a.tag_list) || [])
+    ).sort();
+  }, [articles]);
 
   // Toggle tag selection
   const toggleTag = (tag: string) => {

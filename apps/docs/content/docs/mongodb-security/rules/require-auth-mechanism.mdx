@@ -1,12 +1,9 @@
 ---
-title: "require-auth-mechanism"
-description: "Requires explicit authentication mechanism specification for MongoDB connections."
-copyright: (c) 2025 Ofri Peretz. All rights reserved.
+title: require-auth-mechanism
+description: Requires explicit authentication mechanism specification for MongoDB connections.
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
-> **Keywords:** CWE-287, authentication, SCRAM-SHA-256, MongoDB, security
+> **Keywords:** [CWE-287](https://cwe.mitre.org/data/definitions/287.html), authentication, SCRAM-SHA-256, MongoDB, security
 
 Requires explicit authentication mechanism specification for MongoDB connections.
 
@@ -16,8 +13,8 @@ Requires explicit authentication mechanism specification for MongoDB connections
 
 | Aspect            | Details                                 |
 | ----------------- | --------------------------------------- |
-| **CWE Reference** | CWE-287 (Improper Authentication)       |
-| **OWASP**         | A07:2021 - Identification/Auth Failures |
+| **CWE Reference** | [CWE-287](https://cwe.mitre.org/data/definitions/287.html) (Improper Authentication)       |
+| **OWASP**         | [A07:2021](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/) - Identification/Auth Failures |
 | **Severity**      | Medium (CVSS: 6.5)                      |
 | **Category**      | Security                                |
 
@@ -26,7 +23,7 @@ Requires explicit authentication mechanism specification for MongoDB connections
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-287 OWASP:A07 CVSS:9.8 | Improper Authentication detected | CRITICAL
+🔒 [CWE-287](https://cwe.mitre.org/data/definitions/287.html) OWASP:A07 CVSS:9.8 | Improper Authentication detected | CRITICAL
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A07_2021/
 ```
 
@@ -85,10 +82,6 @@ mongoose.connect(uri, {
 
 - Development environments with passwordless local MongoDB
 - When using MongoDB Atlas with default secure configuration
-
-<WhenNotToUse />
-
-<FalseNegativeCTA />
 
 ## Known False Negatives
 
