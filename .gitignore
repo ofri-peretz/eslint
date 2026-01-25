@@ -106,8 +106,6 @@ test-report.junit.xml
 **/*.tsbuildinfo
 **/*.log
 **/graph.json
-**/pnpm-lock.yaml
-**/package-lock.json
 **/.DS_Store
 **/ehthumbs.db
 **/Thumbs.db
