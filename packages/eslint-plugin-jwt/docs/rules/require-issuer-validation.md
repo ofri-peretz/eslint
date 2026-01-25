@@ -1,4 +1,10 @@
-# require-issuer-validation
+---
+title: require-issuer-validation
+description: 'require-issuer-validation'
+category: security
+tags: ['security', 'jwt']
+---
+
 
 > Require issuer (iss) claim validation in JWT verify operations
 

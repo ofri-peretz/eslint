@@ -1,9 +1,9 @@
 ---
 title: no-unsafe-search-path
-description: "CWE: [CWE-22](https://cwe.mitre.org/data/definitions/22.html)"
+description: "CWE: CWE-22"
 ---
 
-> **Keywords:** search_path, schema hijacking, [CWE-426](https://cwe.mitre.org/data/definitions/426.html), pg, node-postgres, security
+> **Keywords:** search_path, schema hijacking, CWE-426, pg, node-postgres, security
 **CWE:** [CWE-22](https://cwe.mitre.org/data/definitions/22.html)
 
 Prevents dynamic `SET search_path` queries that could enable schema hijacking.
@@ -14,7 +14,7 @@ Prevents dynamic `SET search_path` queries that could enable schema hijacking.
 
 | Aspect            | Details                         |
 | ----------------- | ------------------------------- |
-| **CWE Reference** | [CWE-426](https://cwe.mitre.org/data/definitions/426.html) (Untrusted Search Path) |
+| **CWE Reference** | CWE-426 (Untrusted Search Path) |
 | **Severity**      | High (CVSS: 7.5)                |
 | **Category**      | Security                        |
 
@@ -55,7 +55,7 @@ await client.query('SET search_path = $1', [safeSchema]);
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 [CWE-426](https://cwe.mitre.org/data/definitions/426.html) OWASP:A03 CVSS:7.5 | Untrusted Search Path detected | HIGH
+🔒 CWE-426 OWASP:A03 CVSS:7.5 | Untrusted Search Path detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A03_2021/
 ```
 

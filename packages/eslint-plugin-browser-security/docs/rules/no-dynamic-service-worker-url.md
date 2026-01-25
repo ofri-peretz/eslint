@@ -1,4 +1,10 @@
-# no-dynamic-service-worker-url
+---
+title: no-dynamic-service-worker-url
+description: 'no-dynamic-service-worker-url'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > No Dynamic Service Worker Url
 

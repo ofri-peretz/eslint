@@ -1,4 +1,10 @@
-# no-sensitive-localstorage
+---
+title: no-sensitive-localstorage
+description: 'no-sensitive-localstorage'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > **Keywords:** localStorage, sessionStorage, tokens, CWE-922, security, XSS, sensitive data
 **CWE:** [CWE-359](https://cwe.mitre.org/data/definitions/359.html)  
@@ -15,7 +21,7 @@ Detects storage of sensitive data (tokens, passwords, PII) in localStorage. This
 | **CWE Reference** | CWE-922 (Insecure Storage of Sensitive Information) |
 | **Severity**      | 🔴 High                                             |
 | **Auto-Fix**      | ❌ No (requires architecture change)                |
-| **Category**      | Security                                            |
+| **Category**   | Security |
 | **Best For**      | SPAs, frontend apps handling authentication         |
 
 ## Vulnerability and Risk

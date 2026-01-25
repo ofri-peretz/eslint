@@ -1,4 +1,10 @@
-# require-schema-validation
+---
+title: require-schema-validation
+description: 'require-schema-validation'
+category: security
+tags: ['security', 'mongodb']
+---
+
 
 > **Keywords:** CWE-20, input validation, Mongoose, schema, security
 
@@ -13,7 +19,7 @@ Requires validation options on Mongoose schema fields to prevent invalid or mali
 | **CWE Reference** | CWE-20 (Improper Input Validation) |
 | **OWASP**         | A04:2021 - Insecure Design         |
 | **Severity**      | Medium (CVSS: 6.1)                 |
-| **Category**      | Security                           |
+| **Category**   | Security |
 
 ## Error Message Format
 

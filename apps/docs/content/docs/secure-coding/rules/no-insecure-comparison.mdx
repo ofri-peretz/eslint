@@ -1,9 +1,9 @@
 ---
 title: no-insecure-comparison
-description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
+description: "CWE: CWE-693"
 ---
 
-> **Keywords:** insecure comparison, [CWE-697](https://cwe.mitre.org/data/definitions/697.html), security, ESLint rule, loose equality, type coercion, == vs ===, strict equality, JavaScript security, auto-fix, LLM-optimized, code security
+> **Keywords:** insecure comparison, CWE-697, security, ESLint rule, loose equality, type coercion, == vs ===, strict equality, JavaScript security, auto-fix, LLM-optimized, code security
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
@@ -15,7 +15,7 @@ Detects insecure comparison operators (`==`, `!=`) that can lead to type coercio
 
 | Aspect            | Details                                                                    |
 | ----------------- | -------------------------------------------------------------------------- |
-| **CWE Reference** | [CWE-697](https://cwe.mitre.org/data/definitions/697.html) (Incorrect Comparison)                                             |
+| **CWE Reference** | CWE-697 (Incorrect Comparison)                                             |
 | **Severity**      | High (security vulnerability)                                              |
 | **Auto-Fix**      | ✅ Yes (replaces == with ===, != with !==)                                 |
 | **Category**      | Security                                                                   |
@@ -33,7 +33,7 @@ Detects insecure comparison operators (`==`, `!=`) that can lead to type coercio
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-⚠️ [CWE-697](https://cwe.mitre.org/data/definitions/697.html) OWASP:A06 CVSS:5.3 | Incorrect Comparison detected | MEDIUM
+⚠️ CWE-697 OWASP:A06 CVSS:5.3 | Incorrect Comparison detected | MEDIUM
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
 ```
 

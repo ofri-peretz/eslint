@@ -1,4 +1,10 @@
-# no-bypass-middleware
+---
+title: no-bypass-middleware
+description: 'no-bypass-middleware'
+category: security
+tags: ['security', 'mongodb']
+---
+
 
 > **Keywords:** CWE-284, middleware, hooks, Mongoose, pre, post, security
 
@@ -13,7 +19,7 @@ Detects Mongoose operations that bypass middleware hooks (pre/post hooks).
 | **CWE Reference** | CWE-284 (Improper Access Control) |
 | **OWASP**         | A01:2021 - Broken Access Control  |
 | **Severity**      | Medium (CVSS: 5.3)                |
-| **Category**      | Security                          |
+| **Category**   | Security |
 
 ## Error Message Format
 

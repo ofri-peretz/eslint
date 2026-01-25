@@ -1,0 +1,46 @@
+{
+  "name": "eslint-plugin-operability",
+  "version": "1.0.0",
+  "description": "ESLint rules for production behavior, resource hygiene, and log quality.",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "keywords": [
+    "eslint",
+    "eslint-plugin",
+    "interlace-quality",
+    "operability",
+    "observability",
+    "production-ready",
+    "llm-optimized"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "@interlace/eslint-devkit": "workspace:*"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.46.2",
+    "@typescript-eslint/rule-tester": "^8.46.2"
+  }
+}

@@ -1,4 +1,10 @@
-# no-missing-client-release
+---
+title: no-missing-client-release
+description: 'no-missing-client-release'
+category: security
+tags: ['security', 'postgres']
+---
+
 
 > **Keywords:** connection leak, resource management, CWE-772, pg, node-postgres, pool
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
@@ -13,7 +19,7 @@ Ensures acquired pool clients are released back to the pool.
 | ----------------- | ------------------------------------- |
 | **CWE Reference** | CWE-772 (Missing Release of Resource) |
 | **Severity**      | High (CVSS: 7.5)                      |
-| **Category**      | Resource Management                   |
+| **Category**   | Security |
 
 ## Rule Details
 

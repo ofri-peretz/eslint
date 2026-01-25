@@ -1,4 +1,10 @@
-# no-sensitive-indexeddb
+---
+title: no-sensitive-indexeddb
+description: 'no-sensitive-indexeddb'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > No Sensitive Indexeddb
 

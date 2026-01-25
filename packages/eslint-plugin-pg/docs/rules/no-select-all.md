@@ -1,4 +1,10 @@
-# no-select-all
+---
+title: no-select-all
+description: 'no-select-all'
+category: security
+tags: ['security', 'postgres']
+---
+
 
 > **Keywords:** SELECT \*, performance, quality, pg, node-postgres
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
@@ -12,7 +18,7 @@ Discourages `SELECT *` in favor of explicit column lists.
 | Aspect       | Details                   |
 | ------------ | ------------------------- |
 | **Severity** | Low (quality/performance) |
-| **Category** | Performance               |
+| **Category**   | Security |
 
 ## Rule Details
 

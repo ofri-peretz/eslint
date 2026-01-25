@@ -1,9 +1,9 @@
 ---
 title: no-insecure-ssl
-description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
+description: "CWE: CWE-693"
 ---
 
-> **Keywords:** SSL, TLS, [CWE-295](https://cwe.mitre.org/data/definitions/295.html), pg, node-postgres, security, certificate validation
+> **Keywords:** SSL, TLS, CWE-295, pg, node-postgres, security, certificate validation
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Prevents disabling SSL certificate validation in PostgreSQL connections.
@@ -14,7 +14,7 @@ Prevents disabling SSL certificate validation in PostgreSQL connections.
 
 | Aspect            | Details                                   |
 | ----------------- | ----------------------------------------- |
-| **CWE Reference** | [CWE-295](https://cwe.mitre.org/data/definitions/295.html) (Improper Certificate Validation) |
+| **CWE Reference** | CWE-295 (Improper Certificate Validation) |
 | **Severity**      | High (CVSS: 7.5)                          |
 | **Category**      | Security                                  |
 
@@ -62,7 +62,7 @@ const client = new Client({
 ## Error Message Format
 
 ```
-🔒 [CWE-295](https://cwe.mitre.org/data/definitions/295.html) | Insecure SSL: rejectUnauthorized: false disables certificate validation | HIGH
+🔒 CWE-295 | Insecure SSL: rejectUnauthorized: false disables certificate validation | HIGH
    Fix: Remove rejectUnauthorized: false or set to true, and provide CA certificate
 ```
 

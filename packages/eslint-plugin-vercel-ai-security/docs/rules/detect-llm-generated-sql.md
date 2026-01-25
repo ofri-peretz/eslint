@@ -1,4 +1,10 @@
-# detect-llm-generated-sql
+---
+title: detect-llm-generated-sql
+description: 'detect-llm-generated-sql'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Detect Llm Generated Sql
 

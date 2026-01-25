@@ -1,4 +1,10 @@
-# browser-security/no-filereader-innerhtml
+---
+title: no-filereader-innerhtml
+description: 'no-filereader-innerhtml'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > 🔒 Disallow using innerHTML with FileReader data
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  

@@ -1,4 +1,10 @@
-# require-cookie-secure-attrs
+---
+title: require-cookie-secure-attrs
+description: 'require-cookie-secure-attrs'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > Require Cookie Secure Attrs
 
@@ -94,7 +100,7 @@ Cookies.set('name', 'value'); // May not set Secure
 
 ```typescript
 // ❌ NOT DETECTED - Conditional attributes
-const attrs = isDev ? '' : '; Secure';
+const attrs = isDev ? ' : '; Secure';
 document.cookie = 'name=value' + attrs;
 ```
 

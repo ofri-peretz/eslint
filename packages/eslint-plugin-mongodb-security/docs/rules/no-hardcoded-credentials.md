@@ -1,4 +1,10 @@
-# no-hardcoded-credentials
+---
+title: no-hardcoded-credentials
+description: 'no-hardcoded-credentials'
+category: security
+tags: ['security', 'mongodb']
+---
+
 
 > **Keywords:** CWE-798, hardcoded credentials, MongoDB, authentication, security
 
@@ -13,7 +19,7 @@ Detects hardcoded MongoDB authentication credentials in connection options.
 | **CWE Reference** | CWE-798 (Hardcoded Credentials)         |
 | **OWASP**         | A07:2021 - Identification/Auth Failures |
 | **Severity**      | High (CVSS: 7.5)                        |
-| **Category**      | Security                                |
+| **Category**   | Security |
 
 ## Error Message Format
 

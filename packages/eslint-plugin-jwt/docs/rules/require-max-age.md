@@ -1,4 +1,10 @@
-# require-max-age
+---
+title: require-max-age
+description: 'require-max-age'
+category: security
+tags: ['security', 'jwt']
+---
+
 
 > Require maxAge option in verify operations to enforce token freshness
 

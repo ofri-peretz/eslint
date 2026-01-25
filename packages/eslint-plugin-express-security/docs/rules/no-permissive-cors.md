@@ -1,4 +1,10 @@
-# no-permissive-cors
+---
+title: no-permissive-cors
+description: 'no-permissive-cors'
+category: security
+tags: ['security', 'express']
+---
+
 
 > **Keywords:** CORS, cross-origin resource sharing, CWE-942, security, ESLint rule, origin validation, wildcard CORS, Access-Control-Allow-Origin, auto-fix, LLM-optimized
 
@@ -13,7 +19,7 @@ Detects overly permissive CORS configurations in Express.js applications. This r
 | **CWE Reference** | CWE-942 (Permissive Cross-domain Policy)         |
 | **Severity**      | 🔴 High                                          |
 | **Auto-Fix**      | ✅ Yes (suggests origin whitelist)               |
-| **Category**      | Security                                         |
+| **Category**   | Security |
 | **Best For**      | Express.js APIs, REST services, web applications |
 
 ## Vulnerability and Risk

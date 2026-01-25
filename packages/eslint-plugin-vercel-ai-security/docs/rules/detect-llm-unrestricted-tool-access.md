@@ -1,4 +1,10 @@
-# detect-llm-unrestricted-tool-access
+---
+title: detect-llm-unrestricted-tool-access
+description: 'detect-llm-unrestricted-tool-access'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Detect Llm Unrestricted Tool Access
 

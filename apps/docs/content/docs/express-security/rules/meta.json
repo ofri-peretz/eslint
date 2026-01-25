@@ -2,6 +2,7 @@
   "title": "Rules",
   "pages": [
     "no-cors-credentials-wildcard",
+    "no-exposed-debug-endpoints",
     "no-express-unsafe-regex-route",
     "no-graphql-introspection-production",
     "no-insecure-cookie-options",

@@ -1,4 +1,10 @@
-# require-algorithm-whitelist
+---
+title: require-algorithm-whitelist
+description: 'require-algorithm-whitelist'
+category: security
+tags: ['security', 'jwt']
+---
+
 
 > Require explicit algorithm specification in JWT verify operations
 

@@ -1,4 +1,10 @@
-# no-select-sensitive-fields
+---
+title: no-select-sensitive-fields
+description: 'no-select-sensitive-fields'
+category: security
+tags: ['security', 'mongodb']
+---
+
 
 > **Keywords:** CWE-200, information exposure, password, Mongoose, security
 
@@ -13,7 +19,7 @@ Detects queries that may return sensitive fields like passwords, tokens, or API 
 | **CWE Reference** | CWE-200 (Information Exposure)   |
 | **OWASP**         | A01:2021 - Broken Access Control |
 | **Severity**      | Medium (CVSS: 5.3)               |
-| **Category**      | Security                         |
+| **Category**   | Security |
 
 ## Rule Details
 

@@ -1,4 +1,10 @@
-# no-electron-security-issues
+---
+title: no-electron-security-issues
+description: 'no-electron-security-issues'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** Electron, CWE-16, nodeIntegration, contextIsolation, desktop security
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
@@ -15,7 +21,7 @@ Detects Electron security vulnerabilities and insecure configurations. This rule
 | **CWE Reference** | [CWE-16](https://cwe.mitre.org/data/definitions/16.html) (Configuration) |
 | **Severity**      | High (CVSS 8.8)                                                          |
 | **Auto-Fix**      | 💡 Suggestions available                                                 |
-| **Category**      | Platform-Specific                                                        |
+| **Category**   | Security |
 
 ## Vulnerability and Risk
 

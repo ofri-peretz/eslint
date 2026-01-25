@@ -1,4 +1,10 @@
-# no-unsafe-eval-csp
+---
+title: no-unsafe-eval-csp
+description: 'no-unsafe-eval-csp'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > No Unsafe Eval Csp
 

@@ -1,4 +1,10 @@
-# no-exposed-private-fields
+---
+title: no-exposed-private-fields
+description: 'no-exposed-private-fields'
+category: security
+tags: ['security', 'nestjs']
+---
+
 
 > Detect exposed sensitive fields in DTOs/entities
 

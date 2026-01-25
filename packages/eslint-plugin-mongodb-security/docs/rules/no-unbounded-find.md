@@ -1,4 +1,10 @@
-# no-unbounded-find
+---
+title: no-unbounded-find
+description: 'no-unbounded-find'
+category: security
+tags: ['security', 'mongodb']
+---
+
 
 > **Keywords:** CWE-400, resource exhaustion, limit, MongoDB, DoS, security
 
@@ -13,7 +19,7 @@ Requires `limit()` on find queries to prevent resource exhaustion from unbounded
 | **CWE Reference** | CWE-400 (Resource Exhaustion) |
 | **OWASP**         | A04:2021 - Insecure Design    |
 | **Severity**      | Low (CVSS: 4.3)               |
-| **Category**      | Security / Performance        |
+| **Category**   | Security |
 
 ## Error Message Format
 

@@ -1,9 +1,9 @@
 ---
 title: no-env-logging
-description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
+description: "CWE: CWE-693"
 ---
 
-> **Keywords:** environment variables, logging, Lambda, [CWE-532](https://cwe.mitre.org/data/definitions/532.html), security, sensitive data exposure
+> **Keywords:** environment variables, logging, Lambda, CWE-532, security, sensitive data exposure
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
@@ -15,7 +15,7 @@ Detects logging of environment variables which may contain secrets. This rule is
 
 | Aspect            | Details                                             |
 | ----------------- | --------------------------------------------------- |
-| **CWE Reference** | [CWE-532](https://cwe.mitre.org/data/definitions/532.html) (Insertion of Sensitive Info into Log File) |
+| **CWE Reference** | CWE-532 (Insertion of Sensitive Info into Log File) |
 | **Severity**      | 🟡 Warning                                          |
 | **Auto-Fix**      | ❌ No (requires manual review)                      |
 | **Category**      | Security                                            |
@@ -174,7 +174,7 @@ console.log(data); // Logs all secrets!
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-⚠️ [CWE-532](https://cwe.mitre.org/data/definitions/532.html) OWASP:A09 CVSS:5.3 | Log Information Exposure detected | MEDIUM [GDPR,HIPAA,PCI-DSS,SOC2]
+⚠️ CWE-532 OWASP:A09 CVSS:5.3 | Log Information Exposure detected | MEDIUM [GDPR,HIPAA,PCI-DSS,SOC2]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A09_2021/
 ```
 

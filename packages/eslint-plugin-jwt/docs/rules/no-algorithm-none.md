@@ -1,4 +1,10 @@
-# no-algorithm-none
+---
+title: no-algorithm-none
+description: 'no-algorithm-none'
+category: security
+tags: ['security', 'jwt']
+---
+
 
 > Disallow JWT "none" algorithm which bypasses signature verification (CVE-2022-23540)
 

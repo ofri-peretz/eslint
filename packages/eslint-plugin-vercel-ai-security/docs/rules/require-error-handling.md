@@ -1,4 +1,10 @@
-# `require-error-handling`
+---
+title: require-error-handling
+description: 'require-error-handling'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Ensures AI SDK calls are wrapped in try-catch to prevent cascading failures.
 

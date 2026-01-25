@@ -2,6 +2,7 @@
   "title": "Rules",
   "pages": [
     "no-env-logging",
+    "no-exposed-debug-endpoints",
     "no-hardcoded-credentials-sdk",
     "no-permissive-cors-middy",
     "no-permissive-cors-response",

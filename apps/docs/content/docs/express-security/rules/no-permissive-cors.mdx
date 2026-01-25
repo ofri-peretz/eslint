@@ -3,7 +3,7 @@ title: no-permissive-cors
 description: Detects overly permissive CORS configurations in Express.js applications. This rule is part of eslint-plugin-express-security and provides LLM-optimized error m
 ---
 
-> **Keywords:** CORS, cross-origin resource sharing, [CWE-942](https://cwe.mitre.org/data/definitions/942.html), security, ESLint rule, origin validation, wildcard CORS, Access-Control-Allow-Origin, auto-fix, LLM-optimized
+> **Keywords:** CORS, cross-origin resource sharing, CWE-942, security, ESLint rule, origin validation, wildcard CORS, Access-Control-Allow-Origin, auto-fix, LLM-optimized
 
 Detects overly permissive CORS configurations in Express.js applications. This rule is part of [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) and provides LLM-optimized error messages.
 
@@ -13,7 +13,7 @@ Detects overly permissive CORS configurations in Express.js applications. This r
 
 | Aspect            | Details                                          |
 | ----------------- | ------------------------------------------------ |
-| **CWE Reference** | [CWE-942](https://cwe.mitre.org/data/definitions/942.html) (Permissive Cross-domain Policy)         |
+| **CWE Reference** | CWE-942 (Permissive Cross-domain Policy)         |
 | **Severity**      | 🔴 High                                          |
 | **Auto-Fix**      | ✅ Yes (suggests origin whitelist)               |
 | **Category**      | Security                                         |
@@ -168,7 +168,7 @@ app.use(
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 [CWE-942](https://cwe.mitre.org/data/definitions/942.html) OWASP:A01 CVSS:7.5 | CORS Misconfiguration detected | HIGH
+🔒 CWE-942 OWASP:A01 CVSS:7.5 | CORS Misconfiguration detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
 ```
 

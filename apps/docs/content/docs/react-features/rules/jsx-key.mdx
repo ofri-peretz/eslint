@@ -150,14 +150,14 @@ function ItemList({ items }) {
 
 ### Choosing Keys
 
-| Source          | Quality  | Example               |
-| --------------- | -------- | --------------------- |
-| Database ID     | ✅ Best  | `key={user.id}`       |
-| Unique field    | ✅ Good  | `key={item.slug}`     |
-| Compound unique | ✅ Good  | `key="category-id"`   |
-| UUID/nanoid     | ⚠️ OK    | `key={generateId()}`  |
-| Array index     | ❌ Avoid | `key={index}`         |
-| Random number   | ❌ Never | `key={Math.random()}` |
+| Source          | Quality  | Example                       |
+| --------------- | -------- | ----------------------------- |
+| Database ID     | ✅ Best  | `key={user.id}`               |
+| Unique field    | ✅ Good  | `key={item.slug}`             |
+| Compound unique | ✅ Good  | `key={category + "-" + name}` |
+| UUID/nanoid     | ⚠️ OK    | `key={generateId()}`          |
+| Array index     | ❌ Avoid | `key={index}`                 |
+| Random number   | ❌ Never | `key={Math.random()}`         |
 
 ### When Index Keys Are Acceptable
 

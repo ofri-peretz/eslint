@@ -1,4 +1,10 @@
-# no-format-string-injection
+---
+title: no-format-string-injection
+description: 'no-format-string-injection'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** format string injection, CWE-134, printf, util.format, logging, security
 **CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
@@ -15,7 +21,7 @@ Detects format string injection vulnerabilities. This rule is part of [`eslint-p
 | **CWE Reference** | [CWE-134](https://cwe.mitre.org/data/definitions/134.html) (Format String Vulnerability) |
 | **Severity**      | Critical (CVSS 9.8)                                                                      |
 | **Auto-Fix**      | 💡 Suggestions available                                                                 |
-| **Category**      | Injection Prevention                                                                     |
+| **Category**   | Security |
 
 ## Vulnerability and Risk
 

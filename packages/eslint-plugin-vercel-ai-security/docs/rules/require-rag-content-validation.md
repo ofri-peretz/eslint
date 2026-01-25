@@ -1,4 +1,10 @@
-# `require-rag-content-validation`
+---
+title: require-rag-content-validation
+description: 'require-rag-content-validation'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Requires validation of RAG content before including in AI prompts.
 

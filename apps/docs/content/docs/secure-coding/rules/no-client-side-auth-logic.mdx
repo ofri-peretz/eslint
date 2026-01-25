@@ -3,7 +3,7 @@ title: no-client-side-auth-logic
 description: Detects authentication logic in client-side code that can be easily bypassed.
 ---
 
-> **Keywords:** client-side auth, [CWE-602](https://cwe.mitre.org/data/definitions/602.html), localStorage auth, security bypass, authentication, JavaScript security
+> **Keywords:** client-side auth, CWE-602, localStorage auth, security bypass, authentication, JavaScript security
 
 Detects authentication logic in client-side code that can be easily bypassed.
 
@@ -85,7 +85,7 @@ await verifyPermission('admin:read');
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-⚠️ [CWE-602](https://cwe.mitre.org/data/definitions/602.html) OWASP:A06 CVSS:6.5 | Client-Side Enforcement of Server-Side Security detected | MEDIUM
+⚠️ CWE-602 OWASP:A06 CVSS:6.5 | Client-Side Enforcement of Server-Side Security detected | MEDIUM
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
 ```
 

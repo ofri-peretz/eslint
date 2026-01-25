@@ -1,4 +1,10 @@
-# no-exposed-debug-endpoints
+---
+title: no-exposed-debug-endpoints
+description: 'no-exposed-debug-endpoints'
+category: security
+tags: ['security', 'express']
+---
+
 
 > **Keywords:** debug endpoint, admin path, exposed routes, express security, CWE-489, OWASP M8, test endpoints, health checks, information disclosure, unauthorized access, server security
 
@@ -16,7 +22,7 @@ Identifies potential debug, administration, or testing endpoints that are often 
 | **CWE Reference** | [CWE-489](https://cwe.mitre.org/data/definitions/489.html) (Active Debug) |
 | **Severity**      | 🟠 HIGH (security misconfiguration)                                       |
 | **Auto-Fix**      | ❌ Not available (requires manual review/auth implementation)             |
-| **Category**      | Environment & Platform Security                                           |
+| **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                   |
 | **Best For**      | Node.js applications, Express servers, API Gateways                       |
 

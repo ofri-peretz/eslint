@@ -1,4 +1,10 @@
-# browser-security/no-jwt-in-storage
+---
+title: no-jwt-in-storage
+description: 'no-jwt-in-storage'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > 🔒 Disallow storing JWT tokens in localStorage or sessionStorage
 **CWE:** [CWE-311](https://cwe.mitre.org/data/definitions/311.html)  

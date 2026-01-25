@@ -1,4 +1,10 @@
-# require-projection
+---
+title: require-projection
+description: 'require-projection'
+category: security
+tags: ['security', 'mongodb']
+---
+
 
 > **Keywords:** CWE-200, projection, field selection, MongoDB, information exposure
 
@@ -13,7 +19,7 @@ Requires field projection on queries to minimize data exposure.
 | **CWE Reference** | CWE-200 (Information Exposure)   |
 | **OWASP**         | A01:2021 - Broken Access Control |
 | **Severity**      | Low (CVSS: 3.7)                  |
-| **Category**      | Security / Performance           |
+| **Category**   | Security |
 
 ## Rule Details
 

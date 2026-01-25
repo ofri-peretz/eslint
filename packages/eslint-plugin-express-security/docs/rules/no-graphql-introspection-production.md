@@ -1,4 +1,10 @@
-# no-graphql-introspection-production
+---
+title: no-graphql-introspection-production
+description: 'no-graphql-introspection-production'
+category: security
+tags: ['security', 'express']
+---
+
 
 > Disallow GraphQL introspection in production environments
 

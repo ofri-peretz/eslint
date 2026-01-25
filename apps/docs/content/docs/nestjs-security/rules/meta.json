@@ -1,6 +1,7 @@
 {
   "title": "Rules",
   "pages": [
+    "no-exposed-debug-endpoints",
     "no-exposed-private-fields",
     "no-missing-validation-pipe",
     "require-class-validator",

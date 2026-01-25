@@ -1,4 +1,10 @@
-# no-express-unsafe-regex-route
+---
+title: no-express-unsafe-regex-route
+description: 'no-express-unsafe-regex-route'
+category: security
+tags: ['security', 'express']
+---
+
 
 > Disallow vulnerable regular expressions in route definitions
 

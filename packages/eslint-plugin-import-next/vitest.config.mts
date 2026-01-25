@@ -18,6 +18,7 @@ export default defineConfig({
     watch: false,
     include: ['src/**/*.test.ts'],
     passWithNoTests: true,
+    testTimeout: 30000, // Increase timeout for tests that require file system resolution
     globalSetup: ['../../vitest.global-setup.ts'],
     coverage: {
       provider: 'v8',

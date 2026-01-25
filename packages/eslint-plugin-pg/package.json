@@ -35,13 +35,15 @@
   "keywords": [
     "eslint",
     "eslint-plugin",
+    "interlace-security",
     "pg",
     "postgres",
     "postgresql",
     "node-postgres",
     "security",
     "best-practices",
-    "code-quality"
+    "code-quality",
+    "llm-optimized"
   ],
   "engines": {
     "node": ">=18.0.0"
@@ -55,6 +57,7 @@
     }
   },
   "dependencies": {
+    "tslib": "^2.3.0",
     "@interlace/eslint-devkit": "^1.2.1"
   },
   "devDependencies": {

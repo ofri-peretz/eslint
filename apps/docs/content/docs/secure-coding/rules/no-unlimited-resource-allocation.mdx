@@ -1,9 +1,9 @@
 ---
 title: no-unlimited-resource-allocation
-description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
+description: "CWE: CWE-693"
 ---
 
-> **Keywords:** resource allocation, [CWE-770](https://cwe.mitre.org/data/definitions/770.html), DoS, memory exhaustion, security, rate limiting
+> **Keywords:** resource allocation, CWE-770, DoS, memory exhaustion, security, rate limiting
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
@@ -119,7 +119,7 @@ const results = await Promise.all(urls.map((url) => limit(() => fetch(url))));
 ## Error Message Format
 
 ```
-🔒 [CWE-770](https://cwe.mitre.org/data/definitions/770.html) OWASP:A05-Misconfig CVSS:7.5 | Unlimited Resource Allocation | HIGH [SOC2,PCI-DSS]
+🔒 CWE-770 OWASP:A05-Misconfig CVSS:7.5 | Unlimited Resource Allocation | HIGH [SOC2,PCI-DSS]
    Fix: Add size limits and validate user input before allocation | https://cwe.mitre.org/...
 ```
 

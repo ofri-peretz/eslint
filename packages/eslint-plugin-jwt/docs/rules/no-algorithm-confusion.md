@@ -1,4 +1,10 @@
-# no-algorithm-confusion
+---
+title: no-algorithm-confusion
+description: 'no-algorithm-confusion'
+category: security
+tags: ['security', 'jwt']
+---
+
 
 > Prevent algorithm confusion attacks using symmetric algorithms with asymmetric keys
 
@@ -11,7 +17,7 @@
 | **CWE Reference** | [CWE-347](https://cwe.mitre.org/data/definitions/347.html)                 |
 | **Severity**      | Critical                                                                   |
 | **Auto-Fix**      | ❌ No auto-fix available                                                   |
-| **Category**      | Security                                                                   |
+| **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                    |
 | **Best For**      | Protecting asymmetric JWT verification from algorithm substitution attacks |
 

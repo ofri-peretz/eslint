@@ -14,7 +14,7 @@ Disallow `dangerouslySetInnerHTML` usage to prevent XSS vulnerabilities. This ru
 | **Severity**   | Error (security)                                                     |
 | **Auto-Fix**   | ❌ No (requires manual review)                                       |
 | **Category**   | React / Security                                                     |
-| **CWE**        | [CWE-79](https://cwe.mitre.org/data/definitions/79.html) (Cross-site Scripting)                                        |
+| **CWE**        | CWE-79 (Cross-site Scripting)                                        |
 | **ESLint MCP** | ✅ Optimized for ESLint MCP integration                              |
 | **Best For**   | All React projects, especially security-critical applications        |
 
@@ -23,7 +23,7 @@ Disallow `dangerouslySetInnerHTML` usage to prevent XSS vulnerabilities. This ru
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-⚠️ [CWE-79](https://cwe.mitre.org/data/definitions/79.html) OWASP:A05 CVSS:6.1 | Cross-site Scripting (XSS) detected | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
+⚠️ CWE-79 OWASP:A05 CVSS:6.1 | Cross-site Scripting (XSS) detected | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 
@@ -230,7 +230,7 @@ Only disable this rule when:
 | Feature              | no-danger           | eslint-plugin-react | Manual review      |
 | -------------------- | ------------------- | ------------------- | ------------------ |
 | **XSS Detection**    | ✅ Yes              | ✅ Yes              | ⚠️ Manual          |
-| **CWE Reference**    | ✅ [CWE-79](https://cwe.mitre.org/data/definitions/79.html)           | ❌ No               | ❌ No              |
+| **CWE Reference**    | ✅ CWE-79           | ❌ No               | ❌ No              |
 | **LLM-Optimized**    | ✅ Yes              | ❌ No               | ❌ No              |
 | **ESLint MCP**       | ✅ Optimized        | ❌ No               | ❌ No              |
 

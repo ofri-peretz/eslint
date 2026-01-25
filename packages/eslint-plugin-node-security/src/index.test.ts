@@ -21,6 +21,28 @@ describe('eslint-plugin-node-security plugin interface', () => {
       'no-zip-slip',
       'no-arbitrary-file-access',
       'no-data-in-temp-storage',
+      'detect-suspicious-dependencies',
+      'lock-file',
+      'no-dynamic-dependency-loading',
+      'require-dependency-integrity',
+      'require-secure-credential-storage',
+      'require-secure-deletion',
+      'require-storage-encryption',
+      'no-dynamic-require',
+      // Migrated crypto rules
+      'no-cryptojs',
+      'no-cryptojs-weak-random',
+      'no-deprecated-cipher-method',
+      'no-ecb-mode',
+      'no-insecure-key-derivation',
+      'no-insecure-rsa-padding',
+      'no-self-signed-certs',
+      'no-sha1-hash',
+      'no-static-iv',
+      'no-timing-unsafe-compare',
+      'no-weak-cipher-algorithm',
+      'no-weak-hash-algorithm',
+      'prefer-native-crypto',
     ]);
   });
 

@@ -1,4 +1,10 @@
-# no-unsafe-regex-construction
+---
+title: no-unsafe-regex-construction
+description: 'no-unsafe-regex-construction'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** no unsafe regex construction, security, ESLint rule, JavaScript, TypeScript, CWE-400, CWE-185, ReDoS, injection
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
@@ -13,7 +19,7 @@ ESLint Rule: no-unsafe-regex-construction with LLM-optimized suggestions and aut
 | **CWE Reference** | [CWE-185](https://cwe.mitre.org/data/definitions/185.html) (Incorrect Regular Expression) |
 | **Severity**      | Error (Security)                                                                          |
 | **Auto-Fix**      | ❌ No                                                                                     |
-| **Category**      | Security                                                                                  |
+| **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                                   |
 | **Best For**      | Production applications handling user input                                               |
 | **Suggestions**   | ✅ Advice on escaping input                                                               |

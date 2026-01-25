@@ -1,110 +1,133 @@
-# no-ecb-mode
+---
+title: no-ecb-mode
+description: 'CWE: [CWE-327](https://cwe.mitre.org/data/definitions/327.html)'
+category: security
+tags: ['security', 'crypto']
+---
 
-> No Ecb Mode
+> **Keywords:** no-ecb-mode, ECB, Electronic Codebook, deterministic encryption, security, ESLint rule, CWE-327, pattern leakage
+> **CWE:** [CWE-327: Use of a Broken or Risky Cryptographic Algorithm](https://cwe.mitre.org/data/definitions/327.html)  
+> **OWASP:** [OWASP Top 10 A02:2021 - Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 
-**🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
+ESLint Rule: no-ecb-mode. This rule is part of [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto).
 
 ## Quick Summary
 
-| Aspect            | Details                                                             |
-| ----------------- | ------------------------------------------------------------------- |
-| **CWE Reference** | [CWE-327](https://cwe.mitre.org/data/definitions/327.html)          |
-| **Severity**      | Critical (security risk)                                            |
-| **Auto-Fix**      | ✅ Auto-fix available                                               |
-| **Category**      | Security                                                            |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                             |
-| **Best For**      | Any application performing encryption, ensuring secure cipher modes |
+| Aspect         | Details                                     |
+| -------------- | ------------------------------------------- |
+| **Severity**   | Critical (Broken Cryptography)              |
+| **Auto-Fix**   | ✅ Yes (via suggestion to GCM/CBC)          |
+| **Category**   | Security |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration     |
+| **Best For**   | All applications encrypting structured data |
 
-## Description
+## Vulnerability and Risk
 
-Disallow the use of Electronic Codebook (ECB) mode for encryption. ECB mode encrypts identical plaintext blocks into identical ciphertext blocks, which can leak patterns in the data and is susceptible to various attacks.
+**Vulnerability:** Use of Electronic Codebook (ECB) mode for symmetric encryption. ECB divides the plaintext into blocks and encrypts each block independently using the same key.
 
-## OWASP Mapping
-
-- **OWASP Top 10**: A02:2021 - Cryptographic Failures
-- **CWE**: CWE-327 - Use of a Broken or Risky Cryptographic Algorithm
+**Risk:** ECB is deterministic. Identical plaintext blocks result in identical ciphertext blocks. This leaks significant structural information about the data. For example, encrypting a bitmap image with ECB often results in the original image still being clearly visible in the ciphertext patterns. It is also vulnerable to block-shuffling attacks where an attacker can rearrange blocks to change the meaning of the decrypted data.
 
 ## Error Message Format
 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-327 OWASP:A04 CVSS:7.5 | Broken Cryptographic Algorithm detected | HIGH [PCI-DSS,HIPAA,ISO27001,NIST-CSF]
-   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A04_2021/
+🔒 CWE-327 OWASP:A02 | Insecure Cipher Mode (ECB) detected | CRITICAL [PatternLeak]
+   Fix: Replace ECB mode with GCM or CBC for secure, non-deterministic encryption | https://cwe.mitre.org/data/definitions/327.html
 ```
 
 ### Message Components
 
-| Component                 | Purpose                | Example                                                                                                                                                                                                                         |
-| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Risk Standards**        | Security benchmarks    | [CWE-327](https://cwe.mitre.org/data/definitions/327.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description**     | Specific vulnerability | `Broken Cryptographic Algorithm detected`                                                                                                                                                                                       |
-| **Severity & Compliance** | Impact assessment      | `HIGH [PCI-DSS,HIPAA,ISO27001,NIST-CSF]`                                                                                                                                                                                        |
-| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                            |
-| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/)                                                                                                                                                                     |
+| Component                 | Purpose                | Example                                                                                                    |
+| :------------------------ | :--------------------- | :--------------------------------------------------------------------------------------------------------- |
+| **Risk Standards**        | Security benchmarks    | [CWE-327](https://cwe.mitre.org/data/definitions/327.html) [OWASP:A02](https://owasp.org/Top10/A02_2021/)  |
+| **Issue Description**     | Specific vulnerability | `Insecure Cipher Mode (ECB) detected`                                                                      |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [PatternLeak]`                                                                                   |
+| **Fix Instruction**       | Actionable remediation | `Replace ECB with GCM or CBC`                                                                              |
+| **Technical Truth**       | Official reference     | [ECB Weaknesses](<https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Electronic_codebook_(ECB)>) |
 
 ## Rule Details
 
-Detects the use of cipher modes ending in `-ecb` (e.g., `aes-256-ecb`) in `createCipheriv` and `createDecipheriv` calls.
+This rule scans for the `-ecb` suffix in the algorithm string passed to `crypto.createCipheriv()` and `crypto.createDecipheriv()`.
+
+```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#f8fafc',
+    'primaryTextColor': '#1e293b',
+    'primaryBorderColor': '#334155',
+    'lineColor': '#475569',
+    'c0': '#f8fafc',
+    'c1': '#f1f5f9',
+    'c2': '#e2e8f0',
+    'c3': '#cbd5e1'
+  }
+}}%%
+flowchart TD
+    A[crypto Method Call] --> B{Algorithm ends in -ECB?}
+    B -->|Yes| C[🚨 Deterministic Risk]
+    B -->|No - is-GCM / -CBC| D[✅ Non-Deterministic Mode]
+    C --> E[💡 Suggest AES-256-GCM]
+```
+
+### Why This Matters
+
+| Issue                  | Impact                             | Solution                                                  |
+| ---------------------- | ---------------------------------- | --------------------------------------------------------- |
+| 🛡️ **Data Leakage**    | Visual/structural patterns leak    | Use GCM or CBC which use IVs to ensure unique ciphertexts |
+| 🚀 **Block Shuffling** | Data manipulated undetected        | Use GCM (AEAD) to provide cryptographic integrity         |
+| 🔒 **Compliance**      | Violates modern security standards | Standardize on AEAD modes for all sensitive data storage  |
+
+## Configuration
+
+This rule has no options.
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```javascript
-crypto.createCipheriv('aes-256-ecb', key, iv);
-crypto.createDecipheriv('aes-128-ecb', key, iv);
+// Using insecure ECB mode (DANGEROUS)
+const cipher = crypto.createCipheriv('aes-256-ecb', key, '');
+
+// Even with an IV, ECB ignores it
+const decipher = crypto.createDecipheriv('aes-128-ecb', key, null);
 ```
 
 ### ✅ Correct
 
 ```javascript
-crypto.createCipheriv('aes-256-gcm', key, iv);
-crypto.createCipheriv('aes-256-cbc', key, iv);
+// Using GCM mode (BEST PRACTICE)
+const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+
+// Using CBC mode (Secure if IV is unique)
+const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
 ```
-
-## Options
-
-This rule has no options.
-
-## When Not To Use It
-
-Only in very specific cases where ECB is required for compatibility with an existing system that cannot be updated (though GCM or CBC should always be preferred).
 
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Algorithm from Variable
+### Dynamic Algorithm Names
 
-**Why**: Algorithm names from variables not traced.
+**Why**: If the algorithm string is constructed at runtime or loaded from a variable.
 
-```typescript
-// ❌ NOT DETECTED - Algorithm from variable
-const algo = config.hashAlgorithm; // May be weak
-crypto.createHash(algo);
+```javascript
+const mode = '-ecb';
+crypto.createCipheriv('aes-256' + mode, key, iv); // ❌ NOT DETECTED
 ```
 
-**Mitigation**: Hardcode secure algorithms.
+**Mitigation**: Always use string literals for algorithm definitions to ensure auditability.
 
-### Third-party Crypto Libraries
+### Legacy Aliases
 
-**Why**: Non-standard crypto APIs not recognized.
+**Why**: Some older libraries might use non-standard names for ECB mode that don't match the `-ecb` regex pattern.
 
-```typescript
-// ❌ NOT DETECTED - Third-party
-customCrypto.encrypt(data, key);
-```
+**Mitigation**: Standardize on the built-in Node.js `crypto` module.
 
-**Mitigation**: Review all crypto implementations.
+## References
 
-### Configuration-based Security
-
-**Why**: Config-driven security not analyzed.
-
-```typescript
-// ❌ NOT DETECTED - Config-based
-const options = getSecurityOptions(); // May be weak
-```
-
-**Mitigation**: Validate security configurations.
+- [CWE-327: Use of a Broken or Risky Cryptographic Algorithm](https://cwe.mitre.org/data/definitions/327.html)
+- [Wikipedia: Block cipher mode of operation (ECB)](<https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Electronic_codebook_(ECB)>)
+- [Adobe Incident: Example of ECB vulnerability](https://en.wikipedia.org/wiki/Galois/Counter_Mode#Security)

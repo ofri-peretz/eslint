@@ -12,7 +12,7 @@ Prevent storing authentication tokens in JavaScript-accessible cookies.
 | Property     | Value                                                                                                  |
 | ------------ | ------------------------------------------------------------------------------------------------------ |
 | **CWE**      | [CWE-1004: Sensitive Cookie Without 'HttpOnly' Flag](https://cwe.mitre.org/data/definitions/1004.html) |
-| **OWASP**    | [A02:2021](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/) - Cryptographic Failures                                                                      |
+| **OWASP**    | A02:2021 - Cryptographic Failures                                                                      |
 | **CVSS**     | 8.5 (High)                                                                                             |
 | **Severity** | HIGH                                                                                                   |
 
@@ -116,7 +116,7 @@ Cookies.set('token', jwt); // Uses document.cookie internally
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-⚠️ [CWE-1004](https://cwe.mitre.org/data/definitions/1004.html) OWASP:A02 CVSS:5.3 | Sensitive Cookie Without HttpOnly detected | MEDIUM
+⚠️ CWE-1004 OWASP:A02 CVSS:5.3 | Sensitive Cookie Without HttpOnly detected | MEDIUM
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A02_2021/
 ```
 

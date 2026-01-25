@@ -1,4 +1,10 @@
-# no-sensitive-payload
+---
+title: no-sensitive-payload
+description: 'no-sensitive-payload'
+category: security
+tags: ['security', 'jwt']
+---
+
 
 > Prevent storing sensitive data in JWT payload which is only base64-encoded
 

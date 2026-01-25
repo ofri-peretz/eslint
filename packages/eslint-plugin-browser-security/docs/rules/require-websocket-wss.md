@@ -1,4 +1,10 @@
-# browser-security/require-websocket-wss
+---
+title: require-websocket-wss
+description: 'require-websocket-wss'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > 🔒 Require secure WebSocket connections (wss://) instead of unencrypted (ws://)
 **CWE:** [CWE-319](https://cwe.mitre.org/data/definitions/319.html)  

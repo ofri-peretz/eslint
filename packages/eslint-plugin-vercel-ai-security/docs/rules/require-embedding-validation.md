@@ -1,4 +1,10 @@
-# `require-embedding-validation`
+---
+title: require-embedding-validation
+description: 'require-embedding-validation'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Requires validation of embeddings before storage or similarity search.
 

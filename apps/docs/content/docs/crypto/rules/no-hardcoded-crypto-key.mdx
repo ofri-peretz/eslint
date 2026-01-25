@@ -1,107 +1,140 @@
 ---
 title: no-hardcoded-crypto-key
-description: Disallow hardcoded cryptographic keys in crypto.createCipheriv() and crypto.createDecipheriv().
+description: "CWE: CWE-321"
 ---
 
-# no-hardcoded-crypto-key
+> **Keywords:** no-hardcoded-crypto-key, secrets management, KMS, environment variables, security, ESLint rule, CWE-321, key disclosure
+> **CWE:** [CWE-321: Use of Hard-coded Cryptographic Key](https://cwe.mitre.org/data/definitions/321.html)  
+> **OWASP:** [OWASP Top 10 A02:2021 - Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 
-> No Hardcoded Crypto Key
-
-**🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
+ESLint Rule: no-hardcoded-crypto-key. This rule is part of [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto).
 
 ## Quick Summary
 
-| Aspect            | Details                                                    |
-| ----------------- | ---------------------------------------------------------- |
-| **CWE Reference** | [CWE-321](https://cwe.mitre.org/data/definitions/321.html) |
-| **Severity**      | Critical (security risk)                                   |
-| **Auto-Fix**      | ❌ No auto-fix available                                   |
-| **Category**      | Security                                                   |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                    |
-| **Best For**      | Protecting cryptographic keys from source code exposure    |
+| Aspect         | Details                                   |
+| -------------- | ----------------------------------------- |
+| **Severity**   | Critical (Secret Leakage)                 |
+| **Auto-Fix**   | ❌ No (requires secrets migration)        |
+| **Category**   | Security / Secrets Management             |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration   |
+| **Best For**   | All applications handling encryption keys |
 
-## Description
+## Vulnerability and Risk
 
-Disallow the use of hardcoded cryptographic keys in `crypto.createCipheriv()` and `crypto.createDecipheriv()` calls. Hardcoding keys in source code makes them easily discoverable by attackers.
+**Vulnerability:** Embedding raw cryptographic keys directly in the source code as string literals or static buffers.
 
-## OWASP Mapping
-
-- **OWASP Top 10**: [A02:2021](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/) - Cryptographic Failures
-- **CWE**: [CWE-321](https://cwe.mitre.org/data/definitions/321.html) - Use of Hard-coded Cryptographic Key
+**Risk:** Hardcoded keys are permanent "backdoors" into your application's security. They are checked into version control (git), leaked in build artifacts, and become visible to anyone with read access to the repository or the deployed code. Revoking a hardcoded key requires a code deployment, which is slow and leaves past backups/versions vulnerable forever.
 
 ## Error Message Format
 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 [CWE-321](https://cwe.mitre.org/data/definitions/321.html) OWASP:A04 CVSS:9.1 | Hardcoded Cryptographic Key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001,NIST-CSF]
-   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A04_2021/
+🔒 CWE-321 OWASP:A02 | Hardcoded Cryptographic Key detected | CRITICAL [SecretLeak]
+   Fix: Move the key to a secure vault (KMS/Secrets Manager) or use environment variables | https://cwe.mitre.org/data/definitions/321.html
 ```
 
 ### Message Components
 
-| Component                 | Purpose                | Example                                                                                                                                                                                                                         |
-| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Risk Standards**        | Security benchmarks    | [CWE-321](https://cwe.mitre.org/data/definitions/321.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:9.1](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description**     | Specific vulnerability | `Hardcoded Cryptographic Key detected`                                                                                                                                                                                          |
-| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001,NIST-CSF]`                                                                                                                                                                          |
-| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                            |
-| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/)                                                                                                                                                                     |
+| Component                 | Purpose                | Example                                                                                                   |
+| :------------------------ | :--------------------- | :-------------------------------------------------------------------------------------------------------- |
+| **Risk Standards**        | Security benchmarks    | [CWE-321](https://cwe.mitre.org/data/definitions/321.html) [OWASP:A02](https://owasp.org/Top10/A02_2021/) |
+| **Issue Description**     | Specific vulnerability | `Hardcoded Key detected`                                                                                  |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [SecretLeak]`                                                                                   |
+| **Fix Instruction**       | Actionable remediation | `Move to secure vault/KMS`                                                                                |
+| **Technical Truth**       | Official reference     | [Use of Hard-coded Key](https://cwe.mitre.org/data/definitions/321.html)                                  |
 
 ## Rule Details
 
-Detects string literals or hardcoded byte arrays used as keys in cryptographic operations.
+This rule identifies string literals or static `Buffer.from()` calls being passed into the `key` argument of `crypto.createCipheriv()` and `crypto.createDecipheriv()`.
+
+```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#f8fafc',
+    'primaryTextColor': '#1e293b',
+    'primaryBorderColor': '#334155',
+    'lineColor': '#475569',
+    'c0': '#f8fafc',
+    'c1': '#f1f5f9',
+    'c2': '#e2e8f0',
+    'c3': '#cbd5e1'
+  }
+}}%%
+flowchart TD
+    A[crypto Method Call] --> B{Key argument is a literal string?}
+    B -->|Yes| C[🚨 High Secret Exposure]
+    B -->|No| D{Key is Buffer.from('literal')?}
+    D -->|Yes| C
+    D -->|No| E[✅ Likely Protected]
+    C --> F[💡 Suggest process.env or AWS KMS]
+```
+
+### Why This Matters
+
+| Issue                   | Impact                               | Solution                                                      |
+| ----------------------- | ------------------------------------ | ------------------------------------------------------------- |
+| 🛡️ **Git Exposure**     | Key leaked to entire dev team/actors | Use `.env` or CI/CD secrets that aren't committed to the repo |
+| 🚀 **Ineffective Rev.** | Rotation requires code redeploy      | Use dynamic key loading from a vault for instant rotation     |
+| 🔒 **Compliance**       | Violates SOC2/PCI-DSS/HIPAA          | Enforce KMS (AWS/GCP/Azure) for all cryptographic material    |
+
+## Configuration
+
+This rule has no options.
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```javascript
-crypto.createCipheriv('aes-256-gcm', 'my-secret-key-123456', iv);
-crypto.createCipheriv('aes-256-gcm', Buffer.from('hardcodedkey'), iv);
-crypto.createDecipheriv('aes-256-gcm', 'hardcoded-key', iv);
+// Hardcoded string as key (DANGEROUS)
+const cipher = crypto.createCipheriv(
+  'aes-256-gcm',
+  'very-secret-hardcoded-key-123',
+  iv,
+);
+
+// Hardcoded buffer literal
+const key = Buffer.from('my-static-key-value');
+const dc = crypto.createDecipheriv('aes-256-cbc', key, iv);
 ```
 
 ### ✅ Correct
 
 ```javascript
-crypto.createCipheriv('aes-256-gcm', process.env.KEY, iv);
-crypto.createCipheriv('aes-256-gcm', keyFromKms, iv);
-crypto.createCipheriv('aes-256-gcm', Buffer.from(envKey), iv);
+// Loading key from process environment
+const key = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
+const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+
+// Using a KMS client
+const keyFromVault = await secretsManager.getKey('app-master-key');
+const dc = crypto.createDecipheriv('aes-256-gcm', keyFromVault, iv);
 ```
-
-## Options
-
-This rule has no options.
-
-## When Not To Use It
-
-Never. Cryptographic keys should never be hardcoded in production code.
 
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Key from External Module
+### Imported Constants
 
-**Why**: Keys imported from other modules are not traceable as "hardcoded" if they are identifiers.
+**Why**: If the key is imported from another file as a variable, this rule (which processes one file at a time) doesn't know it's hardcoded.
 
-```typescript
-// ❌ NOT DETECTED - if keys.ts has a hardcoded string
-import { JWT_KEY } from './keys';
-crypto.createCipheriv('aes-256-gcm', JWT_KEY, iv);
+```javascript
+import { KEY } from './config';
+crypto.createCipheriv(algo, KEY, iv); // ❌ NOT DETECTED
 ```
 
-**Mitigation**: Run the rule across the entire project.
+**Mitigation**: Run security scans across the whole codebase and hunt for string literals in `config` or `constants` modules.
 
-### Computed Keys
+### Concatenated Literals
 
-**Why**: Keys built via complex string manipulation are not resolved.
+**Why**: If the key is built using `const key = 'part1' + 'part2'`, it may skip basic literal detection.
 
-```typescript
-// ❌ NOT DETECTED
-const key = 'part1' + 'part2';
-crypto.createCipheriv('aes-256-gcm', key, iv);
-```
+**Mitigation**: Avoid building secrets via string manipulation; load them as single atoms from your vault.
 
-**Mitigation**: Avoid building keys via concatenation.
+## References
+
+- [CWE-321: Use of Hard-coded Cryptographic Key](https://cwe.mitre.org/data/definitions/321.html)
+- [OWASP Secret Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html)
+- [Twelve-Factor App - Config](https://12factor.net/config)

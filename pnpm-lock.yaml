@@ -391,44 +391,8 @@ importers:
         version: 5.9.3
 
   packages/eslint-devkit:
-    dependencies:
-      '@typescript-eslint/utils':
-        specifier: ^8.46.2
-        version: 8.46.2(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
-      tslib:
-        specifier: ^2.3.0
-        version: 2.8.1
-      typescript:
-        specifier: '>=4.0.0'
-        version: 5.9.3
-    optionalDependencies:
-      enhanced-resolve:
-        specifier: ^5.18.3
-        version: 5.18.3
-      get-tsconfig:
-        specifier: ^4.13.0
-        version: 4.13.0
     devDependencies:
       '@typescript-eslint/parser':
-        specifier: ^8.46.2
-        version: 8.46.2(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
-
-  packages/eslint-plugin-architecture:
-    dependencies:
-      '@interlace/eslint-devkit':
-        specifier: workspace:*
-        version: link:../eslint-devkit
-      tslib:
-        specifier: ^2.3.0
-        version: 2.8.1
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-    devDependencies:
-      '@typescript-eslint/parser':
-        specifier: ^8.46.2
-        version: 8.46.2(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
-      '@typescript-eslint/rule-tester':
         specifier: ^8.46.2
         version: 8.46.2(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
 
@@ -438,7 +402,23 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1(@typescript-eslint/utils@8.46.2(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
       tslib:
-        specifier: ^2.8.1
+        specifier: ^2.3.0
+        version: 2.8.1
+    devDependencies:
+      '@typescript-eslint/parser':
+        specifier: ^8.46.2
+        version: 8.46.2(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/rule-tester':
+        specifier: ^8.46.2
+        version: 8.46.2(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
+
+  packages/eslint-plugin-conventions:
+    dependencies:
+      '@interlace/eslint-devkit':
+        specifier: workspace:*
+        version: link:../eslint-devkit
+      tslib:
+        specifier: ^2.3.0
         version: 2.8.1
     devDependencies:
       '@typescript-eslint/parser':
@@ -485,12 +465,6 @@ importers:
       '@interlace/eslint-devkit':
         specifier: ^1.2.1
         version: 1.2.1(@typescript-eslint/utils@8.46.2(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
-      tslib:
-        specifier: ^2.3.0
-        version: 2.8.1
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
     devDependencies:
       '@typescript-eslint/parser':
         specifier: ^8.46.2
@@ -530,6 +504,43 @@ importers:
       '@typescript-eslint/rule-tester':
         specifier: ^8.46.2
         version: 8.46.2(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
+
+  packages/eslint-plugin-maintainability:
+    dependencies:
+      '@interlace/eslint-devkit':
+        specifier: workspace:*
+        version: link:../eslint-devkit
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+    devDependencies:
+      '@typescript-eslint/parser':
+        specifier: ^8.46.2
+        version: 8.46.2(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/rule-tester':
+        specifier: ^8.46.2
+        version: 8.46.2(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
+
+  packages/eslint-plugin-modernization:
+    dependencies:
+      '@interlace/eslint-devkit':
+        specifier: workspace:*
+        version: link:../eslint-devkit
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+
+  packages/eslint-plugin-modularity:
+    dependencies:
+      '@interlace/eslint-devkit':
+        specifier: workspace:*
+        version: link:../eslint-devkit
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
 
   packages/eslint-plugin-mongodb-security:
     dependencies:
@@ -571,9 +582,35 @@ importers:
 
   packages/eslint-plugin-node-security:
     dependencies:
+      '@interlace/eslint-devkit':
+        specifier: ^1.2.1
+        version: 1.2.1(@typescript-eslint/utils@8.46.2(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3))(typescript@5.9.3)
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
+    devDependencies:
+      '@typescript-eslint/parser':
+        specifier: ^8.46.2
+        version: 8.46.2(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/rule-tester':
+        specifier: ^8.46.2
+        version: 8.46.2(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
+
+  packages/eslint-plugin-operability:
+    dependencies:
+      '@interlace/eslint-devkit':
+        specifier: workspace:*
+        version: link:../eslint-devkit
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+    devDependencies:
+      '@typescript-eslint/parser':
+        specifier: ^8.46.2
+        version: 8.46.2(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/rule-tester':
+        specifier: ^8.46.2
+        version: 8.46.2(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
 
   packages/eslint-plugin-pg:
     dependencies:
@@ -603,25 +640,6 @@ importers:
         specifier: workspace:*
         version: link:..
 
-  packages/eslint-plugin-quality:
-    dependencies:
-      '@interlace/eslint-devkit':
-        specifier: workspace:*
-        version: link:../eslint-devkit
-      tslib:
-        specifier: ^2.3.0
-        version: 2.8.1
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-    devDependencies:
-      '@typescript-eslint/parser':
-        specifier: ^8.46.2
-        version: 8.46.2(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
-      '@typescript-eslint/rule-tester':
-        specifier: ^8.46.2
-        version: 8.46.2(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
-
   packages/eslint-plugin-react-a11y:
     dependencies:
       '@interlace/eslint-devkit':
@@ -649,6 +667,22 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+    devDependencies:
+      '@typescript-eslint/parser':
+        specifier: ^8.46.2
+        version: 8.46.2(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/rule-tester':
+        specifier: ^8.46.2
+        version: 8.46.2(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
+
+  packages/eslint-plugin-reliability:
+    dependencies:
+      '@interlace/eslint-devkit':
+        specifier: workspace:*
+        version: link:../eslint-devkit
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
     devDependencies:
       '@typescript-eslint/parser':
         specifier: ^8.46.2

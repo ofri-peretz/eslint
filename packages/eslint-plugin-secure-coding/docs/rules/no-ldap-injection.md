@@ -1,4 +1,10 @@
-# no-ldap-injection
+---
+title: no-ldap-injection
+description: 'no-ldap-injection'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** LDAP injection, CWE-90, directory service, authentication bypass, security, Active Directory
 **CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
@@ -15,7 +21,7 @@ Detects LDAP injection vulnerabilities. This rule is part of [`eslint-plugin-sec
 | **CWE Reference** | [CWE-90](https://cwe.mitre.org/data/definitions/90.html) (LDAP Injection) |
 | **Severity**      | Critical (CVSS 9.8)                                                       |
 | **Auto-Fix**      | 💡 Suggestions available                                                  |
-| **Category**      | Injection Prevention                                                      |
+| **Category**   | Security |
 
 ## Vulnerability and Risk
 

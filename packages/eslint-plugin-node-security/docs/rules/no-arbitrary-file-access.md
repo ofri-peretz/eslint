@@ -1,4 +1,10 @@
-# no-arbitrary-file-access
+---
+title: no-arbitrary-file-access
+description: 'no-arbitrary-file-access'
+category: security
+tags: ['security', 'node']
+---
+
 
 > **Keywords:** path traversal, CWE-22, file access, LFI, directory traversal, fs, readFile, security
 
@@ -13,7 +19,7 @@ Prevents file system access with unsanitized user input to protect against path 
 | **CWE Reference** | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) (Improper Limitation of Pathname) |
 | **OWASP**         | [A01:2021 Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)  |
 | **Severity**      | High                                                                                       |
-| **Category**      | Security                                                                                   |
+| **Category**   | Security |
 
 ## Rule Details
 

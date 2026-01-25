@@ -1,4 +1,10 @@
-# require-class-validator
+---
+title: require-class-validator
+description: 'require-class-validator'
+category: security
+tags: ['security', 'nestjs']
+---
+
 
 > Require class-validator decorators on DTO properties
 

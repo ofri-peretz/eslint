@@ -46,21 +46,29 @@ interface RuleDoc {
 
 /**
  * Extract title from markdown content
+ * Support both H1 and frontmatter 'title'
  */
 function extractTitle(content: string): string {
+  // Check for frontmatter title
+  const fmMatch = content.match(/^---\s*\n[\s\S]*?title:\s*(.+)\n[\s\S]*?---/);
+  if (fmMatch) return fmMatch[1].trim();
+
+  // Fallback to H1
   const match = content.match(/^#\s+(.+)$/m);
   return match ? match[1].trim() : '';
 }
 
 /**
  * Extract description from markdown content
- * Usually the first paragraph after the title
  */
 function extractDescription(content: string): string {
-  // Remove the title
-  const withoutTitle = content.replace(/^#\s+.+$/m, '').trim();
+  // Check for frontmatter description
+  const fmMatch = content.match(/^---\s*\n[\s\S]*?description:\s*(.+)\n[\s\S]*?---/);
+  if (fmMatch) return fmMatch[1].trim().replace(/^['"]|['"]$/g, '');
+
+  // Fallback to extraction logic
+  const withoutTitle = content.replace(/^#\s+.+$/m, '').replace(/^---[\s\S]*?---/m, '').trim();
   
-  // Skip keywords line if present
   const lines = withoutTitle.split('\n');
   let descLine = '';
   
@@ -68,7 +76,6 @@ function extractDescription(content: string): string {
     const trimmed = line.trim();
     if (!trimmed) continue;
     if (trimmed.startsWith('>')) {
-      // Extract from blockquote
       descLine = trimmed.replace(/^>\s*\*\*Keywords:\*\*.*$/, '').replace(/^>\s*/, '');
       if (descLine) break;
       continue;
@@ -77,34 +84,35 @@ function extractDescription(content: string): string {
     break;
   }
   
-  // Clean up and truncate for SEO
   return descLine
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove markdown links
-    .replace(/\*\*/g, '') // Remove bold
-    .replace(/`/g, '') // Remove code ticks
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\*\*/g, '')
+    .replace(/`/g, '')
     .slice(0, 160);
 }
 
 /**
  * Escape a string for use in YAML frontmatter
- * Uses single quotes or strips problematic characters
  */
 function escapeYamlString(str: string | null | undefined): string {
   if (!str) return '""';
   
-  // Remove backslashes and normalize the string
   let cleaned = str
-    .replace(/\\/g, '') // Remove backslashes entirely
-    .replace(/\n/g, ' ') // Replace newlines with spaces
-    .replace(/\r/g, '') // Remove carriage returns
-    .replace(/\t/g, ' ') // Replace tabs with spaces
-    .replace(/\s+/g, ' ') // Normalize whitespace
+    .replace(/\\/g, '')
+    .replace(/\n/g, ' ')
+    .replace(/\r/g, '')
+    .replace(/\t/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
   
-  // If string contains characters that need quoting, use double quotes
+  // If it's already a CWE reference like 'CWE: [CWE-XXX](...)' we might want to keep parts
+  // but for frontmatter description we strip the link
+  if (cleaned.startsWith('CWE:')) {
+     cleaned = cleaned.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+  }
+
   const needsQuoting = /[:#{}\[\],&*?|<>=!%@`'"]/.test(cleaned);
   if (needsQuoting) {
-    // Escape double quotes inside the string
     cleaned = cleaned.replace(/"/g, "'");
     return `"${cleaned}"`;
   }
@@ -118,19 +126,17 @@ function escapeYamlString(str: string | null | undefined): string {
 function convertToMdx(doc: RuleDoc): string {
   let content = doc.content;
   
-  // The content is already markdown, we just need to add frontmatter
-  // Remove the first H1 title as it will be in frontmatter
+  // Remove existing frontmatter from source to avoid duplication
+  content = content.replace(/^---[\s\S]*?---\n*/, '');
+  
+  // Remove H1 title
   content = content.replace(/^#\s+.+\n+/, '');
   
-  // Convert HTML comments to MDX comments (MDX doesn't support HTML comments)
   content = content.replace(/<!--([\s\S]*?)-->/g, '{/* $1 */}');
   
-  // Ensure description is never empty
   const description = doc.description || `ESLint rule: ${doc.name}`;
   const title = doc.title || doc.name;
   
-  // Build MDX file with properly escaped YAML
-  // Note: Fumadocs renders the frontmatter title automatically, so we don't add an H1
   return `---
 title: ${escapeYamlString(title)}
 description: ${escapeYamlString(description)}
@@ -139,6 +145,7 @@ description: ${escapeYamlString(description)}
 ${content.trim()}
 `;
 }
+
 
 /**
  * Process a single plugin's rule docs

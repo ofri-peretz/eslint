@@ -1,4 +1,10 @@
-# no-unsafe-dynamic-require
+---
+title: no-unsafe-dynamic-require
+description: 'no-unsafe-dynamic-require'
+category: security
+tags: ['security', 'node']
+---
+
 
 > **Keywords:** require, code injection, security, ESLint rule, dynamic require, path traversal, arbitrary code execution, module loading, auto-fix, LLM-optimized, code security
 **CWE:** [CWE-494](https://cwe.mitre.org/data/definitions/494.html)  
@@ -15,7 +21,7 @@ Disallows dynamic `require()` calls with non-literal arguments that could lead t
 | **CWE Reference** | [CWE-706](https://cwe.mitre.org/data/definitions/706.html) (Incorrect Resolution) |
 | **Severity**      | Warning (security best practice)                                                  |
 | **Auto-Fix**      | ⚠️ Suggests fixes (manual application)                                            |
-| **Category**      | Security                                                                          |
+| **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                           |
 | **Best For**      | Node.js applications, plugin systems, dynamic module loading                      |
 

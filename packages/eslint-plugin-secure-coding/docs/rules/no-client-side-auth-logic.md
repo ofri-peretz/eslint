@@ -1,4 +1,10 @@
-# no-client-side-auth-logic
+---
+title: no-client-side-auth-logic
+description: 'no-client-side-auth-logic'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** client-side auth, CWE-602, localStorage auth, security bypass, authentication, JavaScript security
 
@@ -13,7 +19,7 @@ Detects authentication logic in client-side code that can be easily bypassed.
 | **CWE Reference** | [CWE-602](https://cwe.mitre.org/data/definitions/602.html) (Client-Side Enforcement of Server-Side Security) |
 | **OWASP**         | [A01:2021 Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)                    |
 | **Severity**      | Critical                                                                                                     |
-| **Category**      | Security                                                                                                     |
+| **Category**   | Security |
 
 ## Rule Details
 

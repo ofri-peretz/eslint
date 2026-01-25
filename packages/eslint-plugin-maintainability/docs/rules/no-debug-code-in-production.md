@@ -1,0 +1,146 @@
+---
+title: no-debug-code-in-production
+description: 'no-debug-code-in-production'
+category: quality
+tags: ['quality', 'maintainability']
+---
+
+
+> **Keywords:** console.log, DEBUG, **DEV**, CWE-489, leftover debug, production security
+
+Detects debug code that should not be present in production builds.
+
+⚠️ This rule **errors** by default in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                        |
+| ----------------- | ------------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-489](https://cwe.mitre.org/data/definitions/489.html) (Active Debug Code) |
+| **OWASP Mobile**  | [M7: Client Code Quality](https://owasp.org/www-project-mobile-top-10/)        |
+| **Severity**      | High                                                                           |
+| **Category**   | Quality |
+
+## Rule Details
+
+Debug code left in production can expose sensitive information, internal system details, or create attack vectors. This rule detects:
+
+- `console.log()` statements
+- `DEBUG` identifiers
+- `__DEV__` React Native development flags
+
+## Examples
+
+### ❌ Incorrect
+
+```javascript
+// Console logging in production code
+function processPayment(card) {
+  console.log('Processing card:', card.number); // Exposes PII!
+  return chargeCard(card);
+}
+
+// Debug flags left in code
+if (DEBUG) {
+  showInternalState();
+}
+
+// React Native dev flag
+if (__DEV__) {
+  enableDevTools();
+}
+```
+
+### ✅ Correct
+
+```javascript
+// Use proper logging service
+import { logger } from './logger';
+
+function processPayment(card) {
+  logger.info('Processing payment', { cardLast4: card.number.slice(-4) });
+  return chargeCard(card);
+}
+
+// Remove debug blocks entirely for production
+// Or use build-time dead code elimination
+
+// Conditional logging based on environment
+if (process.env.NODE_ENV !== 'production') {
+  console.log('Development only log');
+}
+```
+
+## Error Message Format
+
+When triggered, this rule produces:
+
+```
+🔒 CWE-489 | Debug Code in Production detected - DEBUG, __DEV__, console | HIGH
+   Fix: Review and apply secure practices | https://cwe.mitre.org/data/definitions/489.html
+```
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Aliased Console
+
+**Why**: Aliased console object not traced.
+
+```typescript
+// ❌ NOT DETECTED - Aliased console
+const log = console.log;
+log('debug info');
+```
+
+**Mitigation**: Avoid aliasing console methods.
+
+### Custom Debug Functions
+
+**Why**: Custom logging functions not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom debug function
+function debug(msg) {
+  console.log(msg);
+}
+debug('internal state');
+```
+
+**Mitigation**: Apply rule to debug function definitions.
+
+### Dynamic Method Names
+
+**Why**: Dynamic property access not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic method
+const method = 'log';
+console[method]('debug');
+```
+
+**Mitigation**: Avoid dynamic console access.
+
+## When Not To Use It
+
+- In development-only configuration files
+- In CLI tools where console output is expected
+- When using a logging library that conditionally strips debug logs
+
+## Further Reading
+
+- [OWASP Mobile Top 10 - M7](https://owasp.org/www-project-mobile-top-10/)
+- [CWE-489: Active Debug Code](https://cwe.mitre.org/data/definitions/489.html)
+- [ESLint no-console rule](https://eslint.org/docs/rules/no-console)
+
+## Related Rules
+
+- [no-exposed-debug-endpoints](./no-exposed-debug-endpoints.md)
+- [detect-mixed-content](./detect-mixed-content.md)
+
+---
+
+**Category:** Security  
+**Type:** Problem  
+**Recommended:** Yes

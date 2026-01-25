@@ -1,9 +1,9 @@
 ---
 title: no-transaction-on-pool
-description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
+description: "CWE: CWE-693"
 ---
 
-> **Keywords:** transactions, race condition, [CWE-362](https://cwe.mitre.org/data/definitions/362.html), pg, node-postgres, pool
+> **Keywords:** transactions, race condition, CWE-362, pg, node-postgres, pool
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Prevents running transaction commands directly on pool (must use dedicated client).
@@ -14,7 +14,7 @@ Prevents running transaction commands directly on pool (must use dedicated clien
 
 | Aspect            | Details                  |
 | ----------------- | ------------------------ |
-| **CWE Reference** | [CWE-362](https://cwe.mitre.org/data/definitions/362.html) (Race Condition) |
+| **CWE Reference** | CWE-362 (Race Condition) |
 | **Severity**      | High (CVSS: 7.5)         |
 | **Category**      | Correctness              |
 
@@ -50,7 +50,7 @@ try {
 ## Error Message Format
 
 ```
-⚠️ [CWE-362](https://cwe.mitre.org/data/definitions/362.html) | Transaction command on pool causes race condition | HIGH
+⚠️ CWE-362 | Transaction command on pool causes race condition | HIGH
    Fix: Use pool.connect() and run transaction commands on the returned client
 ```
 

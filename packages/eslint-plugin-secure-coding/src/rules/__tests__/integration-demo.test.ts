@@ -7,7 +7,6 @@ import parser from '@typescript-eslint/parser';
 import { noDirectiveInjection } from '../no-directive-injection';
 import { noRedosVulnerableRegex } from '../no-redos-vulnerable-regex';
 import { noInsecureComparison } from '../no-insecure-comparison';
-import { noUnescapedUrlParameter } from '../no-unescaped-url-parameter';
 import { noImproperSanitization } from '../no-improper-sanitization';
 import { noImproperTypeValidation } from '../no-improper-type-validation';
 import { noPrivilegeEscalation } from '../no-privilege-escalation';
@@ -98,24 +97,6 @@ describe('Demo Gaps Reproduction', () => {
   });
 
 
-
-  describe('no-unescaped-url-parameter', () => {
-    ruleTester.run('demo-repro', noUnescapedUrlParameter, {
-      valid: [],
-      invalid: [
-        {
-          code: `
-            const window = { location: { href: '' } };
-            export function insecure_noUnescapedUrlParameter(returnUrl: string) {
-              const redirectUrl = \`https://example.com/dashboard?next=\${returnUrl}\`;
-              window.location.href = redirectUrl;
-            }
-          `,
-          errors: [{ messageId: 'unescapedUrlParameter' }]
-        }
-      ]
-    });
-  });
 
   describe('no-improper-sanitization', () => {
     ruleTester.run('demo-repro', noImproperSanitization, {

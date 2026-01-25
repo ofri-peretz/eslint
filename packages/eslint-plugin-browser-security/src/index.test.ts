@@ -34,8 +34,32 @@ describe('eslint-plugin-browser-security plugin interface', () => {
       'no-worker-message-innerhtml',
       'no-unsafe-inline-csp',
       'no-unsafe-eval-csp',
+      'detect-mixed-content',
+      'no-allow-arbitrary-loads',
+      'no-clickjacking',
+      'no-credentials-in-query-params',
+      'no-http-urls',
+      'no-insecure-redirects',
+      'no-insecure-websocket',
+      'no-missing-cors-check',
+      'no-missing-csrf-protection',
+      'no-missing-security-headers',
+      'no-password-in-url',
+      'no-permissive-cors',
+      'no-sensitive-data-in-analytics',
+      'no-sensitive-data-in-cache',
+      'no-tracking-without-consent',
+      'no-unencrypted-transmission',
+      'no-unescaped-url-parameter',
+      'no-unvalidated-deeplinks',
+      'require-csp-headers',
+      'require-https-only',
+      'require-url-validation',
+      'require-mime-type-validation',
+      'no-disabled-certificate-validation',
+      'no-client-side-auth-logic', // Migrated from secure-coding
     ]);
-    expect(ruleKeys.length).toBe(21);
+    expect(ruleKeys.length).toBe(45);
   });
 
   describe('configurations', () => {

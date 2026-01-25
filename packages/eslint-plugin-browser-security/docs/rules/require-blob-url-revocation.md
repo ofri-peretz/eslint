@@ -1,4 +1,10 @@
-# require-blob-url-revocation
+---
+title: require-blob-url-revocation
+description: 'require-blob-url-revocation'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > Require Blob Url Revocation
 

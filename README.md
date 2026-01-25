@@ -52,15 +52,19 @@ Independently versioned ESLint-focused packages: plugins, configs, and supportin
 | [`eslint-plugin-lambda-security`](./packages/eslint-plugin-lambda-security)       | AWS Lambda security          | ![npm](https://img.shields.io/npm/dm/eslint-plugin-lambda-security?style=flat-square)    |
 | [`eslint-plugin-vercel-ai-security`](./packages/eslint-plugin-vercel-ai-security) | Vercel AI SDK security       | ![npm](https://img.shields.io/npm/dm/eslint-plugin-vercel-ai-security?style=flat-square) |
 
-### Code Quality Plugins
+### Code Quality & Architecture Plugins
 
-| Package                                                                   | Description                      |
-| ------------------------------------------------------------------------- | -------------------------------- |
-| [`eslint-plugin-architecture`](./packages/eslint-plugin-architecture)     | Architecture and structure rules |
-| [`eslint-plugin-quality`](./packages/eslint-plugin-quality)               | Code quality and maintainability |
-| [`eslint-plugin-import-next`](./packages/eslint-plugin-import-next)       | Import/export analysis           |
-| [`eslint-plugin-react-features`](./packages/eslint-plugin-react-features) | React best practices             |
-| [`eslint-plugin-react-a11y`](./packages/eslint-plugin-react-a11y)         | React accessibility              |
+| Package                                                                     | Description                              |
+| --------------------------------------------------------------------------- | ---------------------------------------- |
+| [`eslint-plugin-modularity`](./packages/eslint-plugin-modularity)           | Structural integrity and DDD patterns    |
+| [`eslint-plugin-modernization`](./packages/eslint-plugin-modernization)     | ESNext migration and syntax evolution    |
+| [`eslint-plugin-maintainability`](./packages/eslint-plugin-maintainability) | Cognitive load and clean code            |
+| [`eslint-plugin-reliability`](./packages/eslint-plugin-reliability)         | Runtime stability and error safety       |
+| [`eslint-plugin-operability`](./packages/eslint-plugin-operability)         | Production readiness and resource health |
+| [`eslint-plugin-conventions`](./packages/eslint-plugin-conventions)         | Team-specific habits and styles          |
+| [`eslint-plugin-import-next`](./packages/eslint-plugin-import-next)         | High-fidelity dependency graph analysis  |
+| [`eslint-plugin-react-features`](./packages/eslint-plugin-react-features)   | React best practices and optimization    |
+| [`eslint-plugin-react-a11y`](./packages/eslint-plugin-react-a11y)           | React accessibility and WCAG compliance  |
 
 ### Supporting Tools
 

@@ -1,4 +1,10 @@
-# no-unsafe-where
+---
+title: no-unsafe-where
+description: 'no-unsafe-where'
+category: security
+tags: ['security', 'mongodb']
+---
+
 
 > **Keywords:** NoSQL injection, CWE-943, MongoDB, $where, RCE, CVE-2025-23061, CVE-2024-53900, Mongoose
 
@@ -14,7 +20,7 @@ Prevents use of the dangerous `$where` operator which executes JavaScript on the
 | **CVE**           | CVE-2025-23061, CVE-2024-53900            |
 | **OWASP**         | A01:2021 - Broken Access Control          |
 | **Severity**      | Critical (CVSS: 9.0)                      |
-| **Category**      | Security                                  |
+| **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for AI assistant integration |
 
 ## Rule Details

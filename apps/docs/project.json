@@ -1,140 +1,144 @@
 {
-    "$schema": "../../node_modules/nx/schemas/project-schema.json",
-    "name": "docs",
-    "projectType": "application",
-    "sourceRoot": "apps/docs/src",
-    "tags": [
-        "type:app",
-        "scope:docs"
-    ],
-    "implicitDependencies": [
-        "eslint-plugin-secure-coding",
-        "eslint-plugin-crypto",
-        "eslint-plugin-jwt",
-        "eslint-plugin-pg",
-        "eslint-plugin-express-security",
-        "eslint-plugin-nestjs-security",
-        "eslint-plugin-lambda-security",
-        "eslint-plugin-browser-security",
-        "eslint-plugin-mongodb-security",
-        "eslint-plugin-vercel-ai-security",
-        "eslint-plugin-import-next",
-        "eslint-plugin-architecture",
-        "eslint-plugin-quality",
-        "eslint-plugin-react-features",
-        "eslint-plugin-react-a11y"
-    ],
-    "targets": {
-        "validate-mermaid": {
-            "executor": "nx:run-commands",
-            "options": {
-                "command": "tsx ../../scripts/validate-mermaid-syntax.ts",
-                "cwd": "{projectRoot}"
-            }
-        },
-        "test": {
-            "executor": "nx:run-commands",
-            "options": {
-                "command": "vitest run",
-                "cwd": "{projectRoot}"
-            }
-        },
-        "test:watch": {
-            "executor": "nx:run-commands",
-            "options": {
-                "command": "vitest",
-                "cwd": "{projectRoot}"
-            }
-        },
-        "build": {
-            "executor": "nx:run-commands",
-            "dependsOn": [
-                "validate-mermaid"
-            ],
-            "outputs": [
-                "{projectRoot}/.next"
-            ],
-            "options": {
-                "command": "next build",
-                "cwd": "{projectRoot}"
-            }
-        },
-        "vercel-build": {
-            "executor": "nx:run-commands",
-            "dependsOn": [
-                "build"
-            ],
-            "outputs": [
-                "{projectRoot}/.vercel/output"
-            ],
-            "options": {
-                "command": "npx vercel build --prod",
-                "cwd": "{projectRoot}"
-            }
-        },
-        "dev": {
-            "executor": "nx:run-commands",
-            "options": {
-                "command": "next dev -p 3000",
-                "cwd": "{projectRoot}"
-            }
-        },
-        "dev:fresh": {
-            "executor": "nx:run-commands",
-            "options": {
-                "commands": [
-                    "npx nx daemon --stop 2>/dev/null || true",
-                    "npx nx reset",
-                    "rm -rf .next .turbo ../../.turbo ../../node_modules/.cache",
-                    "next dev -p 3000"
-                ],
-                "cwd": "{projectRoot}",
-                "parallel": false
-            }
-        },
-        "lint": {
-            "executor": "nx:run-commands",
-            "options": {
-                "command": "eslint src",
-                "cwd": "{projectRoot}"
-            }
-        },
-        "typecheck": {
-            "executor": "nx:run-commands",
-            "options": {
-                "command": "tsc --noEmit",
-                "cwd": "{projectRoot}"
-            }
-        },
-        "start": {
-            "executor": "nx:run-commands",
-            "dependsOn": [
-                "build"
-            ],
-            "options": {
-                "command": "node .next/standalone/server.js",
-                "cwd": "{projectRoot}"
-            }
-        },
-        "deploy": {
-            "executor": "nx:run-commands",
-            "dependsOn": [
-                "vercel-build"
-            ],
-            "options": {
-                "command": "npx vercel deploy --prebuilt --prod --yes",
-                "cwd": "{projectRoot}"
-            }
-        },
-        "nx-release-publish": {
-            "executor": "nx:run-commands",
-            "dependsOn": [
-                "deploy"
-            ],
-            "options": {
-                "command": "echo 'Docs deployed via nx release'",
-                "cwd": "{projectRoot}"
-            }
-        }
+  "name": "docs",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/docs/src",
+  "tags": [
+    "type:app",
+    "scope:docs"
+  ],
+  "implicitDependencies": [
+    "eslint-plugin-secure-coding",
+    "eslint-plugin-crypto",
+    "eslint-plugin-jwt",
+    "eslint-plugin-pg",
+    "eslint-plugin-express-security",
+    "eslint-plugin-nestjs-security",
+    "eslint-plugin-lambda-security",
+    "eslint-plugin-browser-security",
+    "eslint-plugin-mongodb-security",
+    "eslint-plugin-vercel-ai-security",
+    "eslint-plugin-import-next",
+    "eslint-plugin-modularity",
+    "eslint-plugin-modernization",
+    "eslint-plugin-maintainability",
+    "eslint-plugin-reliability",
+    "eslint-plugin-conventions",
+    "eslint-plugin-operability",
+    "eslint-plugin-react-features",
+    "eslint-plugin-react-a11y"
+  ],
+  "targets": {
+    "validate-mermaid": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx ../../scripts/validate-mermaid-syntax.ts",
+        "cwd": "{projectRoot}"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run",
+        "cwd": "{projectRoot}"
+      }
+    },
+    "test:watch": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest",
+        "cwd": "{projectRoot}"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "validate-mermaid"
+      ],
+      "outputs": [
+        "{projectRoot}/.next"
+      ],
+      "options": {
+        "command": "next build",
+        "cwd": "{projectRoot}"
+      }
+    },
+    "vercel-build": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "outputs": [
+        "{projectRoot}/.vercel/output"
+      ],
+      "options": {
+        "command": "npx vercel build --prod",
+        "cwd": "{projectRoot}"
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "next dev -p 3000",
+        "cwd": "{projectRoot}"
+      }
+    },
+    "dev:fresh": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "npx nx daemon --stop 2>/dev/null || true",
+          "npx nx reset",
+          "rm -rf .next .turbo ../../.turbo ../../node_modules/.cache",
+          "next dev -p 3000"
+        ],
+        "cwd": "{projectRoot}",
+        "parallel": false
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint src",
+        "cwd": "{projectRoot}"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "{projectRoot}"
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "command": "node .next/standalone/server.js",
+        "cwd": "{projectRoot}"
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "vercel-build"
+      ],
+      "options": {
+        "command": "npx vercel deploy --prebuilt --prod --yes",
+        "cwd": "{projectRoot}"
+      }
+    },
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "deploy"
+      ],
+      "options": {
+        "command": "echo 'Docs deployed via nx release'",
+        "cwd": "{projectRoot}"
+      }
     }
+  }
 }

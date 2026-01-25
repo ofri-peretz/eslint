@@ -1,4 +1,10 @@
-# detect-non-literal-fs-filename
+---
+title: detect-non-literal-fs-filename
+description: 'detect-non-literal-fs-filename'
+category: security
+tags: ['security', 'node']
+---
+
 
 > **Keywords:** path traversal, CWE-22, security, ESLint rule, file system, fs module, directory traversal, file access, auto-fix, LLM-optimized, code security
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
@@ -15,7 +21,7 @@ Detects variable in filename argument of fs calls, which might allow an attacker
 | **CWE Reference** | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) (Path Traversal) |
 | **Severity**      | High (security vulnerability)                                             |
 | **Auto-Fix**      | ⚠️ Suggests fixes (manual application)                                    |
-| **Category**      | Security                                                                  |
+| **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                   |
 | **Best For**      | Node.js applications, file processing systems, file upload handlers       |
 

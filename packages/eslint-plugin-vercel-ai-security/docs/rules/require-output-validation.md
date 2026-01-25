@@ -1,4 +1,10 @@
-# `require-output-validation`
+---
+title: require-output-validation
+description: 'require-output-validation'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Requires validation of AI output before displaying to users.
 

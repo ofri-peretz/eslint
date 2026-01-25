@@ -1,9 +1,9 @@
 ---
 title: no-missing-client-release
-description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
+description: "CWE: CWE-693"
 ---
 
-> **Keywords:** connection leak, resource management, [CWE-772](https://cwe.mitre.org/data/definitions/772.html), pg, node-postgres, pool
+> **Keywords:** connection leak, resource management, CWE-772, pg, node-postgres, pool
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Ensures acquired pool clients are released back to the pool.
@@ -14,7 +14,7 @@ Ensures acquired pool clients are released back to the pool.
 
 | Aspect            | Details                               |
 | ----------------- | ------------------------------------- |
-| **CWE Reference** | [CWE-772](https://cwe.mitre.org/data/definitions/772.html) (Missing Release of Resource) |
+| **CWE Reference** | CWE-772 (Missing Release of Resource) |
 | **Severity**      | High (CVSS: 7.5)                      |
 | **Category**      | Resource Management                   |
 
@@ -53,7 +53,7 @@ async function simpleQuery() {
 ## Error Message Format
 
 ```
-⚠️ [CWE-772](https://cwe.mitre.org/data/definitions/772.html) | Pool client acquired but never released | HIGH
+⚠️ CWE-772 | Pool client acquired but never released | HIGH
    Fix: Add client.release() in a finally block
 ```
 

@@ -11,36 +11,74 @@
         ".github/workflows/release.yml"
     ],
     // ============================================
-    // File Watcher Exclusions (reduces memory/CPU)
+    // File Watcher Exclusions (reduces FSEvents load)
     // ============================================
     "files.watcherExclude": {
+        // Package Managers
         "**/node_modules/**": true,
-        "**/.git/objects/**": true,
-        "**/.git/subtree-cache/**": true,
-        "**/.nx/**": true,
-        "**/.next/**": true,
-        "**/dist/**": true,
-        "**/coverage/**": true,
         "**/.pnpm-store/**": true,
-        "**/tmp/**": true,
+        // Build Outputs
+        "**/dist/**": true,
+        "**/build/**": true,
+        "**/out/**": true,
+        "**/.next/**": true,
+        "**/standalone/**": true,
+        "**/_next/**": true,
+        // Framework Caches
+        "**/.nx/**": true,
         "**/.cache/**": true,
         "**/.parcel-cache/**": true,
         "**/.contentlayer/**": true,
-        "**/test-results/**": true
+        "**/.source/**": true,
+        "**/.turbo/**": true,
+        "**/.vercel/**": true,
+        // Test Artifacts
+        "**/coverage/**": true,
+        "**/test-results/**": true,
+        "**/.nyc_output/**": true,
+        "**/.jest/**": true,
+        // Temporary Files
+        "**/tmp/**": true,
+        // Version Control
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        // Large Generated Files
+        "**/graph.json": true,
+        "**/*.tsbuildinfo": true,
+        "**/*.log": true,
+        "**/*.map": true
     },
     // ============================================
     // Search Exclusions (faster find-in-files)
     // ============================================
     "search.exclude": {
+        // Package Managers
         "**/node_modules": true,
-        "**/.nx": true,
-        "**/.next": true,
+        "packages/**/pnpm-lock.yaml": true,
+        "apps/**/pnpm-lock.yaml": true,
+        // Build Outputs
         "**/dist": true,
+        "**/build": true,
+        "**/out": true,
+        "**/.next": true,
+        "**/standalone": true,
+        // Framework Caches
+        "**/.nx": true,
+        "**/.cache": true,
+        "**/.parcel-cache": true,
+        "**/.contentlayer": true,
+        "**/.source": true,
+        "**/.turbo": true,
+        "**/.vercel": true,
+        // Test Artifacts
         "**/coverage": true,
-        "**/pnpm-lock.yaml": true,
+        "**/test-results": true,
+        // Temporary Files
+        "**/tmp": true,
+        // Large Generated Files
         "**/graph.json": true,
         "**/*.tsbuildinfo": true,
-        "**/test-results": true
+        "**/*.map": true
     },
     // ============================================
     // File Explorer Exclusions (cleaner sidebar)

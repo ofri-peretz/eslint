@@ -45,6 +45,24 @@
       ],
       "eslint-plugin-node-security": [
         "packages/eslint-plugin-node-security/src/index.ts"
+      ],
+      "eslint-plugin-maintainability": [
+        "packages/eslint-plugin-maintainability/src/index.ts"
+      ],
+      "eslint-plugin-reliability": [
+        "packages/eslint-plugin-reliability/src/index.ts"
+      ],
+      "eslint-plugin-operability": [
+        "packages/eslint-plugin-operability/src/index.ts"
+      ],
+      "eslint-plugin-conventions": [
+        "packages/eslint-plugin-conventions/src/index.ts"
+      ],
+      "@interlace/eslint-plugin-modularity": [
+        "packages/eslint-plugin-modularity/src/index.ts"
+      ],
+      "@interlace/eslint-plugin-modernization": [
+        "packages/eslint-plugin-modernization/src/index.ts"
       ]
     }
   },

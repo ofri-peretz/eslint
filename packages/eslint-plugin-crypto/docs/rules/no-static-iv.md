@@ -1,95 +1,149 @@
-# no-static-iv
+---
+title: no-static-iv
+description: 'CWE: [CWE-329](https://cwe.mitre.org/data/definitions/329.html)'
+category: security
+tags: ['security', 'crypto']
+---
 
-> No Static Iv
+> **Keywords:** no-static-iv, initialization vector, hardcoded IV, deterministic encryption, security, ESLint rule, CWE-329, predictable crypto
+> **CWE:** [CWE-329: Not Using an Unpredictable IV with CBC Mode](https://cwe.mitre.org/data/definitions/329.html)  
+> **OWASP:** [OWASP Top 10 A02:2021 - Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 
-## Description
+ESLint Rule: no-static-iv. This rule is part of [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto).
 
-TODO: Add description for this rule.
+## Quick Summary
 
-## OWASP Mapping
+| Aspect         | Details                                 |
+| -------------- | --------------------------------------- |
+| **Severity**   | High (Cryptographic Failure)            |
+| **Auto-Fix**   | ❌ No (requires logic update)           |
+| **Category**   | Security |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For**   | Shared secrets and database encryption  |
 
-- **OWASP Top 10**: A02:2021 - Cryptographic Failures
-- **CWE**: CWE-327 - Use of a Broken or Risky Cryptographic Algorithm
+## Vulnerability and Risk
+
+**Vulnerability:** Use of static (hardcoded) strings or fixed buffers as Initialization Vectors (IVs) for symmetric encryption (e.g., AES).
+
+**Risk:** Static IVs make encryption deterministic. If the same plaintext is encrypted twice with the same key and same static IV, the resulting ciphertext will be identical. This allows attackers to detect patterns, perform "chosen-plaintext" attacks, and in some cases, decrypt data without the secret key.
 
 ## Error Message Format
 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-327 OWASP:A04 CVSS:7.5 | Broken Cryptographic Algorithm detected | HIGH [PCI-DSS,HIPAA,ISO27001,NIST-CSF]
-   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A04_2021/
+🔒 CWE-329 OWASP:A02 | Static IV detected | HIGH [PredictableCrypto]
+   Fix: Replace hardcoded IV with dynamic source: const iv = crypto.randomBytes(16) | https://cwe.mitre.org/data/definitions/329.html
 ```
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-327](https://cwe.mitre.org/data/definitions/327.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description** | Specific vulnerability | `Broken Cryptographic Algorithm detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH [PCI-DSS,HIPAA,ISO27001,NIST-CSF]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                   |
+| :------------------------ | :--------------------- | :-------------------------------------------------------------------------------------------------------- |
+| **Risk Standards**        | Security benchmarks    | [CWE-329](https://cwe.mitre.org/data/definitions/329.html) [OWASP:A02](https://owasp.org/Top10/A02_2021/) |
+| **Issue Description**     | Specific vulnerability | `Static IV detected`                                                                                      |
+| **Severity & Compliance** | Impact assessment      | `HIGH [PredictableCrypto]`                                                                                |
+| **Fix Instruction**       | Actionable remediation | `Replace hardcoded IV with dynamic source`                                                                |
+| **Technical Truth**       | Official reference     | [Deterministic Encryption](https://cwe.mitre.org/data/definitions/329.html)                               |
 
 ## Rule Details
 
-TODO: Add rule details.
+This rule flags uses of `crypto.createCipheriv()` and `crypto.createDecipheriv()` where the 3rd argument (IV) is a string literal, a literal buffer, or a variable that appears to be static.
+
+```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#f8fafc',
+    'primaryTextColor': '#1e293b',
+    'primaryBorderColor': '#334155',
+    'lineColor': '#475569',
+    'c0': '#f8fafc',
+    'c1': '#f1f5f9',
+    'c2': '#e2e8f0',
+    'c3': '#cbd5e1'
+  }
+}}%%
+flowchart TD
+    A[createCipheriv Call] --> B{IV is a string literal?}
+    B -->|Yes| C[🚨 Static IV Risk]
+    B -->|No| D{IV is Buffer.from('string')?}
+    D -->|Yes| C
+    D -->|No| E[✅ Likely Dynamic]
+    C --> F[💡 Suggest crypto.randomBytes]
+```
+
+### Why This Matters
+
+| Issue                  | Impact                               | Solution                                               |
+| ---------------------- | ------------------------------------ | ------------------------------------------------------ |
+| 🕵️ **Pattern Recon**   | Duplicate messages revealed to actor | Use a unique IV for every single encryption call       |
+| 🚀 **Data Extraction** | High risk of plaintext recovery      | Ensure IVs are truly unpredictable and non-repeating   |
+| 🔒 **Compliance**      | Violates FIPS/PCI-DSS standards      | Store the unique IV alongside the ciphertext in the DB |
+
+## Configuration
+
+This rule supports the following options:
+
+```javascript
+{
+  "rules": {
+    "crypto/no-static-iv": ["error", {
+      "allowInTests": true // Allow fixed IVs in .test.js files for deterministic testing
+    }]
+  }
+}
+```
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```javascript
-// TODO: Add incorrect example
+// Hardcoded hex string as IV
+const iv = '1234567890abcdef1234567890abcdef';
+const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+
+// Hardcoded Buffer
+const iv = Buffer.from('my-static-string-iv');
+const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
 ```
 
 ### ✅ Correct
 
 ```javascript
-// TODO: Add correct example
+// Dynamic IV generation (Recommended)
+const iv = crypto.randomBytes(16);
+const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+
+// Passing dynamic IV stored in DB
+const iv = Buffer.from(encryptedPackage.iv, 'hex');
+const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
 ```
-
-## Options
-
-This rule has no options.
-
-## When Not To Use It
-
-TODO: Add when not to use.
 
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Values from Variables
+### Complexity of Source
 
-**Why**: Values stored in variables are not traced.
+**Why**: If the IV is built from a complex sequence of non-literal strings (e.g. `const iv = 'a' + 'b' + 'c'`), the rule logic may skip it.
 
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = userInput;
-dangerousOperation(value);
+```javascript
+const iv = getParts().join('');
+crypto.createCipheriv(algo, key, iv); // ❌ NOT DETECTED
 ```
 
-**Mitigation**: Validate all user inputs.
+**Mitigation**: Always use `crypto.randomBytes(16)` and document the source of all IV variables.
 
-### Wrapper Functions
+### IV Reuse
 
-**Why**: Custom wrappers not recognized.
+**Why**: This rule detects _static_ IVs, but it cannot detect if a _randomly generated_ IV is being reused incorrectly for multiple messages (which is also a vulnerability).
 
-```typescript
-// ❌ NOT DETECTED - Wrapper
-myWrapper(userInput); // Uses dangerous API internally
-```
+**Mitigation**: Audit your encryption service logic to ensure `randomBytes` is called once per encryption operation.
 
-**Mitigation**: Apply rule to wrapper implementations.
+## References
 
-### Dynamic Invocation
-
-**Why**: Dynamic calls not analyzed.
-
-```typescript
-// ❌ NOT DETECTED - Dynamic
-obj[method](userInput);
-```
-
-**Mitigation**: Avoid dynamic method invocation.
+- [CWE-329: Not Using an Unpredictable IV with CBC Mode](https://cwe.mitre.org/data/definitions/329.html)
+- [OWASP Cryptographic Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#initialization-vectors)
+- [Why you should never reuse an IV](https://en.wikipedia.org/wiki/Initialization_vector#IV_reuse)

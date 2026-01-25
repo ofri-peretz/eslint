@@ -1,9 +1,9 @@
 ---
 title: no-batch-insert-loop
-description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
+description: "CWE: CWE-693"
 ---
 
-> **Keywords:** N+1 queries, performance, [CWE-400](https://cwe.mitre.org/data/definitions/400.html), pg, node-postgres, bulk operations
+> **Keywords:** N+1 queries, performance, CWE-400, pg, node-postgres, bulk operations
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern).
@@ -14,7 +14,7 @@ Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern).
 
 | Aspect            | Details                       |
 | ----------------- | ----------------------------- |
-| **CWE Reference** | [CWE-400](https://cwe.mitre.org/data/definitions/400.html) (Resource Exhaustion) |
+| **CWE Reference** | CWE-400 (Resource Exhaustion) |
 | **Severity**      | Medium (performance)          |
 | **Category**      | Performance                   |
 
@@ -67,7 +67,7 @@ await client.query('UPDATE users SET active = true WHERE id = ANY($1)', [
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 [CWE-400](https://cwe.mitre.org/data/definitions/400.html) OWASP:A06 CVSS:7.5 | Uncontrolled Resource Consumption (ReDoS) detected | HIGH
+🔒 CWE-400 OWASP:A06 CVSS:7.5 | Uncontrolled Resource Consumption (ReDoS) detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
 ```
 

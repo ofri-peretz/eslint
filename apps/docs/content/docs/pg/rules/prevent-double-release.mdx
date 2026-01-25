@@ -1,9 +1,9 @@
 ---
 title: prevent-double-release
-description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
+description: "CWE: CWE-693"
 ---
 
-> **Keywords:** double release, connection pool, [CWE-415](https://cwe.mitre.org/data/definitions/415.html), pg, node-postgres, pool corruption
+> **Keywords:** double release, connection pool, CWE-415, pg, node-postgres, pool corruption
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Prevents calling `client.release()` multiple times on the same client.
@@ -14,7 +14,7 @@ Prevents calling `client.release()` multiple times on the same client.
 
 | Aspect            | Details                   |
 | ----------------- | ------------------------- |
-| **CWE Reference** | [CWE-415](https://cwe.mitre.org/data/definitions/415.html) (Double Free)     |
+| **CWE Reference** | CWE-415 (Double Free)     |
 | **Severity**      | HIGH (CVSS: 6.5)          |
 | **Category**      | Correctness / Reliability |
 

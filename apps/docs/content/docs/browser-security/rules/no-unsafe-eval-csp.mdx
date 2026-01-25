@@ -12,7 +12,7 @@ Disallow 'unsafe-eval' in Content Security Policy directives.
 | Property     | Value                                                                    |
 | ------------ | ------------------------------------------------------------------------ |
 | **CWE**      | [CWE-95: Code Injection](https://cwe.mitre.org/data/definitions/95.html) |
-| **OWASP**    | [A03:2021](https://owasp.org/Top10/A03_2021-Injection/) - Injection                                                     |
+| **OWASP**    | A03:2021 - Injection                                                     |
 | **CVSS**     | 8.1 (High)                                                               |
 | **Severity** | HIGH                                                                     |
 
@@ -138,7 +138,7 @@ helmet.contentSecurityPolicy({ directives: { scriptSrc: ["'unsafe-eval'"] } });
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 [CWE-95](https://cwe.mitre.org/data/definitions/95.html) OWASP:A05 CVSS:9.8 | Eval Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
+🔒 CWE-95 OWASP:A05 CVSS:9.8 | Eval Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 

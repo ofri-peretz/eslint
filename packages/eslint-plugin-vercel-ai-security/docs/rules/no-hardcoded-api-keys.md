@@ -1,4 +1,10 @@
-# `no-hardcoded-api-keys`
+---
+title: no-hardcoded-api-keys
+description: 'no-hardcoded-api-keys'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Detects hardcoded API keys and secrets in AI SDK configuration.
 

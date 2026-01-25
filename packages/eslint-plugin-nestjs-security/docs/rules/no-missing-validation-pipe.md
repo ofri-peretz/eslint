@@ -1,4 +1,10 @@
-# no-missing-validation-pipe
+---
+title: no-missing-validation-pipe
+description: 'no-missing-validation-pipe'
+category: security
+tags: ['security', 'nestjs']
+---
+
 
 > Require ValidationPipe for DTO input parameters
 

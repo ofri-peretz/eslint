@@ -1,4 +1,10 @@
-# browser-security/no-websocket-eval
+---
+title: no-websocket-eval
+description: 'no-websocket-eval'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > 🔒 Disallow using eval() or Function() with WebSocket message data
 **CWE:** [CWE-319](https://cwe.mitre.org/data/definitions/319.html)  

@@ -1,9 +1,9 @@
 ---
 title: no-innerhtml
-description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
+description: "CWE: CWE-693"
 ---
 
-> **Keywords:** XSS, innerHTML, outerHTML, [CWE-79](https://cwe.mitre.org/data/definitions/79.html), security, DOM manipulation, sanitization, DOMPurify
+> **Keywords:** XSS, innerHTML, outerHTML, CWE-79, security, DOM manipulation, sanitization, DOMPurify
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
@@ -15,7 +15,7 @@ Detects dangerous innerHTML/outerHTML assignments that can lead to Cross-Site Sc
 
 | Aspect            | Details                                            |
 | ----------------- | -------------------------------------------------- |
-| **CWE Reference** | [CWE-79](https://cwe.mitre.org/data/definitions/79.html) (Cross-site Scripting)                      |
+| **CWE Reference** | CWE-79 (Cross-site Scripting)                      |
 | **Severity**      | 🔴 Critical                                        |
 | **Auto-Fix**      | ✅ Yes (suggests DOMPurify)                        |
 | **Category**      | Security                                           |
@@ -233,7 +233,7 @@ element[prop] = userInput;
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-⚠️ [CWE-79](https://cwe.mitre.org/data/definitions/79.html) OWASP:A05 CVSS:6.1 | Cross-site Scripting (XSS) detected | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
+⚠️ CWE-79 OWASP:A05 CVSS:6.1 | Cross-site Scripting (XSS) detected | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 

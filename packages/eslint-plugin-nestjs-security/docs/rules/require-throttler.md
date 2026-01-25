@@ -1,4 +1,10 @@
-# require-throttler
+---
+title: require-throttler
+description: 'require-throttler'
+category: security
+tags: ['security', 'nestjs']
+---
+
 
 > Require ThrottlerGuard or @Throttle decorator for rate limiting
 

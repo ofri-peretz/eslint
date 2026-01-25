@@ -1,4 +1,10 @@
-# require-issued-at
+---
+title: require-issued-at
+description: 'require-issued-at'
+category: security
+tags: ['security', 'jwt']
+---
+
 
 > Require iat (issued at) claim for token freshness validation
 

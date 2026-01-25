@@ -1,4 +1,10 @@
-# no-sensitive-sessionstorage
+---
+title: no-sensitive-sessionstorage
+description: 'no-sensitive-sessionstorage'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > No Sensitive Sessionstorage
 

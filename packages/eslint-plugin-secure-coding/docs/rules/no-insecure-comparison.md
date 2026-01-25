@@ -1,4 +1,10 @@
-# no-insecure-comparison
+---
+title: no-insecure-comparison
+description: 'no-insecure-comparison'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** insecure comparison, CWE-697, security, ESLint rule, loose equality, type coercion, == vs ===, strict equality, JavaScript security, auto-fix, LLM-optimized, code security
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
@@ -15,7 +21,7 @@ Detects insecure comparison operators (`==`, `!=`) that can lead to type coercio
 | **CWE Reference** | CWE-697 (Incorrect Comparison)                                             |
 | **Severity**      | High (security vulnerability)                                              |
 | **Auto-Fix**      | ✅ Yes (replaces == with ===, != with !==)                                 |
-| **Category**      | Security                                                                   |
+| **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                    |
 | **Best For**      | All JavaScript/TypeScript applications, especially security-sensitive code |
 

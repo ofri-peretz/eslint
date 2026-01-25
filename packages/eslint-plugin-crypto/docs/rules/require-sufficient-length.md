@@ -1,60 +1,123 @@
-# require-sufficient-length
+---
+title: require-sufficient-length
+description: 'CWE: [CWE-331](https://cwe.mitre.org/data/definitions/331.html)'
+category: security
+tags: ['security', 'crypto']
+---
 
-> Require Sufficient Length
+> **Keywords:** require-sufficient-length, entropy, token length, random string, security, ESLint rule, CWE-331, brute force
+> **CWE:** [CWE-331: Insufficient Entropy](https://cwe.mitre.org/data/definitions/331.html)  
+> **OWASP:** [OWASP Top 10 A02:2021 - Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 
-## Description
+ESLint Rule: require-sufficient-length. This rule is part of [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto).
 
-TODO: Add description for this rule.
+## Quick Summary
 
-## OWASP Mapping
+| Aspect         | Details                                 |
+| -------------- | --------------------------------------- |
+| **Severity**   | Medium (Insufficient Entropy)           |
+| **Auto-Fix**   | ❌ No (requires length adjustment)      |
+| **Category**   | Security |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For**   | Session tokens, CSRF tokens, API keys   |
 
-- **OWASP Top 10**: A02:2021 - Cryptographic Failures
-- **CWE**: CWE-327 - Use of a Broken or Risky Cryptographic Algorithm
+## Vulnerability and Risk
+
+**Vulnerability:** Insufficient entropy occurs when security-critical tokens (like session IDs or password reset tokens) are too short. Short tokens have a smaller search space, making them easier to guess.
+
+**Risk:** Attackers can perform brute-force or dictionary attacks to guess active session tokens, valid API keys, or reset codes. If successful, this leads to account takeover or unauthorized access to sensitive data.
 
 ## Error Message Format
 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-327 OWASP:A04 CVSS:7.5 | Broken Cryptographic Algorithm detected | HIGH [PCI-DSS,HIPAA,ISO27001,NIST-CSF]
-   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A04_2021/
+🔒 CWE-331 OWASP:A02 | Insufficient token length detected | MEDIUM [LowEntropy]
+   Fix: Increase token length to at least 32 characters to ensure sufficient entropy | https://cwe.mitre.org/data/definitions/331.html
 ```
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-327](https://cwe.mitre.org/data/definitions/327.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description** | Specific vulnerability | `Broken Cryptographic Algorithm detected` |
-| **Severity & Compliance** | Impact assessment | `HIGH [PCI-DSS,HIPAA,ISO27001,NIST-CSF]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                   |
+| :------------------------ | :--------------------- | :-------------------------------------------------------------------------------------------------------- |
+| **Risk Standards**        | Security benchmarks    | [CWE-331](https://cwe.mitre.org/data/definitions/331.html) [OWASP:A02](https://owasp.org/Top10/A02_2021/) |
+| **Issue Description**     | Specific vulnerability | `Insufficient token length detected`                                                                      |
+| **Severity & Compliance** | Impact assessment      | `MEDIUM [LowEntropy]`                                                                                     |
+| **Fix Instruction**       | Actionable remediation | `Increase length to at least 32`                                                                          |
+| **Technical Truth**       | Official reference     | [Insufficient Entropy](https://cwe.mitre.org/data/definitions/331.html)                                   |
 
 ## Rule Details
 
-TODO: Add rule details.
+This rule monitors uses of the `crypto-random-string` library and flags calls where the `length` property is less than the required minimum (default: 32).
+
+```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#f8fafc',
+    'primaryTextColor': '#1e293b',
+    'primaryBorderColor': '#334155',
+    'lineColor': '#475569',
+    'c0': '#f8fafc',
+    'c1': '#f1f5f9',
+    'c2': '#e2e8f0',
+    'c3': '#cbd5e1'
+  }
+}}%%
+flowchart TD
+    A[cryptoRandomString call] --> B{length < 32?}
+    B -->|Yes| C[🚨 Low Entropy Risk]
+    B -->|No| D[✅ Sustainably Random]
+    C --> E[💡 Suggest length: 32+]
+```
+
+### Why This Matters
+
+| Issue               | Impact                            | Solution                                                         |
+| ------------------- | --------------------------------- | ---------------------------------------------------------------- |
+| 🕵️ **Brute Force**  | Tokens estimated and bypassed     | Use at least 128 bits of entropy (approx 22-32 chars hex/base64) |
+| 🚀 **Exfiltration** | Session hijacking                 | Enforce long, non-sequential identifiers                         |
+| 🔒 **Compliance**   | Failure to meet NIST requirements | Implement consistent entropy standards across the codebase       |
+
+## Configuration
+
+This rule supports the following options:
+
+```javascript
+{
+  "rules": {
+    "crypto/require-sufficient-length": ["error", {
+      "minLength": 32 // Default minimum length
+    }]
+  }
+}
+```
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```javascript
-// TODO: Add incorrect example
+import cryptoRandomString from 'crypto-random-string';
+
+// Token is too short (only 10 characters)
+const token = cryptoRandomString({ length: 10 });
+
+// Default sync call with short length
+const salt = cryptoRandomString.sync({ length: 16, type: 'url-safe' });
 ```
 
 ### ✅ Correct
 
 ```javascript
-// TODO: Add correct example
+import cryptoRandomString from 'crypto-random-string';
+
+// Sufficiently long token (32 characters)
+const token = cryptoRandomString({ length: 32 });
+
+// Using a custom length above the minimum
+const apiKey = cryptoRandomString({ length: 64, type: 'alphanumeric' });
 ```
-
-## Options
-
-This rule has no options.
-
-## When Not To Use It
-
-TODO: Add when not to use.
 
 ## Known False Negatives
 
@@ -62,34 +125,23 @@ The following patterns are **not detected** due to static analysis limitations:
 
 ### Values from Variables
 
-**Why**: Values stored in variables are not traced.
+**Why**: If the length is passed as a variable that changes at runtime, the rule cannot determine if it meets the minimum.
 
-```typescript
-// ❌ NOT DETECTED - Value from variable
-const value = userInput;
-dangerousOperation(value);
+```javascript
+const len = getLengthFromConfig();
+const token = cryptoRandomString({ length: len }); // ❌ NOT DETECTED
 ```
 
-**Mitigation**: Validate all user inputs.
+**Mitigation**: Always use numeric literals for security-critical parameters in your codebase.
 
-### Wrapper Functions
+### Other Random Libraries
 
-**Why**: Custom wrappers not recognized.
+**Why**: This rule specifically targets `crypto-random-string`. Calls to `nanoid`, `uuid`, or custom generators are not analyzed.
 
-```typescript
-// ❌ NOT DETECTED - Wrapper
-myWrapper(userInput); // Uses dangerous API internally
-```
+**Mitigation**: Standardize on a single trusted library for random identifiers.
 
-**Mitigation**: Apply rule to wrapper implementations.
+## References
 
-### Dynamic Invocation
-
-**Why**: Dynamic calls not analyzed.
-
-```typescript
-// ❌ NOT DETECTED - Dynamic
-obj[method](userInput);
-```
-
-**Mitigation**: Avoid dynamic method invocation.
+- [CWE-331: Insufficient Entropy](https://cwe.mitre.org/data/definitions/331.html)
+- [OWASP Session Management - Entropy](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html#session-id-entropy)
+- [NIST SP 800-63B - Authentication and Lifecycle Management](https://pages.nist.gov/800-63-3/sp800-63b.html)

@@ -3,7 +3,7 @@ title: no-unsafe-query
 description: Prevents NoSQL injection by detecting direct use of user input in MongoDB query objects.
 ---
 
-> **Keywords:** NoSQL injection, [CWE-943](https://cwe.mitre.org/data/definitions/943.html), MongoDB, Mongoose, operator injection, query manipulation, security
+> **Keywords:** NoSQL injection, CWE-943, MongoDB, Mongoose, operator injection, query manipulation, security
 
 Prevents NoSQL injection by detecting direct use of user input in MongoDB query objects.
 
@@ -13,8 +13,8 @@ Prevents NoSQL injection by detecting direct use of user input in MongoDB query 
 
 | Aspect            | Details                                   |
 | ----------------- | ----------------------------------------- |
-| **CWE Reference** | [CWE-943](https://cwe.mitre.org/data/definitions/943.html) (NoSQL Injection)                 |
-| **OWASP**         | [A03:2021](https://owasp.org/Top10/A03_2021-Injection/) - Injection                      |
+| **CWE Reference** | CWE-943 (NoSQL Injection)                 |
+| **OWASP**         | A03:2021 - Injection                      |
 | **Severity**      | Critical (CVSS: 9.8)                      |
 | **Category**      | Security                                  |
 | **ESLint MCP**    | ✅ Optimized for AI assistant integration |
@@ -67,7 +67,7 @@ User.find({ email: { $eq: email } });
 ## Error Message Format
 
 ```
-🔒 [CWE-943](https://cwe.mitre.org/data/definitions/943.html) OWASP:[A03:2021](https://owasp.org/Top10/A03_2021-Injection/)-Injection CVSS:9.8 | NoSQL injection via user input | CRITICAL
+🔒 CWE-943 OWASP:A03:2021-Injection CVSS:9.8 | NoSQL injection via user input | CRITICAL
    Fix: Wrap user input with explicit $eq operator: { field: { $eq: sanitize(value) } }
 ```
 

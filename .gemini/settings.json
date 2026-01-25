@@ -1,23 +1,48 @@
 {
-    "$schema": "https://json.schemastore.org/gemini-settings.json",
+    "agent": {
+        "planningMode": "auto"
+    },
     "codebaseIndexing": {
         "excludePatterns": [
+            "// ===== Package Managers =====",
             "**/node_modules/**",
-            "**/.git/**",
-            "**/.nx/**",
-            "**/.next/**",
-            "**/dist/**",
-            "**/coverage/**",
-            "**/test-results/**",
             "**/.pnpm-store/**",
+            "packages/**/pnpm-lock.yaml",
+            "apps/**/pnpm-lock.yaml",
+            "// ===== Build Outputs =====",
+            "**/dist/**",
+            "**/build/**",
+            "**/out/**",
+            "**/.next/**",
+            "**/standalone/**",
+            "**/_next/**",
+            "// ===== Framework Caches =====",
+            "**/.nx/**",
             "**/.cache/**",
             "**/.parcel-cache/**",
             "**/.contentlayer/**",
+            "**/.source/**",
+            "**/.turbo/**",
+            "**/.vercel/**",
+            "// ===== Test Artifacts =====",
+            "**/coverage/**",
+            "**/test-results/**",
+            "**/.nyc_output/**",
+            "**/.jest/**",
+            "**/*.junit.xml",
+            "// ===== Temporary Files =====",
             "**/tmp/**",
+            "// ===== Version Control =====",
+            "**/.git/**",
+            "// ===== Large Generated Files =====",
             "**/graph.json",
             "**/*.tsbuildinfo",
             "**/*.log",
-            "**/pnpm-lock.yaml"
+            "**/*.map",
+            "// ===== OS Artifacts =====",
+            "**/.DS_Store",
+            "**/Thumbs.db",
+            "**/ehthumbs.db"
         ]
     }
 }

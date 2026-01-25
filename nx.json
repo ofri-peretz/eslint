@@ -2,7 +2,10 @@
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "defaultBase": "main",
   "namedInputs": {
-    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "default": [
+      "{projectRoot}/**/*",
+      "sharedGlobals"
+    ],
     "production": [
       "default",
       "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
@@ -24,9 +27,18 @@
   },
   "targetDefaults": {
     "build": {
-      "dependsOn": ["^build", "test"],
-      "inputs": ["production", "^production"],
-      "outputs": ["{projectRoot}/dist", "{projectRoot}/.tsbuildinfo"],
+      "dependsOn": [
+        "^build",
+        "test"
+      ],
+      "inputs": [
+        "production",
+        "^production"
+      ],
+      "outputs": [
+        "{projectRoot}/dist",
+        "{projectRoot}/.tsbuildinfo"
+      ],
       "cache": true,
       "configurations": {
         "production": {}
@@ -40,11 +52,16 @@
         "{workspaceRoot}/eslint.config.js",
         "{workspaceRoot}/eslint.config.mjs"
       ],
-      "outputs": ["{projectRoot}/.eslintcache"],
+      "outputs": [
+        "{projectRoot}/.eslintcache"
+      ],
       "cache": true
     },
     "test": {
-      "inputs": ["default", "^production"],
+      "inputs": [
+        "default",
+        "^production"
+      ],
       "outputs": [
         "{projectRoot}/coverage",
         "{projectRoot}/test-report.junit.xml"
@@ -53,17 +70,31 @@
     },
     "@nx/js:tsc": {
       "cache": true,
-      "dependsOn": ["^build"],
-      "inputs": ["production", "^production"],
-      "outputs": ["{projectRoot}/dist", "{projectRoot}/.tsbuildinfo"]
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "production",
+        "^production"
+      ],
+      "outputs": [
+        "{projectRoot}/dist",
+        "{projectRoot}/.tsbuildinfo"
+      ]
     },
     "typecheck": {
       "cache": true,
-      "inputs": ["default", "{workspaceRoot}/tsconfig.base.json"]
+      "inputs": [
+        "default",
+        "{workspaceRoot}/tsconfig.base.json"
+      ]
     },
     "@nx/vite:test": {
       "cache": true,
-      "inputs": ["default", "^production"],
+      "inputs": [
+        "default",
+        "^production"
+      ],
       "outputs": [
         "{projectRoot}/coverage",
         "{projectRoot}/test-report.junit.xml"
@@ -73,7 +104,9 @@
   "plugins": [
     {
       "plugin": "@nx/eslint/plugin",
-      "exclude": ["**/benchmark/**"],
+      "exclude": [
+        "**/benchmark/**"
+      ],
       "options": {
         "targetName": "lint",
         "eslintArgs": "--max-warnings=0"
@@ -81,7 +114,9 @@
     },
     {
       "plugin": "@nx/vite/plugin",
-      "exclude": ["**/benchmark/**"],
+      "exclude": [
+        "**/benchmark/**"
+      ],
       "options": {
         "buildTargetName": "build",
         "testTargetName": "test",
@@ -94,12 +129,6 @@
         "watchDepsTargetName": "watch-deps"
       }
     },
-    {
-      "plugin": "@nx/jest/plugin",
-      "options": {
-        "targetName": "test"
-      }
-    }
   ],
   "release": {
     "projects": [
@@ -115,7 +144,9 @@
       "eslint-plugin-browser-security",
       "eslint-plugin-lambda-security",
       "eslint-plugin-mongodb-security",
-      "eslint-plugin-node-security"
+      "eslint-plugin-node-security",
+      "eslint-plugin-modularity",
+      "eslint-plugin-modernization"
     ],
     "projectsRelationship": "independent",
     "conventionalCommits": {
@@ -181,7 +212,9 @@
       "versionActionsOptions": {
         "skipLockFileUpdate": true
       },
-      "manifestRootsToUpdate": ["{projectRoot}"],
+      "manifestRootsToUpdate": [
+        "{projectRoot}"
+      ],
       "git": {
         "commit": true,
         "commitArgs": "--no-verify",

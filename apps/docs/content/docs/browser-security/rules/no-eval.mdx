@@ -1,9 +1,9 @@
 ---
 title: no-eval
-description: "CWE: [CWE-95](https://cwe.mitre.org/data/definitions/95.html)"
+description: "CWE: CWE-95"
 ---
 
-> **Keywords:** eval, code injection, [CWE-94](https://cwe.mitre.org/data/definitions/94.html), security, dynamic code execution, Function constructor
+> **Keywords:** eval, code injection, CWE-94, security, dynamic code execution, Function constructor
 **CWE:** [CWE-95](https://cwe.mitre.org/data/definitions/95.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
@@ -15,7 +15,7 @@ Detects dangerous eval() and similar code execution patterns. This rule is part 
 
 | Aspect            | Details                      |
 | ----------------- | ---------------------------- |
-| **CWE Reference** | [CWE-94](https://cwe.mitre.org/data/definitions/94.html) (Code Injection)      |
+| **CWE Reference** | CWE-94 (Code Injection)      |
 | **Severity**      | 🔴 Critical                  |
 | **Auto-Fix**      | ❌ No (requires refactoring) |
 | **Category**      | Security                     |
@@ -190,7 +190,7 @@ new Worker(`data:,${userCode}`);
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 [CWE-94](https://cwe.mitre.org/data/definitions/94.html) OWASP:A05 CVSS:9.8 | Code Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
+🔒 CWE-94 OWASP:A05 CVSS:9.8 | Code Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 

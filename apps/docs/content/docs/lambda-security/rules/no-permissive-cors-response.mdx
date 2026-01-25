@@ -1,9 +1,9 @@
 ---
 title: no-permissive-cors-response
-description: "CWE: [CWE-942](https://cwe.mitre.org/data/definitions/942.html)"
+description: "CWE: CWE-942"
 ---
 
-> **Keywords:** CORS, Lambda, API Gateway, [CWE-942](https://cwe.mitre.org/data/definitions/942.html), security, Access-Control-Allow-Origin, wildcard, auto-fix
+> **Keywords:** CORS, Lambda, API Gateway, CWE-942, security, Access-Control-Allow-Origin, wildcard, auto-fix
 **CWE:** [CWE-942](https://cwe.mitre.org/data/definitions/942.html)  
 **OWASP Mobile:** [M8: Security Misconfiguration](https://owasp.org/www-project-mobile-top-10/)
 
@@ -15,7 +15,7 @@ Detects permissive CORS headers in Lambda API Gateway responses. This rule is pa
 
 | Aspect            | Details                                          |
 | ----------------- | ------------------------------------------------ |
-| **CWE Reference** | [CWE-942](https://cwe.mitre.org/data/definitions/942.html) (Permissive Cross-domain Policy)         |
+| **CWE Reference** | CWE-942 (Permissive Cross-domain Policy)         |
 | **Severity**      | 🔴 High                                          |
 | **Auto-Fix**      | ✅ Yes                                           |
 | **Category**      | Security                                         |
@@ -241,7 +241,7 @@ return { statusCode: 200, body: '...' };
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 [CWE-942](https://cwe.mitre.org/data/definitions/942.html) OWASP:A01 CVSS:7.5 | CORS Misconfiguration detected | HIGH
+🔒 CWE-942 OWASP:A01 CVSS:7.5 | CORS Misconfiguration detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
 ```
 

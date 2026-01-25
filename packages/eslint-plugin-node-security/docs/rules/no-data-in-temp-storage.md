@@ -1,4 +1,10 @@
-# no-data-in-temp-storage
+---
+title: no-data-in-temp-storage
+description: 'no-data-in-temp-storage'
+category: security
+tags: ['security', 'node']
+---
+
 
 > Prevents sensitive data in temporary directories
 
@@ -14,7 +20,7 @@
 | **CWE Reference** | [CWE-312](https://cwe.mitre.org/data/definitions/312.html) (Cleartext Storage) |
 | **Severity**      | 🟠 HIGH                                                                        |
 | **Auto-Fix**      | ❌ Not available                                                               |
-| **Category**      | Data Protection                                                                |
+| **Category**   | Security |
 | **Best For**      | Node.js File I/O                                                               |
 
 ## Rule Details

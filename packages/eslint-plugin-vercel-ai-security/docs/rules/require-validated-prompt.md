@@ -1,4 +1,10 @@
-# `require-validated-prompt`
+---
+title: require-validated-prompt
+description: 'require-validated-prompt'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Prevents prompt injection by detecting unvalidated user input in AI prompts.
 

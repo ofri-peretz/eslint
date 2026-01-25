@@ -1,4 +1,10 @@
-# no-worker-message-innerhtml
+---
+title: no-worker-message-innerhtml
+description: 'no-worker-message-innerhtml'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > No Worker Message Innerhtml
 

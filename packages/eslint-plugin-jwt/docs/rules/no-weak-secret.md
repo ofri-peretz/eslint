@@ -1,4 +1,10 @@
-# no-weak-secret
+---
+title: no-weak-secret
+description: 'no-weak-secret'
+category: security
+tags: ['security', 'jwt']
+---
+
 
 > Require strong secrets (256+ bits) for HMAC-based JWT signing
 

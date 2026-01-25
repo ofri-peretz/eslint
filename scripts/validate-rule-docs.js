@@ -59,8 +59,16 @@ ruleDocs.forEach((filePath, index) => {
   }
   
   // Check 7: Has placeholder/stub content
-  if (content.includes('Insecure pattern') || content.includes('Secure pattern') || 
-      content.includes('security rule for') || content.includes('CWE-000')) {
+  const placeholderPatterns = [
+    /insecure pattern/i,
+    /secure pattern/i,
+    /TODO:/i,
+    /Add specific examples/i,
+    /security rule for/i,
+    /CWE-000/i,
+    /Example of .* detected by this rule/i
+  ];
+  if (placeholderPatterns.some(pattern => content.match(pattern))) {
     ruleIssues.push('Contains placeholder/stub content');
   }
   

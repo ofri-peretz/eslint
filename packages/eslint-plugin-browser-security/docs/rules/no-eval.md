@@ -1,4 +1,10 @@
-# no-eval
+---
+title: no-eval
+description: 'no-eval'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > **Keywords:** eval, code injection, CWE-94, security, dynamic code execution, Function constructor
 **CWE:** [CWE-95](https://cwe.mitre.org/data/definitions/95.html)  
@@ -15,7 +21,7 @@ Detects dangerous eval() and similar code execution patterns. This rule is part 
 | **CWE Reference** | CWE-94 (Code Injection)      |
 | **Severity**      | 🔴 Critical                  |
 | **Auto-Fix**      | ❌ No (requires refactoring) |
-| **Category**      | Security                     |
+| **Category**   | Security |
 | **Best For**      | All JavaScript applications  |
 
 ## Vulnerability and Risk

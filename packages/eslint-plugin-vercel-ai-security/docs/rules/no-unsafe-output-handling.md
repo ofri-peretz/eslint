@@ -1,4 +1,10 @@
-# `no-unsafe-output-handling`
+---
+title: no-unsafe-output-handling
+description: 'no-unsafe-output-handling'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Prevents using AI-generated content in dangerous operations like eval, SQL, or innerHTML.
 

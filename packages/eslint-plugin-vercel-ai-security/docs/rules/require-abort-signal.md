@@ -1,4 +1,10 @@
-# `require-abort-signal`
+---
+title: require-abort-signal
+description: 'require-abort-signal'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Ensures streaming calls have AbortSignal for graceful cancellation.
 

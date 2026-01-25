@@ -41,6 +41,7 @@
     "eslint",
     "eslint-plugin",
     "eslintplugin",
+    "interlace-security",
     "browser",
     "browser-security",
     "web-security",
@@ -72,6 +73,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "tslib": "^2.3.0",
     "@interlace/eslint-devkit": "^1.2.1"
   },
   "peerDependencies": {},

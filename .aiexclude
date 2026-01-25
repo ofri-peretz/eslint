@@ -1,0 +1,77 @@
+# ===========================================
+# Gemini Code Assist / Antigravity Exclusions
+# ===========================================
+# This file follows .gitignore syntax
+# Files/folders listed here will NOT be indexed
+# IMPORTANT: Use ** prefix for recursive matching
+
+# =====================
+# Package Managers
+# =====================
+**/node_modules/
+**/.pnpm-store/
+# Root pnpm-lock.yaml is kept (essential for monorepo)
+# Only exclude nested lock files that shouldn't exist
+packages/**/pnpm-lock.yaml
+apps/**/pnpm-lock.yaml
+
+# =====================
+# Build Outputs
+# =====================
+**/dist/
+**/build/
+**/out/
+**/.next/
+**/standalone/
+**/_next/
+
+# =====================
+# Framework Caches
+# =====================
+**/.nx/
+**/.cache/
+**/.parcel-cache/
+**/.contentlayer/
+**/.source/
+**/.turbo/
+**/.vercel/
+
+# =====================
+# Test Artifacts
+# =====================
+**/coverage/
+**/test-results/
+**/.nyc_output/
+**/.jest/
+**/*.junit.xml
+
+# =====================
+# Temporary Files
+# =====================
+**/tmp/
+
+# =====================
+# Version Control
+# =====================
+**/.git/
+
+# =====================
+# Large Generated Files
+# =====================
+**/graph.json
+**/*.tsbuildinfo
+**/*.log
+**/*.map
+
+# =====================
+# OS Artifacts
+# =====================
+**/.DS_Store
+**/Thumbs.db
+**/ehthumbs.db
+
+# =====================
+# IDE/Editor Artifacts
+# =====================
+**/.idea/
+**/*.iml

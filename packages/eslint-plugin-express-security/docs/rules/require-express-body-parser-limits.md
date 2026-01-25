@@ -1,4 +1,10 @@
-# require-express-body-parser-limits
+---
+title: require-express-body-parser-limits
+description: 'require-express-body-parser-limits'
+category: security
+tags: ['security', 'express']
+---
+
 
 > Require size limits on body parser middleware to prevent DoS attacks
 

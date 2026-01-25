@@ -1,4 +1,10 @@
-# no-secrets-in-env
+---
+title: no-secrets-in-env
+description: 'no-secrets-in-env'
+category: security
+tags: ['security', 'lambda']
+---
+
 
 > **Keywords:** secrets, environment variables, Lambda, CWE-798, security, hardcoded secrets
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
@@ -15,7 +21,7 @@ Detects secrets defined directly in environment variable configurations. This ru
 | **CWE Reference** | CWE-798 (Use of Hard-coded Credentials)               |
 | **Severity**      | 🔴 Critical                                           |
 | **Auto-Fix**      | ✅ Yes (suggests Secrets Manager)                     |
-| **Category**      | Security                                              |
+| **Category**   | Security |
 | **Best For**      | Lambda configurations, CDK/SAM/Serverless definitions |
 
 ## Vulnerability and Risk

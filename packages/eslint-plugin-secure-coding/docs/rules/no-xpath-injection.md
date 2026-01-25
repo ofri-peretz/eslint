@@ -1,4 +1,10 @@
-# no-xpath-injection
+---
+title: no-xpath-injection
+description: 'no-xpath-injection'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** XPath injection, CWE-643, XML, security, data extraction, authentication bypass
 **CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
@@ -15,7 +21,7 @@ Detects XPath injection vulnerabilities. This rule is part of [`eslint-plugin-se
 | **CWE Reference** | [CWE-643](https://cwe.mitre.org/data/definitions/643.html) (XPath Injection) |
 | **Severity**      | Critical (CVSS 9.8)                                                          |
 | **Auto-Fix**      | 💡 Suggestions available                                                     |
-| **Category**      | Injection Prevention                                                         |
+| **Category**   | Security |
 
 ## Vulnerability and Risk
 

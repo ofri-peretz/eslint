@@ -1,4 +1,10 @@
-# `require-max-steps`
+---
+title: require-max-steps
+description: 'require-max-steps'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Prevents infinite tool calling loops in multi-step agents.
 

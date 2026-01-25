@@ -1,4 +1,10 @@
-# no-env-logging
+---
+title: no-env-logging
+description: 'no-env-logging'
+category: security
+tags: ['security', 'lambda']
+---
+
 
 > **Keywords:** environment variables, logging, Lambda, CWE-532, security, sensitive data exposure
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
@@ -15,7 +21,7 @@ Detects logging of environment variables which may contain secrets. This rule is
 | **CWE Reference** | CWE-532 (Insertion of Sensitive Info into Log File) |
 | **Severity**      | 🟡 Warning                                          |
 | **Auto-Fix**      | ❌ No (requires manual review)                      |
-| **Category**      | Security                                            |
+| **Category**   | Security |
 | **Best For**      | Lambda handlers, debugging code                     |
 
 ## Vulnerability and Risk

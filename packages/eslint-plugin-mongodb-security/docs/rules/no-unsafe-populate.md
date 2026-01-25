@@ -1,4 +1,10 @@
-# no-unsafe-populate
+---
+title: no-unsafe-populate
+description: 'no-unsafe-populate'
+category: security
+tags: ['security', 'mongodb']
+---
+
 
 > **Keywords:** CWE-943, populate, Mongoose, injection, CVE-2025-23061, security
 
@@ -14,7 +20,7 @@ Detects user-controlled `populate()` paths that could lead to data exposure or i
 | **CVE**           | CVE-2025-23061 (Mongoose populate injection) |
 | **OWASP**         | A03:2021 - Injection                         |
 | **Severity**      | Medium (CVSS: 6.5)                           |
-| **Category**      | Security                                     |
+| **Category**   | Security |
 
 ## Rule Details
 

@@ -1,4 +1,10 @@
-# `require-tool-schema`
+---
+title: require-tool-schema
+description: 'Get weather'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Ensures all AI tools have Zod schema validation for input parameters.
 

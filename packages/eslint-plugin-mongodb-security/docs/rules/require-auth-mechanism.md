@@ -1,4 +1,10 @@
-# require-auth-mechanism
+---
+title: require-auth-mechanism
+description: 'require-auth-mechanism'
+category: security
+tags: ['security', 'mongodb']
+---
+
 
 > **Keywords:** CWE-287, authentication, SCRAM-SHA-256, MongoDB, security
 
@@ -13,7 +19,7 @@ Requires explicit authentication mechanism specification for MongoDB connections
 | **CWE Reference** | CWE-287 (Improper Authentication)       |
 | **OWASP**         | A07:2021 - Identification/Auth Failures |
 | **Severity**      | Medium (CVSS: 6.5)                      |
-| **Category**      | Security                                |
+| **Category**   | Security |
 
 ## Error Message Format
 

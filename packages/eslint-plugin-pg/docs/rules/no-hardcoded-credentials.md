@@ -1,4 +1,10 @@
-# no-hardcoded-credentials
+---
+title: no-hardcoded-credentials
+description: 'no-hardcoded-credentials'
+category: security
+tags: ['security', 'postgres']
+---
+
 
 > **Keywords:** credentials, passwords, secrets, CWE-798, pg, node-postgres, security
 **CWE:** [CWE-522](https://cwe.mitre.org/data/definitions/522.html)
@@ -13,7 +19,7 @@ Prevents hardcoded passwords and connection strings in PostgreSQL client initial
 | ----------------- | ------------------------------- |
 | **CWE Reference** | CWE-798 (Hardcoded Credentials) |
 | **Severity**      | High (CVSS: 7.5)                |
-| **Category**      | Security                        |
+| **Category**   | Security |
 
 ## Rule Details
 

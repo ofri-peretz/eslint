@@ -1,4 +1,10 @@
-# no-debug-mode-production
+---
+title: no-debug-mode-production
+description: 'no-debug-mode-production'
+category: security
+tags: ['security', 'mongodb']
+---
+
 
 > **Keywords:** CWE-489, debug, Mongoose, logging, production, security
 
@@ -13,7 +19,7 @@ Detects Mongoose debug mode that could expose sensitive query information in pro
 | **CWE Reference** | CWE-489 (Active Debug Code)          |
 | **OWASP**         | A05:2021 - Security Misconfiguration |
 | **Severity**      | Low (CVSS: 3.1)                      |
-| **Category**      | Security                             |
+| **Category**   | Security |
 
 ## Rule Details
 

@@ -1,4 +1,10 @@
-# no-permissive-cors-middy
+---
+title: no-permissive-cors-middy
+description: 'no-permissive-cors-middy'
+category: security
+tags: ['security', 'lambda']
+---
+
 
 > **Keywords:** CORS, Middy, Lambda middleware, CWE-942, security, wildcard origin
 **CWE:** [CWE-942](https://cwe.mitre.org/data/definitions/942.html)  
@@ -15,7 +21,7 @@ Detects permissive CORS configurations in Middy middleware. This rule is part of
 | **CWE Reference** | CWE-942 (Permissive Cross-domain Policy) |
 | **Severity**      | 🔴 High                                  |
 | **Auto-Fix**      | ✅ Yes                                   |
-| **Category**      | Security                                 |
+| **Category**   | Security |
 | **Best For**      | Lambda functions using Middy middleware  |
 
 ## Vulnerability and Risk

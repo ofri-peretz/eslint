@@ -1,4 +1,10 @@
-# no-cors-credentials-wildcard
+---
+title: no-cors-credentials-wildcard
+description: 'no-cors-credentials-wildcard'
+category: security
+tags: ['security', 'express']
+---
+
 
 > Disallow CORS credentials with wildcard origin
 

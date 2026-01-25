@@ -1,4 +1,10 @@
-# no-cookie-auth-tokens
+---
+title: no-cookie-auth-tokens
+description: 'no-cookie-auth-tokens'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > No Cookie Auth Tokens
 

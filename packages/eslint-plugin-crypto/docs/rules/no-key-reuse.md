@@ -1,102 +1,129 @@
-# no-key-reuse
+---
+title: no-key-reuse
+description: 'CWE: [CWE-327](https://cwe.mitre.org/data/definitions/327.html)'
+category: security
+tags: ['security', 'crypto']
+---
 
-> No Key Reuse
+> **Keywords:** no-key-reuse, key management, cryptographic key, security, ESLint rule, CWE-327, nonce reuse, AES-GCM
+> **CWE:** [CWE-327: Use of a Broken or Risky Cryptographic Algorithm](https://cwe.mitre.org/data/definitions/327.html)  
+> **OWASP:** [OWASP Top 10 A02:2021 - Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 
-**🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
+ESLint Rule: no-key-reuse. This rule is part of [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto).
 
 ## Quick Summary
 
-| Aspect            | Details                                                    |
-| ----------------- | ---------------------------------------------------------- |
-| **CWE Reference** | [CWE-327](https://cwe.mitre.org/data/definitions/327.html) |
-| **Severity**      | Critical (security risk)                                   |
-| **Auto-Fix**      | ❌ No auto-fix available                                   |
-| **Category**      | Security                                                   |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                    |
-| **Best For**      | Ensuring unique keys for sensitive encryption operations   |
+| Aspect         | Details                                      |
+| -------------- | -------------------------------------------- |
+| **Severity**   | Critical (Asymmetric/Symmetric Risk)         |
+| **Auto-Fix**   | ❌ No (requires architectural review)        |
+| **Category**   | Security |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration      |
+| **Best For**   | Enterprise key management and secure storage |
 
-## Description
+## Vulnerability and Risk
 
-Disallow the reuse of the same cryptographic key for different purposes or across multiple encryption operations within the same scope. Reusing keys can significantly weaken encryption and leak information about the plaintext.
+**Vulnerability:** Reuse of the same cryptographic key for multiple distinct security operations or using the same key across different cryptographic purposes (e.g., using the same RSA key for both signing and encryption).
 
-## OWASP Mapping
-
-- **OWASP Top 10**: A02:2021 - Cryptographic Failures
-- **CWE**: CWE-327 - Use of a Broken or Risky Cryptographic Algorithm
+**Risk:** Key reuse is one of the most common causes of catastrophic cryptographic failure. In some algorithms (like AES-GCM), reusing a key with the same IV (Initialization Vector) can lead to the "Forbidden Attack," which allows an attacker to recover the authentication key or even decrypt data without knowing the secret key. Reusing keys also increases the impact of a single key compromise.
 
 ## Error Message Format
 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-327 OWASP:A04 CVSS:7.5 | Cryptographic Key Reuse detected | CRITICAL [PCI-DSS,HIPAA,ISO27001,NIST-CSF]
-   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A04_2021/
+🔒 CWE-327 OWASP:A02 | Cryptographic Key Reuse detected | CRITICAL [KeyLifecycle]
+   Fix: Generate a unique key for each distinct security purpose or operation | https://cwe.mitre.org/data/definitions/327.html
 ```
 
 ### Message Components
 
-| Component                 | Purpose                | Example                                                                                                                                                                                                                         |
-| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Risk Standards**        | Security benchmarks    | [CWE-327](https://cwe.mitre.org/data/definitions/327.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description**     | Specific vulnerability | `Cryptographic Key Reuse detected`                                                                                                                                                                                              |
-| **Severity & Compliance** | Impact assessment      | `CRITICAL [PCI-DSS,HIPAA,ISO27001,NIST-CSF]`                                                                                                                                                                                    |
-| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                            |
-| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/)                                                                                                                                                                     |
+| Component                 | Purpose                | Example                                                                                                   |
+| :------------------------ | :--------------------- | :-------------------------------------------------------------------------------------------------------- |
+| **Risk Standards**        | Security benchmarks    | [CWE-327](https://cwe.mitre.org/data/definitions/327.html) [OWASP:A02](https://owasp.org/Top10/A02_2021/) |
+| **Issue Description**     | Specific vulnerability | `Key Reuse detected`                                                                                      |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [KeyLifecycle]`                                                                                 |
+| **Fix Instruction**       | Actionable remediation | `Generate unique keys for each purpose`                                                                   |
+| **Technical Truth**       | Official reference     | [Key Management](https://cwe.mitre.org/data/definitions/327.html)                                         |
 
 ## Rule Details
 
-Detects cases where the same identifier is used as a key in multiple `createCipheriv` calls in the same file.
+This rule identifies instances where the same variable or identifier is passed as the `key` argument into multiple cryptographic constructor calls (like `createCipheriv`) within the same module scope.
+
+```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#f8fafc',
+    'primaryTextColor': '#1e293b',
+    'primaryBorderColor': '#334155',
+    'lineColor': '#475569',
+    'c0': '#f8fafc',
+    'c1': '#f1f5f9',
+    'c2': '#e2e8f0',
+    'c3': '#cbd5e1'
+  }
+}}%%
+flowchart TD
+    A[Multiple crypto calls in file] --> B{Same 'key' id used twice?}
+    B -->|Yes| C[🚨 Logic/State Risk]
+    B -->|No| D[✅ Best Practice]
+    C --> E[💡 Suggest key derivation or rotation]
+```
+
+### Why This Matters
+
+| Issue                   | Impact                               | Solution                                                     |
+| ----------------------- | ------------------------------------ | ------------------------------------------------------------ |
+| 🛡️ **Forbidden Attack** | GCM authentication bypass            | Ensure Key+IV combinations never repeat in your app lifetime |
+| 🚀 **Blast Radius**     | Single leak compromises many systems | Use separate keys for separate application tiers             |
+| 🔒 **Compliance**       | Violates NIST SP 800-57 guidelines   | Enforce strictly isolated Key-Usage policies                 |
+
+## Configuration
+
+This rule has no options.
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```javascript
-crypto.createCipheriv('aes-256-gcm', sharedKey, iv1);
-crypto.createCipheriv('aes-256-gcm', sharedKey, iv2);
+// Reusing the same key for two different operations in one scope
+const sharedKey = getMasterKey();
+
+const cipherA = crypto.createCipheriv('aes-256-gcm', sharedKey, iv1);
+const cipherB = crypto.createCipheriv('aes-256-gcm', sharedKey, iv2);
 ```
 
 ### ✅ Correct
 
 ```javascript
-crypto.createCipheriv('aes-256-gcm', key1, iv1);
-crypto.createCipheriv('aes-256-gcm', key2, iv2);
+// Using unique keys derived from a master key
+const key1 = deriveKey(masterKey, 'purpose-a');
+const key2 = deriveKey(masterKey, 'purpose-b');
+
+const cipherA = crypto.createCipheriv('aes-256-gcm', key1, iv1);
+const cipherB = crypto.createCipheriv('aes-256-gcm', key2, iv2);
 ```
-
-## Options
-
-This rule has no options.
-
-## When Not To Use It
-
-Only if key reuse is explicitly required by a specific protocol (extremely rare and dangerous).
 
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Inter-file Key Reuse
+### Inter-File Reuse
 
-**Why**: ESLint analyzes files in isolation. Reusing a key in two different files is not detected.
+**Why**: ESLint processes files individually. If you import the same key into two different files and use it there, this rule will not flag it.
 
-```typescript
-// file1.ts
-crypto.createCipheriv('aes', sharedKey, iv1);
-// file2.ts
-crypto.createCipheriv('aes', sharedKey, iv2);
-```
+**Mitigation**: Standardize all encryption logic into a common security service wrapper that handles key lifecycle.
 
-**Mitigation**: Manage keys centrally.
+### Key Derivation Obfuscation
 
-### Reuse via Different Identifiers
+**Why**: If `deriveKey(sharedKey)` is called twice, the _inputs_ are the same, but the _outputs_ (the variables used in `createCipheriv`) will have different names, potentially bypassing the rule.
 
-**Why**: If the same key is stored in two variables, the rule won't know they are the same key.
+**Mitigation**: Audit your derivation functions to ensure they use unique salt/context inputs for every call.
 
-```typescript
-const key1 = getSecret();
-const key2 = key1;
-crypto.createCipheriv('aes', key1, iv1);
-crypto.createCipheriv('aes', key2, iv2);
-```
+## References
 
-**Mitigation**: Avoid variable duplication for secrets.
+- [CWE-327: Use of a Broken or Risky Cryptographic Algorithm](https://cwe.mitre.org/data/definitions/327.html)
+- [NIST Special Publication 800-57: Recommendation for Key Management](https://csrc.nist.gov/publications/detail/sp/800-57-part-1/rev-5/final)
+- [AES-GCM Forbidden Attack (Wikipedia)](https://en.wikipedia.org/wiki/Galois/Counter_Mode#Security)

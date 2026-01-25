@@ -1,206 +1,163 @@
-# no-missing-authentication
+---
+title: no-missing-authentication
+description: 'CWE: [CWE-287](https://cwe.mitre.org/data/definitions/287.html)'
+category: security
+tags: ['security', 'core']
+---
 
-> **Keywords:** missing authentication, CWE-287, security, ESLint rule, authentication middleware, route handlers, Express, Fastify, API security, access control, LLM-optimized, code security
-**CWE:** [CWE-287](https://cwe.mitre.org/data/definitions/287.html)  
-**OWASP Mobile:** [M3: Insecure Authentication/Authorization](https://owasp.org/www-project-mobile-top-10/)
+> **Keywords:** no-missing-authentication, Express, Fastify, route handler, middleware, JWT, security, ESLint rule, CWE-287, broken authentication
+> **CWE:** [CWE-287: Improper Authentication](https://cwe.mitre.org/data/definitions/287.html)  
+> **OWASP Mobile:** [OWASP Mobile Top 10 M3: Insecure Communication](https://owasp.org/www-project-mobile-top-10/)
 
-Detects missing authentication checks in route handlers. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages that AI assistants can automatically fix.
-
-⚠️ This rule **_warns_** by default in the `recommended` config.
+ESLint Rule: no-missing-authentication. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
 ## Quick Summary
 
-| Aspect            | Details                                                            |
-| ----------------- | ------------------------------------------------------------------ |
-| **CWE Reference** | CWE-287 (Improper Authentication)                                  |
-| **Severity**      | Critical (security vulnerability)                                  |
-| **Auto-Fix**      | ❌ No (requires manual authentication setup)                       |
-| **Category**      | Security                                                           |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                            |
-| **Best For**      | All web applications with API endpoints, Express, Fastify, Next.js |
+| Aspect         | Details                                  |
+| -------------- | ---------------------------------------- |
+| **Severity**   | Critical (Broken Authentication)         |
+| **Auto-Fix**   | ❌ No (requires adding middleware)       |
+| **Category**   | Security |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration  |
+| **Best For**   | All REST APIs and backend route handlers |
 
 ## Vulnerability and Risk
 
-**Vulnerability:** Missing authentication checks in API route handlers or controller methods allow anonymous or unauthenticated users to access endpoints that should be protected.
+**Vulnerability:** Missing authentication checks on sensitive API routes. This occurs when an endpoint that should be restricted is exposed to unauthenticated (anonymous) users.
 
-**Risk:** Unauthorized access to sensitive data or functionality. This can lead to data breaches, modification of data by unauthorized users, or access to privileged administrative functions.
+**Risk:** Attackers can access private data, perform actions on behalf of other users, or gain administrative control over the application. Broken authentication is one of the most common and impactful security vulnerabilities in modern web applications.
 
 ## Error Message Format
 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 CWE-287 OWASP:A07 CVSS:9.8 | Improper Authentication detected | CRITICAL
-   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A07_2021/
+🔒 CWE-287 OWASP:M3 | Missing Authentication detected | CRITICAL [BrokenAuth]
+   Fix: Add authentication middleware (e.g., authenticate()) to this route | https://cwe.mitre.org/data/definitions/287.html
 ```
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-287](https://cwe.mitre.org/data/definitions/287.html) [OWASP:A07](https://owasp.org/Top10/A07_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description** | Specific vulnerability | `Improper Authentication detected` |
-| **Severity & Compliance** | Impact assessment | `CRITICAL` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A07_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                             |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-287](https://cwe.mitre.org/data/definitions/287.html) [OWASP:M3](https://owasp.org/www-project-mobile-top-10/) |
+| **Issue Description**     | Specific vulnerability | `Missing Authentication detected`                                                                                   |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [BrokenAuth]`                                                                                             |
+| **Fix Instruction**       | Actionable remediation | `Add authentication middleware`                                                                                     |
+| **Technical Truth**       | Official reference     | [Improper Authentication](https://cwe.mitre.org/data/definitions/287.html)                                          |
 
 ## Rule Details
 
-Missing authentication checks allow unauthorized access to protected resources. This rule detects route handlers that don't have authentication middleware configured.
+This rule scans route handlers in popular frameworks (Express, Fastify, etc.) and flags those that do not include a recognized authentication middleware in their middleware chain.
+
+```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#f8fafc',
+    'primaryTextColor': '#1e293b',
+    'primaryBorderColor': '#334155',
+    'lineColor': '#475569',
+    'c0': '#f8fafc',
+    'c1': '#f1f5f9',
+    'c2': '#e2e8f0',
+    'c3': '#cbd5e1'
+  }
+}}%%
+flowchart TD
+    A[Route Method Call e.g. .get] --> B{Contains known auth middleware?}
+    B -->|Yes| C[✅ Protected Endpoint]
+    B -->|No| D[🚨 Missing Authentication]
+    D --> E[💡 Suggest passport/jwt/custom-auth wrap]
+```
 
 ### Why This Matters
 
-| Issue                | Impact                         | Solution                      |
-| -------------------- | ------------------------------ | ----------------------------- |
-| 🔒 **Security**      | Unauthorized access to APIs    | Add authentication middleware |
-| 🐛 **Data Breach**   | Sensitive data exposure        | Protect all endpoints         |
-| 🔐 **Compliance**    | Violates security standards    | Enforce authentication        |
-| 📊 **Best Practice** | All protected routes need auth | Use auth middleware           |
+| Issue             | Impact                               | Solution                                                     |
+| ----------------- | ------------------------------------ | ------------------------------------------------------------ |
+| 🕵️ **Exposure**   | Private user data leaked             | Enforce authentication on EVERY non-public route             |
+| 🚀 **Takeover**   | Account hijacking through API bypass | Use signed tokens (JWT) or sessions for all sensitive calls  |
+| 🔒 **Compliance** | Failure to meet GDPR/SOC2 standards  | Implement a "Deny by Default" strategy for all route folders |
 
-## Detection Patterns
+## Configuration
 
-The rule detects:
+This rule supports extensive configuration to match your project's middleware naming conventions:
 
-- **Express routes**: `app.get()`, `app.post()`, `app.put()`, `app.delete()`, `app.patch()`, `app.all()`
-- **Route handlers without authentication middleware** in arguments
-- **Common auth middleware patterns**: `authenticate`, `auth`, `requireAuth`, `isAuthenticated`, `verifyToken`, `checkAuth`, `ensureAuthenticated`, `passport.authenticate`, `jwt`, `session`
+```javascript
+{
+  "rules": {
+    "secure-coding/no-missing-authentication": ["error", {
+      "authMiddlewarePatterns": ["authenticate", "requireAuth", "passport.authenticate"],
+      "routeHandlerPatterns": ["get", "post", "put", "delete"],
+      "ignorePatterns": ["/api/public/*"]
+    }]
+  }
+}
+```
 
 ## Examples
 
 ### ❌ Incorrect
 
-```typescript
-// Missing authentication on protected route
-app.get('/api/users', (req, res) => {
-  // ❌ No auth middleware
-  // Return user data
+```javascript
+// Express route without any authentication middleware
+app.get('/api/user/profile', (req, res) => {
+  // ❌ VULNERABLE: Direct access to profile data
+  res.json(req.user.profile);
 });
 
-app.post('/api/users', (req, res) => {
-  // ❌ No auth middleware
-  // Create user
-});
-
-router.put('/api/users/:id', (req, res) => {
-  // ❌ No auth middleware
-  // Update user
+// Fastify route missing protection
+fastify.post('/api/settings', async (request, reply) => {
+  // ❌ VULNERABLE: Anyone can change settings
+  updateSettings(request.body);
 });
 ```
 
 ### ✅ Correct
 
-```typescript
-// Authentication middleware added
-app.get('/api/users', authenticate(), (req, res) => {
-  // ✅ Auth middleware
-  // Return user data
+```javascript
+// Using recognized authentication middleware (Express)
+app.get('/api/user/profile', authenticate(), (req, res) => {
+  // ✅ SECURE
+  res.json(req.user.profile);
 });
 
-app.post('/api/users', auth, requireAuth, (req, res) => {
-  // ✅ Multiple auth checks
-  // Create user
-});
-
-router.put('/api/users/:id', verifyToken(), (req, res) => {
-  // ✅ Token verification
-  // Update user
-});
-
-// Public route (can be ignored via options)
-app.get('/api/public', (req, res) => {
-  // ✅ Public endpoint
-  // Return public data
-});
+// Using Passport.js
+app.post(
+  '/api/settings',
+  passport.authenticate('jwt', { session: false }),
+  (req, res) => {
+    // ✅ SECURE
+    updateSettings(req.body);
+  },
+);
 ```
-
-## Configuration
-
-### Default Configuration
-
-```json
-{
-  "secure-coding/no-missing-authentication": "warn"
-}
-```
-
-### Options
-
-| Option                   | Type       | Default                                   | Description                           |
-| ------------------------ | ---------- | ----------------------------------------- | ------------------------------------- |
-| `allowInTests`           | `boolean`  | `false`                                   | Allow missing auth in tests           |
-| `testFilePattern`        | `string`   | `'\\.(test\|spec)\\.(ts\|tsx\|js\|jsx)$'` | Test file pattern regex               |
-| `authMiddlewarePatterns` | `string[]` | `['authenticate', 'auth', ...]`           | Auth middleware patterns to recognize |
-| `routeHandlerPatterns`   | `string[]` | `['get', 'post', ...]`                    | Route handler patterns to check       |
-| `ignorePatterns`         | `string[]` | `[]`                                      | Additional patterns to ignore         |
-
-### Example Configuration
-
-```json
-{
-  "secure-coding/no-missing-authentication": [
-    "error",
-    {
-      "allowInTests": true,
-      "authMiddlewarePatterns": ["authenticate", "myCustomAuth"],
-      "routeHandlerPatterns": ["get", "post", "put", "delete"],
-      "ignorePatterns": ["/api/public"]
-    }
-  ]
-}
-```
-
-## Best Practices
-
-1. **Always add authentication** to protected routes
-2. **Use middleware**: Leverage Express/Fastify middleware for consistent auth
-3. **Public routes**: Explicitly mark public routes or use ignore patterns
-4. **Token validation**: Verify JWT/session tokens on all protected endpoints
-5. **Role-based access**: Combine with role checks for fine-grained control
 
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Credentials from Config
+### Global Middleware
 
-**Why**: Config values not traced.
+**Why**: If authentication is applied globally via `app.use(authMiddleware)`, this rule might still flag individual routes because it doesn't always see the global application setup.
 
-```typescript
-// ❌ NOT DETECTED - From config
-const password = config.dbPassword;
+**Mitigation**: Use `// eslint-disable-next-line` on individual routes if global protection is active, or configure the rule to ignore specific files.
+
+### Custom Logic Checks
+
+**Why**: If you perform authentication _inside_ the handler function body using imperative logic instead of middleware.
+
+```javascript
+app.get('/data', (req, res) => {
+  if (!req.user) return res.status(401).send(); // ❌ Rule may not see this
+  ...
+});
 ```
 
-**Mitigation**: Use proper secrets management.
+**Mitigation**: Always prefer middleware for authentication to ensure it runs before any business logic and is easily audited.
 
-### Environment Variables
-
-**Why**: Env var content not analyzed.
-
-```typescript
-// ❌ NOT DETECTED - Env var
-const secret = process.env.API_KEY;
-```
-
-**Mitigation**: Never hardcode or expose secrets.
-
-### Dynamic Credential Access
-
-**Why**: Dynamic property access not traced.
-
-```typescript
-// ❌ NOT DETECTED - Dynamic
-const cred = credentials[type];
-```
-
-**Mitigation**: Audit all credential access patterns.
-
-## Related Rules
-
-- [`no-privilege-escalation`](./no-privilege-escalation.md) - Detects privilege escalation vulnerabilities
-- [`no-unvalidated-user-input`](./no-unvalidated-user-input.md) - Detects unvalidated user input
-
-## Resources
+## References
 
 - [CWE-287: Improper Authentication](https://cwe.mitre.org/data/definitions/287.html)
-- [OWASP: Improper Authentication](https://owasp.org/www-community/vulnerabilities/Improper_Authentication)
-- [Express Authentication Guide](https://expressjs.com/en/guide/using-middleware.html)
+- [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
+- [Express Guide - Using Middleware](https://expressjs.com/en/guide/using-middleware.html)

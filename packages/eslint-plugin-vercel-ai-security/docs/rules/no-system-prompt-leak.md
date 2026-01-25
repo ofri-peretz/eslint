@@ -1,4 +1,10 @@
-# `no-system-prompt-leak`
+---
+title: no-system-prompt-leak
+description: 'no-system-prompt-leak'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Prevents system prompts from being exposed in API responses or client code.
 

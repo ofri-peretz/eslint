@@ -1,4 +1,10 @@
-# no-unsafe-query
+---
+title: no-unsafe-query
+description: 'no-unsafe-query'
+category: security
+tags: ['security', 'postgres']
+---
+
 
 > Prevents SQL injection by detecting string concatenation or template literals with variables in `client.query()` calls.
 
@@ -11,7 +17,7 @@
 | **CWE Reference** | [CWE-89](https://cwe.mitre.org/data/definitions/89.html) (SQL Injection) |
 | **Severity**      | Critical (CVSS: 9.8)                                                     |
 | **Auto-Fix**      | ❌ No auto-fix available                                                 |
-| **Category**      | Security                                                                 |
+| **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for AI assistant integration                                |
 | **Best For**      | Protecting database operations from SQL injection vulnerabilities        |
 

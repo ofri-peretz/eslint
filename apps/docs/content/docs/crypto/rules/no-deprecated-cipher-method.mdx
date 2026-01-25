@@ -1,115 +1,133 @@
 ---
 title: no-deprecated-cipher-method
-description: Disallow the use of deprecated crypto.createCipher() and crypto.createDecipher().
+description: "CWE: CWE-327"
 ---
 
-# no-deprecated-cipher-method
+> **Keywords:** no-deprecated-cipher-method, createCipher, createDecipher, IV, secure key derivation, security, ESLint rule, CWE-327, cryptographic failure
+> **CWE:** [CWE-327: Use of a Broken or Risky Cryptographic Algorithm](https://cwe.mitre.org/data/definitions/327.html)  
+> **OWASP:** [OWASP Top 10 A02:2021 - Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 
-> No Deprecated Cipher Method
-
-**🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
+ESLint Rule: no-deprecated-cipher-method. This rule is part of [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto).
 
 ## Quick Summary
 
-| Aspect            | Details                                                    |
-| ----------------- | ---------------------------------------------------------- |
-| **CWE Reference** | [CWE-327](https://cwe.mitre.org/data/definitions/327.html) |
-| **Severity**      | High (security risk)                                       |
-| **Auto-Fix**      | ✅ Auto-fix available                                      |
-| **Category**      | Security                                                   |
-| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                    |
-| **Best For**      | Modernizing Node.js crypto calls, ensuring IV usage        |
+| Aspect         | Details                                       |
+| -------------- | --------------------------------------------- |
+| **Severity**   | High (Broken Cryptography)                    |
+| **Auto-Fix**   | ✅ Yes (via suggestion to use IV variant)     |
+| **Category**   | Security / Cryptography                       |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration       |
+| **Best For**   | Modernizing legacy Node.js cryptographic code |
 
-## Description
+## Vulnerability and Risk
 
-Disallow the use of the deprecated `crypto.createCipher()` and `crypto.createDecipher()` methods. These methods derive keys and IVs using an insecure, non-standard method (MD5 with no salt) and do not allow providing a dedicated IV.
+**Vulnerability:** Use of deprecated Node.js methods `crypto.createCipher()` and `crypto.createDecipher()`. These methods are legacy APIs that derive a key and Initialization Vector (IV) from a password using an insecure, non-standard implementation (typically an un-salted single MD5 hash).
 
-## OWASP Mapping
-
-- **OWASP Top 10**: [A02:2021](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/) - Cryptographic Failures
-- **CWE**: [CWE-327](https://cwe.mitre.org/data/definitions/327.html) - Use of a Broken or Risky Cryptographic Algorithm
+**Risk:** Because these methods do not use a dedicated, unique IV for every operation, they produce deterministic ciphertext (the same plaintext always encrypts to the same ciphertext with the same password). This allows attackers to perform pattern analysis and known-plaintext attacks. Furthermore, the weak key derivation makes the "password" vulnerable to brute-force or dictionary attacks much faster than modern standards like PBKDF2 or scrypt.
 
 ## Error Message Format
 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 [CWE-327](https://cwe.mitre.org/data/definitions/327.html) OWASP:A04 CVSS:7.5 | Broken Cryptographic Algorithm detected | HIGH [PCI-DSS,HIPAA,ISO27001,NIST-CSF]
-   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A04_2021/
+🔒 CWE-327 OWASP:A02 | Deprecated crypto method detected | HIGH [BrokenCrypto]
+   Fix: Use crypto.createCipheriv() which requires an explicit, unique IV for secure encryption | https://nodejs.org/api/crypto.html#cryptocreatecipherivalgorithm-key-iv-options
 ```
 
 ### Message Components
 
-| Component                 | Purpose                | Example                                                                                                                                                                                                                         |
-| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Risk Standards**        | Security benchmarks    | [CWE-327](https://cwe.mitre.org/data/definitions/327.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description**     | Specific vulnerability | `Broken Cryptographic Algorithm detected`                                                                                                                                                                                       |
-| **Severity & Compliance** | Impact assessment      | `HIGH [PCI-DSS,HIPAA,ISO27001,NIST-CSF]`                                                                                                                                                                                        |
-| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                            |
-| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/)                                                                                                                                                                     |
+| Component                 | Purpose                | Example                                                                                                   |
+| :------------------------ | :--------------------- | :-------------------------------------------------------------------------------------------------------- |
+| **Risk Standards**        | Security benchmarks    | [CWE-327](https://cwe.mitre.org/data/definitions/327.html) [OWASP:A02](https://owasp.org/Top10/A02_2021/) |
+| **Issue Description**     | Specific vulnerability | `Deprecated crypto method detected`                                                                       |
+| **Severity & Compliance** | Impact assessment      | `HIGH [BrokenCrypto]`                                                                                     |
+| **Fix Instruction**       | Actionable remediation | `Use createCipheriv()`                                                                                    |
+| **Technical Truth**       | Official reference     | [Node.js Deprecation](https://nodejs.org/api/crypto.html#cryptocreatecipheralgorithm-password-options)    |
 
 ## Rule Details
 
-Disallows calling `crypto.createCipher()` or `crypto.createDecipher()`. Suggests using `crypto.createCipheriv()` or `crypto.createDecipheriv()` instead.
+This rule scans for calls to `crypto.createCipher()` and `crypto.createDecipher()`, highlighting them as dangerous legacy patterns.
+
+```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#f8fafc',
+    'primaryTextColor': '#1e293b',
+    'primaryBorderColor': '#334155',
+    'lineColor': '#475569',
+    'c0': '#f8fafc',
+    'c1': '#f1f5f9',
+    'c2': '#e2e8f0',
+    'c3': '#cbd5e1'
+  }
+}}%%
+flowchart TD
+    A[crypto Method Call] --> B{Is createCipher or createDecipher?}
+    B -->|Yes| C[🚨 Deprecated / Insecure Risk]
+    B -->|No - is iv variant| D[✅ Recommended API]
+    C --> E[💡 Suggest createCipheriv / createDecipheriv]
+```
+
+### Why This Matters
+
+| Issue                | Impact                              | Solution                                                     |
+| -------------------- | ----------------------------------- | ------------------------------------------------------------ |
+| 🛡️ **Lack of IV**    | Deterministic, crackable ciphertext | Use `createCipheriv` which enforces unique, random IVs       |
+| 🚀 **Weak Salt/Key** | Rapid password brute-forcing        | Derive keys using `PBKDF2` or `scrypt` before encrypting     |
+| 🔒 **Compliance**    | Violates modern security baselines  | Decommission all legacy Node.js crypto calls from production |
+
+## Configuration
+
+This rule has no options.
 
 ## Examples
 
 ### ❌ Incorrect
 
 ```javascript
-crypto.createCipher('aes-256-cbc', password);
-crypto.createDecipher('aes-256-cbc', password);
+// Using deprecated method with a simple password
+const cipher = crypto.createCipher('aes-256-cbc', 'my-weak-password');
+
+// Using deprecated decipher
+const decipher = crypto.createDecipher('aes-256-cbc', 'my-weak-password');
 ```
 
 ### ✅ Correct
 
 ```javascript
-crypto.createCipheriv('aes-256-cbc', key, iv);
-crypto.createDecipheriv('aes-256-cbc', key, iv);
+// Using the formal IV variant (BEST PRACTICE)
+const key = crypto.scryptSync('password', 'salt', 32);
+const iv = crypto.randomBytes(16);
+const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+
+// Decryption with the explicit IV
+const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
 ```
-
-## Options
-
-This rule has no options.
-
-## When Not To Use It
-
-Only if you are maintaining extremely old legacy code that cannot be updated to provide IVs, though this is a significant security risk.
 
 ## Known False Negatives
 
 The following patterns are **not detected** due to static analysis limitations:
 
-### Algorithm from Variable
+### Alias Methods
 
-**Why**: Algorithm names from variables not traced.
+**Why**: If the methods are renamed or accessed via dynamic indexing.
 
-```typescript
-// ❌ NOT DETECTED - Algorithm from variable
-const algo = config.hashAlgorithm; // May be weak
-crypto.createHash(algo);
+```javascript
+const method = 'create' + 'Cipher';
+const c = crypto[method](...); // ❌ NOT DETECTED
 ```
 
-**Mitigation**: Hardcode secure algorithms.
+**Mitigation**: Standardize on explicit, static platform API access for all cryptographic operations.
 
-### Third-party Crypto Libraries
+### Wrapped Libraries
 
-**Why**: Non-standard crypto APIs not recognized.
+**Why**: Third-party libraries that internally use these deprecated methods but expose a different interface are not scanned.
 
-```typescript
-// ❌ NOT DETECTED - Third-party
-customCrypto.encrypt(data, key);
-```
+**Mitigation**: Audit your `node_modules` for legacy cryptographic dependencies using security scanning tools like `npm audit`.
 
-**Mitigation**: Review all crypto implementations.
+## References
 
-### Configuration-based Security
-
-**Why**: Config-driven security not analyzed.
-
-```typescript
-// ❌ NOT DETECTED - Config-based
-const options = getSecurityOptions(); // May be weak
-```
-
-**Mitigation**: Validate security configurations.
+- [CWE-327: Use of a Broken or Risky Cryptographic Algorithm](https://cwe.mitre.org/data/definitions/327.html)
+- [Node.js Crypto createCipher Deprecation Warning](https://nodejs.org/api/crypto.html#cryptocreatecipheralgorithm-password-options)
+- [OpenSSL EVP_BytesToKey documentation (The underlying algorithm)](https://www.openssl.org/docs/man1.1.1/man3/EVP_BytesToKey.html)

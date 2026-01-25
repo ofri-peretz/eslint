@@ -1,4 +1,10 @@
-# no-directive-injection
+---
+title: no-directive-injection
+description: 'no-directive-injection'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** directive injection, CWE-94, template injection, Angular, Vue, React, SSTI, XSS
 **CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
@@ -15,7 +21,7 @@ Detects directive injection vulnerabilities in template systems. This rule is pa
 | **CWE Reference** | [CWE-94](https://cwe.mitre.org/data/definitions/94.html) (Code Injection), [CWE-96](https://cwe.mitre.org/data/definitions/96.html) (SSTI) |
 | **Severity**      | High (CVSS 8.8)                                                                                                                            |
 | **Auto-Fix**      | 💡 Suggestions available                                                                                                                   |
-| **Category**      | Injection Prevention                                                                                                                       |
+| **Category**   | Security |
 
 ## Vulnerability and Risk
 

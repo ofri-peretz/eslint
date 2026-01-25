@@ -1,4 +1,10 @@
-# detect-rag-injection-risks
+---
+title: detect-rag-injection-risks
+description: 'detect-rag-injection-risks'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Detect Rag Injection Risks
 

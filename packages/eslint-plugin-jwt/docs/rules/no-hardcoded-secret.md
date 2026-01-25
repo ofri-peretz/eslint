@@ -1,4 +1,10 @@
-# no-hardcoded-secret
+---
+title: no-hardcoded-secret
+description: 'no-hardcoded-secret'
+category: security
+tags: ['security', 'jwt']
+---
+
 
 > Disallow hardcoded secrets in JWT sign/verify operations
 
@@ -11,7 +17,7 @@
 | **CWE Reference** | [CWE-798](https://cwe.mitre.org/data/definitions/798.html) |
 | **Severity**      | Critical                                                   |
 | **Auto-Fix**      | ❌ No auto-fix available                                   |
-| **Category**      | Security                                                   |
+| **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                    |
 | **Best For**      | Protecting JWT secrets from source code exposure           |
 

@@ -1,4 +1,10 @@
-# detect-weak-password-validation
+---
+title: detect-weak-password-validation
+description: 'detect-weak-password-validation'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** password policy, weak password, CWE-521, authentication, password length, security
 
@@ -13,7 +19,7 @@ Detects weak password length requirements (less than 8 characters) in validation
 | **CWE Reference** | [CWE-521](https://cwe.mitre.org/data/definitions/521.html) (Weak Password Requirements)                                             |
 | **OWASP**         | [A07:2021 Identification and Authentication Failures](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/) |
 | **Severity**      | Critical                                                                                                                            |
-| **Category**      | Security                                                                                                                            |
+| **Category**   | Security |
 
 ## Rule Details
 

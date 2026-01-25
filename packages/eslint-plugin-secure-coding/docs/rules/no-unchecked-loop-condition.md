@@ -1,4 +1,10 @@
-# no-unchecked-loop-condition
+---
+title: no-unchecked-loop-condition
+description: 'no-unchecked-loop-condition'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** unchecked loop, CWE-400, CWE-835, infinite loop, DoS, security
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
@@ -15,7 +21,7 @@ Detects unchecked loop conditions that could cause DoS. This rule is part of [`e
 | **CWE Reference** | CWE-400 (Uncontrolled Resource Consumption), CWE-835 (Infinite Loop) |
 | **Severity**      | High (CVSS 7.5)                                                      |
 | **Auto-Fix**      | 💡 Suggestions available                                             |
-| **Category**      | Buffer, Memory & DoS                                                 |
+| **Category**   | Security |
 
 ## Vulnerability and Risk
 

@@ -1,4 +1,10 @@
-# `no-training-data-exposure`
+---
+title: no-training-data-exposure
+description: 'no-training-data-exposure'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Prevents user data from being sent to LLM training endpoints.
 

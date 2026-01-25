@@ -1,4 +1,10 @@
-# no-exposed-debug-endpoints (NestJS)
+---
+title: no-exposed-debug-endpoints
+description: 'no-exposed-debug-endpoints'
+category: security
+tags: ['security', 'nestjs']
+---
+
 
 > **Keywords:** NestJS, debug endpoint, admin path, exposed routes, @Get, @Post, decoractor security, CWE-489, OWASP M8, test endpoints, information disclosure, unauthorized access
 
@@ -16,7 +22,7 @@ Identifies potential debug, administration, or testing endpoints that are often 
 | **CWE Reference** | [CWE-489](https://cwe.mitre.org/data/definitions/489.html) (Active Debug) |
 | **Severity**      | 🟠 HIGH (security misconfiguration)                                       |
 | **Auto-Fix**      | ❌ Not available                                                          |
-| **Category**      | Environment & Platform Security                                           |
+| **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized                                                              |
 | **Best For**      | NestJS Controllers                                                        |
 

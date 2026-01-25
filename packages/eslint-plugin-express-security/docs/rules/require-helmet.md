@@ -1,4 +1,10 @@
-# require-helmet
+---
+title: require-helmet
+description: 'require-helmet'
+category: security
+tags: ['security', 'express']
+---
+
 
 > Require helmet middleware for security headers in Express.js applications
 

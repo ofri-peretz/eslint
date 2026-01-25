@@ -1,4 +1,10 @@
-# no-permissive-cors-response
+---
+title: no-permissive-cors-response
+description: 'no-permissive-cors-response'
+category: security
+tags: ['security', 'lambda']
+---
+
 
 > **Keywords:** CORS, Lambda, API Gateway, CWE-942, security, Access-Control-Allow-Origin, wildcard, auto-fix
 **CWE:** [CWE-942](https://cwe.mitre.org/data/definitions/942.html)  
@@ -15,7 +21,7 @@ Detects permissive CORS headers in Lambda API Gateway responses. This rule is pa
 | **CWE Reference** | CWE-942 (Permissive Cross-domain Policy)         |
 | **Severity**      | 🔴 High                                          |
 | **Auto-Fix**      | ✅ Yes                                           |
-| **Category**      | Security                                         |
+| **Category**   | Security |
 | **Best For**      | Lambda functions returning API Gateway responses |
 
 ## Vulnerability and Risk

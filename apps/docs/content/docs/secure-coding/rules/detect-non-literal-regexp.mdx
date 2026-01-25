@@ -1,9 +1,9 @@
 ---
 title: detect-non-literal-regexp
-description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
+description: "CWE: CWE-693"
 ---
 
-> **Keywords:** ReDoS, [CWE-400](https://cwe.mitre.org/data/definitions/400.html), security, ESLint rule, regular expression denial of service, RegExp, regex injection, performance, auto-fix, LLM-optimized, code security
+> **Keywords:** ReDoS, CWE-400, security, ESLint rule, regular expression denial of service, RegExp, regex injection, performance, auto-fix, LLM-optimized, code security
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
@@ -69,7 +69,7 @@ flowchart TD
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 [CWE-400](https://cwe.mitre.org/data/definitions/400.html) OWASP:A06 CVSS:7.5 | Uncontrolled Resource Consumption (ReDoS) detected | HIGH
+🔒 CWE-400 OWASP:A06 CVSS:7.5 | Uncontrolled Resource Consumption (ReDoS) detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
 ```
 
@@ -220,7 +220,7 @@ const maliciousInputs = [
 | Feature             | detect-non-literal-regexp | eslint-plugin-security | eslint-plugin-sonarjs |
 | ------------------- | ------------------------- | ---------------------- | --------------------- |
 | **ReDoS Detection** | ✅ Yes                    | ⚠️ Limited             | ⚠️ Limited            |
-| **CWE Reference**   | ✅ [CWE-400](https://cwe.mitre.org/data/definitions/400.html) included       | ⚠️ Limited             | ⚠️ Limited            |
+| **CWE Reference**   | ✅ CWE-400 included       | ⚠️ Limited             | ⚠️ Limited            |
 | **LLM-Optimized**   | ✅ Yes                    | ❌ No                  | ❌ No                 |
 | **ESLint MCP**      | ✅ Optimized              | ❌ No                  | ❌ No                 |
 | **Fix Suggestions** | ✅ Detailed               | ⚠️ Basic               | ⚠️ Basic              |

@@ -1,4 +1,10 @@
-# require-audience-validation
+---
+title: require-audience-validation
+description: 'require-audience-validation'
+category: security
+tags: ['security', 'jwt']
+---
+
 
 > Require audience (aud) claim validation in JWT verify operations
 

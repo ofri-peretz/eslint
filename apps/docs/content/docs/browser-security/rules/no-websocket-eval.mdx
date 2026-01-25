@@ -12,7 +12,7 @@ description: 🔒 Disallow using eval() or Function() with WebSocket message dat
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 [CWE-95](https://cwe.mitre.org/data/definitions/95.html) OWASP:A05 CVSS:9.8 | Eval Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
+🔒 CWE-95 OWASP:A05 CVSS:9.8 | Eval Injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 
@@ -188,6 +188,6 @@ setupHandler(ws, (data) => eval(data.code));
 
 | Category          | ID                   |
 | ----------------- | -------------------- |
-| OWASP Top 10 2021 | [A03:2021](https://owasp.org/Top10/A03_2021-Injection/) - Injection |
-| CWE               | [CWE-95](https://cwe.mitre.org/data/definitions/95.html)               |
+| OWASP Top 10 2021 | A03:2021 - Injection |
+| CWE               | CWE-95               |
 | CVSS              | **9.8 (Critical)**   |

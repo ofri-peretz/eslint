@@ -1,4 +1,10 @@
-# no-unsafe-deserialization
+---
+title: no-unsafe-deserialization
+description: 'no-unsafe-deserialization'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** unsafe deserialization, CWE-502, RCE, code execution, YAML, pickle, security
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
@@ -15,7 +21,7 @@ Detects unsafe deserialization of untrusted data. This rule is part of [`eslint-
 | **CWE Reference** | [CWE-502](https://cwe.mitre.org/data/definitions/502.html) (Unsafe Deserialization) |
 | **Severity**      | Critical (CVSS 9.8)                                                                 |
 | **Auto-Fix**      | 💡 Suggestions available                                                            |
-| **Category**      | Object & Prototype                                                                  |
+| **Category**   | Security |
 
 ## Vulnerability and Risk
 

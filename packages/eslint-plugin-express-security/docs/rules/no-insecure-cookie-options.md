@@ -1,4 +1,10 @@
-# no-insecure-cookie-options
+---
+title: no-insecure-cookie-options
+description: 'no-insecure-cookie-options'
+category: security
+tags: ['security', 'express']
+---
+
 
 > Require secure cookie flags (httpOnly, secure, sameSite)
 

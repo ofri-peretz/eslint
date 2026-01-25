@@ -1,9 +1,9 @@
 ---
 title: no-privilege-escalation
-description: "CWE: [CWE-693](https://cwe.mitre.org/data/definitions/693.html)"
+description: "CWE: CWE-693"
 ---
 
-> **Keywords:** privilege escalation, [CWE-269](https://cwe.mitre.org/data/definitions/269.html), security, ESLint rule, role assignment, permission bypass, access control, user input, role checks, LLM-optimized, code security
+> **Keywords:** privilege escalation, CWE-269, security, ESLint rule, role assignment, permission bypass, access control, user input, role checks, LLM-optimized, code security
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
@@ -15,7 +15,7 @@ Detects potential privilege escalation vulnerabilities where user input is used 
 
 | Aspect            | Details                                                                  |
 | ----------------- | ------------------------------------------------------------------------ |
-| **CWE Reference** | [CWE-269](https://cwe.mitre.org/data/definitions/269.html) (Improper Privilege Management)                                  |
+| **CWE Reference** | CWE-269 (Improper Privilege Management)                                  |
 | **Severity**      | High (security vulnerability)                                            |
 | **Auto-Fix**      | ❌ No (requires manual role check implementation)                        |
 | **Category**      | Security                                                                 |
@@ -33,7 +33,7 @@ Detects potential privilege escalation vulnerabilities where user input is used 
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 [CWE-269](https://cwe.mitre.org/data/definitions/269.html) OWASP:A01 CVSS:8.8 | Improper Privilege Management detected | HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]
+🔒 CWE-269 OWASP:A01 CVSS:8.8 | Improper Privilege Management detected | HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
 ```
 

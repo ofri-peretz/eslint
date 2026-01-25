@@ -1,4 +1,10 @@
-# check-query-params
+---
+title: check-query-params
+description: 'check-query-params'
+category: security
+tags: ['security', 'postgres']
+---
+
 
 > **Keywords:** query parameters, CWE-89, pg, node-postgres, quality, parameterized queries
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
@@ -13,7 +19,7 @@ Ensures the number of placeholders in SQL queries matches the provided parameter
 | ----------------- | --------------------------------- |
 | **CWE Reference** | CWE-89 (SQL Injection Prevention) |
 | **Severity**      | Medium (CVSS: 5.0)                |
-| **Category**      | Quality                           |
+| **Category**   | Security |
 
 ## Rule Details
 

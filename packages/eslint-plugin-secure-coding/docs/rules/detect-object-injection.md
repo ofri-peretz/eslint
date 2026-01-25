@@ -1,8 +1,14 @@
-# detect-object-injection
+---
+title: detect-object-injection
+description: 'detect-object-injection'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** prototype pollution, CWE-915, security, ESLint rule, object injection, bracket notation, property injection, auto-fix, LLM-optimized, code security
-**CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
-**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
+> **CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
+> **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects `variable[key]` as a left- or right-hand assignment operand (prototype pollution). This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages with fix suggestions.
 
@@ -15,7 +21,7 @@ Detects `variable[key]` as a left- or right-hand assignment operand (prototype p
 | **CWE Reference** | [CWE-915](https://cwe.mitre.org/data/definitions/915.html) (Prototype Pollution) |
 | **Severity**      | Critical (security vulnerability)                                                |
 | **Auto-Fix**      | ⚠️ Suggests fixes (manual application)                                           |
-| **Category**      | Security                                                                         |
+| **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                          |
 | **Best For**      | All applications, especially those handling user input for object properties     |
 
@@ -72,13 +78,13 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 ### Message Components
 
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-915](https://cwe.mitre.org/data/definitions/915.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description** | Specific vulnerability | `Object Injection detected` |
-| **Severity & Compliance** | Impact assessment | `CRITICAL [SOC2,PCI-DSS,ISO27001]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/) |
+| Component                 | Purpose                | Example                                                                                                                                                                                                                         |
+| :------------------------ | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Risk Standards**        | Security benchmarks    | [CWE-915](https://cwe.mitre.org/data/definitions/915.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description**     | Specific vulnerability | `Object Injection detected`                                                                                                                                                                                                     |
+| **Severity & Compliance** | Impact assessment      | `CRITICAL [SOC2,PCI-DSS,ISO27001]`                                                                                                                                                                                              |
+| **Fix Instruction**       | Actionable remediation | `Follow the remediation steps below`                                                                                                                                                                                            |
+| **Technical Truth**       | Official reference     | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/)                                                                                                                                                                     |
 
 ## Configuration
 
@@ -165,31 +171,13 @@ console.log(innocent.malicious); // Function exists!
    }
    ```
 
-## Security Impact
+### Why This Matters
 
-### Prototype Pollution Attacks
-
-```javascript
-// Pollute Object.prototype
-const obj = {};
-obj[userInput] = maliciousFunction;
-// If userInput = "__proto__", ALL objects are polluted
-
-// Constructor injection
-obj[userInput] = maliciousConstructor;
-// If userInput = "constructor", object creation is compromised
-
-// Property shadowing
-Object.prototype[userInput] = maliciousValue;
-// All property access can be manipulated
-```
-
-### Real-World Impact
-
-- **Data Manipulation** - Alter application data structures
-- **Method Injection** - Add malicious methods to all objects
-- **Information Disclosure** - Access sensitive object properties
-- **Denial of Service** - Break application functionality
+| Issue                  | Impact                               | Solution                                                        |
+| ---------------------- | ------------------------------------ | --------------------------------------------------------------- |
+| 🕵️ **Prototype Poll.** | Global object behavior modified      | Use `Map` or `Object.create(null)` for user-keyed objects       |
+| 🚀 **RCE**             | Attackers execute arbitrary code     | Validate all keys against a strict whitelist                    |
+| 🔒 **Compliance**      | Failure to prevent injection attacks | Implement defense-in-depth by freezing prototypes in production |
 
 ## Migration Guide
 

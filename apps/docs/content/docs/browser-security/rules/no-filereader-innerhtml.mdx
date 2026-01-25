@@ -12,7 +12,7 @@ description: 🔒 Disallow using innerHTML with FileReader data
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-⚠️ [CWE-79](https://cwe.mitre.org/data/definitions/79.html) OWASP:A05 CVSS:6.1 | Cross-site Scripting (XSS) detected | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
+⚠️ CWE-79 OWASP:A05 CVSS:6.1 | Cross-site Scripting (XSS) detected | MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A05_2021/
 ```
 
@@ -223,6 +223,6 @@ reader.onload = async (e) => {
 
 | Category          | ID                   |
 | ----------------- | -------------------- |
-| OWASP Top 10 2021 | [A03:2021](https://owasp.org/Top10/A03_2021-Injection/) - Injection |
-| CWE               | [CWE-79](https://cwe.mitre.org/data/definitions/79.html)               |
+| OWASP Top 10 2021 | A03:2021 - Injection |
+| CWE               | CWE-79               |
 | CVSS              | 8.1 (High)           |

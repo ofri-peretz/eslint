@@ -1,4 +1,10 @@
-# no-sensitive-data-exposure
+---
+title: no-sensitive-data-exposure
+description: 'no-sensitive-data-exposure'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** no sensitive data exposure, security, ESLint rule, JavaScript, TypeScript, CWE-532
 **CWE:** [CWE-359](https://cwe.mitre.org/data/definitions/359.html)  
@@ -13,7 +19,7 @@ ESLint Rule: no-sensitive-data-exposure. This rule is part of [`eslint-plugin-se
 | **CWE Reference** | [CWE-200](https://cwe.mitre.org/data/definitions/200.html) (Information Exposure) |
 | **Severity**      | High (security vulnerability)                                                     |
 | **Auto-Fix**      | ❌ No                                                                             |
-| **Category**      | Security                                                                          |
+| **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                           |
 | **Best For**      | Applications handling PII                                                         |
 

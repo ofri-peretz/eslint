@@ -1,4 +1,10 @@
-# require-lean-queries
+---
+title: require-lean-queries
+description: 'require-lean-queries'
+category: security
+tags: ['security', 'mongodb']
+---
+
 
 > **Keywords:** CWE-400, lean, performance, Mongoose, memory
 
@@ -13,7 +19,7 @@ Suggests using `.lean()` for read-only Mongoose queries to reduce memory usage.
 | **CWE Reference** | CWE-400 (Resource Exhaustion) |
 | **OWASP**         | A04:2021 - Insecure Design    |
 | **Severity**      | Low (CVSS: 4.3)               |
-| **Category**      | Performance                   |
+| **Category**   | Security |
 
 ## Error Message Format
 

@@ -1,4 +1,10 @@
-# no-graphql-injection
+---
+title: no-graphql-injection
+description: 'no-graphql-injection'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** GraphQL injection, CWE-943, CWE-400, security, DoS, introspection, query complexity, LLM-optimized
 **CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
@@ -15,7 +21,7 @@ Detects GraphQL injection vulnerabilities and DoS attacks. This rule is part of 
 | **CWE Reference** | [CWE-943](https://cwe.mitre.org/data/definitions/943.html) (GraphQL Injection), [CWE-400](https://cwe.mitre.org/data/definitions/400.html) (DoS) |
 | **Severity**      | Critical                                                                                                                                         |
 | **Auto-Fix**      | 💡 Suggestions available                                                                                                                         |
-| **Category**      | Injection Prevention                                                                                                                             |
+| **Category**   | Security |
 
 ## Vulnerability and Risk
 

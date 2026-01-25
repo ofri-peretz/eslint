@@ -1,0 +1,21 @@
+{
+  "name": "eslint-plugin-modernization",
+  "version": "0.0.1",
+  "description": "ESLint rules for modernizing JavaScript to ES2022+ syntax.",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "keywords": [
+    "eslint",
+    "eslint-plugin",
+    "interlace-quality",
+    "modernization",
+    "es2022",
+    "modern-javascript",
+    "llm-optimized"
+  ],
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "@interlace/eslint-devkit": "workspace:*"
+  }
+}

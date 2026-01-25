@@ -12,7 +12,7 @@ Prevent dynamic URLs in service worker registration.
 | Property     | Value                                                                                                                |
 | ------------ | -------------------------------------------------------------------------------------------------------------------- |
 | **CWE**      | [CWE-829: Inclusion of Functionality from Untrusted Control Sphere](https://cwe.mitre.org/data/definitions/829.html) |
-| **OWASP**    | [A08:2021](https://owasp.org/Top10/A08_2021-Software_and_Data_Integrity_Failures/) - Software and Data Integrity Failures                                                                      |
+| **OWASP**    | A08:2021 - Software and Data Integrity Failures                                                                      |
 | **CVSS**     | 8.1 (High)                                                                                                           |
 | **Severity** | HIGH                                                                                                                 |
 
@@ -97,7 +97,7 @@ registerSW(dynamicUrl);
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 [CWE-829](https://cwe.mitre.org/data/definitions/829.html) OWASP:A03 CVSS:7.5 | Untrusted Control Sphere Inclusion detected | HIGH
+🔒 CWE-829 OWASP:A03 CVSS:7.5 | Untrusted Control Sphere Inclusion detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A03_2021/
 ```
 

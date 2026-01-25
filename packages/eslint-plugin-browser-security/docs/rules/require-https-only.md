@@ -1,0 +1,143 @@
+---
+title: require-https-only
+description: 'require-https-only'
+category: security
+tags: ['security', 'browser']
+---
+
+
+> Enforces HTTPS for all external requests
+
+**Severity:** 🔴 CRITICAL  
+**CWE:** [CWE-319: Cleartext Transmission of Sensitive Information](https://cwe.mitre.org/data/definitions/319.html)  
+**OWASP Mobile:** [M5: Insecure Communication](https://owasp.org/www-project-mobile-top-10/)
+
+## Rule Details
+
+This rule detects HTTP (unencrypted) URLs in `fetch()` and `axios` requests. HTTP transmits data in plaintext, allowing man-in-the-middle (MITM) attacks where attackers can intercept, read, and modify data in transit.
+
+### Why This Matters
+
+Using HTTP instead of HTTPS exposes all transmitted data:
+
+- **Credentials theft**: Login credentials sent in plaintext
+- **Session hijacking**: Auth tokens intercepted by attackers
+- **Data tampering**: Responses modified to inject malicious code
+- **Compliance violations**: PCI-DSS requires TLS 1.2+ for payment data
+
+HTTPS is **mandatory** for:
+
+- Authentication and authorization
+- Any PII or sensitive data
+- API requests with auth tokens
+- Payment processing (PCI-DSS requirement)
+
+## ❌ Incorrect
+
+```typescript
+// HTTP fetch() requests
+fetch('http://api.example.com/users'); // ❌ Unencrypted
+
+// HTTP axios requests
+axios.get('http://api.example.com/data'); // ❌ Plaintext transmission
+
+// HTTP POST with credentials
+fetch('http://api.example.com/login', {
+  method: 'POST',
+  body: JSON.stringify({ username, password }), // ❌ Credentials in plaintext!
+});
+
+// Mixed content (HTTPS page loading HTTP resources)
+fetch('http://cdn.example.com/script.js'); // ❌ Mixed content vulnerability
+```
+
+## ✅ Correct
+
+```typescript
+// HTTPS fetch() requests
+fetch('https://api.example.com/users'); // ✅ Encrypted with TLS
+
+// HTTPS axios requests
+axios.get('https://api.example.com/data'); // ✅ Secure transmission
+
+// HTTPS POST with credentials
+fetch('https://api.example.com/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ username, password }), // ✅ Encrypted
+});
+
+// Environment-based URLs (with HTTPS enforcement)
+const API_URL = process.env.API_URL; // Must be HTTPS in production
+if (!API_URL.startsWith('https://')) {
+  throw new Error('API_URL must use HTTPS');
+}
+fetch(API_URL);
+
+// Localhost exception (development only)
+const isDev = process.env.NODE_ENV === 'development';
+const url = isDev ? 'http://localhost:3000' : 'https://api.prod.com'; // ✅ Conditional
+```
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### URLs from Variables or Environment
+
+**Why**: We only detect literal HTTP URL strings. URLs from variables or `process.env` are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - URL from variable
+const apiUrl = getApiUrl(); // Returns 'http://...'
+fetch(apiUrl);
+```
+
+**Mitigation**: Validate URLs at runtime. Use URL parsing libraries to enforce HTTPS.
+
+```typescript
+// Runtime validation
+const url = new URL(apiUrl);
+if (url.protocol !== 'https:' && !isDevelopment) {
+  throw new Error('Only HTTPS URLs allowed in production');
+}
+```
+
+### Template Literals with Expressions
+
+**Why**: Template literals with variable interpolation cannot be statically analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Template literal
+const protocol = 'http'; // Insecure!
+fetch(`${protocol}://api.example.com/data`);
+```
+
+**Mitigation**: Use constant HTTPS URLs. Avoid dynamic protocol construction.
+
+### Redirects and Location Headers
+
+**Why**: Server-side redirects from HTTPS to HTTP are not detected at the client level.
+
+```typescript
+// ❌ NOT DETECTED - Server redirects to HTTP
+fetch('https://api.example.com/redirect'); // Server returns HTTP redirect
+```
+
+**Mitigation**: Configure servers to never redirect HTTPS to HTTP. Use HSTS headers.
+
+## ⚙️ Configuration
+
+This rule has no configuration options. It flags all HTTP URLs in `fetch()` and `axios.get/post/put/delete/patch/head/options()` calls.
+
+## 🔗 Related Rules
+
+- [`no-disabled-certificate-validation`](./no-disabled-certificate-validation.md) - Prevent SSL bypass
+- [`no-insecure-websocket`](./no-insecure-websocket.md) - Require WSS (secure WebSocket)
+
+## 📚 References
+
+- [CWE-319: Cleartext Transmission](https://cwe.mitre.org/data/definitions/319.html)
+- [OWASP Mobile M5: Insecure Communication](https://owasp.org/www-project-mobile-top-10/)
+- [PCI-DSS Requirement 4.1: Use Strong Cryptography](https://www.pcisecuritystandards.org/)
+- [HSTS Specification](https://tools.ietf.org/html/rfc6797)

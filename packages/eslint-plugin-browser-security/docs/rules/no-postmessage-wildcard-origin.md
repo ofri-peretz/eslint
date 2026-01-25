@@ -1,4 +1,10 @@
-# browser-security/no-postmessage-wildcard-origin
+---
+title: no-postmessage-wildcard-origin
+description: 'no-postmessage-wildcard-origin'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > 🔒 Disallow using wildcard (\*) as targetOrigin in postMessage calls
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  

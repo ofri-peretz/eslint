@@ -1,4 +1,10 @@
-# no-hardcoded-connection-string
+---
+title: no-hardcoded-connection-string
+description: 'no-hardcoded-connection-string'
+category: security
+tags: ['security', 'mongodb']
+---
+
 
 > **Keywords:** CWE-798, hardcoded credentials, MongoDB, connection string, secrets, security
 
@@ -13,7 +19,7 @@ Detects hardcoded MongoDB connection strings containing credentials in source co
 | **CWE Reference** | CWE-798 (Hardcoded Credentials)           |
 | **OWASP**         | A07:2021 - Identification/Auth Failures   |
 | **Severity**      | High (CVSS: 7.5)                          |
-| **Category**      | Security                                  |
+| **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for AI assistant integration |
 
 ## Error Message Format

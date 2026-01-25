@@ -418,7 +418,7 @@ Modern browser APIs can leak sensitive data or be abused.
 ```javascript
 // ⚠️ CAUTION: WebRTC can leak real IP
 const pc = new RTCPeerConnection();
-pc.createDataChannel('');
+pc.createDataChannel(');
 pc.createOffer().then((offer) => pc.setLocalDescription(offer));
 pc.onicecandidate = (event) => {
   // event.candidate.candidate contains IP addresses!

@@ -1,4 +1,10 @@
-# browser-security/no-sensitive-cookie-js
+---
+title: no-sensitive-cookie-js
+description: 'no-sensitive-cookie-js'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > 🔒 Disallow storing sensitive data (tokens, passwords) in cookies via JavaScript
 **CWE:** [CWE-359](https://cwe.mitre.org/data/definitions/359.html)  

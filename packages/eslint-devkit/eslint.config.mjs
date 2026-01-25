@@ -16,6 +16,10 @@ export default [
           ignoredDependencies: [
             'vitest', // Dev dependency - used for testing only
             '@nx/vite', // Dev dependency - Nx plugin for Vite/Vitest
+            '@typescript-eslint/utils', // Direct dependency, not peer
+            'get-tsconfig', // Direct dependency
+            'enhanced-resolve', // Direct dependency
+            'typescript', // Already optional peer in downstream plugins
           ],
         },
       ],

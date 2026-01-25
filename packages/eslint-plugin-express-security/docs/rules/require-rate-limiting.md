@@ -1,4 +1,10 @@
-# require-rate-limiting
+---
+title: require-rate-limiting
+description: 'require-rate-limiting'
+category: security
+tags: ['security', 'express']
+---
+
 
 > Require rate limiting middleware to prevent DDoS and brute-force attacks
 

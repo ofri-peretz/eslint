@@ -12,7 +12,7 @@ Require Secure and SameSite attributes on cookies.
 | Property     | Value                                                                                                                    |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------ |
 | **CWE**      | [CWE-614: Sensitive Cookie in HTTPS Session Without 'Secure' Attribute](https://cwe.mitre.org/data/definitions/614.html) |
-| **OWASP**    | [A05:2021](https://owasp.org/Top10/A05_2021-Security_Misconfiguration/) - Security Misconfiguration                                                                                     |
+| **OWASP**    | A05:2021 - Security Misconfiguration                                                                                     |
 | **CVSS**     | 6.5 (Medium)                                                                                                             |
 | **Severity** | MEDIUM                                                                                                                   |
 
@@ -113,7 +113,7 @@ document.cookie = 'name=value' + attrs;
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-⚠️ [CWE-614](https://cwe.mitre.org/data/definitions/614.html) OWASP:A02 CVSS:5.3 | Sensitive Cookie in HTTPS without Secure detected | MEDIUM
+⚠️ CWE-614 OWASP:A02 CVSS:5.3 | Sensitive Cookie in HTTPS without Secure detected | MEDIUM
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A02_2021/
 ```
 

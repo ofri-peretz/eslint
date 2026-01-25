@@ -1,4 +1,10 @@
-# no-decode-without-verify
+---
+title: no-decode-without-verify
+description: 'no-decode-without-verify'
+category: security
+tags: ['security', 'jwt']
+---
+
 
 > Disallow trusting decoded JWT payload without signature verification
 

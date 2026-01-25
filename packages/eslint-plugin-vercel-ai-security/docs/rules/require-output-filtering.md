@@ -1,4 +1,10 @@
-# `require-output-filtering`
+---
+title: require-output-filtering
+description: 'require-output-filtering'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Requires filtering of sensitive data returned by AI tools.
 

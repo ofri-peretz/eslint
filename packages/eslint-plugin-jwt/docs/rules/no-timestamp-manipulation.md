@@ -1,4 +1,10 @@
-# no-timestamp-manipulation
+---
+title: no-timestamp-manipulation
+description: 'no-timestamp-manipulation'
+category: security
+tags: ['security', 'jwt']
+---
+
 
 > Prevent disabling automatic timestamp generation which enables replay attacks
 

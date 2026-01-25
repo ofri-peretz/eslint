@@ -1,4 +1,10 @@
-# require-postmessage-origin-check
+---
+title: require-postmessage-origin-check
+description: 'require-postmessage-origin-check'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > **Keywords:** postMessage, cross-origin, CWE-346, security, iframe, message validation
 **CWE:** [CWE-494](https://cwe.mitre.org/data/definitions/494.html)  
@@ -15,7 +21,7 @@ Detects postMessage event handlers without origin validation. This rule is part 
 | **CWE Reference** | CWE-346 (Origin Validation Error)              |
 | **Severity**      | 🔴 High                                        |
 | **Auto-Fix**      | ✅ Yes (suggests origin check)                 |
-| **Category**      | Security                                       |
+| **Category**   | Security |
 | **Best For**      | Apps using iframes, cross-window communication |
 
 ## Vulnerability and Risk

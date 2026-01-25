@@ -1,8 +1,14 @@
-# detect-eval-with-expression
+---
+title: detect-eval-with-expression
+description: 'detect-eval-with-expression'
+category: security
+tags: ['security', 'node']
+---
+
 
 > **Keywords:** eval, code injection, CWE-95, security, ESLint rule, remote code execution, RCE, arbitrary code execution, Function constructor, auto-fix, LLM-optimized, code security
-**CWE:** [CWE-95](https://cwe.mitre.org/data/definitions/95.html)  
-**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
+> **CWE:** [CWE-95](https://cwe.mitre.org/data/definitions/95.html)  
+> **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
 Detects `eval(variable)` which can allow an attacker to run arbitrary code inside your process. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages with fix suggestions.
 
@@ -15,7 +21,7 @@ Detects `eval(variable)` which can allow an attacker to run arbitrary code insid
 | **CWE Reference** | [CWE-95](https://cwe.mitre.org/data/definitions/95.html) (Code Injection) |
 | **Severity**      | Critical (security vulnerability)                                         |
 | **Auto-Fix**      | ⚠️ Suggests fixes (manual application)                                    |
-| **Category**      | Security                                                                  |
+| **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                   |
 | **Best For**      | All applications, especially those handling user input                    |
 
@@ -172,27 +178,13 @@ The rule automatically detects common eval patterns and provides targeted fixes:
 | Command Injection   | 78  | A03:2021 | 9.8 Critical | System command execution   |
 | Prototype Pollution | 915 | A01:2021 | 8.1 High     | Object manipulation        |
 
-## Why This Matters
+### Why This Matters
 
-### Real-World Exploits
-
-```javascript
-// Attacker can execute arbitrary code
-const userInput = 'process.exit()'; // Server shutdown
-eval(userInput); // 💥 Server dies
-
-// Prototype pollution via eval
-const userInput = "__proto__.toString = () => 'HACKED'";
-eval(userInput); // 💥 All objects polluted
-```
-
-### Prevention Strategy
-
-1. **Complete Removal** - Remove eval usage entirely
-2. **Safe Alternatives** - Use JSON.parse, Map, template literals
-3. **Input Validation** - Whitelist allowed patterns
-4. **Sandboxing** - Use vm module if absolutely necessary
-5. **Static Analysis** - Prefer compile-time evaluation
+| Issue                  | Impact                              | Solution                                                     |
+| ---------------------- | ----------------------------------- | ------------------------------------------------------------ |
+| 🚀 **Remote Code Ex.** | Full server/client takeover         | Remove `eval()` entirely; use `JSON.parse` or object logic   |
+| 🕵️ **Data Injection**  | Manipulated business logic          | Validate input against a strict whitelist of allowed values  |
+| 🔒 **Compliance**      | Failure to prevent script injection | Implement Content Security Policy (CSP) and static templates |
 
 ## Migration Guide
 

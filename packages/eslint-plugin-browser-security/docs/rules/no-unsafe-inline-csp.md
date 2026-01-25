@@ -1,4 +1,10 @@
-# no-unsafe-inline-csp
+---
+title: no-unsafe-inline-csp
+description: 'no-unsafe-inline-csp'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > No Unsafe Inline Csp
 

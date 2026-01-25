@@ -1,4 +1,10 @@
-# no-redos-vulnerable-regex
+---
+title: no-redos-vulnerable-regex
+description: 'no-redos-vulnerable-regex'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** no redos vulnerable regex, security, ESLint rule, JavaScript, TypeScript, CWE-400, CWE-1333, DoS, catastrophic backtracking
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
@@ -12,7 +18,7 @@ ESLint Rule: no-redos-vulnerable-regex. This rule is part of [`eslint-plugin-sec
 | --------------- | ----------------------------------------------- |
 | **Severity**    | Error (Security)                                |
 | **Auto-Fix**    | ❌ No (requires manual review)                  |
-| **Category**    | Security                                        |
+| **Category**   | Security |
 | **ESLint MCP**  | ✅ Optimized for ESLint MCP integration         |
 | **Best For**    | Production applications handling user input     |
 | **Suggestions** | ✅ Advice on using atomic groups/safe libraries |

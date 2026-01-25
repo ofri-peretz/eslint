@@ -1,4 +1,10 @@
-# require-expiration
+---
+title: require-expiration
+description: 'require-expiration'
+category: security
+tags: ['security', 'jwt']
+---
+
 
 > Require expiration claim (exp) or expiresIn option in JWT signing
 

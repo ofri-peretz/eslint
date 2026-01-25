@@ -62,6 +62,34 @@ import { noWorkerMessageInnerhtml } from './rules/no-worker-message-innerhtml';
 import { noUnsafeInlineCsp } from './rules/no-unsafe-inline-csp';
 import { noUnsafeEvalCsp } from './rules/no-unsafe-eval-csp';
 
+// Migrated rules from secure-coding
+import { detectMixedContent } from './rules/detect-mixed-content';
+import { noAllowArbitraryLoads } from './rules/no-allow-arbitrary-loads';
+import { noClickjacking } from './rules/no-clickjacking';
+import { noCredentialsInQueryParams } from './rules/no-credentials-in-query-params';
+import { noHttpUrls } from './rules/no-http-urls';
+import { noInsecureRedirects } from './rules/no-insecure-redirects';
+import { noInsecureWebsocket } from './rules/no-insecure-websocket';
+import { noMissingCorsCheck } from './rules/no-missing-cors-check';
+import { noMissingCsrfProtection } from './rules/no-missing-csrf-protection';
+import { noMissingSecurityHeaders } from './rules/no-missing-security-headers';
+import { noPasswordInUrl } from './rules/no-password-in-url';
+import { noPermissiveCors } from './rules/no-permissive-cors';
+import { noSensitiveDataInAnalytics } from './rules/no-sensitive-data-in-analytics';
+import { noSensitiveDataInCache } from './rules/no-sensitive-data-in-cache';
+import { noTrackingWithoutConsent } from './rules/no-tracking-without-consent';
+import { noUnencryptedTransmission } from './rules/no-unencrypted-transmission';
+import { noUnescapedUrlParameter } from './rules/no-unescaped-url-parameter';
+import { noUnvalidatedDeeplinks } from './rules/no-unvalidated-deeplinks';
+import { requireCspHeaders } from './rules/require-csp-headers';
+import { requireHttpsOnly } from './rules/require-https-only';
+import { requireUrlValidation } from './rules/require-url-validation';
+import { requireMimeTypeValidation } from './rules/require-mime-type-validation';
+import { noDisabledCertificateValidation } from './rules/no-disabled-certificate-validation';
+
+// Migrated from secure-coding (browser-specific auth)
+import { noClientSideAuthLogic } from './rules/no-client-side-auth-logic';
+
 /**
  * Collection of all browser security ESLint rules
  */
@@ -105,6 +133,34 @@ export const rules: Record<
   // CSP Security
   'no-unsafe-inline-csp': noUnsafeInlineCsp,
   'no-unsafe-eval-csp': noUnsafeEvalCsp,
+
+  // Migrated rules
+  'detect-mixed-content': detectMixedContent,
+  'no-allow-arbitrary-loads': noAllowArbitraryLoads,
+  'no-clickjacking': noClickjacking,
+  'no-credentials-in-query-params': noCredentialsInQueryParams,
+  'no-http-urls': noHttpUrls,
+  'no-insecure-redirects': noInsecureRedirects,
+  'no-insecure-websocket': noInsecureWebsocket,
+  'no-missing-cors-check': noMissingCorsCheck,
+  'no-missing-csrf-protection': noMissingCsrfProtection,
+  'no-missing-security-headers': noMissingSecurityHeaders,
+  'no-password-in-url': noPasswordInUrl,
+  'no-permissive-cors': noPermissiveCors,
+  'no-sensitive-data-in-analytics': noSensitiveDataInAnalytics,
+  'no-sensitive-data-in-cache': noSensitiveDataInCache,
+  'no-tracking-without-consent': noTrackingWithoutConsent,
+  'no-unencrypted-transmission': noUnencryptedTransmission,
+  'no-unescaped-url-parameter': noUnescapedUrlParameter,
+  'no-unvalidated-deeplinks': noUnvalidatedDeeplinks,
+  'require-csp-headers': requireCspHeaders,
+  'require-https-only': requireHttpsOnly,
+  'require-url-validation': requireUrlValidation,
+  'require-mime-type-validation': requireMimeTypeValidation,
+  'no-disabled-certificate-validation': noDisabledCertificateValidation,
+
+  // Migrated from secure-coding
+  'no-client-side-auth-logic': noClientSideAuthLogic,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 /**
@@ -158,6 +214,17 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   // Medium - CSP Security
   'browser-security/no-unsafe-inline-csp': 'error',
   'browser-security/no-unsafe-eval-csp': 'error',
+
+  // Migrated Rules
+  'browser-security/detect-mixed-content': 'error',
+  'browser-security/no-allow-arbitrary-loads': 'error',
+  'browser-security/no-clickjacking': 'error',
+  'browser-security/no-credentials-in-query-params': 'error',
+  'browser-security/no-http-urls': 'error',
+  'browser-security/require-https-only': 'error',
+  'browser-security/no-insecure-websocket': 'error',
+  'browser-security/no-unvalidated-deeplinks': 'error',
+  'browser-security/no-client-side-auth-logic': 'error',
 };
 
 /**
@@ -281,3 +348,4 @@ export type { Options as NoDynamicServiceWorkerUrlOptions } from './rules/no-dyn
 export type { Options as NoWorkerMessageInnerhtmlOptions } from './rules/no-worker-message-innerhtml';
 export type { Options as NoUnsafeInlineCspOptions } from './rules/no-unsafe-inline-csp';
 export type { Options as NoUnsafeEvalCspOptions } from './rules/no-unsafe-eval-csp';
+

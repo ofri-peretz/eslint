@@ -1,4 +1,10 @@
-# no-weak-password-recovery
+---
+title: no-weak-password-recovery
+description: 'no-weak-password-recovery'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** no weak password recovery, security, ESLint rule, JavaScript, TypeScript, CWE-640, CWE-620, authentication, ATO, tokens
 **CWE:** [CWE-798](https://cwe.mitre.org/data/definitions/798.html)  
@@ -13,7 +19,7 @@ ESLint Rule: no-weak-password-recovery with LLM-optimized suggestions and auto-f
 | **CWE Reference** | [CWE-640](https://cwe.mitre.org/data/definitions/640.html) (Weak Password Recovery) |
 | **Severity**      | Error (Security)                                                                    |
 | **Auto-Fix**      | ❌ No                                                                               |
-| **Category**      | Security                                                                            |
+| **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                             |
 | **Best For**      | Authentication systems, User management                                             |
 | **Suggestions**   | ✅ Advice on secure token generation                                                |

@@ -3,7 +3,7 @@ title: no-operator-injection
 description: "Detects MongoDB operator injection attacks where user input is passed directly as query values, allowing attackers to inject operators like $ne, $gt, $or to byp"
 ---
 
-> **Keywords:** NoSQL injection, [CWE-943](https://cwe.mitre.org/data/definitions/943.html), MongoDB, $ne, $gt, $or, operator injection, security
+> **Keywords:** NoSQL injection, CWE-943, MongoDB, $ne, $gt, $or, operator injection, security
 
 Detects MongoDB operator injection attacks where user input is passed directly as query values, allowing attackers to inject operators like `$ne`, `$gt`, `$or` to bypass authentication or exfiltrate data.
 
@@ -13,8 +13,8 @@ Detects MongoDB operator injection attacks where user input is passed directly a
 
 | Aspect            | Details                                   |
 | ----------------- | ----------------------------------------- |
-| **CWE Reference** | [CWE-943](https://cwe.mitre.org/data/definitions/943.html) (NoSQL Injection)                 |
-| **OWASP**         | [A03:2021](https://owasp.org/Top10/A03_2021-Injection/) - Injection                      |
+| **CWE Reference** | CWE-943 (NoSQL Injection)                 |
+| **OWASP**         | A03:2021 - Injection                      |
 | **Severity**      | Critical (CVSS: 9.1)                      |
 | **Category**      | Security                                  |
 | **ESLint MCP**    | ✅ Optimized for AI assistant integration |

@@ -1,0 +1,57 @@
+{
+  "name": "eslint-plugin-maintainability",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/eslint-plugin-maintainability/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "dependsOn": ["^build", "test"],
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/eslint-plugin-maintainability",
+        "main": "packages/eslint-plugin-maintainability/src/index.ts",
+        "tsConfig": "packages/eslint-plugin-maintainability/tsconfig.lib.json",
+        "assets": [
+          "packages/eslint-plugin-maintainability/README.md",
+          "packages/eslint-plugin-maintainability/CHANGELOG.md",
+          "packages/eslint-plugin-maintainability/LICENSE",
+          {
+            "glob": "packages/eslint-plugin-maintainability/README.md",
+            "input": "packages/eslint-plugin-maintainability",
+            "output": "./"
+          }
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{projectRoot}/coverage"],
+      "options": {
+        "configFile": "packages/eslint-plugin-maintainability/vitest.config.mts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "coverage": true
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": [
+          "packages/eslint-plugin-maintainability/**/*.{ts,tsx,js,jsx}"
+        ]
+      }
+    },
+    "nx-release-publish": {
+      "executor": "@nx/js:release-publish",
+      "options": {
+        "packageRoot": "dist/{projectRoot}"
+      }
+    }
+  }
+}

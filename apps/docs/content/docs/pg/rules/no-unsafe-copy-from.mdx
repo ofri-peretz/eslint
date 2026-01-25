@@ -3,7 +3,7 @@ title: no-unsafe-copy-from
 description: Prevents COPY FROM with file paths (should use STDIN for safe client-side data loading).
 ---
 
-> **Keywords:** COPY FROM, file access, [CWE-73](https://cwe.mitre.org/data/definitions/73.html), pg, node-postgres, security, path injection
+> **Keywords:** COPY FROM, file access, CWE-73, pg, node-postgres, security, path injection
 
 Prevents `COPY FROM` with file paths (should use STDIN for safe client-side data loading).
 
@@ -13,8 +13,8 @@ Prevents `COPY FROM` with file paths (should use STDIN for safe client-side data
 
 | Aspect            | Details                                 |
 | ----------------- | --------------------------------------- |
-| **CWE Reference** | [CWE-73](https://cwe.mitre.org/data/definitions/73.html) (External Control of File Name)  |
-| **OWASP**         | [A03:2021](https://owasp.org/Top10/A03_2021-Injection/) Injection                      |
+| **CWE Reference** | CWE-73 (External Control of File Name)  |
+| **OWASP**         | A03:2021 Injection                      |
 | **Severity**      | CRITICAL (dynamic) / MEDIUM (hardcoded) |
 | **Category**      | Security                                |
 | **Fixable**       | No                                      |
@@ -119,14 +119,14 @@ export default [
 ### Dynamic Path (CRITICAL)
 
 ```
-🔒 [CWE-73](https://cwe.mitre.org/data/definitions/73.html) OWASP:A03-Injection | Dynamic file path in COPY FROM detected - potential arbitrary file read. | CRITICAL [SOC2,PCI-DSS]
+🔒 CWE-73 OWASP:A03-Injection | Dynamic file path in COPY FROM detected - potential arbitrary file read. | CRITICAL [SOC2,PCI-DSS]
    Fix: Never use user input in COPY FROM paths. Use COPY FROM STDIN for user data. | https://www.postgresql.org/docs/current/sql-copy.html
 ```
 
 ### Hardcoded Path (MEDIUM)
 
 ```
-⚠️ [CWE-73](https://cwe.mitre.org/data/definitions/73.html) | Hardcoded file path in COPY FROM - server-side file access. | MEDIUM
+⚠️ CWE-73 | Hardcoded file path in COPY FROM - server-side file access. | MEDIUM
    Fix: Prefer COPY FROM STDIN for application code. Use allowHardcodedPaths option if this is an admin script. | https://www.postgresql.org/docs/current/sql-copy.html
 ```
 
@@ -198,4 +198,4 @@ await client.query(`COPY users FROM PROGRAM '${cmd}'`);
 - [CWE-73: External Control of File Name or Path](https://cwe.mitre.org/data/definitions/73.html)
 - [CVE-2019-9193: PostgreSQL COPY FROM PROGRAM](https://nvd.nist.gov/vuln/detail/CVE-2019-9193)
 - [PostgreSQL COPY Documentation](https://www.postgresql.org/docs/current/sql-copy.html)
-- [OWASP [A03:2021](https://owasp.org/Top10/A03_2021-Injection/) Injection](https://owasp.org/Top10/A03_2021-Injection/)
+- [OWASP A03:2021 Injection](https://owasp.org/Top10/A03_2021-Injection/)

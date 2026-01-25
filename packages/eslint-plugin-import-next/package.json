@@ -41,6 +41,7 @@
     "eslint",
     "eslint-plugin",
     "eslintplugin",
+    "interlace-quality",
     "eslint-plugin-import",
     "eslint-plugin-import-alternative",
     "import",

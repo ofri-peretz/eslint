@@ -1,4 +1,10 @@
-# no-unlimited-resource-allocation
+---
+title: no-unlimited-resource-allocation
+description: 'no-unlimited-resource-allocation'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** resource allocation, CWE-770, DoS, memory exhaustion, security, rate limiting
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
@@ -15,7 +21,7 @@ Detects unlimited resource allocation that could cause DoS. This rule is part of
 | **CWE Reference** | [CWE-770](https://cwe.mitre.org/data/definitions/770.html) (Allocation Without Limits) |
 | **Severity**      | High (CVSS 7.5)                                                                        |
 | **Auto-Fix**      | 💡 Suggestions available                                                               |
-| **Category**      | Buffer, Memory & DoS                                                                   |
+| **Category**   | Security |
 
 ## Vulnerability and Risk
 

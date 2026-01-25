@@ -1,0 +1,21 @@
+{
+  "name": "eslint-plugin-modularity",
+  "version": "0.0.1",
+  "description": "ESLint rules for architecture, DDD patterns, and module isolation.",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "keywords": [
+    "eslint",
+    "eslint-plugin",
+    "interlace-quality",
+    "modularity",
+    "ddd",
+    "architecture",
+    "llm-optimized"
+  ],
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "@interlace/eslint-devkit": "workspace:*"
+  }
+}

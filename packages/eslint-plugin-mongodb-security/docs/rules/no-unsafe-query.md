@@ -1,4 +1,10 @@
-# no-unsafe-query
+---
+title: no-unsafe-query
+description: 'no-unsafe-query'
+category: security
+tags: ['security', 'mongodb']
+---
+
 
 > **Keywords:** NoSQL injection, CWE-943, MongoDB, Mongoose, operator injection, query manipulation, security
 
@@ -13,7 +19,7 @@ Prevents NoSQL injection by detecting direct use of user input in MongoDB query 
 | **CWE Reference** | CWE-943 (NoSQL Injection)                 |
 | **OWASP**         | A03:2021 - Injection                      |
 | **Severity**      | Critical (CVSS: 9.8)                      |
-| **Category**      | Security                                  |
+| **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for AI assistant integration |
 
 ## Rule Details

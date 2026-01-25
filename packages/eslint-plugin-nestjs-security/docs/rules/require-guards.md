@@ -1,4 +1,10 @@
-# require-guards
+---
+title: require-guards
+description: 'require-guards'
+category: security
+tags: ['security', 'nestjs']
+---
+
 
 > Require @UseGuards decorator on controllers or route handlers
 

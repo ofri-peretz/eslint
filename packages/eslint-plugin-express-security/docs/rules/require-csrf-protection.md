@@ -1,4 +1,10 @@
-# require-csrf-protection
+---
+title: require-csrf-protection
+description: 'require-csrf-protection'
+category: security
+tags: ['security', 'express']
+---
+
 
 > Require CSRF protection middleware for state-changing HTTP methods
 

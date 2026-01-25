@@ -1,4 +1,10 @@
-# no-improper-type-validation
+---
+title: no-improper-type-validation
+description: 'no-improper-type-validation'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** type validation, CWE-1287, type confusion, typeof, instanceof, security
 **CWE:** [CWE-20](https://cwe.mitre.org/data/definitions/20.html)  
@@ -15,7 +21,7 @@ Detects improper type validation in user input handling. This rule is part of [`
 | **CWE Reference** | [CWE-1287](https://cwe.mitre.org/data/definitions/1287.html) (Improper Validation of Specified Type of Input) |
 | **Severity**      | Medium (CVSS 5.3)                                                                                             |
 | **Auto-Fix**      | 💡 Suggestions available                                                                                      |
-| **Category**      | Input Validation & XSS                                                                                        |
+| **Category**   | Security |
 
 ## Vulnerability and Risk
 

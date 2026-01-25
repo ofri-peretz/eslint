@@ -1,4 +1,10 @@
-# browser-security/no-postmessage-innerhtml
+---
+title: no-postmessage-innerhtml
+description: 'no-postmessage-innerhtml'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > 🔒 Disallow using innerHTML with postMessage data
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  

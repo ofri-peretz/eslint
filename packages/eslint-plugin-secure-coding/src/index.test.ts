@@ -25,61 +25,20 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
       'no-unsafe-regex-construction',
       'detect-object-injection',
       'no-unsafe-deserialization',
-      'no-hardcoded-credentials',
       'no-insecure-comparison',
-      'no-unvalidated-user-input',
-      'no-unescaped-url-parameter',
       'no-improper-sanitization',
       'no-improper-type-validation',
       'no-missing-authentication',
       'no-privilege-escalation',
       'no-weak-password-recovery',
-      'no-missing-csrf-protection',
-      'no-missing-cors-check',
-      'no-missing-security-headers',
-      'no-insecure-redirects',
-      'no-unencrypted-transmission',
-      'no-clickjacking',
+      'require-backend-authorization',
+      'no-hardcoded-credentials',
       'no-sensitive-data-exposure',
+      'no-pii-in-logs', // Migrated from node-security
       'no-unlimited-resource-allocation',
       'no-unchecked-loop-condition',
-      'no-electron-security-issues',
-      'no-credentials-in-query-params',
-      'require-secure-credential-storage',
-      'require-dependency-integrity',
-      'detect-suspicious-dependencies',
-      'no-dynamic-dependency-loading',
-      'lock-file',
-      'no-client-side-auth-logic',
-      'require-backend-authorization',
-      'no-hardcoded-session-tokens',
-      'detect-weak-password-validation',
-      'no-password-in-url',
-      'no-unvalidated-deeplinks',
-      'require-url-validation',
-      'require-mime-type-validation',
-      'require-csp-headers',
-      'no-http-urls',
-      'no-disabled-certificate-validation',
-      'require-https-only',
-      'no-insecure-websocket',
-      'detect-mixed-content',
-      'no-allow-arbitrary-loads',
-      'require-network-timeout',
-      'no-pii-in-logs',
-      'no-tracking-without-consent',
-      'require-data-minimization',
-      'no-sensitive-data-in-analytics',
-      'no-debug-code-in-production',
-      'require-code-minification',
-      'no-verbose-error-messages',
-      'require-secure-defaults',
-      'no-permissive-cors',
-      'no-sensitive-data-in-cache',
-      'require-storage-encryption',
-      'require-secure-deletion',
     ]);
-    expect(ruleKeys.length).toBe(64);
+    expect(ruleKeys.length).toBe(23);
   });
 
   describe('configurations', () => {
@@ -114,14 +73,6 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
       
       const owaspRules = configs['owasp-top-10'].rules || {};
       expect(owaspRules['secure-coding/no-missing-authentication']).toBe('error');
-    });
-
-    it('should provide owasp-mobile-top-10 configuration', () => {
-      expect(configs['owasp-mobile-top-10']).toBeDefined();
-      expect(configs['owasp-mobile-top-10'].plugins?.['secure-coding']).toBeDefined();
-      
-      const mobileRules = configs['owasp-mobile-top-10'].rules || {};
-      expect(mobileRules['secure-coding/no-credentials-in-query-params']).toBe('error');
     });
   });
 });

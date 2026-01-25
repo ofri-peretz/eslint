@@ -1,0 +1,19 @@
+{
+  "name": "eslint-plugin-conventions",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/eslint-plugin-conventions/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/eslint-plugin-conventions",
+        "main": "packages/eslint-plugin-conventions/src/index.ts",
+        "tsConfig": "packages/eslint-plugin-conventions/tsconfig.lib.json",
+        "assets": ["packages/eslint-plugin-conventions/*.md"]
+      }
+    }
+  },
+  "tags": []
+}

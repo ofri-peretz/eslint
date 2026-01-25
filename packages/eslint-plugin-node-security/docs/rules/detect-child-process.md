@@ -1,4 +1,10 @@
-# detect-child-process
+---
+title: detect-child-process
+description: 'detect-child-process'
+category: security
+tags: ['security', 'node']
+---
+
 
 > **Keywords:** command injection, CWE-78, security, ESLint rule, child_process, exec, spawn, OS command injection, shell injection, auto-fix, LLM-optimized, code security
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
@@ -15,7 +21,7 @@ Detects instances of `child_process` & non-literal `exec()` calls that may allow
 | **CWE Reference** | [CWE-78](https://cwe.mitre.org/data/definitions/78.html) (OS Command Injection) |
 | **Severity**      | Critical (security vulnerability)                                               |
 | **Auto-Fix**      | ⚠️ Suggests fixes (manual application)                                          |
-| **Category**      | Security                                                                        |
+| **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                         |
 | **Best For**      | Node.js applications, deployment scripts, CI/CD tools                           |
 

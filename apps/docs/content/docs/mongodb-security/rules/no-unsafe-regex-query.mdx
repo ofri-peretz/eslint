@@ -3,7 +3,7 @@ title: no-unsafe-regex-query
 description: Detects user input in MongoDB $regex operators that could cause ReDoS (Regular Expression Denial of Service) or information disclosure.
 ---
 
-> **Keywords:** ReDoS, [CWE-400](https://cwe.mitre.org/data/definitions/400.html), MongoDB, $regex, regular expression, denial of service
+> **Keywords:** ReDoS, CWE-400, MongoDB, $regex, regular expression, denial of service
 
 Detects user input in MongoDB `$regex` operators that could cause ReDoS (Regular Expression Denial of Service) or information disclosure.
 
@@ -13,8 +13,8 @@ Detects user input in MongoDB `$regex` operators that could cause ReDoS (Regular
 
 | Aspect            | Details                       |
 | ----------------- | ----------------------------- |
-| **CWE Reference** | [CWE-400](https://cwe.mitre.org/data/definitions/400.html) (Resource Exhaustion) |
-| **OWASP**         | [A03:2021](https://owasp.org/Top10/A03_2021-Injection/) - Injection          |
+| **CWE Reference** | CWE-400 (Resource Exhaustion) |
+| **OWASP**         | A03:2021 - Injection          |
 | **Severity**      | High (CVSS: 7.5)              |
 | **Category**      | Security                      |
 
@@ -23,7 +23,7 @@ Detects user input in MongoDB `$regex` operators that could cause ReDoS (Regular
 The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
 
 ```text
-🔒 [CWE-400](https://cwe.mitre.org/data/definitions/400.html) OWASP:A06 CVSS:7.5 | Uncontrolled Resource Consumption (ReDoS) detected | HIGH
+🔒 CWE-400 OWASP:A06 CVSS:7.5 | Uncontrolled Resource Consumption (ReDoS) detected | HIGH
    Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
 ```
 

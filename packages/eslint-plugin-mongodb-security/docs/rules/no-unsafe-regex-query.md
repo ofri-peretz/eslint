@@ -1,4 +1,10 @@
-# no-unsafe-regex-query
+---
+title: no-unsafe-regex-query
+description: 'no-unsafe-regex-query'
+category: security
+tags: ['security', 'mongodb']
+---
+
 
 > **Keywords:** ReDoS, CWE-400, MongoDB, $regex, regular expression, denial of service
 
@@ -13,7 +19,7 @@ Detects user input in MongoDB `$regex` operators that could cause ReDoS (Regular
 | **CWE Reference** | CWE-400 (Resource Exhaustion) |
 | **OWASP**         | A03:2021 - Injection          |
 | **Severity**      | High (CVSS: 7.5)              |
-| **Category**      | Security                      |
+| **Category**   | Security |
 
 ## Error Message Format
 

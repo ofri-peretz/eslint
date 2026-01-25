@@ -1,4 +1,10 @@
-# no-improper-sanitization
+---
+title: no-improper-sanitization
+description: 'no-improper-sanitization'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** improper sanitization, CWE-116, CWE-79, XSS, encoding, escaping, security
 **CWE:** [CWE-20](https://cwe.mitre.org/data/definitions/20.html)  
@@ -15,7 +21,7 @@ Detects improper sanitization of user input. This rule is part of [`eslint-plugi
 | **CWE Reference** | [CWE-116](https://cwe.mitre.org/data/definitions/116.html) (Improper Encoding), [CWE-79](https://cwe.mitre.org/data/definitions/79.html) (XSS) |
 | **Severity**      | High (CVSS 7.5)                                                                                                                                |
 | **Auto-Fix**      | 💡 Suggestions available                                                                                                                       |
-| **Category**      | Input Validation & XSS                                                                                                                         |
+| **Category**   | Security |
 
 ## Vulnerability and Risk
 

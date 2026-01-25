@@ -1,4 +1,10 @@
-# no-innerhtml
+---
+title: no-innerhtml
+description: 'no-innerhtml'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > **Keywords:** XSS, innerHTML, outerHTML, CWE-79, security, DOM manipulation, sanitization, DOMPurify
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
@@ -15,7 +21,7 @@ Detects dangerous innerHTML/outerHTML assignments that can lead to Cross-Site Sc
 | **CWE Reference** | CWE-79 (Cross-site Scripting)                      |
 | **Severity**      | 🔴 Critical                                        |
 | **Auto-Fix**      | ✅ Yes (suggests DOMPurify)                        |
-| **Category**      | Security                                           |
+| **Category**   | Security |
 | **Best For**      | Frontend apps, React/Vue/Angular, DOM manipulation |
 
 ## Vulnerability and Risk

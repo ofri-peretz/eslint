@@ -1,4 +1,10 @@
-# `require-tool-confirmation`
+---
+title: require-tool-confirmation
+description: 'require-tool-confirmation'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Requires human confirmation for destructive tool operations.
 

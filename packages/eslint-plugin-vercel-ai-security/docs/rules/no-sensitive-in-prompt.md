@@ -1,4 +1,10 @@
-# `no-sensitive-in-prompt`
+---
+title: no-sensitive-in-prompt
+description: 'no-sensitive-in-prompt'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Prevents sensitive data (passwords, tokens, PII) from being sent to LLMs.
 

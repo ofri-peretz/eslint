@@ -1,4 +1,10 @@
-# `require-audit-logging`
+---
+title: require-audit-logging
+description: 'require-audit-logging'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Suggests audit logging for AI SDK operations.
 

@@ -1,4 +1,10 @@
-# no-unsafe-search-path
+---
+title: no-unsafe-search-path
+description: 'no-unsafe-search-path'
+category: security
+tags: ['security', 'postgres']
+---
+
 
 > **Keywords:** search_path, schema hijacking, CWE-426, pg, node-postgres, security
 **CWE:** [CWE-22](https://cwe.mitre.org/data/definitions/22.html)
@@ -13,7 +19,7 @@ Prevents dynamic `SET search_path` queries that could enable schema hijacking.
 | ----------------- | ------------------------------- |
 | **CWE Reference** | CWE-426 (Untrusted Search Path) |
 | **Severity**      | High (CVSS: 7.5)                |
-| **Category**      | Security                        |
+| **Category**   | Security |
 
 ## Rule Details
 

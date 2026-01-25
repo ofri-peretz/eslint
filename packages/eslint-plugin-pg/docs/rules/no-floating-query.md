@@ -1,4 +1,10 @@
-# no-floating-query
+---
+title: no-floating-query
+description: 'no-floating-query'
+category: security
+tags: ['security', 'postgres']
+---
+
 
 > **Keywords:** unhandled promise, CWE-252, pg, node-postgres, async
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
@@ -13,7 +19,7 @@ Ensures query promises are awaited or handled.
 | ----------------- | -------------------------------- |
 | **CWE Reference** | CWE-252 (Unchecked Return Value) |
 | **Severity**      | Medium (CVSS: 5.0)               |
-| **Category**      | Correctness                      |
+| **Category**   | Security |
 
 ## Rule Details
 

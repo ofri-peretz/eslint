@@ -1,4 +1,10 @@
-# no-hardcoded-session-tokens
+---
+title: no-hardcoded-session-tokens
+description: 'no-hardcoded-session-tokens'
+category: security
+tags: ['security', 'core']
+---
+
 
 > Detects hardcoded session/JWT tokens in code
 

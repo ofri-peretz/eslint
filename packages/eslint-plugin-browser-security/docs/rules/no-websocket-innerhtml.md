@@ -1,4 +1,10 @@
-# browser-security/no-websocket-innerhtml
+---
+title: no-websocket-innerhtml
+description: 'no-websocket-innerhtml'
+category: security
+tags: ['security', 'browser']
+---
+
 
 > 🔒 Disallow using innerHTML with WebSocket message data
 **CWE:** [CWE-319](https://cwe.mitre.org/data/definitions/319.html)  

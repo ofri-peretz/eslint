@@ -1,4 +1,10 @@
-# no-transaction-on-pool
+---
+title: no-transaction-on-pool
+description: 'no-transaction-on-pool'
+category: security
+tags: ['security', 'postgres']
+---
+
 
 > **Keywords:** transactions, race condition, CWE-362, pg, node-postgres, pool
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
@@ -13,7 +19,7 @@ Prevents running transaction commands directly on pool (must use dedicated clien
 | ----------------- | ------------------------ |
 | **CWE Reference** | CWE-362 (Race Condition) |
 | **Severity**      | High (CVSS: 7.5)         |
-| **Category**      | Correctness              |
+| **Category**   | Security |
 
 ## Rule Details
 

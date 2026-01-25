@@ -1,4 +1,10 @@
-# `require-max-tokens`
+---
+title: require-max-tokens
+description: 'require-max-tokens'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Ensures all AI calls have token limits to prevent resource exhaustion.
 

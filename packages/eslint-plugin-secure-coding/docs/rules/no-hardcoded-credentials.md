@@ -1,4 +1,10 @@
-# no-hardcoded-credentials
+---
+title: no-hardcoded-credentials
+description: 'no-hardcoded-credentials'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** hardcoded credentials, CWE-798, security, ESLint rule, API keys, passwords, tokens, secrets, environment variables, secret management, OWASP, credential security, auto-fix, LLM-optimized, code security
 **CWE:** [CWE-522](https://cwe.mitre.org/data/definitions/522.html)  
@@ -15,7 +21,7 @@ Detects hardcoded passwords, API keys, tokens, and other sensitive credentials i
 | **CWE Reference** | [CWE-798](https://cwe.mitre.org/data/definitions/798.html) (Use of Hard-coded Credentials) |
 | **Severity**      | Critical (security vulnerability)                                                          |
 | **Auto-Fix**      | ✅ Yes (suggests environment variables or secret managers)                                 |
-| **Category**      | Security                                                                                   |
+| **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                                    |
 | **Best For**      | All applications handling sensitive data, API integrations, database connections           |
 

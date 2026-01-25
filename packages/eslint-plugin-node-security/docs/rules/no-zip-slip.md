@@ -1,4 +1,10 @@
-# no-zip-slip
+---
+title: no-zip-slip
+description: 'no-zip-slip'
+category: security
+tags: ['security', 'node']
+---
+
 
 > **Keywords:** zip slip, CWE-22, path traversal, archive extraction, tar, security
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
@@ -15,7 +21,7 @@ Detects zip slip/archive extraction vulnerabilities. This rule is part of [`esli
 | **CWE Reference** | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) (Path Traversal) |
 | **Severity**      | High (CVSS 8.1)                                                           |
 | **Auto-Fix**      | 💡 Suggestions available                                                  |
-| **Category**      | Path & File Security                                                      |
+| **Category**   | Security |
 
 ## Vulnerability and Risk
 

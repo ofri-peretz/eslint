@@ -5,8 +5,18 @@ description: Prevent algorithm confusion attacks using symmetric algorithms with
 
 > Prevent algorithm confusion attacks using symmetric algorithms with asymmetric keys
 
-**Severity:** 🔴 Critical  
-**CWE:** [CWE-347](https://cwe.mitre.org/data/definitions/347.html)
+**🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
+
+## Quick Summary
+
+| Aspect            | Details                                                                    |
+| ----------------- | -------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-347](https://cwe.mitre.org/data/definitions/347.html)                 |
+| **Severity**      | Critical                                                                   |
+| **Auto-Fix**      | ❌ No auto-fix available                                                   |
+| **Category**      | Security                                                                   |
+| **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                    |
+| **Best For**      | Protecting asymmetric JWT verification from algorithm substitution attacks |
 
 ## Rule Details
 
@@ -44,10 +54,6 @@ jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
 3. Attacker creates a token with `alg: "HS256"` signed with the public key as secret
 4. Server accepts HS256 in its algorithm list
 5. Server verifies using the public key as HMAC secret - attack succeeds
-
-## When Not To Use It
-
-Never disable this rule. Algorithm confusion is a critical vulnerability.
 
 ## Known False Negatives
 

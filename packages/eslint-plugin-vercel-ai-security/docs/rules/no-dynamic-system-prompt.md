@@ -1,4 +1,10 @@
-# `no-dynamic-system-prompt`
+---
+title: no-dynamic-system-prompt
+description: 'no-dynamic-system-prompt'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Prevents dynamic content in system prompts to avoid agent confusion attacks.
 

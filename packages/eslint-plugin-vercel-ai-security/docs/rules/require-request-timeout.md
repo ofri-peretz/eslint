@@ -1,4 +1,10 @@
-# `require-request-timeout`
+---
+title: require-request-timeout
+description: 'require-request-timeout'
+category: security
+tags: ['security', 'ai']
+---
+
 
 > Requires timeout configuration for AI SDK calls to prevent DoS.
 

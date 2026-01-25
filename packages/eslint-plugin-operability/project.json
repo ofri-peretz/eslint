@@ -1,0 +1,19 @@
+{
+  "name": "eslint-plugin-operability",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/eslint-plugin-operability/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/eslint-plugin-operability",
+        "main": "packages/eslint-plugin-operability/src/index.ts",
+        "tsConfig": "packages/eslint-plugin-operability/tsconfig.lib.json",
+        "assets": ["packages/eslint-plugin-operability/*.md"]
+      }
+    }
+  },
+  "tags": []
+}

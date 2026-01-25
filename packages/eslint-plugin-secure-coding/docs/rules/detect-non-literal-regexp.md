@@ -1,4 +1,10 @@
-# detect-non-literal-regexp
+---
+title: detect-non-literal-regexp
+description: 'detect-non-literal-regexp'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** ReDoS, CWE-400, security, ESLint rule, regular expression denial of service, RegExp, regex injection, performance, auto-fix, LLM-optimized, code security
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
@@ -15,7 +21,7 @@ Detects `RegExp(variable)`, which might allow an attacker to DOS your server wit
 | **CWE Reference** | [CWE-400](https://cwe.mitre.org/data/definitions/400.html) (ReDoS - Regular Expression Denial of Service) |
 | **Severity**      | High (performance/security issue)                                                                         |
 | **Auto-Fix**      | ⚠️ Suggests fixes (manual application)                                                                    |
-| **Category**      | Security                                                                                                  |
+| **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                                                   |
 | **Best For**      | Applications processing user input with regex, validation libraries                                       |
 

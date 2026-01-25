@@ -1,4 +1,10 @@
-# no-privilege-escalation
+---
+title: no-privilege-escalation
+description: 'no-privilege-escalation'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** privilege escalation, CWE-269, security, ESLint rule, role assignment, permission bypass, access control, user input, role checks, LLM-optimized, code security
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
@@ -15,7 +21,7 @@ Detects potential privilege escalation vulnerabilities where user input is used 
 | **CWE Reference** | CWE-269 (Improper Privilege Management)                                  |
 | **Severity**      | High (security vulnerability)                                            |
 | **Auto-Fix**      | ❌ No (requires manual role check implementation)                        |
-| **Category**      | Security                                                                 |
+| **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                  |
 | **Best For**      | All applications with role-based access control, user management systems |
 

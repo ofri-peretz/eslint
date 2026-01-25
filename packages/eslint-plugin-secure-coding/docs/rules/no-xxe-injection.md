@@ -1,4 +1,10 @@
-# no-xxe-injection
+---
+title: no-xxe-injection
+description: 'no-xxe-injection'
+category: security
+tags: ['security', 'core']
+---
+
 
 > **Keywords:** XXE, XML External Entity, CWE-611, SSRF, file disclosure, security, XML parsing
 **CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
@@ -15,7 +21,7 @@ Detects XML External Entity (XXE) injection vulnerabilities. This rule is part o
 | **CWE Reference** | [CWE-611](https://cwe.mitre.org/data/definitions/611.html) (XXE Injection) |
 | **Severity**      | Critical (CVSS 9.1)                                                        |
 | **Auto-Fix**      | ❌ Manual fix required                                                     |
-| **Category**      | Injection Prevention                                                       |
+| **Category**   | Security |
 
 ## Vulnerability and Risk
 

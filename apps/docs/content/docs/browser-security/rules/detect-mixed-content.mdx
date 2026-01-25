@@ -1,0 +1,138 @@
+---
+title: detect-mixed-content
+description: "Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulnerabilities."
+---
+
+> **Keywords:** mixed content, HTTPS, HTTP, CWE-311, insecure resource, TLS, web security
+
+Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulnerabilities.
+
+⚠️ This rule **errors** by default in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                                           |
+| ----------------- | ------------------------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-311](https://cwe.mitre.org/data/definitions/311.html) (Missing Encryption of Sensitive Data) |
+| **OWASP Mobile**  | [M5: Insecure Communication](https://owasp.org/www-project-mobile-top-10/)                        |
+| **Severity**      | Medium                                                                                            |
+| **Category**      | Security                                                                                          |
+
+## Rule Details
+
+Mixed content occurs when HTTPS pages load resources over HTTP. This weakens the security of the entire page, as attackers can intercept or modify the insecure resources through man-in-the-middle attacks.
+
+This rule detects any string literal starting with `http://`.
+
+## Examples
+
+### ❌ Incorrect
+
+```javascript
+// Loading resources over HTTP
+const imageUrl = 'http://example.com/logo.png';
+const apiEndpoint = 'http://api.example.com/data';
+
+// External script over HTTP
+<script src="http://example.com/tracking.js"></script>;
+
+// Fetching data without TLS
+fetch('http://api.example.com/users');
+```
+
+### ✅ Correct
+
+```javascript
+// All resources over HTTPS
+const imageUrl = 'https://example.com/logo.png';
+const apiEndpoint = 'https://api.example.com/data';
+
+// External script over HTTPS
+<script src="https://example.com/tracking.js"></script>;
+
+// Secure fetch
+fetch('https://api.example.com/users');
+
+// Protocol-relative URLs (inherits page protocol)
+const cdnUrl = '//cdn.example.com/asset.js';
+```
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-311 OWASP:A04 CVSS:7.5 | Missing Encryption of Sensitive Data detected | HIGH
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A04_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-311](https://cwe.mitre.org/data/definitions/311.html) [OWASP:A04](https://owasp.org/Top10/A04_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Issue Description** | Specific vulnerability | `Missing Encryption of Sensitive Data detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A04_2021-Injection/) |
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### URL from Variables
+
+**Why**: URLs constructed dynamically cannot be traced.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic URL
+const protocol = isDevMode ? 'http' : 'https';
+const url = `${protocol}://api.example.com`;
+```
+
+**Mitigation**: Always use HTTPS in production, configure via environment.
+
+### Template Literals with Variables
+
+**Why**: Only static string literals are checked.
+
+```typescript
+// ❌ NOT DETECTED - Template with variable protocol
+const baseUrl = `${config.protocol}://api.example.com`;
+```
+
+**Mitigation**: Validate URLs at runtime before use.
+
+### URLs in JSON/Config Files
+
+**Why**: Rule only checks JavaScript/TypeScript files.
+
+```json
+// ❌ NOT DETECTED - JSON config
+{ "apiUrl": "http://api.example.com" }
+```
+
+**Mitigation**: Use separate config validation or JSON schema.
+
+## When Not To Use It
+
+- In local development environments accessing `localhost` or `127.0.0.1`
+- When explicitly documenting insecure URLs in comments
+- In test fixtures testing HTTP behavior
+
+## Further Reading
+
+- [OWASP Mixed Content](https://owasp.org/www-community/vulnerabilities/Insecure_Transport)
+- [MDN Mixed Content](https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content)
+- [CWE-311: Missing Encryption](https://cwe.mitre.org/data/definitions/311.html)
+
+## Related Rules
+
+- [no-disabled-certificate-validation](./no-disabled-certificate-validation.md)
+- [no-insecure-ssl](../pg/no-insecure-ssl.md) (in eslint-plugin-pg)
+
+---
+
+**Category:** Security  
+**Type:** Problem  
+**Recommended:** Yes

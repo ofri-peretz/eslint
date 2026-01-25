@@ -1,4 +1,10 @@
-# no-buffer-overread
+---
+title: no-buffer-overread
+description: 'no-buffer-overread'
+category: security
+tags: ['security', 'node']
+---
+
 
 > **Keywords:** buffer overread, CWE-126, out-of-bounds, memory safety, security, Node.js
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
@@ -15,7 +21,7 @@ Detects buffer access beyond bounds. This rule is part of [`eslint-plugin-node-s
 | **CWE Reference** | [CWE-126](https://cwe.mitre.org/data/definitions/126.html) (Buffer Over-read) |
 | **Severity**      | High (CVSS 7.5)                                                               |
 | **Auto-Fix**      | 💡 Suggestions available                                                      |
-| **Category**      | Buffer, Memory & DoS                                                          |
+| **Category**   | Security |
 
 ## Vulnerability and Risk
 
