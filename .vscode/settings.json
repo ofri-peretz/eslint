@@ -9,5 +9,46 @@
     "github-actions.workflows.pinned.workflows": [
         ".github/workflows/ci.yml",
         ".github/workflows/release.yml"
-    ]
+    ],
+    // ============================================
+    // File Watcher Exclusions (reduces memory/CPU)
+    // ============================================
+    "files.watcherExclude": {
+        "**/node_modules/**": true,
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/.nx/**": true,
+        "**/.next/**": true,
+        "**/dist/**": true,
+        "**/coverage/**": true,
+        "**/.pnpm-store/**": true,
+        "**/tmp/**": true,
+        "**/.cache/**": true,
+        "**/.parcel-cache/**": true,
+        "**/.contentlayer/**": true,
+        "**/test-results/**": true
+    },
+    // ============================================
+    // Search Exclusions (faster find-in-files)
+    // ============================================
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/.nx": true,
+        "**/.next": true,
+        "**/dist": true,
+        "**/coverage": true,
+        "**/pnpm-lock.yaml": true,
+        "**/graph.json": true,
+        "**/*.tsbuildinfo": true,
+        "**/test-results": true
+    },
+    // ============================================
+    // File Explorer Exclusions (cleaner sidebar)
+    // ============================================
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/*.tsbuildinfo": true,
+        "**/graph.json": true
+    }
 }

@@ -1,0 +1,23 @@
+{
+    "$schema": "https://json.schemastore.org/gemini-settings.json",
+    "codebaseIndexing": {
+        "excludePatterns": [
+            "**/node_modules/**",
+            "**/.git/**",
+            "**/.nx/**",
+            "**/.next/**",
+            "**/dist/**",
+            "**/coverage/**",
+            "**/test-results/**",
+            "**/.pnpm-store/**",
+            "**/.cache/**",
+            "**/.parcel-cache/**",
+            "**/.contentlayer/**",
+            "**/tmp/**",
+            "**/graph.json",
+            "**/*.tsbuildinfo",
+            "**/*.log",
+            "**/pnpm-lock.yaml"
+        ]
+    }
+}
