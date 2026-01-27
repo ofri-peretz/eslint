@@ -1,8 +1,10 @@
 ---
 title: no-floating-query
-description: 'no-floating-query'
+description: no-floating-query
 category: security
+severity: medium
 tags: ['security', 'postgres']
+autofix: false
 ---
 
 

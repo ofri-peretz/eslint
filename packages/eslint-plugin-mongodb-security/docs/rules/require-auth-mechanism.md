@@ -1,8 +1,10 @@
 ---
 title: require-auth-mechanism
-description: 'require-auth-mechanism'
+description: require-auth-mechanism
 category: security
+severity: high
 tags: ['security', 'mongodb']
+autofix: false
 ---
 
 

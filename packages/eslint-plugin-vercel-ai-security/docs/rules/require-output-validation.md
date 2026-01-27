@@ -1,8 +1,10 @@
 ---
 title: require-output-validation
-description: 'require-output-validation'
+description: require-output-validation
 category: security
+severity: medium
 tags: ['security', 'ai']
+autofix: false
 ---
 
 

@@ -1,4 +1,13 @@
-# jsx-max-depth
+---
+title: jsx-max-depth
+description: jsx-max-depth rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# jsx-max-depth
 
 > **Keywords:** React, JSX nesting, component depth, complexity, refactoring, ESLint rule, LLM-optimized
 

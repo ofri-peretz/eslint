@@ -1,4 +1,13 @@
-# no-object-type-as-default-prop
+---
+title: no-object-type-as-default-prop
+description: no-object-type-as-default-prop rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-object-type-as-default-prop
 
 > **Keywords:** React, defaultProps, object, reference equality, re-renders, performance, ESLint rule, LLM-optimized
 

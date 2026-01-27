@@ -1,4 +1,13 @@
-# no-typos
+---
+title: no-typos
+description: no-typos rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-typos
 
 > **Keywords:** React, typos, lifecycle, static properties, ESLint rule, autocorrect, LLM-optimized
 

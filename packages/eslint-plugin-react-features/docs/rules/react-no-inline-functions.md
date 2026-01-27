@@ -1,4 +1,13 @@
-# react-no-inline-functions
+---
+title: react-no-inline-functions
+description: react-no-inline-functions rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# react-no-inline-functions
 
 > **Keywords:** React, performance, ESLint rule, inline functions, useCallback, React optimization, re-renders, auto-fix, LLM-optimized, React performance
 

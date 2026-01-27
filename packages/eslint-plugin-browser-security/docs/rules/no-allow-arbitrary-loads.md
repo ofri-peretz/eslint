@@ -1,8 +1,10 @@
 ---
 title: no-allow-arbitrary-loads
-description: 'no-allow-arbitrary-loads'
+description: no-allow-arbitrary-loads
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

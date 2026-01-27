@@ -1,8 +1,12 @@
 ---
 title: no-external-api-calls-in-utils
-description: 'no-external-api-calls-in-utils'
+description: no-external-api-calls-in-utils
 category: modularity
+severity: low
 tags: ['architecture', 'modularity']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

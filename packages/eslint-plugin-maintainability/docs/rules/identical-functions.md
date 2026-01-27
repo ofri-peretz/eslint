@@ -1,8 +1,12 @@
 ---
 title: identical-functions
-description: 'identical-functions'
+description: identical-functions
 category: quality
+severity: low
 tags: ['quality', 'maintainability']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

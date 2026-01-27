@@ -1,8 +1,10 @@
 ---
 title: no-sensitive-in-prompt
-description: 'no-sensitive-in-prompt'
+description: no-sensitive-in-prompt
 category: security
+severity: medium
 tags: ['security', 'ai']
+autofix: false
 ---
 
 

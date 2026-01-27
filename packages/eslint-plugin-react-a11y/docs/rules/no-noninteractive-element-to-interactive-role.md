@@ -1,4 +1,13 @@
-# no-noninteractive-element-to-interactive-role
+---
+title: no-noninteractive-element-to-interactive-role
+description: no-noninteractive-element-to-interactive-role rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-noninteractive-element-to-interactive-role
 
 > **Keywords:** no-noninteractive-element-to-interactive-role, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

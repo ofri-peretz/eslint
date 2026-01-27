@@ -1,8 +1,10 @@
 ---
 title: no-predictable-salt
-description: 'CWE: [CWE-331](https://cwe.mitre.org/data/definitions/331.html)'
+description: "CWE: [CWE-331](https://cwe.mitre.org/data/definitions/331.html)"
 category: security
+severity: medium
 tags: ['security', 'crypto']
+autofix: false
 ---
 
 > **Keywords:** no-predictable-salt, rainbow table, PBKDF2, scrypt, password hashing, security, ESLint rule, CWE-331, hardcoded salt

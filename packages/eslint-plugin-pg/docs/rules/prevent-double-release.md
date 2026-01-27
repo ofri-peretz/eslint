@@ -1,8 +1,10 @@
 ---
 title: prevent-double-release
-description: 'prevent-double-release'
+description: prevent-double-release
 category: security
+severity: medium
 tags: ['security', 'postgres']
+autofix: false
 ---
 
 

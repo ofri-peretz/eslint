@@ -1,8 +1,10 @@
 ---
 title: require-secure-defaults
-description: 'CWE: [CWE-1188](https://cwe.mitre.org/data/definitions/1188.html)'
+description: "CWE: [CWE-1188](https://cwe.mitre.org/data/definitions/1188.html)"
 category: security
+severity: medium
 tags: ['security', 'core']
+autofix: false
 ---
 
 > **Keywords:** require secure defaults, security, ESLint rule, [CWE-1188](https://cwe.mitre.org/data/definitions/1188.html), secure-by-default, configuration, hardened

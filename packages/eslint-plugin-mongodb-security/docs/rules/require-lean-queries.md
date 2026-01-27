@@ -1,8 +1,10 @@
 ---
 title: require-lean-queries
-description: 'require-lean-queries'
+description: require-lean-queries
 category: security
+severity: medium
 tags: ['security', 'mongodb']
+autofix: false
 ---
 
 

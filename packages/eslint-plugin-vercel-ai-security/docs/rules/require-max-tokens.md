@@ -1,8 +1,10 @@
 ---
 title: require-max-tokens
-description: 'require-max-tokens'
+description: require-max-tokens
 category: security
+severity: medium
 tags: ['security', 'ai']
+autofix: false
 ---
 
 

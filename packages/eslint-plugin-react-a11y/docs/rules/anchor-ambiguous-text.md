@@ -1,4 +1,13 @@
-# anchor-ambiguous-text
+---
+title: anchor-ambiguous-text
+description: anchor-ambiguous-text rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# anchor-ambiguous-text
 
 > **Keywords:** anchor-ambiguous-text, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

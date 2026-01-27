@@ -1,8 +1,10 @@
 ---
 title: detect-non-literal-regexp
-description: 'detect-non-literal-regexp'
+description: detect-non-literal-regexp
 category: security
+severity: medium
 tags: ['security', 'core']
+autofix: false
 ---
 
 

@@ -1,8 +1,10 @@
 ---
 title: no-missing-csrf-protection
-description: 'no-missing-csrf-protection'
+description: no-missing-csrf-protection
 category: security
+severity: high
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

@@ -1,8 +1,10 @@
 ---
 title: no-missing-security-headers
-description: 'no-missing-security-headers'
+description: no-missing-security-headers
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

@@ -1,0 +1,114 @@
+---
+title: no-missing-error-context
+description: Ensure errors include sufficient context for debugging. This rule is part of @interlace/eslint-plugin-maintainability and provides LLM-optimized error messages.
+category: quality
+severity: medium
+tags: ['quality', 'maintainability', 'error-handling']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---
+
+> **Keywords:** error, context, debugging, stack trace, ESLint rule, error handling, maintainability, LLM-optimized
+
+Ensure errors include sufficient context for debugging. This rule is part of [`@interlace/eslint-plugin-maintainability`](https://www.npmjs.com/package/@interlace/eslint-plugin-maintainability) and provides LLM-optimized error messages with suggestions.
+
+## Quick Summary
+
+| Aspect         | Details                                 |
+| -------------- | --------------------------------------- |
+| **Severity**   | Warning (code quality)                  |
+| **Auto-Fix**   | 💡 Suggests fixes                       |
+| **Category**   | Error Handling                          |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For**   | All projects requiring traceable errors |
+
+## Rule Details
+
+This rule ensures that when catching and re-throwing errors, the original error context (such as stack trace and cause) is preserved.
+
+### Why This Matters
+
+| Issue                   | Impact                  | Solution                 |
+| ----------------------- | ----------------------- | ------------------------ |
+| 🔍 **Lost Stack Trace** | Can't find error origin | Preserve original error  |
+| 🐛 **Debugging**        | Root cause hidden       | Use error cause property |
+| 📊 **Logging**          | Incomplete error info   | Include original context |
+| 🔄 **Error Wrapping**   | Context lost in chain   | Chain errors properly    |
+
+## Examples
+
+### ❌ Incorrect
+
+```typescript
+// Losing original error context
+try {
+  await fetchUser(id);
+} catch (error) {
+  throw new Error('Failed to fetch user'); // Original error lost!
+}
+
+// Discarding stack trace
+try {
+  processData(input);
+} catch (e) {
+  throw new Error(e.message); // Stack trace lost!
+}
+```
+
+### ✅ Correct
+
+```typescript
+// Preserve error cause (ES2022+)
+try {
+  await fetchUser(id);
+} catch (error) {
+  throw new Error(`Failed to fetch user ${id}`, { cause: error });
+}
+
+// Re-throw with context
+try {
+  processData(input);
+} catch (error) {
+  error.message = `Processing failed for input ${input}: ${error.message}`;
+  throw error;
+}
+
+// Use custom error class
+class DatabaseError extends Error {
+  constructor(message: string, cause: Error) {
+    super(message);
+    this.cause = cause;
+    this.name = 'DatabaseError';
+  }
+}
+
+try {
+  await db.query(sql);
+} catch (error) {
+  throw new DatabaseError(`Query failed: ${sql}`, error);
+}
+```
+
+## Configuration Examples
+
+### Basic Usage
+
+```javascript
+{
+  rules: {
+    'maintainability/no-missing-error-context': 'warn'
+  }
+}
+```
+
+## Related Rules
+
+- [`error-message`](./error-message.mdx) - Meaningful error messages
+- [`no-silent-errors`](./no-silent-errors.mdx) - Prevent ignoring errors
+- [`no-unhandled-promise`](./no-unhandled-promise.mdx) - Async error handling
+
+## Further Reading
+
+- **[Error Cause in JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/cause)** - MDN documentation
+- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration

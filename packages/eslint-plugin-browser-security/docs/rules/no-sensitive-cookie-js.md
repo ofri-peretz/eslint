@@ -1,8 +1,10 @@
 ---
 title: no-sensitive-cookie-js
-description: 'no-sensitive-cookie-js'
+description: no-sensitive-cookie-js
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

@@ -1,8 +1,10 @@
 ---
 title: no-unsafe-dynamic-require
-description: 'no-unsafe-dynamic-require'
+description: no-unsafe-dynamic-require
 category: security
+severity: medium
 tags: ['security', 'node']
+autofix: false
 ---
 
 

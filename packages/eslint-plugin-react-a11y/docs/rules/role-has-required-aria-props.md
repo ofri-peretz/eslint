@@ -1,4 +1,13 @@
-# role-has-required-aria-props
+---
+title: role-has-required-aria-props
+description: role-has-required-aria-props rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# role-has-required-aria-props
 
 > **Keywords:** role-has-required-aria-props, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

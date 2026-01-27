@@ -1,4 +1,13 @@
-# sort-comp
+---
+title: sort-comp
+description: sort-comp rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# sort-comp
 
 > **Keywords:** React, component methods, ordering, lifecycle, code organization, ESLint rule, LLM-optimized
 

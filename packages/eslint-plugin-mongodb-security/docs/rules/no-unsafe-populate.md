@@ -1,8 +1,10 @@
 ---
 title: no-unsafe-populate
-description: 'no-unsafe-populate'
+description: no-unsafe-populate
 category: security
+severity: medium
 tags: ['security', 'mongodb']
+autofix: false
 ---
 
 

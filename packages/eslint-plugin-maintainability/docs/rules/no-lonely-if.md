@@ -1,8 +1,12 @@
 ---
 title: no-lonely-if
-description: 'no-lonely-if'
+description: no-lonely-if
 category: quality
+severity: low
 tags: ['quality', 'maintainability']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

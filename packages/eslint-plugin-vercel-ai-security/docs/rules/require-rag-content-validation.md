@@ -1,8 +1,10 @@
 ---
 title: require-rag-content-validation
-description: 'require-rag-content-validation'
+description: require-rag-content-validation
 category: security
+severity: medium
 tags: ['security', 'ai']
+autofix: false
 ---
 
 

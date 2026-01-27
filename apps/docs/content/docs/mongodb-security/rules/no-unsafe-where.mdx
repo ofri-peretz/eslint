@@ -1,6 +1,10 @@
 ---
 title: no-unsafe-where
-description: "Prevents use of the dangerous $where operator which executes JavaScript on the MongoDB server, enabling Remote Code Execution (RCE)."
+description: Prevents use of the dangerous $where operator which executes JavaScript on the MongoDB server, enabling Remote Code Execution (RCE).
+category: security
+severity: medium
+tags: ['security', 'mongodb', 'database']
+autofix: false
 ---
 
 > **Keywords:** NoSQL injection, CWE-943, MongoDB, $where, RCE, CVE-2025-23061, CVE-2024-53900, Mongoose

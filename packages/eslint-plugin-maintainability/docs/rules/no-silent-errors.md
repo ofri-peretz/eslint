@@ -1,8 +1,12 @@
 ---
 title: no-silent-errors
-description: 'no-silent-errors'
+description: no-silent-errors
 category: quality
+severity: medium
 tags: ['quality', 'maintainability']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

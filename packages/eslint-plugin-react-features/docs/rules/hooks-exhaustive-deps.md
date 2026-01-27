@@ -1,4 +1,13 @@
-# hooks-exhaustive-deps
+---
+title: hooks-exhaustive-deps
+description: hooks-exhaustive-deps rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# hooks-exhaustive-deps
 
 > **Keywords:** React, hooks, useEffect, useCallback, useMemo, dependencies, stale closure, ESLint rule, performance, LLM-optimized
 

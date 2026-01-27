@@ -1,4 +1,13 @@
-# aria-props
+---
+title: aria-props
+description: aria-props rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# aria-props
 
 > **Keywords:** aria-props, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

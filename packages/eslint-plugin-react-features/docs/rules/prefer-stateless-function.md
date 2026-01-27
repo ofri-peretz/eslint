@@ -1,4 +1,13 @@
-# prefer-stateless-function
+---
+title: prefer-stateless-function
+description: prefer-stateless-function rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# prefer-stateless-function
 
 > **Keywords:** React, class component, function component, hooks, ESLint rule, migration, LLM-optimized
 

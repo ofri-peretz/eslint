@@ -1,8 +1,10 @@
 ---
 title: no-graphql-introspection-production
-description: 'no-graphql-introspection-production'
+description: no-graphql-introspection-production
 category: security
+severity: medium
 tags: ['security', 'express']
+autofix: false
 ---
 
 

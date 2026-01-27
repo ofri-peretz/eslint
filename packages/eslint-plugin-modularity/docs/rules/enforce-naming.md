@@ -1,8 +1,12 @@
 ---
 title: enforce-naming
-description: 'enforce-naming'
+description: enforce-naming
 category: modularity
+severity: low
 tags: ['architecture', 'modularity']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

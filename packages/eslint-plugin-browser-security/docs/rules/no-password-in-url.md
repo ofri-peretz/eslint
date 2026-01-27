@@ -1,8 +1,10 @@
 ---
 title: no-password-in-url
-description: 'no-password-in-url'
+description: no-password-in-url
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

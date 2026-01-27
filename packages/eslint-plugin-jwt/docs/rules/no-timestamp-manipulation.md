@@ -1,8 +1,10 @@
 ---
 title: no-timestamp-manipulation
-description: 'no-timestamp-manipulation'
+description: no-timestamp-manipulation
 category: security
+severity: medium
 tags: ['security', 'jwt']
+autofix: false
 ---
 
 

@@ -1,8 +1,10 @@
 ---
 title: require-audit-logging
-description: 'require-audit-logging'
+description: require-audit-logging
 category: security
+severity: medium
 tags: ['security', 'ai']
+autofix: false
 ---
 
 

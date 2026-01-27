@@ -14,7 +14,7 @@ describe('eslint-plugin-react-a11y plugin interface', () => {
     const ruleKeys = Object.keys(plugin.rules || {});
     
     // Check some core rules
-    expect(ruleKeys).toContain('img-requires-alt');
+    expect(ruleKeys).toContain('alt-text');
     expect(ruleKeys).toContain('anchor-has-content');
     expect(ruleKeys).toContain('aria-props');
     
@@ -31,7 +31,7 @@ describe('eslint-plugin-react-a11y plugin interface', () => {
         expect(ruleName).toMatch(/^react-a11y\//);
       });
       
-      expect(recommendedRules['react-a11y/img-requires-alt']).toBe('error');
+      expect(recommendedRules['react-a11y/alt-text']).toBe('error');
     });
 
     it('should provide strict configuration', () => {
@@ -43,7 +43,7 @@ describe('eslint-plugin-react-a11y plugin interface', () => {
         expect(ruleName).toMatch(/^react-a11y\//);
       });
       
-      expect(strictRules['react-a11y/img-requires-alt']).toBe('error');
+      expect(strictRules['react-a11y/alt-text']).toBe('error');
       expect(Object.keys(strictRules).length).toBe(Object.keys(rules).length);
     });
 

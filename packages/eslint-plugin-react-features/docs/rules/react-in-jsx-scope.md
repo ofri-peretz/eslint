@@ -1,4 +1,13 @@
-# react-in-jsx-scope
+---
+title: react-in-jsx-scope
+description: react-in-jsx-scope rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# react-in-jsx-scope
 
 > **Keywords:** React, JSX, import, scope, ESLint rule, React 17, LLM-optimized
 

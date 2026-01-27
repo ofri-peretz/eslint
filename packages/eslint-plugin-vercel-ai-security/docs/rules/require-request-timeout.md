@@ -1,8 +1,10 @@
 ---
 title: require-request-timeout
-description: 'require-request-timeout'
+description: require-request-timeout
 category: security
+severity: medium
 tags: ['security', 'ai']
+autofix: false
 ---
 
 

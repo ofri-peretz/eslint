@@ -1,8 +1,10 @@
 ---
 title: no-privilege-escalation
-description: 'no-privilege-escalation'
+description: no-privilege-escalation
 category: security
+severity: medium
 tags: ['security', 'core']
+autofix: false
 ---
 
 

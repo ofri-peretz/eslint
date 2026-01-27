@@ -1,8 +1,10 @@
 ---
 title: prefer-pool-query
-description: 'prefer-pool-query'
+description: prefer-pool-query
 category: security
+severity: medium
 tags: ['security', 'postgres']
+autofix: false
 ---
 
 

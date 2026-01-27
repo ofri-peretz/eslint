@@ -1,8 +1,10 @@
 ---
 title: no-permissive-cors-response
-description: 'no-permissive-cors-response'
+description: no-permissive-cors-response
 category: security
+severity: medium
 tags: ['security', 'lambda']
+autofix: false
 ---
 
 

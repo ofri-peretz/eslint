@@ -1,8 +1,10 @@
 ---
 title: require-websocket-wss
-description: 'require-websocket-wss'
+description: require-websocket-wss
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

@@ -1,8 +1,10 @@
 ---
 title: no-arbitrary-file-access
-description: 'no-arbitrary-file-access'
+description: no-arbitrary-file-access
 category: security
+severity: medium
 tags: ['security', 'node']
+autofix: false
 ---
 
 

@@ -1,8 +1,10 @@
 ---
 title: no-transaction-on-pool
-description: 'no-transaction-on-pool'
+description: no-transaction-on-pool
 category: security
+severity: medium
 tags: ['security', 'postgres']
+autofix: false
 ---
 
 

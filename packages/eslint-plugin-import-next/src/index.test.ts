@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import plugin from './index';
-import { rules, configs } from './index';
+import plugin, { configs } from './index';
 
 describe('eslint-plugin-import-next plugin interface', () => {
   it('should export correct meta information', () => {

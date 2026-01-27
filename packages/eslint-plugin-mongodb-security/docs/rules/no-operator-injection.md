@@ -1,8 +1,10 @@
 ---
 title: no-operator-injection
-description: 'no-operator-injection'
+description: no-operator-injection
 category: security
+severity: critical
 tags: ['security', 'mongodb']
+autofix: false
 ---
 
 

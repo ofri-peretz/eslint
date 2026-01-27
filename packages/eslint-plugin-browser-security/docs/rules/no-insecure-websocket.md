@@ -1,8 +1,10 @@
 ---
 title: no-insecure-websocket
-description: 'CWE: [CWE-319](https://cwe.mitre.org/data/definitions/319.html)'
+description: "CWE: [CWE-319](https://cwe.mitre.org/data/definitions/319.html)"
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 > **Keywords:** no insecure websocket, security, ESLint rule, [CWE-319](https://cwe.mitre.org/data/definitions/319.html), wss, encryption, MitM

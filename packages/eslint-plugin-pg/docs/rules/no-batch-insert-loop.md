@@ -1,8 +1,10 @@
 ---
 title: no-batch-insert-loop
-description: 'no-batch-insert-loop'
+description: no-batch-insert-loop
 category: security
+severity: medium
 tags: ['security', 'postgres']
+autofix: false
 ---
 
 

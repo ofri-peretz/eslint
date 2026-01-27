@@ -1,8 +1,10 @@
 ---
 title: no-insecure-comparison
-description: 'no-insecure-comparison'
+description: no-insecure-comparison
 category: security
+severity: medium
 tags: ['security', 'core']
+autofix: false
 ---
 
 

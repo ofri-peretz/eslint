@@ -1,4 +1,13 @@
-# no-static-element-interactions
+---
+title: no-static-element-interactions
+description: no-static-element-interactions rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-static-element-interactions
 
 > **Keywords:** no-static-element-interactions, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

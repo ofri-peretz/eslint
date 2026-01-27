@@ -39,8 +39,11 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "peerDependencies": {
-    "typescript": "^5.9.3"
+  "peerDependencies": {},
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
   },
   "dependencies": {
     "tslib": "^2.3.0",

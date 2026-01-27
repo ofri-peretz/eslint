@@ -1,8 +1,10 @@
 ---
 title: require-csp-headers
-description: 'CWE: [CWE-1021](https://cwe.mitre.org/data/definitions/1021.html)'
+description: "CWE: [CWE-1021](https://cwe.mitre.org/data/definitions/1021.html)"
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 > **Keywords:** require csp headers, Content Security Policy, security, ESLint rule, [CWE-1021](https://cwe.mitre.org/data/definitions/1021.html), XSS, Helmet

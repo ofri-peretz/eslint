@@ -1,4 +1,13 @@
-# no-danger
+---
+title: no-danger
+description: no-danger rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-danger
 
 > **Keywords:** React, dangerouslySetInnerHTML, XSS, security, sanitize, ESLint rule, HTML injection, LLM-optimized
 

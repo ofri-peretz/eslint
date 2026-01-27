@@ -1,4 +1,13 @@
-# no-invalid-html-attribute
+---
+title: no-invalid-html-attribute
+description: no-invalid-html-attribute rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-invalid-html-attribute
 
 > **Keywords:** React, JSX, HTML attributes, validation, ESLint rule, accessibility, LLM-optimized
 

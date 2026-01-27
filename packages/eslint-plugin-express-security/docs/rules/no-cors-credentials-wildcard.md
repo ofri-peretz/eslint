@@ -1,8 +1,10 @@
 ---
 title: no-cors-credentials-wildcard
-description: 'no-cors-credentials-wildcard'
+description: no-cors-credentials-wildcard
 category: security
+severity: high
 tags: ['security', 'express']
+autofix: false
 ---
 
 

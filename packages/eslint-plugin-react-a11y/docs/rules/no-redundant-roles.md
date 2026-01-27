@@ -1,4 +1,13 @@
-# no-redundant-roles
+---
+title: no-redundant-roles
+description: no-redundant-roles rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-redundant-roles
 
 > **Keywords:** no-redundant-roles, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

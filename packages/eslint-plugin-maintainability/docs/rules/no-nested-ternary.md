@@ -1,8 +1,12 @@
 ---
 title: no-nested-ternary
-description: 'no-nested-ternary'
+description: no-nested-ternary
 category: quality
+severity: low
 tags: ['quality', 'maintainability']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

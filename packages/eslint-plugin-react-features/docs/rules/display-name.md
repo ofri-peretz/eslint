@@ -1,4 +1,13 @@
-# display-name
+---
+title: display-name
+description: display-name rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# display-name
 
 > **Keywords:** React, displayName, component, debugging, DevTools, ESLint rule, naming, LLM-optimized
 

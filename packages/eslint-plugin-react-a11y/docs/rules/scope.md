@@ -1,4 +1,13 @@
-# scope
+---
+title: scope
+description: scope rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# scope
 
 > **Keywords:** scope, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

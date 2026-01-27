@@ -1,4 +1,13 @@
-# no-is-mounted
+---
+title: no-is-mounted
+description: no-is-mounted rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-is-mounted
 
 > **Keywords:** React, isMounted, deprecated, memory leaks, ESLint rule, anti-pattern, LLM-optimized
 

@@ -1,8 +1,12 @@
 ---
 title: filename-case
-description: 'filename-case'
+description: filename-case
 category: quality
+severity: low
 tags: ['quality', 'conventions']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

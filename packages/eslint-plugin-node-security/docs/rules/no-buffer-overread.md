@@ -1,8 +1,10 @@
 ---
 title: no-buffer-overread
-description: 'no-buffer-overread'
+description: no-buffer-overread
 category: security
+severity: medium
 tags: ['security', 'node']
+autofix: false
 ---
 
 

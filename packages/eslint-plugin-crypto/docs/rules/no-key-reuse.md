@@ -1,8 +1,10 @@
 ---
 title: no-key-reuse
-description: 'CWE: [CWE-327](https://cwe.mitre.org/data/definitions/327.html)'
+description: "CWE: [CWE-327](https://cwe.mitre.org/data/definitions/327.html)"
 category: security
+severity: medium
 tags: ['security', 'crypto']
+autofix: false
 ---
 
 > **Keywords:** no-key-reuse, key management, cryptographic key, security, ESLint rule, CWE-327, nonce reuse, AES-GCM

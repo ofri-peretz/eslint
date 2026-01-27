@@ -1,8 +1,10 @@
 ---
 title: no-jwt-in-storage
-description: 'no-jwt-in-storage'
+description: no-jwt-in-storage
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

@@ -1,8 +1,10 @@
 ---
 title: no-sensitive-payload
-description: 'no-sensitive-payload'
+description: no-sensitive-payload
 category: security
+severity: medium
 tags: ['security', 'jwt']
+autofix: false
 ---
 
 

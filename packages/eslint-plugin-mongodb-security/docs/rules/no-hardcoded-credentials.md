@@ -1,8 +1,10 @@
 ---
 title: no-hardcoded-credentials
-description: 'no-hardcoded-credentials'
+description: no-hardcoded-credentials
 category: security
+severity: critical
 tags: ['security', 'mongodb']
+autofix: false
 ---
 
 

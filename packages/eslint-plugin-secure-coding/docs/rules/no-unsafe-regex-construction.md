@@ -1,8 +1,10 @@
 ---
 title: no-unsafe-regex-construction
-description: 'no-unsafe-regex-construction'
+description: no-unsafe-regex-construction
 category: security
+severity: medium
 tags: ['security', 'core']
+autofix: false
 ---
 
 

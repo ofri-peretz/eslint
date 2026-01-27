@@ -1,8 +1,10 @@
 ---
 title: no-sensitive-data-in-cache
-description: 'CWE: [CWE-200](https://cwe.mitre.org/data/definitions/200.html)'
+description: "CWE: [CWE-200](https://cwe.mitre.org/data/definitions/200.html)"
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 > **Keywords:** no sensitive data in cache, browser storage, localStorage, security, ESLint rule, [CWE-200](https://cwe.mitre.org/data/definitions/200.html), information disclosure

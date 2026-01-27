@@ -1,8 +1,10 @@
 ---
 title: no-decode-without-verify
-description: 'no-decode-without-verify'
+description: no-decode-without-verify
 category: security
+severity: medium
 tags: ['security', 'jwt']
+autofix: false
 ---
 
 

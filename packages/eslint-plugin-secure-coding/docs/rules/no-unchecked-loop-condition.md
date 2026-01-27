@@ -1,8 +1,10 @@
 ---
 title: no-unchecked-loop-condition
-description: 'no-unchecked-loop-condition'
+description: no-unchecked-loop-condition
 category: security
+severity: medium
 tags: ['security', 'core']
+autofix: false
 ---
 
 

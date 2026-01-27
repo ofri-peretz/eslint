@@ -1,4 +1,13 @@
-# label-has-associated-control
+---
+title: label-has-associated-control
+description: label-has-associated-control rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# label-has-associated-control
 
 > **Keywords:** label-has-associated-control, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

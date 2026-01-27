@@ -1,8 +1,10 @@
 ---
 title: no-credentials-in-query-params
-description: 'CWE: [CWE-598](https://cwe.mitre.org/data/definitions/598.html)'
+description: "CWE: [CWE-598](https://cwe.mitre.org/data/definitions/598.html)"
 category: security
+severity: high
 tags: ['security', 'browser']
+autofix: false
 ---
 
 > **Keywords:** no-credentials-in-query-params, credentials, URL, query string, security, ESLint rule, CWE-598

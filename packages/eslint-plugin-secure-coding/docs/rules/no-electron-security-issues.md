@@ -1,8 +1,10 @@
 ---
 title: no-electron-security-issues
-description: 'no-electron-security-issues'
+description: no-electron-security-issues
 category: security
+severity: medium
 tags: ['security', 'core']
+autofix: false
 ---
 
 

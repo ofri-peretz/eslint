@@ -1,8 +1,10 @@
 ---
 title: no-algorithm-none
-description: 'no-algorithm-none'
+description: no-algorithm-none
 category: security
+severity: critical
 tags: ['security', 'jwt']
+autofix: false
 ---
 
 

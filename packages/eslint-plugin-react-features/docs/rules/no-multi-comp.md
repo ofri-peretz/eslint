@@ -1,4 +1,13 @@
-# no-multi-comp
+---
+title: no-multi-comp
+description: no-multi-comp rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-multi-comp
 
 > **Keywords:** React, components, file organization, single responsibility, code structure, ESLint rule, LLM-optimized
 

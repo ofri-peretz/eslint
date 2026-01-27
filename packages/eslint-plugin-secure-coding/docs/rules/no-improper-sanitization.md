@@ -1,8 +1,10 @@
 ---
 title: no-improper-sanitization
-description: 'no-improper-sanitization'
+description: no-improper-sanitization
 category: security
+severity: medium
 tags: ['security', 'core']
+autofix: false
 ---
 
 

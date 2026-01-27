@@ -1,8 +1,12 @@
 ---
 title: no-missing-error-context
-description: 'no-missing-error-context'
+description: no-missing-error-context
 category: quality
+severity: medium
 tags: ['quality', 'maintainability']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

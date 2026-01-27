@@ -1,8 +1,12 @@
 ---
 title: consistent-existence-index-check
-description: 'consistent-existence-index-check'
+description: consistent-existence-index-check
 category: quality
+severity: low
 tags: ['quality', 'conventions']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

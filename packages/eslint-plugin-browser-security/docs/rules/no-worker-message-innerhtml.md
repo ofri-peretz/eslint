@@ -1,8 +1,10 @@
 ---
 title: no-worker-message-innerhtml
-description: 'no-worker-message-innerhtml'
+description: no-worker-message-innerhtml
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

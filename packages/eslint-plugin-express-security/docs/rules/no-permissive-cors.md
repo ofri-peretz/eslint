@@ -1,8 +1,10 @@
 ---
 title: no-permissive-cors
-description: 'no-permissive-cors'
+description: no-permissive-cors
 category: security
+severity: medium
 tags: ['security', 'express']
+autofix: false
 ---
 
 

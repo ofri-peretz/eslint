@@ -1,8 +1,10 @@
 ---
 title: require-tool-schema
-description: 'Get weather'
+description: Get weather
 category: security
+severity: medium
 tags: ['security', 'ai']
+autofix: false
 ---
 
 

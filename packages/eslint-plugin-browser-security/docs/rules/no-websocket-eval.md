@@ -1,8 +1,10 @@
 ---
 title: no-websocket-eval
-description: 'no-websocket-eval'
+description: no-websocket-eval
 category: security
+severity: critical
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

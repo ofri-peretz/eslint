@@ -1,4 +1,13 @@
-# no-noninteractive-tabindex
+---
+title: no-noninteractive-tabindex
+description: no-noninteractive-tabindex rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-noninteractive-tabindex
 
 > **Keywords:** no-noninteractive-tabindex, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

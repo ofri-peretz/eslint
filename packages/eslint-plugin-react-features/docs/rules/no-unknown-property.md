@@ -1,4 +1,13 @@
-# no-unknown-property
+---
+title: no-unknown-property
+description: no-unknown-property rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-unknown-property
 
 > **Keywords:** React, JSX, props, HTML attributes, className, ESLint rule, DOM, LLM-optimized
 

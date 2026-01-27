@@ -1,8 +1,10 @@
 ---
 title: no-numeric-only-tokens
-description: 'CWE: [CWE-330](https://cwe.mitre.org/data/definitions/330.html)'
+description: "CWE: [CWE-330](https://cwe.mitre.org/data/definitions/330.html)"
 category: security
+severity: medium
 tags: ['security', 'crypto']
+autofix: false
 ---
 
 > **Keywords:** no-numeric-only-tokens, entropy, crypto-random-string, security, ESLint rule, CWE-330, brute force, token strength

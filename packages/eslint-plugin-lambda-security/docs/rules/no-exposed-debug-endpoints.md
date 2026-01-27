@@ -1,111 +1,197 @@
 ---
 title: no-exposed-debug-endpoints
-description: 'no-exposed-debug-endpoints'
+description: Detect debug endpoints without authentication in Lambda handlers
 category: security
-tags: ['security', 'lambda']
+severity: high
+tags: ['security', 'debug', 'cwe-489', 'lambda', 'aws']
+autofix: false
+cwe: CWE-489
+owasp: A05:2021-Security-Misconfiguration
 ---
 
+> **Keywords:** debug endpoint, admin endpoint, authentication, CWE-489, Lambda, serverless
+> **CWE:** [CWE-489](https://cwe.mitre.org/data/definitions/489.html)  
+> **OWASP:** [A05:2021-Security Misconfiguration](https://owasp.org/Top10/A05_2021-Security_Misconfiguration/)
 
-> **Keywords:** AWS Lambda, debug endpoint, admin path, exposed routes, event.path, rawPath, serverless security, CWE-489, OWASP M8, test endpoints, information disclosure, unauthorized access
+Detects debug and admin endpoints in Lambda handlers that may be exposed without authentication. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) and provides LLM-optimized error messages.
 
-**CWE:** [CWE-489](https://cwe.mitre.org/data/definitions/489.html)  
-**OWASP Mobile:** [OWASP Mobile Top 10 M8](https://owasp.org/www-project-mobile-top-10/)
-
-Identifies potential debug, administration, or testing endpoints that are often left exposed in production environments without proper authentication. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) and provides LLM-optimized error messages.
-
-**🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
+**🚨 Security rule** | **⚠️ Set to error in `recommended`**
 
 ## Quick Summary
 
 | Aspect            | Details                                                                   |
-| :---------------- | :------------------------------------------------------------------------ |
+| ----------------- | ------------------------------------------------------------------------- |
 | **CWE Reference** | [CWE-489](https://cwe.mitre.org/data/definitions/489.html) (Active Debug) |
-| **Severity**      | 🟠 HIGH (security misconfiguration)                                       |
-| **Auto-Fix**      | ❌ Not available                                                          |
-| **Category**   | Security |
-| **ESLint MCP**    | ✅ Optimized                                                              |
-| **Best For**      | AWS Lambda Handlers                                                       |
+| **Severity**      | High (security vulnerability)                                             |
+| **Auto-Fix**      | ❌ No auto-fix (requires auth implementation)                             |
+| **Category**      | Security                                                                  |
+| **Best For**      | Lambda functions with HTTP triggers                                       |
+
+## Vulnerability and Risk
+
+**Vulnerability:** Debug endpoints like `/debug`, `/admin`, `/__debug__`, `/health` may expose sensitive internal information or administrative functionality if left accessible in production without authentication.
+
+**Risk:** Exposed debug endpoints can:
+
+- Reveal application internals and configuration
+- Provide admin functionality to attackers
+- Expose health check details useful for reconnaissance
+- Allow state manipulation in development modes
 
 ## Rule Details
 
-This rule scans for path checks against the Lambda `event` object (e.g., `event.path`, `event.rawPath`) and literal string constants that match known sensitive paths.
+This rule detects:
 
-## ❌ Incorrect
+- Path literals like `/debug`, `/admin`, `/_admin`, `/__debug__`, `/test`
+- Route comparisons: `event.path === '/debug'`
+- Serverless Framework path configurations
+
+## Why This Matters
+
+| Risk                    | Impact                                  | Solution                    |
+| ----------------------- | --------------------------------------- | --------------------------- |
+| 🔓 **Admin Access**     | Attackers gain administrative functions | Add authentication          |
+| 🔍 **Information Leak** | Internal state/config exposed           | Remove from production      |
+| 🛠️ **Debug Tools**      | Development tools in production         | Environment-based disabling |
+
+## Configuration
+
+| Option        | Type       | Default                                   | Description              |
+| ------------- | ---------- | ----------------------------------------- | ------------------------ |
+| `endpoints`   | `string[]` | `['/debug', '/__debug__', '/admin', ...]` | Debug paths to flag      |
+| `ignoreFiles` | `string[]` | `[]`                                      | Files/patterns to ignore |
+
+```javascript
+{
+  rules: {
+    'lambda-security/no-exposed-debug-endpoints': ['error', {
+      endpoints: ['/debug', '/__debug__', '/admin', '/_admin', '/test', '/health'],
+      ignoreFiles: ['health-check.ts']  // Allow specific health check handlers
+    }]
+  }
+}
+```
+
+## Examples
+
+### ❌ Incorrect
 
 ```typescript
+// Direct debug endpoint check
 export const handler = async (event) => {
-  // ❌ Explicit check for a debug path in a Lambda handler
   if (event.path === '/debug') {
+    // ❌ Debug endpoint without auth
     return {
       statusCode: 200,
-      body: JSON.stringify(process.env),
+      body: JSON.stringify({
+        env: process.env,
+        memory: process.memoryUsage(),
+      }),
     };
-  }
-
-  // ❌ Admin path check
-  if (event.rawPath.includes('/admin')) {
-    return runAdminTask();
   }
 };
 
-// ❌ Literal string matching a forbidden path
-const myPath = '/test-endpoint';
-
-// ❌ Serverless configuration (serverless.ts)
-export const config = {
+// Serverless Framework config
+export const serverless = {
   functions: {
-    debug: {
-      events: [{ http: { path: '/debug' } }],
+    admin: {
+      handler: 'handler.admin',
+      events: [
+        {
+          http: {
+            path: '/admin', // ❌ Admin endpoint
+            method: 'get',
+          },
+        },
+      ],
     },
   },
 };
 ```
 
-## ✅ Correct
+### ✅ Correct
 
 ```typescript
-export const handler = async (event) => {
-  // ✅ Standard production path check
-  if (event.path === '/api/v1/user') {
-    return getUser();
-  }
+import { verifyJwt } from './auth';
 
-  // ✅ Health check with non-sensitive name
-  if (event.path === '/status-check') {
-    return { ok: true };
+export const handler = async (event) => {
+  // Authenticate all admin requests
+  if (event.path === '/admin') {
+    const authResult = await verifyJwt(event.headers.authorization); // ✅ Auth check
+    if (!authResult.valid) {
+      return { statusCode: 401, body: 'Unauthorized' };
+    }
+
+    return handleAdminRequest(event);
   }
+};
+
+// Environment-based debug endpoints
+export const handler = async (event) => {
+  if (event.path === '/debug') {
+    if (process.env.NODE_ENV === 'production') {
+      // ✅ Disabled in prod
+      return { statusCode: 404, body: 'Not Found' };
+    }
+
+    return getDebugInfo();
+  }
+};
+
+// Health check with limited information
+export const healthHandler = async () => {
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      status: 'healthy',
+      version: process.env.APP_VERSION, // ✅ Only safe info
+      // NOT: env, memory, internal state
+    }),
+  };
 };
 ```
 
-## ⚙️ Configuration
+## Default Flagged Endpoints
 
-| Option        | Type       | Default           | Description                                  |
-| :------------ | :--------- | :---------------- | :------------------------------------------- |
-| `endpoints`   | `string[]` | `['/debug', ...]` | Custom list of debug/admin endpoints to flag |
-| `ignoreFiles` | `string[]` | `[]`              | List of files or patterns to ignore          |
+| Endpoint     | Risk Level | Common Purpose                  |
+| ------------ | ---------- | ------------------------------- |
+| `/debug`     | High       | Debug information               |
+| `/__debug__` | High       | Internal debug                  |
+| `/admin`     | Critical   | Administrative functions        |
+| `/_admin`    | Critical   | Hidden admin                    |
+| `/test`      | Medium     | Test endpoints                  |
+| `/health`    | Low        | Health checks (may reveal info) |
 
-### Example Configuration
+## Security Impact
 
-```json
+| Vulnerability     | CWE | OWASP    | CVSS         | Impact                 |
+| ----------------- | --- | -------- | ------------ | ---------------------- |
+| Active Debug Code | 489 | A05:2021 | 7.5 High     | Information disclosure |
+| Missing Auth      | 306 | A07:2021 | 9.8 Critical | Unauthorized access    |
+
+## Ignore Patterns for Legitimate Use
+
+```javascript
+// Disable for specific health check handler
+/* eslint-disable lambda-security/no-exposed-debug-endpoints */
+
+// Or use rule configuration
 {
-  "rules": {
-    "lambda-security/no-exposed-debug-endpoints": [
-      "error",
-      {
-        "endpoints": ["/_internal", "/dev-console"],
-        "ignoreFiles": ["tests/**/*.ts"]
-      }
-    ]
+  rules: {
+    'lambda-security/no-exposed-debug-endpoints': ['error', {
+      ignoreFiles: ['health.ts', 'readiness.ts']
+    }]
   }
 }
 ```
 
-## Known False Negatives
+## Related Rules
 
-- Values stored in variables/constants used in path comparisons.
-- Complex path parsing logic that doesn't use direct property access on the `event` object.
+- [`no-exposed-error-details`](./no-exposed-error-details.md) - Don't expose error details
+- [`no-env-logging`](./no-env-logging.md) - Don't log environment variables
 
-## References
+## Further Reading
 
-- [CWE-489](https://cwe.mitre.org/data/definitions/489.html)
-- [AWS Lambda Security Best Practices](https://docs.aws.amazon.com/lambda/latest/dg/security-best-practices.html)
+- **[CWE-489: Active Debug Code](https://cwe.mitre.org/data/definitions/489.html)** - Official CWE entry
+- **[OWASP Security Misconfiguration](https://owasp.org/Top10/A05_2021-Security_Misconfiguration/)** - OWASP guidance
+- **[API Gateway Authorization](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-control-access-to-api.html)** - AWS docs

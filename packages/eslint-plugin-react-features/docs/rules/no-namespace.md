@@ -1,4 +1,13 @@
-# no-namespace
+---
+title: no-namespace
+description: no-namespace rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-namespace
 
 > **Keywords:** React, namespace import, named imports, tree shaking, bundle size, ESLint rule, LLM-optimized
 

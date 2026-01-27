@@ -181,7 +181,7 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
                 fix(fixer: TSESLint.RuleFixer) {
                   // This is a complex fix that would require:
                   // 1. Finding the module scope location
-                  // 2. Moving the function declaration
+                  // 2. Moving the function declaration33 3
                   // 3. Updating any references
                   // For now, just provide a suggestion
                   return fixer.insertTextBefore(node, '// TODO: Move this function to module scope - it doesn\'t capture outer variables\n');

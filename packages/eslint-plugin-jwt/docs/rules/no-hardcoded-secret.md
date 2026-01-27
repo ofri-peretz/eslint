@@ -1,8 +1,10 @@
 ---
 title: no-hardcoded-secret
-description: 'no-hardcoded-secret'
+description: no-hardcoded-secret
 category: security
+severity: critical
 tags: ['security', 'jwt']
+autofix: false
 ---
 
 

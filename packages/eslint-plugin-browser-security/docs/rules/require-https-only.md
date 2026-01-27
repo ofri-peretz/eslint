@@ -1,8 +1,10 @@
 ---
 title: require-https-only
-description: 'require-https-only'
+description: require-https-only
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

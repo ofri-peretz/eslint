@@ -1,8 +1,12 @@
 ---
 title: nested-complexity-hotspots
-description: 'nested-complexity-hotspots'
+description: nested-complexity-hotspots
 category: quality
+severity: medium
 tags: ['quality', 'maintainability']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

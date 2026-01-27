@@ -1,4 +1,13 @@
-# anchor-has-content
+---
+title: anchor-has-content
+description: anchor-has-content rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# anchor-has-content
 
 > **Keywords:** anchor-has-content, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

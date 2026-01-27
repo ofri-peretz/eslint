@@ -1,4 +1,13 @@
-# no-children-prop
+---
+title: no-children-prop
+description: no-children-prop rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-children-prop
 
 > **Keywords:** React, children, props, composition, ESLint rule, best practices, LLM-optimized
 

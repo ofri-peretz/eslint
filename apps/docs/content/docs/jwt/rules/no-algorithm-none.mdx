@@ -1,13 +1,37 @@
 ---
 title: no-algorithm-none
-description: "Disallow JWT 'none' algorithm which bypasses signature verification (CVE-2022-23540)"
+description: "Disallow JWT 'none' algorithm which bypasses signature verification"
+category: security
+severity: critical
+tags: ['security', 'jwt', 'authentication', 'cwe-347', 'owasp-a02']
+autofix: false
+cwe: CWE-347
+owasp: "A02:2021-Cryptographic-Failures"
 ---
 
-> Disallow JWT "none" algorithm which bypasses signature verification (CVE-2022-23540)
+> **Keywords:** JWT, security, authentication, algorithm, none, CVE-2022-23540
 
-**Severity:** 🔴 Critical  
-**CWE:** [CWE-347](https://cwe.mitre.org/data/definitions/347.html)  
-**CVE:** [CVE-2022-23540](https://nvd.nist.gov/vuln/detail/CVE-2022-23540)
+Disallow JWT "none" algorithm which bypasses signature verification (CVE-2022-23540). This rule is part of [`@interlace/eslint-plugin-jwt`](https://www.npmjs.com/package/@interlace/eslint-plugin-jwt).
+
+## Quick Summary
+
+| Aspect         | Details                                                           |
+| -------------- | ----------------------------------------------------------------- |
+| **Severity**   | 🔴 Critical                                                       |
+| **Category**   | Security                                                          |
+| **Auto-Fix**   | ❌ No auto-fix                                                    |
+| **CWE**        | [CWE-347](https://cwe.mitre.org/data/definitions/347.html)        |
+| **CVE**        | [CVE-2022-23540](https://nvd.nist.gov/vuln/detail/CVE-2022-23540) |
+| **OWASP**      | A02:2021 - Cryptographic Failures                                 |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration                           |
+
+## Why This Matters
+
+| Risk                         | Impact                              | Mitigation                |
+| ---------------------------- | ----------------------------------- | ------------------------- |
+| 🔐 **Token Forgery**         | Attackers can forge any JWT payload | Enforce secure algorithms |
+| 🚨 **Authentication Bypass** | Complete auth bypass possible       | Never allow 'none'        |
+| 📊 **Data Tampering**        | Claims can be modified              | Verify signatures         |
 
 ## Rule Details
 
@@ -29,7 +53,6 @@ jwt.verify(token, secret, { algorithms: ['RS256', 'none'] });
 
 // Case variations
 jwt.verify(token, secret, { algorithm: 'NONE' });
-jwt.verify(token, secret, { algorithm: 'None' });
 
 // Empty algorithms array
 jwt.verify(token, secret, { algorithms: [] });
@@ -48,7 +71,7 @@ jwt.verify(token, secret, { algorithms: ['RS256', 'ES256'] });
 jwt.verify(token, secret, { algorithms: ['HS256'] });
 ```
 
-## Options
+## Configuration
 
 ```javascript
 {
@@ -58,17 +81,11 @@ jwt.verify(token, secret, { algorithms: ['HS256'] });
 }
 ```
 
-| Option         | Type    | Default | Description         |
-| -------------- | ------- | ------- | ------------------- |
-| `allowInTests` | boolean | false   | Allow in test files |
-
-## When Not To Use It
-
-Never disable this rule in production code. You may use `allowInTests: true` for security testing.
+| Option         | Type    | Default | Description                     |
+| -------------- | ------- | ------- | ------------------------------- |
+| `allowInTests` | boolean | false   | Allow in test files for testing |
 
 ## Known False Negatives
-
-The following patterns are **not detected** due to static analysis limitations:
 
 ### Dynamic Algorithm Configuration
 
@@ -94,35 +111,13 @@ jwt.verify(token, secret, { ...maliciousOptions });
 
 **Mitigation**: Avoid spreading untrusted option objects. Validate options at runtime.
 
-### External Configuration Files
+## When Not To Use It
 
-**Why**: ESLint cannot trace values from JSON/YAML config files.
-
-```typescript
-// ❌ NOT DETECTED - Algorithm from config file
-// config.json: { "jwt": { "algorithm": "none" } }
-import config from './config.json';
-jwt.verify(token, secret, { algorithm: config.jwt.algorithm });
-```
-
-**Mitigation**: Validate configuration at application startup. Use schema validation for config files.
-
-### Library Wrapper Defaults
-
-**Why**: Default options set inside wrapper functions are not visible.
-
-```typescript
-// ❌ NOT DETECTED - Wrapper function with unsafe defaults
-function verifyToken(token: string) {
-  // 'none' hardcoded in wrapper
-  return jwt.verify(token, secret, { algorithms: ['none', 'HS256'] });
-}
-verifyToken(userToken); // Looks safe, but isn't
-```
-
-**Mitigation**: Apply this rule to all files including utility modules.
+Never disable this rule in production code. You may use `allowInTests: true` for security testing.
 
 ## Further Reading
 
 - [CVE-2022-23540](https://nvd.nist.gov/vuln/detail/CVE-2022-23540)
+- [CWE-347: Improper Verification of Cryptographic Signature](https://cwe.mitre.org/data/definitions/347.html)
 - [RFC 8725 - JWT Best Practices](https://tools.ietf.org/html/rfc8725)
+- [OWASP JWT Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html)

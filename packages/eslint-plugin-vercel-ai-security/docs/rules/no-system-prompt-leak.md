@@ -1,8 +1,10 @@
 ---
 title: no-system-prompt-leak
-description: 'no-system-prompt-leak'
+description: no-system-prompt-leak
 category: security
+severity: medium
 tags: ['security', 'ai']
+autofix: false
 ---
 
 

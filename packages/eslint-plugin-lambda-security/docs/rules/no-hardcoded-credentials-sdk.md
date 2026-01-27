@@ -1,8 +1,10 @@
 ---
 title: no-hardcoded-credentials-sdk
-description: 'no-hardcoded-credentials-sdk'
+description: no-hardcoded-credentials-sdk
 category: security
+severity: critical
 tags: ['security', 'lambda']
+autofix: false
 ---
 
 

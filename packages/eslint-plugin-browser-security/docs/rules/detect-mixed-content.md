@@ -1,8 +1,10 @@
 ---
 title: detect-mixed-content
-description: 'detect-mixed-content'
+description: detect-mixed-content
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

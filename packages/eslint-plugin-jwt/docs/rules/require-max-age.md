@@ -1,8 +1,10 @@
 ---
 title: require-max-age
-description: 'require-max-age'
+description: require-max-age
 category: security
+severity: medium
 tags: ['security', 'jwt']
+autofix: false
 ---
 
 

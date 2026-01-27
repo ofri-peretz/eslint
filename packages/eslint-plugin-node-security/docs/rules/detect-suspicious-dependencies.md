@@ -1,8 +1,10 @@
 ---
 title: detect-suspicious-dependencies
-description: 'detect-suspicious-dependencies'
+description: detect-suspicious-dependencies
 category: security
+severity: medium
 tags: ['security', 'node']
+autofix: false
 ---
 
 

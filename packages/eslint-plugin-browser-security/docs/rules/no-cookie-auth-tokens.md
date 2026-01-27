@@ -1,8 +1,10 @@
 ---
 title: no-cookie-auth-tokens
-description: 'no-cookie-auth-tokens'
+description: no-cookie-auth-tokens
 category: security
+severity: high
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

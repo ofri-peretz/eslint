@@ -1,8 +1,10 @@
 ---
 title: no-dynamic-require
-description: 'no-dynamic-require'
+description: no-dynamic-require
 category: security
+severity: medium
 tags: ['security', 'node']
+autofix: false
 ---
 
 

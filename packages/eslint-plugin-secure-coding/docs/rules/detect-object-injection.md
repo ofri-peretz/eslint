@@ -1,8 +1,10 @@
 ---
 title: detect-object-injection
-description: 'detect-object-injection'
+description: detect-object-injection
 category: security
+severity: critical
 tags: ['security', 'core']
+autofix: false
 ---
 
 

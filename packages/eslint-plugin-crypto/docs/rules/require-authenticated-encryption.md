@@ -1,8 +1,10 @@
 ---
 title: require-authenticated-encryption
-description: 'CWE: [CWE-327](https://cwe.mitre.org/data/definitions/327.html)'
+description: "CWE: [CWE-327](https://cwe.mitre.org/data/definitions/327.html)"
 category: security
+severity: high
 tags: ['security', 'crypto']
+autofix: false
 ---
 
 > **Keywords:** require-authenticated-encryption, GCM mode, AEAD, CBC mode, integrity, security, ESLint rule, CWE-327, tampering, padding oracle

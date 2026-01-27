@@ -1,8 +1,10 @@
 ---
 title: no-math-random-crypto
-description: 'CWE: [CWE-338](https://cwe.mitre.org/data/definitions/338.html)'
+description: "CWE: [CWE-338](https://cwe.mitre.org/data/definitions/338.html)"
 category: security
+severity: medium
 tags: ['security', 'crypto']
+autofix: false
 ---
 
 > **Keywords:** no-math-random-crypto, PRNG, Math.random, security token, predictability, ESLint rule, CWE-338, cryptographic-security

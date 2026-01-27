@@ -1,8 +1,12 @@
 ---
 title: no-unreadable-iife
-description: 'no-unreadable-iife'
+description: no-unreadable-iife
 category: quality
+severity: low
 tags: ['quality', 'maintainability']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

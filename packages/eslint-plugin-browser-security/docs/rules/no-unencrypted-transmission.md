@@ -1,8 +1,10 @@
 ---
 title: no-unencrypted-transmission
-description: 'no-unencrypted-transmission'
+description: no-unencrypted-transmission
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

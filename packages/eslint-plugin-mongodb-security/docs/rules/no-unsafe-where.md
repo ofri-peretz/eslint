@@ -1,8 +1,10 @@
 ---
 title: no-unsafe-where
-description: 'no-unsafe-where'
+description: no-unsafe-where
 category: security
+severity: medium
 tags: ['security', 'mongodb']
+autofix: false
 ---
 
 

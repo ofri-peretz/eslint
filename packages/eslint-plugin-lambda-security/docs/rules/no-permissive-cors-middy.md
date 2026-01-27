@@ -1,8 +1,10 @@
 ---
 title: no-permissive-cors-middy
-description: 'no-permissive-cors-middy'
+description: no-permissive-cors-middy
 category: security
+severity: medium
 tags: ['security', 'lambda']
+autofix: false
 ---
 
 

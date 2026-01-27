@@ -1,8 +1,10 @@
 ---
 title: no-format-string-injection
-description: 'no-format-string-injection'
+description: no-format-string-injection
 category: security
+severity: critical
 tags: ['security', 'core']
+autofix: false
 ---
 
 

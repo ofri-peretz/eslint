@@ -1,8 +1,10 @@
 ---
 title: no-algorithm-confusion
-description: 'no-algorithm-confusion'
+description: no-algorithm-confusion
 category: security
+severity: medium
 tags: ['security', 'jwt']
+autofix: false
 ---
 
 

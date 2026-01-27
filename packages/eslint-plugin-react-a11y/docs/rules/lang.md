@@ -1,4 +1,13 @@
-# lang
+---
+title: lang
+description: lang rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# lang
 
 > **Keywords:** lang, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

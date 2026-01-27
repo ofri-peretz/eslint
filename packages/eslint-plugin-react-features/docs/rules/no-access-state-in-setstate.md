@@ -1,4 +1,13 @@
-# no-access-state-in-setstate
+---
+title: no-access-state-in-setstate
+description: no-access-state-in-setstate rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-access-state-in-setstate
 
 > **Keywords:** React, setState, this.state, functional updates, race conditions, class components, ESLint rule, LLM-optimized
 

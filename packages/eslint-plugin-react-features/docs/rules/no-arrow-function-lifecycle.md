@@ -1,4 +1,13 @@
-# no-arrow-function-lifecycle
+---
+title: no-arrow-function-lifecycle
+description: no-arrow-function-lifecycle rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-arrow-function-lifecycle
 
 > **Keywords:** React, lifecycle, arrow function, class component, binding, ESLint rule, LLM-optimized
 

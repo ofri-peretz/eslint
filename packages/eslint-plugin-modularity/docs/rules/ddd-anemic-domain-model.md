@@ -1,8 +1,12 @@
 ---
 title: ddd-anemic-domain-model
-description: 'Detects entities with only getters/setters and no business logic, enforcing the Rich Domain Model over the Anemic Domain Model anti-pattern.'
+description: Detects entities with only getters/setters and no business logic, enforcing the Rich Domain Model over the Anemic Domain Model anti-pattern.
 category: modularity
+severity: low
 tags: ['architecture', 'ddd', 'modularity']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 > **Keywords:** ddd-anemic-domain-model, domain-driven design, rich domain model, anemic domain model, anti-pattern, encapsulation, business logic, Aggregate Root, ESLint rule

@@ -1,8 +1,10 @@
 ---
 title: no-dynamic-dependency-loading
-description: 'no-dynamic-dependency-loading'
+description: no-dynamic-dependency-loading
 category: security
+severity: medium
 tags: ['security', 'node']
+autofix: false
 ---
 
 

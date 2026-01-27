@@ -1,8 +1,10 @@
 ---
 title: no-tracking-without-consent
-description: 'CWE: [CWE-359](https://cwe.mitre.org/data/definitions/359.html)'
+description: "CWE: [CWE-359](https://cwe.mitre.org/data/definitions/359.html)"
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 > **Keywords:** no tracking without consent, privacy, GDPR, CCPA, analytics, security, ESLint rule, [CWE-359](https://cwe.mitre.org/data/definitions/359.html)

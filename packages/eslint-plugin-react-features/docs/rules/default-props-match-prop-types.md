@@ -1,4 +1,13 @@
-# default-props-match-prop-types
+---
+title: default-props-match-prop-types
+description: default-props-match-prop-types rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# default-props-match-prop-types
 
 > **Keywords:** React, defaultProps, propTypes, validation, type safety, ESLint rule, LLM-optimized
 

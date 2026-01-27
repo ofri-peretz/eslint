@@ -1,4 +1,13 @@
-# no-unnecessary-rerenders
+---
+title: no-unnecessary-rerenders
+description: no-unnecessary-rerenders rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-unnecessary-rerenders
 
 > **Keywords:** no unnecessary rerenders, performance, ESLint rule, JavaScript, TypeScript
 

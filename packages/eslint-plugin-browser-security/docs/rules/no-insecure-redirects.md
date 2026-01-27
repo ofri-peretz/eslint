@@ -1,8 +1,10 @@
 ---
 title: no-insecure-redirects
-description: 'no-insecure-redirects'
+description: no-insecure-redirects
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

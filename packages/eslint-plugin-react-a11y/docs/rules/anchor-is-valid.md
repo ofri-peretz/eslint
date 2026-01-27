@@ -1,4 +1,13 @@
-# anchor-is-valid
+---
+title: anchor-is-valid
+description: anchor-is-valid rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# anchor-is-valid
 
 > **Keywords:** anchor-is-valid, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

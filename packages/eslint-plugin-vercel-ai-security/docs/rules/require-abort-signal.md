@@ -1,8 +1,10 @@
 ---
 title: require-abort-signal
-description: 'require-abort-signal'
+description: require-abort-signal
 category: security
+severity: medium
 tags: ['security', 'ai']
+autofix: false
 ---
 
 

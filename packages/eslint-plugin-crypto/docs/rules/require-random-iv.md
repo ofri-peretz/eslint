@@ -1,8 +1,10 @@
 ---
 title: require-random-iv
-description: 'CWE: [CWE-329](https://cwe.mitre.org/data/definitions/329.html)'
+description: "CWE: [CWE-329](https://cwe.mitre.org/data/definitions/329.html)"
 category: security
+severity: medium
 tags: ['security', 'crypto']
+autofix: false
 ---
 
 > **Keywords:** require-random-iv, cryptographically secure, initialization vector, IV, entropy, security, ESLint rule, CWE-329, predictable IV

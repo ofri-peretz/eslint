@@ -1,8 +1,10 @@
 ---
 title: no-unsafe-inline-csp
-description: 'no-unsafe-inline-csp'
+description: no-unsafe-inline-csp
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

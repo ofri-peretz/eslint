@@ -1,8 +1,10 @@
 ---
 title: no-unsafe-deserialization
-description: 'no-unsafe-deserialization'
+description: no-unsafe-deserialization
 category: security
+severity: medium
 tags: ['security', 'core']
+autofix: false
 ---
 
 

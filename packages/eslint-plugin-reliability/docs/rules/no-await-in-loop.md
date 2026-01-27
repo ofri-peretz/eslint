@@ -1,8 +1,12 @@
 ---
 title: no-await-in-loop
-description: 'no-await-in-loop'
+description: no-await-in-loop
 category: quality
+severity: low
 tags: ['quality', 'reliability']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

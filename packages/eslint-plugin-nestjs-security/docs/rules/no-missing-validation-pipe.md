@@ -1,8 +1,10 @@
 ---
 title: no-missing-validation-pipe
-description: 'no-missing-validation-pipe'
+description: no-missing-validation-pipe
 category: security
+severity: medium
 tags: ['security', 'nestjs']
+autofix: false
 ---
 
 

@@ -1,4 +1,13 @@
-# required-attributes
+---
+title: required-attributes
+description: required-attributes rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# required-attributes
 
 > **Keywords:** React, accessibility, ESLint rule, required attributes, aria attributes, React props, auto-fix, LLM-optimized, React accessibility
 

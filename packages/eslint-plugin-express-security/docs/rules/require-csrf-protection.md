@@ -1,8 +1,10 @@
 ---
 title: require-csrf-protection
-description: 'require-csrf-protection'
+description: require-csrf-protection
 category: security
+severity: high
 tags: ['security', 'express']
+autofix: false
 ---
 
 

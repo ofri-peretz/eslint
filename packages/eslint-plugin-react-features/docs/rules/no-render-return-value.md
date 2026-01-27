@@ -1,4 +1,13 @@
-# no-render-return-value
+---
+title: no-render-return-value
+description: no-render-return-value rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-render-return-value
 
 > **Keywords:** React, render, ReactDOM, deprecated, ESLint rule, migration, LLM-optimized
 

@@ -1,8 +1,12 @@
 ---
 title: no-instanceof-array
-description: 'Prefer Array.isArray() over instanceof Array for reliable type checking across different JavaScript realms (iframes, Web Workers).'
+description: Prefer Array.isArray() over instanceof Array for reliable type checking across different JavaScript realms (iframes, Web Workers).
 category: modernization
+severity: low
 tags: ['modernization', 'reliability', 'cross-realm']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 > **Keywords:** no-instanceof-array, Array.isArray, type checking, cross-realm, iframes, web workers, reliability, ESLint rule, modernization

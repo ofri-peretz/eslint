@@ -1,8 +1,10 @@
 ---
 title: no-unescaped-url-parameter
-description: 'no-unescaped-url-parameter'
+description: no-unescaped-url-parameter
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

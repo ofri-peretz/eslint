@@ -1,4 +1,13 @@
-# jsx-no-bind
+---
+title: jsx-no-bind
+description: jsx-no-bind rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# jsx-no-bind
 
 > **Keywords:** React, bind, arrow function, performance, ESLint rule, render, LLM-optimized
 

@@ -1,8 +1,10 @@
 ---
 title: require-schema-validation
-description: 'require-schema-validation'
+description: require-schema-validation
 category: security
+severity: medium
 tags: ['security', 'mongodb']
+autofix: false
 ---
 
 

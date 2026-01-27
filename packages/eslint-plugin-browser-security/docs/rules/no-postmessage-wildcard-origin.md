@@ -1,8 +1,10 @@
 ---
 title: no-postmessage-wildcard-origin
-description: 'no-postmessage-wildcard-origin'
+description: no-postmessage-wildcard-origin
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

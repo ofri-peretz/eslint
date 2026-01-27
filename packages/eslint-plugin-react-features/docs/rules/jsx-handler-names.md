@@ -1,4 +1,13 @@
-# jsx-handler-names
+---
+title: jsx-handler-names
+description: jsx-handler-names rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# jsx-handler-names
 
 > **Keywords:** React, event handlers, naming conventions, onClick, onSubmit, handleClick, ESLint rule, LLM-optimized
 

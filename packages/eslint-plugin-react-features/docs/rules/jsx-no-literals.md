@@ -1,4 +1,13 @@
-# jsx-no-literals
+---
+title: jsx-no-literals
+description: jsx-no-literals rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# jsx-no-literals
 
 > **Keywords:** React, JSX, string literals, i18n, internationalization, translation, ESLint rule, LLM-optimized
 

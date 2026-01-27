@@ -1,4 +1,13 @@
-# heading-has-content
+---
+title: heading-has-content
+description: heading-has-content rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# heading-has-content
 
 > **Keywords:** heading-has-content, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

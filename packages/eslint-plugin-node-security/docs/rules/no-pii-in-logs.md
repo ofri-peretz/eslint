@@ -1,8 +1,10 @@
 ---
 title: no-pii-in-logs
-description: 'CWE: [CWE-532](https://cwe.mitre.org/data/definitions/532.html)'
+description: "CWE: [CWE-532](https://cwe.mitre.org/data/definitions/532.html)"
 category: security
+severity: medium
 tags: ['security', 'node']
+autofix: false
 ---
 
 > **Keywords:** no-pii-in-logs, PII, logging, privacy, console, security, ESLint rule, CWE-532, CWE-359

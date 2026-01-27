@@ -1,4 +1,13 @@
-# no-string-refs
+---
+title: no-string-refs
+description: no-string-refs rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-string-refs
 
 > **Keywords:** React, refs, createRef, useRef, string refs, ESLint rule, deprecated, LLM-optimized
 

@@ -1,8 +1,10 @@
 ---
 title: no-insecure-cookie-options
-description: 'no-insecure-cookie-options'
+description: no-insecure-cookie-options
 category: security
+severity: medium
 tags: ['security', 'express']
+autofix: false
 ---
 
 

@@ -64,6 +64,9 @@
     "tslib": "^2.3.0"
   },
   "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    },
     "get-tsconfig": {
       "optional": true
     },
@@ -72,7 +75,9 @@
     }
   },
   "optionalDependencies": {},
-  "dependencies": {},
+  "dependencies": {
+    "@typescript-eslint/utils": "^7.0.0 || ^8.0.0"
+  },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2"
   }

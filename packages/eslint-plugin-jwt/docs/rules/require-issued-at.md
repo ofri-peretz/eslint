@@ -1,8 +1,10 @@
 ---
 title: require-issued-at
-description: 'require-issued-at'
+description: require-issued-at
 category: security
+severity: medium
 tags: ['security', 'jwt']
+autofix: false
 ---
 
 

@@ -1,4 +1,13 @@
-# tabindex-no-positive
+---
+title: tabindex-no-positive
+description: tabindex-no-positive rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# tabindex-no-positive
 
 > **Keywords:** tabindex-no-positive, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

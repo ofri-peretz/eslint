@@ -1,8 +1,10 @@
 ---
 title: no-graphql-injection
-description: 'no-graphql-injection'
+description: no-graphql-injection
 category: security
+severity: critical
 tags: ['security', 'core']
+autofix: false
 ---
 
 

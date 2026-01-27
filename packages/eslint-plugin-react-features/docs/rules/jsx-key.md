@@ -1,4 +1,13 @@
-# jsx-key
+---
+title: jsx-key
+description: jsx-key rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# jsx-key
 
 > **Keywords:** React, JSX, key prop, reconciliation, lists, map, iteration, ESLint rule, performance, LLM-optimized
 

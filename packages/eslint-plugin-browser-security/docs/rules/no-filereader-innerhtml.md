@@ -1,8 +1,10 @@
 ---
 title: no-filereader-innerhtml
-description: 'no-filereader-innerhtml'
+description: no-filereader-innerhtml
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

@@ -1,4 +1,13 @@
-# no-did-mount-set-state
+---
+title: no-did-mount-set-state
+description: no-did-mount-set-state rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-did-mount-set-state
 
 > **Keywords:** React, componentDidMount, setState, lifecycle, performance, ESLint rule, LLM-optimized
 

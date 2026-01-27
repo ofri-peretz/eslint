@@ -1,8 +1,10 @@
 ---
 title: detect-weak-password-validation
-description: 'detect-weak-password-validation'
+description: detect-weak-password-validation
 category: security
+severity: medium
 tags: ['security', 'core']
+autofix: false
 ---
 
 

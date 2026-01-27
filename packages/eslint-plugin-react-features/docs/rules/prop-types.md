@@ -1,4 +1,13 @@
-# prop-types
+---
+title: prop-types
+description: prop-types rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# prop-types
 
 > **Keywords:** React, PropTypes, validation, type checking, runtime validation, ESLint rule, LLM-optimized
 

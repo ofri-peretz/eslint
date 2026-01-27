@@ -1,8 +1,10 @@
 ---
 title: no-websocket-innerhtml
-description: 'no-websocket-innerhtml'
+description: no-websocket-innerhtml
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

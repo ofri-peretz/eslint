@@ -1,8 +1,10 @@
 ---
 title: require-mime-type-validation
-description: 'CWE: [CWE-434](https://cwe.mitre.org/data/definitions/434.html)'
+description: "CWE: [CWE-434](https://cwe.mitre.org/data/definitions/434.html)"
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 > **Keywords:** require mime type validation, file upload, security, ESLint rule, [CWE-434](https://cwe.mitre.org/data/definitions/434.html), multer, unrestricted upload

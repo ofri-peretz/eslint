@@ -10,12 +10,17 @@
     "experimentalDecorators": true,
     "importHelpers": true,
     "target": "ES2022",
-    "lib": ["ES2022", "dom"],
+    "lib": [
+      "ES2022",
+      "dom"
+    ],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@interlace/eslint-devkit": ["packages/eslint-devkit/src/index.ts"],
+      "@interlace/eslint-devkit": [
+        "packages/eslint-devkit/src/index.ts"
+      ],
       "eslint-plugin-secure-coding": [
         "packages/eslint-plugin-secure-coding/src/index.ts"
       ],
@@ -25,9 +30,15 @@
       "eslint-plugin-import-next": [
         "packages/eslint-plugin-import-next/src/index.ts"
       ],
-      "eslint-plugin-pg": ["packages/eslint-plugin-pg/src/index.ts"],
-      "eslint-plugin-crypto": ["packages/eslint-plugin-crypto/src/index.ts"],
-      "eslint-plugin-jwt": ["packages/eslint-plugin-jwt/src/index.ts"],
+      "eslint-plugin-pg": [
+        "packages/eslint-plugin-pg/src/index.ts"
+      ],
+      "eslint-plugin-crypto": [
+        "packages/eslint-plugin-crypto/src/index.ts"
+      ],
+      "eslint-plugin-jwt": [
+        "packages/eslint-plugin-jwt/src/index.ts"
+      ],
       "eslint-plugin-express-security": [
         "packages/eslint-plugin-express-security/src/index.ts"
       ],
@@ -58,13 +69,16 @@
       "eslint-plugin-conventions": [
         "packages/eslint-plugin-conventions/src/index.ts"
       ],
-      "@interlace/eslint-plugin-modularity": [
+      "eslint-plugin-modularity": [
         "packages/eslint-plugin-modularity/src/index.ts"
       ],
-      "@interlace/eslint-plugin-modernization": [
+      "eslint-plugin-modernization": [
         "packages/eslint-plugin-modernization/src/index.ts"
       ]
     }
   },
-  "exclude": ["node_modules", "tmp"]
+  "exclude": [
+    "node_modules",
+    "tmp"
+  ]
 }

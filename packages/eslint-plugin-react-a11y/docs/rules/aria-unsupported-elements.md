@@ -1,4 +1,13 @@
-# aria-unsupported-elements
+---
+title: aria-unsupported-elements
+description: aria-unsupported-elements rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# aria-unsupported-elements
 
 > **Keywords:** aria-unsupported-elements, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

@@ -1,8 +1,10 @@
 ---
 title: require-express-body-parser-limits
-description: 'require-express-body-parser-limits'
+description: require-express-body-parser-limits
 category: security
+severity: medium
 tags: ['security', 'express']
+autofix: false
 ---
 
 

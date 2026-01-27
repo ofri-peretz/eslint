@@ -1,4 +1,13 @@
-# no-keyboard-inaccessible-elements
+---
+title: no-keyboard-inaccessible-elements
+description: no-keyboard-inaccessible-elements rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-keyboard-inaccessible-elements
 
 > **Keywords:** no-keyboard-inaccessible-elements, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

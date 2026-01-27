@@ -1,8 +1,10 @@
 ---
 title: require-tls-connection
-description: 'require-tls-connection'
+description: require-tls-connection
 category: security
+severity: medium
 tags: ['security', 'mongodb']
+autofix: false
 ---
 
 

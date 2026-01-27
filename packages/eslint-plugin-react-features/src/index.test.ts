@@ -21,7 +21,7 @@ describe('eslint-plugin-react-features plugin interface', () => {
     expect(ruleKeys).toContain('react/jsx-key');
     expect(ruleKeys).toContain('performance/no-unnecessary-rerenders');
 
-    expect(ruleKeys.length).toBe(90);
+    expect(ruleKeys.length).toBe(106);
   });
 
   describe('configurations', () => {

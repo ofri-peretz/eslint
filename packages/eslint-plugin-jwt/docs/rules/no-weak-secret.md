@@ -1,8 +1,10 @@
 ---
 title: no-weak-secret
-description: 'no-weak-secret'
+description: no-weak-secret
 category: security
+severity: critical
 tags: ['security', 'jwt']
+autofix: false
 ---
 
 

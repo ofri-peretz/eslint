@@ -1,8 +1,12 @@
 ---
 title: no-unhandled-promise
-description: 'no-unhandled-promise'
+description: no-unhandled-promise
 category: quality
+severity: low
 tags: ['quality', 'maintainability']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

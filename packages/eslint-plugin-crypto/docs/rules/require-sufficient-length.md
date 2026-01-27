@@ -1,8 +1,10 @@
 ---
 title: require-sufficient-length
-description: 'CWE: [CWE-331](https://cwe.mitre.org/data/definitions/331.html)'
+description: "CWE: [CWE-331](https://cwe.mitre.org/data/definitions/331.html)"
 category: security
+severity: medium
 tags: ['security', 'crypto']
+autofix: false
 ---
 
 > **Keywords:** require-sufficient-length, entropy, token length, random string, security, ESLint rule, CWE-331, brute force

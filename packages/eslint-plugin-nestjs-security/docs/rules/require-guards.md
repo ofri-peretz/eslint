@@ -1,8 +1,10 @@
 ---
 title: require-guards
-description: 'require-guards'
+description: require-guards
 category: security
+severity: medium
 tags: ['security', 'nestjs']
+autofix: false
 ---
 
 

@@ -1,4 +1,13 @@
-# prefer-es6-class
+---
+title: prefer-es6-class
+description: prefer-es6-class rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# prefer-es6-class
 
 > **Keywords:** React, ES6 class, createClass, migration, ESLint rule, modern syntax, LLM-optimized
 

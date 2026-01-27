@@ -1,8 +1,10 @@
 ---
 title: no-bypass-middleware
-description: 'no-bypass-middleware'
+description: no-bypass-middleware
 category: security
+severity: medium
 tags: ['security', 'mongodb']
+autofix: false
 ---
 
 

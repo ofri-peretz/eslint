@@ -1,8 +1,10 @@
 ---
 title: no-dynamic-system-prompt
-description: 'no-dynamic-system-prompt'
+description: no-dynamic-system-prompt
 category: security
+severity: medium
 tags: ['security', 'ai']
+autofix: false
 ---
 
 

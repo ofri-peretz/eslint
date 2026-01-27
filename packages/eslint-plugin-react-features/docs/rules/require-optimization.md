@@ -1,4 +1,13 @@
-# require-optimization
+---
+title: require-optimization
+description: require-optimization rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# require-optimization
 
 > **Keywords:** React, performance, memo, useMemo, useCallback, optimization, re-renders, ESLint rule, LLM-optimized
 

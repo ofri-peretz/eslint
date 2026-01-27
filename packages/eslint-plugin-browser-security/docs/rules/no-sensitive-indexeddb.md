@@ -1,8 +1,10 @@
 ---
 title: no-sensitive-indexeddb
-description: 'no-sensitive-indexeddb'
+description: no-sensitive-indexeddb
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

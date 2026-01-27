@@ -1,4 +1,13 @@
-# no-unescaped-entities
+---
+title: no-unescaped-entities
+description: no-unescaped-entities rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-unescaped-entities
 
 > **Keywords:** React, JSX, entities, quotes, apostrophe, ESLint rule, HTML, LLM-optimized
 

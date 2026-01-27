@@ -1,8 +1,10 @@
 ---
 title: no-unsafe-output-handling
-description: 'no-unsafe-output-handling'
+description: no-unsafe-output-handling
 category: security
+severity: medium
 tags: ['security', 'ai']
+autofix: false
 ---
 
 

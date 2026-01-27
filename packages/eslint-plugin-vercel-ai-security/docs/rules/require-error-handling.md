@@ -1,8 +1,10 @@
 ---
 title: require-error-handling
-description: 'require-error-handling'
+description: require-error-handling
 category: security
+severity: medium
 tags: ['security', 'ai']
+autofix: false
 ---
 
 

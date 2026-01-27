@@ -1,8 +1,10 @@
 ---
 title: require-embedding-validation
-description: 'require-embedding-validation'
+description: require-embedding-validation
 category: security
+severity: medium
 tags: ['security', 'ai']
+autofix: false
 ---
 
 

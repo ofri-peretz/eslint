@@ -1,8 +1,10 @@
 ---
 title: no-web-crypto-export
-description: 'CWE: [CWE-321](https://cwe.mitre.org/data/definitions/321.html)'
+description: "CWE: [CWE-321](https://cwe.mitre.org/data/definitions/321.html)"
 category: security
+severity: medium
 tags: ['security', 'crypto']
+autofix: false
 ---
 
 > **Keywords:** no-web-crypto-export, Web Crypto API, exportKey, wrapKey, key leakage, security, ESLint rule, CWE-321, extractable keys

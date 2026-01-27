@@ -1,4 +1,13 @@
-# no-redundant-should-component-update
+---
+title: no-redundant-should-component-update
+description: no-redundant-should-component-update rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-redundant-should-component-update
 
 > **Keywords:** React, shouldComponentUpdate, performance, PureComponent, optimization, ESLint rule, LLM-optimized
 

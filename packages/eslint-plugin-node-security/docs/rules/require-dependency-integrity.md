@@ -1,8 +1,10 @@
 ---
 title: require-dependency-integrity
-description: 'CWE: [CWE-494](https://cwe.mitre.org/data/definitions/494.html)'
+description: "CWE: [CWE-494](https://cwe.mitre.org/data/definitions/494.html)"
 category: security
+severity: medium
 tags: ['security', 'node']
+autofix: false
 ---
 
 > **Keywords:** require-dependency-integrity, SRI, Subresource Integrity, security, ESLint rule, supply chain, CDN, CWE-494

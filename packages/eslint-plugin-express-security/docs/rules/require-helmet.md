@@ -1,8 +1,10 @@
 ---
 title: require-helmet
-description: 'require-helmet'
+description: require-helmet
 category: security
+severity: medium
 tags: ['security', 'express']
+autofix: false
 ---
 
 

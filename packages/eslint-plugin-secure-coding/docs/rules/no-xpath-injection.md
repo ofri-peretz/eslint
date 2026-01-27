@@ -1,8 +1,10 @@
 ---
 title: no-xpath-injection
-description: 'no-xpath-injection'
+description: no-xpath-injection
 category: security
+severity: critical
 tags: ['security', 'core']
+autofix: false
 ---
 
 

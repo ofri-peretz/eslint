@@ -1,8 +1,10 @@
 ---
 title: no-select-all
-description: 'no-select-all'
+description: no-select-all
 category: security
+severity: medium
 tags: ['security', 'postgres']
+autofix: false
 ---
 
 

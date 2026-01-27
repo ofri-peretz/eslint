@@ -1,8 +1,10 @@
 ---
 title: detect-child-process
-description: 'detect-child-process'
+description: detect-child-process
 category: security
+severity: medium
 tags: ['security', 'node']
+autofix: false
 ---
 
 

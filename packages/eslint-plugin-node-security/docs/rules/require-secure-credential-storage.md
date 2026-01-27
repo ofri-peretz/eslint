@@ -1,8 +1,10 @@
 ---
 title: require-secure-credential-storage
-description: 'require-secure-credential-storage'
+description: require-secure-credential-storage
 category: security
+severity: high
 tags: ['security', 'node']
+autofix: false
 ---
 
 

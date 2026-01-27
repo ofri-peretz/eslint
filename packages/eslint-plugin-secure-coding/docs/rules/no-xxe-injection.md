@@ -1,8 +1,10 @@
 ---
 title: no-xxe-injection
-description: 'no-xxe-injection'
+description: no-xxe-injection
 category: security
+severity: critical
 tags: ['security', 'core']
+autofix: false
 ---
 
 

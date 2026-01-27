@@ -66,6 +66,7 @@
   },
   "peerDependencies": {},
   "dependencies": {
+    "tslib": "^2.3.0",
     "@interlace/eslint-devkit": "^1.2.1"
   },
   "devDependencies": {

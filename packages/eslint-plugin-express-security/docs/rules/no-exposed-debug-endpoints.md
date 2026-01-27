@@ -1,8 +1,10 @@
 ---
 title: no-exposed-debug-endpoints
-description: 'no-exposed-debug-endpoints'
+description: no-exposed-debug-endpoints
 category: security
+severity: medium
 tags: ['security', 'express']
+autofix: false
 ---
 
 

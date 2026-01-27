@@ -1,4 +1,13 @@
-# aria-role
+---
+title: aria-role
+description: aria-role rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# aria-role
 
 > **Keywords:** aria-role, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

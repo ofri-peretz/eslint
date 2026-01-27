@@ -1,8 +1,10 @@
 ---
 title: require-storage-encryption
-description: 'CWE: [CWE-312](https://cwe.mitre.org/data/definitions/312.html)'
+description: "CWE: [CWE-312](https://cwe.mitre.org/data/definitions/312.html)"
 category: security
+severity: medium
 tags: ['security', 'node']
+autofix: false
 ---
 
 > **Keywords:** require-storage-encryption, data at rest, encryption, persistent storage, security, ESLint rule, CWE-312

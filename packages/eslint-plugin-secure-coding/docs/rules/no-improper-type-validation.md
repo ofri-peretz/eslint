@@ -1,8 +1,10 @@
 ---
 title: no-improper-type-validation
-description: 'no-improper-type-validation'
+description: no-improper-type-validation
 category: security
+severity: medium
 tags: ['security', 'core']
+autofix: false
 ---
 
 

@@ -1,8 +1,10 @@
 ---
 title: require-throttler
-description: 'require-throttler'
+description: require-throttler
 category: security
+severity: medium
 tags: ['security', 'nestjs']
+autofix: false
 ---
 
 

@@ -1,0 +1,121 @@
+---
+title: no-silent-errors
+description: Prevent silently catching and ignoring errors. This rule is part of @interlace/eslint-plugin-maintainability and provides LLM-optimized error messages.
+category: quality
+severity: medium
+tags: ['quality', 'maintainability', 'error-handling']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---
+
+> **Keywords:** error, silent, catch, debugging, ESLint rule, error handling, maintainability, LLM-optimized
+
+Prevent silently catching and ignoring errors. This rule is part of [`@interlace/eslint-plugin-maintainability`](https://www.npmjs.com/package/@interlace/eslint-plugin-maintainability) and provides LLM-optimized error messages with suggestions.
+
+## Quick Summary
+
+| Aspect         | Details                                      |
+| -------------- | -------------------------------------------- |
+| **Severity**   | Warning (code quality)                       |
+| **Auto-Fix**   | 💡 Suggests fixes                            |
+| **Category**   | Error Handling                               |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration      |
+| **Best For**   | All projects requiring robust error handling |
+
+## Rule Details
+
+This rule detects catch blocks that silently swallow errors without logging, re-throwing, or handling them in a meaningful way.
+
+### Why This Matters
+
+| Issue                  | Impact                    | Solution                  |
+| ---------------------- | ------------------------- | ------------------------- |
+| 🙈 **Hidden Failures** | Bugs go unnoticed         | Log or handle errors      |
+| 🐛 **Debugging**       | Hard to trace issues      | Preserve error info       |
+| 📊 **Monitoring**      | No visibility into issues | Forward to error tracking |
+| 🔒 **Reliability**     | Silent data corruption    | Proper error handling     |
+
+## Examples
+
+### ❌ Incorrect
+
+```typescript
+// Empty catch block
+try {
+  fetchData();
+} catch (e) {
+  // Silent - no handling
+}
+
+// Catch with only comment
+try {
+  processPayment();
+} catch (error) {
+  // TODO: handle this later
+}
+
+// Swallowing error without action
+try {
+  saveToDatabase();
+} catch {
+  return null;
+}
+```
+
+### ✅ Correct
+
+```typescript
+// Log the error
+try {
+  fetchData();
+} catch (error) {
+  console.error('Failed to fetch data:', error);
+}
+
+// Re-throw with context
+try {
+  processPayment();
+} catch (error) {
+  throw new Error(`Payment failed: ${error.message}`);
+}
+
+// Handle with fallback and logging
+try {
+  saveToDatabase();
+} catch (error) {
+  logger.error('Database save failed', { error });
+  return fallbackValue;
+}
+
+// Report to error tracking
+try {
+  criticalOperation();
+} catch (error) {
+  Sentry.captureException(error);
+  throw error;
+}
+```
+
+## Configuration Examples
+
+### Basic Usage
+
+```javascript
+{
+  rules: {
+    'maintainability/no-silent-errors': 'warn'
+  }
+}
+```
+
+## Related Rules
+
+- [`error-message`](./error-message.mdx) - Meaningful error messages
+- [`no-missing-error-context`](./no-missing-error-context.mdx) - Error context requirements
+- [`no-unhandled-promise`](./no-unhandled-promise.mdx) - Async error handling
+
+## Further Reading
+
+- **[Error Handling Patterns](https://www.patterns.dev/posts/error-handling)** - Modern error handling
+- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration

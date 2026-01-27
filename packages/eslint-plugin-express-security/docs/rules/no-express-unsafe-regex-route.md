@@ -1,8 +1,10 @@
 ---
 title: no-express-unsafe-regex-route
-description: 'no-express-unsafe-regex-route'
+description: no-express-unsafe-regex-route
 category: security
+severity: medium
 tags: ['security', 'express']
+autofix: false
 ---
 
 

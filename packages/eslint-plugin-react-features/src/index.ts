@@ -53,6 +53,18 @@ import { stateInConstructor } from './rules/react/state-in-constructor';
 import { staticPropertyPlacement } from './rules/react/static-property-placement';
 import { hooksExhaustiveDeps } from './rules/react/hooks-exhaustive-deps';
 
+// Security rules
+import { jsxNoTargetBlank } from './rules/react/jsx-no-target-blank';
+import { jsxNoScriptUrl } from './rules/react/jsx-no-script-url';
+import { jsxNoDuplicateProps } from './rules/react/jsx-no-duplicate-props';
+import { noDangerWithChildren } from './rules/react/no-danger-with-children';
+import { noDeprecated } from './rules/react/no-deprecated';
+
+// Deprecated API rules
+import { noFindDomNode } from './rules/react/no-find-dom-node';
+import { noUnsafe } from './rules/react/no-unsafe';
+import { voidDomElementsNoChildren } from './rules/react/void-dom-elements-no-children';
+
 // Migration rules
 import { reactClassToHooks } from './rules/migration/react-class-to-hooks';
 
@@ -60,7 +72,6 @@ import { reactClassToHooks } from './rules/migration/react-class-to-hooks';
 import { noUnnecessaryRerenders } from './rules/performance/no-unnecessary-rerenders';
 import { reactRenderOptimization } from './rules/performance/react-render-optimization';
 import { reactNoInlineFunctions } from './rules/performance/react-no-inline-functions';
-
 
 export const rules = {
   // Flat names
@@ -105,6 +116,18 @@ export const rules = {
   'state-in-constructor': stateInConstructor,
   'static-property-placement': staticPropertyPlacement,
   'hooks-exhaustive-deps': hooksExhaustiveDeps,
+  
+  // Security and bug prevention
+  'jsx-no-target-blank': jsxNoTargetBlank,
+  'jsx-no-script-url': jsxNoScriptUrl,
+  'jsx-no-duplicate-props': jsxNoDuplicateProps,
+  'no-danger-with-children': noDangerWithChildren,
+  'no-deprecated': noDeprecated,
+  
+  // Deprecated API rules
+  'no-find-dom-node': noFindDomNode,
+  'no-unsafe': noUnsafe,
+  'void-dom-elements-no-children': voidDomElementsNoChildren,
   
   'react-class-to-hooks': reactClassToHooks,
   'no-unnecessary-rerenders': noUnnecessaryRerenders,
@@ -154,6 +177,18 @@ export const rules = {
   'react/static-property-placement': staticPropertyPlacement,
   'react/hooks-exhaustive-deps': hooksExhaustiveDeps,
 
+  // Security and bug prevention (categorized)
+  'react/jsx-no-target-blank': jsxNoTargetBlank,
+  'react/jsx-no-script-url': jsxNoScriptUrl,
+  'react/jsx-no-duplicate-props': jsxNoDuplicateProps,
+  'react/no-danger-with-children': noDangerWithChildren,
+  'react/no-deprecated': noDeprecated,
+
+  // Deprecated API rules (categorized)
+  'react/no-find-dom-node': noFindDomNode,
+  'react/no-unsafe': noUnsafe,
+  'react/void-dom-elements-no-children': voidDomElementsNoChildren,
+
   'migration/react-class-to-hooks': reactClassToHooks,
   'performance/no-unnecessary-rerenders': noUnnecessaryRerenders,
   'performance/react-render-optimization': reactRenderOptimization,
@@ -180,6 +215,13 @@ export const configs = {
       '@eslint/react-features/react/no-string-refs': 'error',
       '@eslint/react-features/react/no-unknown-property': 'error',
       '@eslint/react-features/react/hooks-exhaustive-deps': 'warn',
+      // Security rules
+      '@eslint/react-features/react/jsx-no-target-blank': 'error',
+      '@eslint/react-features/react/jsx-no-script-url': 'error',
+      '@eslint/react-features/react/jsx-no-duplicate-props': 'error',
+      '@eslint/react-features/react/no-danger-with-children': 'error',
+      '@eslint/react-features/react/no-deprecated': 'warn',
+      // Performance
       '@eslint/react-features/performance/no-unnecessary-rerenders': 'warn',
       '@eslint/react-features/performance/react-render-optimization': 'warn',
     },

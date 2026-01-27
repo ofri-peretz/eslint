@@ -1,8 +1,12 @@
 ---
 title: error-message
-description: 'error-message'
+description: error-message
 category: quality
+severity: medium
 tags: ['quality', 'maintainability']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

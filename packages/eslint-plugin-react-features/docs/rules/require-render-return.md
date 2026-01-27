@@ -1,4 +1,13 @@
-# require-render-return
+---
+title: require-render-return
+description: require-render-return rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# require-render-return
 
 > **Keywords:** React, render, return, class component, ESLint rule, correctness, LLM-optimized
 

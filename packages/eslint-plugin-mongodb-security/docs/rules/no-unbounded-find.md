@@ -1,8 +1,10 @@
 ---
 title: no-unbounded-find
-description: 'no-unbounded-find'
+description: no-unbounded-find
 category: security
+severity: medium
 tags: ['security', 'mongodb']
+autofix: false
 ---
 
 

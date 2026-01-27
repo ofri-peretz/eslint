@@ -1,4 +1,13 @@
-# prefer-tag-over-role
+---
+title: prefer-tag-over-role
+description: prefer-tag-over-role rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# prefer-tag-over-role
 
 > **Keywords:** prefer-tag-over-role, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

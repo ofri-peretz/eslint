@@ -1,4 +1,13 @@
-# media-has-caption
+---
+title: media-has-caption
+description: media-has-caption rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# media-has-caption
 
 > **Keywords:** media-has-caption, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

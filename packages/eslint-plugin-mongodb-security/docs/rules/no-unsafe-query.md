@@ -1,8 +1,10 @@
 ---
 title: no-unsafe-query
-description: 'no-unsafe-query'
+description: no-unsafe-query
 category: security
+severity: medium
 tags: ['security', 'mongodb']
+autofix: false
 ---
 
 

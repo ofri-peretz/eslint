@@ -1,8 +1,10 @@
 ---
 title: require-backend-authorization
-description: 'CWE: [CWE-602](https://cwe.mitre.org/data/definitions/602.html)'
+description: "CWE: [CWE-602](https://cwe.mitre.org/data/definitions/602.html)"
 category: security
+severity: high
 tags: ['security', 'core']
+autofix: false
 ---
 
 > **Keywords:** require-backend-authorization, client-side, server-side, access control, security, ESLint rule, CWE-602, authorization bypass

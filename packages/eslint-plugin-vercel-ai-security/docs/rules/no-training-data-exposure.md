@@ -1,8 +1,10 @@
 ---
 title: no-training-data-exposure
-description: 'no-training-data-exposure'
+description: no-training-data-exposure
 category: security
+severity: medium
 tags: ['security', 'ai']
+autofix: false
 ---
 
 

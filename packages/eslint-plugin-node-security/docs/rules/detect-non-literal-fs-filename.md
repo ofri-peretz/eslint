@@ -1,8 +1,10 @@
 ---
 title: detect-non-literal-fs-filename
-description: 'detect-non-literal-fs-filename'
+description: detect-non-literal-fs-filename
 category: security
+severity: medium
 tags: ['security', 'node']
+autofix: false
 ---
 
 

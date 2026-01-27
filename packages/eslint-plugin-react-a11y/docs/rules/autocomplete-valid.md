@@ -1,4 +1,13 @@
-# autocomplete-valid
+---
+title: autocomplete-valid
+description: autocomplete-valid rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# autocomplete-valid
 
 > **Keywords:** autocomplete-valid, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

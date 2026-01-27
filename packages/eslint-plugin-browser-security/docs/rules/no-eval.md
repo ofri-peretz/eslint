@@ -1,8 +1,10 @@
 ---
 title: no-eval
-description: 'no-eval'
+description: no-eval
 category: security
+severity: critical
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

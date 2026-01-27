@@ -1,8 +1,10 @@
 ---
 title: require-issuer-validation
-description: 'require-issuer-validation'
+description: require-issuer-validation
 category: security
+severity: medium
 tags: ['security', 'jwt']
+autofix: false
 ---
 
 

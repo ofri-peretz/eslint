@@ -1,8 +1,10 @@
 ---
 title: no-missing-authentication
-description: 'CWE: [CWE-287](https://cwe.mitre.org/data/definitions/287.html)'
+description: "CWE: [CWE-287](https://cwe.mitre.org/data/definitions/287.html)"
 category: security
+severity: high
 tags: ['security', 'core']
+autofix: false
 ---
 
 > **Keywords:** no-missing-authentication, Express, Fastify, route handler, middleware, JWT, security, ESLint rule, CWE-287, broken authentication

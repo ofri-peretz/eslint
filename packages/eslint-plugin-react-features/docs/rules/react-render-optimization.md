@@ -1,4 +1,13 @@
-# react-render-optimization
+---
+title: react-render-optimization
+description: react-render-optimization rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# react-render-optimization
 
 > **Keywords:** react render optimization, performance, ESLint rule, JavaScript, TypeScript
 

@@ -1,8 +1,10 @@
 ---
 title: require-secure-deletion
-description: 'CWE: [CWE-459](https://cwe.mitre.org/data/definitions/459.html)'
+description: "CWE: [CWE-459](https://cwe.mitre.org/data/definitions/459.html)"
 category: security
+severity: medium
 tags: ['security', 'node']
+autofix: false
 ---
 
 > **Keywords:** require-secure-deletion, secure wipe, memory cleanup, data destruction, property deletion, security, ESLint rule, CWE-459

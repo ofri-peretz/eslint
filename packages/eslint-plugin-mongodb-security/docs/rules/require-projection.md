@@ -1,8 +1,10 @@
 ---
 title: require-projection
-description: 'require-projection'
+description: require-projection
 category: security
+severity: medium
 tags: ['security', 'mongodb']
+autofix: false
 ---
 
 

@@ -1,8 +1,10 @@
 ---
 title: require-class-validator
-description: 'require-class-validator'
+description: require-class-validator
 category: security
+severity: medium
 tags: ['security', 'nestjs']
+autofix: false
 ---
 
 

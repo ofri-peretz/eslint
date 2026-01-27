@@ -1,4 +1,13 @@
-# no-access-key
+---
+title: no-access-key
+description: no-access-key rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-access-key
 
 > **Keywords:** no-access-key, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

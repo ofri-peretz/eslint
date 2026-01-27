@@ -1,8 +1,12 @@
 ---
 title: consistent-function-scoping
-description: 'consistent-function-scoping'
+description: consistent-function-scoping
 category: quality
+severity: low
 tags: ['quality', 'maintainability']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

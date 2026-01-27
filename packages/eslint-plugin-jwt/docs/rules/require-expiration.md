@@ -1,8 +1,10 @@
 ---
 title: require-expiration
-description: 'require-expiration'
+description: require-expiration
 category: security
+severity: medium
 tags: ['security', 'jwt']
+autofix: false
 ---
 
 

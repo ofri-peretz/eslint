@@ -1,8 +1,10 @@
 ---
 title: no-disabled-certificate-validation
-description: 'CWE: [CWE-295](https://cwe.mitre.org/data/definitions/295.html)'
+description: "CWE: [CWE-295](https://cwe.mitre.org/data/definitions/295.html)"
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 > **Keywords:** no disabled certificate validation, SSL, TLS, security, ESLint rule, [CWE-295](https://cwe.mitre.org/data/definitions/295.html), MitM, rejectUnauthorized

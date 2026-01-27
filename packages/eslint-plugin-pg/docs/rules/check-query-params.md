@@ -1,8 +1,10 @@
 ---
 title: check-query-params
-description: 'check-query-params'
+description: check-query-params
 category: security
+severity: medium
 tags: ['security', 'postgres']
+autofix: false
 ---
 
 

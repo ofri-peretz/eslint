@@ -1,4 +1,13 @@
-# interactive-supports-focus
+---
+title: interactive-supports-focus
+description: interactive-supports-focus rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# interactive-supports-focus
 
 > **Keywords:** interactive-supports-focus, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

@@ -1,8 +1,10 @@
 ---
 title: require-output-filtering
-description: 'require-output-filtering'
+description: require-output-filtering
 category: security
+severity: medium
 tags: ['security', 'ai']
+autofix: false
 ---
 
 

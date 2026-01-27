@@ -1,8 +1,10 @@
 ---
 title: no-exposed-private-fields
-description: 'no-exposed-private-fields'
+description: no-exposed-private-fields
 category: security
+severity: medium
 tags: ['security', 'nestjs']
+autofix: false
 ---
 
 

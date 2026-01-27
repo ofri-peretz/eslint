@@ -1,8 +1,12 @@
 ---
 title: prefer-event-target
-description: 'prefer-event-target'
+description: prefer-event-target
 category: modernization
+severity: low
 tags: ['architecture', 'modernization']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

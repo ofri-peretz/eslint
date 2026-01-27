@@ -1,8 +1,10 @@
 ---
 title: lock-file
-description: 'CWE: [CWE-829](https://cwe.mitre.org/data/definitions/829.html)'
+description: "CWE: [CWE-829](https://cwe.mitre.org/data/definitions/829.html)"
 category: security
+severity: medium
 tags: ['security', 'node']
+autofix: false
 ---
 
 > **Keywords:** lock-file, package-lock, yarn.lock, pnpm-lock, supply chain, security, ESLint rule, CWE-829, deterministic builds

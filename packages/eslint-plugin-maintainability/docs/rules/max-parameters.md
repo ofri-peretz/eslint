@@ -1,8 +1,12 @@
 ---
 title: max-parameters
-description: 'max-parameters'
+description: max-parameters
 category: quality
+severity: low
 tags: ['quality', 'maintainability']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

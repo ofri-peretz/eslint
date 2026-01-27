@@ -1,8 +1,10 @@
 ---
 title: no-permissive-cors
-description: 'CWE: [CWE-942](https://cwe.mitre.org/data/definitions/942.html)'
+description: "CWE: [CWE-942](https://cwe.mitre.org/data/definitions/942.html)"
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 > **Keywords:** no permissive cors, security, ESLint rule, [CWE-942](https://cwe.mitre.org/data/definitions/942.html), Access-Control-Allow-Origin, wildcard, API security

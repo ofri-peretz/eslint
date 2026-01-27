@@ -1,8 +1,10 @@
 ---
 title: require-algorithm-whitelist
-description: 'require-algorithm-whitelist'
+description: require-algorithm-whitelist
 category: security
+severity: medium
 tags: ['security', 'jwt']
+autofix: false
 ---
 
 

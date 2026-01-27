@@ -1,4 +1,13 @@
-# role-supports-aria-props
+---
+title: role-supports-aria-props
+description: role-supports-aria-props rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# role-supports-aria-props
 
 > **Keywords:** role-supports-aria-props, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

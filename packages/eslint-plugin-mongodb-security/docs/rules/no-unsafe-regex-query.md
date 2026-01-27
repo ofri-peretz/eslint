@@ -1,8 +1,10 @@
 ---
 title: no-unsafe-regex-query
-description: 'no-unsafe-regex-query'
+description: no-unsafe-regex-query
 category: security
+severity: medium
 tags: ['security', 'mongodb']
+autofix: false
 ---
 
 

@@ -1,8 +1,10 @@
 ---
 title: require-validated-prompt
-description: 'require-validated-prompt'
+description: require-validated-prompt
 category: security
+severity: medium
 tags: ['security', 'ai']
+autofix: false
 ---
 
 

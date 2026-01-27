@@ -1,4 +1,13 @@
-# mouse-events-have-key-events
+---
+title: mouse-events-have-key-events
+description: mouse-events-have-key-events rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# mouse-events-have-key-events
 
 > **Keywords:** mouse-events-have-key-events, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

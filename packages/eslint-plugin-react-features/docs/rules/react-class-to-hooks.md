@@ -1,4 +1,13 @@
-# react-class-to-hooks
+---
+title: react-class-to-hooks
+description: react-class-to-hooks rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# react-class-to-hooks
 
 > **Keywords:** React, hooks, migration, ESLint rule, class components, functional components, React modernization, auto-fix, LLM-optimized, React migration
 

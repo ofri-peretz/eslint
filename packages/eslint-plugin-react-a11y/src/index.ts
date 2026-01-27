@@ -50,7 +50,7 @@ import { mediaHasCaption } from './rules/media-has-caption';
 
 // Image rules
 import { imgRedundantAlt } from './rules/img-redundant-alt';
-import { imgRequiresAlt } from './rules/img-requires-alt';
+import { altText } from './rules/alt-text';
 
 // Interactive element rules
 import { interactiveSupportsFocus } from './rules/interactive-supports-focus';
@@ -113,7 +113,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   
   // Image rules
   'img-redundant-alt': imgRedundantAlt,
-  'img-requires-alt': imgRequiresAlt,
+  'alt-text': altText,
   
   // Interactive element rules
   'interactive-supports-focus': interactiveSupportsFocus,
@@ -172,7 +172,7 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
     },
     rules: {
       // WCAG 2.1 Level A - Critical (errors)
-      'react-a11y/img-requires-alt': 'error',
+      'react-a11y/alt-text': 'error',
       'react-a11y/anchor-has-content': 'error',
       'react-a11y/aria-props': 'error',
       'react-a11y/aria-role': 'error',
@@ -243,7 +243,7 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
     },
     rules: {
       // 1.1.1 Non-text Content
-      'react-a11y/img-requires-alt': 'error',
+      'react-a11y/alt-text': 'error',
       
       // 1.3.1 Info and Relationships
       'react-a11y/heading-has-content': 'error',
@@ -287,7 +287,7 @@ export const configs: Record<string, TSESLint.FlatConfig.Config> = {
     },
     rules: {
       // All Level A rules
-      'react-a11y/img-requires-alt': 'error',
+      'react-a11y/alt-text': 'error',
       'react-a11y/heading-has-content': 'error',
       'react-a11y/scope': 'error',
       'react-a11y/role-has-required-aria-props': 'error',

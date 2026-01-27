@@ -1,4 +1,13 @@
-# no-set-state
+---
+title: no-set-state
+description: no-set-state rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-set-state
 
 > **Keywords:** React, setState, hooks, functional components, migration, useState, ESLint rule, LLM-optimized
 

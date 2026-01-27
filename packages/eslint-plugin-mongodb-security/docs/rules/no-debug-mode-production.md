@@ -1,8 +1,10 @@
 ---
 title: no-debug-mode-production
-description: 'no-debug-mode-production'
+description: no-debug-mode-production
 category: security
+severity: medium
 tags: ['security', 'mongodb']
+autofix: false
 ---
 
 

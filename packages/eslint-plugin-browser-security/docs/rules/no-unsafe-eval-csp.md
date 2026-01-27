@@ -1,8 +1,10 @@
 ---
 title: no-unsafe-eval-csp
-description: 'no-unsafe-eval-csp'
+description: no-unsafe-eval-csp
 category: security
+severity: critical
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

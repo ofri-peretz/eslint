@@ -17,6 +17,7 @@ import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
   | 'mutableValueObject'
+  | 'mutableNestedType'
   | 'addReadonly'
   | 'useObjectFreeze'
   | 'makeImmutable';
@@ -112,6 +113,14 @@ export const dddValueObjectImmutability = createRule<RuleOptions, MessageIds>({
         severity: 'MEDIUM',
         fix: 'Make properties readonly or use Object.freeze',
         documentationLink: 'https://martinfowler.com/bliki/ValueObject.html',
+      }),
+      mutableNestedType: formatLLMMessage({
+        icon: MessageIcons.ARCHITECTURE,
+        issueName: 'Mutable nested type',
+        description: 'Value object {{className}} has mutable nested type (array/object) - use Readonly<T> or readonly arrays',
+        severity: 'MEDIUM',
+        fix: 'Use readonly arrays or Readonly<T> for nested objects',
+        documentationLink: 'https://www.typescriptlang.org/docs/handbook/utility-types.html#readonlytype',
       }),
       addReadonly: formatLLMMessage({
         icon: MessageIcons.INFO,

@@ -1,8 +1,10 @@
 ---
 title: no-select-sensitive-fields
-description: 'no-select-sensitive-fields'
+description: no-select-sensitive-fields
 category: security
+severity: medium
 tags: ['security', 'mongodb']
+autofix: false
 ---
 
 

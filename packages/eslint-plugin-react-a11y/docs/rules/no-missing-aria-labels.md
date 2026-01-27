@@ -1,4 +1,13 @@
-# no-missing-aria-labels
+---
+title: no-missing-aria-labels
+description: no-missing-aria-labels rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-missing-aria-labels
 
 > **Keywords:** no-missing-aria-labels, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

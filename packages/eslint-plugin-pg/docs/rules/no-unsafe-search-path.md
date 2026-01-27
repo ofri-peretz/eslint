@@ -1,8 +1,10 @@
 ---
 title: no-unsafe-search-path
-description: 'no-unsafe-search-path'
+description: no-unsafe-search-path
 category: security
+severity: medium
 tags: ['security', 'postgres']
+autofix: false
 ---
 
 

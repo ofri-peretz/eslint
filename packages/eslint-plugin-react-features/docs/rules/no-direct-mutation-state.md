@@ -1,4 +1,13 @@
-# no-direct-mutation-state
+---
+title: no-direct-mutation-state
+description: no-direct-mutation-state rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-direct-mutation-state
 
 > **Keywords:** React, state, mutation, setState, ESLint rule, hooks, LLM-optimized
 

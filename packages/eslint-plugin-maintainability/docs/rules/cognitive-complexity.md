@@ -1,8 +1,12 @@
 ---
 title: cognitive-complexity
-description: 'cognitive-complexity'
+description: cognitive-complexity
 category: quality
+severity: medium
 tags: ['quality', 'maintainability']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

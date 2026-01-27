@@ -1,4 +1,13 @@
-# img-redundant-alt
+---
+title: img-redundant-alt
+description: img-redundant-alt rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# img-redundant-alt
 
 > **Keywords:** img-redundant-alt, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

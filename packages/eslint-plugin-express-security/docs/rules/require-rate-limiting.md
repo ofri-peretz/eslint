@@ -1,8 +1,10 @@
 ---
 title: require-rate-limiting
-description: 'require-rate-limiting'
+description: require-rate-limiting
 category: security
+severity: medium
 tags: ['security', 'express']
+autofix: false
 ---
 
 

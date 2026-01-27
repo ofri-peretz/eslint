@@ -1,8 +1,10 @@
 ---
 title: no-sensitive-data-exposure
-description: 'no-sensitive-data-exposure'
+description: no-sensitive-data-exposure
 category: security
+severity: medium
 tags: ['security', 'core']
+autofix: false
 ---
 
 

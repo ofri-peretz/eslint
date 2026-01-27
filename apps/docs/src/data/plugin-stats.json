@@ -1,27 +1,27 @@
 {
   "plugins": [
     {
-      "name": "eslint-plugin-secure-coding",
-      "rules": 68,
-      "description": "Security-focused ESLint plugin with 89 AI-parseable rules for detecting and preventing vulnerabilities",
-      "category": "security",
-      "version": "3.0.1",
-      "published": true
-    },
-    {
       "name": "eslint-plugin-browser-security",
-      "rules": 28,
+      "rules": 52,
       "description": "Security-focused ESLint plugin for browser applications",
       "category": "security",
       "version": "1.1.1",
       "published": true
     },
     {
-      "name": "eslint-plugin-crypto",
-      "rules": 25,
-      "description": "Security-focused ESLint plugin with 24 AI-parseable rules for cryptographic best practices",
+      "name": "eslint-plugin-node-security",
+      "rules": 31,
+      "description": "Security-focused ESLint plugin for Node",
       "category": "security",
-      "version": "2.1.1",
+      "version": "1.0.0",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-secure-coding",
+      "rules": 26,
+      "description": "Security-focused ESLint plugin with 89 AI-parseable rules for detecting and preventing vulnerabilities",
+      "category": "security",
+      "version": "3.0.1",
       "published": true
     },
     {
@@ -57,11 +57,59 @@
       "published": true
     },
     {
-      "name": "eslint-plugin-node-security",
-      "rules": 11,
-      "description": "Security-focused ESLint plugin for Node",
+      "name": "eslint-plugin-crypto",
+      "rules": 10,
+      "description": "Security-focused ESLint plugin with 24 AI-parseable rules for cryptographic best practices",
+      "category": "security",
+      "version": "2.1.1",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-conventions",
+      "rules": 9,
+      "description": "ESLint rules for team-specific disciplinary patterns and code conventions",
       "category": "security",
       "version": "1.0.0",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-maintainability",
+      "rules": 8,
+      "description": "ESLint rules for reducing cognitive load and ensuring code readability",
+      "category": "security",
+      "version": "1.0.5",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-reliability",
+      "rules": 8,
+      "description": "ESLint rules for runtime stability, fault tolerance, and type safety",
+      "category": "security",
+      "version": "1.0.0",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-modularity",
+      "rules": 7,
+      "description": "ESLint rules for architecture, DDD patterns, and module isolation",
+      "category": "security",
+      "version": "0.0.1",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-operability",
+      "rules": 6,
+      "description": "ESLint rules for production behavior, resource hygiene, and log quality",
+      "category": "security",
+      "version": "1.0.0",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-modernization",
+      "rules": 5,
+      "description": "ESLint rules for modernizing JavaScript to ES2022+ syntax",
+      "category": "security",
+      "version": "0.0.1",
       "published": true
     },
     {
@@ -97,24 +145,8 @@
       "published": true
     },
     {
-      "name": "eslint-plugin-architecture",
-      "rules": 13,
-      "description": "ESLint architecture rules enforcing DDD, API boundaries, and project structure",
-      "category": "architecture",
-      "version": "1.0.5",
-      "published": false
-    },
-    {
-      "name": "eslint-plugin-quality",
-      "rules": 21,
-      "description": "ESLint quality rules for code health, error handling, and complexity management",
-      "category": "quality",
-      "version": "1.0.5",
-      "published": false
-    },
-    {
       "name": "eslint-plugin-react-features",
-      "rules": 44,
+      "rules": 52,
       "description": "ESLint React rules for modern react features, hooks, and patterns",
       "category": "react",
       "version": "1.0.5",
@@ -129,8 +161,8 @@
       "published": false
     }
   ],
-  "totalRules": 302,
-  "totalPlugins": 12,
-  "allPluginsCount": 16,
-  "generatedAt": "2026-01-23T04:56:07.700Z"
+  "totalRules": 332,
+  "totalPlugins": 18,
+  "allPluginsCount": 20,
+  "generatedAt": "2026-01-27T00:22:26.156Z"
 }

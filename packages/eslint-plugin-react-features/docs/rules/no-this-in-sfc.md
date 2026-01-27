@@ -1,4 +1,13 @@
-# no-this-in-sfc
+---
+title: no-this-in-sfc
+description: no-this-in-sfc rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-this-in-sfc
 
 > **Keywords:** React, this, stateless, functional component, hooks, SFC, ESLint rule, LLM-optimized
 

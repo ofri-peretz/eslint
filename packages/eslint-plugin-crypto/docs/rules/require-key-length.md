@@ -1,8 +1,10 @@
 ---
 title: require-key-length
-description: 'CWE: [CWE-326](https://cwe.mitre.org/data/definitions/326.html)'
+description: "CWE: [CWE-326](https://cwe.mitre.org/data/definitions/326.html)"
 category: security
+severity: medium
 tags: ['security', 'crypto']
+autofix: false
 ---
 
 > **Keywords:** require-key-length, AES-256, encryption strength, key size, security, ESLint rule, CWE-326, cryptographic bit-strength

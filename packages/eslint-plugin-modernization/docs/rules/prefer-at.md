@@ -1,8 +1,12 @@
 ---
 title: prefer-at
-description: 'prefer-at'
+description: prefer-at
 category: modernization
+severity: low
 tags: ['architecture', 'modernization']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

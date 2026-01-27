@@ -1,4 +1,13 @@
-# state-in-constructor
+---
+title: state-in-constructor
+description: state-in-constructor rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# state-in-constructor
 
 > **Keywords:** React, state, constructor, initialization, class component, ESLint rule, LLM-optimized
 

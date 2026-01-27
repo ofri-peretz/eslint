@@ -1,36 +1,34 @@
-# 🧭 ESLint Monorepo
-
 <p align="center">
   <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
 </p>
 
-> **Plugins, configs, resolvers, and tooling for ESLint-driven code quality**
+<p align="center">
+  Plugins, configs, resolvers, and tooling for ESLint-driven code quality
+</p>
 
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.9+-blue.svg" alt="TypeScript" /></a>
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-20+-green.svg" alt="Node.js" /></a>
+  <a href="https://pnpm.io/"><img src="https://img.shields.io/badge/pnpm-9.15-cc00ff.svg" alt="pnpm" /></a>
+  <a href="https://nx.dev/"><img src="https://img.shields.io/badge/Nx-22.0-143055.svg" alt="Nx" /></a>
+  <a href="https://vitest.dev/"><img src="https://img.shields.io/badge/Vitest-4.0-6E9F18.svg" alt="Vitest" /></a>
+  <a href="https://codecov.io/gh/ofri-peretz/eslint"><img src="https://codecov.io/gh/ofri-peretz/eslint/branch/main/graph/badge.svg" alt="Codecov" /></a>
+</p>
+
+<p align="center">
 This monorepo houses battle-tested ESLint plugins, sharable configs, and supporting utilities that help teams enforce architecture, security, and consistency with actionable, LLM-friendly feedback.
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
-[![pnpm](https://img.shields.io/badge/maintained%20with-pnpm-cc00ff.svg)](https://pnpm.io/)
-[![Nx](https://img.shields.io/badge/built%20with-Nx-143055.svg)](https://nx.dev/)
+</p>
 
 ---
 
 ## Philosophy
 
-**Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
+**Interlace** fosters **strength through integration**. We **interlace** security directly into your workflow, creating a resilient fabric of code. Tools should **guide rather than gatekeep**, providing educational feedback that strengthens developers.
 
----
+**Why an independent ecosystem?** 🚀 Ship fast without upstream bureaucracy • 🤖 AI-optimized messages (CWE, OWASP, fixes) • ⚡ Unified codebase for performance • 🏗️ Consistent patterns across all plugins • 📚 Educational "why" explanations • 🔧 Modern ESLint 9 flat config
 
-## 🛡️ Show your security
-
-Add this badge to your README to show you are protected:
-
-[![Security: eslint-plugin-secure-coding](https://img.shields.io/badge/Security-eslint--plugin--secure--coding-blue?style=flat-square)](https://github.com/ofri-peretz/eslint)
-
-```markdown
-[![Security: eslint-plugin-secure-coding](https://img.shields.io/badge/Security-eslint--plugin--secure--coding-blue?style=flat-square)](https://github.com/ofri-peretz/eslint)
-```
+All rules are **clean-room implementations** — familiar naming, better engineering.
 
 ---
 
@@ -54,23 +52,23 @@ Independently versioned ESLint-focused packages: plugins, configs, and supportin
 
 ### Code Quality & Architecture Plugins
 
-| Package                                                                     | Description                              |
-| --------------------------------------------------------------------------- | ---------------------------------------- |
-| [`eslint-plugin-modularity`](./packages/eslint-plugin-modularity)           | Structural integrity and DDD patterns    |
-| [`eslint-plugin-modernization`](./packages/eslint-plugin-modernization)     | ESNext migration and syntax evolution    |
-| [`eslint-plugin-maintainability`](./packages/eslint-plugin-maintainability) | Cognitive load and clean code            |
-| [`eslint-plugin-reliability`](./packages/eslint-plugin-reliability)         | Runtime stability and error safety       |
-| [`eslint-plugin-operability`](./packages/eslint-plugin-operability)         | Production readiness and resource health |
-| [`eslint-plugin-conventions`](./packages/eslint-plugin-conventions)         | Team-specific habits and styles          |
-| [`eslint-plugin-import-next`](./packages/eslint-plugin-import-next)         | High-fidelity dependency graph analysis  |
-| [`eslint-plugin-react-features`](./packages/eslint-plugin-react-features)   | React best practices and optimization    |
-| [`eslint-plugin-react-a11y`](./packages/eslint-plugin-react-a11y)           | React accessibility and WCAG compliance  |
+| Package                                                                     | Description                              | Downloads                                                                             |
+| --------------------------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------- |
+| [`eslint-plugin-modularity`](./packages/eslint-plugin-modularity)           | Structural integrity and DDD patterns    | ![npm](https://img.shields.io/npm/dm/eslint-plugin-modularity?style=flat-square)      |
+| [`eslint-plugin-modernization`](./packages/eslint-plugin-modernization)     | ESNext migration and syntax evolution    | ![npm](https://img.shields.io/npm/dm/eslint-plugin-modernization?style=flat-square)   |
+| [`eslint-plugin-maintainability`](./packages/eslint-plugin-maintainability) | Cognitive load and clean code            | ![npm](https://img.shields.io/npm/dm/eslint-plugin-maintainability?style=flat-square) |
+| [`eslint-plugin-reliability`](./packages/eslint-plugin-reliability)         | Runtime stability and error safety       | ![npm](https://img.shields.io/npm/dm/eslint-plugin-reliability?style=flat-square)     |
+| [`eslint-plugin-operability`](./packages/eslint-plugin-operability)         | Production readiness and resource health | ![npm](https://img.shields.io/npm/dm/eslint-plugin-operability?style=flat-square)     |
+| [`eslint-plugin-conventions`](./packages/eslint-plugin-conventions)         | Team-specific habits and styles          | ![npm](https://img.shields.io/npm/dm/eslint-plugin-conventions?style=flat-square)     |
+| [`eslint-plugin-import-next`](./packages/eslint-plugin-import-next)         | High-fidelity dependency graph analysis  | ![npm](https://img.shields.io/npm/dm/eslint-plugin-import-next?style=flat-square)     |
+| [`eslint-plugin-react-features`](./packages/eslint-plugin-react-features)   | React best practices and optimization    | ![npm](https://img.shields.io/npm/dm/eslint-plugin-react-features?style=flat-square)  |
+| [`eslint-plugin-react-a11y`](./packages/eslint-plugin-react-a11y)           | React accessibility and WCAG compliance  | ![npm](https://img.shields.io/npm/dm/eslint-plugin-react-a11y?style=flat-square)      |
 
 ### Supporting Tools
 
-| Package                                                | Description                               |
-| ------------------------------------------------------ | ----------------------------------------- |
-| [`@interlace/eslint-devkit`](./packages/eslint-devkit) | Build your own team-specific ESLint rules |
+| Package                                                | Description                               | Downloads                                                                        |
+| ------------------------------------------------------ | ----------------------------------------- | -------------------------------------------------------------------------------- |
+| [`@interlace/eslint-devkit`](./packages/eslint-devkit) | Build your own team-specific ESLint rules | ![npm](https://img.shields.io/npm/dm/@interlace/eslint-devkit?style=flat-square) |
 
 ---
 

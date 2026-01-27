@@ -1,8 +1,10 @@
 ---
 title: no-postmessage-innerhtml
-description: 'no-postmessage-innerhtml'
+description: no-postmessage-innerhtml
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

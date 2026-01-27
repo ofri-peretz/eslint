@@ -1,8 +1,10 @@
 ---
 title: no-missing-client-release
-description: 'no-missing-client-release'
+description: no-missing-client-release
 category: security
+severity: medium
 tags: ['security', 'postgres']
+autofix: false
 ---
 
 

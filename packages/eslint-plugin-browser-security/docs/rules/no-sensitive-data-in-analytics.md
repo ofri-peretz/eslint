@@ -1,8 +1,10 @@
 ---
 title: no-sensitive-data-in-analytics
-description: 'no-sensitive-data-in-analytics'
+description: no-sensitive-data-in-analytics
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

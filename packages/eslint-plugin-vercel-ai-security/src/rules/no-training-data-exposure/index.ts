@@ -70,7 +70,7 @@ export const noTrainingDataExposure = createRule<RuleOptions, MessageIds>({
       'train', 'training', 'finetune', 'feedback',
     ];
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+
 
     /**
      * Check if identifier suggests training

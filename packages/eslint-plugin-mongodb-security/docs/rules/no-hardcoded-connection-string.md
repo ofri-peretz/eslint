@@ -1,8 +1,10 @@
 ---
 title: no-hardcoded-connection-string
-description: 'no-hardcoded-connection-string'
+description: no-hardcoded-connection-string
 category: security
+severity: critical
 tags: ['security', 'mongodb']
+autofix: false
 ---
 
 

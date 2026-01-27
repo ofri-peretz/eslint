@@ -1,8 +1,10 @@
 ---
 title: no-directive-injection
-description: 'no-directive-injection'
+description: no-directive-injection
 category: security
+severity: critical
 tags: ['security', 'core']
+autofix: false
 ---
 
 

@@ -1,4 +1,13 @@
-# iframe-has-title
+---
+title: iframe-has-title
+description: iframe-has-title rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# iframe-has-title
 
 > **Keywords:** iframe-has-title, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

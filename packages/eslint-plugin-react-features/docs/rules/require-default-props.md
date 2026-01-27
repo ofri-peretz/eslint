@@ -1,4 +1,13 @@
-# require-default-props
+---
+title: require-default-props
+description: require-default-props rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# require-default-props
 
 > **Keywords:** React, defaultProps, optional props, type safety, component API, ESLint rule, LLM-optimized
 

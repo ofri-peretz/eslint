@@ -1,8 +1,10 @@
 ---
 title: no-hardcoded-session-tokens
-description: 'no-hardcoded-session-tokens'
+description: no-hardcoded-session-tokens
 category: security
+severity: critical
 tags: ['security', 'core']
+autofix: false
 ---
 
 

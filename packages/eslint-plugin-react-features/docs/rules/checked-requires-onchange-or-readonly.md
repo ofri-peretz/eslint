@@ -1,4 +1,13 @@
-# checked-requires-onchange-or-readonly
+---
+title: checked-requires-onchange-or-readonly
+description: checked-requires-onchange-or-readonly rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# checked-requires-onchange-or-readonly
 
 > **Keywords:** React, controlled input, checkbox, radio, onChange, readOnly, form handling, ESLint rule, LLM-optimized
 

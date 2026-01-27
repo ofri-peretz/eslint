@@ -1,8 +1,10 @@
 ---
 title: no-client-side-auth-logic
-description: 'no-client-side-auth-logic'
+description: no-client-side-auth-logic
 category: security
+severity: high
 tags: ['security', 'core']
+autofix: false
 ---
 
 

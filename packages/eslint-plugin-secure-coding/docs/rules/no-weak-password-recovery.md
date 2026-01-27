@@ -1,8 +1,10 @@
 ---
 title: no-weak-password-recovery
-description: 'no-weak-password-recovery'
+description: no-weak-password-recovery
 category: security
+severity: medium
 tags: ['security', 'core']
+autofix: false
 ---
 
 

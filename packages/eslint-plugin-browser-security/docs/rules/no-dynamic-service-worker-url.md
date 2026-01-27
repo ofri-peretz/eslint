@@ -1,8 +1,10 @@
 ---
 title: no-dynamic-service-worker-url
-description: 'no-dynamic-service-worker-url'
+description: no-dynamic-service-worker-url
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

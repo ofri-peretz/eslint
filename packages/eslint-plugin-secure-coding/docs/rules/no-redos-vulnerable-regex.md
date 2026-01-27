@@ -1,8 +1,10 @@
 ---
 title: no-redos-vulnerable-regex
-description: 'no-redos-vulnerable-regex'
+description: no-redos-vulnerable-regex
 category: security
+severity: medium
 tags: ['security', 'core']
+autofix: false
 ---
 
 

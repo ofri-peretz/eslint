@@ -1,8 +1,10 @@
 ---
 title: no-unlimited-resource-allocation
-description: 'no-unlimited-resource-allocation'
+description: no-unlimited-resource-allocation
 category: security
+severity: medium
 tags: ['security', 'core']
+autofix: false
 ---
 
 

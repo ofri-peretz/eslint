@@ -1,8 +1,10 @@
 ---
 title: no-insecure-ssl
-description: 'no-insecure-ssl'
+description: no-insecure-ssl
 category: security
+severity: medium
 tags: ['security', 'postgres']
+autofix: false
 ---
 
 

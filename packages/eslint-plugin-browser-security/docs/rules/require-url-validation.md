@@ -1,8 +1,10 @@
 ---
 title: require-url-validation
-description: 'CWE: [CWE-601](https://cwe.mitre.org/data/definitions/601.html)'
+description: "CWE: [CWE-601](https://cwe.mitre.org/data/definitions/601.html)"
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 > **Keywords:** require url validation, open redirect, security, ESLint rule, [CWE-601](https://cwe.mitre.org/data/definitions/601.html), window.location, phishing

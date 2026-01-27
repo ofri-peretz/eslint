@@ -1,4 +1,13 @@
-# static-property-placement
+---
+title: static-property-placement
+description: static-property-placement rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# static-property-placement
 
 > **Keywords:** React, static properties, propTypes, defaultProps, organization, ESLint rule, LLM-optimized
 

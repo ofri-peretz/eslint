@@ -1,8 +1,10 @@
 ---
 title: require-audience-validation
-description: 'require-audience-validation'
+description: require-audience-validation
 category: security
+severity: medium
 tags: ['security', 'jwt']
+autofix: false
 ---
 
 

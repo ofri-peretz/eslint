@@ -1,8 +1,10 @@
 ---
 title: no-data-in-temp-storage
-description: 'no-data-in-temp-storage'
+description: no-data-in-temp-storage
 category: security
+severity: medium
 tags: ['security', 'node']
+autofix: false
 ---
 
 

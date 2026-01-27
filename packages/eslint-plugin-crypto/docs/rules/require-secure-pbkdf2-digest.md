@@ -1,8 +1,10 @@
 ---
 title: require-secure-pbkdf2-digest
-description: 'CWE: [CWE-328](https://cwe.mitre.org/data/definitions/328.html)'
+description: "CWE: [CWE-328](https://cwe.mitre.org/data/definitions/328.html)"
 category: security
+severity: medium
 tags: ['security', 'crypto']
+autofix: false
 ---
 
 > **Keywords:** require-secure-pbkdf2-digest, PBKDF2, hashing, SHA1, weak algorithm, security, ESLint rule, CWE-328, password storage

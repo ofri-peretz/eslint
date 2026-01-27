@@ -1,8 +1,12 @@
 ---
 title: ddd-value-object-immutability
-description: 'ddd-value-object-immutability'
+description: ddd-value-object-immutability
 category: modularity
+severity: low
 tags: ['architecture', 'modularity']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

@@ -1,8 +1,10 @@
 ---
 title: no-secrets-in-env
-description: 'no-secrets-in-env'
+description: no-secrets-in-env
 category: security
+severity: medium
 tags: ['security', 'lambda']
+autofix: false
 ---
 
 

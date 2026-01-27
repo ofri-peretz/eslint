@@ -1,8 +1,10 @@
 ---
 title: no-zip-slip
-description: 'no-zip-slip'
+description: no-zip-slip
 category: security
+severity: medium
 tags: ['security', 'node']
+autofix: false
 ---
 
 

@@ -1,8 +1,10 @@
 ---
 title: detect-eval-with-expression
-description: 'detect-eval-with-expression'
+description: detect-eval-with-expression
 category: security
+severity: critical
 tags: ['security', 'node']
+autofix: false
 ---
 
 

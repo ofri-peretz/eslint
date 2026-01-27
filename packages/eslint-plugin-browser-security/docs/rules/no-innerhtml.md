@@ -1,8 +1,10 @@
 ---
 title: no-innerhtml
-description: 'no-innerhtml'
+description: no-innerhtml
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

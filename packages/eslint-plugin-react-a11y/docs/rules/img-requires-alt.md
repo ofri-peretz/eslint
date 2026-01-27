@@ -1,4 +1,13 @@
-# img-requires-alt
+---
+title: img-requires-alt
+description: img-requires-alt rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# img-requires-alt
 
 > **Keywords:** img-requires-alt, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

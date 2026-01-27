@@ -1,8 +1,10 @@
 ---
 title: no-unvalidated-deeplinks
-description: 'no-unvalidated-deeplinks'
+description: no-unvalidated-deeplinks
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

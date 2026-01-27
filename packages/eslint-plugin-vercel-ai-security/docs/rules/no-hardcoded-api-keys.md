@@ -1,8 +1,10 @@
 ---
 title: no-hardcoded-api-keys
-description: 'no-hardcoded-api-keys'
+description: no-hardcoded-api-keys
 category: security
+severity: critical
 tags: ['security', 'ai']
+autofix: false
 ---
 
 

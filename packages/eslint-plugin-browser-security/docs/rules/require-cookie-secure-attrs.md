@@ -1,8 +1,10 @@
 ---
 title: require-cookie-secure-attrs
-description: 'require-cookie-secure-attrs'
+description: require-cookie-secure-attrs
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

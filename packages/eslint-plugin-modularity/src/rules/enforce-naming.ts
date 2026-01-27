@@ -140,12 +140,28 @@ domain = 'general', terms = []
     };
 
     /**
+     * Preserve case when replacing term
+     * e.g., User -> Customer, user -> customer, USER -> CUSTOMER
+     */
+    const preserveCase = (original: string, replacement: string): string => {
+      if (original === original.toUpperCase()) {
+        return replacement.toUpperCase();
+      }
+      if (original[0] === original[0].toUpperCase()) {
+        return replacement.charAt(0).toUpperCase() + replacement.slice(1);
+      }
+      return replacement.toLowerCase();
+    };
+
+    /**
      * Generate replacement suggestion
      */
     const generateReplacement = (name: string, term: DomainTerm): string => {
       if (typeof term.incorrect === 'string') {
-        // Simple string replacement
-        return name.replace(new RegExp(term.incorrect, 'gi'), term.correct);
+        // Case-preserving replacement
+        return name.replace(new RegExp(`(${term.incorrect})`, 'gi'), (match) => {
+          return preserveCase(match, term.correct);
+        });
       }
       // For regex, just suggest the correct term
       return term.correct;

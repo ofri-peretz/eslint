@@ -1,8 +1,12 @@
 ---
 title: enforce-rest-conventions
-description: 'enforce-rest-conventions'
+description: enforce-rest-conventions
 category: modularity
+severity: low
 tags: ['architecture', 'modularity']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
 ---
 
 

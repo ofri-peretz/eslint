@@ -1,4 +1,13 @@
-# no-did-update-set-state
+---
+title: no-did-update-set-state
+description: no-did-update-set-state rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-did-update-set-state
 
 > **Keywords:** React, componentDidUpdate, setState, infinite loop, lifecycle, ESLint rule, LLM-optimized
 

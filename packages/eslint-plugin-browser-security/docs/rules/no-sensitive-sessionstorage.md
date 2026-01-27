@@ -1,8 +1,10 @@
 ---
 title: no-sensitive-sessionstorage
-description: 'no-sensitive-sessionstorage'
+description: no-sensitive-sessionstorage
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

@@ -1,8 +1,10 @@
 ---
 title: no-sensitive-localstorage
-description: 'no-sensitive-localstorage'
+description: no-sensitive-localstorage
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

@@ -1,4 +1,13 @@
-# aria-activedescendant-has-tabindex
+---
+title: aria-activedescendant-has-tabindex
+description: aria-activedescendant-has-tabindex rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# aria-activedescendant-has-tabindex
 
 > **Keywords:** aria-activedescendant-has-tabindex, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

@@ -1,8 +1,10 @@
 ---
 title: no-clickjacking
-description: 'no-clickjacking'
+description: no-clickjacking
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

@@ -1,4 +1,13 @@
-# html-has-lang
+---
+title: html-has-lang
+description: html-has-lang rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# html-has-lang
 
 > **Keywords:** html-has-lang, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

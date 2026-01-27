@@ -1,4 +1,13 @@
-# no-aria-hidden-on-focusable
+---
+title: no-aria-hidden-on-focusable
+description: no-aria-hidden-on-focusable rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-aria-hidden-on-focusable
 
 > **Keywords:** no-aria-hidden-on-focusable, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

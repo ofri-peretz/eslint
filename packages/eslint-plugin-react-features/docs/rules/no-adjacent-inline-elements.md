@@ -1,4 +1,13 @@
-# no-adjacent-inline-elements
+---
+title: no-adjacent-inline-elements
+description: no-adjacent-inline-elements rule
+category: quality
+severity: low
+tags: ['quality', 'react']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-adjacent-inline-elements
 
 > **Keywords:** React, JSX, inline elements, layout, accessibility, spacing, ESLint rule, LLM-optimized
 

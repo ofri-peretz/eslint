@@ -1,192 +1,173 @@
 ---
 title: no-env-logging
-description: 'no-env-logging'
+description: Detect logging of process.env which may expose secrets
 category: security
-tags: ['security', 'lambda']
+severity: high
+tags: ['security', 'logging', 'cwe-532', 'lambda', 'aws']
+autofix: false
+cwe: CWE-532
+owasp: A09:2021-Security-Logging-and-Monitoring-Failures
 ---
 
+> **Keywords:** logging, process.env, secrets, CloudWatch, CWE-532, Lambda, serverless
+> **CWE:** [CWE-532](https://cwe.mitre.org/data/definitions/532.html)  
+> **OWASP:** [A09:2021-Security Logging and Monitoring Failures](https://owasp.org/Top10/A09_2021-Security_Logging_and_Monitoring_Failures/)
 
-> **Keywords:** environment variables, logging, Lambda, CWE-532, security, sensitive data exposure
-**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
-**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
+Detects logging of `process.env` which may expose API keys, passwords, and tokens in CloudWatch logs. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) and provides LLM-optimized error messages.
 
-Detects logging of environment variables which may contain secrets. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security).
-
-⚠️ This rule **_warns_** by default in the `recommended` config.
+**🚨 Security rule** | **💡 Provides suggestions** | **⚠️ Set to error in `recommended`**
 
 ## Quick Summary
 
-| Aspect            | Details                                             |
-| ----------------- | --------------------------------------------------- |
-| **CWE Reference** | CWE-532 (Insertion of Sensitive Info into Log File) |
-| **Severity**      | 🟡 Warning                                          |
-| **Auto-Fix**      | ❌ No (requires manual review)                      |
-| **Category**   | Security |
-| **Best For**      | Lambda handlers, debugging code                     |
+| Aspect            | Details                                                                   |
+| ----------------- | ------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-532](https://cwe.mitre.org/data/definitions/532.html) (Info in Logs) |
+| **Severity**      | High (secret exposure)                                                    |
+| **Auto-Fix**      | 💡 Suggests specific variable logging                                     |
+| **Category**      | Security                                                                  |
+| **Best For**      | Lambda functions with any logging                                         |
 
 ## Vulnerability and Risk
 
-**Vulnerability:** Logging `process.env` or specific environment variables can expose secrets to CloudWatch Logs, which may be accessible to more users than intended.
+**Vulnerability:** Logging `process.env` or `JSON.stringify(process.env)` exposes all environment variables, including secrets like API keys, database passwords, and authentication tokens.
 
-**Risk:** Secrets in logs can be harvested by:
+**Risk:** CloudWatch logs may be:
 
-- Attackers with CloudWatch access
-- Log aggregation tools
-- Developers debugging in production
+- Accessed by developers with broad permissions
+- Exported to third-party logging services
+- Included in error reports and support tickets
+- Retained long-term, increasing exposure window
 
-## Examples
+## Rule Details
 
-### ❌ Incorrect
+This rule detects:
 
-```javascript
-// Logging all environment variables - VULNERABLE
-console.log(process.env);
-console.log('Environment:', JSON.stringify(process.env));
+- `console.log(process.env)` - logging entire env object
+- `JSON.stringify(process.env)` - serializing all env vars
+- Template literals containing `process.env`
 
-// Logging specific secrets - VULNERABLE
-console.log('API Key:', process.env.API_KEY);
-console.log(`Database password: ${process.env.DB_PASSWORD}`);
+## Why This Matters
 
-// Debug logging that leaks secrets
-logger.debug({ env: process.env });
-```
+| Risk                   | Impact                            | Solution                       |
+| ---------------------- | --------------------------------- | ------------------------------ |
+| 🔑 **Secret Exposure** | API keys, passwords leaked        | Log specific non-secret values |
+| 📊 **Log Aggregation** | Secrets sent to external services | Filter sensitive data          |
+| 👥 **Access Control**  | Developers see production secrets | Use secrets manager instead    |
 
-### ✅ Correct
-
-```javascript
-// Log only non-sensitive info - SAFE
-console.log('Function started');
-console.log('Region:', process.env.AWS_REGION);
-console.log('Stage:', process.env.STAGE);
-
-// Filter out sensitive keys - SAFE
-const safeEnv = {
-  AWS_REGION: process.env.AWS_REGION,
-  NODE_ENV: process.env.NODE_ENV,
-  LOG_LEVEL: process.env.LOG_LEVEL,
-};
-console.log('Config:', JSON.stringify(safeEnv));
-
-// Use structured logging without secrets
-logger.info({
-  message: 'Processing request',
-  requestId: event.requestContext?.requestId,
-});
-```
-
-## Options
+## Configuration
 
 | Option         | Type      | Default | Description         |
 | -------------- | --------- | ------- | ------------------- |
 | `allowInTests` | `boolean` | `true`  | Allow in test files |
 
-```json
+```javascript
 {
-  "rules": {
-    "lambda-security/no-env-logging": "warn"
+  rules: {
+    'lambda-security/no-env-logging': ['error', {
+      allowInTests: true
+    }]
   }
 }
 ```
 
-## Best Practices
+## Examples
 
-### 1. Define Safe Variables to Log
+### ❌ Incorrect
 
-```javascript
-const SAFE_ENV_VARS = ['AWS_REGION', 'NODE_ENV', 'STAGE', 'LOG_LEVEL'];
+```typescript
+export const handler = async (event) => {
+  // Logging entire env object
+  console.log('Environment:', process.env); // ❌ Exposes all secrets
 
-function getSafeEnv() {
-  return Object.fromEntries(
-    SAFE_ENV_VARS.map((key) => [key, process.env[key]]),
+  console.log('Config:', JSON.stringify(process.env)); // ❌ Same issue
+
+  console.log(`Starting with env: ${process.env}`); // ❌ Template literal
+
+  // Debugging that exposes secrets
+  logger.debug({ env: process.env }); // ❌ Structured log with secrets
+};
+```
+
+### ✅ Correct
+
+```typescript
+export const handler = async (event, context) => {
+  // Log only specific, non-sensitive values
+  console.log('Starting handler', {
+    region: process.env.AWS_REGION, // ✅ Non-sensitive
+    version: process.env.APP_VERSION, // ✅ Non-sensitive
+    requestId: context.awsRequestId, // ✅ Non-sensitive
+  });
+
+  // Never log these:
+  // process.env.DATABASE_PASSWORD
+  // process.env.API_KEY
+  // process.env.JWT_SECRET
+  // process.env.ENCRYPTION_KEY
+};
+
+// Better: Use AWS Secrets Manager
+import {
+  SecretsManagerClient,
+  GetSecretValueCommand,
+} from '@aws-sdk/client-secrets-manager';
+
+const client = new SecretsManagerClient({});
+
+async function getSecret(secretName: string) {
+  const response = await client.send(
+    new GetSecretValueCommand({ SecretId: secretName }),
   );
+  return JSON.parse(response.SecretString!);
 }
+
+export const handler = async (event) => {
+  const secrets = await getSecret('my-app/prod');
+  // Secrets are never in env vars, can't be accidentally logged
+};
 ```
 
-### 2. Use Log Levels
+## Common Sensitive Environment Variables
 
-```javascript
-// Only log environment in development
-if (process.env.NODE_ENV === 'development') {
-  console.log('Config:', getSafeEnv());
-}
+| Variable Pattern        | Contains                   | Risk Level |
+| ----------------------- | -------------------------- | ---------- |
+| `*_PASSWORD`            | Database passwords         | Critical   |
+| `*_SECRET`              | Encryption/signing secrets | Critical   |
+| `*_KEY`                 | API keys                   | Critical   |
+| `*_TOKEN`               | Auth tokens                | Critical   |
+| `DATABASE_URL`          | Connection strings         | Critical   |
+| `JWT_SECRET`            | JWT signing key            | Critical   |
+| `AWS_ACCESS_KEY_ID`     | AWS credentials            | Critical   |
+| `AWS_SECRET_ACCESS_KEY` | AWS credentials            | Critical   |
+
+## Safe Logging Pattern
+
+```typescript
+// Create a safe subset for logging
+const safeEnvForLogging = {
+  NODE_ENV: process.env.NODE_ENV,
+  AWS_REGION: process.env.AWS_REGION,
+  LOG_LEVEL: process.env.LOG_LEVEL,
+  APP_VERSION: process.env.APP_VERSION,
+};
+
+console.log('Environment config:', safeEnvForLogging); // ✅ Safe
 ```
+
+## Security Impact
+
+| Vulnerability          | CWE | OWASP    | CVSS       | Impact              |
+| ---------------------- | --- | -------- | ---------- | ------------------- |
+| Sensitive Data in Logs | 532 | A09:2021 | 7.5 High   | Credential exposure |
+| Info Disclosure        | 200 | A01:2021 | 5.3 Medium | Configuration leak  |
 
 ## Related Rules
 
-- [`no-secrets-in-env`](./no-secrets-in-env.md) - Secrets in environment definitions
-- [`no-hardcoded-credentials-sdk`](./no-hardcoded-credentials-sdk.md) - Hardcoded credentials
+- [`no-exposed-error-details`](./no-exposed-error-details.md) - Don't expose error details
+- [`no-hardcoded-credentials-sdk`](./no-hardcoded-credentials-sdk.md) - No hardcoded secrets
 
-## Known False Negatives
+## Further Reading
 
-The following patterns are **not detected** due to static analysis limitations:
-
-### Indirect process.env Access
-
-**Why**: Environment accessed through variables is not tracked.
-
-```typescript
-// ❌ NOT DETECTED - Indirect access
-const env = process.env;
-console.log(env); // Logs all env vars
-```
-
-**Mitigation**: Avoid storing process.env in variables.
-
-### Custom Logger Methods
-
-**Why**: Non-standard logger methods may not be recognized.
-
-```typescript
-// ❌ NOT DETECTED - Custom logger
-customLogger.trace({ env: process.env });
-```
-
-**Mitigation**: Configure rule for custom logger method names.
-
-### Spread into Log Object
-
-**Why**: Spread operator hides the source.
-
-```typescript
-// ❌ NOT DETECTED - Spread env vars
-console.log({ ...process.env, timestamp: Date.now() });
-```
-
-**Mitigation**: Never spread process.env into objects.
-
-### Serialization Before Logging
-
-**Why**: Pre-serialized data is not traced.
-
-```typescript
-// ❌ NOT DETECTED - Serialized before log
-const data = JSON.stringify(process.env);
-// Later...
-console.log(data); // Logs all secrets!
-```
-
-**Mitigation**: Never serialize full process.env.
-
-## Resources
-
-- [CWE-532: Insertion of Sensitive Information into Log File](https://cwe.mitre.org/data/definitions/532.html)
-- [AWS Lambda Logging Best Practices](https://docs.aws.amazon.com/lambda/latest/dg/monitoring-cloudwatchlogs.html)
-
-## Error Message Format
-
-The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
-
-```text
-⚠️ CWE-532 OWASP:A09 CVSS:5.3 | Log Information Exposure detected | MEDIUM [GDPR,HIPAA,PCI-DSS,SOC2]
-   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A09_2021/
-```
-
-### Message Components
-
-| Component | Purpose | Example |
-| :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-532](https://cwe.mitre.org/data/definitions/532.html) [OWASP:A09](https://owasp.org/Top10/A09_2021-Injection/) [CVSS:5.3](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
-| **Issue Description** | Specific vulnerability | `Log Information Exposure detected` |
-| **Severity & Compliance** | Impact assessment | `MEDIUM [GDPR,HIPAA,PCI-DSS,SOC2]` |
-| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
-| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A09_2021-Injection/) |
+- **[CWE-532: Sensitive Info in Logs](https://cwe.mitre.org/data/definitions/532.html)** - Official CWE entry
+- **[AWS Secrets Manager](https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html)** - Secure secret storage
+- **[Lambda Environment Variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html)** - AWS documentation

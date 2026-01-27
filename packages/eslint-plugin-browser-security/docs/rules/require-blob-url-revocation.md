@@ -1,8 +1,10 @@
 ---
 title: require-blob-url-revocation
-description: 'require-blob-url-revocation'
+description: require-blob-url-revocation
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

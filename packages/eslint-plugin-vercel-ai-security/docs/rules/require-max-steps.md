@@ -1,8 +1,10 @@
 ---
 title: require-max-steps
-description: 'require-max-steps'
+description: require-max-steps
 category: security
+severity: medium
 tags: ['security', 'ai']
+autofix: false
 ---
 
 

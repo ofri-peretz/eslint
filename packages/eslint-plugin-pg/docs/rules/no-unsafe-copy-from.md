@@ -1,8 +1,10 @@
 ---
 title: no-unsafe-copy-from
-description: 'no-unsafe-copy-from'
+description: no-unsafe-copy-from
 category: security
+severity: medium
 tags: ['security', 'postgres']
+autofix: false
 ---
 
 

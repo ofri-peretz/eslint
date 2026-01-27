@@ -1,8 +1,10 @@
 ---
 title: no-missing-cors-check
-description: 'no-missing-cors-check'
+description: no-missing-cors-check
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

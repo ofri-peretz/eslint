@@ -1,8 +1,10 @@
 ---
 title: require-postmessage-origin-check
-description: 'require-postmessage-origin-check'
+description: require-postmessage-origin-check
 category: security
+severity: medium
 tags: ['security', 'browser']
+autofix: false
 ---
 
 

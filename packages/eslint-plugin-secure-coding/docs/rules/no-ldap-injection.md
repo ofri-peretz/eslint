@@ -1,8 +1,10 @@
 ---
 title: no-ldap-injection
-description: 'no-ldap-injection'
+description: no-ldap-injection
 category: security
+severity: critical
 tags: ['security', 'core']
+autofix: false
 ---
 
 

@@ -1,8 +1,10 @@
 ---
 title: require-tool-confirmation
-description: 'require-tool-confirmation'
+description: require-tool-confirmation
 category: security
+severity: medium
 tags: ['security', 'ai']
+autofix: false
 ---
 
 

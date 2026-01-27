@@ -1,4 +1,13 @@
-# no-distracting-elements
+---
+title: no-distracting-elements
+description: no-distracting-elements rule
+category: quality
+severity: low
+tags: ['quality', 'react', 'accessibility', 'a11y']
+autofix: suggestions
+affects: ['readability', 'maintainability']
+effort: low
+---# no-distracting-elements
 
 > **Keywords:** no-distracting-elements, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

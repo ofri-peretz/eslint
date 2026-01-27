@@ -1,8 +1,10 @@
 ---
 title: no-hardcoded-crypto-key
-description: 'CWE: [CWE-321](https://cwe.mitre.org/data/definitions/321.html)'
+description: "CWE: [CWE-321](https://cwe.mitre.org/data/definitions/321.html)"
 category: security
+severity: critical
 tags: ['security', 'crypto']
+autofix: false
 ---
 
 > **Keywords:** no-hardcoded-crypto-key, secrets management, KMS, environment variables, security, ESLint rule, CWE-321, key disclosure
