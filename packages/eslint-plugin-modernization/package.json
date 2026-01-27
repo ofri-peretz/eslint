@@ -1,19 +1,51 @@
 {
   "name": "eslint-plugin-modernization",
-  "version": "0.0.1",
-  "description": "ESLint rules for modernizing JavaScript to ES2022+ syntax.",
+  "version": "1.0.0",
+  "description": "ESLint rules for modernizing JavaScript to ES2022+ syntax with AI-parseable guidance.",
   "type": "commonjs",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modernization/README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "directory": "packages/eslint-plugin-modernization"
+  },
+  "bugs": {
+    "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
   "keywords": [
     "eslint",
     "eslint-plugin",
+    "eslintplugin",
     "interlace-quality",
     "modernization",
     "es2022",
     "modern-javascript",
-    "llm-optimized"
+    "llm-optimized",
+    "ai-assistant",
+    "typescript"
   ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "tslib": "^2.3.0",
     "@interlace/eslint-devkit": "workspace:*"
