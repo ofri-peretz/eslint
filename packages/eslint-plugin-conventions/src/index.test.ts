@@ -1,14 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import plugin, { configs } from './index';
+import plugin, { rules, configs } from './index';
 
 describe('eslint-plugin-conventions plugin interface', () => {
   it('should export correct meta information', () => {
     expect(plugin.meta).toBeDefined();
     expect(plugin.meta?.name).toBe('@interlace/eslint-plugin-conventions');
     expect(plugin.meta?.version).toBeDefined();
+    expect(typeof plugin.meta?.version).toBe('string');
   });
 
-  it('should export all conventions rules', () => {
+  it('should export all conventions rules (both flat and categorized)', () => {
     expect(plugin.rules).toBeDefined();
     const ruleKeys = Object.keys(plugin.rules || {});
     
@@ -34,13 +35,38 @@ describe('eslint-plugin-conventions plugin interface', () => {
     expect(ruleKeys).toContain('conventions/filename-case');
     expect(ruleKeys).toContain('conventions/consistent-existence-index-check');
 
-    expect(ruleKeys.length).toBe(18);
+    expect(ruleKeys.length).toBe(18); // 9 flat + 9 categorized
+  });
+
+  it('should export rules matching plugin.rules', () => {
+    expect(rules).toBeDefined();
+    expect(Object.keys(rules).length).toBeGreaterThan(0);
+    // rules export should contain flat names only
+    expect(Object.keys(rules)).toContain('no-commented-code');
   });
 
   describe('configurations', () => {
     it('should provide recommended configuration', () => {
       expect(configs['recommended']).toBeDefined();
       expect(configs['recommended'].plugins?.['@interlace/conventions']).toBeDefined();
+      
+      const recommendedRules = configs['recommended'].rules || {};
+      Object.keys(recommendedRules).forEach(ruleName => {
+        expect(ruleName).toMatch(/^@interlace\/conventions\//);
+      });
+      
+      // Verify at least one rule is configured
+      expect(Object.keys(recommendedRules).length).toBeGreaterThan(0);
+    });
+
+    it('should have all recommended rules reference existing rules', () => {
+      const recommendedRules = Object.keys(configs['recommended'].rules || {});
+      const pluginRules = Object.keys(plugin.rules || {});
+      
+      recommendedRules.forEach(ruleName => {
+        const shortName = ruleName.replace('@interlace/conventions/', '');
+        expect(pluginRules).toContain(shortName);
+      });
     });
   });
 });

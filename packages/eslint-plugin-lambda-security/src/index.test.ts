@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import plugin, { configs } from './index';
+import plugin, { rules, configs } from './index';
 
 describe('eslint-plugin-lambda-security plugin interface', () => {
   it('should export correct meta information', () => {
     expect(plugin.meta).toBeDefined();
     expect(plugin.meta?.name).toBe('eslint-plugin-lambda-security');
     expect(plugin.meta?.version).toBeDefined();
+    expect(typeof plugin.meta?.version).toBe('string');
   });
 
   it('should export all lambda-security rules', () => {
@@ -30,6 +31,13 @@ describe('eslint-plugin-lambda-security plugin interface', () => {
     expect(ruleKeys.length).toBe(14);
   });
 
+  it('should export rules matching plugin.rules', () => {
+    expect(rules).toBeDefined();
+    expect(Object.keys(rules).length).toBe(14);
+    expect(Object.keys(rules)).toContain('no-hardcoded-credentials-sdk');
+    expect(Object.keys(rules)).toContain('no-env-logging');
+  });
+
   describe('configurations', () => {
     it('should provide recommended configuration', () => {
       expect(configs.recommended).toBeDefined();
@@ -41,6 +49,9 @@ describe('eslint-plugin-lambda-security plugin interface', () => {
       });
       
       expect(recommendedRules['lambda-security/no-hardcoded-credentials-sdk']).toBe('error');
+      
+      // Verify recommended rules are configured
+      expect(Object.keys(recommendedRules).length).toBeGreaterThan(0);
     });
 
     it('should provide strict configuration', () => {
@@ -53,6 +64,19 @@ describe('eslint-plugin-lambda-security plugin interface', () => {
       });
       
       expect(strictRules['lambda-security/no-hardcoded-credentials-sdk']).toBe('error');
+      
+      // Strict should include all rules
+      expect(Object.keys(strictRules).length).toBe(Object.keys(rules).length);
+    });
+
+    it('should have all strict rules reference existing rules', () => {
+      const strictRules = Object.keys(configs.strict.rules || {});
+      const pluginRules = Object.keys(plugin.rules || {});
+      
+      strictRules.forEach(ruleName => {
+        const shortName = ruleName.replace('lambda-security/', '');
+        expect(pluginRules).toContain(shortName);
+      });
     });
   });
 });
