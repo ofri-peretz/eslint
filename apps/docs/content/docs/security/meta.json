@@ -6,13 +6,17 @@
     "defaultOpen": true,
     "pages": [
         "index",
-        "browser-security",
-        "crypto",
-        "jwt",
         "plugin-secure-coding",
-        "graphql-security",
-        "api-security",
-        "mongodb-security",
-        "secrets"
+        "plugin-browser-security",
+        "plugin-node-security",
+        "plugin-jwt",
+        "plugin-express-security",
+        "plugin-nestjs-security",
+        "plugin-lambda-security",
+        "plugin-mongodb-security",
+        "plugin-pg",
+        "plugin-vercel-ai-security",
+        "plugin-react-a11y",
+        "plugin-react-features"
     ]
 }
