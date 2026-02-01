@@ -1,6 +1,6 @@
 ---
 title: no-deprecated
-description: Warn about using deprecated React APIs. This rule is part of @interlace/eslint-plugin-react-features and provides LLM-optimized error messages.
+description: Warn about using deprecated React APIs. This rule is part of eslint-plugin-react-features and provides LLM-optimized error messages.
 category: quality
 severity: low
 tags: ['quality', 'react']
@@ -11,7 +11,7 @@ effort: low
 
 > **Keywords:** React, deprecated, API, migration, ESLint rule, code quality, LLM-optimized
 
-Warn about using deprecated React APIs. This rule is part of [`@interlace/eslint-plugin-react-features`](https://www.npmjs.com/package/@interlace/eslint-plugin-react-features) and provides LLM-optimized error messages.
+Warn about using deprecated React APIs. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and provides LLM-optimized error messages.
 
 ## Quick Summary
 

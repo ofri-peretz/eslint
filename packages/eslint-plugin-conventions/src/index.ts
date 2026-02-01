@@ -42,7 +42,7 @@ export const rules = {
 
 export const plugin = {
   meta: {
-    name: '@interlace/eslint-plugin-conventions',
+    name: 'eslint-plugin-conventions',
     version: '1.0.0',
   },
   rules,

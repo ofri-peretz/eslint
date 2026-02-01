@@ -1,0 +1,45 @@
+---
+title: Configuration
+description: Configure ESLint Interlace plugins for your project
+icon: Settings
+---
+
+## Basic Configuration
+
+Create or update your `eslint.config.js` (ESLint 9.x flat config):
+
+```js title="eslint.config.js"
+import interlace from 'eslint-config-interlace';
+
+export default [...interlace.configs.recommended];
+```
+
+## Custom Configuration
+
+Customize rules based on your project needs:
+
+```js title="eslint.config.js"
+import browserSecurity from 'eslint-plugin-browser-security';
+import crypto from 'eslint-plugin-crypto';
+
+export default [
+  browserSecurity.configs.recommended,
+  crypto.configs.recommended,
+  {
+    rules: {
+      // Customize specific rules
+      'browser-security/no-insecure-url': 'error',
+      'crypto/no-weak-algorithms': 'warn',
+    },
+  },
+];
+```
+
+<Cards>
+  <Card title="Flat Config Migration" href="/docs/flat-config">
+    Migrate from .eslintrc to flat config
+  </Card>
+  <Card title="Editor Integration" href="/docs/editor-integration">
+    Set up VS Code and other editors
+  </Card>
+</Cards>

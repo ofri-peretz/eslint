@@ -1,6 +1,6 @@
 ---
 title: jsx-no-target-blank
-description: "Require rel='noopener noreferrer' with target='_blank'. This rule is part of @interlace/eslint-plugin-react-features and provides LLM-optimized error messages."
+description: "Require rel='noopener noreferrer' with target='_blank'. This rule is part of eslint-plugin-react-features and provides LLM-optimized error messages."
 category: quality
 severity: low
 tags: ['quality', 'react']
@@ -11,7 +11,7 @@ effort: low
 
 > **Keywords:** React, JSX, target blank, noopener, security, ESLint rule, LLM-optimized
 
-Require rel="noopener noreferrer" with target="\_blank". This rule is part of [`@interlace/eslint-plugin-react-features`](https://www.npmjs.com/package/@interlace/eslint-plugin-react-features) and provides LLM-optimized error messages.
+Require rel="noopener noreferrer" with target="\_blank". This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and provides LLM-optimized error messages.
 
 ## Quick Summary
 

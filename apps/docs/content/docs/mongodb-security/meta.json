@@ -1,8 +1,0 @@
-{
-  "title": "mongodb-security",
-  "pages": [
-    "README",
-    "changelog",
-    "rules"
-  ]
-}

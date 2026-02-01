@@ -1,0 +1,18 @@
+{
+    "title": "Quality & Architecture",
+    "description": "Code quality and maintainability",
+    "icon": "Layers",
+    "root": true,
+    "defaultOpen": true,
+    "pages": [
+        "index",
+        "react-best-practices",
+        "react-hooks",
+        "react-performance",
+        "documentation",
+        "naming-conventions",
+        "coding-conventions",
+        "errors",
+        "module-federation"
+    ]
+}

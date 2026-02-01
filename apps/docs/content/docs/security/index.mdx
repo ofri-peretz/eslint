@@ -1,0 +1,70 @@
+---
+title: Security Plugins
+description: Security-focused ESLint plugins for protecting your applications
+icon: Shield
+---
+
+import {
+  Globe,
+  Lock,
+  Key,
+  Code,
+  Database,
+  Webhook,
+  EyeOff,
+} from 'lucide-react';
+
+ESLint Interlace provides comprehensive security coverage across multiple domains.
+
+## Plugin Categories
+
+<Cards>
+  <Card
+    title="Browser Security"
+    href="/docs/security/browser-security"
+    icon={<Globe />}
+  >
+    12 rules for XSS, cookie, and DOM security
+  </Card>
+  <Card title="Cryptography" href="/docs/security/crypto" icon={<Lock />}>
+    Secure cryptographic implementations
+  </Card>
+  <Card title="JWT" href="/docs/security/jwt" icon={<Key />}>
+    JSON Web Token security patterns
+  </Card>
+  <Card
+    title="Secure Coding"
+    href="/docs/security/secure-coding"
+    icon={<Code />}
+  >
+    General secure coding practices
+  </Card>
+  <Card
+    title="GraphQL Security"
+    href="/docs/security/graphql-security"
+    icon={<Database />}
+  >
+    GraphQL query protection
+  </Card>
+  <Card
+    title="API Security"
+    href="/docs/security/api-security"
+    icon={<Webhook />}
+  >
+    REST API security patterns
+  </Card>
+  <Card
+    title="MongoDB Security"
+    href="/docs/security/mongodb-security"
+    icon={<Database />}
+  >
+    NoSQL injection prevention
+  </Card>
+  <Card
+    title="Secrets Detection"
+    href="/docs/security/secrets"
+    icon={<EyeOff />}
+  >
+    Prevent hardcoded credentials
+  </Card>
+</Cards>

@@ -1,6 +1,6 @@
 ---
 title: require-network-timeout
-description: Require timeout configuration for network requests. This rule is part of @interlace/eslint-plugin-reliability and provides LLM-optimized error messages.
+description: Require timeout configuration for network requests. This rule is part of eslint-plugin-reliability and provides LLM-optimized error messages.
 category: quality
 severity: low
 tags: ['quality', 'reliability']
@@ -11,7 +11,7 @@ effort: low
 
 > **Keywords:** network, timeout, fetch, http, ESLint rule, reliability, performance, LLM-optimized
 
-Require timeout configuration for network requests. This rule is part of [`@interlace/eslint-plugin-reliability`](https://www.npmjs.com/package/@interlace/eslint-plugin-reliability) and provides LLM-optimized error messages with suggestions.
+Require timeout configuration for network requests. This rule is part of [`eslint-plugin-reliability`](https://www.npmjs.com/package/eslint-plugin-reliability) and provides LLM-optimized error messages with suggestions.
 
 ## Quick Summary
 

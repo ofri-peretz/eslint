@@ -1,1198 +1,136 @@
 @import 'tailwindcss';
-@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/purple.css';
 @import 'fumadocs-ui/css/preset.css';
-@import 'tw-animate-css';
-/* 
- ---break---
- */
-@custom-variant dark (&:is(.dark *));
+@import 'fumadocs-twoslash/twoslash.css';
 
-/* 
- * Interlace ESLint Theme
- * WCAG 7:1 compliant colors for dark mode
- */
+/* Scan fumadocs packages from app-level node_modules (symlinked to workspace root) */
+@source "../../node_modules/fumadocs-ui";
+@source "../../node_modules/fumadocs-twoslash";
 
+/* =========================================
+   BRAND COLORS - ESLint Interlace
+   Override fumadocs neutral theme with purple accent
+   WCAG AA compliant color choices
+   ========================================= */
+
+/* Light mode - high contrast for accessibility */
 :root {
-  scroll-behavior: smooth;
-  --fd-primary: 263 80% 45%;
-  --fd-primary-foreground: 0 0% 100%;
-  --fd-background: 0 0% 100%;
-  --fd-foreground: 0 0% 9%;
-  --fd-accent: 270 50% 97%;
-  --fd-accent-foreground: 263 80% 30%;
-  --fd-card: 0 0% 100%;
-  --fd-card-foreground: 0 0% 9%;
-  --fd-border: 0 0% 88%;
-  --fd-muted: 0 0% 96%;
-  /* WCAG 7:1: #404040 on #FFFFFF = 9.7:1 */
-  --fd-muted-foreground: 0 0% 25%;
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  /* WCAG 7:1 compliant */
-  --muted-foreground: oklch(0.4 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Primary purple - meets WCAG AA for large text on white */
+  --color-fd-primary: hsl(263, 80%, 45%) !important;
+  --color-fd-primary-foreground: hsl(0, 0%, 100%) !important;
+  
+  /* Foreground color for lines and text */
+  --color-fd-foreground: hsl(0, 0%, 3.9%) !important;
+  
+  /* Improved muted foreground for better readability (4.5:1 contrast ratio) */
+  --color-fd-muted-foreground: hsl(0, 0%, 40%) !important;
+  
+  /* Ring/focus color matching brand */
+  --color-fd-ring: hsl(263, 70%, 55%) !important;
 }
 
+/* Dark mode - lighter purple for dark backgrounds, WCAG AA compliant */
 .dark {
-  /* WCAG 7:1 compliant dark theme */
-  --fd-primary: 270 75% 75%;
-  --fd-primary-foreground: 0 0% 5%;
-  --fd-background: 222 22% 8%;
-  --fd-foreground: 0 0% 95%;
-  --fd-accent: 263 35% 18%;
-  --fd-accent-foreground: 270 80% 85%;
-  --fd-card: 222 20% 11%;
-  --fd-card-foreground: 0 0% 95%;
-  --fd-border: 222 15% 25%;
-  --fd-muted: 222 18% 14%;
-  /* WCAG 7:1: #B8B8B8 on #141A21 = 7.5:1 */
-  --fd-muted-foreground: 0 0% 72%;
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
-
-/* Headings - always visible */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  color: hsl(var(--fd-foreground)) !important;
-}
-
-/* Links */
-a {
-  text-decoration: none !important;
-}
-
-article a:not([class]) {
-  color: hsl(var(--fd-primary));
-  font-weight: 500;
-}
-
-/* ============================================
-   Compact Badge System for MDX Content
-   High-density flexbox layout for shields.io badges
-   Override prose defaults (32px margin on images)
-   KEY: line-height: 0 kills all vertical spacing
-   ============================================ */
-
-/* Badge container paragraph - MUST have line-height: 0 */
-article p:has(img[src*="shields.io"]),
-article p:has(img[src*="codecov.io"]),
-.prose p:has(img[src*="shields.io"]),
-.prose p:has(img[src*="codecov.io"]) {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  align-items: center !important;
-  gap: 3px !important;
-  line-height: 0 !important;
-  margin-top: 8px !important;
-  margin-bottom: 8px !important;
-}
-
-/* Badge images - block display, forced height */
-article img[src*="shields.io"],
-article img[src*="codecov.io"],
-.prose img[src*="shields.io"],
-.prose img[src*="codecov.io"],
-p img[src*="shields.io"],
-p img[src*="codecov.io"] {
-  display: block !important;
-  height: 20px !important;
-  min-height: 20px !important;
-  width: auto !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: none !important;
-}
-
-/* Badge links - block with fixed height and line-height: 0 */
-article a:has(> img[src*="shields.io"]),
-article a:has(> img[src*="codecov.io"]),
-.prose a:has(> img[src*="shields.io"]),
-.prose a:has(> img[src*="codecov.io"]),
-p a:has(> img[src*="shields.io"]),
-p a:has(> img[src*="codecov.io"]) {
-  display: block !important;
-  height: 20px !important;
-  min-height: 20px !important;
-  line-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-}
-
-/* DevTo Article Card - Override prose image margins */
-.group img.rounded-full {
-  margin: 0 !important;
-}
-
-/* Sidebar - better group styling */
-nav [data-separator] {
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: hsl(var(--fd-muted-foreground));
-  padding: 1rem 0 0.5rem;
-  margin-top: 0.5rem;
-  border-top: 1px solid hsl(var(--fd-border));
-}
-
-nav [data-separator]:first-child {
-  margin-top: 0;
-  border-top: none;
-  padding-top: 0;
-}
-
-/* Sidebar active nav item */
-.fd-sidebar [data-active='true'] {
-  color: hsl(var(--fd-primary)) !important;
-  font-weight: 700 !important;
-  background: hsl(var(--fd-primary) / 0.1) !important;
-  border-left: 2px solid hsl(var(--fd-primary));
-  border-radius: 0 0.375rem 0.375rem 0;
-}
-
-/* TOC Styling - High Fidelity 2025 */
-.fd-toc {
-  opacity: 0.95;
-  transition: opacity 0.3s ease;
-}
-
-.fd-toc:hover {
-  opacity: 1;
-}
-
-.fd-toc-item {
-  font-size: 0.8125rem !important;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  padding-left: 1rem;
-  border-radius: 6px;
-  text-decoration: none !important;
-  border-left: 0 !important;
-}
-
-.fd-toc-item[data-active='true'] {
-  color: hsl(var(--fd-primary)) !important;
-  font-weight: 600 !important;
-  background: linear-gradient(to right, hsl(var(--fd-primary) / 0.1), transparent);
-}
-
-.fd-toc-item:hover:not([data-active='true']) {
-  color: hsl(var(--fd-foreground));
-  background: hsl(var(--fd-muted) / 0.5);
-}
-
-/* Page improvements */
-.fd-page {
-  max-width: 1400px !important;
-}
-
-/* ============================================
-   Accessibility - Keyboard Focus Styles
-   WCAG 2.1 Level AA compliant focus indicators
-   ============================================ */
-
-/* Global focus-visible styles */
-:focus-visible {
-  outline: 2px solid hsl(var(--fd-primary));
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-/* Interactive elements focus states */
-a:focus-visible,
-button:focus-visible,
-[role='button']:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: 2px solid hsl(var(--fd-primary));
-  outline-offset: 2px;
-}
-
-/* Card-like elements */
-.group:focus-visible,
-[data-card]:focus-visible {
-  outline: 2px solid hsl(var(--fd-primary));
-  outline-offset: 3px;
-  border-radius: 8px;
-}
-
-/* Skip to content link (should be added to layout) */
-.skip-to-content {
-  position: absolute;
-  top: -100%;
-  left: 0;
-  z-index: 9999;
-  padding: 1rem;
-  background: hsl(var(--fd-primary));
-  color: hsl(var(--fd-primary-foreground));
-  font-weight: 600;
-}
-
-.skip-to-content:focus {
-  top: 0;
-}
-
-/* ============================================
-   Code Blocks - Minimal overrides for Fumadocs
-   Let Fumadocs CodeBlock component handle styling
-   ============================================ */
-
-/* Tighten spacing around code blocks */
-figure[data-rehype-pretty-code-figure] {
-  margin: 0.75rem 0;
-}
-
-/* Ensure proper code font */
-pre code {
-  font-family:
-    'SF Mono', Monaco, 'Cascadia Code', 'Fira Code', Consolas, monospace;
-  font-size: 0.8125rem;
-  line-height: 1.6;
-}
-
-/* Scrollbar styling */
-pre::-webkit-scrollbar {
-  height: 6px;
-}
-
-pre::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-pre::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-}
-
-/* Inline code */
-:not(pre) > code {
-  background: hsl(var(--fd-accent));
-  color: hsl(var(--fd-accent-foreground));
-  padding: 0.15rem 0.4rem;
-  border-radius: 0.25rem;
-  font-size: 0.875em;
-  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-}
-
-/* Callouts - target actual Fumadocs callout structure */
-/* Fumadocs uses Tailwind utility classes, not .fd-callout */
-.bg-fd-card.flex,
-[class*='bg-fd-card'][class*='flex'] {
-  align-items: center;
-}
-
-/* Fallback for .fd-callout if used elsewhere */
-.fd-callout {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin: 1rem 0;
-  padding: 0.875rem 1rem;
-  border-radius: 0.75rem;
-  border-left: 3px solid;
-}
-
-.fd-callout > svg {
-  flex-shrink: 0;
-}
-
-/* Reduced spacing */
-article > * + * {
-  margin-top: 1rem;
-}
-
-article h2 {
-  margin-top: 1.5rem !important;
-}
-article h3 {
-  margin-top: 1.25rem !important;
-}
-article p {
-  margin: 0.5rem 0 !important;
-}
-article ul,
-article ol {
-  margin: 0.5rem 0 !important;
-}
-article hr {
-  margin: 1.25rem 0 !important;
-}
-
-/* Tables */
-table {
-  border-radius: 0.5rem;
-  overflow: hidden;
-  border: 1px solid hsl(var(--fd-border));
-  margin: 0.75rem 0;
-  width: 100%;
-}
-
-table th {
-  background: hsl(var(--fd-accent));
-  font-weight: 600;
-  padding: 0.625rem 0.75rem;
-  text-align: center;
-}
-
-table td {
-  padding: 0.5rem 0.75rem;
-}
-
-/* Cards hover */
-.fd-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px hsl(var(--fd-primary) / 0.12);
-  border-color: hsl(var(--fd-primary) / 0.4);
-}
-
-/* Badges inline */
-p > a > img {
-  display: inline-block;
-  vertical-align: middle;
-}
-
-/* Responsive container utilities */
-@media (max-width: 640px) {
-  .responsive-grid-2 {
-    grid-template-columns: 1fr !important;
-  }
-
-  .responsive-text-sm {
-    font-size: 0.875rem !important;
-  }
-
-  .responsive-p-reduced {
-    padding: 0.75rem !important;
-  }
-}
-
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* ============================================
-   Mermaid Charts - Proper Layout & Overflow
-   WCAG AAA compliant for both light and dark modes
-   ============================================ */
-
-/* Container for Mermaid diagrams */
-.mermaid,
-[data-mermaid],
-pre.mermaid {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  overflow: visible !important;
-  padding: 2rem 1.5rem;
-  margin: 1rem 0;
-  background: hsl(var(--fd-card));
-  border: 1px solid hsl(var(--fd-border));
-  border-radius: 0.75rem;
-}
-
-/* Ensure SVG doesn't clip - CRITICAL for edge labels */
-.mermaid svg,
-[data-mermaid] svg {
-  max-width: none !important;
-  width: 100% !important;
-  height: auto !important;
-  display: block;
-  margin: 0 auto;
-  overflow: visible !important;
-}
-
-/* CRITICAL: Fix edge label clipping */
-.mermaid .edgeLabel,
-[data-mermaid] .edgeLabel {
-  background-color: hsl(var(--fd-background)) !important;
-  padding: 4px 8px !important;
-  border-radius: 4px !important;
-  overflow: visible !important;
-}
-
-.mermaid .edgeLabel foreignObject,
-[data-mermaid] .edgeLabel foreignObject {
-  overflow: visible !important;
-}
-
-.mermaid .edgeLabel div,
-.mermaid .edgeLabel span,
-[data-mermaid] .edgeLabel div,
-[data-mermaid] .edgeLabel span {
-  background-color: hsl(var(--fd-background)) !important;
-  color: hsl(var(--fd-foreground)) !important;
-  padding: 2px 6px !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  line-height: 1.4 !important;
-  white-space: nowrap !important;
-}
-
-/* CRITICAL: Fix text alignment in Mermaid nodes */
-/* The root cause is <p> tags inside foreignObject have default browser margins */
-svg foreignObject p,
-svg foreignObject .nodeLabel p,
-svg foreignObject .edgeLabel p,
-.mermaid foreignObject p,
-[data-mermaid] foreignObject p {
-  margin: 0 !important;
-  padding: 0 !important;
-  line-height: 1.5 !important;
-}
-
-/* CRITICAL: Remove underlines from all Mermaid text */
-.mermaid text,
-.mermaid .nodeLabel,
-.mermaid .label,
-.mermaid tspan,
-[data-mermaid] text,
-[data-mermaid] .nodeLabel,
-[data-mermaid] .label,
-[data-mermaid] tspan {
-  text-decoration: none !important;
-  font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif !important;
-  fill: hsl(var(--fd-foreground)) !important;
-}
-
-/* Node text - ensure proper contrast */
-.mermaid .nodeLabel,
-[data-mermaid] .nodeLabel {
-  color: hsl(var(--fd-foreground)) !important;
-  fill: hsl(var(--fd-foreground)) !important;
-}
-
-/* Remove underlines from links in Mermaid */
-.mermaid a,
-.mermaid a text,
-[data-mermaid] a,
-[data-mermaid] a text {
-  text-decoration: none !important;
-}
-
-/* Node boxes styling - light mode friendly */
-.mermaid .node rect,
-.mermaid .node polygon,
-.mermaid .node circle,
-.mermaid .node ellipse,
-[data-mermaid] .node rect,
-[data-mermaid] .node polygon,
-[data-mermaid] .node circle,
-[data-mermaid] .node ellipse {
-  stroke: hsl(var(--fd-border)) !important;
-  stroke-width: 1.5px !important;
-  fill: hsl(var(--fd-accent)) !important;
-}
-
-/* Decision diamond styling - theme aware */
-.mermaid .node.decision polygon,
-.mermaid .decision polygon,
-[data-mermaid] .node.decision polygon,
-[data-mermaid] .decision polygon {
-  fill: hsl(var(--fd-accent)) !important;
-}
-
-/* Flowchart arrows/links */
-.mermaid .flowchart-link,
-.mermaid .edgePath path,
-[data-mermaid] .flowchart-link,
-[data-mermaid] .edgePath path {
-  stroke: hsl(var(--fd-muted-foreground)) !important;
-  stroke-width: 1.5px !important;
-}
-
-/* Arrow markers */
-.mermaid marker path,
-[data-mermaid] marker path {
-  fill: hsl(var(--fd-muted-foreground)) !important;
-}
-
-/* Subgraph styling */
-.mermaid .cluster rect,
-[data-mermaid] .cluster rect {
-  fill: hsl(var(--fd-muted)) !important;
-  stroke: hsl(var(--fd-border)) !important;
-}
-
-/* Subgraph labels */
-.mermaid .cluster-label,
-.mermaid .cluster-label text,
-[data-mermaid] .cluster-label,
-[data-mermaid] .cluster-label text {
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  fill: hsl(var(--fd-foreground)) !important;
-  text-decoration: none !important;
-}
-
-/* Edge labels background - ensure visibility */
-.mermaid .edgeLabel rect,
-[data-mermaid] .edgeLabel rect {
-  fill: hsl(var(--fd-background)) !important;
-  opacity: 1 !important;
-  rx: 4px !important;
-  ry: 4px !important;
-}
-
-/* Responsive Mermaid */
-@media (max-width: 640px) {
-  .mermaid,
-  [data-mermaid] {
-    padding: 1rem 0.5rem;
-    font-size: 12px;
-  }
-
-  .mermaid text,
-  .mermaid .nodeLabel,
-  [data-mermaid] text,
-  [data-mermaid] .nodeLabel {
-    font-size: 11px !important;
-  }
-}
-
-/* ============================================
-   Sequence Diagram - Dark Mode Text Contrast Fix
-   These selectors target Mermaid sequence diagram specific elements
-   ============================================ */
-
-/* Actor boxes and text */
-.mermaid .actor,
-[data-mermaid] .actor {
-  fill: hsl(var(--fd-accent)) !important;
-  stroke: hsl(var(--fd-border)) !important;
-}
-
-.mermaid .actor-line,
-[data-mermaid] .actor-line {
-  stroke: hsl(var(--fd-muted-foreground)) !important;
-}
-
-/* Actor text - CRITICAL for dark mode contrast */
-.mermaid text.actor,
-.mermaid .actor text,
-[data-mermaid] text.actor,
-[data-mermaid] .actor text {
-  fill: hsl(var(--fd-foreground)) !important;
-  font-weight: 600 !important;
-}
-
-/* Message text between actors */
-.mermaid .messageText,
-[data-mermaid] .messageText {
-  fill: hsl(var(--fd-foreground)) !important;
-  font-size: 13px !important;
-}
-
-/* Loop/alt/opt labels */
-.mermaid .labelText,
-.mermaid .loopText,
-[data-mermaid] .labelText,
-[data-mermaid] .loopText {
-  fill: hsl(var(--fd-foreground)) !important;
-  font-weight: 500 !important;
-}
-
-/* Loop/section boxes */
-.mermaid .loopLine,
-.mermaid .labelBox,
-[data-mermaid] .loopLine,
-[data-mermaid] .labelBox {
-  stroke: hsl(var(--fd-border)) !important;
-  fill: hsl(var(--fd-muted)) !important;
-}
-
-/* Note boxes */
-.mermaid .note,
-[data-mermaid] .note {
-  fill: hsl(var(--fd-accent)) !important;
-  stroke: hsl(var(--fd-border)) !important;
-}
-
-/* Note text */
-.mermaid .noteText,
-[data-mermaid] .noteText {
-  fill: hsl(var(--fd-foreground)) !important;
-}
-
-/* Activation bars */
-.mermaid .activation0,
-.mermaid .activation1,
-.mermaid .activation2,
-[data-mermaid] .activation0,
-[data-mermaid] .activation1,
-[data-mermaid] .activation2 {
-  fill: hsl(var(--fd-accent)) !important;
-  stroke: hsl(var(--fd-border)) !important;
-}
-
-/* Sequence arrows */
-.mermaid .messageLine0,
-.mermaid .messageLine1,
-[data-mermaid] .messageLine0,
-[data-mermaid] .messageLine1 {
-  stroke: hsl(var(--fd-muted-foreground)) !important;
-  stroke-width: 1.5px !important;
-}
-
-/* Arrow heads */
-.mermaid #arrowhead path,
-.mermaid #crosshead path,
-.mermaid #sequencenumber,
-[data-mermaid] #arrowhead path,
-[data-mermaid] #crosshead path,
-[data-mermaid] #sequencenumber {
-  fill: hsl(var(--fd-muted-foreground)) !important;
-}
-/*  
- ---break---
- */
-@theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-
-  /* Magic UI Animations */
-  --shimmer-spread: 90deg;
-  --animate-gradient: gradient 8s linear infinite;
-  --animate-shimmer-slide: shimmer-slide var(--shimmer-duration) ease-in-out
-    infinite;
-  --animate-spin-around: spin-around calc(var(--shimmer-duration) * 2) infinite
-    linear;
-  --animate-border-beam: border-beam calc(var(--duration) * 1s) infinite linear;
-
-  @keyframes gradient {
-    to {
-      background-position: var(--bg-size, 300%) 0;
+  /* Lighter purple for dark mode - maintains 4.5:1 contrast on dark bg */
+  --color-fd-primary: hsl(270, 75%, 75%) !important;
+  --color-fd-primary-foreground: hsl(0, 0%, 5%) !important;
+  
+  /* Foreground color for dark mode */
+  --color-fd-foreground: hsl(0, 0%, 92%) !important;
+  
+  /* Improved muted foreground for dark mode readability */
+  --color-fd-muted-foreground: hsl(0, 0%, 65%) !important;
+  
+  /* Ring/focus color for dark mode */
+  --color-fd-ring: hsl(270, 70%, 70%) !important;
+}
+
+/* =========================================
+   CLERK TOC STYLE FIX
+   Only the arbitrary property utilities that Tailwind v4 cannot generate
+   ========================================= */
+
+/* TOC indicator thumb - the moving purple bar (Tailwind v4 arbitrary props) */
+.h-\(--fd-height\) {
+  height: var(--fd-height);
+}
+
+.top-\(--fd-top\) {
+  top: var(--fd-top);
+}
+
+/* TOC indicator transition - smooth animation when scrolling */
+.transition-\[top\,height\] {
+  transition-property: top, height !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition-duration: 150ms !important;
+}
+
+/* Direct targeting of TOC indicator thumb for transition */
+#nd-toc .bg-fd-primary {
+  transition-property: top, height !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition-duration: 150ms !important;
+}
+
+/* =========================================
+   CLEAN TOC STYLE - Single line indicator
+   Hide the "staircase" gray lines and diagonal connectors
+   Keep only the purple sliding indicator
+   ========================================= */
+
+/* Hide the gray vertical rail segments (causes staircase effect) */
+#nd-toc .bg-fd-foreground\/10 {
+  display: none !important;
+}
+
+/* Hide the diagonal SVG connector lines between depth levels */
+#nd-toc svg line.stroke-fd-foreground\/10,
+#nd-toc .stroke-fd-foreground\/10 {
+  display: none !important;
+}
+
+/* =========================================
+   POPOVER TOC SPACING FIX
+   Ensure proper padding for items in the popover TOC
+   Match the clerk style item offsets
+   ========================================= */
+
+/* Popover TOC items - ensure minimum padding from left edge */
+[data-toc-popover-content] a {
+  padding-inline-start: 14px !important;
+}
+
+/* Nested items in popover get more padding */
+[data-toc-popover-content] a[data-depth="3"] {
+  padding-inline-start: 26px !important;
+}
+
+[data-toc-popover-content] a[data-depth="4"],
+[data-toc-popover-content] a[data-depth="5"],
+[data-toc-popover-content] a[data-depth="6"] {
+  padding-inline-start: 36px !important;
+}
+
+@layer components {
+  /* =================================================
+   * RESPONSIVE TOC VISIBILITY  
+   * - xl+ (≥1280px): Show side TOC, hide popover TOC
+   * - <xl (<1280px): Show popover TOC, hide side TOC
+   * ================================================= */
+  
+  /* On large screens (xl+): Hide the popover TOC */
+  @media (min-width: 1280px) {
+    button[data-toc-popover-trigger],
+    div[data-toc-popover-content] {
+      display: none !important;
     }
-  }
-
-  @keyframes shimmer-slide {
-    to {
-      transform: translate(calc(100cqw - 100%), 0);
-    }
-  }
-
-  @keyframes spin-around {
-    0% {
-      transform: translateZ(0) rotate(0);
-    }
-    15%,
-    35% {
-      transform: translateZ(0) rotate(90deg);
-    }
-    65%,
-    85% {
-      transform: translateZ(0) rotate(270deg);
-    }
-    100% {
-      transform: translateZ(0) rotate(360deg);
-    }
-  }
-
-  @keyframes border-beam {
-    100% {
-      offset-distance: 100%;
-    }
-  }
-
-  --animate-shiny-text: shiny-text 8s infinite;
-  --animate-aurora: aurora 8s ease-in-out infinite alternate;
-
-  @keyframes shiny-text {
-    0%,
-    90%,
-    100% {
-      background-position: calc(-100% - var(--shiny-width)) 0;
-    }
-    30%,
-    60% {
-      background-position: calc(100% + var(--shiny-width)) 0;
-    }
-  }
-  @keyframes aurora {
-    0% {
-      background-position: 0% 50%;
-      transform: rotate(-5deg) scale(0.9);
-    }
-    25% {
-      background-position: 50% 100%;
-      transform: rotate(5deg) scale(1.1);
-    }
-    50% {
-      background-position: 100% 50%;
-      transform: rotate(-3deg) scale(0.95);
-    }
-    75% {
-      background-position: 50% 0%;
-      transform: rotate(3deg) scale(1.05);
-    }
-    100% {
-      background-position: 0% 50%;
-      transform: rotate(-5deg) scale(0.9);
-    }
-  }
-}
-/* 
- ---break---
- */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
-}
-
-/* ============================================
-   Navigation Footer Links (Next/Previous)
-   Magic UI-inspired hover effects
-   ============================================ */
-
-.fd-footer-nav a {
-  position: relative;
-  border-radius: 12px;
-  border: 1px solid hsl(var(--fd-border));
-  background: linear-gradient(135deg, hsl(var(--fd-card)) 0%, hsl(var(--fd-muted) / 0.3) 100%);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-}
-
-.fd-footer-nav a::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, hsl(var(--fd-primary) / 0.05), transparent);
-  transform: translateX(-100%);
-  transition: transform 0.6s ease;
-}
-
-.fd-footer-nav a:hover {
-  border-color: hsl(var(--fd-primary) / 0.4);
-  box-shadow: 0 8px 24px -4px hsl(var(--fd-primary) / 0.15);
-  transform: translateY(-2px);
-}
-
-.fd-footer-nav a:hover::before {
-  transform: translateX(100%);
-}
-
-/* Navigation arrows */
-.fd-footer-nav svg {
-  transition: transform 0.3s ease;
-}
-
-.fd-footer-nav a:hover svg {
-  transform: translateX(4px);
-}
-
-.fd-footer-nav a:first-child:hover svg {
-  transform: translateX(-4px);
-}
-
-/* ============================================
-   Articles Page - Responsive Design
-   Fixes for tablet/mid-screen sizes
-   ============================================ */
-
-/* Search bar container - responsive sizing */
-.articles-search-container {
-  width: 100%;
-  max-width: 42rem; /* max-w-2xl */
-  margin: 0 auto;
-  padding: 0 1rem;
-}
-
-@media (min-width: 640px) {
-  .articles-search-container {
-    padding: 0 1.5rem;
-  }
-}
-
-@media (min-width: 768px) {
-  .articles-search-container {
-    padding: 0;
-  }
-}
-
-/* Content max-width container */
-.articles-content-container {
-  width: 100%;
-  max-width: 80rem; /* max-w-7xl */
-  margin: 0 auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
-
-@media (min-width: 640px) {
-  .articles-content-container {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-  }
-}
-
-@media (min-width: 768px) {
-  .articles-content-container {
-    padding-left: 2rem;
-    padding-right: 2rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .articles-content-container {
-    padding-left: 3rem;
-    padding-right: 3rem;
-  }
-}
-
-/* Tag filter responsive wrapping */
-.articles-tags-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  max-width: 100%;
-  overflow-x: auto;
-  padding-bottom: 0.5rem;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-
-.articles-tags-container::-webkit-scrollbar {
-  display: none;
-}
-
-@media (min-width: 768px) {
-  .articles-tags-container {
-    overflow-x: visible;
-    padding-bottom: 0;
-  }
-}
-
-/* Sort controls - stack on mobile */
-.articles-sort-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  justify-content: space-between;
-  align-items: center;
-}
-
-@media (max-width: 639px) {
-  .articles-sort-container {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
-
-/* ============================================
-   Accessibility Improvements
-   WCAG 2.1 AA Compliance
-   ============================================ */
-
-/* Minimum 44x44px touch targets for mobile */
-@media (pointer: coarse) {
-  .touch-target,
-  a[href],
-  button:not([disabled]),
-  [role="button"],
-  input[type="checkbox"],
-  input[type="radio"] {
-    min-height: 44px;
-    min-width: 44px;
   }
   
-  /* Tag buttons in articles */
-  .articles-tags-container > * {
-    min-height: 36px;
-    padding-left: 12px;
-    padding-right: 12px;
+  /* On smaller screens (<xl): Hide the side TOC */
+  @media (max-width: 1279px) {
+    #nd-toc {
+      display: none !important;
+    }
   }
 }
-
-/* Focus visible states for keyboard navigation */
-:focus-visible {
-  outline: 2px solid hsl(var(--fd-primary));
-  outline-offset: 2px;
-  border-radius: var(--radius);
-}
-
-/* Skip to main content link */
-.skip-to-main {
-  position: absolute;
-  left: -9999px;
-  top: auto;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-}
-
-.skip-to-main:focus {
-  position: fixed;
-  top: 1rem;
-  left: 1rem;
-  width: auto;
-  height: auto;
-  padding: 1rem 1.5rem;
-  background: hsl(var(--fd-primary));
-  color: hsl(var(--fd-primary-foreground));
-  font-weight: bold;
-  border-radius: var(--radius);
-  z-index: 9999;
-}
-
-/* Reduce motion for users who prefer it */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-/* ============================================
-   Team-Based Visibility
-   Use with data-team attribute on body or parent
-   ============================================ */
-
-/* Utility classes for team-conditional content */
-.security-only {
-  display: block;
-}
-
-.architecture-only {
-  display: none;
-}
-
-/* When in Architecture mode (body has data-team="architecture") */
-body[data-team="architecture"] .security-only {
-  display: none;
-}
-
-body[data-team="architecture"] .architecture-only {
-  display: block;
-}
-
-/* Dim non-active team items in sidebar */
-.sidebar-link[data-team]:not([data-team="security"]) {
-  opacity: 0.6;
-}
-
-body[data-team="architecture"] .sidebar-link[data-team="security"] {
-  opacity: 0.6;
-}
-
-body[data-team="architecture"] .sidebar-link[data-team="architecture"] {
-  opacity: 1;
-}
-
-/* ============================================
-   Breadcrumb Navigation
-   Global navigation showing page hierarchy
-   ============================================ */
-
-.breadcrumb-nav {
-  margin-bottom: 1.25rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid hsl(var(--fd-border));
-}
-
-.breadcrumb-list {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.25rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  font-size: 0.8125rem;
-}
-
-.breadcrumb-item {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.breadcrumb-separator {
-  width: 14px;
-  height: 14px;
-  color: hsl(var(--fd-muted-foreground));
-  opacity: 0.6;
-  flex-shrink: 0;
-}
-
-.breadcrumb-link {
-  color: hsl(var(--fd-muted-foreground));
-  text-decoration: none !important;
-  transition: color 0.2s ease;
-  padding: 0.125rem 0.25rem;
-  border-radius: 4px;
-}
-
-.breadcrumb-link:hover {
-  color: hsl(var(--fd-primary));
-  background: hsl(var(--fd-primary) / 0.08);
-}
-
-.breadcrumb-home {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.breadcrumb-home-icon {
-  width: 15px;
-  height: 15px;
-}
-
-.breadcrumb-current {
-  color: hsl(var(--fd-foreground));
-  font-weight: 500;
-}
-
-/* Screen reader only utility */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* Responsive breadcrumb */
-@media (max-width: 640px) {
-  .breadcrumb-list {
-    font-size: 0.75rem;
-  }
-  
-  .breadcrumb-separator {
-    width: 12px;
-    height: 12px;
-  }
-  
-  .breadcrumb-home-icon {
-    width: 13px;
-    height: 13px;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-

@@ -1,0 +1,52 @@
+---
+title: Editor Integration
+description: Set up ESLint Interlace with VS Code and other editors
+icon: Monitor
+---
+
+## VS Code
+
+### Install ESLint Extension
+
+Install the official [ESLint extension](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) for VS Code.
+
+### Configure Settings
+
+Add to your `.vscode/settings.json`:
+
+```json title=".vscode/settings.json"
+{
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ]
+}
+```
+
+## WebStorm / JetBrains IDEs
+
+WebStorm has built-in ESLint support:
+
+1. Go to **Settings** → **Languages & Frameworks** → **JavaScript** → **Code Quality Tools** → **ESLint**
+2. Select **Automatic ESLint configuration**
+3. Enable **Run eslint --fix on save**
+
+## Neovim
+
+Use [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig) with ESLint language server:
+
+```lua title="init.lua"
+require('lspconfig').eslint.setup({
+  on_attach = function(client, bufnr)
+    vim.api.nvim_create_autocmd("BufWritePre", {
+      buffer = bufnr,
+      command = "EslintFixAll",
+    })
+  end,
+})
+```

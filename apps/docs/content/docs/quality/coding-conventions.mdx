@@ -1,0 +1,31 @@
+---
+title: Coding Conventions
+description: Style and consistency rules
+icon: Code
+---
+
+<Callout type="info">
+  This plugin documentation is loaded from GitHub at runtime.
+</Callout>
+
+## Overview
+
+`eslint-plugin-coding-conventions` enforces code style and consistency.
+
+## Installation
+
+```bash tab="npm"
+npm install eslint-plugin-coding-conventions
+```
+
+```bash tab="pnpm"
+pnpm add eslint-plugin-coding-conventions
+```
+
+## Configuration
+
+```js title="eslint.config.js"
+import codingConventions from 'eslint-plugin-coding-conventions';
+
+export default [codingConventions.configs.recommended];
+```

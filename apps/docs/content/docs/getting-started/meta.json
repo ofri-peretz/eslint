@@ -1,0 +1,14 @@
+{
+    "title": "Getting Started",
+    "description": "Install, configure, and integrate",
+    "icon": "Rocket",
+    "root": true,
+    "defaultOpen": true,
+    "pages": [
+        "index",
+        "installation",
+        "configuration",
+        "flat-config",
+        "editor-integration"
+    ]
+}

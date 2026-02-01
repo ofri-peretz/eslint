@@ -1,0 +1,31 @@
+---
+title: Secure Coding
+description: General secure coding practices for JavaScript
+icon: Code
+---
+
+<Callout type="info">
+  This plugin documentation is loaded from GitHub at runtime.
+</Callout>
+
+## Overview
+
+`eslint-plugin-secure-coding` enforces general secure coding practices.
+
+## Installation
+
+```bash tab="npm"
+npm install eslint-plugin-secure-coding
+```
+
+```bash tab="pnpm"
+pnpm add eslint-plugin-secure-coding
+```
+
+## Configuration
+
+```js title="eslint.config.js"
+import secureCoding from 'eslint-plugin-secure-coding';
+
+export default [secureCoding.configs.recommended];
+```

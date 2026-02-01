@@ -25,11 +25,13 @@ export default defineConfig({
     include: [
       'tests/**/*.test.ts',
       'tests/**/*.test.tsx', // Include TSX test files
+      'src/__tests__/**/*.test.ts', // Include src-level tests
+      'src/__tests__/**/*.test.tsx',
     ],
     exclude: [],
     passWithNoTests: true,
     globalSetup: ['../../vitest.global-setup.ts'],
-    name: { label: 'docs', color: 'blue' },
+    name: 'docs',
     pool: 'vmThreads',
     coverage: {
       provider: 'v8',

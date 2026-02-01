@@ -29,7 +29,8 @@ const config = {
   transpilePackages: ['motion', 'motion/react'],
 
   // Bundle optimization: externalize heavy packages from SSR bundles
-  serverExternalPackages: ['katex', 'mermaid'],
+  // Required for twoslash TypeScript code hints
+  serverExternalPackages: ['katex', 'mermaid', 'typescript', 'twoslash'],
 
   // Image optimization for maximum performance
   images: {
@@ -51,6 +52,10 @@ const config = {
       react: path.resolve(monorepoRoot, 'node_modules/react'),
       'react-dom': path.resolve(monorepoRoot, 'node_modules/react-dom'),
       'motion/react': 'motion',
+      // CSS resolution for workspace-level dependencies
+      'fumadocs-ui': path.resolve(monorepoRoot, 'node_modules/fumadocs-ui'),
+      'fumadocs-core': path.resolve(monorepoRoot, 'node_modules/fumadocs-core'),
+      tailwindcss: path.resolve(monorepoRoot, 'node_modules/tailwindcss'),
     };
     return config;
   },
@@ -92,6 +97,14 @@ const config = {
       headers: [
         { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
       ],
+    },
+  ],
+
+  redirects: async () => [
+    {
+      source: '/docs',
+      destination: '/docs/getting-started',
+      permanent: true,
     },
   ],
 };

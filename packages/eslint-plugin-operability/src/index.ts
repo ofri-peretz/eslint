@@ -33,7 +33,7 @@ export const rules = {
 
 export const plugin = {
   meta: {
-    name: '@interlace/eslint-plugin-operability',
+    name: 'eslint-plugin-operability',
     version: '1.0.0',
   },
   rules,

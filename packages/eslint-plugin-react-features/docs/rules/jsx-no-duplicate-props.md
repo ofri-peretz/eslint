@@ -1,6 +1,6 @@
 ---
 title: jsx-no-duplicate-props
-description: Prevent duplicate props in JSX elements. This rule is part of @interlace/eslint-plugin-react-features and provides LLM-optimized error messages.
+description: Prevent duplicate props in JSX elements. This rule is part of eslint-plugin-react-features and provides LLM-optimized error messages.
 category: quality
 severity: low
 tags: ['quality', 'react']
@@ -11,7 +11,7 @@ effort: low
 
 > **Keywords:** React, JSX, props, duplicate, ESLint rule, code quality, LLM-optimized
 
-Prevent duplicate props in JSX elements. This rule is part of [`@interlace/eslint-plugin-react-features`](https://www.npmjs.com/package/@interlace/eslint-plugin-react-features) and provides LLM-optimized error messages.
+Prevent duplicate props in JSX elements. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and provides LLM-optimized error messages.
 
 ## Quick Summary
 

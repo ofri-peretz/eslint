@@ -1,0 +1,18 @@
+{
+    "title": "Security",
+    "description": "Security-focused ESLint plugins",
+    "icon": "Shield",
+    "root": true,
+    "defaultOpen": true,
+    "pages": [
+        "index",
+        "browser-security",
+        "crypto",
+        "jwt",
+        "secure-coding",
+        "graphql-security",
+        "api-security",
+        "mongodb-security",
+        "secrets"
+    ]
+}

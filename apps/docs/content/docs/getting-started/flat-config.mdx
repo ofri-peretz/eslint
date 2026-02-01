@@ -1,0 +1,71 @@
+---
+title: Flat Config Migration
+description: Migrate from .eslintrc to ESLint 9.x flat config
+icon: RefreshCw
+---
+
+## Overview
+
+ESLint 9.x introduces a new "flat config" format that replaces the legacy `.eslintrc.*` files. All ESLint Interlace plugins support flat config natively.
+
+## Migration Steps
+
+<Steps>
+
+### Remove legacy config files
+
+Delete your existing `.eslintrc.js`, `.eslintrc.json`, or `.eslintrc.yaml` files.
+
+### Create eslint.config.js
+
+Create a new `eslint.config.js` file in your project root:
+
+```js title="eslint.config.js"
+import interlace from 'eslint-config-interlace';
+
+export default [...interlace.configs.recommended];
+```
+
+### Update package.json scripts
+
+Ensure your lint script uses the new config:
+
+```json title="package.json"
+{
+  "scripts": {
+    "lint": "eslint ."
+  }
+}
+```
+
+</Steps>
+
+## Legacy Config Comparison
+
+<Tabs items={['Flat Config', 'Legacy Config']}>
+<Tab value="Flat Config">
+```js title="eslint.config.js"
+import browserSecurity from 'eslint-plugin-browser-security';
+
+export default [
+  browserSecurity.configs.recommended,
+  {
+    rules: {
+      'browser-security/no-insecure-url': 'error',
+    },
+  },
+];
+```
+</Tab>
+<Tab value="Legacy Config">
+```json title=".eslintrc.json"
+{
+  "plugins": ["browser-security"],
+  "extends": ["plugin:browser-security/recommended"],
+  "rules": {
+    "browser-security/no-insecure-url": "error"
+  }
+}
+```
+</Tab>
+</Tabs>

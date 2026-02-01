@@ -1,0 +1,31 @@
+---
+title: MongoDB Security
+description: NoSQL injection prevention and secure database operations
+icon: Database
+---
+
+<Callout type="info">
+  This plugin documentation is loaded from GitHub at runtime.
+</Callout>
+
+## Overview
+
+`eslint-plugin-mongodb-security` prevents NoSQL injection and enforces secure MongoDB patterns.
+
+## Installation
+
+```bash tab="npm"
+npm install eslint-plugin-mongodb-security
+```
+
+```bash tab="pnpm"
+pnpm add eslint-plugin-mongodb-security
+```
+
+## Configuration
+
+```js title="eslint.config.js"
+import mongodbSecurity from 'eslint-plugin-mongodb-security';
+
+export default [mongodbSecurity.configs.recommended];
+```

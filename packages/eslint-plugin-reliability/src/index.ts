@@ -41,7 +41,7 @@ export const rules = {
 
 export const plugin = {
   meta: {
-    name: '@interlace/eslint-plugin-reliability',
+    name: 'eslint-plugin-reliability',
     version: '1.0.0',
   },
   rules,

@@ -91,9 +91,9 @@
     {
       "name": "eslint-plugin-modularity",
       "rules": 7,
-      "description": "ESLint rules for architecture, DDD patterns, and module isolation",
+      "description": "ESLint rules for architecture, DDD patterns, and module isolation with AI-parseable guidance",
       "category": "security",
-      "version": "0.0.1",
+      "version": "1.0.0",
       "published": true
     },
     {
@@ -107,9 +107,9 @@
     {
       "name": "eslint-plugin-modernization",
       "rules": 5,
-      "description": "ESLint rules for modernizing JavaScript to ES2022+ syntax",
+      "description": "ESLint rules for modernizing JavaScript to ES2022+ syntax with AI-parseable guidance",
       "category": "security",
-      "version": "0.0.1",
+      "version": "1.0.0",
       "published": true
     },
     {
@@ -164,5 +164,5 @@
   "totalRules": 332,
   "totalPlugins": 18,
   "allPluginsCount": 20,
-  "generatedAt": "2026-01-27T00:22:26.156Z"
+  "generatedAt": "2026-02-01T03:39:37.656Z"
 }

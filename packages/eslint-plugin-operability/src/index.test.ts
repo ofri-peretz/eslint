@@ -4,7 +4,7 @@ import plugin, { rules, configs } from './index';
 describe('eslint-plugin-operability plugin interface', () => {
   it('should export correct meta information', () => {
     expect(plugin.meta).toBeDefined();
-    expect(plugin.meta?.name).toBe('@interlace/eslint-plugin-operability');
+    expect(plugin.meta?.name).toBe('eslint-plugin-operability');
     expect(plugin.meta?.version).toBeDefined();
     expect(typeof plugin.meta?.version).toBe('string');
   });

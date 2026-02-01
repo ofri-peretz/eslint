@@ -1,0 +1,31 @@
+---
+title: Documentation
+description: JSDoc and comment standards
+icon: FileText
+---
+
+<Callout type="info">
+  This plugin documentation is loaded from GitHub at runtime.
+</Callout>
+
+## Overview
+
+`eslint-plugin-documentation` enforces JSDoc and documentation standards.
+
+## Installation
+
+```bash tab="npm"
+npm install eslint-plugin-documentation
+```
+
+```bash tab="pnpm"
+pnpm add eslint-plugin-documentation
+```
+
+## Configuration
+
+```js title="eslint.config.js"
+import documentation from 'eslint-plugin-documentation';
+
+export default [documentation.configs.recommended];
+```

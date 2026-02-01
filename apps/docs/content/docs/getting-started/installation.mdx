@@ -1,0 +1,51 @@
+---
+title: Installation
+description: Install ESLint Interlace plugins in your project
+icon: Download
+---
+
+## Quick Start
+
+Install the ESLint Interlace preset that includes all plugins:
+
+```bash tab="npm"
+npm install eslint-config-interlace
+```
+
+```bash tab="pnpm"
+pnpm add eslint-config-interlace
+```
+
+```bash tab="yarn"
+yarn add eslint-config-interlace
+```
+
+## Individual Plugins
+
+Or install specific plugins based on your needs:
+
+### Security Plugins
+
+```bash
+npm install eslint-plugin-browser-security \
+  eslint-plugin-crypto \
+  eslint-plugin-jwt \
+  eslint-plugin-secure-coding
+```
+
+### Quality Plugins
+
+```bash
+npm install eslint-plugin-react-best-practices \
+  eslint-plugin-react-hooks-best-practices \
+  eslint-plugin-documentation
+```
+
+<Cards>
+  <Card title="Configuration" href="/docs/configuration">
+    Configure plugins for your project
+  </Card>
+  <Card title="Flat Config" href="/docs/flat-config">
+    ESLint 9.x flat config migration
+  </Card>
+</Cards>

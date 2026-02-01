@@ -42,7 +42,7 @@ Instead of a catch-all container, we split rules based on **core engineering val
 
 ### 2. Proposed Taxonomy & Mapping
 
-#### **Suite A: `@interlace/eslint-plugin-maintainability`**
+#### **Suite A: `eslint-plugin-maintainability`**
 
 - **Audience:** Craftsmanship-focused developers & Clean Code purists.
 - **Core Value:** Reducing cognitive load and ensuring code readability.
@@ -58,7 +58,7 @@ Instead of a catch-all container, we split rules based on **core engineering val
   - `max-lines-per-function`: Set strict limits on function length.
   - `prefer-early-return`: Discourage deeply nested `if/else` structures.
 
-#### **Suite B: `@interlace/eslint-plugin-reliability`**
+#### **Suite B: `eslint-plugin-reliability`**
 
 - **Audience:** Backend Engineers & SREs.
 - **Core Value:** Runtime stability, fault tolerance, and type safety.
@@ -75,7 +75,7 @@ Instead of a catch-all container, we split rules based on **core engineering val
   - `no-ignored-return-value`: Prevent ignoring results from immutable methods (e.g., `.map()`).
   - `strict-error-types`: Enforce that only `Error` objects (not strings/literals) are thrown.
 
-#### **Suite C: `@interlace/eslint-plugin-operability`**
+#### **Suite C: `eslint-plugin-operability`**
 
 - **Audience:** Platform Engineers & DevOps.
 - **Core Value:** Production behavior, resource hygiene, and log quality.
@@ -91,7 +91,7 @@ Instead of a catch-all container, we split rules based on **core engineering val
   - `require-correlation-id`: Ensure logging utilities receive a trace/correlation ID.
   - `no-sync-io-in-async`: Prevent blocking the event loop with `fs.*Sync` in async contexts.
 
-#### **Suite D: `@interlace/eslint-plugin-conventions` (The "Flavor" Suite)**
+#### **Suite D: `eslint-plugin-conventions` (The "Flavor" Suite)**
 
 - **Audience:** Teams looking for disciplinary habits and specific style "flavor."
 - **Core Value:** Consistency and enforcement of team-specific disciplinary patterns.

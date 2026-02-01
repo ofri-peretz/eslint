@@ -1,5 +1,6 @@
 import { defineConfig, defineDocs, frontmatterSchema, metaSchema } from 'fumadocs-mdx/config';
-import { remarkMdxMermaid, remarkNpm } from 'fumadocs-core/mdx-plugins';
+import { transformerTwoslash } from 'fumadocs-twoslash';
+import { rehypeCodeDefaultOptions } from 'fumadocs-core/mdx-plugins';
 
 // You can customise Zod schemas for frontmatter and `meta.json` here
 // see https://fumadocs.dev/docs/mdx/collections
@@ -18,7 +19,19 @@ export const docs = defineDocs({
 
 export default defineConfig({
   mdxOptions: {
-    // Enable Mermaid code blocks and package manager tabs
-    remarkPlugins: [remarkMdxMermaid, remarkNpm],
+    // Twoslash - TypeScript inline hints in code blocks
+    // Use ```ts twoslash or ```tsx twoslash to enable
+    rehypeCodeOptions: {
+      themes: {
+        light: 'github-light',
+        dark: 'github-dark',
+      },
+      transformers: [
+        ...(rehypeCodeDefaultOptions.transformers ?? []),
+        transformerTwoslash(),
+      ],
+      // Required: Shiki doesn't support lazy loading for Twoslash
+      langs: ['js', 'jsx', 'ts', 'tsx', 'json', 'bash', 'sh', 'yaml', 'md', 'mdx'],
+    },
   },
 });

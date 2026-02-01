@@ -1,6 +1,6 @@
 ---
 title: jsx-no-script-url
-description: "Prevent javascript: URLs in JSX. This rule is part of @interlace/eslint-plugin-react-features and provides LLM-optimized error messages."
+description: 'Prevent javascript: URLs in JSX. This rule is part of eslint-plugin-react-features and provides LLM-optimized error messages.'
 category: quality
 severity: low
 tags: ['quality', 'react']
@@ -11,7 +11,7 @@ effort: low
 
 > **Keywords:** React, JSX, javascript URL, XSS, security, ESLint rule, LLM-optimized
 
-Prevent javascript: URLs in JSX. This rule is part of [`@interlace/eslint-plugin-react-features`](https://www.npmjs.com/package/@interlace/eslint-plugin-react-features) and provides LLM-optimized error messages.
+Prevent javascript: URLs in JSX. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and provides LLM-optimized error messages.
 
 ## Quick Summary
 

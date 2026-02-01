@@ -1,37 +1,4 @@
 {
     "title": "Documentation",
-    "pages": [
-        "---Guide---",
-        "index",
-        "examples",
-        "benchmarks",
-        "coverage",
-        "articles",
-        "concepts",
-        "roadmap",
-        "---ESLint Plugins (Security)---",
-        "secure-coding",
-        "node-security",
-        "pg",
-        "jwt",
-        "crypto",
-        "browser-security",
-        "mongodb-security",
-        "vercel-ai-security",
-        "---ESLint Plugins (Frameworks)---",
-        "express-security",
-        "nestjs-security",
-        "lambda-security",
-        "---ESLint Plugins (Quality)---",
-        "maintainability",
-        "reliability",
-        "operability",
-        "conventions",
-        "react-features",
-        "react-a11y",
-        "---ESLint Plugins (Architecture)---",
-        "modularity",
-        "modernization",
-        "import-next"
-    ]
+    "defaultOpen": true
 }

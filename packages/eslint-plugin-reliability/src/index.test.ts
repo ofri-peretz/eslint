@@ -4,7 +4,7 @@ import plugin, { rules, configs } from './index';
 describe('eslint-plugin-reliability plugin interface', () => {
   it('should export correct meta information', () => {
     expect(plugin.meta).toBeDefined();
-    expect(plugin.meta?.name).toBe('@interlace/eslint-plugin-reliability');
+    expect(plugin.meta?.name).toBe('eslint-plugin-reliability');
     expect(plugin.meta?.version).toBeDefined();
     expect(typeof plugin.meta?.version).toBe('string');
   });

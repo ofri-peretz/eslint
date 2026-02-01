@@ -1,0 +1,58 @@
+---
+title: Browser Security
+description: XSS, cookie, and DOM security rules for client-side JavaScript
+icon: Globe
+---
+
+<Callout type="info">
+  This plugin documentation is loaded from GitHub at runtime.
+</Callout>
+
+## Overview
+
+`eslint-plugin-browser-security` provides 12 rules for protecting client-side JavaScript applications from common web vulnerabilities.
+
+## Installation
+
+```bash tab="npm"
+npm install eslint-plugin-browser-security
+```
+
+```bash tab="pnpm"
+pnpm add eslint-plugin-browser-security
+```
+
+```bash tab="yarn"
+yarn add eslint-plugin-browser-security
+```
+
+## Configuration
+
+```js title="eslint.config.js"
+import browserSecurity from 'eslint-plugin-browser-security';
+
+export default [browserSecurity.configs.recommended];
+```
+
+## Rules
+
+<Cards>
+  <Card
+    title="no-insecure-url"
+    href="/docs/browser-security/rules/no-insecure-url"
+  >
+    Prevent HTTP URLs in security contexts
+  </Card>
+  <Card
+    title="no-document-cookie"
+    href="/docs/browser-security/rules/no-document-cookie"
+  >
+    Avoid direct document.cookie access
+  </Card>
+  <Card
+    title="no-dangerouslysetinnerhtml"
+    href="/docs/browser-security/rules/no-dangerouslysetinnerhtml"
+  >
+    Require safe alternatives to dangerouslySetInnerHTML
+  </Card>
+</Cards>
