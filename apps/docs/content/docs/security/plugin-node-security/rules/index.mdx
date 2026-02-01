@@ -1,15 +1,40 @@
 ---
 title: Rules
-description: All ESLint rules provided by eslint-plugin-node-security
+description: All ESLint security rules provided by eslint-plugin-node-security
 icon: BookOpen
 ---
 
 import { RulesTable } from '@/components/docs/rules-table';
 
-<Callout type="info" title="31 Rules Available">
-  Node.js security rules for crypto, file access, and dependencies.
+<Callout type="info" title="31 Security Rules">
+  Comprehensive coverage of Node.js built-in module security including fs,
+  child_process, vm, and crypto.
 </Callout>
 
 ## All Rules
 
 <RulesTable plugin="node-security" showLinks />
+
+---
+
+## Rule Categories
+
+### Command Injection
+
+Rules detecting child_process vulnerabilities and unsafe command execution.
+
+### File System Security
+
+Rules preventing path traversal, TOCTOU vulnerabilities, and unsafe file operations.
+
+### Cryptographic Security
+
+Rules enforcing secure crypto implementations and preventing weak algorithms.
+
+### Module Security
+
+Rules detecting unsafe require patterns and dependency vulnerabilities.
+
+### Data Protection
+
+Rules preventing PII exposure in logs and requiring secure storage.

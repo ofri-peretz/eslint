@@ -1,15 +1,40 @@
 ---
 title: Rules
-description: All ESLint rules provided by eslint-plugin-vercel-ai-security
+description: All ESLint security rules provided by eslint-plugin-vercel-ai-security
 icon: BookOpen
 ---
 
 import { RulesTable } from '@/components/docs/rules-table';
 
-<Callout type="info" title="19 Rules Available">
-  Vercel AI SDK security rules for prompt injection and AI safety.
+<Callout type="info" title="19 Security Rules">
+  Comprehensive coverage of Vercel AI SDK security including prompt injection,
+  output handling, and tool safety.
 </Callout>
 
 ## All Rules
 
 <RulesTable plugin="vercel-ai-security" showLinks />
+
+---
+
+## Rule Categories
+
+### Prompt Injection Prevention
+
+Rules detecting dynamic system prompts, sensitive data in prompts, and system prompt leaks.
+
+### Output Security
+
+Rules requiring output validation, filtering, and safe handling of AI responses.
+
+### Tool & Function Safety
+
+Rules requiring tool confirmation, schema validation, and proper error handling.
+
+### Resource Limits
+
+Rules enforcing max tokens, max steps, request timeouts, and abort signals.
+
+### Audit & Compliance
+
+Rules requiring audit logging and RAG content validation.

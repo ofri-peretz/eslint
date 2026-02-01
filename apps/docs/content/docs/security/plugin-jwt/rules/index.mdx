@@ -1,15 +1,36 @@
 ---
 title: Rules
-description: All ESLint rules provided by eslint-plugin-jwt
+description: All ESLint security rules provided by eslint-plugin-jwt
 icon: BookOpen
 ---
 
 import { RulesTable } from '@/components/docs/rules-table';
 
-<Callout type="info" title="13 Rules Available">
-  JWT security rules for token validation, algorithm safety, and claims verification.
+<Callout type="info" title="13 Security Rules">
+  Comprehensive coverage of JWT security including algorithm confusion, token
+  validation, and CVE-specific vulnerabilities.
 </Callout>
 
 ## All Rules
 
 <RulesTable plugin="jwt" showLinks />
+
+---
+
+## Rule Categories
+
+### Algorithm Security
+
+Rules preventing algorithm confusion attacks (CVE-2022-23540) and ensuring proper algorithm whitelisting.
+
+### Token Validation
+
+Rules requiring proper validation of audience, issuer, expiration, and issued-at claims.
+
+### Secrets & Keys
+
+Rules detecting hardcoded secrets and weak signing keys.
+
+### Payload Security
+
+Rules preventing sensitive data exposure in JWT payloads.

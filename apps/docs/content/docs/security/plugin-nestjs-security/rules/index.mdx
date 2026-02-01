@@ -1,15 +1,35 @@
 ---
 title: Rules
-description: All ESLint rules provided by eslint-plugin-nestjs-security
+description: All ESLint security rules provided by eslint-plugin-nestjs-security
 icon: BookOpen
 ---
 
 import { RulesTable } from '@/components/docs/rules-table';
 
-<Callout type="info" title="6 Rules Available">
-  NestJS security rules for guards, validation, and throttling.
+<Callout type="info" title="6 Security Rules">
+  Essential NestJS security rules for guards, validation pipes, and throttling.
 </Callout>
 
 ## All Rules
 
 <RulesTable plugin="nestjs-security" showLinks />
+
+---
+
+## Rule Categories
+
+### Authentication & Authorization
+
+Rules requiring proper guards on controllers and endpoints.
+
+### Input Validation
+
+Rules enforcing validation pipes and class-validator decorators.
+
+### Rate Limiting
+
+Rules requiring throttler configuration to prevent abuse.
+
+### Data Protection
+
+Rules preventing exposure of private fields in responses.

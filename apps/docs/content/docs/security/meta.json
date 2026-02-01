@@ -15,8 +15,6 @@
         "plugin-lambda-security",
         "plugin-mongodb-security",
         "plugin-pg",
-        "plugin-vercel-ai-security",
-        "plugin-react-a11y",
-        "plugin-react-features"
+        "plugin-vercel-ai-security"
     ]
 }

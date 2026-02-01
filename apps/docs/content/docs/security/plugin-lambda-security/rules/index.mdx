@@ -1,15 +1,40 @@
 ---
 title: Rules
-description: All ESLint rules provided by eslint-plugin-lambda-security
+description: All ESLint security rules provided by eslint-plugin-lambda-security
 icon: BookOpen
 ---
 
 import { RulesTable } from '@/components/docs/rules-table';
 
-<Callout type="info" title="14 Rules Available">
-  AWS Lambda security rules for serverless functions.
+<Callout type="info" title="14 Security Rules">
+  Comprehensive coverage of AWS Lambda and Middy security patterns for
+  serverless applications.
 </Callout>
 
 ## All Rules
 
 <RulesTable plugin="lambda-security" showLinks />
+
+---
+
+## Rule Categories
+
+### CORS & Headers
+
+Rules preventing permissive CORS responses and enforcing security headers.
+
+### Input Validation
+
+Rules requiring validation of event body and user-controlled input.
+
+### Credential Security
+
+Rules detecting hardcoded SDK credentials and secrets in environment variables.
+
+### Error Handling
+
+Rules preventing error swallowing and exposed error details.
+
+### Resource Limits
+
+Rules requiring timeout handling and preventing unbounded batch processing.

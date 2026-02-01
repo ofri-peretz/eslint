@@ -1,5 +1,10 @@
 {
-    "title": "lambda-security",
+    "title": "Plugin: lambda-security",
     "icon": "Cloud",
-    "defaultOpen": false
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
 }

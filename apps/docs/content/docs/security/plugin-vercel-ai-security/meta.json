@@ -1,5 +1,10 @@
 {
-    "title": "vercel-ai-security",
+    "title": "Plugin: vercel-ai-security",
     "icon": "Bot",
-    "defaultOpen": false
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
 }

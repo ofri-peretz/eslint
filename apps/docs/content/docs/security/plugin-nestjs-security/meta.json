@@ -1,5 +1,10 @@
 {
-    "title": "nestjs-security",
+    "title": "Plugin: nestjs-security",
     "icon": "Shield",
-    "defaultOpen": false
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
 }

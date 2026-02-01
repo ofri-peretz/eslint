@@ -1,5 +1,10 @@
 {
-    "title": "jwt",
+    "title": "Plugin: jwt",
     "icon": "Key",
-    "defaultOpen": false
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
 }

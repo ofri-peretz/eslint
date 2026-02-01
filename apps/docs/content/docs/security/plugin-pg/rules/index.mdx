@@ -1,15 +1,36 @@
 ---
 title: Rules
-description: All ESLint rules provided by eslint-plugin-pg
+description: All ESLint security rules provided by eslint-plugin-pg
 icon: BookOpen
 ---
 
 import { RulesTable } from '@/components/docs/rules-table';
 
-<Callout type="info" title="13 Rules Available">
-  PostgreSQL security rules for SQL injection and connection safety.
+<Callout type="info" title="13 Security Rules">
+  Comprehensive coverage of PostgreSQL security and best practices for the pg
+  driver.
 </Callout>
 
 ## All Rules
 
 <RulesTable plugin="pg" showLinks />
+
+---
+
+## Rule Categories
+
+### SQL Injection Prevention
+
+Rules detecting unsafe queries and requiring parameterized queries.
+
+### Credential Security
+
+Rules preventing hardcoded credentials and insecure SSL configurations.
+
+### Connection Management
+
+Rules enforcing proper client release and preventing double-release issues.
+
+### Query Best Practices
+
+Rules for efficient query patterns and preventing common mistakes.

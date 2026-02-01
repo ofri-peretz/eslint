@@ -1,15 +1,36 @@
 ---
 title: Rules
-description: All ESLint rules provided by eslint-plugin-mongodb-security
+description: All ESLint security rules provided by eslint-plugin-mongodb-security
 icon: BookOpen
 ---
 
 import { RulesTable } from '@/components/docs/rules-table';
 
-<Callout type="info" title="16 Rules Available">
-  MongoDB security rules for NoSQL injection and query safety.
+<Callout type="info" title="16 Security Rules">
+  Comprehensive coverage of NoSQL injection, credential exposure, and
+  MongoDB/Mongoose vulnerabilities.
 </Callout>
 
 ## All Rules
 
 <RulesTable plugin="mongodb-security" showLinks />
+
+---
+
+## Rule Categories
+
+### NoSQL Injection Prevention
+
+Rules detecting operator injection, unsafe queries, and regex-based attacks.
+
+### Credential Security
+
+Rules preventing hardcoded credentials and connection strings.
+
+### Query Safety
+
+Rules enforcing bounded queries, projections, and lean query patterns.
+
+### Connection Security
+
+Rules requiring TLS connections and proper authentication mechanisms.

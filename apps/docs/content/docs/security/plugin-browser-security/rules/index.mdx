@@ -1,15 +1,40 @@
 ---
 title: Rules
-description: All ESLint rules provided by eslint-plugin-browser-security
+description: All ESLint security rules provided by eslint-plugin-browser-security
 icon: BookOpen
 ---
 
 import { RulesTable } from '@/components/docs/rules-table';
 
-<Callout type="info" title="45 Rules Available">
-  Browser security rules for XSS, CSRF, CSP, and client-side vulnerabilities.
+<Callout type="info" title="45 Security Rules">
+  Comprehensive coverage of XSS, cookie security, DOM protection, and
+  client-side vulnerabilities.
 </Callout>
 
 ## All Rules
 
 <RulesTable plugin="browser-security" showLinks />
+
+---
+
+## Rule Categories
+
+### XSS Prevention
+
+Rules that prevent Cross-Site Scripting attacks through innerHTML, postMessage, and DOM manipulation.
+
+### Cookie Security
+
+Rules for secure cookie handling, preventing sensitive data exposure in client-side storage.
+
+### Content Security Policy
+
+Rules enforcing proper CSP headers and preventing unsafe inline/eval patterns.
+
+### DOM Security
+
+Rules for safe DOM manipulation and preventing DOM-based vulnerabilities.
+
+### WebSocket Security
+
+Rules for secure WebSocket communication and message handling.
