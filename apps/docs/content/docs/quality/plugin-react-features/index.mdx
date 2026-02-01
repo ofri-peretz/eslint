@@ -1,0 +1,48 @@
+---
+title: 'Overview'
+description: React best practices and feature rules.
+icon: Puzzle
+---
+
+import { RemoteReadme } from '@/components/docs/remote-readme';
+import { Code, BookOpen, History } from 'lucide-react';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+<Callout type="info" title="Live from GitHub">
+  This content is fetched directly from
+  [README.md](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/README.md)
+  on GitHub and cached for 1 hour.
+</Callout>
+
+<Callout type="success" title="React Best Practices">
+  Enforce React best practices and feature patterns for maintainable
+  applications.
+</Callout>
+
+<Cards>
+  <Card
+    title="Rules (51)"
+    description="Browse all available React feature rules"
+    href="/docs/quality/plugin-react-features/rules"
+    icon={<BookOpen />}
+  />
+  <Card
+    title="Changelog"
+    description="View version history and updates"
+    href="/docs/quality/plugin-react-features/changelog"
+    icon={<History />}
+  />
+</Cards>
+
+---
+
+<RemoteReadme plugin="react-features" sections={['full']} />
+
+<a
+  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/README.md"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="inline-flex items-center gap-1 text-sm text-fd-muted-foreground hover:text-fd-foreground mt-6"
+>
+  View README.md on GitHub →
+</a>

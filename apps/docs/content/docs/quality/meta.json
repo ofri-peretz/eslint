@@ -15,6 +15,9 @@
         "plugin-operability",
         "---Conventions---",
         "plugin-conventions",
-        "plugin-modernization"
+        "plugin-modernization",
+        "---React---",
+        "plugin-react-features",
+        "plugin-react-a11y"
     ]
 }
