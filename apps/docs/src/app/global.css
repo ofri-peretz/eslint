@@ -2,6 +2,9 @@
 @import 'fumadocs-ui/css/purple.css';
 @import 'fumadocs-ui/css/preset.css';
 @import 'fumadocs-twoslash/twoslash.css';
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
 
 /* Scan fumadocs packages from app-level node_modules (symlinked to workspace root) */
 @source "../../node_modules/fumadocs-ui";
@@ -18,13 +21,13 @@
   /* Primary purple - meets WCAG AA for large text on white */
   --color-fd-primary: hsl(263, 80%, 45%) !important;
   --color-fd-primary-foreground: hsl(0, 0%, 100%) !important;
-  
+
   /* Foreground color for lines and text */
   --color-fd-foreground: hsl(0, 0%, 3.9%) !important;
-  
+
   /* Improved muted foreground for better readability (4.5:1 contrast ratio) */
   --color-fd-muted-foreground: hsl(0, 0%, 40%) !important;
-  
+
   /* Ring/focus color matching brand */
   --color-fd-ring: hsl(263, 70%, 55%) !important;
 }
@@ -34,13 +37,13 @@
   /* Lighter purple for dark mode - maintains 4.5:1 contrast on dark bg */
   --color-fd-primary: hsl(270, 75%, 75%) !important;
   --color-fd-primary-foreground: hsl(0, 0%, 5%) !important;
-  
+
   /* Foreground color for dark mode */
   --color-fd-foreground: hsl(0, 0%, 92%) !important;
-  
+
   /* Improved muted foreground for dark mode readability */
   --color-fd-muted-foreground: hsl(0, 0%, 65%) !important;
-  
+
   /* Ring/focus color for dark mode */
   --color-fd-ring: hsl(270, 70%, 70%) !important;
 }
@@ -118,7 +121,7 @@
    * - xl+ (≥1280px): Show side TOC, hide popover TOC
    * - <xl (<1280px): Show popover TOC, hide side TOC
    * ================================================= */
-  
+
   /* On large screens (xl+): Hide the popover TOC */
   @media (min-width: 1280px) {
     button[data-toc-popover-trigger],
@@ -126,7 +129,7 @@
       display: none !important;
     }
   }
-  
+
   /* On smaller screens (<xl): Hide the side TOC */
   @media (max-width: 1279px) {
     #nd-toc {
@@ -134,3 +137,53 @@
     }
   }
 }
+
+@theme inline {
+  --animate-shimmer-slide: shimmer-slide var(--speed) ease-in-out infinite alternate;
+  --animate-spin-around: spin-around calc(var(--speed) * 2) infinite linear;
+  @keyframes shimmer-slide {
+  to {
+    transform: translate(calc(100cqw - 100%), 0);
+    }
+  }
+  @keyframes spin-around {
+  0% {
+    transform: translateZ(0) rotate(0);
+    }
+  15%, 35% {
+    transform: translateZ(0) rotate(90deg);
+    }
+  65%, 85% {
+    transform: translateZ(0) rotate(270deg);
+    }
+  100% {
+    transform: translateZ(0) rotate(360deg);
+    }
+  }
+  --animate-gradient: gradient 8s linear infinite
+;
+  @keyframes gradient {
+  to {
+    background-position: var(--bg-size, 300%) 0;
+    }
+  }
+  --animate-marquee: marquee var(--duration) infinite linear;
+  --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
+  @keyframes marquee {
+  from {
+    transform: translateX(0);
+    }
+  to {
+    transform: translateX(calc(-100% - var(--gap)));
+    }
+  }
+  @keyframes marquee-vertical {
+  from {
+    transform: translateY(0);
+    }
+  to {
+    transform: translateY(calc(-100% - var(--gap)));
+    }
+  }}
+
+/* Base styling is provided by fumadocs-ui/css/preset.css */

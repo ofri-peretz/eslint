@@ -31,6 +31,21 @@ export function baseOptions(): BaseLayoutProps {
       ),
       transparentMode: 'top',
     },
-    githubUrl: 'https://github.com/interlace-app/eslint-ecosystem',
+    links: [
+      {
+        text: 'Documentation',
+        url: '/docs',
+        active: 'nested-url',
+      },
+      {
+        text: 'Showcase',
+        url: '/showcase',
+      },
+      {
+        text: 'Articles',
+        url: '/articles',
+      },
+    ],
+    githubUrl: 'https://github.com/ofri-peretz/eslint',
   };
 }
