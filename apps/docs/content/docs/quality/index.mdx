@@ -1,79 +1,135 @@
 ---
-title: Quality & Architecture
-description: Code quality, maintainability, and architectural best practices
+title: Quality & Architecture Plugins
+description: ESLint plugins for code quality, maintainability, modularity, and developer experience
 icon: Layers
 ---
 
 import {
-  Atom,
-  GitPullRequest,
+  Package,
   Zap,
   FileText,
-  Tag,
   Code,
-  AlertTriangle,
-  Network,
+  Layers,
+  Box,
+  Cog,
+  Activity,
+  Sparkles,
 } from 'lucide-react';
 
-Ensure code quality and maintainability across your codebase.
+## ESLint Plugins
 
-## Plugin Categories
+This section documents our **ESLint plugins** focused on code quality, architectural patterns, and developer experience.
+
+<Callout type="info" title="Live Documentation">
+  All plugin documentation (README, Changelog, Rule docs) is fetched directly
+  from GitHub. Updates are reflected automatically without redeployment.
+</Callout>
+
+---
+
+## Architecture
 
 <Cards>
   <Card
-    title="React Best Practices"
-    href="/docs/quality/react-best-practices"
-    icon={<Atom />}
-  >
-    Component patterns and conventions
-  </Card>
-  <Card
-    title="React Hooks"
-    href="/docs/quality/react-hooks"
-    icon={<GitPullRequest />}
-  >
-    Custom hooks and hook rules
-  </Card>
-  <Card
-    title="React Performance"
-    href="/docs/quality/react-performance"
+    title="Plugin: import-next"
+    href="/docs/quality/plugin-import-next"
     icon={<Zap />}
   >
-    Performance optimization rules
+    100x faster cycle detection • 61 rules • Drop-in eslint-plugin-import
+    replacement
   </Card>
   <Card
-    title="Documentation"
-    href="/docs/quality/documentation"
-    icon={<FileText />}
+    title="Plugin: modularity"
+    href="/docs/quality/plugin-modularity"
+    icon={<Box />}
   >
-    JSDoc and comment standards
-  </Card>
-  <Card
-    title="Naming Conventions"
-    href="/docs/quality/naming-conventions"
-    icon={<Tag />}
-  >
-    Consistent naming patterns
-  </Card>
-  <Card
-    title="Coding Conventions"
-    href="/docs/quality/coding-conventions"
-    icon={<Code />}
-  >
-    Style and consistency rules
-  </Card>
-  <Card
-    title="Error Handling"
-    href="/docs/quality/errors"
-    icon={<AlertTriangle />}
-  >
-    Robust error handling patterns
-  </Card>
-  <Card
-    title="Module Federation"
-    href="/docs/quality/module-federation"
-    icon={<Network />}
-  >
-    Micro-frontend architecture
+    Architecture, DDD patterns, and module isolation • 7 rules
   </Card>
 </Cards>
+
+---
+
+## Code Quality
+
+<Cards>
+  <Card
+    title="Plugin: maintainability"
+    href="/docs/quality/plugin-maintainability"
+    icon={<Layers />}
+  >
+    Reducing cognitive load and ensuring readability • 8 rules
+  </Card>
+  <Card
+    title="Plugin: reliability"
+    href="/docs/quality/plugin-reliability"
+    icon={<Activity />}
+  >
+    Runtime stability, fault tolerance, and type safety • 8 rules
+  </Card>
+  <Card
+    title="Plugin: operability"
+    href="/docs/quality/plugin-operability"
+    icon={<Cog />}
+  >
+    Production behavior, resource hygiene, and log quality • 6 rules
+  </Card>
+</Cards>
+
+---
+
+## Conventions & Modernization
+
+<Cards>
+  <Card
+    title="Plugin: conventions"
+    href="/docs/quality/plugin-conventions"
+    icon={<Code />}
+  >
+    Team-specific disciplinary patterns and code conventions • 9 rules
+  </Card>
+  <Card
+    title="Plugin: modernization"
+    href="/docs/quality/plugin-modernization"
+    icon={<Sparkles />}
+  >
+    Modernizing JavaScript to ES2022+ syntax • 5 rules
+  </Card>
+</Cards>
+
+---
+
+## Plugin Structure
+
+Each plugin page includes:
+
+| Section       | Source                      | Cache TTL |
+| ------------- | --------------------------- | --------- |
+| **Overview**  | `README.md` from GitHub     | 1 hour    |
+| **Rules**     | Individual rule `.md` files | 6 hours   |
+| **Changelog** | `CHANGELOG.md` from GitHub  | 2 hours   |
+
+---
+
+## Quick Install
+
+```bash title="Install all quality plugins"
+npm install eslint-plugin-import-next \
+  eslint-plugin-maintainability \
+  eslint-plugin-reliability \
+  eslint-plugin-modularity \
+  eslint-plugin-operability \
+  eslint-plugin-conventions \
+  eslint-plugin-modernization
+```
+
+---
+
+## Unified Config
+
+Use `eslint-config-interlace` to bundle all quality rules:
+
+```js title="eslint.config.js"
+import interlaceConfig from 'eslint-config-interlace';
+
+export default [interlaceConfig.configs.quality];
+```

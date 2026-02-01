@@ -4,48 +4,170 @@ description: Install ESLint Interlace plugins in your project
 icon: Download
 ---
 
+import { CheckCircle, AlertTriangle } from 'lucide-react';
+
+## Prerequisites
+
+Before installing ESLint Interlace, ensure your project meets these requirements:
+
+<Cards>
+  <Card title="Node.js 18+" icon={<CheckCircle />}>
+    Required for ESLint 9.x compatibility
+  </Card>
+  <Card title="ESLint 9.x" icon={<CheckCircle />}>
+    Flat config format is required
+  </Card>
+</Cards>
+
+<Callout type="warning" title="ESLint Version">
+  ESLint Interlace requires **ESLint 9.x** or later with flat config support. If
+  you're using ESLint 8.x, see our [Flat Config
+  Migration](/docs/getting-started/flat-config) guide.
+</Callout>
+
 ## Quick Start
 
-Install the ESLint Interlace preset that includes all plugins:
+Install the complete ESLint Interlace preset that includes all plugins:
 
-```bash tab="npm"
-npm install eslint-config-interlace
-```
-
-```bash tab="pnpm"
-pnpm add eslint-config-interlace
-```
-
-```bash tab="yarn"
-yarn add eslint-config-interlace
-```
+<Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+  <Tab value="npm">
+    ```bash npm install eslint-config-interlace eslint --save-dev ```
+  </Tab>
+  <Tab value="pnpm">```bash pnpm add eslint-config-interlace eslint -D ```</Tab>
+  <Tab value="yarn">
+    ```bash yarn add eslint-config-interlace eslint --dev ```
+  </Tab>
+  <Tab value="bun">
+    ```bash bun add eslint-config-interlace eslint --dev ```
+  </Tab>
+</Tabs>
 
 ## Individual Plugins
 
-Or install specific plugins based on your needs:
+Install only the plugins you need:
 
 ### Security Plugins
 
 ```bash
-npm install eslint-plugin-browser-security \
+npm install --save-dev \
+  eslint-plugin-browser-security \
   eslint-plugin-crypto \
   eslint-plugin-jwt \
-  eslint-plugin-secure-coding
+  eslint-plugin-secure-coding \
+  eslint-plugin-secrets
+```
+
+### React Security
+
+```bash
+npm install --save-dev \
+  eslint-plugin-react-native-security
 ```
 
 ### Quality Plugins
 
 ```bash
-npm install eslint-plugin-react-best-practices \
+npm install --save-dev \
+  eslint-plugin-react-best-practices \
   eslint-plugin-react-hooks-best-practices \
   eslint-plugin-documentation
 ```
 
+### Node.js Plugins
+
+```bash
+npm install --save-dev \
+  eslint-plugin-node-security
+```
+
+## Monorepo Setup
+
+### Nx Workspace
+
+For Nx monorepos, install at the root and configure per-project:
+
+```bash title="Root installation"
+npm install eslint-config-interlace --save-dev -w
+```
+
+```js title="apps/my-app/eslint.config.js"
+import interlace from 'eslint-config-interlace';
+import baseConfig from '../../eslint.config.js';
+
+export default [
+  ...baseConfig,
+  ...interlace.configs.recommended,
+  {
+    files: ['**/*.tsx'],
+    rules: {
+      // App-specific overrides
+    },
+  },
+];
+```
+
+### Turborepo
+
+```bash title="Root installation"
+npm install eslint-config-interlace --save-dev
+```
+
+Share config via internal package or use `tsconfig` paths:
+
+```js title="packages/eslint-config/index.js"
+import interlace from 'eslint-config-interlace';
+
+export default [...interlace.configs.recommended];
+```
+
+### pnpm Workspaces
+
+```bash
+pnpm add eslint-config-interlace -D -w
+```
+
+## TypeScript Projects
+
+For TypeScript projects, no additional configuration is needed. ESLint Interlace automatically detects `.ts` and `.tsx` files:
+
+```js title="eslint.config.js"
+import interlace from 'eslint-config-interlace';
+
+export default [
+  ...interlace.configs.recommended,
+  {
+    files: ['**/*.ts', '**/*.tsx'],
+    // TypeScript files are automatically handled
+  },
+];
+```
+
+<Callout type="info" title="Type-Aware Rules">
+  Some security rules benefit from TypeScript type information. Enable
+  type-aware linting for maximum coverage.
+</Callout>
+
+## Verify Installation
+
+Run ESLint to verify the installation:
+
+```bash
+npx eslint --version
+npx eslint .
+```
+
+You should see ESLint running with Interlace rules. If you encounter issues, check our [Troubleshooting](/docs/getting-started/troubleshooting) guide.
+
+## Next Steps
+
 <Cards>
-  <Card title="Configuration" href="/docs/configuration">
-    Configure plugins for your project
+  <Card title="Configuration" href="/docs/getting-started/configuration">
+    Configure plugins and customize rules
   </Card>
-  <Card title="Flat Config" href="/docs/flat-config">
-    ESLint 9.x flat config migration
+  <Card
+    title="Editor Integration"
+    href="/docs/getting-started/editor-integration"
+  >
+    Set up VS Code, Cursor AI, and other editors
   </Card>
 </Cards>

@@ -1,8 +1,10 @@
 ---
 title: Editor Integration
-description: Set up ESLint Interlace with VS Code and other editors
+description: Set up ESLint Interlace with VS Code, Cursor AI, and other editors
 icon: Monitor
 ---
+
+import { CheckCircle, Sparkles, Zap } from 'lucide-react';
 
 ## VS Code
 
@@ -24,21 +26,112 @@ Add to your `.vscode/settings.json`:
     "javascriptreact",
     "typescript",
     "typescriptreact"
+  ],
+  "eslint.useFlatConfig": true,
+  "eslint.workingDirectories": [{ "mode": "auto" }]
+}
+```
+
+### Recommended Extensions
+
+For the best experience, also install:
+
+- **Error Lens** — Inline error display
+- **ESLint** — Core linting
+- **Prettier** — Code formatting (configure to not conflict)
+
+```json title=".vscode/extensions.json"
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "usernamehw.errorlens",
+    "esbenp.prettier-vscode"
   ]
 }
 ```
 
+## Cursor AI
+
+Cursor AI has built-in ESLint support and leverages Interlace's structured metadata for accurate fixes.
+
+<Callout type="success" title="AI-Native Advantage">
+  ESLint Interlace provides CWE, OWASP, and CVSS metadata that Cursor AI uses to
+  generate precise security fixes—no hallucinations.
+</Callout>
+
+### Enable ESLint
+
+1. Open **Settings** (⌘ + ,)
+2. Search for "ESLint"
+3. Ensure **ESLint: Enable** is checked
+4. Set **ESLint: Use Flat Config** to `true`
+
+### AI Fix Workflow
+
+When Cursor detects an Interlace security violation:
+
+1. **Hover** over the error to see structured metadata (CWE, OWASP)
+2. **Press** ⌘ + K to open AI chat
+3. **Ask** "Fix this security vulnerability" — Cursor uses Interlace metadata
+4. **Review** the suggested fix and apply
+
+### Settings
+
+```json title=".cursor/settings.json"
+{
+  "eslint.enable": true,
+  "eslint.useFlatConfig": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  }
+}
+```
+
+## Antigravity IDE
+
+Antigravity natively integrates with ESLint Interlace for autonomous security fixes.
+
+### Configuration
+
+Antigravity automatically detects your `eslint.config.js` and applies Interlace rules. No additional configuration needed.
+
+### Agent Workflow
+
+When working with Antigravity:
+
+1. Antigravity reads ESLint diagnostics including Interlace metadata
+2. Security violations are prioritized in the agent's context
+3. Fixes are applied using the structured remediation suggestions
+4. The agent verifies fixes pass linting before committing
+
+<Callout type="info" title="Structured Metadata">
+  Interlace provides structured JSON metadata (CWE ID, OWASP category, CVSS
+  score) that AI agents use to understand vulnerability context and generate
+  accurate fixes.
+</Callout>
+
 ## WebStorm / JetBrains IDEs
 
-WebStorm has built-in ESLint support:
+WebStorm, IntelliJ IDEA, and other JetBrains IDEs have built-in ESLint support.
+
+### Enable ESLint
 
 1. Go to **Settings** → **Languages & Frameworks** → **JavaScript** → **Code Quality Tools** → **ESLint**
 2. Select **Automatic ESLint configuration**
-3. Enable **Run eslint --fix on save**
+3. Check **Run eslint --fix on save**
+
+### Flat Config Support
+
+JetBrains IDEs automatically detect `eslint.config.js` files. Ensure you're using a recent IDE version (2024.1+) for full flat config support.
+
+```text title="File → Settings → Languages & Frameworks → JavaScript → Code Quality Tools → ESLint"
+✓ Automatic ESLint configuration
+✓ Run eslint --fix on save
+```
 
 ## Neovim
 
-Use [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig) with ESLint language server:
+### Using nvim-lspconfig
 
 ```lua title="init.lua"
 require('lspconfig').eslint.setup({
@@ -48,5 +141,138 @@ require('lspconfig').eslint.setup({
       command = "EslintFixAll",
     })
   end,
+  settings = {
+    workingDirectories = { mode = "auto" },
+    experimental = {
+      useFlatConfig = true,
+    },
+  },
 })
 ```
+
+### Using none-ls (null-ls successor)
+
+```lua title="init.lua"
+local null_ls = require("null-ls")
+
+null_ls.setup({
+  sources = {
+    null_ls.builtins.diagnostics.eslint_d,
+    null_ls.builtins.code_actions.eslint_d,
+  },
+})
+```
+
+### Using conform.nvim for Formatting
+
+```lua title="init.lua"
+require("conform").setup({
+  formatters_by_ft = {
+    javascript = { "eslint_d" },
+    typescript = { "eslint_d" },
+    javascriptreact = { "eslint_d" },
+    typescriptreact = { "eslint_d" },
+  },
+  format_on_save = {
+    timeout_ms = 500,
+    lsp_fallback = true,
+  },
+})
+```
+
+## GitHub Codespaces
+
+### devcontainer Configuration
+
+```json title=".devcontainer/devcontainer.json"
+{
+  "name": "Node.js & ESLint Interlace",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "usernamehw.errorlens"],
+      "settings": {
+        "eslint.useFlatConfig": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        }
+      }
+    }
+  },
+  "postCreateCommand": "npm install"
+}
+```
+
+## Pre-commit Hooks
+
+### Using Husky + lint-staged
+
+```bash
+npm install husky lint-staged --save-dev
+npx husky init
+```
+
+```json title="package.json"
+{
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": ["eslint --fix", "git add"]
+  }
+}
+```
+
+```bash title=".husky/pre-commit"
+npx lint-staged
+```
+
+### Using lefthook
+
+```yaml title="lefthook.yml"
+pre-commit:
+  parallel: true
+  commands:
+    eslint:
+      glob: '*.{js,jsx,ts,tsx}'
+      run: npx eslint --fix {staged_files}
+      stage_fixed: true
+```
+
+## Troubleshooting Editor Issues
+
+<Accordions>
+
+<Accordion title="ESLint not detecting flat config">
+
+Ensure your file is named exactly `eslint.config.js` (not `.mjs` or `.cjs` unless configured) and is in the project root.
+
+For VS Code, add `"eslint.useFlatConfig": true` to settings.
+
+</Accordion>
+
+<Accordion title="Rules not appearing in editor">
+
+1. Restart the ESLint server (VS Code: ⌘ + Shift + P → "ESLint: Restart ESLint Server")
+2. Check the ESLint output panel for errors
+3. Verify the plugin is installed: `npm ls eslint-plugin-browser-security`
+
+</Accordion>
+
+<Accordion title="Slow linting in large projects">
+
+1. Add node_modules to ignores
+2. Use `eslint_d` for faster repeated runs
+3. Consider `TIMING=1 npx eslint .` to identify slow rules
+
+</Accordion>
+
+</Accordions>
+
+## Next Steps
+
+<Cards>
+  <Card title="CI/CD Integration" href="/docs/advanced/ci-cd">
+    Add linting to GitHub Actions and other pipelines
+  </Card>
+  <Card title="Troubleshooting" href="/docs/getting-started/troubleshooting">
+    Common issues and solutions
+  </Card>
+</Cards>

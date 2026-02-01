@@ -19,7 +19,7 @@ export function baseOptions(): BaseLayoutProps {
             priority
           />
           <Image
-            src="/eslint-interlace-logo-light.svg"
+            src="/eslint-interlace-logo-white.svg"
             alt="ESLint Interlace"
             width={24}
             height={24}

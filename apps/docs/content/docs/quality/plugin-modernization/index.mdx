@@ -1,0 +1,47 @@
+---
+title: 'Overview'
+description: ESLint rules for modernizing JavaScript to ES2022+ syntax
+icon: FileText
+---
+
+import { RemoteReadme } from '@/components/docs/remote-readme';
+import { Sparkles, BookOpen, History } from 'lucide-react';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+<Callout type="info" title="Live from GitHub">
+  This content is fetched directly from
+  [README.md](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modernization/README.md)
+  on GitHub and cached for 1 hour.
+</Callout>
+
+<Callout type="success" title="Modern JavaScript">
+  Upgrade your codebase to ES2022+ syntax with auto-fixable rules.
+</Callout>
+
+<Cards>
+  <Card
+    title="Rules (5)"
+    description="Browse all modernization rules"
+    href="/docs/quality/plugin-modernization/rules"
+    icon={<BookOpen />}
+  />
+  <Card
+    title="Changelog"
+    description="View version history and updates"
+    href="/docs/quality/plugin-modernization/changelog"
+    icon={<History />}
+  />
+</Cards>
+
+---
+
+<RemoteReadme plugin="modernization" sections={['full']} />
+
+<a
+  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modernization/README.md"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="inline-flex items-center gap-1 text-sm text-fd-muted-foreground hover:text-fd-foreground mt-6"
+>
+  View README.md on GitHub →
+</a>

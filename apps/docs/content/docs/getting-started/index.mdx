@@ -1,12 +1,92 @@
 ---
 title: Getting Started
-description: Install, configure, and integrate ESLint Interlace
+description: Enterprise-grade security & quality linting for JavaScript
 icon: Rocket
 ---
 
-import { Package, Settings, FileCode } from 'lucide-react';
+import {
+  Package,
+  Settings,
+  FileCode,
+  Monitor,
+  Shield,
+  Sparkles,
+  CheckCircle,
+} from 'lucide-react';
 
-Welcome to ESLint Interlace. Follow these guides to get up and running.
+## What is ESLint Interlace?
+
+ESLint Interlace is a comprehensive ecosystem of **security and quality ESLint plugins** designed to protect your JavaScript and TypeScript applications from vulnerabilities while enforcing best practices.
+
+<Callout type="info" title="Quick Start">
+  Install the complete suite with a single command: `npm install
+  eslint-config-interlace`
+</Callout>
+
+## Why Interlace?
+
+<Cards>
+  <Card title="🛡️ Security First" href="/docs/plugins#security">
+    11 specialized plugins protecting against XSS, SQL injection, insecure
+    tokens, weak cryptography, and more.
+  </Card>
+  <Card title="📐 Quality Enforced" href="/docs/plugins#quality">
+    8 plugins ensuring React best practices, proper hook usage, documentation
+    standards, and code architecture.
+  </Card>
+  <Card title="🤖 AI-Native" href="/docs/concepts/ai-integration">
+    Structured metadata (CWE, OWASP, CVSS) enables AI agents to fix
+    vulnerabilities accurately—no hallucinations.
+  </Card>
+</Cards>
+
+## The Interlace Advantage
+
+| Feature               | Traditional Linters | ESLint Interlace                  |
+| --------------------- | ------------------- | --------------------------------- |
+| **Security Coverage** | Generic rules       | CWE/OWASP-mapped rules            |
+| **AI Compatibility**  | Plain text errors   | Structured metadata               |
+| **Fix Suggestions**   | Basic hints         | Precise remediation patterns      |
+| **Severity Scoring**  | Error/Warning       | CVSS-based risk scores            |
+| **Framework Support** | Generic             | React, Next.js, Node.js optimized |
+
+## Quick Setup Guide
+
+<Steps>
+
+### Install the package
+
+```bash tab="npm"
+npm install eslint-config-interlace
+```
+
+```bash tab="pnpm"
+pnpm add eslint-config-interlace
+```
+
+```bash tab="yarn"
+yarn add eslint-config-interlace
+```
+
+### Configure ESLint
+
+Create `eslint.config.js` in your project root:
+
+```js title="eslint.config.js"
+import interlace from 'eslint-config-interlace';
+
+export default [...interlace.configs.recommended];
+```
+
+### Run the linter
+
+```bash
+npx eslint .
+```
+
+</Steps>
+
+## Explore the Documentation
 
 <Cards>
   <Card
@@ -14,20 +94,56 @@ Welcome to ESLint Interlace. Follow these guides to get up and running.
     href="/docs/getting-started/installation"
     icon={<Package />}
   >
-    Quick setup with npm, yarn, or pnpm
+    Detailed setup for npm, yarn, pnpm, and monorepos
   </Card>
   <Card
     title="Configuration"
     href="/docs/getting-started/configuration"
     icon={<Settings />}
   >
-    Configure plugins for your project
+    Presets, custom rules, and TypeScript integration
   </Card>
   <Card
     title="Flat Config"
     href="/docs/getting-started/flat-config"
     icon={<FileCode />}
   >
-    ESLint 9.x flat config migration
+    Migrate from legacy .eslintrc to ESLint 9.x
+  </Card>
+  <Card
+    title="Editor Integration"
+    href="/docs/getting-started/editor-integration"
+    icon={<Monitor />}
+  >
+    VS Code, Cursor AI, WebStorm, and Neovim setup
   </Card>
 </Cards>
+
+## Plugin Categories
+
+### Security Plugins
+
+Protect your application from common vulnerabilities:
+
+- **browser-security** — XSS prevention, DOM security
+- **crypto** — Weak algorithm detection, secure random
+- **jwt** — Token security, secret exposure
+- **secure-coding** — Injection prevention, input validation
+- **secrets** — Hardcoded credentials detection
+- **react-native-security** — Mobile-specific vulnerabilities
+- **node-security** — Server-side security patterns
+
+### Quality Plugins
+
+Enforce best practices and maintainability:
+
+- **react-best-practices** — Component patterns, performance
+- **react-hooks-best-practices** — Hook rules, dependency arrays
+- **documentation** — JSDoc enforcement, API documentation
+- **react-usememo** — Memoization optimization
+- **react-perf** — Performance anti-patterns
+
+<Callout type="success" title="Start Secure">
+  Ready to protect your codebase? Head to the [Installation
+  Guide](/docs/getting-started/installation) to get started.
+</Callout>

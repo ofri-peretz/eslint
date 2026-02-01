@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: operability",
+    "icon": "Settings",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

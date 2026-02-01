@@ -1,0 +1,131 @@
+---
+title: AI Integration
+description: How structured metadata enables AI agents to fix vulnerabilities accurately
+icon: Brain
+---
+
+import { Sparkles, AlertTriangle, CheckCircle, Code } from 'lucide-react';
+
+## Why AI Needs Structured Errors
+
+Traditional linters output plain text errors like:
+
+> "Possible SQL injection vulnerability"
+
+This gives AI assistants **no actionable context**. They may hallucinate fixes or apply incorrect patterns.
+
+<Callout type="warn" title="The Hallucination Problem">
+  When an AI assistant receives a vague error message, it must guess at the fix.
+  This leads to incorrect remediation patterns, incomplete fixes, or even
+  introducing new vulnerabilities.
+</Callout>
+
+---
+
+## The Interlace Difference
+
+Every Interlace security rule provides **structured metadata**:
+
+| Field           | Example             | Purpose                       |
+| --------------- | ------------------- | ----------------------------- |
+| **CWE**         | CWE-89              | SQL Injection classification  |
+| **OWASP**       | A03:2021            | Injection category mapping    |
+| **CVSS**        | 9.8 (Critical)      | Severity scoring              |
+| **Fix Pattern** | Parameterized query | Verified remediation template |
+
+---
+
+## How AI Agents Use This Data
+
+With structured metadata, AI agents can:
+
+<Steps>
+
+### Understand the Exact Vulnerability
+
+The CWE classification tells the AI exactly what type of vulnerability it's dealing with—not a guess, but a precise classification from a global database.
+
+### Reference Verified Patterns
+
+Instead of generating a fix from scratch, the AI can reference the rule's documented remediation pattern, which has been tested and verified.
+
+### Prioritize by Severity
+
+CVSS scores help AI agents understand which issues are critical (fix now) vs. low priority (can wait).
+
+</Steps>
+
+---
+
+## Supported AI Tools
+
+Interlace's structured metadata works with all major AI coding assistants:
+
+<Cards>
+  <Card title="GitHub Copilot">
+    Reads ESLint output and applies suggested fixes inline.
+  </Card>
+  <Card title="Cursor AI">
+    Uses metadata for context-aware security remediation.
+  </Card>
+  <Card title="Claude Dev">
+    Leverages CWE/OWASP mappings for precise fixes.
+  </Card>
+  <Card title="Antigravity">
+    Native integration with structured error output.
+  </Card>
+</Cards>
+
+---
+
+## Example: SQL Injection Fix
+
+### Without Structured Metadata
+
+```plaintext
+Error: Possible SQL injection vulnerability (line 19)
+```
+
+AI Response: _"Maybe use prepared statements? Or escape the input? Let me try..."_
+
+### With Interlace Metadata
+
+```json
+{
+  "ruleId": "secure-coding/no-sql-concatenation",
+  "message": "SQL query constructed via string concatenation",
+  "cwe": "CWE-89",
+  "owasp": "A03:2021",
+  "cvss": 9.8,
+  "fix": {
+    "pattern": "parameterized-query",
+    "example": "db.query('SELECT * FROM users WHERE id = $1', [userId])"
+  }
+}
+```
+
+AI Response: _"Applying parameterized query pattern for CWE-89 SQL Injection..."_
+
+<Callout type="success" title="100% Precision">
+  With structured metadata, AI agents apply the exact fix pattern—no guessing,
+  no hallucinations.
+</Callout>
+
+---
+
+## Next Steps
+
+<Cards>
+  <Card
+    title="AST Fundamentals"
+    href="/docs/getting-started/concepts/ast-fundamentals"
+  >
+    Understand how ESLint "sees" your code
+  </Card>
+  <Card
+    title="Security Metadata"
+    href="/docs/getting-started/concepts/security-metadata"
+  >
+    Deep dive into CWE, OWASP, and CVSS
+  </Card>
+</Cards>

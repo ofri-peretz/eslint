@@ -1,0 +1,47 @@
+---
+title: 'Overview'
+description: Drop-in replacement for eslint-plugin-import with 100x faster cycle detection
+icon: FileText
+---
+
+import { RemoteReadme } from '@/components/docs/remote-readme';
+import { Zap, BookOpen, History, ExternalLink } from 'lucide-react';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+<Callout type="info" title="Live from GitHub">
+  This content is fetched directly from
+  [README.md](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/README.md)
+  on GitHub and cached for 1 hour.
+</Callout>
+
+<Callout type="success" title="100x Faster">
+  Cycle detection in milliseconds, not minutes. Optimized for large monorepos.
+</Callout>
+
+<Cards>
+  <Card
+    title="Rules (56)"
+    description="Browse all available ESLint rules"
+    href="/docs/quality/plugin-import-next/rules"
+    icon={<BookOpen />}
+  />
+  <Card
+    title="Changelog"
+    description="View version history and updates"
+    href="/docs/quality/plugin-import-next/changelog"
+    icon={<History />}
+  />
+</Cards>
+
+---
+
+<RemoteReadme plugin="import-next" sections={['full']} />
+
+<a
+  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/README.md"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="inline-flex items-center gap-1 text-sm text-fd-muted-foreground hover:text-fd-foreground mt-6"
+>
+  View README.md on GitHub →
+</a>

@@ -1,0 +1,150 @@
+---
+title: Detect → Understand → Fix
+description: The 3-step workflow that defines the Interlace experience
+icon: Workflow
+---
+
+import { AlertTriangle, Brain, CheckCircle, ArrowRight } from 'lucide-react';
+
+## The Interlace Workflow
+
+Every security vulnerability follows a **3-step journey** from detection to remediation. Interlace is designed to make each step seamless—for both humans and AI agents.
+
+<Steps>
+
+### Step 1: Detect
+
+ESLint catches the vulnerability in your code, highlighting the exact line and providing context.
+
+### Step 2: Understand
+
+Structured metadata (CWE, OWASP, CVSS) gives you—and your AI assistant—everything needed to understand the risk.
+
+### Step 3: Fix
+
+Verified remediation patterns guide the fix, ensuring you apply the correct solution every time.
+
+</Steps>
+
+---
+
+## Workflow in Action
+
+Let's walk through a real SQL Injection vulnerability:
+
+### 🔴 Step 1: Detect
+
+Your editor shows a red squiggly on line 19:
+
+```js {3}
+async function getUserById(userId: string) {
+  // ❌ ESLint Error: SQL query constructed via string concatenation
+  const query = "SELECT * FROM users WHERE id = " + userId;
+  return db.query(query);
+}
+```
+
+The ESLint rule `secure-coding/no-sql-concatenation` has detected the vulnerability.
+
+---
+
+### 🟡 Step 2: Understand
+
+Hovering over the error reveals rich metadata:
+
+| Field      | Value                    | Meaning                 |
+| ---------- | ------------------------ | ----------------------- |
+| **CWE**    | CWE-89                   | SQL Injection           |
+| **OWASP**  | A03:2021                 | Injection category      |
+| **CVSS**   | 9.8                      | Critical severity       |
+| **Impact** | Data breach, auth bypass | Real-world consequences |
+
+<Callout type="warn" title="Why This Matters">
+  A CVSS of 9.8 means this vulnerability could allow complete database access.
+  This isn't a "fix later" issue—it needs immediate attention.
+</Callout>
+
+---
+
+### 🟢 Step 3: Fix
+
+The rule provides a **verified fix pattern**:
+
+```js {3-6}
+async function getUserById(userId: string) {
+  // ✅ Fixed: Parameterized query prevents injection
+  const result = await db.query(
+    'SELECT * FROM users WHERE id = $1',
+    [userId]
+  );
+  return result.rows[0];
+}
+```
+
+The fix:
+
+- Uses parameterized queries (placeholders like `$1`)
+- Separates data from SQL syntax
+- Prevents any SQL injection regardless of input
+
+---
+
+## How AI Agents Use This Workflow
+
+When you ask an AI assistant to fix the error:
+
+1. **Detect**: AI reads the ESLint error output
+2. **Understand**: AI parses the structured metadata (CWE-89, CVSS 9.8)
+3. **Fix**: AI applies the documented remediation pattern
+
+<Callout type="success" title="No Hallucinations">
+  Because the AI has structured context, it applies the **exact fix
+  pattern**—not a guess. This is the power of AI-native documentation.
+</Callout>
+
+---
+
+## The Difference: Traditional vs. Interlace
+
+| Aspect            | Traditional Linter       | Interlace                     |
+| ----------------- | ------------------------ | ----------------------------- |
+| **Detection**     | "Possible SQL injection" | Exact line, node, and pattern |
+| **Understanding** | None                     | CWE, OWASP, CVSS, impact      |
+| **Fix**           | Generic docs link        | Verified code pattern         |
+| **AI Readiness**  | ❌ Plain text            | ✓ Structured JSON metadata    |
+
+---
+
+## Workflow Integration
+
+### In Your Editor
+
+1. **VS Code** — Red squiggly + hover for metadata
+2. **Cursor** — AI chat reads ESLint context automatically
+3. **WebStorm** — Inspections panel with severity badges
+
+### In CI/CD
+
+```yaml
+# GitHub Actions
+- run: npx eslint . --format json > eslint-report.json
+- name: Check for Critical Issues
+  run: |
+    if grep -q '"cvss": 9' eslint-report.json; then
+      echo "Critical security issues found!"
+      exit 1
+    fi
+```
+
+---
+
+## Next Steps
+
+<Cards>
+  <Card title="Test Coverage" href="/docs/getting-started/concepts/coverage">
+    See live ecosystem health metrics
+  </Card>
+  <Card title="Benchmarks" href="/docs/getting-started/concepts/benchmarks">
+    Compare Interlace to other solutions
+  </Card>
+</Cards>

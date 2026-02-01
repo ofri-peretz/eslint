@@ -1,0 +1,143 @@
+---
+title: Changelog
+description: Version history for all Interlace plugins
+icon: FileText
+---
+
+import {
+  FileText,
+  AlertTriangle,
+  Shield,
+  Sparkles,
+  ExternalLink,
+} from 'lucide-react';
+
+## Version History
+
+This page aggregates changelog information from all ESLint Interlace plugins, fetched dynamically from GitHub.
+
+<Callout type="info" title="Live Data">
+  Changelog data is fetched directly from GitHub CHANGELOG.md files and cached
+  for 2 hours. Updates to the repository are reflected automatically—no
+  redeployment needed.
+</Callout>
+
+---
+
+## How It Works
+
+Each plugin maintains its own `CHANGELOG.md` in its package directory. This page aggregates them in real-time:
+
+1. **GitHub Raw Content** — Files are fetched from `raw.githubusercontent.com`
+2. **2-Hour Cache** — Data is cached using our json-cache policy
+3. **Parsed Entries** — Markdown is parsed to extract version, date, and type
+
+---
+
+## Plugin Changelogs
+
+### Core Config
+
+<a
+  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-config-interlace/CHANGELOG.md"
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  **eslint-config-interlace** — View on GitHub →
+</a>
+
+The unified config package that bundles all plugins.
+
+---
+
+### Security Plugins
+
+| Plugin               | Description           | Changelog                                                                                                      |
+| -------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `browser-security`   | XSS, DOM security     | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/CHANGELOG.md)   |
+| `crypto`             | Weak algorithms, PRNG | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-crypto/CHANGELOG.md)             |
+| `jwt`                | Token security        | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/CHANGELOG.md)                |
+| `secure-coding`      | Injection prevention  | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/CHANGELOG.md)      |
+| `secrets`            | Hardcoded credentials | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secrets/CHANGELOG.md)            |
+| `node-security`      | Server-side patterns  | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/CHANGELOG.md)      |
+| `pg`                 | PostgreSQL security   | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/CHANGELOG.md)                 |
+| `mongodb-security`   | MongoDB injection     | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/CHANGELOG.md)   |
+| `vercel-ai-security` | AI SDK security       | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/CHANGELOG.md) |
+
+---
+
+### Quality Plugins
+
+| Plugin                       | Description          | Changelog                                                                                                              |
+| ---------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `react-best-practices`       | Component patterns   | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-best-practices/CHANGELOG.md)       |
+| `react-hooks-best-practices` | Hook rules           | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-hooks-best-practices/CHANGELOG.md) |
+| `documentation`              | JSDoc enforcement    | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-documentation/CHANGELOG.md)              |
+| `import-next`                | Fast cycle detection | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/CHANGELOG.md)                |
+
+---
+
+## API Access
+
+You can programmatically access changelog data via our API:
+
+```bash
+# Get all changelogs (parsed)
+curl https://interlace.dev/api/changelog
+
+# Get specific plugin changelog
+curl https://interlace.dev/api/changelog?plugin=jwt
+
+# Get raw markdown
+curl https://interlace.dev/api/changelog?plugin=jwt&raw=true
+```
+
+### Response Format
+
+```json
+{
+  "success": true,
+  "data": {
+    "plugin": "jwt",
+    "path": "packages/eslint-plugin-jwt/CHANGELOG.md",
+    "entries": [
+      {
+        "version": "1.4.0",
+        "date": "2026-01-15",
+        "type": "feature",
+        "content": "Added no-none-algorithm rule..."
+      }
+    ],
+    "fetchedAt": "2026-01-31T12:00:00Z"
+  },
+  "meta": {
+    "source": "github",
+    "ttl": 7200
+  }
+}
+```
+
+---
+
+## Entry Types
+
+| Symbol | Type       | Meaning                 |
+| ------ | ---------- | ----------------------- |
+| 🟢     | `feature`  | New feature or rule     |
+| 🔧     | `fix`      | Bug fix                 |
+| 🛡️     | `security` | Security improvement    |
+| 🔴     | `breaking` | Breaking change         |
+| ⚡     | `perf`     | Performance improvement |
+
+---
+
+## Next Steps
+
+<Cards>
+  <Card title="Roadmap" href="/docs/getting-started/advanced/roadmap">
+    See upcoming features
+  </Card>
+  <Card title="Contributing" href="/docs/getting-started/advanced/contributing">
+    Help build new rules
+  </Card>
+</Cards>

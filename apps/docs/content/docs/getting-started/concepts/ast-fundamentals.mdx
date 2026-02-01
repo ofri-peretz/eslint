@@ -1,0 +1,181 @@
+---
+title: AST Fundamentals
+description: How ESLint reads and analyzes your code
+icon: TreeDeciduous
+---
+
+import { TreeDeciduous, Code, Search, Lightbulb } from 'lucide-react';
+
+## The Tree Inside Your Code
+
+ESLint doesn't read code like humans. It parses your JavaScript into an **Abstract Syntax Tree (AST)**—a structured representation of your code's grammar.
+
+Understanding the AST unlocks:
+
+- **Custom rule creation** for your specific patterns
+- **Better debugging** of false positives
+- **Advanced selectors** for precise rule targeting
+
+---
+
+## What is an AST?
+
+When you write:
+
+```js
+const query = 'SELECT * FROM users WHERE id = ' + userId;
+```
+
+ESLint parses it into a tree structure:
+
+```
+Program
+└── VariableDeclaration (kind: "const")
+    └── VariableDeclarator
+        ├── Identifier (name: "query")
+        └── BinaryExpression (operator: "+")
+            ├── Literal (value: "SELECT * FROM users WHERE id = ")
+            └── Identifier (name: "userId")
+```
+
+Each node in the tree represents a **syntactic element**:
+
+- `Program` — The root of every JavaScript file
+- `VariableDeclaration` — A `const`, `let`, or `var` statement
+- `BinaryExpression` — An operation like `+`, `-`, `*`, etc.
+- `Identifier` — A variable name
+- `Literal` — A raw value like a string or number
+
+---
+
+## How Security Rules Use the AST
+
+Security rules match **patterns** in the AST. For example, the `no-sql-concatenation` rule triggers when it finds:
+
+```
+BinaryExpression (operator: "+")
+├── Literal (value contains SQL keywords)
+└── Identifier (untrusted input)
+```
+
+This pattern-matching approach is:
+
+- **Precise** — Only matches actual vulnerable patterns
+- **Fast** — Tree traversal is O(n) complexity
+- **Flexible** — Can target any syntactic structure
+
+---
+
+## ESLint Selectors
+
+ESLint uses **CSS-like selectors** to target AST nodes. Here are common patterns:
+
+| Selector                             | Matches                    |
+| ------------------------------------ | -------------------------- |
+| `CallExpression`                     | Any function call          |
+| `CallExpression[callee.name="eval"]` | Calls to `eval()`          |
+| `BinaryExpression[operator="+"]`     | Any `+` operation          |
+| `VariableDeclaration[kind="var"]`    | `var` declarations         |
+| `Identifier[name="password"]`        | Variables named "password" |
+
+### Advanced Selector Example
+
+To match dangerous SQL concatenation:
+
+```js
+// This selector:
+'BinaryExpression[operator="+"] > Literal[value=/SELECT|INSERT|UPDATE|DELETE/i]';
+
+// Matches patterns like:
+const query = 'SELECT * FROM users' + userInput;
+```
+
+---
+
+## Common AST Node Types
+
+### Declarations
+
+| Node Type             | Example             |
+| --------------------- | ------------------- |
+| `VariableDeclaration` | `const x = 1`       |
+| `FunctionDeclaration` | `function foo() {}` |
+| `ClassDeclaration`    | `class Foo {}`      |
+
+### Expressions
+
+| Node Type          | Example               |
+| ------------------ | --------------------- |
+| `CallExpression`   | `foo()`               |
+| `MemberExpression` | `obj.prop`            |
+| `BinaryExpression` | `a + b`               |
+| `TemplateLiteral`  | `` `Hello ${name}` `` |
+
+### Statements
+
+| Node Type         | Example        |
+| ----------------- | -------------- |
+| `IfStatement`     | `if (x) {}`    |
+| `ReturnStatement` | `return value` |
+| `ThrowStatement`  | `throw error`  |
+
+---
+
+## Try It Yourself
+
+<Callout type="info" title="Interactive Explorer Coming Soon">
+  We're building an interactive AST explorer that lets you paste any JavaScript
+  and see how ESLint "sees" your code. Stay tuned!
+</Callout>
+
+In the meantime, try these tools:
+
+- [AST Explorer](https://astexplorer.net/) — The gold standard for AST visualization
+- [ESLint Playground](https://eslint.org/play/) — Test rules against code
+
+---
+
+## Writing Custom Rules
+
+Understanding the AST enables you to write custom rules. Here's a minimal example:
+
+```js title="no-console-log.js"
+module.exports = {
+  meta: {
+    type: 'suggestion',
+    docs: { description: 'Disallow console.log' },
+  },
+  create(context) {
+    return {
+      // Selector: CallExpression where callee is console.log
+      'CallExpression[callee.object.name="console"][callee.property.name="log"]'(
+        node,
+      ) {
+        context.report({
+          node,
+          message: 'Unexpected console.log statement',
+        });
+      },
+    };
+  },
+};
+```
+
+---
+
+## Next Steps
+
+<Cards>
+  <Card
+    title="Security Metadata"
+    href="/docs/getting-started/concepts/security-metadata"
+  >
+    Learn about CWE, OWASP, and CVSS mappings
+  </Card>
+  <Card
+    title="AI Integration"
+    href="/docs/getting-started/concepts/ai-integration"
+  >
+    How AI agents use structured metadata
+  </Card>
+</Cards>

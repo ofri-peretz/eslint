@@ -3,6 +3,7 @@ import * as Twoslash from 'fumadocs-twoslash/ui';
 import { Mermaid } from '@/components/mdx/mermaid';
 import { Steps, Step } from 'fumadocs-ui/components/steps';
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
 import type { MDXComponents } from 'mdx/types';
 
 /**
@@ -14,6 +15,7 @@ import type { MDXComponents } from 'mdx/types';
  * - Mermaid diagram rendering
  * - Steps/Step for multi-step guides
  * - Tabs/Tab for tabbed content
+ * - Accordion/Accordions for collapsible sections
  */
 export function getMDXComponents(components?: MDXComponents): MDXComponents {
   return {
@@ -24,6 +26,8 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     Step,
     Tabs, // Tabbed content
     Tab,
+    Accordion, // Collapsible sections
+    Accordions,
     ...components,
   };
 }

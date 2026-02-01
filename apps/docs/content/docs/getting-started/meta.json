@@ -9,6 +9,19 @@
         "installation",
         "configuration",
         "flat-config",
-        "editor-integration"
+        "editor-integration",
+        "troubleshooting",
+        "---Concepts---",
+        "concepts/ai-integration",
+        "concepts/ast-fundamentals",
+        "concepts/security-metadata",
+        "concepts/detect-understand-fix",
+        "concepts/coverage",
+        "concepts/benchmarks",
+        "---Advanced---",
+        "advanced/ci-cd",
+        "advanced/changelog",
+        "advanced/roadmap",
+        "advanced/contributing"
     ]
 }

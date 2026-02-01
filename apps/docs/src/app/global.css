@@ -187,3 +187,47 @@
   }}
 
 /* Base styling is provided by fumadocs-ui/css/preset.css */
+
+/* =========================================
+   REMOTE CONTENT STYLING
+   Styles for README, changelog, and rule docs
+   fetched from GitHub
+   ========================================= */
+
+/* Badge images should be inline with gap */
+.remote-readme a > img,
+.remote-changelog a > img,
+.remote-rule-doc a > img {
+  display: inline-block !important;
+  vertical-align: middle;
+  height: auto;
+}
+
+/* Center-aligned divs (logo, tagline, badges) - transformed from <p align> */
+.remote-readme div[align="center"],
+.remote-changelog div[align="center"],
+.remote-rule-doc div[align="center"] {
+  text-align: center;
+  display: flex !important;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Badge links in centered divs should be inline */
+.remote-readme div[align="center"] a,
+.remote-changelog div[align="center"] a,
+.remote-rule-doc div[align="center"] a {
+  display: inline-flex !important;
+  align-items: center;
+}
+
+/* Ensure images don't break layout */
+.remote-readme img,
+.remote-changelog img,
+.remote-rule-doc img {
+  max-width: 100%;
+  height: auto;
+}

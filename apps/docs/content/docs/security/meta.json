@@ -9,7 +9,7 @@
         "browser-security",
         "crypto",
         "jwt",
-        "secure-coding",
+        "plugin-secure-coding",
         "graphql-security",
         "api-security",
         "mongodb-security",

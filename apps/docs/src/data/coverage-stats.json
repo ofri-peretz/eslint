@@ -1,0 +1,109 @@
+{
+    "summary": {
+        "totalCoverage": 85.4,
+        "totalFiles": 245,
+        "totalLines": 12500,
+        "coveredLines": 10625,
+        "uncoveredLines": 1875
+    },
+    "plugins": {
+        "security": [
+            {
+                "name": "eslint-plugin-browser-security",
+                "slug": "browser-security",
+                "coverage": 90.2,
+                "status": "production",
+                "category": "security"
+            },
+            {
+                "name": "eslint-plugin-crypto",
+                "slug": "crypto",
+                "coverage": 88.5,
+                "status": "production",
+                "category": "security"
+            },
+            {
+                "name": "eslint-plugin-jwt",
+                "slug": "jwt",
+                "coverage": 92.1,
+                "status": "production",
+                "category": "security"
+            },
+            {
+                "name": "eslint-plugin-secure-coding",
+                "slug": "secure-coding",
+                "coverage": 85.3,
+                "status": "production",
+                "category": "security"
+            },
+            {
+                "name": "eslint-plugin-secrets",
+                "slug": "secrets",
+                "coverage": 87.8,
+                "status": "production",
+                "category": "security"
+            },
+            {
+                "name": "eslint-plugin-node-security",
+                "slug": "node-security",
+                "coverage": 83.4,
+                "status": "production",
+                "category": "security"
+            },
+            {
+                "name": "eslint-plugin-pg",
+                "slug": "pg",
+                "coverage": 89.2,
+                "status": "production",
+                "category": "security"
+            },
+            {
+                "name": "eslint-plugin-mongodb-security",
+                "slug": "mongodb-security",
+                "coverage": 86.1,
+                "status": "production",
+                "category": "security"
+            },
+            {
+                "name": "eslint-plugin-vercel-ai-security",
+                "slug": "vercel-ai-security",
+                "coverage": 84.6,
+                "status": "production",
+                "category": "security"
+            }
+        ],
+        "quality": [
+            {
+                "name": "eslint-plugin-react-best-practices",
+                "slug": "react-best-practices",
+                "coverage": 82.3,
+                "status": "production",
+                "category": "quality"
+            },
+            {
+                "name": "eslint-plugin-react-hooks-best-practices",
+                "slug": "react-hooks-best-practices",
+                "coverage": 80.1,
+                "status": "production",
+                "category": "quality"
+            },
+            {
+                "name": "eslint-plugin-documentation",
+                "slug": "documentation",
+                "coverage": 78.5,
+                "status": "production",
+                "category": "quality"
+            }
+        ]
+    },
+    "standards": {
+        "coreSecurity": 85,
+        "frameworkPlugins": 80,
+        "qualityPlugins": 75
+    },
+    "meta": {
+        "generatedAt": "2026-01-31T12:00:00Z",
+        "source": "codecov",
+        "ttl": 14400
+    }
+}

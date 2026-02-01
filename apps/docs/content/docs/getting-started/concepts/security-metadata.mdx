@@ -1,0 +1,138 @@
+---
+title: Security Metadata
+description: Understanding CWE, OWASP, and CVSS standards
+icon: Shield
+---
+
+import { Shield, AlertTriangle, ExternalLink } from 'lucide-react';
+
+## Industry Security Standards
+
+Interlace maps every security rule to **three industry standards**, ensuring your vulnerabilities are classified using the same language as professional security auditors, compliance frameworks, and AI assistants.
+
+---
+
+## CWE (Common Weakness Enumeration)
+
+<Callout type="info" title="What is CWE?">
+  A community-developed dictionary of software weaknesses maintained by MITRE.
+  Each weakness has a unique ID (e.g., CWE-89 for SQL Injection).
+</Callout>
+
+CWE provides a **common language** for describing security vulnerabilities. When Interlace reports `CWE-89`, any security tool, auditor, or AI assistant knows exactly what type of issue it is.
+
+### Common CWEs in Interlace
+
+| CWE ID  | Name                       | Risk Category | Example Rule                         |
+| ------- | -------------------------- | ------------- | ------------------------------------ |
+| CWE-79  | Cross-site Scripting (XSS) | Web           | `browser-security/no-innerhtml`      |
+| CWE-89  | SQL Injection              | Injection     | `secure-coding/no-sql-concatenation` |
+| CWE-327 | Use of Broken Crypto       | Cryptography  | `node-security/no-weak-algorithms`   |
+| CWE-798 | Hardcoded Credentials      | Secrets       | `secrets/no-hardcoded-credentials`   |
+| CWE-614 | Sensitive Cookie in HTTPS  | Web           | `browser-security/secure-cookie`     |
+
+<a
+  href="https://cwe.mitre.org/data/index.html"
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  Browse the full CWE database →
+</a>
+
+---
+
+## OWASP Top 10
+
+<Callout type="info" title="What is OWASP?">
+  The Open Web Application Security Project publishes the most critical web
+  application risks every few years. The Top 10 is the industry standard for web
+  security priorities.
+</Callout>
+
+Interlace covers **100% of the OWASP Top 10 2021**:
+
+| Rank | Category                  | Interlace Coverage              |
+| ---- | ------------------------- | ------------------------------- |
+| A01  | Broken Access Control     | ✓ Role/permission rules         |
+| A02  | Cryptographic Failures    | ✓ `eslint-plugin-crypto`        |
+| A03  | Injection                 | ✓ SQL, NoSQL, Command injection |
+| A04  | Insecure Design           | ✓ Architecture patterns         |
+| A05  | Security Misconfiguration | ✓ Config validation rules       |
+| A06  | Vulnerable Components     | ✓ Dependency checks             |
+| A07  | Auth Failures             | ✓ JWT, session rules            |
+| A08  | Data Integrity Failures   | ✓ Deserialization rules         |
+| A09  | Logging Failures          | ✓ Logging best practices        |
+| A10  | SSRF                      | ✓ URL validation rules          |
+
+<a href="https://owasp.org/Top10/" target="_blank" rel="noopener noreferrer">
+  Read the OWASP Top 10 2021 →
+</a>
+
+---
+
+## CVSS (Common Vulnerability Scoring System)
+
+<Callout type="info" title="What is CVSS?">
+  A severity rating from 0.0 to 10.0 that helps prioritize vulnerability fixes.
+  Higher scores = more critical.
+</Callout>
+
+CVSS helps you **prioritize** which issues to fix first:
+
+| Score Range | Severity    | Action                | Example                 |
+| ----------- | ----------- | --------------------- | ----------------------- |
+| 9.0 - 10.0  | 🔴 Critical | Fix immediately       | SQL Injection (9.8)     |
+| 7.0 - 8.9   | 🟠 High     | Fix in current sprint | Hardcoded secrets (7.5) |
+| 4.0 - 6.9   | 🟡 Medium   | Schedule fix          | Missing HTTPS (5.3)     |
+| 0.1 - 3.9   | 🟢 Low      | Monitor & plan        | Info disclosure (2.1)   |
+
+### CVSS in Interlace
+
+Every security rule displays its CVSS score, helping you:
+
+- **Triage** issues by severity
+- **Report** to stakeholders with industry-standard metrics
+- **Comply** with security frameworks that require risk scoring
+
+<Callout type="warn" title="CVSS Disclaimer">
+  Interlace CVSS scores are based on industry averages for each CWE category.
+  Actual severity may vary based on your specific application context.
+</Callout>
+
+---
+
+## Why This Mapping Matters
+
+### For Developers
+
+- Understand the **real-world impact** of each issue
+- **Prioritize** fixes based on severity
+- **Learn** security patterns from industry standards
+
+### For Security Teams
+
+- **Audit** codebases using industry-standard classifications
+- **Report** findings with CWE/OWASP/CVSS mappings
+- **Integrate** with SIEMs and security dashboards
+
+### For AI Agents
+
+- **Ground** responses in verified security context
+- **Reference** specific remediation patterns
+- **Avoid** hallucinations with structured metadata
+
+---
+
+## Next Steps
+
+<Cards>
+  <Card
+    title="Detect → Understand → Fix"
+    href="/docs/getting-started/concepts/detect-understand-fix"
+  >
+    See the complete workflow in action
+  </Card>
+  <Card title="Test Coverage" href="/docs/getting-started/concepts/coverage">
+    View live ecosystem metrics
+  </Card>
+</Cards>

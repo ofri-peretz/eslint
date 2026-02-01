@@ -1,0 +1,251 @@
+---
+title: Contributing
+description: How to contribute security rules to the Interlace ecosystem
+icon: Users
+---
+
+import { Users, Code, TestTube, FileText, GitPullRequest } from 'lucide-react';
+
+## Contributing to Interlace
+
+We welcome contributions from the security and JavaScript communities! This guide walks you through creating, testing, and documenting new ESLint rules.
+
+<Callout type="success" title="All Contributions Welcome">
+  Whether it's a new rule, bug fix, documentation improvement, or test
+  case—every contribution helps make JavaScript more secure.
+</Callout>
+
+---
+
+## Rule Development Workflow
+
+<Steps>
+
+### 1. Propose the Rule
+
+Before coding, open a GitHub issue or discussion describing:
+
+- **Vulnerability type** (CWE if known)
+- **Example vulnerable code**
+- **Proposed detection logic**
+- **Auto-fix possibility**
+
+### 2. Set Up Development
+
+```bash
+# Clone the monorepo
+git clone https://github.com/ofri-peretz/eslint.git
+cd eslint
+
+# Install dependencies
+npm install
+
+# Create a new branch
+git checkout -b feat/no-awesome-vulnerability
+```
+
+### 3. Write the Rule
+
+Rules live in `packages/eslint-plugin-{name}/src/rules/`:
+
+```ts title="no-example-vuln.ts"
+import { ESLintUtils } from '@typescript-eslint/utils';
+
+const createRule = ESLintUtils.RuleCreator(
+  (name) => `https://interlace.dev/docs/rules/${name}`,
+);
+
+export const noExampleVuln = createRule({
+  name: 'no-example-vuln',
+  meta: {
+    type: 'problem',
+    docs: {
+      description: 'Prevent example vulnerability pattern',
+    },
+    messages: {
+      vulnerable: 'This pattern is vulnerable to {{cwe}}',
+    },
+    schema: [],
+    // Security metadata for AI agents
+    cwe: 'CWE-xxx',
+    owasp: 'A0x:2021',
+    cvss: 7.5,
+  },
+  defaultOptions: [],
+  create(context) {
+    return {
+      // AST visitor pattern
+      CallExpression(node) {
+        if (isVulnerablePattern(node)) {
+          context.report({
+            node,
+            messageId: 'vulnerable',
+            data: { cwe: 'CWE-xxx' },
+          });
+        }
+      },
+    };
+  },
+});
+```
+
+### 4. Write Tests
+
+Test-first development is required. Tests live next to rules:
+
+```ts title="no-example-vuln.test.ts"
+import { RuleTester } from '@typescript-eslint/rule-tester';
+import { noExampleVuln } from './no-example-vuln';
+
+const ruleTester = new RuleTester();
+
+ruleTester.run('no-example-vuln', noExampleVuln, {
+  valid: [
+    // Safe patterns that should NOT trigger
+    'const safe = sanitize(input);',
+    'const query = preparedStatement(input);',
+  ],
+  invalid: [
+    // Vulnerable patterns that SHOULD trigger
+    {
+      code: 'const query = "SELECT " + input;',
+      errors: [{ messageId: 'vulnerable' }],
+    },
+  ],
+});
+```
+
+### 5. Document the Rule
+
+Create documentation in the plugin's `docs/` folder:
+
+````md title="docs/rules/no-example-vuln.md"
+# no-example-vuln
+
+Prevents the example vulnerability pattern.
+
+## Risk
+
+- **CWE**: CWE-xxx
+- **OWASP**: A0x:2021
+- **CVSS**: 7.5 (High)
+
+## Rule Details
+
+This rule triggers when...
+
+### ❌ Incorrect
+
+```js
+const query = 'SELECT ' + input;
+```
+````
+
+### ✅ Correct
+
+```js
+const query = preparedStatement(input);
+```
+
+## When Not To Use
+
+If you're working with trusted input only...
+
+````
+
+### 6. Submit PR
+
+```bash
+# Run all checks
+npm run lint
+npm run test
+npm run build
+
+# Commit with conventional format
+git commit -m "feat(secure-coding): add no-example-vuln rule"
+
+# Push and create PR
+git push origin feat/no-awesome-vulnerability
+````
+
+</Steps>
+
+---
+
+## Rule Requirements
+
+### Mandatory Metadata
+
+Every security rule MUST include:
+
+| Field         | Type   | Description                     |
+| ------------- | ------ | ------------------------------- |
+| `cwe`         | string | CWE identifier (e.g., "CWE-89") |
+| `owasp`       | string | OWASP Top 10 category           |
+| `cvss`        | number | CVSS 3.1 score (0.0-10.0)       |
+| `description` | string | Clear, actionable description   |
+
+### Test Coverage
+
+- **Minimum 80% coverage** for new rules
+- **At least 3 valid** (safe) patterns
+- **At least 3 invalid** (vulnerable) patterns
+- **Edge cases** for each detection logic branch
+
+### Documentation
+
+- **Description** of the vulnerability
+- **CWE/OWASP/CVSS** metadata
+- **Incorrect** code examples
+- **Correct** code examples
+- **When Not To Use** section
+- **Related rules** links
+
+---
+
+## PR Checklist
+
+Before submitting:
+
+- [ ] Rule has CWE/OWASP/CVSS metadata
+- [ ] Tests cover valid and invalid cases
+- [ ] Tests achieve 80%+ coverage
+- [ ] Documentation follows template
+- [ ] `npm run lint` passes
+- [ ] `npm run test` passes
+- [ ] `npm run build` passes
+- [ ] Commit message follows conventional format
+
+---
+
+## Getting Help
+
+<Cards>
+  <Card
+    title="GitHub Discussions"
+    href="https://github.com/ofri-peretz/eslint/discussions"
+  >
+    Ask questions and propose ideas
+  </Card>
+  <Card
+    title="Issue Tracker"
+    href="https://github.com/ofri-peretz/eslint/issues"
+  >
+    Report bugs or request features
+  </Card>
+</Cards>
+
+---
+
+## Recognition
+
+Contributors are recognized in:
+
+- **CONTRIBUTORS.md** in the repo
+- **Release notes** for their PRs
+- **Authors** field in package.json for significant contributions
+
+<Callout type="success" title="Thank You!">
+  Every contribution makes JavaScript more secure. We appreciate your time and
+  expertise!
+</Callout>

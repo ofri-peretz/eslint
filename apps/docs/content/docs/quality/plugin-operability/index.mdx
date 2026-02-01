@@ -1,0 +1,47 @@
+---
+title: 'Overview'
+description: ESLint rules for operational excellence and deployment readiness
+icon: FileText
+---
+
+import { RemoteReadme } from '@/components/docs/remote-readme';
+import { Settings, BookOpen, History } from 'lucide-react';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+<Callout type="info" title="Live from GitHub">
+  This content is fetched directly from
+  [README.md](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-operability/README.md)
+  on GitHub and cached for 1 hour.
+</Callout>
+
+<Callout type="success" title="Production Ready">
+  Ensure your code is ready for production with operability best practices.
+</Callout>
+
+<Cards>
+  <Card
+    title="Rules"
+    description="Browse all operability rules"
+    href="/docs/quality/plugin-operability/rules"
+    icon={<BookOpen />}
+  />
+  <Card
+    title="Changelog"
+    description="View version history and updates"
+    href="/docs/quality/plugin-operability/changelog"
+    icon={<History />}
+  />
+</Cards>
+
+---
+
+<RemoteReadme plugin="operability" sections={['full']} />
+
+<a
+  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-operability/README.md"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="inline-flex items-center gap-1 text-sm text-fd-muted-foreground hover:text-fd-foreground mt-6"
+>
+  View README.md on GitHub →
+</a>

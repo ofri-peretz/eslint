@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: maintainability",
+    "icon": "Layers",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

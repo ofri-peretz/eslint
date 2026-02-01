@@ -1,0 +1,47 @@
+---
+title: 'Overview'
+description: ESLint rules for clean module boundaries and dependency management
+icon: FileText
+---
+
+import { RemoteReadme } from '@/components/docs/remote-readme';
+import { Package, BookOpen, History } from 'lucide-react';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+<Callout type="info" title="Live from GitHub">
+  This content is fetched directly from
+  [README.md](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modularity/README.md)
+  on GitHub and cached for 1 hour.
+</Callout>
+
+<Callout type="success" title="Clean Modules">
+  Enforce clean module boundaries and prevent circular dependencies.
+</Callout>
+
+<Cards>
+  <Card
+    title="Rules"
+    description="Browse all modularity rules"
+    href="/docs/quality/plugin-modularity/rules"
+    icon={<BookOpen />}
+  />
+  <Card
+    title="Changelog"
+    description="View version history and updates"
+    href="/docs/quality/plugin-modularity/changelog"
+    icon={<History />}
+  />
+</Cards>
+
+---
+
+<RemoteReadme plugin="modularity" sections={['full']} />
+
+<a
+  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modularity/README.md"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="inline-flex items-center gap-1 text-sm text-fd-muted-foreground hover:text-fd-foreground mt-6"
+>
+  View README.md on GitHub →
+</a>

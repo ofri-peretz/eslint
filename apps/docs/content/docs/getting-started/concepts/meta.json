@@ -1,0 +1,14 @@
+{
+    "title": "Concepts",
+    "description": "Core concepts and ecosystem transparency",
+    "pages": [
+        "---Core Concepts---",
+        "ai-integration",
+        "ast-fundamentals",
+        "security-metadata",
+        "detect-understand-fix",
+        "---Ecosystem---",
+        "coverage",
+        "benchmarks"
+    ]
+}

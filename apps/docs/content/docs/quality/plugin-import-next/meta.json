@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: import-next",
+    "icon": "Zap",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

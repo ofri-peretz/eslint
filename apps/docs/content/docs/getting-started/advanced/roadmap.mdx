@@ -1,0 +1,158 @@
+---
+title: Roadmap
+description: Upcoming features and development priorities
+icon: Map
+---
+
+import { Map, Shield, Zap, Brain, Database, Globe } from 'lucide-react';
+
+## Development Roadmap
+
+This roadmap outlines the planned features and priorities for the ESLint Interlace ecosystem.
+
+<Callout type="info" title="Community Driven">
+  Feature priorities are influenced by community feedback. Open a GitHub issue
+  or discussion to suggest features or vote on existing proposals.
+</Callout>
+
+---
+
+## Q1 2026: AI-Native Expansion
+
+Focus on enhancing AI agent integration and structured metadata.
+
+<Cards>
+  <Card title="🤖 Enhanced LLM Metadata" icon={<Brain />}>
+    Richer fix patterns and multi-step remediation guides for AI agents.
+  </Card>
+  <Card title="📊 SARIF 2.1 Output" icon={<Shield />}>
+    Native SARIF format for GitHub Security tab integration.
+  </Card>
+  <Card title="⚡ Performance Mode" icon={<Zap />}>
+    Lazy rule loading for 50% faster startup in large projects.
+  </Card>
+</Cards>
+
+### Planned Rules
+
+| Plugin               | Rule                       | Status         |
+| -------------------- | -------------------------- | -------------- |
+| `browser-security`   | `no-postmessage-wildcard`  | In Development |
+| `secure-coding`      | `no-prototype-pollution`   | Planning       |
+| `vercel-ai-security` | `no-tool-result-injection` | Released ✓     |
+
+---
+
+## Q2 2026: Ecosystem Expansion
+
+New plugins and framework-specific security rules.
+
+<Cards>
+  <Card title="🔐 AWS SDK Security" icon={<Shield />}>
+    IAM permission validation, S3 bucket policy checks.
+  </Card>
+  <Card title="🌐 GraphQL Security" icon={<Globe />}>
+    Query depth limiting, introspection controls.
+  </Card>
+  <Card title="💾 Redis Security" icon={<Database />}>
+    Command injection, ACL validation.
+  </Card>
+</Cards>
+
+### New Plugins Planned
+
+| Plugin                           | Target  | Description               |
+| -------------------------------- | ------- | ------------------------- |
+| `eslint-plugin-aws-security`     | Q2 2026 | AWS SDK security patterns |
+| `eslint-plugin-graphql-security` | Q2 2026 | GraphQL query security    |
+| `eslint-plugin-redis-security`   | Q2 2026 | Redis command safety      |
+
+---
+
+## Q3 2026: Enterprise Features
+
+Focus on compliance, reporting, and team workflows.
+
+### Compliance Mappings
+
+- **SOC 2 Type II**: Rule mapping to SOC 2 controls
+- **PCI-DSS**: Payment card data security rules
+- **HIPAA**: Healthcare data protection patterns
+
+### Enterprise Integration
+
+| Feature           | Description                             |
+| ----------------- | --------------------------------------- |
+| **Dashboard API** | Aggregate security metrics across repos |
+| **Policy Engine** | Enforce org-wide rule configurations    |
+| **Audit Logging** | Track rule suppressions and overrides   |
+
+---
+
+## Q4 2026: Intelligence Layer
+
+Machine learning-powered security insights.
+
+<Cards>
+  <Card title="🧠 Smart Detection" icon={<Brain />}>
+    ML-based pattern detection for zero-day vulnerability classes.
+  </Card>
+  <Card title="📈 Risk Trending" icon={<Zap />}>
+    Track security posture over time across the codebase.
+  </Card>
+  <Card title="🔮 Predictive Fixes" icon={<Shield />}>
+    AI-suggested fixes based on codebase patterns.
+  </Card>
+</Cards>
+
+---
+
+## Recently Completed
+
+### ✅ Q4 2025
+
+- [x] ESLint 9.x flat config support
+- [x] Vercel AI SDK security plugin
+- [x] MongoDB injection detection
+- [x] 100x faster cycle detection (import-next)
+
+### ✅ Q3 2025
+
+- [x] PostgreSQL COPY FROM detection
+- [x] JWT algorithm confusion rules
+- [x] CVSS scoring on all security rules
+- [x] React Server Components support
+
+---
+
+## How to Contribute
+
+We welcome community contributions! See the [Contributing Guide](/docs/getting-started/advanced/contributing) for:
+
+- Rule development workflow
+- Testing requirements
+- Documentation standards
+- PR checklist
+
+---
+
+## Request a Feature
+
+<Callout type="success" title="Feature Requests">
+  Have an idea for a new rule or plugin? [Open a GitHub
+  Discussion](https://github.com/ofri-peretz/eslint/discussions/new?category=ideas)
+  to propose it.
+</Callout>
+
+---
+
+## Next Steps
+
+<Cards>
+  <Card title="Contributing" href="/docs/getting-started/advanced/contributing">
+    Help build new features
+  </Card>
+  <Card title="Changelog" href="/docs/getting-started/advanced/changelog">
+    See what's already shipped
+  </Card>
+</Cards>

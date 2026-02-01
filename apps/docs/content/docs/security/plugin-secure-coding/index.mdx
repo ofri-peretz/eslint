@@ -1,0 +1,48 @@
+---
+title: 'Overview'
+description: General secure coding practices and OWASP compliance for JavaScript/TypeScript
+icon: FileText
+---
+
+import { RemoteReadme } from '@/components/docs/remote-readme';
+import { Shield, BookOpen, History, Lock, ExternalLink } from 'lucide-react';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+
+<Callout type="info" title="Live from GitHub">
+  This content is fetched directly from
+  [README.md](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/README.md)
+  on GitHub and cached for 1 hour.
+</Callout>
+
+<Callout type="success" title="AI-Optimized Security">
+  Every rule includes CWE, OWASP, and CVSS metadata for AI assistants to provide
+  precise, context-aware fixes.
+</Callout>
+
+<Cards>
+  <Card
+    title="Rules (78+)"
+    description="Browse all security rules with CWE/OWASP mapping"
+    href="/docs/security/plugin-secure-coding/rules"
+    icon={<BookOpen />}
+  />
+  <Card
+    title="Changelog"
+    description="View version history and updates"
+    href="/docs/security/plugin-secure-coding/changelog"
+    icon={<History />}
+  />
+</Cards>
+
+---
+
+<RemoteReadme plugin="secure-coding" sections={['full']} />
+
+<a
+  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/README.md"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="inline-flex items-center gap-1 text-sm text-fd-muted-foreground hover:text-fd-foreground mt-6"
+>
+  View README.md on GitHub →
+</a>

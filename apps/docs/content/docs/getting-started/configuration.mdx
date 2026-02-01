@@ -4,42 +4,222 @@ description: Configure ESLint Interlace plugins for your project
 icon: Settings
 ---
 
-## Basic Configuration
+import { Shield, Zap, Settings } from 'lucide-react';
 
-Create or update your `eslint.config.js` (ESLint 9.x flat config):
+## Configuration Presets
+
+ESLint Interlace provides three preset configurations:
+
+<Cards>
+  <Card title="Recommended" icon={<Shield />}>
+    Balanced rules for most projects. Security errors, quality warnings.
+  </Card>
+  <Card title="Strict" icon={<Zap />}>
+    Maximum security. All rules as errors. For high-security applications.
+  </Card>
+  <Card title="Minimal" icon={<Settings />}>
+    Core security rules only. Minimal false positives.
+  </Card>
+</Cards>
+
+### Using Presets
 
 ```js title="eslint.config.js"
 import interlace from 'eslint-config-interlace';
 
-export default [...interlace.configs.recommended];
+// Choose your preset
+export default [
+  ...interlace.configs.recommended, // Balanced (default)
+  // ...interlace.configs.strict,    // Maximum security
+  // ...interlace.configs.minimal,   // Core rules only
+];
 ```
 
 ## Custom Configuration
 
-Customize rules based on your project needs:
+### Individual Plugin Configuration
+
+Import and configure specific plugins:
 
 ```js title="eslint.config.js"
 import browserSecurity from 'eslint-plugin-browser-security';
 import crypto from 'eslint-plugin-crypto';
+import jwt from 'eslint-plugin-jwt';
 
 export default [
+  // Apply recommended configs from each plugin
   browserSecurity.configs.recommended,
   crypto.configs.recommended,
+  jwt.configs.recommended,
+
+  // Custom rule overrides
   {
     rules: {
-      // Customize specific rules
       'browser-security/no-insecure-url': 'error',
       'crypto/no-weak-algorithms': 'warn',
+      'jwt/no-hardcoded-secret': 'error',
     },
   },
 ];
 ```
 
+### Rule Severity Levels
+
+| Severity  | Meaning  | When to Use                         |
+| --------- | -------- | ----------------------------------- |
+| `'off'`   | Disabled | Rule not applicable to your project |
+| `'warn'`  | Warning  | Review needed, doesn't fail CI      |
+| `'error'` | Error    | Must be fixed before merge          |
+
+### File-Specific Rules
+
+Apply different rules to different file types:
+
+```js title="eslint.config.js"
+import interlace from 'eslint-config-interlace';
+
+export default [
+  ...interlace.configs.recommended,
+
+  // Stricter rules for API routes
+  {
+    files: ['**/api/**/*.ts', '**/routes/**/*.ts'],
+    rules: {
+      'secure-coding/no-sql-injection': 'error',
+      'jwt/no-algorithm-none': 'error',
+    },
+  },
+
+  // Relaxed rules for tests
+  {
+    files: ['**/*.test.ts', '**/*.spec.ts'],
+    rules: {
+      'secrets/no-hardcoded-credentials': 'off',
+    },
+  },
+];
+```
+
+## Ignoring Files
+
+### Using `ignores` Property
+
+```js title="eslint.config.js"
+import interlace from 'eslint-config-interlace';
+
+export default [
+  {
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      'build/**',
+      '.next/**',
+      'coverage/**',
+    ],
+  },
+  ...interlace.configs.recommended,
+];
+```
+
+### Inline Ignore Comments
+
+```js
+// eslint-disable-next-line browser-security/no-insecure-url
+const legacyUrl = 'http://legacy-internal-service.local';
+
+/* eslint-disable jwt/no-hardcoded-secret */
+// This is a test fixture, not a real secret
+const testToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...';
+/* eslint-enable jwt/no-hardcoded-secret */
+```
+
+<Callout type="warning" title="Use Sparingly">
+  Disable comments should be rare. If you're disabling rules frequently,
+  consider adjusting your configuration instead.
+</Callout>
+
+## TypeScript Configuration
+
+### Type-Aware Linting
+
+Some rules can use TypeScript type information for more accurate detection:
+
+```js title="eslint.config.js"
+import interlace from 'eslint-config-interlace';
+import tseslint from 'typescript-eslint';
+
+export default tseslint.config(...interlace.configs.recommended, {
+  languageOptions: {
+    parserOptions: {
+      project: './tsconfig.json',
+    },
+  },
+});
+```
+
+### Monorepo TypeScript
+
+For monorepos with multiple `tsconfig.json` files:
+
+```js title="eslint.config.js"
+import interlace from 'eslint-config-interlace';
+import tseslint from 'typescript-eslint';
+
+export default tseslint.config(...interlace.configs.recommended, {
+  languageOptions: {
+    parserOptions: {
+      project: ['./tsconfig.json', './packages/*/tsconfig.json'],
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+});
+```
+
+## Shared Team Configuration
+
+### Create a Shared Package
+
+```js title="packages/eslint-config-mycompany/index.js"
+import interlace from 'eslint-config-interlace';
+
+export default [
+  ...interlace.configs.strict,
+  {
+    rules: {
+      // Company-wide overrides
+      'secrets/no-hardcoded-credentials': 'error',
+      'jwt/no-algorithm-none': 'error',
+    },
+  },
+];
+```
+
+### Use in Projects
+
+```js title="apps/my-app/eslint.config.js"
+import companyConfig from 'eslint-config-mycompany';
+
+export default [
+  ...companyConfig,
+  {
+    // Project-specific additions
+  },
+];
+```
+
+## Next Steps
+
 <Cards>
-  <Card title="Flat Config Migration" href="/docs/flat-config">
-    Migrate from .eslintrc to flat config
+  <Card title="Flat Config Migration" href="/docs/getting-started/flat-config">
+    Migrate from legacy .eslintrc format
   </Card>
-  <Card title="Editor Integration" href="/docs/editor-integration">
-    Set up VS Code and other editors
+  <Card
+    title="Editor Integration"
+    href="/docs/getting-started/editor-integration"
+  >
+    Set up your IDE for real-time linting
+  </Card>
+  <Card title="CI/CD Integration" href="/docs/advanced/ci-cd">
+    Add linting to your pipeline
   </Card>
 </Cards>

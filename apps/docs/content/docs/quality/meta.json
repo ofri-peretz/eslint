@@ -6,13 +6,15 @@
     "defaultOpen": true,
     "pages": [
         "index",
-        "react-best-practices",
-        "react-hooks",
-        "react-performance",
-        "documentation",
-        "naming-conventions",
-        "coding-conventions",
-        "errors",
-        "module-federation"
+        "---Architecture---",
+        "plugin-import-next",
+        "---Code Quality---",
+        "plugin-maintainability",
+        "plugin-reliability",
+        "plugin-modularity",
+        "plugin-operability",
+        "---Conventions---",
+        "plugin-conventions",
+        "plugin-modernization"
     ]
 }

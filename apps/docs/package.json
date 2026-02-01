@@ -24,6 +24,7 @@
     "fumadocs-core": "*",
     "fumadocs-mdx": "*",
     "fumadocs-ui": "*",
+    "mermaid": "^11.12.2",
     "motion": "^12.29.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

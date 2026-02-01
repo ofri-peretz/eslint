@@ -1,0 +1,254 @@
+---
+title: CI/CD Integration
+description: Add security linting to your CI/CD pipeline
+icon: GitBranch
+---
+
+import { GitBranch, AlertTriangle, CheckCircle, Shield } from 'lucide-react';
+
+## Automated Security Enforcement
+
+Integrating ESLint Interlace into your CI/CD pipeline ensures that security vulnerabilities are caught before they reach production.
+
+<Callout type="info" title="Shift Left Security">
+  Catching vulnerabilities during code review is 100x cheaper than fixing them
+  in production. CI/CD integration makes security checks automatic and
+  consistent.
+</Callout>
+
+---
+
+## GitHub Actions
+
+The most common integration for JavaScript projects:
+
+```yaml title=".github/workflows/security-lint.yml"
+name: Security Lint
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  security-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint Security Checks
+        run: npx eslint . --max-warnings 0
+
+      - name: Upload SARIF report
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: eslint-results.sarif
+```
+
+### With SARIF Reporting
+
+For GitHub Security tab integration:
+
+```yaml title=".github/workflows/security-lint.yml"
+- name: Run ESLint with SARIF output
+  run: |
+    npx eslint . \
+      --format @microsoft/eslint-formatter-sarif \
+      --output-file eslint-results.sarif
+  continue-on-error: true
+
+- name: Upload SARIF
+  uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: eslint-results.sarif
+```
+
+---
+
+## GitLab CI
+
+```yaml title=".gitlab-ci.yml"
+security-lint:
+  stage: test
+  image: node:20
+
+  cache:
+    paths:
+      - node_modules/
+
+  script:
+    - npm ci
+    - npx eslint . --max-warnings 0 --format json > eslint-report.json
+
+  artifacts:
+    reports:
+      codequality: eslint-report.json
+    when: always
+
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+    - if: $CI_COMMIT_BRANCH == "main"
+```
+
+---
+
+## Fail Fast Configuration
+
+### Block Critical Issues Only
+
+Allow warnings but fail on critical security issues:
+
+```yaml
+- name: Run Security Lint
+  run: |
+    npx eslint . --format json > eslint-report.json
+
+    # Fail only on critical (CVSS 9+) issues
+    CRITICAL=$(cat eslint-report.json | jq '[.[].messages[] | select(.severity == 2)] | length')
+    if [ "$CRITICAL" -gt 0 ]; then
+      echo "::error::$CRITICAL critical security issues found!"
+      exit 1
+    fi
+```
+
+### Severity-Based Gates
+
+Configure different behaviors per severity:
+
+```js title="eslint.config.js"
+import interlace from 'eslint-config-interlace';
+
+export default [
+  ...interlace.configs.recommended,
+  {
+    rules: {
+      // Critical (CVSS 9+): Always error
+      'secure-coding/no-sql-injection': 'error',
+      'jwt/no-hardcoded-secret': 'error',
+
+      // High (CVSS 7-8.9): Error in CI, warn locally
+      'crypto/no-weak-algorithms': process.env.CI ? 'error' : 'warn',
+
+      // Medium (CVSS 4-6.9): Warn only
+      'browser-security/no-insecure-url': 'warn',
+    },
+  },
+];
+```
+
+---
+
+## PR Comments
+
+Add security findings as PR comments:
+
+```yaml title=".github/workflows/security-lint.yml"
+- name: Run ESLint
+  id: eslint
+  run: |
+    npx eslint . --format json > eslint-report.json
+    echo "issues=$(cat eslint-report.json | jq '[.[].messages[]] | length')" >> $GITHUB_OUTPUT
+  continue-on-error: true
+
+- name: Comment on PR
+  if: github.event_name == 'pull_request' && steps.eslint.outputs.issues != '0'
+  uses: actions/github-script@v7
+  with:
+    script: |
+      const fs = require('fs');
+      const report = JSON.parse(fs.readFileSync('eslint-report.json', 'utf8'));
+      const issues = report.flatMap(f => f.messages.map(m => ({
+        file: f.filePath.replace(process.cwd(), ''),
+        line: m.line,
+        message: m.message,
+        rule: m.ruleId,
+        severity: m.severity === 2 ? '🔴' : '🟡'
+      })));
+
+      const body = `## 🔒 Security Lint Results
+
+      Found **${issues.length}** issues:
+
+      | File | Line | Rule | Message |
+      |------|------|------|---------|
+      ${issues.slice(0, 10).map(i => 
+        `| ${i.severity} ${i.file} | ${i.line} | \`${i.rule}\` | ${i.message} |`
+      ).join('\n')}
+      ${issues.length > 10 ? `\n... and ${issues.length - 10} more` : ''}
+      `;
+
+      github.rest.issues.createComment({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: context.issue.number,
+        body
+      });
+```
+
+---
+
+## Performance Optimization
+
+Speed up CI runs with caching and parallelization:
+
+```yaml title=".github/workflows/security-lint.yml"
+- name: Cache ESLint
+  uses: actions/cache@v4
+  with:
+    path: .eslintcache
+    key: eslint-${{ hashFiles('**/eslint.config.js') }}
+
+- name: Run ESLint (cached)
+  run: npx eslint . --cache --cache-location .eslintcache
+```
+
+### Parallel Execution
+
+For monorepos:
+
+```yaml
+jobs:
+  lint:
+    strategy:
+      matrix:
+        package: [api, web, shared]
+    steps:
+      - run: npx eslint packages/${{ matrix.package }} --cache
+```
+
+---
+
+## Required Secrets
+
+For SARIF upload and advanced features:
+
+| Secret          | Purpose                   | Required      |
+| --------------- | ------------------------- | ------------- |
+| `GITHUB_TOKEN`  | PR comments, SARIF upload | Auto-provided |
+| `CODECOV_TOKEN` | Coverage reporting        | Optional      |
+
+---
+
+## Next Steps
+
+<Cards>
+  <Card title="Changelog" href="/docs/getting-started/advanced/changelog">
+    View version history
+  </Card>
+  <Card title="Contributing" href="/docs/getting-started/advanced/contributing">
+    Add new security rules
+  </Card>
+</Cards>

@@ -1,0 +1,174 @@
+---
+title: Test Coverage
+description: Live ecosystem health metrics from Codecov
+icon: Activity
+---
+
+import {
+  Activity,
+  Shield,
+  CheckCircle,
+  Gauge,
+  ExternalLink,
+} from 'lucide-react';
+
+## Verification & Coverage
+
+We believe in **radical transparency**. Every line of security logic in Interlace is verified through automated testing, and the results are publicly visible.
+
+<Callout type="success" title="Trust Through Transparency">
+  Coverage data is fetched dynamically from Codecov and cached for 4 hours.
+  Updates are reflected automatically—no redeployment needed.
+</Callout>
+
+---
+
+## How It Works
+
+1. **Codecov Integration** — Coverage is measured on every CI run
+2. **API Caching** — Data is cached using our json-cache policy (4-hour TTL)
+3. **Real-Time Display** — This page shows live metrics from the ecosystem
+
+---
+
+## Coverage Standards
+
+| Plugin Type           | Minimum Coverage | Rationale                                |
+| --------------------- | ---------------- | ---------------------------------------- |
+| **Core Security**     | 85%+             | Mission-critical vulnerability detection |
+| **Framework Plugins** | 80%+             | Framework-specific security patterns     |
+| **Quality Plugins**   | 75%+             | Code quality and best practices          |
+
+---
+
+## Why Coverage Matters for Security
+
+High test coverage in security tooling means:
+
+<Cards>
+  <Card title="No False Negatives" icon={<Shield />}>
+    Every vulnerability pattern is tested to ensure detection works correctly.
+  </Card>
+  <Card title="No False Positives" icon={<CheckCircle />}>
+    Edge cases are covered to prevent noisy, incorrect warnings.
+  </Card>
+  <Card title="Regression Safety" icon={<Gauge />}>
+    Changes are validated against known vulnerability patterns.
+  </Card>
+</Cards>
+
+---
+
+## API Access
+
+You can programmatically access coverage data via our API:
+
+```bash
+# Get repository summary
+curl https://interlace.dev/api/stats
+
+# Get per-plugin breakdown
+curl https://interlace.dev/api/stats?type=components
+```
+
+### Response Format
+
+```json
+{
+  "success": true,
+  "data": {
+    "name": "eslint",
+    "totals": {
+      "files": 245,
+      "lines": 12500,
+      "hits": 10625,
+      "misses": 1875,
+      "coverage": 85.0
+    }
+  },
+  "meta": {
+    "source": "codecov",
+    "ttl": 14400
+  }
+}
+```
+
+---
+
+## Coverage Standards Enforcement
+
+### CI/CD Gates
+
+Every pull request must pass coverage gates:
+
+```yaml
+# .github/workflows/test.yml
+- name: Run Tests with Coverage
+  run: npm run test:coverage
+
+- name: Upload to Codecov
+  uses: codecov/codecov-action@v4
+  with:
+    fail_ci_if_error: true
+
+- name: Check Coverage Thresholds
+  run: |
+    if [ $(cat coverage/coverage-summary.json | jq '.total.lines.pct') -lt 80 ]; then
+      echo "Coverage below threshold!"
+      exit 1
+    fi
+```
+
+### Codecov Configuration
+
+```yaml title="codecov.yml"
+coverage:
+  status:
+    project:
+      default:
+        target: 85%
+        threshold: 2%
+    patch:
+      default:
+        target: 90%
+```
+
+---
+
+## What We Test
+
+- **Detection accuracy** — Does the rule catch the vulnerability?
+- **Edge cases** — Safe patterns that shouldn't trigger
+- **Auto-fixes** — Do fixes produce valid, secure code?
+- **Error messages** — Is metadata (CWE, CVSS) correct?
+
+---
+
+## View Live Dashboard
+
+<a
+  href="https://app.codecov.io/gh/ofri-peretz/eslint"
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  **Open Codecov Dashboard** →
+</a>
+
+<Callout type="info" title="Our Commitment">
+  Security plugins are required to maintain at least **85% coverage**.
+  Framework-specific plugins target **80%**. We reject PRs that decrease
+  coverage without justification.
+</Callout>
+
+---
+
+## Next Steps
+
+<Cards>
+  <Card title="Benchmarks" href="/docs/getting-started/concepts/benchmarks">
+    See performance comparisons
+  </Card>
+  <Card title="Contributing" href="/docs/getting-started/advanced/contributing">
+    Help improve coverage
+  </Card>
+</Cards>

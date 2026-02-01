@@ -1,0 +1,320 @@
+---
+title: Troubleshooting
+description: Common issues and solutions for ESLint Interlace
+icon: HelpCircle
+---
+
+import { AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+
+## Common Issues
+
+<Accordions>
+
+<Accordion title="Error: Cannot find module 'eslint-config-interlace'">
+
+**Cause:** Package not installed or incorrect node_modules path.
+
+**Solution:**
+
+```bash
+# Reinstall the package
+npm install eslint-config-interlace --save-dev
+
+# Clear npm cache if needed
+npm cache clean --force
+rm -rf node_modules package-lock.json
+npm install
+```
+
+For monorepos, ensure you're installing in the correct workspace:
+
+```bash
+# Root installation for sharing
+npm install eslint-config-interlace -w
+
+# Or workspace-specific
+npm install eslint-config-interlace -w packages/my-app
+```
+
+</Accordion>
+
+<Accordion title="ESLint is not using flat config">
+
+**Cause:** ESLint 8.x doesn't use flat config by default, or config file is named incorrectly.
+
+**Solution:**
+
+1. Ensure ESLint 9.x is installed:
+
+   ```bash
+   npm ls eslint
+   # Should show eslint@9.x.x
+   ```
+
+2. Name your config file exactly `eslint.config.js` (in project root)
+
+3. If using ESLint 8.x, you need the flag:
+
+   ```bash
+   ESLINT_USE_FLAT_CONFIG=true npx eslint .
+   ```
+
+4. For VS Code, add to settings:
+
+```json
+{
+  "eslint.useFlatConfig": true
+}
+```
+
+</Accordion>
+
+<Accordion title="Rules are not being applied">
+
+**Cause:** Plugins not properly configured or files not matching patterns.
+
+**Solution:**
+
+1. Verify plugin installation:
+
+   ```bash
+   npm ls eslint-plugin-browser-security
+   ```
+
+2. Check your config exports the rules:
+
+   ```js title="eslint.config.js"
+   import interlace from 'eslint-config-interlace';
+
+   console.log(interlace.configs.recommended); // Debug: see what's exported
+
+   export default [...interlace.configs.recommended];
+   ```
+
+3. Verify files match:
+
+```bash
+npx eslint --debug src/file.ts 2>&1 | grep "Matching"
+```
+
+</Accordion>
+
+<Accordion title="TypeError: Cannot read properties of undefined">
+
+**Cause:** Incorrect import syntax or plugin version mismatch.
+
+**Solution:**
+
+Check your import syntax matches the plugin's export:
+
+```js title="❌ Incorrect"
+import { browserSecurity } from 'eslint-plugin-browser-security';
+```
+
+```js title="✅ Correct"
+import browserSecurity from 'eslint-plugin-browser-security';
+```
+
+Also verify all plugins are on compatible versions:
+
+```bash
+npm outdated | grep eslint
+```
+
+</Accordion>
+
+<Accordion title="CVSS/CWE metadata not appearing in editor">
+
+**Cause:** Editor not displaying ESLint metadata, or using an older plugin version.
+
+**Solution:**
+
+1. Hover over the error in VS Code — metadata appears in the tooltip
+2. Check ESLint output panel for full diagnostics
+3. Update to the latest Interlace version:
+   ```bash
+   npm update eslint-config-interlace
+   ```
+
+For CLI, use the `--format` flag:
+
+```bash
+npx eslint --format json src/ | jq '.[] | .messages[] | .ruleId, .message'
+```
+
+</Accordion>
+
+<Accordion title="Conflicting rules with Prettier">
+
+**Cause:** ESLint formatting rules conflicting with Prettier.
+
+**Solution:**
+
+Use `eslint-config-prettier` to disable conflicting rules:
+
+```bash
+npm install eslint-config-prettier --save-dev
+```
+
+```js title="eslint.config.js"
+import interlace from 'eslint-config-interlace';
+import prettier from 'eslint-config-prettier';
+
+export default [
+  ...interlace.configs.recommended,
+  prettier, // Must be last to override formatting rules
+];
+```
+
+</Accordion>
+
+<Accordion title="Performance: Linting is very slow">
+
+**Cause:** Type-aware rules, large file count, or no caching.
+
+**Solution:**
+
+1. **Enable caching:**
+
+   ```bash
+   npx eslint --cache --cache-location node_modules/.cache/eslint .
+   ```
+
+2. **Identify slow rules:**
+
+   ```bash
+   TIMING=1 npx eslint .
+   ```
+
+3. **Ignore unnecessary files:**
+
+   ```js title="eslint.config.js"
+   export default [
+     {
+       ignores: [
+         'node_modules/**',
+         'dist/**',
+         '.next/**',
+         'coverage/**',
+         '**/*.min.js',
+       ],
+     },
+     // ... rest of config
+   ];
+   ```
+
+4. **Use eslint_d for repeated runs:**
+
+```bash
+npm install eslint_d --save-dev
+npx eslint_d .
+```
+
+</Accordion>
+
+<Accordion title="Monorepo: Different rules per package">
+
+**Cause:** Need package-specific configurations.
+
+**Solution:**
+
+Create per-package configs that extend the root:
+
+```js title="packages/frontend/eslint.config.js"
+import rootConfig from '../../eslint.config.js';
+import react from 'eslint-plugin-react-best-practices';
+
+export default [
+  ...rootConfig,
+  react.configs.recommended,
+  {
+    files: ['**/*.tsx'],
+    rules: {
+      // Frontend-specific rules
+    },
+  },
+];
+```
+
+```js title="packages/api/eslint.config.js"
+import rootConfig from '../../eslint.config.js';
+import node from 'eslint-plugin-node-security';
+
+export default [
+  ...rootConfig,
+  node.configs.recommended,
+  {
+    rules: {
+      // API-specific rules
+    },
+  },
+];
+```
+
+</Accordion>
+
+</Accordions>
+
+## Diagnostic Commands
+
+### Check ESLint Version
+
+```bash
+npx eslint --version
+# Expected: v9.x.x or higher
+```
+
+### List Installed Plugins
+
+```bash
+npm ls | grep eslint-plugin
+```
+
+### Debug Configuration
+
+```bash
+npx eslint --print-config src/index.ts
+```
+
+### Verify Rule is Active
+
+```bash
+npx eslint --no-ignore --rule 'browser-security/no-insecure-url: error' src/
+```
+
+### Check File Matching
+
+```bash
+npx eslint --debug src/file.ts 2>&1 | head -50
+```
+
+## Getting Help
+
+<Cards>
+  <Card
+    title="GitHub Issues"
+    href="https://github.com/ofri-peretz/eslint/issues"
+  >
+    Report bugs or request features
+  </Card>
+  <Card
+    title="Discussions"
+    href="https://github.com/ofri-peretz/eslint/discussions"
+  >
+    Ask questions and share tips
+  </Card>
+</Cards>
+
+## Still Stuck?
+
+If you're still experiencing issues:
+
+1. **Search existing issues** on GitHub
+2. **Create a minimal reproduction** — A small repo that shows the problem
+3. **Include versions** — Node, ESLint, and plugin versions
+4. **Share your config** — The full `eslint.config.js` file
+
+```bash
+# Generate a system report
+npx eslint --version && node --version && npm ls eslint eslint-config-interlace
+```
