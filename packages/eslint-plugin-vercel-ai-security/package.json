@@ -75,9 +75,9 @@
     "@interlace/eslint-devkit": "^1.2.1"
   },
   "devDependencies": {
-    "@ai-sdk/openai": "^2.0.86",
+    "@ai-sdk/openai": "^3.0.24",
     "@typescript-eslint/parser": "^8.46.2",
     "@typescript-eslint/rule-tester": "^8.46.2",
-    "ai": "^5.0.113"
+    "ai": "^6.0.66"
   }
 }
