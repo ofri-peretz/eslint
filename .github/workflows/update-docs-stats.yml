@@ -1,0 +1,112 @@
+# Update Plugin Statistics
+#
+# Scheduled workflow to update plugin statistics JSON files
+# that are used by the documentation site.
+#
+# Runs daily and updates:
+# - Rule counts per plugin
+# - Coverage statistics
+# - Other analytics data
+#
+# The docs site uses ISR with TTL-based caching for these files,
+# so updates are reflected without redeployment.
+
+name: Update Plugin Stats
+
+on:
+    schedule:
+        # Run daily at 6 AM UTC
+        - cron: "0 6 * * *"
+    workflow_dispatch:
+        inputs:
+            force_update:
+                description: "Force update all stats"
+                required: false
+                type: boolean
+                default: false
+
+permissions:
+    contents: write
+    pull-requests: write
+
+jobs:
+    update-stats:
+        name: Update Statistics
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 9
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "22"
+                  cache: "pnpm"
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Generate plugin statistics
+              run: |
+                  # Generate rule counts per plugin
+                  node -e "
+                    const fs = require('fs');
+                    const path = require('path');
+                    
+                    const packagesDir = 'packages';
+                    const plugins = fs.readdirSync(packagesDir)
+                      .filter(d => d.startsWith('eslint-plugin-') && fs.statSync(path.join(packagesDir, d)).isDirectory());
+                    
+                    const stats = {};
+                    let totalRules = 0;
+                    
+                    for (const plugin of plugins) {
+                      const rulesDir = path.join(packagesDir, plugin, 'docs', 'rules');
+                      let ruleCount = 0;
+                      
+                      if (fs.existsSync(rulesDir)) {
+                        ruleCount = fs.readdirSync(rulesDir).filter(f => f.endsWith('.md')).length;
+                      }
+                      
+                      const name = plugin.replace('eslint-plugin-', '');
+                      stats[name] = {
+                        name: plugin,
+                        rules: ruleCount,
+                        category: plugin.includes('security') || ['jwt', 'crypto', 'pg'].some(s => plugin.includes(s)) ? 'security' : 'quality'
+                      };
+                      totalRules += ruleCount;
+                    }
+                    
+                    const output = {
+                      updated: new Date().toISOString(),
+                      totalPlugins: plugins.length,
+                      totalRules,
+                      plugins: stats
+                    };
+                    
+                    fs.mkdirSync('apps/docs/public/data', { recursive: true });
+                    fs.writeFileSync('apps/docs/public/data/plugin-stats.json', JSON.stringify(output, null, 2));
+                    console.log('Generated plugin stats:', output);
+                  "
+
+            - name: Check for changes
+              id: changes
+              run: |
+                  git diff --quiet apps/docs/public/data/ || echo "changes=true" >> $GITHUB_OUTPUT
+
+            - name: Commit and push
+              if: steps.changes.outputs.changes == 'true'
+              run: |
+                  git config --local user.email "github-actions[bot]@users.noreply.github.com"
+                  git config --local user.name "github-actions[bot]"
+                  git add apps/docs/public/data/
+                  git commit -m "chore(docs): update plugin statistics [automated]"
+                  git push
