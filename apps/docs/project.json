@@ -45,6 +45,9 @@
     },
     "build": {
       "executor": "nx:run-commands",
+      "dependsOn": [
+        "typecheck"
+      ],
       "outputs": [
         "{projectRoot}/.next"
       ],

@@ -59,7 +59,7 @@ export async function getTweetWithCache(
   if (!preferFresh && cachedTweet) {
     log(`[TweetLoader] Using cached data for tweet ${id}`);
     const { _cachedAt: _, ...tweetData } = cachedTweet;
-    return tweetData as Tweet;
+    return tweetData as unknown as Tweet;
   }
   
   // Try to fetch fresh data
@@ -82,7 +82,7 @@ export async function getTweetWithCache(
   if (cachedTweet) {
     log(`[TweetLoader] Falling back to cached data for tweet ${id}`);
     const { _cachedAt: _, ...tweetData } = cachedTweet;
-    return tweetData as Tweet;
+    return tweetData as unknown as Tweet;
   }
   
   log(`[TweetLoader] No data available for tweet ${id}`);
