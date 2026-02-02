@@ -211,8 +211,13 @@ jobs:
         id: detect
         run: |
           SELECTED="${{ inputs.package }}"
+          FORCE_ALL="${{ inputs.force-all }}"
+          FIRST_TIME_ONLY="${{ inputs.first-time-only }}"
 
-          if [ "$SELECTED" = "all-affected" ]; then
+          if [ "$FORCE_ALL" = "true" ] || [ "$FIRST_TIME_ONLY" = "true" ] || [ "$SELECTED" = "all" ]; then
+            echo "📦 Full release mode: targetting all packages in dependency order"
+            PUBLISHABLE_PACKAGES="$DEPENDENCY_ORDER"
+          elif [ "$SELECTED" = "all-affected" ]; then
             echo "🔍 Detecting all affected packages..."
             
             # Find the last release tag to compare against
@@ -259,29 +264,30 @@ jobs:
                 PUBLISHABLE_PACKAGES="eslint-devkit"
               fi
             fi
-            
-            if [ -z "$PUBLISHABLE_PACKAGES" ]; then
-              echo "ℹ️ No affected packages found"
-              echo "packages=" >> $GITHUB_OUTPUT
-              echo "package-count=0" >> $GITHUB_OUTPUT
-              echo "matrix={\"package\":[]}" >> $GITHUB_OUTPUT
-            else
-              echo "📦 Affected packages (in dependency order): $PUBLISHABLE_PACKAGES"
-              echo "packages=$PUBLISHABLE_PACKAGES" >> $GITHUB_OUTPUT
-              
-              # Count packages
-              COUNT=$(echo "$PUBLISHABLE_PACKAGES" | tr ',' '\n' | wc -l | tr -d ' ')
-              echo "package-count=$COUNT" >> $GITHUB_OUTPUT
-              
-              # Create matrix JSON (compact, single-line for GitHub Actions)
-              MATRIX_JSON=$(echo "$PUBLISHABLE_PACKAGES" | tr ',' '\n' | jq -R . | jq -sc '{package: .}')
-              echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
-            fi
           else
-            echo "📦 Single package selected: $SELECTED"
-            echo "packages=$SELECTED" >> $GITHUB_OUTPUT
-            echo "package-count=1" >> $GITHUB_OUTPUT
-            echo "matrix={\"package\":[\"$SELECTED\"]}" >> $GITHUB_OUTPUT
+            echo "📦 Single package mode: $SELECTED"
+            PUBLISHABLE_PACKAGES="$SELECTED"
+          fi
+
+          # ────────────────────────────────────────────────────────────
+          # Unified Output Generation
+          # ────────────────────────────────────────────────────────────
+          if [ -z "$PUBLISHABLE_PACKAGES" ]; then
+            echo "ℹ️ No packages found/selected"
+            echo "packages=" >> $GITHUB_OUTPUT
+            echo "package-count=0" >> $GITHUB_OUTPUT
+            echo "matrix={\"package\":[]}" >> $GITHUB_OUTPUT
+          else
+            echo "🎯 Final package list: $PUBLISHABLE_PACKAGES"
+            echo "packages=$PUBLISHABLE_PACKAGES" >> $GITHUB_OUTPUT
+            
+            # Count packages
+            COUNT=$(echo "$PUBLISHABLE_PACKAGES" | tr ',' '\n' | wc -l | tr -d ' ')
+            echo "package-count=$COUNT" >> $GITHUB_OUTPUT
+            
+            # Create matrix JSON (compact, single-line for GitHub Actions)
+            MATRIX_JSON=$(echo "$PUBLISHABLE_PACKAGES" | tr ',' '\n' | jq -R . | jq -sc '{package: .}')
+            echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
           fi
 
       - name: 📊 Summary
