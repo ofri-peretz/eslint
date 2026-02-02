@@ -26,9 +26,11 @@ const PACKAGES_ROOT = join(process.cwd(), '../../packages');
 // Patterns that break MDX parsing in RemoteRuleDoc
 const PROBLEMATIC_PATTERNS = [
   {
-    name: 'CVSS Calculator URL with query string',
-    pattern: /nvd\.nist\.gov\/vuln-metrics\/cvss\/v3-calculator\?vector=/,
-    description: 'CVSS calculator URLs with vector query strings break MDX parsing. Use plain text CVSS scores instead.',
+    name: 'CVSS Calculator URL with UN-ENCODED query string',
+    // Detects: ?vector=AV:N/AC:L (un-encoded chars that break MDX)
+    // Allows: ?vector=AV%3AN%2FAC%3AL (properly URL-encoded)
+    pattern: /nvd\.nist\.gov\/vuln-metrics\/cvss\/v3-calculator\?vector=[^)]*[/:][^)]*\)/,
+    description: 'CVSS calculator URLs must have URL-encoded vector query strings. Use %3A for : and %2F for /',
     severity: 'error',
   },
 

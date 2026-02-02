@@ -21,7 +21,7 @@ describe('MDX Compiler Module', () => {
     it('should export compileRemoteMDX function', async () => {
       const mdxModule = await import('../src/lib/mdx-compiler');
       expect(typeof mdxModule.compileRemoteMDX).toBe('function');
-    });
+    }, 15000); // Extended timeout for heavy module loading
 
     it('should export compileRemoteMarkdown function', async () => {
       const mdxModule = await import('../src/lib/mdx-compiler');

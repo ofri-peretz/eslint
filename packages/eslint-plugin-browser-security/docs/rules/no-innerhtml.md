@@ -251,7 +251,7 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 | Component | Purpose | Example |
 | :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-79](https://cwe.mitre.org/data/definitions/79.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) CVSS Score |
+| **Risk Standards** | Security benchmarks | [CWE-79](https://cwe.mitre.org/data/definitions/79.html) [OWASP:A05](https://owasp.org/Top10/A05_2021-Injection/) [CVSS:6.1](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
 | **Issue Description** | Specific vulnerability | `Cross-site Scripting (XSS) detected` |
 | **Severity & Compliance** | Impact assessment | `MEDIUM [SOC2,PCI-DSS,GDPR,ISO27001]` |
 | **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |

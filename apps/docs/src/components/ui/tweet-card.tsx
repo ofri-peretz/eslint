@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 import { enrichTweet, type EnrichedTweet, type TweetProps } from "react-tweet"
-import { getTweet, type Tweet } from "react-tweet/api"
+import { type Tweet } from "react-tweet/api"
+import { getTweetWithCache } from "@/lib/tweet-loader"
 
 import { cn } from "@/lib/utils"
 
@@ -264,7 +265,7 @@ export const TweetCard = async ({
   className?: string
 }) => {
   const tweet = id
-    ? await getTweet(id).catch((err) => {
+    ? await getTweetWithCache(id).catch((err) => {
         if (onError) {
           onError(err)
         } else {

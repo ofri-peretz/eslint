@@ -1,0 +1,372 @@
+{
+  "_comment": "Cached tweet data to avoid Twitter API rate limits during builds. Updated by scripts/sync-tweet-cache.mjs",
+  "_lastUpdated": "2026-02-02T06:16:05.912Z",
+  "tweets": {
+    "2006790779537121585": {
+      "__typename": "Tweet",
+      "lang": "en",
+      "favorite_count": 8,
+      "possibly_sensitive": false,
+      "created_at": "2026-01-01T18:13:00.000Z",
+      "display_text_range": [
+        0,
+        243
+      ],
+      "entities": {
+        "hashtags": [],
+        "urls": [
+          {
+            "display_url": "dev.to/ofri-peretz/th…",
+            "expanded_url": "https://dev.to/ofri-peretz/the-30-minute-security-audit-onboarding-a-new-codebase-4f91",
+            "indices": [
+              220,
+              243
+            ],
+            "url": "https://t.co/5aWCclnWlG"
+          }
+        ],
+        "user_mentions": [],
+        "symbols": []
+      },
+      "id_str": "2006790779537121585",
+      "text": "Onboarding to a new codebase? You need a security pulse check.\n\nHere is how to conduct a \"30-Minute Security Audit\" to find the glaring vulnerabilities before you write your first line of code.\n\n{ author: Ofri Peretz }\n\nhttps://t.co/5aWCclnWlG",
+      "user": {
+        "id_str": "2735246778",
+        "name": "DEV Community",
+        "screen_name": "ThePracticalDev",
+        "is_blue_verified": true,
+        "profile_image_shape": "Circle",
+        "verified": false,
+        "profile_image_url_https": "https://pbs.twimg.com/profile_images/1694461743865749504/QyaBFrhh_normal.jpg"
+      },
+      "edit_control": {
+        "edit_tweet_ids": [
+          "2006790779537121585"
+        ],
+        "editable_until_msecs": "1767294780000",
+        "is_edit_eligible": true,
+        "edits_remaining": "5"
+      },
+      "conversation_count": 1,
+      "news_action_type": "conversation",
+      "card": {
+        "card_platform": {
+          "platform": {
+            "audience": {
+              "name": "production"
+            },
+            "device": {
+              "name": "iPhone",
+              "version": "13"
+            }
+          }
+        },
+        "name": "summary_large_image",
+        "url": "https://t.co/5aWCclnWlG",
+        "binding_values": {
+          "photo_image_full_size_large": {
+            "image_value": {
+              "height": 419,
+              "width": 800,
+              "url": "https://pbs.twimg.com/card_img/2016990794045935618/0aYCsu58?format=jpg&name=800x419"
+            },
+            "type": "IMAGE"
+          },
+          "thumbnail_image": {
+            "image_value": {
+              "height": 200,
+              "width": 400,
+              "url": "https://pbs.twimg.com/card_img/2016990794045935618/0aYCsu58?format=jpg&name=400x400"
+            },
+            "type": "IMAGE"
+          },
+          "description": {
+            "string_value": "How to assess a new codebase in under 30 minutes using automated security linting. Perfect for acquisitions, new hires, or CTOs inheriting legacy code.",
+            "type": "STRING"
+          },
+          "domain": {
+            "string_value": "dev.to",
+            "type": "STRING"
+          },
+          "thumbnail_image_large": {
+            "image_value": {
+              "height": 300,
+              "width": 600,
+              "url": "https://pbs.twimg.com/card_img/2016990794045935618/0aYCsu58?format=jpg&name=600x600"
+            },
+            "type": "IMAGE"
+          },
+          "summary_photo_image_small": {
+            "image_value": {
+              "height": 202,
+              "width": 386,
+              "url": "https://pbs.twimg.com/card_img/2016990794045935618/0aYCsu58?format=jpg&name=386x202"
+            },
+            "type": "IMAGE"
+          },
+          "thumbnail_image_original": {
+            "image_value": {
+              "height": 500,
+              "width": 1000,
+              "url": "https://pbs.twimg.com/card_img/2016990794045935618/0aYCsu58?format=jpg&name=orig"
+            },
+            "type": "IMAGE"
+          },
+          "site": {
+            "scribe_key": "publisher_id",
+            "type": "USER",
+            "user_value": {
+              "id_str": "2735246778",
+              "path": []
+            }
+          },
+          "photo_image_full_size_small": {
+            "image_value": {
+              "height": 202,
+              "width": 386,
+              "url": "https://pbs.twimg.com/card_img/2016990794045935618/0aYCsu58?format=jpg&name=386x202"
+            },
+            "type": "IMAGE"
+          },
+          "summary_photo_image_large": {
+            "image_value": {
+              "height": 419,
+              "width": 800,
+              "url": "https://pbs.twimg.com/card_img/2016990794045935618/0aYCsu58?format=jpg&name=800x419"
+            },
+            "type": "IMAGE"
+          },
+          "thumbnail_image_small": {
+            "image_value": {
+              "height": 72,
+              "width": 144,
+              "url": "https://pbs.twimg.com/card_img/2016990794045935618/0aYCsu58?format=jpg&name=144x144"
+            },
+            "type": "IMAGE"
+          },
+          "creator": {
+            "type": "USER",
+            "user_value": {
+              "id_str": "2006844490255052802",
+              "path": []
+            }
+          },
+          "thumbnail_image_x_large": {
+            "image_value": {
+              "height": 500,
+              "width": 1000,
+              "url": "https://pbs.twimg.com/card_img/2016990794045935618/0aYCsu58?format=png&name=2048x2048_2_exp"
+            },
+            "type": "IMAGE"
+          },
+          "photo_image_full_size_original": {
+            "image_value": {
+              "height": 500,
+              "width": 1000,
+              "url": "https://pbs.twimg.com/card_img/2016990794045935618/0aYCsu58?format=jpg&name=orig"
+            },
+            "type": "IMAGE"
+          },
+          "vanity_url": {
+            "scribe_key": "vanity_url",
+            "string_value": "dev.to",
+            "type": "STRING"
+          },
+          "photo_image_full_size": {
+            "image_value": {
+              "height": 314,
+              "width": 600,
+              "url": "https://pbs.twimg.com/card_img/2016990794045935618/0aYCsu58?format=jpg&name=600x314"
+            },
+            "type": "IMAGE"
+          },
+          "thumbnail_image_color": {
+            "image_color_value": {
+              "palette": [
+                {
+                  "rgb": {
+                    "blue": 43,
+                    "green": 21,
+                    "red": 26
+                  },
+                  "percentage": 85.22
+                },
+                {
+                  "rgb": {
+                    "blue": 144,
+                    "green": 72,
+                    "red": 51
+                  },
+                  "percentage": 4.79
+                },
+                {
+                  "rgb": {
+                    "blue": 67,
+                    "green": 72,
+                    "red": 30
+                  },
+                  "percentage": 2.78
+                },
+                {
+                  "rgb": {
+                    "blue": 53,
+                    "green": 28,
+                    "red": 66
+                  },
+                  "percentage": 2.22
+                },
+                {
+                  "rgb": {
+                    "blue": 129,
+                    "green": 206,
+                    "red": 38
+                  },
+                  "percentage": 0.95
+                }
+              ]
+            },
+            "type": "IMAGE_COLOR"
+          },
+          "title": {
+            "string_value": "The 30-Minute Security Audit: Onboarding a New Codebase",
+            "type": "STRING"
+          },
+          "summary_photo_image_color": {
+            "image_color_value": {
+              "palette": [
+                {
+                  "rgb": {
+                    "blue": 43,
+                    "green": 21,
+                    "red": 26
+                  },
+                  "percentage": 85.22
+                },
+                {
+                  "rgb": {
+                    "blue": 144,
+                    "green": 72,
+                    "red": 51
+                  },
+                  "percentage": 4.79
+                },
+                {
+                  "rgb": {
+                    "blue": 67,
+                    "green": 72,
+                    "red": 30
+                  },
+                  "percentage": 2.78
+                },
+                {
+                  "rgb": {
+                    "blue": 53,
+                    "green": 28,
+                    "red": 66
+                  },
+                  "percentage": 2.22
+                },
+                {
+                  "rgb": {
+                    "blue": 129,
+                    "green": 206,
+                    "red": 38
+                  },
+                  "percentage": 0.95
+                }
+              ]
+            },
+            "type": "IMAGE_COLOR"
+          },
+          "summary_photo_image_x_large": {
+            "image_value": {
+              "height": 500,
+              "width": 1000,
+              "url": "https://pbs.twimg.com/card_img/2016990794045935618/0aYCsu58?format=png&name=2048x2048_2_exp"
+            },
+            "type": "IMAGE"
+          },
+          "summary_photo_image": {
+            "image_value": {
+              "height": 314,
+              "width": 600,
+              "url": "https://pbs.twimg.com/card_img/2016990794045935618/0aYCsu58?format=jpg&name=600x314"
+            },
+            "type": "IMAGE"
+          },
+          "photo_image_full_size_color": {
+            "image_color_value": {
+              "palette": [
+                {
+                  "rgb": {
+                    "blue": 43,
+                    "green": 21,
+                    "red": 26
+                  },
+                  "percentage": 85.22
+                },
+                {
+                  "rgb": {
+                    "blue": 144,
+                    "green": 72,
+                    "red": 51
+                  },
+                  "percentage": 4.79
+                },
+                {
+                  "rgb": {
+                    "blue": 67,
+                    "green": 72,
+                    "red": 30
+                  },
+                  "percentage": 2.78
+                },
+                {
+                  "rgb": {
+                    "blue": 53,
+                    "green": 28,
+                    "red": 66
+                  },
+                  "percentage": 2.22
+                },
+                {
+                  "rgb": {
+                    "blue": 129,
+                    "green": 206,
+                    "red": 38
+                  },
+                  "percentage": 0.95
+                }
+              ]
+            },
+            "type": "IMAGE_COLOR"
+          },
+          "photo_image_full_size_x_large": {
+            "image_value": {
+              "height": 500,
+              "width": 1000,
+              "url": "https://pbs.twimg.com/card_img/2016990794045935618/0aYCsu58?format=png&name=2048x2048_2_exp"
+            },
+            "type": "IMAGE"
+          },
+          "card_url": {
+            "scribe_key": "card_url",
+            "string_value": "https://t.co/5aWCclnWlG",
+            "type": "STRING"
+          },
+          "summary_photo_image_original": {
+            "image_value": {
+              "height": 500,
+              "width": 1000,
+              "url": "https://pbs.twimg.com/card_img/2016990794045935618/0aYCsu58?format=jpg&name=orig"
+            },
+            "type": "IMAGE"
+          }
+        }
+      },
+      "isEdited": false,
+      "isStaleEdit": false,
+      "_cachedAt": "2026-02-02T06:16:05.410Z"
+    }
+  }
+}

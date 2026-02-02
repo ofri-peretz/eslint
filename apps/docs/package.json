@@ -3,9 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "node scripts/sync-plugin-stats.mjs && next build",
+    "build": "node scripts/sync-plugin-stats.mjs && node scripts/sync-tweet-cache.mjs && next build",
     "dev": "node scripts/sync-plugin-stats.mjs && next dev",
     "sync-stats": "node scripts/sync-plugin-stats.mjs",
+    "sync-tweets": "node scripts/sync-tweet-cache.mjs",
     "start": "next start",
     "types:check": "fumadocs-mdx && next typegen && tsc --noEmit",
     "postinstall": "fumadocs-mdx",

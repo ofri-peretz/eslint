@@ -42,7 +42,7 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 | Component | Purpose | Example |
 | :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-287](https://cwe.mitre.org/data/definitions/287.html) [OWASP:A07](https://owasp.org/Top10/A07_2021-Injection/) CVSS Score |
+| **Risk Standards** | Security benchmarks | [CWE-287](https://cwe.mitre.org/data/definitions/287.html) [OWASP:A07](https://owasp.org/Top10/A07_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
 | **Issue Description** | Specific vulnerability | `Improper Authentication detected` |
 | **Severity & Compliance** | Impact assessment | `CRITICAL` |
 | **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
