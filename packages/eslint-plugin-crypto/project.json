@@ -15,8 +15,10 @@
         "main": "packages/eslint-plugin-crypto/src/index.ts",
         "tsConfig": "packages/eslint-plugin-crypto/tsconfig.lib.json",
         "assets": [
-          "packages/eslint-plugin-crypto/*.md",
-          "packages/eslint-plugin-crypto/.npmignore"
+          "packages/eslint-plugin-crypto/.npmignore",
+          "packages/eslint-plugin-crypto/package.json",
+          "packages/eslint-plugin-crypto/LICENSE",
+          "packages/eslint-plugin-crypto/README.md"
         ]
       }
     },

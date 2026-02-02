@@ -19,10 +19,10 @@
         "main": "packages/eslint-devkit/src/index.ts",
         "tsConfig": "packages/eslint-devkit/tsconfig.lib.json",
         "assets": [
-          "packages/eslint-devkit/*.md",
           "packages/eslint-devkit/LICENSE",
           "packages/eslint-devkit/package.json",
-          "packages/eslint-devkit/AGENTS.md"
+          "packages/eslint-devkit/AGENTS.md",
+          "packages/eslint-devkit/README.md"
         ]
       }
     },

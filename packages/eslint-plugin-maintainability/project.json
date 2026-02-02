@@ -7,8 +7,13 @@
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
-      "dependsOn": ["^build", "test"],
-      "outputs": ["{options.outputPath}"],
+      "dependsOn": [
+        "^build",
+        "test"
+      ],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "outputPath": "dist/packages/eslint-plugin-maintainability",
         "main": "packages/eslint-plugin-maintainability/src/index.ts",
@@ -21,13 +26,16 @@
             "glob": "packages/eslint-plugin-maintainability/README.md",
             "input": "packages/eslint-plugin-maintainability",
             "output": "./"
-          }
+          },
+          "packages/eslint-plugin-maintainability/package.json"
         ]
       }
     },
     "test": {
       "executor": "@nx/vite:test",
-      "outputs": ["{projectRoot}/coverage"],
+      "outputs": [
+        "{projectRoot}/coverage"
+      ],
       "options": {
         "configFile": "packages/eslint-plugin-maintainability/vitest.config.mts",
         "passWithNoTests": true
@@ -40,7 +48,9 @@
     },
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": ["{options.outputFile}"],
+      "outputs": [
+        "{options.outputFile}"
+      ],
       "options": {
         "lintFilePatterns": [
           "packages/eslint-plugin-maintainability/**/*.{ts,tsx,js,jsx}"

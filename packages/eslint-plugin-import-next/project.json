@@ -37,7 +37,8 @@
           "packages/eslint-plugin-import-next/CHANGELOG.md",
           "packages/eslint-plugin-import-next/LICENSE",
           "packages/eslint-plugin-import-next/AGENTS.md",
-          "packages/eslint-plugin-import-next/.npmignore"
+          "packages/eslint-plugin-import-next/.npmignore",
+          "packages/eslint-plugin-import-next/package.json"
         ]
       }
     },

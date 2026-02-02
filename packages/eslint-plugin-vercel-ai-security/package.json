@@ -17,10 +17,10 @@
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/README.md",
+  "homepage": "https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-vercel-ai-security#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "url": "https://github.com/ofri-peretz/eslint",
     "directory": "packages/eslint-plugin-vercel-ai-security"
   },
   "bugs": {

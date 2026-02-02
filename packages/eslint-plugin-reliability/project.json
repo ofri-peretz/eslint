@@ -6,12 +6,24 @@
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "outputPath": "dist/packages/eslint-plugin-reliability",
         "main": "packages/eslint-plugin-reliability/src/index.ts",
         "tsConfig": "packages/eslint-plugin-reliability/tsconfig.lib.json",
-        "assets": ["packages/eslint-plugin-reliability/*.md"]
+        "assets": [
+          "packages/eslint-plugin-reliability/package.json",
+          "packages/eslint-plugin-reliability/LICENSE",
+          "packages/eslint-plugin-reliability/README.md"
+        ]
+      }
+    },
+    "nx-release-publish": {
+      "executor": "@nx/js:release-publish",
+      "options": {
+        "packageRoot": "dist/packages/eslint-plugin-reliability"
       }
     }
   },

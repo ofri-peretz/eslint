@@ -290,7 +290,7 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
     if [ "$GENERATE_CHANGELOG" = "true" ]; then
       echo ""
       echo "📝 Generating changelog..."
-      npx nx release changelog --projects="$PACKAGE" || echo "⚠️ Changelog failed (non-blocking)"
+      npx nx release changelog "$NEW_VERSION" --projects="$PACKAGE" || echo "⚠️ Changelog failed (non-blocking)"
     fi
     
     # ──────────────────────────────────────────────────────────────

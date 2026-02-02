@@ -26,7 +26,8 @@
             "glob": "packages/eslint-plugin-react-features/README.md",
             "input": "packages/eslint-plugin-react-features",
             "output": "./"
-          }
+          },
+          "packages/eslint-plugin-react-features/package.json"
         ]
       }
     },

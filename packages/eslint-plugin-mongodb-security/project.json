@@ -1,83 +1,84 @@
 {
-    "name": "eslint-plugin-mongodb-security",
-    "$schema": "../../node_modules/nx/schemas/project-schema.json",
-    "sourceRoot": "packages/eslint-plugin-mongodb-security/src",
-    "projectType": "library",
-    "tags": [
-        "npm:public",
-        "npm:eslint",
-        "npm:eslint-plugin",
-        "npm:typescript",
-        "npm:linting",
-        "npm:security",
-        "npm:mongodb",
-        "npm:mongoose",
-        "npm:nosql",
-        "npm:owasp",
-        "npm:cwe",
-        "npm:llm-optimized",
-        "npm:code-quality",
-        "npm:ast",
-        "npm:static-analysis"
-    ],
-    "targets": {
-        "build": {
-            "executor": "@nx/js:tsc",
-            "dependsOn": [
-                "^build",
-                "test"
-            ],
-            "outputs": [
-                "{options.outputPath}"
-            ],
-            "options": {
-                "outputPath": "dist/packages/eslint-plugin-mongodb-security",
-                "main": "packages/eslint-plugin-mongodb-security/src/index.ts",
-                "tsConfig": "packages/eslint-plugin-mongodb-security/tsconfig.lib.json",
-                "assets": [
-                    "packages/eslint-plugin-mongodb-security/README.md",
-                    "packages/eslint-plugin-mongodb-security/CHANGELOG.md",
-                    "packages/eslint-plugin-mongodb-security/LICENSE",
-                    "packages/eslint-plugin-mongodb-security/AGENTS.md",
-                    "packages/eslint-plugin-mongodb-security/.npmignore",
-                    {
-                        "input": "packages/eslint-plugin-mongodb-security/docs",
-                        "glob": "**/*",
-                        "output": "docs"
-                    }
-                ]
-            }
-        },
-        "test": {
-            "executor": "@nx/vite:test",
-            "outputs": [
-                "{projectRoot}/coverage"
-            ],
-            "options": {
-                "configFile": "packages/eslint-plugin-mongodb-security/vitest.config.mts"
-            },
-            "configurations": {
-                "ci": {
-                    "coverage": true
-                }
-            }
-        },
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": [
-                "{options.outputFile}"
-            ],
-            "options": {
-                "lintFilePatterns": [
-                    "packages/eslint-plugin-mongodb-security/**/*.ts"
-                ]
-            }
-        },
-        "nx-release-publish": {
-            "executor": "@nx/js:release-publish",
-            "options": {
-                "packageRoot": "dist/{projectRoot}"
-            }
+  "name": "eslint-plugin-mongodb-security",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/eslint-plugin-mongodb-security/src",
+  "projectType": "library",
+  "tags": [
+    "npm:public",
+    "npm:eslint",
+    "npm:eslint-plugin",
+    "npm:typescript",
+    "npm:linting",
+    "npm:security",
+    "npm:mongodb",
+    "npm:mongoose",
+    "npm:nosql",
+    "npm:owasp",
+    "npm:cwe",
+    "npm:llm-optimized",
+    "npm:code-quality",
+    "npm:ast",
+    "npm:static-analysis"
+  ],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "dependsOn": [
+        "^build",
+        "test"
+      ],
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "outputPath": "dist/packages/eslint-plugin-mongodb-security",
+        "main": "packages/eslint-plugin-mongodb-security/src/index.ts",
+        "tsConfig": "packages/eslint-plugin-mongodb-security/tsconfig.lib.json",
+        "assets": [
+          "packages/eslint-plugin-mongodb-security/README.md",
+          "packages/eslint-plugin-mongodb-security/CHANGELOG.md",
+          "packages/eslint-plugin-mongodb-security/LICENSE",
+          "packages/eslint-plugin-mongodb-security/AGENTS.md",
+          "packages/eslint-plugin-mongodb-security/.npmignore",
+          {
+            "input": "packages/eslint-plugin-mongodb-security/docs",
+            "glob": "**/*",
+            "output": "docs"
+          },
+          "packages/eslint-plugin-mongodb-security/package.json"
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": [
+        "{projectRoot}/coverage"
+      ],
+      "options": {
+        "configFile": "packages/eslint-plugin-mongodb-security/vitest.config.mts"
+      },
+      "configurations": {
+        "ci": {
+          "coverage": true
         }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": [
+        "{options.outputFile}"
+      ],
+      "options": {
+        "lintFilePatterns": [
+          "packages/eslint-plugin-mongodb-security/**/*.ts"
+        ]
+      }
+    },
+    "nx-release-publish": {
+      "executor": "@nx/js:release-publish",
+      "options": {
+        "packageRoot": "dist/{projectRoot}"
+      }
     }
+  }
 }

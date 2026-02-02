@@ -20,10 +20,10 @@
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/ofri-peretz/eslint#readme",
+  "homepage": "https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-devkit#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "url": "https://github.com/ofri-peretz/eslint",
     "directory": "packages/eslint-devkit"
   },
   "bugs": {

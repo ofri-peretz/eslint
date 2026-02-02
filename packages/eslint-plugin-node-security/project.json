@@ -37,7 +37,8 @@
           "packages/eslint-plugin-node-security/CHANGELOG.md",
           "packages/eslint-plugin-node-security/LICENSE",
           "packages/eslint-plugin-node-security/AGENTS.md",
-          "packages/eslint-plugin-node-security/.npmignore"
+          "packages/eslint-plugin-node-security/.npmignore",
+          "packages/eslint-plugin-node-security/package.json"
         ]
       }
     },

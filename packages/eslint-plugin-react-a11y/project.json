@@ -36,7 +36,8 @@
           "packages/eslint-plugin-react-a11y/README.md",
           "packages/eslint-plugin-react-a11y/CHANGELOG.md",
           "packages/eslint-plugin-react-a11y/LICENSE",
-          "packages/eslint-plugin-react-a11y/AGENTS.md"
+          "packages/eslint-plugin-react-a11y/AGENTS.md",
+          "packages/eslint-plugin-react-a11y/package.json"
         ]
       }
     },

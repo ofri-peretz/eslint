@@ -5,7 +5,6 @@
   "projectType": "library",
   "release": {
     "version": {
-      "manifestRootsToUpdate": ["dist/{projectRoot}"],
       "currentVersionResolver": "git-tag",
       "fallbackCurrentVersionResolver": "disk"
     }
@@ -14,12 +13,18 @@
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "outputPath": "dist/packages/eslint-plugin-modernization",
         "main": "packages/eslint-plugin-modernization/src/index.ts",
         "tsConfig": "packages/eslint-plugin-modernization/tsconfig.lib.json",
-        "assets": ["packages/eslint-plugin-modernization/*.md"]
+        "assets": [
+          "packages/eslint-plugin-modernization/package.json",
+          "packages/eslint-plugin-modernization/LICENSE",
+          "packages/eslint-plugin-modernization/README.md"
+        ]
       }
     },
     "nx-release-publish": {

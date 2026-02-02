@@ -27,7 +27,8 @@
         "assets": [
           "packages/eslint-plugin-pg/README.md",
           "packages/eslint-plugin-pg/LICENSE",
-          "packages/eslint-plugin-pg/.npmignore"
+          "packages/eslint-plugin-pg/.npmignore",
+          "packages/eslint-plugin-pg/package.json"
         ]
       }
     },

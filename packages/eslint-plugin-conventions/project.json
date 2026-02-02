@@ -6,12 +6,24 @@
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "outputPath": "dist/packages/eslint-plugin-conventions",
         "main": "packages/eslint-plugin-conventions/src/index.ts",
         "tsConfig": "packages/eslint-plugin-conventions/tsconfig.lib.json",
-        "assets": ["packages/eslint-plugin-conventions/*.md"]
+        "assets": [
+          "packages/eslint-plugin-conventions/package.json",
+          "packages/eslint-plugin-conventions/LICENSE",
+          "packages/eslint-plugin-conventions/README.md"
+        ]
+      }
+    },
+    "nx-release-publish": {
+      "executor": "@nx/js:release-publish",
+      "options": {
+        "packageRoot": "dist/packages/eslint-plugin-conventions"
       }
     }
   },
