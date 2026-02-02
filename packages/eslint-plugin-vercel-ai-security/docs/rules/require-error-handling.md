@@ -172,7 +172,7 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 | Component | Purpose | Example |
 | :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-755](https://cwe.mitre.org/data/definitions/755.html) [OWASP:A10](https://owasp.org/Top10/A10_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Risk Standards** | Security benchmarks | [CWE-755](https://cwe.mitre.org/data/definitions/755.html) [OWASP:A10](https://owasp.org/Top10/A10_2021-Injection/) CVSS Score |
 | **Issue Description** | Specific vulnerability | `Improper Handling of Exceptional Conditions detected` |
 | **Severity & Compliance** | Impact assessment | `HIGH` |
 | **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |

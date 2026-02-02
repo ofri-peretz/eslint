@@ -132,7 +132,7 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 | Component | Purpose | Example |
 | :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-614](https://cwe.mitre.org/data/definitions/614.html) [OWASP:A02](https://owasp.org/Top10/A02_2021-Injection/) [CVSS:5.3](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Risk Standards** | Security benchmarks | [CWE-614](https://cwe.mitre.org/data/definitions/614.html) [OWASP:A02](https://owasp.org/Top10/A02_2021-Injection/) CVSS Score |
 | **Issue Description** | Specific vulnerability | `Sensitive Cookie in HTTPS without Secure detected` |
 | **Severity & Compliance** | Impact assessment | `MEDIUM` |
 | **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |

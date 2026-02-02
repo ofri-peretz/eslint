@@ -49,7 +49,7 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 | Component | Purpose | Example |
 | :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-532](https://cwe.mitre.org/data/definitions/532.html) [OWASP:A09](https://owasp.org/Top10/A09_2021-Injection/) [CVSS:5.3](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Risk Standards** | Security benchmarks | [CWE-532](https://cwe.mitre.org/data/definitions/532.html) [OWASP:A09](https://owasp.org/Top10/A09_2021-Injection/) CVSS Score |
 | **Issue Description** | Specific vulnerability | `Log Information Exposure detected` |
 | **Severity & Compliance** | Impact assessment | `MEDIUM [GDPR,HIPAA,PCI-DSS,SOC2]` |
 | **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |

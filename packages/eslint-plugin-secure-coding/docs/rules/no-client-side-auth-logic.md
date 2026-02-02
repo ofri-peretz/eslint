@@ -104,7 +104,7 @@ The rule provides **LLM-optimized error messages** (Compact 2-line format) with 
 
 | Component | Purpose | Example |
 | :--- | :--- | :--- |
-| **Risk Standards** | Security benchmarks | [CWE-602](https://cwe.mitre.org/data/definitions/602.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:6.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) |
+| **Risk Standards** | Security benchmarks | [CWE-602](https://cwe.mitre.org/data/definitions/602.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) CVSS Score |
 | **Issue Description** | Specific vulnerability | `Client-Side Enforcement of Server-Side Security detected` |
 | **Severity & Compliance** | Impact assessment | `MEDIUM` |
 | **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |

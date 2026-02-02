@@ -99,7 +99,7 @@ const chachaCipher = crypto.createCipheriv('chacha20-poly1305', key, iv);
 
 ## The ECB Penguin
 
-![ECB Penguin](https://blog.filippo.io/content/images/2015/11/Tux_ecb.jpg)
+![ECB Penguin](https://upload.wikimedia.org/wikipedia/commons/f/f0/Tux_ecb.jpg)
 
 The "ECB Penguin" is a famous example showing how ECB mode preserves patterns. The original Tux penguin image, when encrypted with ECB mode, still shows the penguin's outline because identical pixel blocks produce identical ciphertext blocks.
 
