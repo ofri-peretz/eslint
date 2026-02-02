@@ -31,7 +31,6 @@ concurrency:
 
 env:
   NODE_VERSION: "24"
-  PNPM_VERSION: "10.18.3"
 
 jobs:
   coverage:
@@ -47,27 +46,22 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: ⚙️ Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
+          cache: "npm"
 
       - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: 🗄️ Restore NX cache
         uses: actions/cache@v4
         with:
           path: .nx/cache
-          key: nx-cache-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          key: nx-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
           restore-keys: |
-            nx-cache-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+            nx-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
             nx-cache-${{ runner.os }}-
 
       # ═══════════════════════════════════════════════════════════════════════
@@ -82,17 +76,17 @@ jobs:
 
           # Validate project input if provided
           if [ -n "$PROJECT" ]; then
-            if ! pnpm nx show project "$PROJECT" >/dev/null 2>&1; then
+            if ! npx nx show project "$PROJECT" >/dev/null 2>&1; then
               echo "❌ Invalid project: $PROJECT"
               echo "Available projects:"
-              pnpm nx show projects
+              npx nx show projects
               exit 1
             fi
             echo "📊 Running tests with coverage for: $PROJECT"
-            pnpm nx test "$PROJECT" -c ci --coverage --verbose || echo "⚠️ Tests completed with issues"
+            npx nx test "$PROJECT" -c ci --coverage --verbose || echo "⚠️ Tests completed with issues"
           else
             echo "📊 Running tests with coverage for all packages..."
-            pnpm nx run-many -t test --all -c ci --coverage --verbose --nxBail=false || echo "⚠️ Some tests may have failed"
+            npx nx run-many -t test --all -c ci --coverage --verbose --nxBail=false || echo "⚠️ Some tests may have failed"
           fi
         env:
           NX_SKIP_NX_CLOUD: "true"

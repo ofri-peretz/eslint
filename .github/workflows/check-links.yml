@@ -1,93 +1,90 @@
 name: Link Integrity Check
 
 on:
-    push:
-        branches: [main]
-        paths:
-            - "apps/docs/content/**/*.mdx"
-            - "apps/docs/content/**/*.md"
-    pull_request:
-        branches: [main]
-        paths:
-            - "apps/docs/content/**/*.mdx"
-            - "apps/docs/content/**/*.md"
-    schedule:
-        # Run weekly on Sundays at midnight UTC
-        - cron: "0 0 * * 0"
-    workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "apps/docs/content/**/*.mdx"
+      - "apps/docs/content/**/*.md"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/docs/content/**/*.mdx"
+      - "apps/docs/content/**/*.md"
+  schedule:
+    # Run weekly on Sundays at midnight UTC
+    - cron: "0 0 * * 0"
+  workflow_dispatch:
 
 permissions:
-    contents: read
-    pull-requests: write
+  contents: read
+  pull-requests: write
 
 jobs:
-    check-links:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+  check-links:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Setup pnpm
-              uses: pnpm/action-setup@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "24"
-                  cache: "pnpm"
+      - name: Install dependencies
+        run: npm ci
 
-            - name: Install dependencies
-              run: pnpm install --frozen-lockfile
+      - name: Run link checker
+        id: linkcheck
+        working-directory: apps/docs
+        continue-on-error: true
+        run: node scripts/check-links.mjs
 
-            - name: Run link checker
-              id: linkcheck
-              working-directory: apps/docs
-              continue-on-error: true
-              run: node scripts/check-links.mjs
+      - name: Upload link report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: link-report
+          path: apps/docs/link-report.json
+          retention-days: 30
 
-            - name: Upload link report
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: link-report
-                  path: apps/docs/link-report.json
-                  retention-days: 30
+      - name: Comment on PR with results
+        if: github.event_name == 'pull_request' && steps.linkcheck.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = JSON.parse(fs.readFileSync('apps/docs/link-report.json', 'utf8'));
 
-            - name: Comment on PR with results
-              if: github.event_name == 'pull_request' && steps.linkcheck.outcome == 'failure'
-              uses: actions/github-script@v7
-              with:
-                  script: |
-                      const fs = require('fs');
-                      const report = JSON.parse(fs.readFileSync('apps/docs/link-report.json', 'utf8'));
+            let body = '## 🔗 Link Integrity Report\n\n';
+            body += `| Status | Count |\n|--------|-------|\n`;
+            body += `| ✅ OK | ${report.summary.ok} |\n`;
+            body += `| ⚠️ Warnings | ${report.summary.warnings} |\n`;
+            body += `| ❌ Errors | ${report.summary.errors} |\n\n`;
 
-                      let body = '## 🔗 Link Integrity Report\n\n';
-                      body += `| Status | Count |\n|--------|-------|\n`;
-                      body += `| ✅ OK | ${report.summary.ok} |\n`;
-                      body += `| ⚠️ Warnings | ${report.summary.warnings} |\n`;
-                      body += `| ❌ Errors | ${report.summary.errors} |\n\n`;
+            if (report.issues.length > 0) {
+              body += '### Issues Found\n\n';
+              for (const issue of report.issues.slice(0, 10)) {
+                body += `- **${issue.file}:${issue.line}**\n`;
+                body += `  - URL: \`${issue.url}\`\n`;
+                body += `  - Issues: ${issue.issues.join(', ')}\n\n`;
+              }
+              if (report.issues.length > 10) {
+                body += `\n*... and ${report.issues.length - 10} more issues. See artifact for full report.*\n`;
+              }
+            }
 
-                      if (report.issues.length > 0) {
-                        body += '### Issues Found\n\n';
-                        for (const issue of report.issues.slice(0, 10)) {
-                          body += `- **${issue.file}:${issue.line}**\n`;
-                          body += `  - URL: \`${issue.url}\`\n`;
-                          body += `  - Issues: ${issue.issues.join(', ')}\n\n`;
-                        }
-                        if (report.issues.length > 10) {
-                          body += `\n*... and ${report.issues.length - 10} more issues. See artifact for full report.*\n`;
-                        }
-                      }
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
 
-                      github.rest.issues.createComment({
-                        issue_number: context.issue.number,
-                        owner: context.repo.owner,
-                        repo: context.repo.repo,
-                        body: body
-                      });
-
-            - name: Fail if errors found
-              if: steps.linkcheck.outcome == 'failure'
-              run: |
-                  echo "❌ Link check failed. See report for details."
-                  exit 1
+      - name: Fail if errors found
+        if: steps.linkcheck.outcome == 'failure'
+        run: |
+          echo "❌ Link check failed. See report for details."
+          exit 1

@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# SDK Compatibility: jsonwebtoken (JWT ecosystem)
+# SDK Compatibility: JWT Ecosystem
 # ═══════════════════════════════════════════════════════════════════════════════
 #
 # PURPOSE:
@@ -7,11 +7,9 @@
 # eslint-plugin-jwt rules.
 #
 # MONITORED PACKAGES:
-# - jsonwebtoken (primary)
-# - jose (modern alternative)
-# - express-jwt (middleware)
-# - jwks-rsa (key management)
-# - jwt-decode (client-side)
+# - jose (Modern JWT/JWS/JWE library)
+# - jsonwebtoken (Legacy/Standard library)
+# - express-jwt (Middleware)
 #
 # SCHEDULE: Every Monday at 6 AM UTC
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -20,14 +18,11 @@ name: "SDK: JWT Ecosystem"
 
 on:
   schedule:
+    # Every Monday at 6 AM UTC
     - cron: "0 6 * * 1"
 
   workflow_dispatch:
     inputs:
-      package:
-        description: "Specific package to test (leave empty for all)"
-        required: false
-        default: ""
       create_issue:
         description: "Create GitHub issue on failure"
         type: boolean
@@ -35,17 +30,13 @@ on:
 
 env:
   NODE_VERSION: "24"
-  PNPM_VERSION: "10.18.3"
   PLUGIN_PATH: "packages/eslint-plugin-jwt"
 
 jobs:
-  # ═══════════════════════════════════════════════════════════════════════════
-  # COMPATIBILITY TESTS
-  # ═══════════════════════════════════════════════════════════════════════════
   compatibility:
     name: JWT Compatibility Test
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
 
     outputs:
       test_passed: ${{ steps.test.outputs.passed }}
@@ -55,67 +46,35 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - name: ⚙️ Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
+          cache: "npm"
 
       - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      # ═════════════════════════════════════════════════════════════════════
-      # VERSION DISCOVERY
-      # ═════════════════════════════════════════════════════════════════════
+        run: npm ci
 
       - name: 🔍 Get version information
         id: versions
         run: |
-          # Get latest versions from npm
-          JWT_LATEST=$(npm view jsonwebtoken version)
           JOSE_LATEST=$(npm view jose version)
+          JWT_LATEST=$(npm view jsonwebtoken version)
           EXPRESS_JWT_LATEST=$(npm view express-jwt version)
-          JWKS_RSA_LATEST=$(npm view jwks-rsa version)
-          JWT_DECODE_LATEST=$(npm view jwt-decode version)
 
           echo "📦 Package versions:"
-          echo "  jsonwebtoken: $JWT_LATEST"
           echo "  jose: $JOSE_LATEST"
+          echo "  jsonwebtoken: $JWT_LATEST"
           echo "  express-jwt: $EXPRESS_JWT_LATEST"
-          echo "  jwks-rsa: $JWKS_RSA_LATEST"
-          echo "  jwt-decode: $JWT_DECODE_LATEST"
 
-          # Store as JSON for later use
-          JSON=$(cat <<EOF
-          {
-            "jsonwebtoken": "$JWT_LATEST",
-            "jose": "$JOSE_LATEST",
-            "express-jwt": "$EXPRESS_JWT_LATEST",
-            "jwks-rsa": "$JWKS_RSA_LATEST",
-            "jwt-decode": "$JWT_DECODE_LATEST"
-          }
-          EOF
-          )
-          echo "json=$(echo $JSON | jq -c .)" >> $GITHUB_OUTPUT
-
-      # ═════════════════════════════════════════════════════════════════════
-      # INSTALL LATEST SDK VERSIONS
-      # ═════════════════════════════════════════════════════════════════════
+          JSON="{\"jose\":\"$JOSE_LATEST\",\"jsonwebtoken\":\"$JWT_LATEST\",\"express-jwt\":\"$EXPRESS_JWT_LATEST\"}"
+          echo "json=$JSON" >> $GITHUB_OUTPUT
 
       - name: 🔄 Install latest JWT packages
         run: |
           # Install at workspace root (proper monorepo pattern)
-          pnpm add jsonwebtoken@latest jose@latest express-jwt@latest jwks-rsa@latest jwt-decode@latest --save-dev -w
+          npm install jose@latest jsonwebtoken@latest express-jwt@latest --save-dev
           echo "✅ Installed latest versions"
-
-      # ═════════════════════════════════════════════════════════════════════
-      # RUN COMPATIBILITY TESTS
-      # ═════════════════════════════════════════════════════════════════════
 
       - name: 🧪 Run Interface Compatibility Tests
         id: test
@@ -124,7 +83,7 @@ jobs:
           mkdir -p ${{ env.PLUGIN_PATH }}/.compatibility-results
 
           set +e
-          pnpm vitest run \
+          npx vitest run \
             --reporter=verbose \
             --reporter=json \
             --outputFile=${{ env.PLUGIN_PATH }}/.compatibility-results/test-results.json \
@@ -135,48 +94,37 @@ jobs:
 
           if [ $TEST_EXIT_CODE -eq 0 ]; then
             echo "passed=true" >> $GITHUB_OUTPUT
-            echo "✅ All compatibility tests passed!"
           else
             echo "passed=false" >> $GITHUB_OUTPUT
-            echo "❌ Compatibility tests failed!"
           fi
-
-      # ═════════════════════════════════════════════════════════════════════
-      # GENERATE REPORT
-      # ═════════════════════════════════════════════════════════════════════
 
       - name: 📝 Generate Compatibility Report
         if: steps.test.outputs.passed == 'false'
         run: |
           mkdir -p ${{ env.PLUGIN_PATH }}/.compatibility-results
 
-          cat << 'EOF' > ${{ env.PLUGIN_PATH }}/.compatibility-results/BREAKING_CHANGE_REPORT.md
+          cat << EOF > ${{ env.PLUGIN_PATH }}/.compatibility-results/BREAKING_CHANGE_REPORT.md
           # 🚨 JWT Ecosystem Breaking Change Report
 
           ## Summary
 
           The eslint-plugin-jwt interface compatibility tests have FAILED.
-          This indicates potential breaking changes in one or more JWT packages.
 
           ## Packages Tested
 
-          | Package | Version | Status |
-          |---------|---------|--------|
-          | jsonwebtoken | ${{ fromJSON(steps.versions.outputs.json).jsonwebtoken }} | See tests |
-          | jose | ${{ fromJSON(steps.versions.outputs.json).jose }} | See tests |
-          | express-jwt | ${{ fromJSON(steps.versions.outputs.json)['express-jwt'] }} | See tests |
-          | jwks-rsa | ${{ fromJSON(steps.versions.outputs.json)['jwks-rsa'] }} | See tests |
-          | jwt-decode | ${{ fromJSON(steps.versions.outputs.json)['jwt-decode'] }} | See tests |
+          | Package | Version |
+          |---------|---------|
+          | jose | ${{ fromJSON(steps.versions.outputs.json).jose }} |
+          | jsonwebtoken | ${{ fromJSON(steps.versions.outputs.json).jsonwebtoken }} |
+          | express-jwt | ${{ fromJSON(steps.versions.outputs.json)['express-jwt'] }} |
 
           ## Affected Rules
 
           | Package | Rules That May Need Updates |
           |---------|---------------------------|
-          | jsonwebtoken | no-algorithm-none, no-weak-secret, require-expiration, require-audience |
-          | jose | require-algorithm-whitelist, no-insecure-key |
-          | express-jwt | require-jwt-validation, no-exposed-secrets |
-          | jwks-rsa | require-jwks-validation |
-          | jwt-decode | no-client-side-decode-verify |
+          | jose | require-jose-algorithms, no-unsafe-jose-key |
+          | jsonwebtoken | require-algorithms, no-unsafe-signing |
+          | express-jwt | require-express-jwt-secrets |
 
           EOF
 
@@ -195,11 +143,9 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Package | Version |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|---------|" >> $GITHUB_STEP_SUMMARY
-          echo "| jsonwebtoken | ${{ fromJSON(steps.versions.outputs.json).jsonwebtoken }} |" >> $GITHUB_STEP_SUMMARY
           echo "| jose | ${{ fromJSON(steps.versions.outputs.json).jose }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| jsonwebtoken | ${{ fromJSON(steps.versions.outputs.json).jsonwebtoken }} |" >> $GITHUB_STEP_SUMMARY
           echo "| express-jwt | ${{ fromJSON(steps.versions.outputs.json)['express-jwt'] }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| jwks-rsa | ${{ fromJSON(steps.versions.outputs.json)['jwks-rsa'] }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| jwt-decode | ${{ fromJSON(steps.versions.outputs.json)['jwt-decode'] }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ "${{ steps.test.outputs.passed }}" == "true" ]; then
@@ -208,9 +154,6 @@ jobs:
             echo "**Status**: ❌ Breaking changes detected" >> $GITHUB_STEP_SUMMARY
           fi
 
-  # ═══════════════════════════════════════════════════════════════════════════
-  # CREATE ISSUE ON FAILURE
-  # ═══════════════════════════════════════════════════════════════════════════
   create-issue:
     name: Create Issue for Breaking Changes
     needs: compatibility
@@ -234,7 +177,7 @@ jobs:
             try {
               reportBody = fs.readFileSync('report/BREAKING_CHANGE_REPORT.md', 'utf8');
             } catch (e) {
-              reportBody = `## JWT SDK Breaking Change Detected\n\nSee workflow run for details.`;
+              reportBody = `## JWT SDK Breaking Change\n\nSee workflow run for details.`;
             }
 
             const existingIssues = await github.rest.issues.listForRepo({

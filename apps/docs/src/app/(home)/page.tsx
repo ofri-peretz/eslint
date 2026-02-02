@@ -24,6 +24,7 @@ import { NumberTicker } from '@/components/ui/number-ticker';
 import { AnimatedGradientText } from '@/components/ui/animated-gradient-text';
 import { Marquee } from '@/components/ui/marquee';
 import { TweetCard } from '@/components/ui/tweet-card';
+import { DevToCard } from '@/components/ui/devto-card';
 import { ShimmerButton } from '@/components/ui/shimmer-button';
 import { getDisplayStats } from '@/lib/stats-loader';
 import { HeroSection } from '@/components/home/hero-section';
@@ -168,64 +169,9 @@ export default async function HomePage() {
               </div>
 
               {/* Dev.to Top 7 Featured Card */}
-              <a 
-                href="https://dev.to/devteam/top-7-featured-dev-posts-of-the-week-e8p"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block group h-full"
-              >
-                <div className="relative flex flex-col gap-4 overflow-hidden rounded-3xl border border-neutral-200 bg-white p-6 shadow-lg shadow-neutral-200/50 transition-all duration-300 ease-out group-hover:shadow-xl group-hover:shadow-neutral-300/50 group-hover:-translate-y-0.5 dark:border-neutral-800 dark:bg-neutral-950 dark:shadow-neutral-900/50 h-full">
-                  <BorderBeam size={200} duration={12} colorFrom="#f59e0b" colorTo="#eab308" />
-                  
-                  {/* Header - Author Info */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <img 
-                        src="https://media2.dev.to/dynamic/image/width=100,height=100,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F264%2Fb75f6edf-df7b-406e-a56b-43facafb352c.jpg"
-                        alt="Jess Lee"
-                        className="size-12 rounded-full border border-neutral-200 dark:border-neutral-800"
-                      />
-                      <div>
-                        <div className="font-semibold flex items-center gap-1.5">
-                          Jess Lee
-                          <Star className="size-4 text-yellow-500 fill-yellow-500" />
-                        </div>
-                        <div className="text-sm text-fd-muted-foreground">
-                          for The DEV Team
-                        </div>
-                      </div>
-                    </div>
-                    <ExternalLink className="size-5 text-fd-muted-foreground group-hover:text-fd-foreground transition-colors" />
-                  </div>
-
-                  {/* Cover Image */}
-                  <img 
-                    src="https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2Fkkraeoyefdl2khru956p.jpg"
-                    alt="Top 7 Posts of the Week"
-                    className="w-full rounded-2xl border border-neutral-200 object-cover dark:border-neutral-800"
-                  />
-
-                  {/* Content */}
-                  <div className="flex-1">
-                    <p className="text-[15px] leading-relaxed">
-                      🏆 Our article <span className="font-medium">&ldquo;The 30-Minute Security Audit&rdquo;</span> was featured in the Top 7 DEV Posts of the Week!
-                    </p>
-                  </div>
-
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full bg-orange-500/15 px-3 py-1 text-xs font-medium text-orange-600 dark:text-orange-400">
-                      #security
-                    </span>
-                    <span className="rounded-full bg-purple-500/15 px-3 py-1 text-xs font-medium text-purple-600 dark:text-purple-400">
-                      #javascript
-                    </span>
-                    <span className="rounded-full bg-blue-500/15 px-3 py-1 text-xs font-medium text-blue-600 dark:text-blue-400">
-                      #eslint
-                    </span>
-                  </div>
-                </div>
-              </a>
+              <div className="flex justify-center h-full">
+                <DevToCard path="devteam/top-7-featured-dev-posts-of-the-week-2cgm" />
+              </div>
 
               {/* Developer Testimonial Card - Different topic: plugin discovery */}
               <div className="relative flex flex-col gap-4 overflow-hidden rounded-xl border border-fd-border bg-fd-card/80 backdrop-blur-sm p-6 hover:border-fd-border/80 transition-all duration-300 h-full">

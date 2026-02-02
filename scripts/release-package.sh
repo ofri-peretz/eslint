@@ -71,7 +71,7 @@ check_dependencies() {
     return 0
   fi
   
-  DEPS=$(pnpm nx show project "$PACKAGE" --json 2>/dev/null | jq -r '.implicitDependencies // [] | .[]' 2>/dev/null || echo "")
+  DEPS=$(npx nx show project "$PACKAGE" --json 2>/dev/null | jq -r '.implicitDependencies // [] | .[]' 2>/dev/null || echo "")
   
   for dep in $DEPS; do
     if echo "$FAILED_PACKAGES" | grep -q "$dep"; then
@@ -137,26 +137,26 @@ run_ci_validation() {
   echo "🧪 Running CI validation..."
   
   echo "📝 Linting..."
-  pnpm nx lint "$PACKAGE" --verbose || {
-    print_error "Lint failed" "ESLint errors in $PACKAGE" "Run 'pnpm nx lint $PACKAGE' locally"
+  npx nx lint "$PACKAGE" --verbose || {
+    print_error "Lint failed" "ESLint errors in $PACKAGE" "Run 'npx nx lint $PACKAGE' locally"
     exit 1
   }
   
   echo "🧪 Testing..."
-  pnpm nx test "$PACKAGE" -c ci --verbose || {
-    print_error "Test failed" "Test failures in $PACKAGE" "Run 'pnpm nx test $PACKAGE' locally"
+  npx nx test "$PACKAGE" -c ci --verbose || {
+    print_error "Test failed" "Test failures in $PACKAGE" "Run 'npx nx test $PACKAGE' locally"
     exit 1
   }
   
   echo "🔨 Building..."
-  pnpm nx build "$PACKAGE" --verbose || {
-    print_error "Build failed" "Build errors in $PACKAGE" "Run 'pnpm nx build $PACKAGE' locally"
+  npx nx build "$PACKAGE" --verbose || {
+    print_error "Build failed" "Build errors in $PACKAGE" "Run 'npx nx build $PACKAGE' locally"
     exit 1
   }
   
   echo "🔍 Typechecking..."
-  pnpm nx typecheck "$PACKAGE" --verbose || {
-    print_error "Typecheck failed" "Type errors in $PACKAGE" "Run 'pnpm nx typecheck $PACKAGE' locally"
+  npx nx typecheck "$PACKAGE" --verbose || {
+    print_error "Typecheck failed" "Type errors in $PACKAGE" "Run 'npx nx typecheck $PACKAGE' locally"
     exit 1
   }
   
@@ -173,17 +173,17 @@ bump_version() {
   VERSION_FAILED=false
   
   if [ -n "$FORCE_VERSION" ]; then
-    pnpm nx release version "$FORCE_VERSION" --projects="$PACKAGE" || VERSION_FAILED=true
+    npx nx release version "$FORCE_VERSION" --projects="$PACKAGE" || VERSION_FAILED=true
   elif [ "$VERSION_SPEC" != "auto" ]; then
-    pnpm nx release version "$VERSION_SPEC" --projects="$PACKAGE" || VERSION_FAILED=true
+    npx nx release version "$VERSION_SPEC" --projects="$PACKAGE" || VERSION_FAILED=true
   else
-    OUTPUT=$(pnpm nx release version --projects="$PACKAGE" 2>&1) || VERSION_FAILED=true
+    OUTPUT=$(npx nx release version --projects="$PACKAGE" 2>&1) || VERSION_FAILED=true
     echo "$OUTPUT"
     
     # Fallback to patch if no conventional commits
     if [ "$VERSION_FAILED" = "true" ] && echo "$OUTPUT" | grep -q "No changes detected"; then
       echo "ℹ️ No conventional commits, falling back to patch..."
-      pnpm nx release version patch --projects="$PACKAGE" || {
+      npx nx release version patch --projects="$PACKAGE" || {
         print_error "Version bump failed" "Patch fallback also failed" "Check nx release configuration"
         exit 1
       }
@@ -192,7 +192,7 @@ bump_version() {
   fi
   
   if [ "$VERSION_FAILED" = "true" ]; then
-    print_error "Version bump failed" "nx release version error" "Run 'pnpm nx release version --projects=$PACKAGE' locally"
+    print_error "Version bump failed" "nx release version error" "Run 'npx nx release version --projects=$PACKAGE' locally"
     exit 1
   fi
   
@@ -207,15 +207,15 @@ bump_version() {
 test_and_build() {
   echo ""
   echo "🧪 Testing package..."
-  pnpm nx test "$PACKAGE" -c ci --verbose || {
-    print_error "Test failed (pre-publish)" "Tests failed" "Run 'pnpm nx test $PACKAGE' locally"
+  npx nx test "$PACKAGE" -c ci --verbose || {
+    print_error "Test failed (pre-publish)" "Tests failed" "Run 'npx nx test $PACKAGE' locally"
     exit 1
   }
   
   echo ""
   echo "🔨 Building package..."
-  pnpm nx build "$PACKAGE" --verbose || {
-    print_error "Build failed (pre-publish)" "Build failed" "Run 'pnpm nx build $PACKAGE' locally"
+  npx nx build "$PACKAGE" --verbose || {
+    print_error "Build failed (pre-publish)" "Build failed" "Run 'npx nx build $PACKAGE' locally"
     exit 1
   }
 }
@@ -270,7 +270,7 @@ publish_to_npm() {
   fi
   
   # Build command
-  PUBLISH_CMD="pnpm nx release publish --projects=$PACKAGE --tag $DIST_TAG"
+  PUBLISH_CMD="npx nx release publish --projects=$PACKAGE --tag $DIST_TAG"
   if [ "$IS_FIRST_RELEASE" = "true" ]; then
     PUBLISH_CMD="$PUBLISH_CMD --first-release"
   fi
@@ -310,7 +310,7 @@ publish_to_npm() {
     
     # Generic error
     print_error "NPM Publish Failed (exit $PUBLISH_EXIT)" "Unknown error" \
-      "Try 'pnpm nx release publish --projects=$PACKAGE --dry-run' locally"
+      "Try 'npx nx release publish --projects=$PACKAGE --dry-run' locally"
     exit 1
   }
   
@@ -348,6 +348,7 @@ check_dependencies
 reconcile_tags "$NPM_NAME"
 
 # CI validation (optional)
+# CI validation (optional)
 run_ci_validation
 
 # Dry run mode
@@ -355,11 +356,11 @@ if [ "$DRY_RUN" = "true" ]; then
   echo ""
   echo "🔍 [DRY RUN] Version bump preview:"
   if [ -n "$FORCE_VERSION" ]; then
-    pnpm nx release version "$FORCE_VERSION" --projects="$PACKAGE" --dry-run || true
+    npx nx release version "$FORCE_VERSION" --projects="$PACKAGE" --dry-run || true
   elif [ "$VERSION_SPEC" != "auto" ]; then
-    pnpm nx release version "$VERSION_SPEC" --projects="$PACKAGE" --dry-run || true
+    npx nx release version "$VERSION_SPEC" --projects="$PACKAGE" --dry-run || true
   else
-    pnpm nx release version --projects="$PACKAGE" --dry-run || true
+    npx nx release version --projects="$PACKAGE" --dry-run || true
   fi
   echo "RESULT=dry-run"
   exit 0
@@ -375,7 +376,7 @@ test_and_build
 if [ "$GENERATE_CHANGELOG" = "true" ]; then
   echo ""
   echo "📝 Generating changelog..."
-  pnpm nx release changelog --projects="$PACKAGE" || echo "⚠️ Changelog failed (non-blocking)"
+  npx nx release changelog --projects="$PACKAGE" || echo "⚠️ Changelog failed (non-blocking)"
 fi
 
 # Push to git

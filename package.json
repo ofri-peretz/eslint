@@ -32,7 +32,7 @@
     "publish:devkit": "nx run eslint-devkit:publish",
     "publish:secure-coding": "nx run eslint-plugin-secure-coding:publish",
     "publish:cli": "nx run cli:publish",
-    "publish:all": "pnpm nx run-many -t build --all && nx release publish",
+    "publish:all": "npx nx run-many -t build --all && nx release publish",
     "ci:trigger": "gh workflow run ci.yml --ref local-playground-app && echo '✅ Workflow triggered!'",
     "ci:status": "tsx scripts/ci-status.ts",
     "ci": "tsx scripts/ci-status.ts",
@@ -156,11 +156,6 @@
     "vitest": "^4.0.18"
   },
   "nx": {},
-  "pnpm": {
-    "overrides": {
-      "@nx/vite": "^22.0.3"
-    }
-  },
   "overrides": {
     "glob": "^11.1.0",
     "html-encoding-sniffer": "^6.0.0"

@@ -16,7 +16,6 @@ concurrency:
 
 env:
   NODE_VERSION: "24"
-  PNPM_VERSION: "10.18.3"
 
 jobs:
   lint:
@@ -34,27 +33,22 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: ⚙️ Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
+          cache: "npm"
 
       - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: 🗄️ Restore NX cache
         uses: actions/cache@v4
         with:
           path: .nx/cache
-          key: nx-cache-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          key: nx-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
           restore-keys: |
-            nx-cache-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+            nx-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
             nx-cache-${{ runner.os }}-
 
       - name: 🗄️ Restore ESLint cache
@@ -86,7 +80,7 @@ jobs:
           echo "📝 Running ESLint on affected packages..."
 
           # Get affected projects
-          AFFECTED=$(pnpm nx show projects --affected 2>/dev/null | tr '\n' ',' | sed 's/,$//')
+          AFFECTED=$(npx nx show projects --affected 2>/dev/null | tr '\n' ',' | sed 's/,$//')
 
           if [ -z "$AFFECTED" ]; then
             echo "ℹ️ No affected projects detected"
@@ -97,10 +91,10 @@ jobs:
 
           # Run ESLint with JSON output and pipe to reviewdog
           # reviewdog only comments on changed lines (delta), not the entire file
-          pnpm nx affected -t lint -- --format=json --max-warnings=0 2>/dev/null | \
+          npx nx affected -t lint -- --format=json --max-warnings=0 2>/dev/null | \
             reviewdog -f=eslint -reporter=github-pr-review -filter-mode=added -fail-on-error=true || {
               echo "⚠️ PR review reporter failed, trying check reporter..."
-              pnpm nx affected -t lint -- --format=json --max-warnings=0 2>/dev/null | \
+              npx nx affected -t lint -- --format=json --max-warnings=0 2>/dev/null | \
                 reviewdog -f=eslint -reporter=github-pr-check -filter-mode=added -fail-on-error=true
             }
 
@@ -123,22 +117,17 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - name: ⚙️ Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
+          cache: "npm"
 
       - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: 📋 Validate documentation
-        run: pnpm tsx scripts/validate-docs.ts
+        run: npx tsx scripts/validate-docs.ts
 
       - name: 📊 Print Summary
         if: always()

@@ -3,14 +3,13 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 #
 # PURPOSE:
-# Proactively detect breaking changes in AWS Lambda and Middy packages that
-# could affect eslint-plugin-lambda-security rules.
+# Proactively detect breaking changes in Middy engine that could affect
+# eslint-plugin-lambda-security rules.
 #
 # MONITORED PACKAGES:
 # - @middy/core
-# - @middy/http-cors
 # - @middy/http-security-headers
-# - @middy/validator
+# - @middy/http-cors
 #
 # SCHEDULE: Every Monday at 6 AM UTC
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -19,6 +18,7 @@ name: "SDK: Lambda / Middy"
 
 on:
   schedule:
+    # Every Monday at 6 AM UTC
     - cron: "0 6 * * 1"
 
   workflow_dispatch:
@@ -30,7 +30,6 @@ on:
 
 env:
   NODE_VERSION: "24"
-  PNPM_VERSION: "10.18.3"
   PLUGIN_PATH: "packages/eslint-plugin-lambda-security"
 
 jobs:
@@ -47,41 +46,34 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - name: ⚙️ Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
+          cache: "npm"
 
       - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: 🔍 Get version information
         id: versions
         run: |
-          MIDDY_CORE=$(npm view @middy/core version)
-          MIDDY_CORS=$(npm view @middy/http-cors version)
-          MIDDY_HEADERS=$(npm view @middy/http-security-headers version)
-          MIDDY_VALIDATOR=$(npm view @middy/validator version)
+          CORE_LATEST=$(npm view @middy/core version)
+          HEADERS_LATEST=$(npm view @middy/http-security-headers version)
+          CORS_LATEST=$(npm view @middy/http-cors version)
 
           echo "📦 Package versions:"
-          echo "  @middy/core: $MIDDY_CORE"
-          echo "  @middy/http-cors: $MIDDY_CORS"
-          echo "  @middy/http-security-headers: $MIDDY_HEADERS"
-          echo "  @middy/validator: $MIDDY_VALIDATOR"
+          echo "  @middy/core: $CORE_LATEST"
+          echo "  @middy/http-security-headers: $HEADERS_LATEST"
+          echo "  @middy/http-cors: $CORS_LATEST"
 
-          JSON="{\"middy-core\":\"$MIDDY_CORE\",\"middy-cors\":\"$MIDDY_CORS\",\"middy-headers\":\"$MIDDY_HEADERS\",\"middy-validator\":\"$MIDDY_VALIDATOR\"}"
+          JSON="{\"middy-core\":\"$CORE_LATEST\",\"middy-headers\":\"$HEADERS_LATEST\",\"middy-cors\":\"$CORS_LATEST\"}"
           echo "json=$JSON" >> $GITHUB_OUTPUT
 
       - name: 🔄 Install latest Middy packages
         run: |
           # Install at workspace root (proper monorepo pattern)
-          pnpm add @middy/core@latest @middy/http-cors@latest @middy/http-security-headers@latest @middy/validator@latest --save-dev -w
+          npm install @middy/core@latest @middy/http-security-headers@latest @middy/http-cors@latest --save-dev
           echo "✅ Installed latest versions"
 
       - name: 🧪 Run Interface Compatibility Tests
@@ -91,7 +83,7 @@ jobs:
           mkdir -p ${{ env.PLUGIN_PATH }}/.compatibility-results
 
           set +e
-          pnpm vitest run \
+          npx vitest run \
             --reporter=verbose \
             --reporter=json \
             --outputFile=${{ env.PLUGIN_PATH }}/.compatibility-results/test-results.json \
@@ -112,7 +104,7 @@ jobs:
           mkdir -p ${{ env.PLUGIN_PATH }}/.compatibility-results
 
           cat << EOF > ${{ env.PLUGIN_PATH }}/.compatibility-results/BREAKING_CHANGE_REPORT.md
-          # 🚨 Lambda/Middy Breaking Change Report
+          # 🚨 Middy Ecosystem Breaking Change Report
 
           ## Summary
 
@@ -123,18 +115,16 @@ jobs:
           | Package | Version |
           |---------|---------|
           | @middy/core | ${{ fromJSON(steps.versions.outputs.json)['middy-core'] }} |
-          | @middy/http-cors | ${{ fromJSON(steps.versions.outputs.json)['middy-cors'] }} |
           | @middy/http-security-headers | ${{ fromJSON(steps.versions.outputs.json)['middy-headers'] }} |
-          | @middy/validator | ${{ fromJSON(steps.versions.outputs.json)['middy-validator'] }} |
+          | @middy/http-cors | ${{ fromJSON(steps.versions.outputs.json)['middy-cors'] }} |
 
           ## Affected Rules
 
           | Package | Rules That May Need Updates |
           |---------|---------------------------|
-          | @middy/core | require-middleware-chain |
-          | @middy/http-cors | cors-origin-validation |
+          | @middy/core | require-middy-guards |
           | @middy/http-security-headers | require-security-headers |
-          | @middy/validator | require-input-validation |
+          | @middy/http-cors | no-unsafe-cors |
 
           EOF
 
@@ -142,21 +132,20 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: lambda-compatibility-results
+          name: middy-compatibility-results
           path: ${{ env.PLUGIN_PATH }}/.compatibility-results/
           retention-days: 30
 
       - name: 📊 Generate Workflow Summary
         if: always()
         run: |
-          echo "## 🔬 Lambda/Middy SDK Compatibility Report" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔬 Middy SDK Compatibility Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Package | Version |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|---------|" >> $GITHUB_STEP_SUMMARY
           echo "| @middy/core | ${{ fromJSON(steps.versions.outputs.json)['middy-core'] }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| @middy/http-cors | ${{ fromJSON(steps.versions.outputs.json)['middy-cors'] }} |" >> $GITHUB_STEP_SUMMARY
           echo "| @middy/http-security-headers | ${{ fromJSON(steps.versions.outputs.json)['middy-headers'] }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| @middy/validator | ${{ fromJSON(steps.versions.outputs.json)['middy-validator'] }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| @middy/http-cors | ${{ fromJSON(steps.versions.outputs.json)['middy-cors'] }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ "${{ steps.test.outputs.passed }}" == "true" ]; then
@@ -175,7 +164,7 @@ jobs:
       - name: 📥 Download Compatibility Report
         uses: actions/download-artifact@v4
         with:
-          name: lambda-compatibility-results
+          name: middy-compatibility-results
           path: report/
 
       - name: 🚨 Create GitHub Issue
@@ -188,14 +177,14 @@ jobs:
             try {
               reportBody = fs.readFileSync('report/BREAKING_CHANGE_REPORT.md', 'utf8');
             } catch (e) {
-              reportBody = `## Lambda/Middy SDK Breaking Change\n\nSee workflow run for details.`;
+              reportBody = `## Middy SDK Breaking Change\n\nSee workflow run for details.`;
             }
 
             const existingIssues = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'open',
-              labels: 'sdk-compatibility,lambda',
+              labels: 'sdk-compatibility,middy',
               per_page: 5
             });
 
@@ -203,8 +192,8 @@ jobs:
               await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                title: '🚨 [SDK Compatibility] Lambda/Middy Breaking Changes',
+                title: '🚨 [SDK Compatibility] Middy Ecosystem Breaking Changes',
                 body: reportBody,
-                labels: ['sdk-compatibility', 'lambda', 'maintenance', 'breaking-change']
+                labels: ['sdk-compatibility', 'middy', 'maintenance', 'breaking-change']
               });
             }

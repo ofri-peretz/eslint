@@ -38,7 +38,6 @@ on:
 
 env:
   NODE_VERSION: "24"
-  PNPM_VERSION: "10.18.3"
   PLUGIN_PATH: "packages/eslint-plugin-pg"
   SDK_PACKAGE: "pg"
 
@@ -64,19 +63,14 @@ jobs:
       # SETUP
       # ═════════════════════════════════════════════════════════════════════
 
-      - name: ⚙️ Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
+          cache: "npm"
 
       - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       # ═════════════════════════════════════════════════════════════════════
       # VERSION DISCOVERY
@@ -112,7 +106,7 @@ jobs:
         run: |
           echo "🔄 Installing pg@${{ steps.versions.outputs.latest }}..."
           # Install at workspace root (proper monorepo pattern)
-          pnpm add ${{ env.SDK_PACKAGE }}@${{ steps.versions.outputs.latest }} --save-dev -w
+          npm install ${{ env.SDK_PACKAGE }}@${{ steps.versions.outputs.latest }} --save-dev
 
           # Verify installation
           ACTUAL=$(node -e "console.log(require('pg/package.json').version)")
@@ -131,7 +125,7 @@ jobs:
 
           # Run tests from workspace root with explicit file path
           set +e
-          pnpm vitest run \
+          npx vitest run \
             --reporter=verbose \
             --reporter=json \
             --outputFile=${{ env.PLUGIN_PATH }}/.compatibility-results/test-results.json \

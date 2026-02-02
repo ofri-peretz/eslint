@@ -403,3 +403,211 @@ describe('Social Embeds - Cache Validation', () => {
     expect(invalidEntries).toHaveLength(0);
   });
 });
+
+// ============================================================================
+// Tests: DEV.to Embed Validation
+// ============================================================================
+
+const DEVTO_CARD_PATTERNS = [
+  // DevToCard component: <DevToCard path="username/slug" />
+  /<DevToCard\s+[^>]*path=["']([^"']+)["']/g,
+];
+
+function extractDevToArticlePaths(content: string): { path: string; context: string }[] {
+  const paths: { path: string; context: string }[] = [];
+  
+  for (const pattern of DEVTO_CARD_PATTERNS) {
+    pattern.lastIndex = 0;
+    
+    let match;
+    while ((match = pattern.exec(content)) !== null) {
+      const path = match[1];
+      const startIndex = Math.max(0, match.index - 20);
+      const endIndex = Math.min(content.length, match.index + match[0].length + 20);
+      const context = content.slice(startIndex, endIndex).replace(/\s+/g, ' ').trim();
+      
+      paths.push({ path, context });
+    }
+  }
+  
+  return paths;
+}
+
+describe('Social Embeds - DEV.to Article Integrity', () => {
+  let articleReferences: Map<string, { files: string[]; contexts: string[] }>;
+  
+  beforeAll(() => {
+    articleReferences = new Map();
+    
+    const sourceFiles = getAllSourceFiles(DOCS_ROOT);
+    const contentFiles = getAllSourceFiles(CONTENT_ROOT, ['.mdx', '.md']);
+    const allFiles = [...sourceFiles, ...contentFiles];
+    
+    for (const file of allFiles) {
+      const content = readFileSync(file, 'utf-8');
+      const articles = extractDevToArticlePaths(content);
+      
+      for (const { path, context } of articles) {
+        const existing = articleReferences.get(path) || { files: [], contexts: [] };
+        const relativePath = getRelativePath(file, process.cwd());
+        
+        if (!existing.files.includes(relativePath)) {
+          existing.files.push(relativePath);
+          existing.contexts.push(context);
+        }
+        
+        articleReferences.set(path, existing);
+      }
+    }
+    
+    if (articleReferences.size > 0) {
+      console.log(`Found ${articleReferences.size} unique DEV.to article(s) across docs:`);
+      for (const [path, { files }] of articleReferences) {
+        console.log(`  - Article "${path}": used in ${files.join(', ')}`);
+      }
+    }
+  });
+
+  it('should find DEV.to article embeds in source files', () => {
+    // This just logs what was found - not a failure if empty
+    expect(articleReferences).toBeDefined();
+  });
+
+  it('should validate all DEV.to article paths are fetchable', async () => {
+    if (articleReferences.size === 0) {
+      console.log('No DEV.to article embeds found - skipping API validation');
+      return;
+    }
+
+    const brokenArticles: { path: string; error: string; files: string[] }[] = [];
+
+    for (const [path, { files }] of articleReferences) {
+      try {
+        const response = await fetch(`https://dev.to/api/articles/${path}`);
+        
+        if (!response.ok) {
+          brokenArticles.push({
+            path,
+            error: `API returned ${response.status}`,
+            files,
+          });
+          continue;
+        }
+
+        const article = await response.json();
+        console.log(`✓ Article "${path}" is valid: "${article.title?.slice(0, 50)}..."`);
+      } catch (error) {
+        brokenArticles.push({
+          path,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          files,
+        });
+      }
+    }
+
+    if (brokenArticles.length > 0) {
+      console.error(`
+╔════════════════════════════════════════════════════════════════════╗
+║  DEV.TO ARTICLE EMBED ERRORS DETECTED                              ║
+╠════════════════════════════════════════════════════════════════════╣
+║  The following DEV.to articles could not be fetched:               ║`);
+      for (const { path, error, files } of brokenArticles) {
+        console.error(`║  - "${path}"`);
+        console.error(`║    Error: ${error}`);
+        console.error(`║    Used in: ${files.join(', ')}`);
+      }
+      console.error(`╚════════════════════════════════════════════════════════════════════╝`);
+    }
+
+    expect(brokenArticles).toHaveLength(0);
+  }, 30000);
+});
+
+describe('Social Embeds - DEV.to Cache Validation', () => {
+  const CACHE_FILE = join(process.cwd(), 'src/data/cached-devto-articles.json');
+  
+  it('should have cached-devto-articles.json file', () => {
+    expect(existsSync(CACHE_FILE)).toBe(true);
+  });
+
+  it('should have all embedded articles cached', () => {
+    if (!existsSync(CACHE_FILE)) {
+      throw new Error('Cache file does not exist - run cache sync first');
+    }
+
+    const cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
+    
+    const sourceFiles = getAllSourceFiles(DOCS_ROOT);
+    const contentFiles = getAllSourceFiles(CONTENT_ROOT, ['.mdx', '.md']);
+    const allFiles = [...sourceFiles, ...contentFiles];
+    
+    const usedPaths = new Set<string>();
+    
+    for (const file of allFiles) {
+      const content = readFileSync(file, 'utf-8');
+      const articles = extractDevToArticlePaths(content);
+      articles.forEach(({ path }) => usedPaths.add(path));
+    }
+    
+    const missingFromCache: string[] = [];
+    
+    for (const path of usedPaths) {
+      if (!cache.articles[path]) {
+        missingFromCache.push(path);
+      }
+    }
+    
+    if (missingFromCache.length > 0) {
+      console.error(`
+╔════════════════════════════════════════════════════════════════════╗
+║  DEV.TO CACHE OUT OF SYNC                                          ║
+╠════════════════════════════════════════════════════════════════════╣
+║  The following article paths are used but not cached:              ║
+║  ${missingFromCache.join(', ').padEnd(64)}║
+║                                                                    ║
+║  Run: npm run sync-devto                                           ║
+╚════════════════════════════════════════════════════════════════════╝
+`);
+    }
+    
+    expect(
+      missingFromCache,
+      `${missingFromCache.length} article(s) missing from cache`
+    ).toHaveLength(0);
+  });
+
+  it('should have valid article data in cache', () => {
+    if (!existsSync(CACHE_FILE)) {
+      return;
+    }
+
+    const cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
+    const invalidEntries: { path: string; reason: string }[] = [];
+    
+    for (const [path, article] of Object.entries(cache.articles)) {
+      if (!article || typeof article !== 'object') {
+        invalidEntries.push({ path, reason: 'Invalid article object' });
+        continue;
+      }
+      
+      const articleData = article as Record<string, unknown>;
+      
+      if (!articleData.title) {
+        invalidEntries.push({ path, reason: 'Missing article title' });
+      }
+      
+      if (!articleData.user) {
+        invalidEntries.push({ path, reason: 'Missing user data' });
+      }
+    }
+    
+    if (invalidEntries.length > 0) {
+      console.error('Invalid DEV.to cache entries found:');
+      for (const { path, reason } of invalidEntries) {
+        console.error(`  - Article "${path}": ${reason}`);
+      }
+    }
+    
+    expect(invalidEntries).toHaveLength(0);
+  });
+});

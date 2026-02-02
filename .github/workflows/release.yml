@@ -106,7 +106,6 @@ concurrency:
 
 env:
   NODE_VERSION: "24"
-  PNPM_VERSION: "9.15.4"
   # Dependency order: devkit MUST be first since others depend on it
   # This array defines the release sequence for all-affected mode
   DEPENDENCY_ORDER: "eslint-devkit,eslint-plugin-secure-coding,eslint-plugin-crypto,eslint-plugin-jwt,eslint-plugin-pg,eslint-plugin-mongodb-security,eslint-plugin-express-security,eslint-plugin-nestjs-security,eslint-plugin-browser-security,eslint-plugin-lambda-security,eslint-plugin-vercel-ai-security,eslint-plugin-architecture,eslint-plugin-quality,eslint-plugin-react-a11y,eslint-plugin-react-features,eslint-plugin-import-next,cli"
@@ -130,19 +129,14 @@ jobs:
           fetch-tags: true
           ref: main
 
-      - name: ⚙️ Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
+          cache: "npm"
 
       - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: 🧹 Clean up orphaned tags
         id: cleanup-tags
@@ -228,7 +222,7 @@ jobs:
             fi
             
             # Get affected projects using Nx
-            AFFECTED=$(pnpm nx show projects --affected --base=$BASE --head=HEAD 2>/dev/null || echo "")
+            AFFECTED=$(npx nx show projects --affected --base=$BASE --head=HEAD 2>/dev/null || echo "")
             
             # Filter to only publishable packages (in packages/ directory)
             # Note: The release loop handles version bumping and skip logic
@@ -392,20 +386,15 @@ jobs:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: ⚙️ Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: https://registry.npmjs.org/
-          cache: "pnpm"
+          cache: "npm"
 
       - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: ⬆️ Upgrade npm for Trusted Publishers
         run: |
@@ -417,9 +406,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .nx/cache
-          key: nx-cache-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          key: nx-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
           restore-keys: |
-            nx-cache-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+            nx-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
             nx-cache-${{ runner.os }}-
 
       - name: 🔍 Verify NPM Authentication

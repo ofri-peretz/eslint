@@ -1,0 +1,55 @@
+{
+  "_comment": "Cached DEV.to article data for builds",
+  "_lastUpdated": "2026-02-02T07:05:00.000Z",
+  "articles": {
+    "devteam/top-7-featured-dev-posts-of-the-week-2cgm": {
+      "type_of": "article",
+      "id": 3151144,
+      "title": "Top 7 Featured DEV Posts of the Week",
+      "description": "Welcome to this week's Top 7, where the DEV editorial team handpicks their favorite posts from the...",
+      "readable_publish_date": "Jan 6",
+      "slug": "top-7-featured-dev-posts-of-the-week-2cgm",
+      "path": "/devteam/top-7-featured-dev-posts-of-the-week-2cgm",
+      "url": "https://dev.to/devteam/top-7-featured-dev-posts-of-the-week-2cgm",
+      "comments_count": 13,
+      "public_reactions_count": 24,
+      "collection_id": null,
+      "published_timestamp": "2026-01-06T14:56:37Z",
+      "language": "en",
+      "subforem_id": 1,
+      "positive_reactions_count": 24,
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2Fuuk88ecpw7hlut8zvcdf.jpg",
+      "social_image": "https://media2.dev.to/dynamic/image/width=1000,height=500,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2Fuuk88ecpw7hlut8zvcdf.jpg",
+      "canonical_url": "https://dev.to/devteam/top-7-featured-dev-posts-of-the-week-2cgm",
+      "created_at": "2026-01-05T20:58:36Z",
+      "edited_at": null,
+      "crossposted_at": null,
+      "published_at": "2026-01-06T14:56:37Z",
+      "last_comment_at": "2026-01-10T21:50:52Z",
+      "reading_time_minutes": 2,
+      "tag_list": "top7, discuss",
+      "tags": [
+        "top7",
+        "discuss"
+      ],
+      "user": {
+        "name": "Jess Lee",
+        "username": "jess",
+        "twitter_username": "jessleenyc",
+        "github_username": "jessleenyc",
+        "user_id": 264,
+        "website_url": null,
+        "profile_image": "https://media2.dev.to/dynamic/image/width=640,height=640,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F264%2Fb75f6edf-df7b-406e-a56b-43facafb352c.jpg",
+        "profile_image_90": "https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F264%2Fb75f6edf-df7b-406e-a56b-43facafb352c.jpg"
+      },
+      "organization": {
+        "name": "The DEV Team",
+        "username": "devteam",
+        "slug": "devteam",
+        "profile_image": "https://media2.dev.to/dynamic/image/width=640,height=640,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Forganization%2Fprofile_image%2F1%2Fd908a186-5651-4a5a-9f76-15200bc6801f.jpg",
+        "profile_image_90": "https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Forganization%2Fprofile_image%2F1%2Fd908a186-5651-4a5a-9f76-15200bc6801f.jpg"
+      },
+      "_cachedAt": "2026-02-02T07:05:00.000Z"
+    }
+  }
+}

@@ -68,7 +68,7 @@ echo ""
 
 # Build the package
 echo "🔨 Building package..."
-pnpm nx build "$PACKAGE_NAME" || {
+npx nx build "$PACKAGE_NAME" || {
   echo "❌ Build failed"
   exit 1
 }

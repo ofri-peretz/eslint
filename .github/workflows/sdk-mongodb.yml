@@ -21,376 +21,370 @@
 name: "SDK: MongoDB"
 
 on:
-    schedule:
-        # Every Monday at 6 AM UTC
-        - cron: "0 6 * * 1"
+  schedule:
+    # Every Monday at 6 AM UTC
+    - cron: "0 6 * * 1"
 
-    workflow_dispatch:
-        inputs:
-            mongodb_version:
-                description: "Specific mongodb version to test (leave empty for latest)"
-                required: false
-                default: ""
-            mongoose_version:
-                description: "Specific mongoose version to test (leave empty for latest)"
-                required: false
-                default: ""
-            create_issue:
-                description: "Create GitHub issue on failure"
-                type: boolean
-                default: true
+  workflow_dispatch:
+    inputs:
+      mongodb_version:
+        description: "Specific mongodb version to test (leave empty for latest)"
+        required: false
+        default: ""
+      mongoose_version:
+        description: "Specific mongoose version to test (leave empty for latest)"
+        required: false
+        default: ""
+      create_issue:
+        description: "Create GitHub issue on failure"
+        type: boolean
+        default: true
 
 env:
-    NODE_VERSION: "24"
-    PNPM_VERSION: "10.18.3"
-    PLUGIN_PATH: "packages/eslint-plugin-mongodb-security"
+  NODE_VERSION: "24"
+  PLUGIN_PATH: "packages/eslint-plugin-mongodb-security"
 
 jobs:
-    # ═══════════════════════════════════════════════════════════════════════════
-    # COMPATIBILITY TEST
-    # ═══════════════════════════════════════════════════════════════════════════
-    compatibility:
-        name: MongoDB Compatibility Test
-        runs-on: ubuntu-latest
-        timeout-minutes: 10
+  # ═══════════════════════════════════════════════════════════════════════════
+  # COMPATIBILITY TEST
+  # ═══════════════════════════════════════════════════════════════════════════
+  compatibility:
+    name: MongoDB Compatibility Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
 
-        outputs:
-            test_passed: ${{ steps.test.outputs.passed }}
-            mongodb_version: ${{ steps.versions.outputs.mongodb_latest }}
-            mongoose_version: ${{ steps.versions.outputs.mongoose_latest }}
-            mongodb_peer_dep: ${{ steps.versions.outputs.mongodb_peer_dep }}
-            mongoose_peer_dep: ${{ steps.versions.outputs.mongoose_peer_dep }}
+    outputs:
+      test_passed: ${{ steps.test.outputs.passed }}
+      mongodb_version: ${{ steps.versions.outputs.mongodb_latest }}
+      mongoose_version: ${{ steps.versions.outputs.mongoose_latest }}
+      mongodb_peer_dep: ${{ steps.versions.outputs.mongodb_peer_dep }}
+      mongoose_peer_dep: ${{ steps.versions.outputs.mongoose_peer_dep }}
 
-        steps:
-            - name: 📥 Checkout repository
-              uses: actions/checkout@v4
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
 
-            # ═════════════════════════════════════════════════════════════════════
-            # SETUP
-            # ═════════════════════════════════════════════════════════════════════
+      # ═════════════════════════════════════════════════════════════════════
+      # SETUP
+      # ═════════════════════════════════════════════════════════════════════
 
-            - name: ⚙️ Setup pnpm
-              uses: pnpm/action-setup@v4
-              with:
-                  version: ${{ env.PNPM_VERSION }}
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
 
-            - name: ⚙️ Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: ${{ env.NODE_VERSION }}
-                  cache: "pnpm"
+      - name: 📦 Install dependencies
+        run: npm ci
 
-            - name: 📦 Install dependencies
-              run: pnpm install --frozen-lockfile
+      # ═════════════════════════════════════════════════════════════════════
+      # VERSION DISCOVERY
+      # ═════════════════════════════════════════════════════════════════════
 
-            # ═════════════════════════════════════════════════════════════════════
-            # VERSION DISCOVERY
-            # ═════════════════════════════════════════════════════════════════════
+      - name: 🔍 Get version information
+        id: versions
+        run: |
+          # Get latest mongodb version from npm
+          if [ -n "${{ inputs.mongodb_version }}" ]; then
+            MONGODB_LATEST="${{ inputs.mongodb_version }}"
+          else
+            MONGODB_LATEST=$(npm view mongodb version)
+          fi
+          echo "mongodb_latest=$MONGODB_LATEST" >> $GITHUB_OUTPUT
+          echo "📦 Latest mongodb version: $MONGODB_LATEST"
 
-            - name: 🔍 Get version information
-              id: versions
-              run: |
-                  # Get latest mongodb version from npm
-                  if [ -n "${{ inputs.mongodb_version }}" ]; then
-                    MONGODB_LATEST="${{ inputs.mongodb_version }}"
-                  else
-                    MONGODB_LATEST=$(npm view mongodb version)
-                  fi
-                  echo "mongodb_latest=$MONGODB_LATEST" >> $GITHUB_OUTPUT
-                  echo "📦 Latest mongodb version: $MONGODB_LATEST"
+          # Get latest mongoose version from npm
+          if [ -n "${{ inputs.mongoose_version }}" ]; then
+            MONGOOSE_LATEST="${{ inputs.mongoose_version }}"
+          else
+            MONGOOSE_LATEST=$(npm view mongoose version)
+          fi
+          echo "mongoose_latest=$MONGOOSE_LATEST" >> $GITHUB_OUTPUT
+          echo "📦 Latest mongoose version: $MONGOOSE_LATEST"
 
-                  # Get latest mongoose version from npm
-                  if [ -n "${{ inputs.mongoose_version }}" ]; then
-                    MONGOOSE_LATEST="${{ inputs.mongoose_version }}"
-                  else
-                    MONGOOSE_LATEST=$(npm view mongoose version)
-                  fi
-                  echo "mongoose_latest=$MONGOOSE_LATEST" >> $GITHUB_OUTPUT
-                  echo "📦 Latest mongoose version: $MONGOOSE_LATEST"
+          # Get current peer dependencies from package.json
+          MONGODB_PEER_DEP=$(jq -r '.peerDependencies.mongodb // "not specified"' ${{ env.PLUGIN_PATH }}/package.json)
+          echo "mongodb_peer_dep=$MONGODB_PEER_DEP" >> $GITHUB_OUTPUT
+          echo "📋 Plugin mongodb peerDependency: $MONGODB_PEER_DEP"
 
-                  # Get current peer dependencies from package.json
-                  MONGODB_PEER_DEP=$(jq -r '.peerDependencies.mongodb // "not specified"' ${{ env.PLUGIN_PATH }}/package.json)
-                  echo "mongodb_peer_dep=$MONGODB_PEER_DEP" >> $GITHUB_OUTPUT
-                  echo "📋 Plugin mongodb peerDependency: $MONGODB_PEER_DEP"
+          MONGOOSE_PEER_DEP=$(jq -r '.peerDependencies.mongoose // "not specified"' ${{ env.PLUGIN_PATH }}/package.json)
+          echo "mongoose_peer_dep=$MONGOOSE_PEER_DEP" >> $GITHUB_OUTPUT
+          echo "📋 Plugin mongoose peerDependency: $MONGOOSE_PEER_DEP"
 
-                  MONGOOSE_PEER_DEP=$(jq -r '.peerDependencies.mongoose // "not specified"' ${{ env.PLUGIN_PATH }}/package.json)
-                  echo "mongoose_peer_dep=$MONGOOSE_PEER_DEP" >> $GITHUB_OUTPUT
-                  echo "📋 Plugin mongoose peerDependency: $MONGOOSE_PEER_DEP"
+      # ═════════════════════════════════════════════════════════════════════
+      # INSTALL LATEST SDK VERSIONS
+      # ═════════════════════════════════════════════════════════════════════
 
-            # ═════════════════════════════════════════════════════════════════════
-            # INSTALL LATEST SDK VERSIONS
-            # ═════════════════════════════════════════════════════════════════════
+      - name: 🔄 Install latest MongoDB packages
+        run: |
+          echo "🔄 Installing mongodb@${{ steps.versions.outputs.mongodb_latest }}..."
+          npm install mongodb@${{ steps.versions.outputs.mongodb_latest }} --save-dev
 
-            - name: 🔄 Install latest MongoDB packages
-              run: |
-                  echo "🔄 Installing mongodb@${{ steps.versions.outputs.mongodb_latest }}..."
-                  pnpm add mongodb@${{ steps.versions.outputs.mongodb_latest }} --save-dev -w
+          echo "🔄 Installing mongoose@${{ steps.versions.outputs.mongoose_latest }}..."
+          npm install mongoose@${{ steps.versions.outputs.mongoose_latest }} --save-dev
 
-                  echo "🔄 Installing mongoose@${{ steps.versions.outputs.mongoose_latest }}..."
-                  pnpm add mongoose@${{ steps.versions.outputs.mongoose_latest }} --save-dev -w
+          # Verify installations
+          MONGODB_ACTUAL=$(node -e "console.log(require('mongodb/package.json').version)")
+          MONGOOSE_ACTUAL=$(node -e "console.log(require('mongoose/package.json').version)")
+          echo "✅ Installed mongodb@${MONGODB_ACTUAL}, mongoose@${MONGOOSE_ACTUAL}"
 
-                  # Verify installations
-                  MONGODB_ACTUAL=$(node -e "console.log(require('mongodb/package.json').version)")
-                  MONGOOSE_ACTUAL=$(node -e "console.log(require('mongoose/package.json').version)")
-                  echo "✅ Installed mongodb@${MONGODB_ACTUAL}, mongoose@${MONGOOSE_ACTUAL}"
+      # ═════════════════════════════════════════════════════════════════════
+      # RUN COMPATIBILITY TESTS
+      # ═════════════════════════════════════════════════════════════════════
 
-            # ═════════════════════════════════════════════════════════════════════
-            # RUN COMPATIBILITY TESTS
-            # ═════════════════════════════════════════════════════════════════════
+      - name: 🧪 Run Interface Compatibility Tests
+        id: test
+        continue-on-error: true
+        run: |
+          # Create output directory at plugin path
+          mkdir -p ${{ env.PLUGIN_PATH }}/.compatibility-results
 
-            - name: 🧪 Run Interface Compatibility Tests
-              id: test
-              continue-on-error: true
-              run: |
-                  # Create output directory at plugin path
-                  mkdir -p ${{ env.PLUGIN_PATH }}/.compatibility-results
+          # Run tests from workspace root with explicit file path
+          set +e
+          npx vitest run \
+            --reporter=verbose \
+            --reporter=json \
+            --outputFile=${{ env.PLUGIN_PATH }}/.compatibility-results/test-results.json \
+            "${{ env.PLUGIN_PATH }}/src/__compatibility__/**/*.spec.ts" 2>&1 | tee ${{ env.PLUGIN_PATH }}/.compatibility-results/test-output.txt
 
-                  # Run tests from workspace root with explicit file path
-                  set +e
-                  pnpm vitest run \
-                    --reporter=verbose \
-                    --reporter=json \
-                    --outputFile=${{ env.PLUGIN_PATH }}/.compatibility-results/test-results.json \
-                    "${{ env.PLUGIN_PATH }}/src/__compatibility__/**/*.spec.ts" 2>&1 | tee ${{ env.PLUGIN_PATH }}/.compatibility-results/test-output.txt
+          TEST_EXIT_CODE=$?
+          set -e
 
-                  TEST_EXIT_CODE=$?
-                  set -e
+          if [ $TEST_EXIT_CODE -eq 0 ]; then
+            echo "passed=true" >> $GITHUB_OUTPUT
+            echo "✅ All compatibility tests passed!"
+          else
+            echo "passed=false" >> $GITHUB_OUTPUT
+            echo "❌ Compatibility tests failed with exit code: $TEST_EXIT_CODE"
+          fi
 
-                  if [ $TEST_EXIT_CODE -eq 0 ]; then
-                    echo "passed=true" >> $GITHUB_OUTPUT
-                    echo "✅ All compatibility tests passed!"
-                  else
-                    echo "passed=false" >> $GITHUB_OUTPUT
-                    echo "❌ Compatibility tests failed with exit code: $TEST_EXIT_CODE"
-                  fi
+      # ═════════════════════════════════════════════════════════════════════
+      # GENERATE LLM-FRIENDLY REPORT (on failure)
+      # ═════════════════════════════════════════════════════════════════════
 
-            # ═════════════════════════════════════════════════════════════════════
-            # GENERATE LLM-FRIENDLY REPORT (on failure)
-            # ═════════════════════════════════════════════════════════════════════
+      - name: 📝 Generate Compatibility Report
+        if: steps.test.outputs.passed == 'false'
+        run: |
+          mkdir -p .compatibility-results
 
-            - name: 📝 Generate Compatibility Report
-              if: steps.test.outputs.passed == 'false'
-              run: |
-                  mkdir -p .compatibility-results
+          cat << 'REPORT_HEADER' > .compatibility-results/BREAKING_CHANGE_REPORT.md
+          # 🚨 MongoDB SDK Breaking Change Report
 
-                  cat << 'REPORT_HEADER' > .compatibility-results/BREAKING_CHANGE_REPORT.md
-                  # 🚨 MongoDB SDK Breaking Change Report
+          ## Summary
 
-                  ## Summary
+          The eslint-plugin-mongodb-security interface compatibility tests have FAILED against the latest MongoDB/Mongoose versions.
+          This indicates a potential breaking change that may affect ESLint rules.
 
-                  The eslint-plugin-mongodb-security interface compatibility tests have FAILED against the latest MongoDB/Mongoose versions.
-                  This indicates a potential breaking change that may affect ESLint rules.
+          REPORT_HEADER
 
-                  REPORT_HEADER
+          cat << EOF >> .compatibility-results/BREAKING_CHANGE_REPORT.md
+          ## Version Information
 
-                  cat << EOF >> .compatibility-results/BREAKING_CHANGE_REPORT.md
-                  ## Version Information
+          | Property | Value |
+          |----------|-------|
+          | **mongodb Tested** | mongodb@${{ steps.versions.outputs.mongodb_latest }} |
+          | **mongoose Tested** | mongoose@${{ steps.versions.outputs.mongoose_latest }} |
+          | **mongodb peerDep** | ${{ steps.versions.outputs.mongodb_peer_dep }} |
+          | **mongoose peerDep** | ${{ steps.versions.outputs.mongoose_peer_dep }} |
+          | **Test Date** | $(date -u +"%Y-%m-%d %H:%M UTC") |
+          | **Workflow Run** | [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |
 
-                  | Property | Value |
-                  |----------|-------|
-                  | **mongodb Tested** | mongodb@${{ steps.versions.outputs.mongodb_latest }} |
-                  | **mongoose Tested** | mongoose@${{ steps.versions.outputs.mongoose_latest }} |
-                  | **mongodb peerDep** | ${{ steps.versions.outputs.mongodb_peer_dep }} |
-                  | **mongoose peerDep** | ${{ steps.versions.outputs.mongoose_peer_dep }} |
-                  | **Test Date** | $(date -u +"%Y-%m-%d %H:%M UTC") |
-                  | **Workflow Run** | [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |
+          ## Test Failures
 
-                  ## Test Failures
+          \`\`\`
+          $(grep -A 50 "FAIL" ${{ env.PLUGIN_PATH }}/.compatibility-results/test-output.txt | head -100 || echo "No FAIL output captured")
+          \`\`\`
 
-                  \`\`\`
-                  $(grep -A 50 "FAIL" ${{ env.PLUGIN_PATH }}/.compatibility-results/test-output.txt | head -100 || echo "No FAIL output captured")
-                  \`\`\`
+          ## Files to Review
 
-                  ## Files to Review
+          1. **Compatibility Tests**: \`${{ env.PLUGIN_PATH }}/src/__compatibility__/mongodb-interface.spec.ts\`
+          2. **Plugin Rules**: \`${{ env.PLUGIN_PATH }}/src/rules/\`
+          3. **Package Config**: \`${{ env.PLUGIN_PATH }}/package.json\`
 
-                  1. **Compatibility Tests**: \`${{ env.PLUGIN_PATH }}/src/__compatibility__/mongodb-interface.spec.ts\`
-                  2. **Plugin Rules**: \`${{ env.PLUGIN_PATH }}/src/rules/\`
-                  3. **Package Config**: \`${{ env.PLUGIN_PATH }}/package.json\`
+          ## Required Actions
 
-                  ## Required Actions
+          ### For LLM/Agent Processing:
 
-                  ### For LLM/Agent Processing:
+          1. **Analyze the failure**: Identify which interface/method/property has changed
+          2. **Check changelogs**:
+             - MongoDB: https://github.com/mongodb/node-mongodb-native/releases
+             - Mongoose: https://github.com/Automattic/mongoose/releases
+          3. **Update compatibility tests**: If the change is intentional, update the test expectations
+          4. **Review affected rules**: Check if any ESLint rules need updates for the new API
+          5. **Update peerDependencies**: If this is a major version bump, update package.json
 
-                  1. **Analyze the failure**: Identify which interface/method/property has changed
-                  2. **Check changelogs**:
-                     - MongoDB: https://github.com/mongodb/node-mongodb-native/releases
-                     - Mongoose: https://github.com/Automattic/mongoose/releases
-                  3. **Update compatibility tests**: If the change is intentional, update the test expectations
-                  4. **Review affected rules**: Check if any ESLint rules need updates for the new API
-                  5. **Update peerDependencies**: If this is a major version bump, update package.json
+          ### Affected Rules by Interface:
 
-                  ### Affected Rules by Interface:
+          | Interface | Rules That May Need Updates |
+          |-----------|----------------------------|
+          | MongoClient/connect | no-hardcoded-connection-string, require-tls-connection |
+          | Collection.find/findOne | no-unsafe-query, no-operator-injection |
+          | $where operator | no-unsafe-where |
+          | $regex patterns | no-unsafe-regex-query |
+          | Schema definition | require-schema-validation |
+          | Model.populate | no-unsafe-populate |
+          | Query.select | no-select-sensitive-fields |
 
-                  | Interface | Rules That May Need Updates |
-                  |-----------|----------------------------|
-                  | MongoClient/connect | no-hardcoded-connection-string, require-tls-connection |
-                  | Collection.find/findOne | no-unsafe-query, no-operator-injection |
-                  | $where operator | no-unsafe-where |
-                  | $regex patterns | no-unsafe-regex-query |
-                  | Schema definition | require-schema-validation |
-                  | Model.populate | no-unsafe-populate |
-                  | Query.select | no-select-sensitive-fields |
+          ## Full Test Output
 
-                  ## Full Test Output
+          <details>
+          <summary>Click to expand full test output</summary>
 
-                  <details>
-                  <summary>Click to expand full test output</summary>
+          \`\`\`
+          $(cat ${{ env.PLUGIN_PATH }}/.compatibility-results/test-output.txt)
+          \`\`\`
 
-                  \`\`\`
-                  $(cat ${{ env.PLUGIN_PATH }}/.compatibility-results/test-output.txt)
-                  \`\`\`
+          </details>
+          EOF
 
-                  </details>
-                  EOF
+          echo "📝 Report generated at .compatibility-results/BREAKING_CHANGE_REPORT.md"
 
-                  echo "📝 Report generated at .compatibility-results/BREAKING_CHANGE_REPORT.md"
+      # ═════════════════════════════════════════════════════════════════════
+      # UPLOAD ARTIFACTS
+      # ═════════════════════════════════════════════════════════════════════
 
-            # ═════════════════════════════════════════════════════════════════════
-            # UPLOAD ARTIFACTS
-            # ═════════════════════════════════════════════════════════════════════
+      - name: 📤 Upload Compatibility Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mongodb-compatibility-results
+          path: ${{ env.PLUGIN_PATH }}/.compatibility-results/
+          retention-days: 30
 
-            - name: 📤 Upload Compatibility Results
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: mongodb-compatibility-results
-                  path: ${{ env.PLUGIN_PATH }}/.compatibility-results/
-                  retention-days: 30
+      # ═════════════════════════════════════════════════════════════════════
+      # WORKFLOW SUMMARY
+      # ═════════════════════════════════════════════════════════════════════
 
-            # ═════════════════════════════════════════════════════════════════════
-            # WORKFLOW SUMMARY
-            # ═════════════════════════════════════════════════════════════════════
+      - name: 📊 Generate Workflow Summary
+        if: always()
+        run: |
+          echo "## 🔬 MongoDB SDK Compatibility Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **mongodb Version** | mongodb@${{ steps.versions.outputs.mongodb_latest }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **mongoose Version** | mongoose@${{ steps.versions.outputs.mongoose_latest }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **mongodb peerDep** | ${{ steps.versions.outputs.mongodb_peer_dep }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **mongoose peerDep** | ${{ steps.versions.outputs.mongoose_peer_dep }} |" >> $GITHUB_STEP_SUMMARY
 
-            - name: 📊 Generate Workflow Summary
-              if: always()
-              run: |
-                  echo "## 🔬 MongoDB SDK Compatibility Report" >> $GITHUB_STEP_SUMMARY
-                  echo "" >> $GITHUB_STEP_SUMMARY
-                  echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
-                  echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
-                  echo "| **mongodb Version** | mongodb@${{ steps.versions.outputs.mongodb_latest }} |" >> $GITHUB_STEP_SUMMARY
-                  echo "| **mongoose Version** | mongoose@${{ steps.versions.outputs.mongoose_latest }} |" >> $GITHUB_STEP_SUMMARY
-                  echo "| **mongodb peerDep** | ${{ steps.versions.outputs.mongodb_peer_dep }} |" >> $GITHUB_STEP_SUMMARY
-                  echo "| **mongoose peerDep** | ${{ steps.versions.outputs.mongoose_peer_dep }} |" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.test.outputs.passed }}" == "true" ]; then
+            echo "| **Status** | ✅ **COMPATIBLE** |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "All interface compatibility tests passed. No breaking changes detected." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| **Status** | ❌ **BREAKING CHANGES DETECTED** |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **Action Required**: Review the compatibility report in the workflow artifacts." >> $GITHUB_STEP_SUMMARY
+          fi
 
-                  if [ "${{ steps.test.outputs.passed }}" == "true" ]; then
-                    echo "| **Status** | ✅ **COMPATIBLE** |" >> $GITHUB_STEP_SUMMARY
-                    echo "" >> $GITHUB_STEP_SUMMARY
-                    echo "All interface compatibility tests passed. No breaking changes detected." >> $GITHUB_STEP_SUMMARY
-                  else
-                    echo "| **Status** | ❌ **BREAKING CHANGES DETECTED** |" >> $GITHUB_STEP_SUMMARY
-                    echo "" >> $GITHUB_STEP_SUMMARY
-                    echo "⚠️ **Action Required**: Review the compatibility report in the workflow artifacts." >> $GITHUB_STEP_SUMMARY
-                  fi
+  # ═══════════════════════════════════════════════════════════════════════════
+  # CREATE ISSUE ON FAILURE
+  # ═══════════════════════════════════════════════════════════════════════════
+  create-issue:
+    name: Create Issue for Breaking Changes
+    needs: compatibility
+    runs-on: ubuntu-latest
+    if: needs.compatibility.outputs.test_passed == 'false' && (github.event.inputs.create_issue != 'false' || github.event_name == 'schedule')
 
-    # ═══════════════════════════════════════════════════════════════════════════
-    # CREATE ISSUE ON FAILURE
-    # ═══════════════════════════════════════════════════════════════════════════
-    create-issue:
-        name: Create Issue for Breaking Changes
-        needs: compatibility
-        runs-on: ubuntu-latest
-        if: needs.compatibility.outputs.test_passed == 'false' && (github.event.inputs.create_issue != 'false' || github.event_name == 'schedule')
+    steps:
+      - name: 📥 Download Compatibility Report
+        uses: actions/download-artifact@v4
+        with:
+          name: mongodb-compatibility-results
+          path: report/
 
-        steps:
-            - name: 📥 Download Compatibility Report
-              uses: actions/download-artifact@v4
-              with:
-                  name: mongodb-compatibility-results
-                  path: report/
+      - name: 🚨 Create GitHub Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
 
-            - name: 🚨 Create GitHub Issue
-              uses: actions/github-script@v7
-              with:
-                  script: |
-                      const fs = require('fs');
+            // Read the detailed report
+            let reportBody = '';
+            try {
+              reportBody = fs.readFileSync('report/BREAKING_CHANGE_REPORT.md', 'utf8');
+            } catch (e) {
+              reportBody = `## MongoDB SDK Breaking Change Detected
+              
+              The compatibility tests failed for mongodb@${{ needs.compatibility.outputs.mongodb_version }} / mongoose@${{ needs.compatibility.outputs.mongoose_version }}.
+              
+              See workflow run for details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
+            }
 
-                      // Read the detailed report
-                      let reportBody = '';
-                      try {
-                        reportBody = fs.readFileSync('report/BREAKING_CHANGE_REPORT.md', 'utf8');
-                      } catch (e) {
-                        reportBody = `## MongoDB SDK Breaking Change Detected
-                        
-                        The compatibility tests failed for mongodb@${{ needs.compatibility.outputs.mongodb_version }} / mongoose@${{ needs.compatibility.outputs.mongoose_version }}.
-                        
-                        See workflow run for details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
-                      }
+            // Check for existing open issues to avoid duplicates
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'sdk-compatibility,mongodb',
+              per_page: 5
+            });
 
-                      // Check for existing open issues to avoid duplicates
-                      const existingIssues = await github.rest.issues.listForRepo({
-                        owner: context.repo.owner,
-                        repo: context.repo.repo,
-                        state: 'open',
-                        labels: 'sdk-compatibility,mongodb',
-                        per_page: 5
-                      });
+            const versionString = `mongodb@${{ needs.compatibility.outputs.mongodb_version }}`;
+            const duplicateIssue = existingIssues.data.find(issue => 
+              issue.title.includes(versionString)
+            );
 
-                      const versionString = `mongodb@${{ needs.compatibility.outputs.mongodb_version }}`;
-                      const duplicateIssue = existingIssues.data.find(issue => 
-                        issue.title.includes(versionString)
-                      );
+            if (duplicateIssue) {
+              console.log(`Issue already exists: #${duplicateIssue.number}`);
+              
+              // Add a comment with the new run info
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: duplicateIssue.number,
+                body: `🔄 **Compatibility check re-run** on ${new Date().toISOString()}\n\nSee latest run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+              });
+            } else {
+              // Create new issue
+              const issue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `🚨 [SDK Compatibility] mongodb@${{ needs.compatibility.outputs.mongodb_version }} / mongoose@${{ needs.compatibility.outputs.mongoose_version }} Breaking Changes`,
+                body: reportBody,
+                labels: ['sdk-compatibility', 'mongodb', 'maintenance', 'breaking-change']
+              });
+              
+              console.log(`Created issue: #${issue.data.number}`);
+            }
 
-                      if (duplicateIssue) {
-                        console.log(`Issue already exists: #${duplicateIssue.number}`);
-                        
-                        // Add a comment with the new run info
-                        await github.rest.issues.createComment({
-                          owner: context.repo.owner,
-                          repo: context.repo.repo,
-                          issue_number: duplicateIssue.number,
-                          body: `🔄 **Compatibility check re-run** on ${new Date().toISOString()}\n\nSee latest run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
-                        });
-                      } else {
-                        // Create new issue
-                        const issue = await github.rest.issues.create({
-                          owner: context.repo.owner,
-                          repo: context.repo.repo,
-                          title: `🚨 [SDK Compatibility] mongodb@${{ needs.compatibility.outputs.mongodb_version }} / mongoose@${{ needs.compatibility.outputs.mongoose_version }} Breaking Changes`,
-                          body: reportBody,
-                          labels: ['sdk-compatibility', 'mongodb', 'maintenance', 'breaking-change']
-                        });
-                        
-                        console.log(`Created issue: #${issue.data.number}`);
-                      }
+  # ═══════════════════════════════════════════════════════════════════════════
+  # SUCCESS NOTIFICATION (optional cleanup)
+  # ═══════════════════════════════════════════════════════════════════════════
+  success-cleanup:
+    name: Success Cleanup
+    needs: compatibility
+    runs-on: ubuntu-latest
+    if: needs.compatibility.outputs.test_passed == 'true'
 
-    # ═══════════════════════════════════════════════════════════════════════════
-    # SUCCESS NOTIFICATION (optional cleanup)
-    # ═══════════════════════════════════════════════════════════════════════════
-    success-cleanup:
-        name: Success Cleanup
-        needs: compatibility
-        runs-on: ubuntu-latest
-        if: needs.compatibility.outputs.test_passed == 'true'
+    steps:
+      - name: ✅ Close Resolved Issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Find open issues for MongoDB compatibility
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'sdk-compatibility,mongodb',
+              per_page: 10
+            });
 
-        steps:
-            - name: ✅ Close Resolved Issues
-              uses: actions/github-script@v7
-              with:
-                  script: |
-                      // Find open issues for MongoDB compatibility
-                      const issues = await github.rest.issues.listForRepo({
-                        owner: context.repo.owner,
-                        repo: context.repo.repo,
-                        state: 'open',
-                        labels: 'sdk-compatibility,mongodb',
-                        per_page: 10
-                      });
-
-                      for (const issue of issues.data) {
-                        console.log(`Closing resolved issue: #${issue.number}`);
-                        
-                        await github.rest.issues.createComment({
-                          owner: context.repo.owner,
-                          repo: context.repo.repo,
-                          issue_number: issue.number,
-                          body: `✅ **Automatically closed**: Compatibility tests now pass for mongodb@${{ needs.compatibility.outputs.mongodb_version }} / mongoose@${{ needs.compatibility.outputs.mongoose_version }}.`
-                        });
-                        
-                        await github.rest.issues.update({
-                          owner: context.repo.owner,
-                          repo: context.repo.repo,
-                          issue_number: issue.number,
-                          state: 'closed'
-                        });
-                      }
+            for (const issue of issues.data) {
+              console.log(`Closing resolved issue: #${issue.number}`);
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `✅ **Automatically closed**: Compatibility tests now pass for mongodb@${{ needs.compatibility.outputs.mongodb_version }} / mongoose@${{ needs.compatibility.outputs.mongoose_version }}.`
+              });
+              
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed'
+              });
+            }

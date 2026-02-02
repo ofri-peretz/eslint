@@ -21,8 +21,7 @@
     "sharedGlobals": [
       "{workspaceRoot}/.env*",
       "{workspaceRoot}/.npmrc",
-      "{workspaceRoot}/.yarnrc",
-      "{workspaceRoot}/.pnpmfile.cjs"
+      "{workspaceRoot}/.yarnrc"
     ]
   },
   "targetDefaults": {
@@ -204,7 +203,7 @@
       }
     },
     "version": {
-      "preVersionCommand": "pnpm nx run-many -t build --projects={projects}",
+      "preVersionCommand": "npx nx run-many -t build --projects={projects}",
       "updateDependents": "always",
       "currentVersionResolver": "git-tag",
       "fallbackCurrentVersionResolver": "disk",

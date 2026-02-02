@@ -18,7 +18,6 @@ concurrency:
 
 env:
   NODE_VERSION: "24"
-  PNPM_VERSION: "10.18.3"
 
 jobs:
   # ═══════════════════════════════════════════════════════════════════════════
@@ -78,25 +77,19 @@ jobs:
           exit 0
 
       # ═══════════════════════════════════════════════════════════════════════
-      # SETUP: PNPM + NODE + DEPENDENCIES
+      # SETUP: NODE + DEPENDENCIES
       # ═══════════════════════════════════════════════════════════════════════
-
-      - name: ⚙️ Setup pnpm
-        if: steps.docs_only.outputs.docs_only != 'true'
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
 
       - name: ⚙️ Setup Node.js
         if: steps.docs_only.outputs.docs_only != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
+          cache: "npm"
 
       - name: 📦 Install dependencies
         if: steps.docs_only.outputs.docs_only != 'true'
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       # ═══════════════════════════════════════════════════════════════════════
       # NX CACHE - Persist build artifacts between runs
@@ -107,9 +100,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .nx/cache
-          key: nx-cache-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          key: nx-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
           restore-keys: |
-            nx-cache-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+            nx-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
             nx-cache-${{ runner.os }}-
 
       # ═══════════════════════════════════════════════════════════════════════
@@ -128,19 +121,19 @@ jobs:
 
       - name: 🧪 Test Affected Packages
         if: steps.docs_only.outputs.docs_only != 'true'
-        run: pnpm nx affected -t test -c ci --verbose
+        run: npx nx affected -t test -c ci --verbose
         env:
           NX_SKIP_NX_CLOUD: "true"
 
       - name: 🔨 Build Affected Packages
         if: steps.docs_only.outputs.docs_only != 'true'
-        run: pnpm nx affected -t build --verbose
+        run: npx nx affected -t build --verbose
         env:
           NX_SKIP_NX_CLOUD: "true"
 
       - name: 🔍 Typecheck Affected Packages
         if: steps.docs_only.outputs.docs_only != 'true'
-        run: pnpm nx affected -t typecheck --verbose
+        run: npx nx affected -t typecheck --verbose
         env:
           NX_SKIP_NX_CLOUD: "true"
 
@@ -153,7 +146,7 @@ jobs:
         continue-on-error: true
         run: |
           echo "🔍 Release validation (non-blocking)..."
-          pnpm nx release version --dry-run --projects=eslint-plugin-secure-coding 2>&1 || {
+          npx nx release version --dry-run --projects=eslint-plugin-secure-coding 2>&1 || {
             echo "⚠️ Release dry-run detected potential issues (warning only)"
           }
         env:
@@ -171,4 +164,4 @@ jobs:
           echo "- **Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch:** ${{ github.ref }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Node:** $(node --version)" >> $GITHUB_STEP_SUMMARY
-          echo "- **pnpm:** $(pnpm --version)" >> $GITHUB_STEP_SUMMARY
+          echo "- **npm:** $(npm --version)" >> $GITHUB_STEP_SUMMARY

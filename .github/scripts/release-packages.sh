@@ -52,9 +52,9 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
   FAILED_DEP=""
   if [ -n "$FAILED_PACKAGES" ]; then
     # Get this package's dependencies from Nx
-    DEPS=$(pnpm nx show project "$PACKAGE" --json 2>/dev/null | jq -r '.implicitDependencies // [] | .[]' 2>/dev/null || echo "")
+    DEPS=$(npx nx show project "$PACKAGE" --json 2>/dev/null | jq -r '.implicitDependencies // [] | .[]' 2>/dev/null || echo "")
     # Also check sourceRoot-based dependencies
-    DEPS="$DEPS $(pnpm nx graph --print-affected --focus="$PACKAGE" 2>/dev/null | jq -r '.nodes | keys[]' 2>/dev/null | grep -v "^$PACKAGE$" || echo "")"
+    DEPS="$DEPS $(npx nx graph --print-affected --focus="$PACKAGE" 2>/dev/null | jq -r '.nodes | keys[]' 2>/dev/null | grep -v "^$PACKAGE$" || echo "")"
     
     for dep in $DEPS; do
       if echo "$FAILED_PACKAGES" | grep -q "$dep"; then
@@ -154,40 +154,40 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
     
     # LINT (matches lint-pr.yml)
     echo "📝 Linting..."
-    if ! pnpm nx lint "$PACKAGE"; then
+    if ! npx nx lint "$PACKAGE"; then
       echo "❌ FAILED: $PACKAGE"
       echo "   └─ Stage: Lint"
-      echo "   └─ Action: Run 'pnpm nx lint $PACKAGE' locally to see errors"
+      echo "   └─ Action: Run 'npx nx lint $PACKAGE' locally to see errors"
       FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
       continue
     fi
     
     # TEST (matches ci-pr.yml)
     echo "🧪 Testing..."
-    if ! pnpm nx test "$PACKAGE" -c ci; then
+    if ! npx nx test "$PACKAGE" -c ci; then
       echo "❌ FAILED: $PACKAGE"
       echo "   └─ Stage: Test"
-      echo "   └─ Action: Run 'pnpm nx test $PACKAGE' locally to see failures"
+      echo "   └─ Action: Run 'npx nx test $PACKAGE' locally to see failures"
       FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
       continue
     fi
     
     # BUILD (matches ci-pr.yml)
     echo "🔨 Building..."
-    if ! pnpm nx build "$PACKAGE"; then
+    if ! npx nx build "$PACKAGE"; then
       echo "❌ FAILED: $PACKAGE"
       echo "   └─ Stage: Build"
-      echo "   └─ Action: Run 'pnpm nx build $PACKAGE' locally to see errors"
+      echo "   └─ Action: Run 'npx nx build $PACKAGE' locally to see errors"
       FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
       continue
     fi
     
     # TYPECHECK (matches ci-pr.yml)
     echo "🔍 Typechecking..."
-    if ! pnpm nx typecheck "$PACKAGE"; then
+    if ! npx nx typecheck "$PACKAGE"; then
       echo "❌ FAILED: $PACKAGE"
       echo "   └─ Stage: Typecheck"
-      echo "   └─ Action: Run 'pnpm nx typecheck $PACKAGE' locally to see errors"
+      echo "   └─ Action: Run 'npx nx typecheck $PACKAGE' locally to see errors"
       FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
       continue
     fi
@@ -202,11 +202,11 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
     echo ""
     echo "🔍 [DRY RUN] Version bump preview:"
     if [ -n "$FORCE_VERSION" ]; then
-      pnpm nx release version "$FORCE_VERSION" --projects="$PACKAGE" --dry-run || true
+      npx nx release version "$FORCE_VERSION" --projects="$PACKAGE" --dry-run || true
     elif [ "$VERSION_SPEC" != "auto" ]; then
-      pnpm nx release version "$VERSION_SPEC" --projects="$PACKAGE" --dry-run || true
+      npx nx release version "$VERSION_SPEC" --projects="$PACKAGE" --dry-run || true
     else
-      pnpm nx release version --projects="$PACKAGE" --dry-run || true
+      npx nx release version --projects="$PACKAGE" --dry-run || true
     fi
   else
     echo ""
@@ -214,17 +214,17 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
     
     VERSION_FAILED=false
     if [ -n "$FORCE_VERSION" ]; then
-      pnpm nx release version "$FORCE_VERSION" --projects="$PACKAGE" || VERSION_FAILED=true
+      npx nx release version "$FORCE_VERSION" --projects="$PACKAGE" || VERSION_FAILED=true
     elif [ "$VERSION_SPEC" != "auto" ]; then
-      pnpm nx release version "$VERSION_SPEC" --projects="$PACKAGE" || VERSION_FAILED=true
+      npx nx release version "$VERSION_SPEC" --projects="$PACKAGE" || VERSION_FAILED=true
     else
-      OUTPUT=$(pnpm nx release version --projects="$PACKAGE" 2>&1) || VERSION_FAILED=true
+      OUTPUT=$(npx nx release version --projects="$PACKAGE" 2>&1) || VERSION_FAILED=true
       echo "$OUTPUT"
       
       # Fallback to patch if no conventional commits or no changes
       if [ "$VERSION_FAILED" = "true" ] && echo "$OUTPUT" | grep -qiE "(No changes detected|No projects are set to be processed|nothing to commit)"; then
         echo "ℹ️ No conventional commits detected, falling back to patch..."
-        if ! pnpm nx release version patch --projects="$PACKAGE"; then
+        if ! npx nx release version patch --projects="$PACKAGE"; then
           echo "❌ FAILED: $PACKAGE"
           echo "   └─ Stage: Version bump (patch fallback)"
           echo "   └─ Action: Check nx release configuration - is $PACKAGE in nx.json release.projects?"
@@ -239,7 +239,7 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
       FAILURE_REASON="Version bump failed - check if package is in nx.json release.projects array"
       echo "❌ FAILED: $PACKAGE"
       echo "   └─ Stage: Version bump"
-      echo "   └─ Action: Verify package is in nx.json release.projects, then run 'pnpm nx release version --projects=$PACKAGE' locally"
+      echo "   └─ Action: Verify package is in nx.json release.projects, then run 'npx nx release version --projects=$PACKAGE' locally"
       FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
       FAILED_DETAILS="${FAILED_DETAILS}$PACKAGE: $FAILURE_REASON\n"
       continue
@@ -253,7 +253,7 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
     # ──────────────────────────────────────────────────────────────
     echo "🔨 Building..."
     BUILD_LOG="/tmp/build-$PACKAGE.log"
-    if pnpm nx build "$PACKAGE" --output-style=static > "$BUILD_LOG" 2>&1; then
+    if npx nx build "$PACKAGE" --output-style=static > "$BUILD_LOG" 2>&1; then
       echo "   ✅ Build complete"
     else
       echo "❌ FAILED: $PACKAGE (build)"
@@ -270,7 +270,7 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
     if [ "$GENERATE_CHANGELOG" = "true" ]; then
       echo ""
       echo "📝 Generating changelog..."
-      pnpm nx release changelog --projects="$PACKAGE" || echo "⚠️ Changelog failed (non-blocking)"
+      npx nx release changelog --projects="$PACKAGE" || echo "⚠️ Changelog failed (non-blocking)"
     fi
     
     # ──────────────────────────────────────────────────────────────
@@ -395,16 +395,16 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
       
     else
       # ════════════════════════════════════════════════════════════
-      # EXISTING PACKAGE: Use OIDC via pnpm nx release publish
+      # EXISTING PACKAGE: Use OIDC via npx nx release publish
       # Trusted Publishers provides passwordless, provenance-signed releases
-      # R21: Falls back to NPM_TOKEN if OIDC fails with 401
+      # Fallback to NPM_TOKEN if OIDC fails with 401
       # ════════════════════════════════════════════════════════════
       
       echo "📦 Publishing via OIDC (Trusted Publishers)..."
-      PUBLISH_CMD="pnpm nx release publish --projects=$PACKAGE --tag $DIST_TAG"
+      PUBLISH_CMD="npx nx release publish --projects=$PACKAGE --tag $DIST_TAG"
       PUBLISH_OUTPUT=$($PUBLISH_CMD 2>&1) || PUBLISH_FAILED=true
       
-      # R21: OIDC Fallback - If OIDC fails with 401, try NPM_TOKEN
+      # OIDC Fallback - If OIDC fails with 401, try NPM_TOKEN
       if [ "$PUBLISH_FAILED" = "true" ] && echo "$PUBLISH_OUTPUT" | grep -qiE "(401|unauthorized|ENEEDAUTH)"; then
         echo "⚠️ OIDC auth failed, attempting NPM_TOKEN fallback..."
         
@@ -488,7 +488,7 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
         continue
       fi
       
-      # R22: Rate limiting detection
+      # Rate limiting detection
       if echo "$PUBLISH_OUTPUT" | grep -qiE "(429|too many requests|rate limit|ETOOMANYREQ)"; then
         echo "❌ NPM Rate Limited: Too many requests for $NPM_NAME"
         echo "   └─ Fix: Wait 15-60 minutes and re-run"
@@ -499,7 +499,7 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
       
       # GENERIC ERROR: Unknown failure
       echo "❌ NPM Publish Failed for $NPM_NAME (exit $PUBLISH_EXIT)"
-      echo "   └─ Fix: Try 'pnpm nx release publish --projects=$PACKAGE --dry-run' locally"
+      echo "   └─ Fix: Try 'npx nx release publish --projects=$PACKAGE --dry-run' locally"
       FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
       continue
     fi
@@ -524,26 +524,26 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
       COMMITS=$(git log --oneline "$LAST_RELEASE_TAG..HEAD" -- "packages/$PACKAGE/" 2>/dev/null | head -20 || echo "")
       if [ -n "$COMMITS" ]; then
         CHANGELOG="## What's Changed
-
+ 
 $COMMITS
 "
       fi
     else
       # First release - no previous tag
       CHANGELOG="## 🎉 Initial Release
-
+ 
 This is the first release of \`$NPM_NAME\`.
 "
     fi
     
     # Build release body
     RELEASE_BODY="# $NPM_NAME v$NEW_VERSION
-
+ 
 📦 **NPM:** [\`npm install $NPM_NAME@$NEW_VERSION\`](https://www.npmjs.com/package/$NPM_NAME/v/$NEW_VERSION)
-
+ 
 $CHANGELOG
 ---
-
+ 
 *Released via [GitHub Actions](https://github.com/ofri-peretz/eslint/actions/workflows/release.yml)*"
     
     # Create GitHub Release using gh CLI

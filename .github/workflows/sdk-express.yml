@@ -3,14 +3,14 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 #
 # PURPOSE:
-# Proactively detect breaking changes in Express-related packages that could
+# Proactively detect breaking changes in common Express middleware that could
 # affect eslint-plugin-express-security rules.
 #
 # MONITORED PACKAGES:
-# - express (core)
-# - helmet (security headers)
-# - cors (CORS middleware)
-# - express-rate-limit (rate limiting)
+# - express
+# - helmet
+# - cors
+# - express-rate-limit
 #
 # SCHEDULE: Every Monday at 6 AM UTC
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -19,6 +19,7 @@ name: "SDK: Express Ecosystem"
 
 on:
   schedule:
+    # Every Monday at 6 AM UTC
     - cron: "0 6 * * 1"
 
   workflow_dispatch:
@@ -30,7 +31,6 @@ on:
 
 env:
   NODE_VERSION: "24"
-  PNPM_VERSION: "10.18.3"
   PLUGIN_PATH: "packages/eslint-plugin-express-security"
 
 jobs:
@@ -47,19 +47,14 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - name: ⚙️ Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
+          cache: "npm"
 
       - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: 🔍 Get version information
         id: versions
@@ -67,21 +62,21 @@ jobs:
           EXPRESS_LATEST=$(npm view express version)
           HELMET_LATEST=$(npm view helmet version)
           CORS_LATEST=$(npm view cors version)
-          RATE_LIMIT_LATEST=$(npm view express-rate-limit version)
+          RATELIMIT_LATEST=$(npm view express-rate-limit version)
 
           echo "📦 Package versions:"
           echo "  express: $EXPRESS_LATEST"
           echo "  helmet: $HELMET_LATEST"
           echo "  cors: $CORS_LATEST"
-          echo "  express-rate-limit: $RATE_LIMIT_LATEST"
+          echo "  express-rate-limit: $RATELIMIT_LATEST"
 
-          JSON="{\"express\":\"$EXPRESS_LATEST\",\"helmet\":\"$HELMET_LATEST\",\"cors\":\"$CORS_LATEST\",\"express-rate-limit\":\"$RATE_LIMIT_LATEST\"}"
+          JSON="{\"express\":\"$EXPRESS_LATEST\",\"helmet\":\"$HELMET_LATEST\",\"cors\":\"$CORS_LATEST\",\"express-rate-limit\":\"$RATELIMIT_LATEST\"}"
           echo "json=$JSON" >> $GITHUB_OUTPUT
 
       - name: 🔄 Install latest Express packages
         run: |
           # Install at workspace root (proper monorepo pattern)
-          pnpm add express@latest helmet@latest cors@latest express-rate-limit@latest --save-dev -w
+          npm install express@latest helmet@latest cors@latest express-rate-limit@latest --save-dev
           echo "✅ Installed latest versions"
 
       - name: 🧪 Run Interface Compatibility Tests
@@ -91,7 +86,7 @@ jobs:
           mkdir -p ${{ env.PLUGIN_PATH }}/.compatibility-results
 
           set +e
-          pnpm vitest run \
+          npx vitest run \
             --reporter=verbose \
             --reporter=json \
             --outputFile=${{ env.PLUGIN_PATH }}/.compatibility-results/test-results.json \
@@ -131,10 +126,10 @@ jobs:
 
           | Package | Rules That May Need Updates |
           |---------|---------------------------|
-          | express | cookie-security, no-exposed-stack-trace |
-          | helmet | require-helmet, helmet-configuration |
-          | cors | cors-configuration, no-wildcard-cors |
-          | express-rate-limit | require-rate-limiting |
+          | express | no-unsafe-redirect, require-helmet |
+          | helmet | require-helmet |
+          | cors | no-unsafe-cors |
+          | express-rate-limit | require-rate-limit |
 
           EOF
 
