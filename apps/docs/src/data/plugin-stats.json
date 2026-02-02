@@ -13,7 +13,7 @@
       "rules": 31,
       "description": "Security-focused ESLint plugin for Node",
       "category": "security",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "published": true
     },
     {
@@ -101,7 +101,7 @@
       "rules": 9,
       "description": "ESLint rules for team-specific disciplinary patterns and code conventions",
       "category": "quality",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "published": true
     },
     {
@@ -109,7 +109,7 @@
       "rules": 8,
       "description": "ESLint rules for reducing cognitive load and ensuring code readability",
       "category": "quality",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "published": true
     },
     {
@@ -117,7 +117,7 @@
       "rules": 8,
       "description": "ESLint rules for runtime stability, fault tolerance, and type safety",
       "category": "quality",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "published": true
     },
     {
@@ -125,7 +125,7 @@
       "rules": 7,
       "description": "ESLint rules for architecture, DDD patterns, and module isolation with AI-parseable guidance",
       "category": "quality",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "published": true
     },
     {
@@ -133,7 +133,7 @@
       "rules": 6,
       "description": "ESLint rules for production behavior, resource hygiene, and log quality",
       "category": "quality",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "published": true
     },
     {
@@ -141,7 +141,7 @@
       "rules": 5,
       "description": "ESLint rules for modernizing JavaScript to ES2022+ syntax with AI-parseable guidance",
       "category": "quality",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "published": true
     },
     {
@@ -164,5 +164,5 @@
   "totalRules": 332,
   "totalPlugins": 18,
   "allPluginsCount": 20,
-  "generatedAt": "2026-02-02T07:48:24.180Z"
+  "generatedAt": "2026-02-02T08:07:39.372Z"
 }
