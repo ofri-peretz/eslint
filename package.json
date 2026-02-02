@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "description": "Open-source tools and libraries for JavaScript & TypeScript ecosystems - ESLint plugins with LLM-optimized rules, utilities, and CLI tools in an Nx monorepo",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "tools/*"
+  ],
   "main": "index.js",
   "homepage": "https://github.com/ofri-peretz/eslint#readme",
   "repository": {
