@@ -1,3 +1,7 @@
+## 1.4.1 (2026-02-02)
+
+This was a version bump only for eslint-plugin-pg to align it with other projects, there were no code changes.
+
 # Changelog
 
 All notable changes to `eslint-plugin-pg` will be documented in this file.
