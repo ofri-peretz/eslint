@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-modernization",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "ESLint rules for modernizing JavaScript to ES2022+ syntax with AI-parseable guidance.",
   "type": "commonjs",
   "main": "./src/index.js",
