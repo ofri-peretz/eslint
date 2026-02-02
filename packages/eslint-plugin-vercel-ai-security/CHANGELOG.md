@@ -1,3 +1,7 @@
+## 1.3.1 (2026-02-02)
+
+This was a version bump only for eslint-plugin-vercel-ai-security to align it with other projects, there were no code changes.
+
 # Changelog
 
 All notable changes to `eslint-plugin-vercel-ai-security` will be documented in this file.
