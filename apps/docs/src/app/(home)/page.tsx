@@ -181,39 +181,36 @@ export default async function HomePage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <img 
-                        src="https://res.cloudinary.com/practicaldev/image/fetch/s--xorjQOYn--/c_fill,f_auto,fl_progressive,h_320,q_auto,w_320/https://dev-to-uploads.s3.amazonaws.com/uploads/organization/profile_image/1/d908a186-5651-4a5a-9f76-15200bc6801f.jpg"
-                        alt="DEV Community"
+                        src="https://media2.dev.to/dynamic/image/width=100,height=100,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F264%2Fb75f6edf-df7b-406e-a56b-43facafb352c.jpg"
+                        alt="Jess Lee"
                         className="size-12 rounded-full border border-neutral-200 dark:border-neutral-800"
                       />
                       <div>
                         <div className="font-semibold flex items-center gap-1.5">
-                          DEV Community
+                          Jess Lee
                           <Star className="size-4 text-yellow-500 fill-yellow-500" />
                         </div>
                         <div className="text-sm text-fd-muted-foreground">
-                          Top 7 Featured Posts
+                          for The DEV Team
                         </div>
                       </div>
                     </div>
                     <ExternalLink className="size-5 text-fd-muted-foreground group-hover:text-fd-foreground transition-colors" />
                   </div>
 
-                  {/* Content */}
-                  <div className="flex-1">
-                    <p className="text-[15px] leading-relaxed mb-3">
-                      🏆 Our article <span className="font-medium">&ldquo;The 30-Minute Security Audit: Onboarding a New Codebase&rdquo;</span> was selected as one of the Top 7 Featured DEV Posts of the Week.
-                    </p>
-                    <p className="text-sm text-fd-muted-foreground">
-                      { "{ author: Ofri Peretz }" }
-                    </p>
-                  </div>
-
                   {/* Cover Image */}
                   <img 
-                    src="https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2Fti8v1j4h18h7cepwdqut.png"
-                    alt="The 30-Minute Security Audit article cover"
+                    src="https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2Fkkraeoyefdl2khru956p.jpg"
+                    alt="Top 7 Posts of the Week"
                     className="w-full rounded-2xl border border-neutral-200 object-cover dark:border-neutral-800"
                   />
+
+                  {/* Content */}
+                  <div className="flex-1">
+                    <p className="text-[15px] leading-relaxed">
+                      🏆 Our article <span className="font-medium">&ldquo;The 30-Minute Security Audit&rdquo;</span> was featured in the Top 7 DEV Posts of the Week!
+                    </p>
+                  </div>
 
                   {/* Tags */}
                   <div className="flex flex-wrap gap-2">
