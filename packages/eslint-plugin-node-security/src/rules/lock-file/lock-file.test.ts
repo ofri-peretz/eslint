@@ -2,7 +2,7 @@
  * @fileoverview Tests for lock-file
  * 
  * NOTE: This rule checks for the lock file in the file system.
- * This repo uses pnpm, so pnpm-lock.yaml exists at the root.
+ * This repo uses npm, so package-lock.json exists at the root.
  */
 
 import { RuleTester } from '@typescript-eslint/rule-tester';
@@ -22,45 +22,43 @@ const virtualFileOutsideRepo = path.join(path.parse(process.cwd()).root, 'non-ex
 
 ruleTester.run('lock-file', lockFile, {
   valid: [
-    // pnpm-lock.yaml exists in the current repo root, so this should pass when configured for pnpm.
-    // We use __filename to ensure it finds the real pnpm-lock.yaml.
     { 
-      code: "const x = 1", 
-      filename: __filename, // This is inside /Users/ofri/.../eslint/...
-      options: [{ packageManager: 'pnpm' }]
+      code: "const validDefault = 1", 
+      filename: __filename,
+    },
+    { 
+      code: "const validNpm = 1", 
+      filename: __filename,
+      options: [{ packageManager: 'npm' }]
     },
   ],
 
   invalid: [
-    // Default package manager is npm, should fail since package-lock.json is missing in this pnpm repo
-    // Note: We use the virtual file outside repo to avoid finding accidental lock files in parent dirs
     {
-      code: "const x = 1",
+      code: "const invalidPnpm = 1",
       filename: virtualFileOutsideRepo,
-      options: [],
+      options: [{ packageManager: 'pnpm' }],
       errors: [{ 
         messageId: 'violationDetected',
-        data: { packageManager: 'npm', lockFile: 'package-lock.json' }
+        data: { packageManager: 'pnpm', lockFile: 'pnpm-lock.yaml' }
       }]
     },
-    // Explicit npm configuration
     {
-      code: "const x = 1",
-      filename: virtualFileOutsideRepo,
-      options: [{ packageManager: 'npm' }],
-      errors: [{ 
-        messageId: 'violationDetected',
-        data: { packageManager: 'npm', lockFile: 'package-lock.json' }
-      }]
-    },
-    // Explicit yarn configuration
-    {
-      code: "const x = 1",
+      code: "const invalidYarn = 1",
       filename: virtualFileOutsideRepo,
       options: [{ packageManager: 'yarn' }],
       errors: [{ 
         messageId: 'violationDetected',
         data: { packageManager: 'yarn', lockFile: 'yarn.lock' }
+      }]
+    },
+    {
+      code: "const invalidOutside = 1",
+      filename: virtualFileOutsideRepo,
+      options: [{ packageManager: 'npm' }],
+      errors: [{ 
+        messageId: 'violationDetected',
+        data: { packageManager: 'npm', lockFile: 'package-lock.json' }
       }]
     }
   ],
