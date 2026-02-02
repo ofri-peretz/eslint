@@ -1,7 +1,12 @@
 import axios from 'axios';
 import fs from 'fs-extra';
-import path from 'node:path';
+import path, { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { format } from 'date-fns';
+
+// ESM-compatible __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // --- Configuration ---
 const DATA_DIR = path.join(__dirname, '../../data');
