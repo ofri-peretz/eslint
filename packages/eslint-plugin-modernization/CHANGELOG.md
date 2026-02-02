@@ -1,3 +1,7 @@
+## 2.0.2 (2026-02-02)
+
+This was a version bump only for eslint-plugin-modernization to align it with other projects, there were no code changes.
+
 # Changelog
 
 All notable changes to `eslint-plugin-modernization` will be documented in this file.
