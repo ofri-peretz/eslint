@@ -149,9 +149,9 @@ const DevToCardContent = ({
         )}
 
         {/* Tags */}
-        {showTags && article.tag_list.length > 0 && (
+        {showTags && article.tags && article.tags.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            {article.tag_list.slice(0, 4).map((tag) => (
+            {article.tags.slice(0, 4).map((tag) => (
               <span
                 key={tag}
                 className="rounded-full bg-fd-primary/10 px-3 py-1 text-xs font-medium text-fd-primary"

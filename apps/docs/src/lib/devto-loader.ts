@@ -19,8 +19,8 @@ export interface DevToArticle {
   social_image: string;
   created_at: string;
   published_at: string;
-  tag_list: string[];
-  tags: string;
+  tag_list: string;
+  tags: string[];
   user: {
     name: string;
     username: string;
