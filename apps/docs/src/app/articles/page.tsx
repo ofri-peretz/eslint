@@ -6,6 +6,9 @@ import type { Metadata } from 'next';
 // Import the cached articles data directly
 import articlesData from '@/data/articles.json';
 
+// Force dynamic rendering to avoid SSG prerender error with fumadocs FrameworkProvider
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Technical Articles',
   description: 'Deep dives into ESLint internals, security patterns, and high-performance JavaScript engineering by the Interlace team.',

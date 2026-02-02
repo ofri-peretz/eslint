@@ -7,6 +7,18 @@ dist
 out
 .turbo
 .nx
+tmp
+
+# ESLint packages - NOT needed for docs build
+packages
+
+# Playground - NOT needed for docs
+playground
+
+# Scripts and tools - NOT needed for docs
+scripts
+tools
+distribution
 
 # Testing
 coverage
@@ -20,14 +32,21 @@ __tests__
 # Development
 .vscode
 .idea
+.cursor
+.cursorrules
+.agent
+.gemini
 *.log
 .DS_Store
+.verdaccio
+.husky
 
 # Git
 .git
 .github
 
-# Docs source not needed for build
+# Large files
+graph.json
 *.md
 !README.md
 

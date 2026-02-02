@@ -14,8 +14,8 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
-import { join } from 'path';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 
 // ============================================================================
 // Configuration
@@ -23,26 +23,37 @@ import { join } from 'path';
 
 const CONTENT_ROOT = join(process.cwd(), 'content/docs/getting-started');
 
-// Valid Lucide React icon names (subset of commonly used ones)
+// Valid Lucide React icon names - comprehensive list
+// Updated 2026-02-01 - includes all icons used in content + common documentation icons
 // Full list at: https://lucide.dev/icons
 const VALID_LUCIDE_ICONS = new Set([
-  // Common documentation icons
-  'Rocket', 'Book', 'FileText', 'Settings', 'Code', 'Terminal',
-  'Download', 'Package', 'Folder', 'File', 'FileCode',
-  // Navigation icons
+  // ========================================
+  // CURRENTLY USED IN MDX CONTENT
+  // ========================================
+  'Accessibility', 'Activity', 'Bot', 'BookOpen', 'Brain',
+  'CircleHelp', 'Cloud', 'Database', 'Download',
+  'FileCode', 'FileText', 'Gauge', 'GitBranch', 'Globe',
+  'History', 'Key', 'Layers', 'Lightbulb', 'Map', 'Monitor',
+  'Puzzle', 'RefreshCw', 'Rocket', 'Server', 'Settings',
+  'Shield', 'Terminal', 'TreeDeciduous', 'Users', 'Workflow',
+  'Wrench',
+  
+  // ========================================
+  // COMMON DOCUMENTATION ICONS
+  // ========================================
+  'Book', 'Code', 'Package', 'Folder', 'File',
   'Home', 'Menu', 'ChevronRight', 'ChevronDown', 'ArrowRight',
-  // Security icons
-  'Shield', 'ShieldCheck', 'Lock', 'Key', 'AlertTriangle', 'AlertCircle',
-  // Concept icons
-  'Brain', 'Lightbulb', 'Sparkles', 'Zap', 'TreeDeciduous', 'GitBranch',
-  // Tool icons
-  'Monitor', 'Laptop', 'Wrench', 'Hammer', 'Cog', 'Settings',
-  // Status icons
-  'Check', 'CheckCircle', 'X', 'XCircle', 'Info', 'HelpCircle',
-  // Action icons
-  'Play', 'Pause', 'Search', 'Filter', 'RefreshCw',
-  // Media icons
+  'ShieldCheck', 'Lock', 'AlertTriangle', 'CircleAlert',
+  'Sparkles', 'Zap', 'Laptop', 'Hammer', 'Cog',
+  'Check', 'CheckCircle', 'X', 'XCircle', 'Info',
+  'Play', 'Pause', 'Search', 'Filter',
   'Image', 'Video', 'Eye', 'EyeOff',
+  
+  // ========================================
+  // DEPRECATED ICONS (For migration warnings)
+  // These should NOT be used - kept for detection
+  // ========================================
+  // NOTE: HelpCircle -> CircleHelp (migrated 2026-02-01)
 ]);
 
 // Minimum and maximum description lengths
@@ -175,6 +186,13 @@ describe('MDX Frontmatter - Required Fields', () => {
 // Tests: Icon Validation
 // ============================================================================
 
+// Deprecated icons that should NOT be used (with their replacements)
+const DEPRECATED_ICONS: Record<string, string> = {
+  'HelpCircle': 'CircleHelp',
+  'AlertCircle': 'CircleAlert',
+  // Add more deprecated icons here as Lucide updates
+};
+
 describe('MDX Frontmatter - Icon Validation', () => {
   let mdxFiles: string[];
   
@@ -200,12 +218,103 @@ describe('MDX Frontmatter - Icon Validation', () => {
       }
     }
     
-    // Only warn, don't fail - icons list may be incomplete
-    if (invalidIcons.length > 0) {
-      console.warn(
-        `Potentially invalid icons (verify manually): ${JSON.stringify(invalidIcons)}`
-      );
+    // Strict validation - fail if unknown icons are found
+    expect(
+      invalidIcons,
+      `Unknown icons detected. Add them to VALID_LUCIDE_ICONS or fix: ${JSON.stringify(invalidIcons, null, 2)}`
+    ).toHaveLength(0);
+  });
+
+  it('should not use deprecated Lucide icons', () => {
+    const deprecatedUsages: { file: string; icon: string; replacement: string }[] = [];
+    
+    for (const file of mdxFiles) {
+      const content = readFileSync(file, 'utf-8');
+      const frontmatter = extractFrontmatter(content);
+      
+      if (frontmatter?.icon) {
+        const iconName = String(frontmatter.icon);
+        if (DEPRECATED_ICONS[iconName]) {
+          deprecatedUsages.push({
+            file: getRelativePath(file),
+            icon: iconName,
+            replacement: DEPRECATED_ICONS[iconName],
+          });
+        }
+      }
     }
+    
+    expect(
+      deprecatedUsages,
+      `Deprecated icons found. Update to new names:\n${deprecatedUsages.map(d => `  ${d.file}: ${d.icon} → ${d.replacement}`).join('\n')}`
+    ).toHaveLength(0);
+  });
+});
+
+// ============================================================================
+// Tests: Site-Wide Icon Validation (All Content)
+// ============================================================================
+
+const CONTENT_ROOT_ALL = join(process.cwd(), 'content');
+
+describe('MDX Frontmatter - Site-Wide Icon Validation', () => {
+  let allMdxFiles: string[];
+  
+  beforeAll(() => {
+    allMdxFiles = getAllMdxFiles(CONTENT_ROOT_ALL);
+  });
+
+  it('should find MDX files across all content', () => {
+    expect(allMdxFiles.length).toBeGreaterThan(0);
+  });
+
+  it('ALL MDX files should use valid Lucide icons', () => {
+    const invalidIcons: { file: string; icon: string }[] = [];
+    
+    for (const file of allMdxFiles) {
+      const content = readFileSync(file, 'utf-8');
+      const frontmatter = extractFrontmatter(content);
+      
+      if (frontmatter?.icon) {
+        const iconName = String(frontmatter.icon);
+        if (!VALID_LUCIDE_ICONS.has(iconName)) {
+          invalidIcons.push({
+            file: file.replace(CONTENT_ROOT_ALL + '/', ''),
+            icon: iconName,
+          });
+        }
+      }
+    }
+    
+    expect(
+      invalidIcons,
+      `Site-wide icon validation failed. Unknown icons:\n${invalidIcons.map(i => `  ${i.file}: "${i.icon}"`).join('\n')}\n\nAdd valid icons to VALID_LUCIDE_ICONS set.`
+    ).toHaveLength(0);
+  });
+
+  it('NO MDX files should use deprecated Lucide icons', () => {
+    const deprecatedUsages: { file: string; icon: string; replacement: string }[] = [];
+    
+    for (const file of allMdxFiles) {
+      const content = readFileSync(file, 'utf-8');
+      const frontmatter = extractFrontmatter(content);
+      
+      if (frontmatter?.icon) {
+        const iconName = String(frontmatter.icon);
+        if (DEPRECATED_ICONS[iconName]) {
+          deprecatedUsages.push({
+            file: file.replace(CONTENT_ROOT_ALL + '/', ''),
+            icon: iconName,
+            replacement: DEPRECATED_ICONS[iconName],
+          });
+        }
+      }
+    }
+    
+    expect(
+      deprecatedUsages,
+      `Deprecated icons found site-wide:\n${deprecatedUsages.map(d => `  ${d.file}: ${d.icon} → ${d.replacement}`).join('\n')}`
+    ).toHaveLength(0);
   });
 });
 
