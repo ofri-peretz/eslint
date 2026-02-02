@@ -1,0 +1,36 @@
+# Dependencies - Vercel will install fresh
+node_modules
+
+# Build outputs - Vercel will build
+.next
+dist
+out
+.turbo
+.nx
+
+# Testing
+coverage
+.vitest
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+__tests__
+
+# Development
+.vscode
+.idea
+*.log
+.DS_Store
+
+# Git
+.git
+.github
+
+# Docs source not needed for build
+*.md
+!README.md
+
+# Storybook
+.storybook
+storybook-static
