@@ -5,7 +5,7 @@ import fs from 'node:fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf-8'));
-// Set to monorepo root (where pnpm-lock.yaml is)
+// Set to monorepo root (where package-lock.json is)
 const monorepoRoot = path.resolve(__dirname, '../..');
 
 const withMDX = createMDX();

@@ -17,16 +17,16 @@ This is a **Next.js 15** documentation site built with **Fumadocs**, serving as 
 
 ```bash
 # From monorepo root
-pnpm install
+npm install
 
 # Run development server
-nx dev docs
+npx nx dev docs
 
 # Build for production
-nx build docs
+npx nx build docs
 
 # Run linter
-nx lint docs
+npx nx lint docs
 ```
 
 ## Code Style
@@ -71,7 +71,7 @@ Documentation is synced from package source files. See `scripts/sync-rule-docs.t
 
 ```bash
 # Sync rule docs from packages
-pnpm tsx scripts/sync-rule-docs.ts
+npx tsx scripts/sync-rule-docs.ts
 ```
 
 ## Key Routes
