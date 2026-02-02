@@ -21,7 +21,6 @@
     "node": "24.x"
   },
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
     "prepare": "husky",
     "lint:workflows": "actionlint",
     "release": "nx release",
