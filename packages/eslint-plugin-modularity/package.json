@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-modularity",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "ESLint rules for architecture, DDD patterns, and module isolation with AI-parseable guidance.",
   "type": "commonjs",
   "main": "./src/index.js",
