@@ -1,3 +1,7 @@
+## 8.2.1 (2026-02-02)
+
+This was a version bump only for eslint-plugin-mongodb-security to align it with other projects, there were no code changes.
+
 # Changelog
 
 All notable changes to `eslint-plugin-mongodb-security` will be documented in this file.
