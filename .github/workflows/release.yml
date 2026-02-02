@@ -105,7 +105,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  NODE_VERSION: "22"
+  NODE_VERSION: "24"
   PNPM_VERSION: "9.15.4"
   # Dependency order: devkit MUST be first since others depend on it
   # This array defines the release sequence for all-affected mode

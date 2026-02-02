@@ -37,7 +37,7 @@ on:
         default: true
 
 env:
-  NODE_VERSION: "22"
+  NODE_VERSION: "24"
   PNPM_VERSION: "10.18.3"
   PLUGIN_PATH: "packages/eslint-plugin-pg"
   SDK_PACKAGE: "pg"
