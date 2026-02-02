@@ -168,56 +168,67 @@ export default async function HomePage() {
               </div>
 
               {/* Dev.to Top 7 Featured Card */}
-              <div className="relative flex flex-col gap-4 overflow-hidden rounded-xl border border-fd-border bg-gradient-to-br from-purple-500/5 via-violet-500/10 to-purple-600/5 p-6 hover:border-purple-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/10 backdrop-blur-sm h-full">
-                <BorderBeam size={200} duration={12} colorFrom="#f59e0b" colorTo="#eab308" />
-                
-                {/* Header */}
-                <div className="flex items-center gap-3">
-                  <div className="size-12 rounded-full bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center">
-                    <span className="text-lg font-bold text-white">7</span>
-                  </div>
-                  <div>
-                    <div className="font-semibold flex items-center gap-1.5">
-                      DEV Community
-                      <Star className="size-4 text-yellow-500 fill-yellow-500" />
+              <a 
+                href="https://dev.to/devteam/top-7-featured-dev-posts-of-the-week-e8p"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block group h-full"
+              >
+                <div className="relative flex flex-col gap-4 overflow-hidden rounded-3xl border border-neutral-200 bg-white p-6 shadow-lg shadow-neutral-200/50 transition-all duration-300 ease-out group-hover:shadow-xl group-hover:shadow-neutral-300/50 group-hover:-translate-y-0.5 dark:border-neutral-800 dark:bg-neutral-950 dark:shadow-neutral-900/50 h-full">
+                  <BorderBeam size={200} duration={12} colorFrom="#f59e0b" colorTo="#eab308" />
+                  
+                  {/* Header - Author Info */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src="https://res.cloudinary.com/practicaldev/image/fetch/s--xorjQOYn--/c_fill,f_auto,fl_progressive,h_320,q_auto,w_320/https://dev-to-uploads.s3.amazonaws.com/uploads/organization/profile_image/1/d908a186-5651-4a5a-9f76-15200bc6801f.jpg"
+                        alt="DEV Community"
+                        className="size-12 rounded-full border border-neutral-200 dark:border-neutral-800"
+                      />
+                      <div>
+                        <div className="font-semibold flex items-center gap-1.5">
+                          DEV Community
+                          <Star className="size-4 text-yellow-500 fill-yellow-500" />
+                        </div>
+                        <div className="text-sm text-fd-muted-foreground">
+                          Top 7 Featured Posts
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-sm text-fd-muted-foreground">
-                      Top 7 Featured Posts
-                    </div>
+                    <ExternalLink className="size-5 text-fd-muted-foreground group-hover:text-fd-foreground transition-colors" />
                   </div>
-                </div>
 
-                {/* Content */}
-                <div className="flex-1">
-                  <h3 className="font-bold text-lg mb-2 leading-snug">
-                    🏆 Featured Article
-                  </h3>
-                  <p className="text-fd-muted-foreground text-sm leading-relaxed mb-4">
-                    Our article <span className="text-fd-foreground font-medium">&ldquo;The 30-Minute Security Audit: Onboarding a New Codebase&rdquo;</span> was selected as one of the Top 7 Featured DEV Posts of the Week.
-                  </p>
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <span className="rounded-full bg-orange-500/15 px-3 py-1 text-xs font-medium text-orange-500">
+                  {/* Content */}
+                  <div className="flex-1">
+                    <p className="text-[15px] leading-relaxed mb-3">
+                      🏆 Our article <span className="font-medium">&ldquo;The 30-Minute Security Audit: Onboarding a New Codebase&rdquo;</span> was selected as one of the Top 7 Featured DEV Posts of the Week.
+                    </p>
+                    <p className="text-sm text-fd-muted-foreground">
+                      { "{ author: Ofri Peretz }" }
+                    </p>
+                  </div>
+
+                  {/* Cover Image */}
+                  <img 
+                    src="https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2Fti8v1j4h18h7cepwdqut.png"
+                    alt="The 30-Minute Security Audit article cover"
+                    className="w-full rounded-2xl border border-neutral-200 object-cover dark:border-neutral-800"
+                  />
+
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full bg-orange-500/15 px-3 py-1 text-xs font-medium text-orange-600 dark:text-orange-400">
                       #security
                     </span>
-                    <span className="rounded-full bg-purple-500/15 px-3 py-1 text-xs font-medium text-purple-500">
+                    <span className="rounded-full bg-purple-500/15 px-3 py-1 text-xs font-medium text-purple-600 dark:text-purple-400">
                       #javascript
                     </span>
-                    <span className="rounded-full bg-blue-500/15 px-3 py-1 text-xs font-medium text-blue-500">
+                    <span className="rounded-full bg-blue-500/15 px-3 py-1 text-xs font-medium text-blue-600 dark:text-blue-400">
                       #eslint
                     </span>
                   </div>
                 </div>
-
-                {/* Footer Link */}
-                <a 
-                  href="https://dev.to/devteam/top-7-featured-dev-posts-of-the-week-e8p"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm font-medium text-purple-500 hover:text-purple-400 transition-colors mt-auto"
-                >
-                  Read the feature <ExternalLink className="size-3.5" />
-                </a>
-              </div>
+              </a>
 
               {/* Developer Testimonial Card - Different topic: plugin discovery */}
               <div className="relative flex flex-col gap-4 overflow-hidden rounded-xl border border-fd-border bg-fd-card/80 backdrop-blur-sm p-6 hover:border-fd-border/80 transition-all duration-300 h-full">
