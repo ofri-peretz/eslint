@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-operability",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "ESLint rules for production behavior, resource hygiene, and log quality.",
   "type": "commonjs",
   "main": "./src/index.js",
