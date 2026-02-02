@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-conventions",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "ESLint rules for team-specific disciplinary patterns and code conventions.",
   "type": "commonjs",
   "main": "./src/index.js",
