@@ -8,7 +8,7 @@
  * 
  * The original .md files remain the source of truth.
  * 
- * Usage: pnpm tsx scripts/sync-rule-docs.ts
+ * Usage: npx tsx scripts/sync-rule-docs.ts
  */
 
 import * as fs from 'fs';
@@ -223,7 +223,7 @@ function main(): void {
   }
   
   console.log('\n✨ Documentation sync complete!');
-  console.log(`   Run 'cd apps/docs && pnpm dev' to preview.`);
+  console.log(`   Run 'cd apps/docs && npm run dev' to preview.`);
 }
 
 main();

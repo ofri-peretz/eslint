@@ -108,7 +108,7 @@ env:
   NODE_VERSION: "24"
   # Dependency order: devkit MUST be first since others depend on it
   # This array defines the release sequence for all-affected mode
-  DEPENDENCY_ORDER: "eslint-devkit,eslint-plugin-secure-coding,eslint-plugin-crypto,eslint-plugin-jwt,eslint-plugin-pg,eslint-plugin-mongodb-security,eslint-plugin-express-security,eslint-plugin-nestjs-security,eslint-plugin-browser-security,eslint-plugin-lambda-security,eslint-plugin-vercel-ai-security,eslint-plugin-architecture,eslint-plugin-quality,eslint-plugin-react-a11y,eslint-plugin-react-features,eslint-plugin-import-next,cli"
+  DEPENDENCY_ORDER: "eslint-devkit,eslint-plugin-secure-coding,eslint-plugin-crypto,eslint-plugin-jwt,eslint-plugin-pg,eslint-plugin-mongodb-security,eslint-plugin-express-security,eslint-plugin-nestjs-security,eslint-plugin-browser-security,eslint-plugin-lambda-security,eslint-plugin-vercel-ai-security,eslint-plugin-node-security,eslint-plugin-conventions,eslint-plugin-maintainability,eslint-plugin-modularity,eslint-plugin-modernization,eslint-plugin-reliability,eslint-plugin-operability,eslint-plugin-react-a11y,eslint-plugin-react-features,eslint-plugin-import-next,cli"
 
 jobs:
   # ═══════════════════════════════════════════════════════════════════════════════
@@ -148,7 +148,7 @@ jobs:
           CLEANED_COUNT=0
 
           # Check all publishable packages
-          for pkg in eslint-devkit eslint-plugin-secure-coding eslint-plugin-crypto eslint-plugin-jwt eslint-plugin-pg eslint-plugin-express-security eslint-plugin-nestjs-security eslint-plugin-browser-security eslint-plugin-lambda-security eslint-plugin-vercel-ai-security eslint-plugin-architecture eslint-plugin-quality eslint-plugin-react-a11y eslint-plugin-react-features eslint-plugin-import-next cli; do
+          for pkg in eslint-devkit eslint-plugin-secure-coding eslint-plugin-crypto eslint-plugin-jwt eslint-plugin-pg eslint-plugin-mongodb-security eslint-plugin-express-security eslint-plugin-nestjs-security eslint-plugin-browser-security eslint-plugin-lambda-security eslint-plugin-vercel-ai-security eslint-plugin-node-security eslint-plugin-conventions eslint-plugin-maintainability eslint-plugin-modularity eslint-plugin-modernization eslint-plugin-reliability eslint-plugin-operability eslint-plugin-react-a11y eslint-plugin-react-features eslint-plugin-import-next cli; do
             # Resolve npm package name
             case "$pkg" in
               eslint-devkit) NPM_NAME="@interlace/eslint-devkit" ;;
@@ -228,7 +228,7 @@ jobs:
             # Note: The release loop handles version bumping and skip logic
             # Here we just filter Nx affected to publishable packages
             PUBLISHABLE_PACKAGES=""
-            for pkg in eslint-devkit eslint-plugin-secure-coding eslint-plugin-crypto eslint-plugin-jwt eslint-plugin-pg eslint-plugin-express-security eslint-plugin-nestjs-security eslint-plugin-browser-security eslint-plugin-lambda-security eslint-plugin-vercel-ai-security eslint-plugin-architecture eslint-plugin-quality eslint-plugin-react-a11y eslint-plugin-react-features eslint-plugin-import-next cli eslint-plugin-mongodb-security; do
+            for pkg in eslint-devkit eslint-plugin-secure-coding eslint-plugin-crypto eslint-plugin-jwt eslint-plugin-pg eslint-plugin-mongodb-security eslint-plugin-express-security eslint-plugin-nestjs-security eslint-plugin-browser-security eslint-plugin-lambda-security eslint-plugin-vercel-ai-security eslint-plugin-node-security eslint-plugin-conventions eslint-plugin-maintainability eslint-plugin-modularity eslint-plugin-modernization eslint-plugin-reliability eslint-plugin-operability eslint-plugin-react-a11y eslint-plugin-react-features eslint-plugin-import-next cli; do
               if echo "$AFFECTED" | grep -q "^$pkg$"; then
                 # Verify package.json exists
                 if [ ! -f "./packages/$pkg/package.json" ]; then
