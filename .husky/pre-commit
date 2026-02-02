@@ -1,5 +1,5 @@
 #!/bin/bash
-# Ensure nvm-installed node/pnpm is in PATH
+# Ensure nvm-installed node is in PATH
 export PATH="$HOME/.nvm/versions/node/v20.19.5/bin:$PATH"
 
 # Skip silently if no staged changes in packages (docs, configs don't need checks)
@@ -15,7 +15,7 @@ echo "🚀 Running pre-commit checks..."
 
 # Run lint first (faster, catches most issues)
 echo "📝 Running lint..."
-LINT_OUTPUT=$(pnpm nx affected -t lint \
+LINT_OUTPUT=$(npx nx affected -t lint \
   --uncommitted \
   --parallel=4 \
   --output-style=static 2>&1)
@@ -25,13 +25,13 @@ if [ $LINT_EXIT -ne 0 ]; then
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "📋 Affected projects detected:"
-  pnpm nx show projects --affected --uncommitted 2>/dev/null | head -20
+  npx nx show projects --affected --uncommitted 2>/dev/null | head -20
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
   echo "$LINT_OUTPUT" | tail -50
   echo "❌ Lint failed"
   echo ""
-  echo "💡 Tip: Run 'pnpm nx affected -t lint --uncommitted' to see full output"
+  echo "💡 Tip: Run 'npx nx affected -t lint --uncommitted' to see full output"
   exit 1
 fi
 
@@ -40,7 +40,7 @@ echo "$LINT_OUTPUT" | grep -E "(Successfully|passed|warning|error)" | tail -5
 
 # Run tests (only if lint passes)
 echo "🧪 Running tests..."
-TEST_OUTPUT=$(pnpm nx affected -t test \
+TEST_OUTPUT=$(npx nx affected -t test \
   --uncommitted \
   --parallel=4 \
   --output-style=static 2>&1)
@@ -50,13 +50,13 @@ if [ $TEST_EXIT -ne 0 ]; then
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "📋 Affected projects detected:"
-  pnpm nx show projects --affected --uncommitted 2>/dev/null | head -20
+  npx nx show projects --affected --uncommitted 2>/dev/null | head -20
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
   echo "$TEST_OUTPUT" | tail -100
   echo "❌ Tests failed"
   echo ""
-  echo "💡 Tip: Run 'pnpm nx affected -t test --uncommitted' to see full output"
+  echo "💡 Tip: Run 'npx nx affected -t test --uncommitted' to see full output"
   exit 1
 fi
 

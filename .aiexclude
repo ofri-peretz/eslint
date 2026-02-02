@@ -9,11 +9,10 @@
 # Package Managers
 # =====================
 **/node_modules/
-**/.pnpm-store/
-# Root pnpm-lock.yaml is kept (essential for monorepo)
+# Root package-lock.json is kept (essential for monorepo)
 # Only exclude nested lock files that shouldn't exist
-packages/**/pnpm-lock.yaml
-apps/**/pnpm-lock.yaml
+packages/**/package-lock.json
+apps/**/package-lock.json
 
 # =====================
 # Build Outputs

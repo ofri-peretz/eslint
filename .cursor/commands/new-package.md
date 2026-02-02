@@ -88,20 +88,20 @@ When adding a new package to this monorepo, **ALWAYS** follow this checklist:
 
 - [ ] Create `tsconfig.json` (copy from similar package)
 - [ ] Update `tsconfig.base.json` paths if needed
-- [ ] Verify TypeScript compilation works: `pnpm nx build <package-name>`
+- [ ] Verify TypeScript compilation works: `npx nx build <package-name>`
 
 ## 6. Testing Setup
 
 - [ ] Create test files (`.test.ts` or `.spec.ts`)
 - [ ] Configure test target in `project.json`
 - [ ] Add `vitest.config.mts` if needed
-- [ ] Verify tests run: `pnpm nx test <package-name>`
+- [ ] Verify tests run: `npx nx test <package-name>`
 
 ## 7. Build Configuration
 
 - [ ] Configure build target in `project.json`
 - [ ] Set correct `outputs` in `project.json`
-- [ ] Verify build works: `pnpm nx build <package-name>`
+- [ ] Verify build works: `npx nx build <package-name>`
 - [ ] Check build output in `dist/packages/<package-name>/`
 
 ## 8. Documentation
@@ -145,11 +145,11 @@ When adding a new package to this monorepo, **ALWAYS** follow this checklist:
 
 ## 11. Verification Steps
 
-- [ ] Run: `pnpm nx graph` - verify package appears in dependency graph
-- [ ] Run: `pnpm nx run-many -t build --all` - verify package builds
-- [ ] Run: `pnpm nx run-many -t test --all` - verify package tests pass
-- [ ] Run: `pnpm nx run-many -t lint --all` - verify package lints
-- [ ] Check: `pnpm nx release --dry-run` - verify package is detected
+- [ ] Run: `npx nx graph` - verify package appears in dependency graph
+- [ ] Run: `npx nx run-many -t build --all` - verify package builds
+- [ ] Run: `npx nx run-many -t test --all` - verify package tests pass
+- [ ] Run: `npx nx run-many -t lint --all` - verify package lints
+- [ ] Check: `npx nx release --dry-run` - verify package is detected
 
 ## 12. First Release
 

@@ -9,6 +9,7 @@ on:
       - "packages/**/src/index.ts"
       - "scripts/sync-readme-rules.ts"
       - "scripts/validate-docs.ts"
+  workflow_dispatch:
 
 jobs:
   validate-docs:

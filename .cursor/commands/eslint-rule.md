@@ -39,14 +39,14 @@
   - [ ] Edge cases
   - [ ] Configuration options (if rule has options)
 - [ ] **100% test coverage policy (REQUIRED):**
-  - [ ] Run `pnpm nx test eslint-plugin --coverage` to verify coverage
+  - [ ] Run `npx nx test eslint-plugin --coverage` to verify coverage
   - [ ] Achieve 100% line coverage for the rule implementation
   - [ ] Achieve 100% branch coverage for the rule implementation
   - [ ] All uncovered lines must be documented with `@coverage-note` comments explaining why they cannot be tested
   - [ ] Integration tests added if rule requires file system access or special context
-- [ ] **Tests pass:** `pnpm nx test eslint-plugin`
-- [ ] **Build succeeds:** `pnpm nx build eslint-plugin`
-- [ ] **No lint errors:** `pnpm nx lint eslint-plugin`
+- [ ] **Tests pass:** `npx nx test eslint-plugin`
+- [ ] **Build succeeds:** `npx nx build eslint-plugin`
+- [ ] **No lint errors:** `npx nx lint eslint-plugin`
 
 ### 3. Documentation ✅
 
@@ -93,13 +93,13 @@
   - [ ] Determine version bump type (patch/minor/major)
   - [ ] Update `packages/eslint-plugin/package.json` version
   - [ ] Update any dependent packages if needed
-  - [ ] Run `pnpm install` to update lockfile
+  - [ ] Run `npm install` to update lockfile
 - [ ] **Git tags alignment:**
-  - [ ] Run `pnpm check-versions` to verify alignment
-  - [ ] Run `pnpm sync-tags:dry-run` to preview tag changes
-  - [ ] Run `pnpm sync-tags` if tags need updating (after version bump)
+  - [ ] Run `npm check-versions` to verify alignment
+  - [ ] Run `npm sync-tags:dry-run` to preview tag changes
+  - [ ] Run `npm sync-tags` if tags need updating (after version bump)
 - [ ] **Release preparation:**
-  - [ ] Run `pnpm nx release version --dry-run` to verify release
+  - [ ] Run `npx nx release version --dry-run` to verify release
   - [ ] Ensure CHANGELOG is complete
   - [ ] Ensure all tests pass
   - [ ] Ensure build succeeds
@@ -113,10 +113,10 @@
   - [ ] Verify auto-fix works (if applicable)
   - [ ] Verify rule configuration options work
 - [ ] **Lint verification:**
-  - [ ] Run `pnpm nx lint` to ensure no new lint errors
+  - [ ] Run `npx nx lint` to ensure no new lint errors
   - [ ] Fix any lint errors introduced
 - [ ] **Type checking:**
-  - [ ] Run `pnpm nx typecheck` (if available)
+  - [ ] Run `npx nx typecheck` (if available)
   - [ ] Fix any type errors
 
 ### 7. Final Verification ✅
@@ -153,25 +153,25 @@
 
 ```bash
 # Build plugin
-pnpm nx build eslint-plugin
+npx nx build eslint-plugin
 
 # Run tests
-pnpm nx test eslint-plugin
+npx nx test eslint-plugin
 
 # Lint
-pnpm nx lint eslint-plugin
+npx nx lint eslint-plugin
 
 # Check versions
-pnpm check-versions
+npm check-versions
 
 # Sync git tags (dry-run)
-pnpm sync-tags:dry-run
+npm sync-tags:dry-run
 
 # Sync git tags
-pnpm sync-tags
+npm sync-tags
 
 # Release dry-run
-pnpm nx release version --dry-run
+npx nx release version --dry-run
 ```
 
 ### Error Message Format (LLM-Optimized)

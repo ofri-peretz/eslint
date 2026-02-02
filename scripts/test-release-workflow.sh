@@ -68,7 +68,7 @@ else
 fi
 echo ""
 
-# Step 3: Verify Node.js and pnpm versions
+# Step 3: Verify Node.js and npm versions
 check_step "Check Node.js Version" "
     NODE_VERSION=\$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
     if [ \"\$NODE_VERSION\" != \"20\" ]; then
@@ -80,36 +80,36 @@ check_step "Check Node.js Version" "
     fi
 "
 
-check_step "Check pnpm Version" "
-    PNPM_VERSION=\$(pnpm --version)
+check_step "Check npm Version" "
+    NPM_VERSION=\$(npm --version)
     EXPECTED_VERSION=\"10.18.3\"
-    if [ \"\$PNPM_VERSION\" != \"\$EXPECTED_VERSION\" ]; then
-        echo -e \"${YELLOW}⚠️  Warning: pnpm version is \$PNPM_VERSION, workflow expects \$EXPECTED_VERSION${NC}\"
+    if [ \"\$NPM_VERSION\" != \"\$EXPECTED_VERSION\" ]; then
+        echo -e \"${YELLOW}⚠️  Warning: npm version is \$NPM_VERSION, workflow expects \$EXPECTED_VERSION${NC}\"
         return 1
     else
-        echo -e \"${GREEN}✅ pnpm version: \$PNPM_VERSION${NC}\"
+        echo -e \"${GREEN}✅ npm version: \$NPM_VERSION${NC}\"
         return 0
     fi
 "
 
 # Step 4: Install dependencies
 check_step "Install Dependencies" "
-    pnpm install --frozen-lockfile
+    npm ci
 "
 
 # Step 5: Print environment info
 check_step "Print Environment Info" "
-    pnpm nx report
+    npx nx report
 "
 
 # Step 6: CI Validation (if enabled)
 if [ "$RUN_CI" = "true" ]; then
     check_step "Run Tests" "
-        pnpm nx run-many -t test --all -c ci --parallel=4 --verbose
+        npx nx run-many -t test --all -c ci --parallel=4 --verbose
     "
     
     check_step "Build Packages" "
-        pnpm nx run-many -t build --all --parallel=4 --verbose
+        npx nx run-many -t build --all --parallel=4 --verbose
     "
 else
     echo -e "${YELLOW}⏭️  Skipping CI validation (run-ci=false)${NC}"
@@ -161,7 +161,7 @@ check_step "Check NPM Registry" "
 # Check if there are changes to release
 check_step "Check for Changes to Release" "
     echo 'Running dry-run to check for changes...'
-    DRY_RUN_OUTPUT=\$(pnpm nx release version --dry-run 2>&1 || true)
+    DRY_RUN_OUTPUT=\$(npx nx release version --dry-run 2>&1 || true)
     if echo \"\$DRY_RUN_OUTPUT\" | grep -q 'No changes detected'; then
         echo -e \"${YELLOW}ℹ️  No changes detected for release${NC}\"
         echo -e \"${YELLOW}   This means there are no conventional commits since the last release${NC}\"
@@ -180,11 +180,11 @@ if [ "$DRY_RUN" = "true" ]; then
     echo -e "${BLUE}🔍 Dry Run: Preview Version Changes${NC}"
     if [ "$VERSION_SPECIFIER" != "auto" ]; then
         check_step "Preview Version ($VERSION_SPECIFIER)" "
-            pnpm nx release version $VERSION_SPECIFIER --dry-run
+            npx nx release version $VERSION_SPECIFIER --dry-run
         "
     else
         check_step "Preview Version (auto)" "
-            pnpm nx release version --dry-run
+            npx nx release version --dry-run
         "
     fi
 else
@@ -194,18 +194,18 @@ else
 fi
 
 # Step 9: Publish preview (dry-run)
-# Note: NX has a known issue where --dry-run is converted to --dryRun=true for pnpm
-# This causes pnpm to fail. We'll skip this check but note it in the summary.
+# Note: NX has a known issue where --dry-run is converted to --dryRun=true for npm
+# This causes npm to fail. We'll skip this check but note it in the summary.
 if [ "$DRY_RUN" = "true" ]; then
     echo -e "${BLUE}🔍 Dry Run: Preview Publish${NC}"
     echo -e "${YELLOW}⚠️  Note: NX release publish --dry-run has a known issue${NC}"
-    echo -e "${YELLOW}   NX converts --dry-run to --dryRun=true, which pnpm rejects${NC}"
+    echo -e "${YELLOW}   NX converts --dry-run to --dryRun=true, which npm rejects${NC}"
     echo -e "${YELLOW}   This doesn't affect actual releases (only preview)${NC}"
     echo -e "${YELLOW}   Skipping publish dry-run check...${NC}"
     echo ""
     # Try it anyway to show the error, but don't fail
     echo "Attempting publish dry-run (expected to fail due to NX bug)..."
-    pnpm nx release publish --tag $DIST_TAG --dry-run 2>&1 | head -10 || true
+    npx nx release publish --tag $DIST_TAG --dry-run 2>&1 | head -10 || true
     echo ""
     echo -e "${YELLOW}✅ Publish dry-run check skipped (known NX issue)${NC}"
     echo ""

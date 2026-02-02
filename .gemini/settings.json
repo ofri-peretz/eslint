@@ -6,9 +6,8 @@
         "excludePatterns": [
             "// ===== Package Managers =====",
             "**/node_modules/**",
-            "**/.pnpm-store/**",
-            "packages/**/pnpm-lock.yaml",
-            "apps/**/pnpm-lock.yaml",
+            "packages/**/package-lock.json",
+            "apps/**/package-lock.json",
             "// ===== Build Outputs =====",
             "**/dist/**",
             "**/build/**",

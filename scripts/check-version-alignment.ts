@@ -5,7 +5,7 @@
  * Ensures package.json versions match lockfile and published versions.
  * 
  * Usage:
- *   pnpm tsx scripts/check-version-alignment.ts
+ *   npx tsx scripts/check-version-alignment.ts
  */
 
 import { readFileSync, existsSync } from 'node:fs';
@@ -41,10 +41,19 @@ function getPackageJsonVersion(projectPath: string): string | null {
 // Get version from lockfile
 function getLockfileVersion(packageName: string): string | null {
   try {
-    const lockfile = readFileSync('pnpm-lock.yaml', 'utf-8');
-    const regex = new RegExp(`'${packageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}':\\s*\\n\\s*specifier:\\s*([^\\n]+)`, 'm');
-    const match = lockfile.match(regex);
-    return match ? match[1].trim().replace(/['"]/g, '') : null;
+    if (existsSync('package-lock.json')) {
+      const lockfile = JSON.parse(readFileSync('package-lock.json', 'utf-8'));
+      // Search in packages (npm v2/v3 lockfile format)
+      if (lockfile.packages) {
+        // Try exact path in monorepo first
+        for (const [path, info] of Object.entries(lockfile.packages)) {
+          if ((info as any).name === packageName) {
+            return (info as any).version;
+          }
+        }
+      }
+    }
+    return null;
   } catch {
     return null;
   }
@@ -165,9 +174,9 @@ function main() {
 
   console.log('💡 To fix:');
   console.log('   1. Update package.json versions');
-  console.log('   2. Run: pnpm install');
-  console.log('   3. Run: pnpm sync-tags (if git tags are out of sync)');
-  console.log('   4. Verify: pnpm nx lint <project>');
+  console.log('   2. Run: npm install');
+  console.log('   3. Run: npx tsx scripts/sync-git-tags.ts (if git tags are out of sync)');
+  console.log('   4. Verify: npx nx lint <project>');
   
   process.exit(1);
 }
