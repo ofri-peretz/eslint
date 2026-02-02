@@ -70,7 +70,7 @@
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "workspace:*"
+    "@interlace/eslint-devkit": "*"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.46.2",

@@ -48,6 +48,6 @@
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@interlace/eslint-devkit": "workspace:*"
+    "@interlace/eslint-devkit": "*"
   }
 }

@@ -79,7 +79,6 @@
   ],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@9.15.4",
   "devDependencies": {
     "@commitlint/cli": "^20.4.0",
     "@commitlint/config-conventional": "^20.4.0",
