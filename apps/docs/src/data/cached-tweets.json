@@ -1,6 +1,6 @@
 {
   "_comment": "Cached tweet data to avoid Twitter API rate limits during builds. Updated by scripts/sync-tweet-cache.mjs",
-  "_lastUpdated": "2026-02-02T06:16:05.912Z",
+  "_lastUpdated": "2026-02-02T07:35:27.461Z",
   "tweets": {
     "2006790779537121585": {
       "__typename": "Tweet",

@@ -38,7 +38,7 @@ Every Nx command MUST use this pattern:
 ```bash
 # Function to run command with error handling for Nx Cloud failures
 run_command() {
-  CMD="pnpm nx <command>"
+  CMD="npx nx <command>"
   
   # First attempt with Nx Cloud (if enabled)
   set +e  # Don't exit on error - we'll handle it
@@ -118,7 +118,7 @@ rm -f /tmp/command-output.log 2>/dev/null || true
 ### 7. Consistency Checks
 
 - [ ] **Node version:** Use `NODE_VERSION: "20"` (or reference from env)
-- [ ] **pnpm version:** Use `PNPM_VERSION: "10.18.3"` (or reference from env)
+- [ ] **npm version:** Use `PNPM_VERSION: "10.18.3"` (or reference from env)
 - [ ] **Concurrency:** Set appropriate concurrency group
 - [ ] **Permissions:** Set minimal required permissions
 - [ ] **Timeout:** Set appropriate timeout for job

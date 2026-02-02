@@ -50,7 +50,7 @@ npm install eslint-plugin-secure-coding --save-dev
 
 ```bash
 # Install once at the repo root
-pnpm add -D eslint-plugin-secure-coding
+npm add -D eslint-plugin-secure-coding
 
 # eslint.config.js (org-standard)
 import secureCoding from 'eslint-plugin-secure-coding';

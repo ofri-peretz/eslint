@@ -10,9 +10,9 @@ This plugin provides ESLint rules for code quality and architecture patterns.
 
 ```bash
 cd packages/eslint-plugin-${plugin}
-pnpm install
-pnpm build
-pnpm test
+npm install
+npm build
+npm test
 ```
 
 ## Project Structure
@@ -33,9 +33,9 @@ src/
 ## Testing Instructions
 
 ```bash
-pnpm test                    # Run all tests
-pnpm test:coverage           # With coverage
-pnpm test -- --watch         # Watch mode
+npm test                    # Run all tests
+npm test:coverage           # With coverage
+npm test -- --watch         # Watch mode
 ```
 
 ## Security Considerations

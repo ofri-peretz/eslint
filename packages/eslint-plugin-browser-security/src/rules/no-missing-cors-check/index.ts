@@ -232,7 +232,6 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
                   suggest: [
                     {
                       messageId: 'useOriginValidation',
-                      // eslint-disable-next-line @typescript-eslint/no-unused-vars
                       fix: (_fixer: TSESLint.RuleFixer) => null,
                     },
                   ],
@@ -256,7 +255,6 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
             suggest: [
               {
                 messageId: 'useOriginValidation',
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 fix: (_fixer: TSESLint.RuleFixer) => null,
               },
             ],
@@ -332,7 +330,6 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
                       suggest: [
                         {
                           messageId: 'useOriginValidation',
-                          // eslint-disable-next-line @typescript-eslint/no-unused-vars
                           fix: (_fixer: TSESLint.RuleFixer) => null,
                         },
                       ],
@@ -374,7 +371,6 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
                                     suggest: [
                                       {
                                         messageId: 'useOriginValidation',
-                                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
                                         fix: (_fixer: TSESLint.RuleFixer) => null,
                                       },
                                     ],
@@ -437,7 +433,6 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
                   suggest: [
                     {
                       messageId: 'useOriginValidation',
-                      // eslint-disable-next-line @typescript-eslint/no-unused-vars
                       fix: (_fixer: TSESLint.RuleFixer) => null,
                     },
                   ],

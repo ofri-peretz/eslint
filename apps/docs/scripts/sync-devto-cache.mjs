@@ -22,6 +22,7 @@ const SRC_DIR = join(__dirname, '../src');
 // These are extracted from usage in the codebase
 const ARTICLE_PATHS = [
   'devteam/top-7-featured-dev-posts-of-the-week-2cgm',
+  'devteam/top-7-featured-dev-posts-of-the-week-e8p',
 ];
 
 async function fetchArticle(path) {

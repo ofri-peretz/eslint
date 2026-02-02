@@ -257,12 +257,10 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
             suggest: [
               {
                 messageId: 'useEncodeURIComponent',
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 fix: (_fixer: TSESLint.RuleFixer) => null,
               },
               {
                 messageId: 'useURLSearchParams',
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 fix: (_fixer: TSESLint.RuleFixer) => null,
               },
             ],
@@ -317,7 +315,6 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
               suggest: [
                 {
                   messageId: 'useEncodeURIComponent',
-                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
                   fix: (_fixer: TSESLint.RuleFixer) => null,
                 },
               ],

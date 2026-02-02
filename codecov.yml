@@ -82,6 +82,26 @@ component_management:
         - type: patch
           target: 75%
 
+    - component_id: mongodb_security
+      name: "eslint-plugin-mongodb-security"
+      paths:
+        - packages/eslint-plugin-mongodb-security/**
+      statuses:
+        - type: project
+          target: 85%
+        - type: patch
+          target: 80%
+
+    - component_id: node_security
+      name: "eslint-plugin-node-security"
+      paths:
+        - packages/eslint-plugin-node-security/**
+      statuses:
+        - type: project
+          target: 85%
+        - type: patch
+          target: 80%
+
     # ─────────────────────────────────────────────────────────────────────────
     # Framework Security Plugins
     # ─────────────────────────────────────────────────────────────────────────
@@ -129,6 +149,57 @@ component_management:
           target: 90%
 
     # ─────────────────────────────────────────────────────────────────────────
+    # Governance & Quality Plugins
+    # ─────────────────────────────────────────────────────────────────────────
+    - component_id: conventions
+      name: "eslint-plugin-conventions"
+      paths:
+        - packages/eslint-plugin-conventions/**
+      statuses:
+        - type: project
+          target: 80%
+
+    - component_id: maintainability
+      name: "eslint-plugin-maintainability"
+      paths:
+        - packages/eslint-plugin-maintainability/**
+      statuses:
+        - type: project
+          target: 80%
+
+    - component_id: modernization
+      name: "eslint-plugin-modernization"
+      paths:
+        - packages/eslint-plugin-modernization/**
+      statuses:
+        - type: project
+          target: 80%
+
+    - component_id: modularity
+      name: "eslint-plugin-modularity"
+      paths:
+        - packages/eslint-plugin-modularity/**
+      statuses:
+        - type: project
+          target: 80%
+
+    - component_id: operability
+      name: "eslint-plugin-operability"
+      paths:
+        - packages/eslint-plugin-operability/**
+      statuses:
+        - type: project
+          target: 80%
+
+    - component_id: reliability
+      name: "eslint-plugin-reliability"
+      paths:
+        - packages/eslint-plugin-reliability/**
+      statuses:
+        - type: project
+          target: 80%
+
+    # ─────────────────────────────────────────────────────────────────────────
     # Core Packages
     # ─────────────────────────────────────────────────────────────────────────
     - component_id: eslint_devkit
@@ -159,16 +230,6 @@ component_management:
       name: "eslint-plugin-react-a11y"
       paths:
         - packages/eslint-plugin-react-a11y/**
-
-    - component_id: architecture
-      name: "eslint-plugin-architecture"
-      paths:
-        - packages/eslint-plugin-architecture/**
-
-    - component_id: quality
-      name: "eslint-plugin-quality"
-      paths:
-        - packages/eslint-plugin-quality/**
 
     # NOTE: cli is an infrastructure package without tests - excluded
 

@@ -120,18 +120,18 @@ cd ~/repos/ofriperetz.dev/playground/apps/<demo-app-name>
 # "eslint-plugin-vercel-ai-security": "^1.0.0-rc.1"
 
 # Install dependencies
-pnpm install
+npm install
 ```
 
 ### Step 3: Run ESLint
 
 ```bash
 # Run lint on full demo app
-pnpm lint
+npm lint
 
 # Or run on specific files
-pnpm eslint src/examples/*/invalid.ts  # Should show errors
-pnpm eslint src/examples/*/valid.ts    # Should pass (no errors)
+npm eslint src/examples/*/invalid.ts  # Should show errors
+npm eslint src/examples/*/valid.ts    # Should pass (no errors)
 ```
 
 ---
@@ -151,10 +151,10 @@ pnpm eslint src/examples/*/valid.ts    # Should pass (no errors)
 
 ```bash
 # Count errors on invalid files
-pnpm eslint src/examples/*/invalid.ts 2>&1 | grep -c "error"
+npm eslint src/examples/*/invalid.ts 2>&1 | grep -c "error"
 
 # Verify valid files pass
-pnpm eslint src/examples/*/valid.ts 2>&1 | grep "0 problems" || echo "Has warnings"
+npm eslint src/examples/*/valid.ts 2>&1 | grep "0 problems" || echo "Has warnings"
 ```
 
 ### 2. Human-Readable Messages 👤
@@ -206,14 +206,14 @@ pnpm eslint src/examples/*/valid.ts 2>&1 | grep "0 problems" || echo "Has warnin
 
 ```bash
 # Basic timing
-time pnpm lint 2>&1 | tail -5
+time npm lint 2>&1 | tail -5
 
 # Memory profiling (macOS)
-NODE_OPTIONS="--max-old-space-size=512" /usr/bin/time -l pnpm lint 2>&1 | grep 'maximum resident set size'
+NODE_OPTIONS="--max-old-space-size=512" /usr/bin/time -l npm lint 2>&1 | grep 'maximum resident set size'
 
 # Generate large test file for stress testing
 echo "// $(seq 1 1000 | xargs -I{} echo 'const x{} = {};')" > /tmp/large.ts
-time pnpm eslint /tmp/large.ts 2>&1
+time npm eslint /tmp/large.ts 2>&1
 
 # Chrome DevTools profiling
 node --inspect-brk ./node_modules/.bin/eslint src/
@@ -314,21 +314,21 @@ node --inspect-brk ./node_modules/.bin/eslint src/
 cd ~/repos/ofriperetz.dev/eslint
 nx build <plugin-name> --skip-nx-cache
 cd ~/repos/ofriperetz.dev/playground/apps/<demo-app>
-pnpm install
+npm install
 ```
 
 ### Config Errors
 
 ```bash
 # Check ESLint config is valid
-pnpm eslint --print-config src/index.ts
+npm eslint --print-config src/index.ts
 ```
 
 ### Version Mismatch
 
 ```bash
 # Check installed versions
-pnpm list eslint-plugin-X
+npm list eslint-plugin-X
 npm view eslint-plugin-X versions
 ```
 
@@ -336,10 +336,10 @@ npm view eslint-plugin-X versions
 
 ```bash
 # Profile rule execution
-DEBUG=eslint:* pnpm lint 2>&1 | head -100
+DEBUG=eslint:* npm lint 2>&1 | head -100
 
 # Identify slow rules
-pnpm eslint src/ --format json | jq '.[] | {filePath, messages: .messages | length}'
+npm eslint src/ --format json | jq '.[] | {filePath, messages: .messages | length}'
 ```
 
 ---

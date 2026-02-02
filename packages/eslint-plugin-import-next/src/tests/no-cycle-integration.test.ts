@@ -11,7 +11,7 @@
  * 2. Set up all test files in beforeAll and run RuleTester at top level
  * 3. Split into multiple test files with different setups
  */
-import { describe, it, afterAll, beforeEach, afterEach } from 'vitest';
+import { describe, it, beforeEach, afterEach } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { tmpdir } from 'node:os';
@@ -19,17 +19,6 @@ import { tmpdir } from 'node:os';
 // Helper to create temporary test directory
 function createTempDir(): string {
   return fs.mkdtempSync(path.join(tmpdir(), 'eslint-circular-test-'));
-}
-
-// Helper to create a file in a directory
-function createFile(dir: string, filename: string, content: string): string {
-  const filePath = path.join(dir, filename);
-  const dirPath = path.dirname(filePath);
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true });
-  }
-  fs.writeFileSync(filePath, content, 'utf-8');
-  return filePath;
 }
 
 describe.skip('no-cycle - Integration Tests', () => {

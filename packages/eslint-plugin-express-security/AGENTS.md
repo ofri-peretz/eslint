@@ -6,7 +6,7 @@
 
 ```bash
 # Install dependencies (from monorepo root)
-pnpm install
+npm install
 
 # Build this package
 nx build eslint-plugin-express-security

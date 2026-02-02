@@ -678,9 +678,9 @@ Brief description of the plugin's purpose and scope.
 # Setup commands
 
 cd packages/eslint-plugin-{name}
-pnpm install
-pnpm build
-pnpm test
+npm install
+npm build
+npm test
 \`\`\`
 
 ## Project Structure
@@ -704,9 +704,9 @@ src/
 ## Testing Instructions
 
 \`\`\`bash
-pnpm test # Run all tests
-pnpm test:coverage # With coverage
-pnpm test -- --watch # Watch mode
+npm test # Run all tests
+npm test:coverage # With coverage
+npm test -- --watch # Watch mode
 \`\`\`
 
 ## Rule Categories
@@ -999,7 +999,7 @@ Check: No generic patterns in SDK-specific plugins
 ### Step 2: Coverage Analysis
 
 ```bash
-pnpm nx test {plugin-name} --coverage --testPathPattern="{rule-name}"
+npx nx test {plugin-name} --coverage --testPathPattern="{rule-name}"
 ```
 
 ```

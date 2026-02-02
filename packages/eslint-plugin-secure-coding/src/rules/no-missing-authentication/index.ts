@@ -395,7 +395,6 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
                 suggest: [
                   {
                     messageId: 'addAuthentication',
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     fix: (_fixer: TSESLint.RuleFixer) => null,
                   },
                 ],

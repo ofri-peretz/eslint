@@ -10,7 +10,7 @@ git clone https://github.com/ofri-peretz/eslint.git
 cd eslint
 
 # Install dependencies
-pnpm install
+npm install
 
 # Build this package
 nx build eslint-plugin-jwt

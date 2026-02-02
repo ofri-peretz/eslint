@@ -99,6 +99,12 @@ on:
         type: boolean
         default: true
 
+      first-time-only:
+        description: "Release ONLY packages that do not exist on npm yet"
+        required: false
+        type: boolean
+        default: false
+
 # Prevent concurrent release runs
 concurrency:
   group: release-workflow
@@ -108,7 +114,7 @@ env:
   NODE_VERSION: "24"
   # Dependency order: devkit MUST be first since others depend on it
   # This array defines the release sequence for all-affected mode
-  DEPENDENCY_ORDER: "eslint-devkit,eslint-plugin-secure-coding,eslint-plugin-crypto,eslint-plugin-jwt,eslint-plugin-pg,eslint-plugin-mongodb-security,eslint-plugin-express-security,eslint-plugin-nestjs-security,eslint-plugin-browser-security,eslint-plugin-lambda-security,eslint-plugin-vercel-ai-security,eslint-plugin-node-security,eslint-plugin-conventions,eslint-plugin-maintainability,eslint-plugin-modularity,eslint-plugin-modernization,eslint-plugin-reliability,eslint-plugin-operability,eslint-plugin-react-a11y,eslint-plugin-react-features,eslint-plugin-import-next,cli"
+  DEPENDENCY_ORDER: "eslint-devkit,eslint-plugin-secure-coding,eslint-plugin-crypto,eslint-plugin-jwt,eslint-plugin-pg,eslint-plugin-mongodb-security,eslint-plugin-express-security,eslint-plugin-nestjs-security,eslint-plugin-browser-security,eslint-plugin-lambda-security,eslint-plugin-vercel-ai-security,eslint-plugin-node-security,eslint-plugin-conventions,eslint-plugin-maintainability,eslint-plugin-modularity,eslint-plugin-modernization,eslint-plugin-reliability,eslint-plugin-operability,eslint-plugin-react-a11y,eslint-plugin-react-features,eslint-plugin-import-next"
 
 jobs:
   # ═══════════════════════════════════════════════════════════════════════════════
@@ -148,11 +154,10 @@ jobs:
           CLEANED_COUNT=0
 
           # Check all publishable packages
-          for pkg in eslint-devkit eslint-plugin-secure-coding eslint-plugin-crypto eslint-plugin-jwt eslint-plugin-pg eslint-plugin-mongodb-security eslint-plugin-express-security eslint-plugin-nestjs-security eslint-plugin-browser-security eslint-plugin-lambda-security eslint-plugin-vercel-ai-security eslint-plugin-node-security eslint-plugin-conventions eslint-plugin-maintainability eslint-plugin-modularity eslint-plugin-modernization eslint-plugin-reliability eslint-plugin-operability eslint-plugin-react-a11y eslint-plugin-react-features eslint-plugin-import-next cli; do
+          for pkg in eslint-devkit eslint-plugin-secure-coding eslint-plugin-crypto eslint-plugin-jwt eslint-plugin-pg eslint-plugin-mongodb-security eslint-plugin-express-security eslint-plugin-nestjs-security eslint-plugin-browser-security eslint-plugin-lambda-security eslint-plugin-vercel-ai-security eslint-plugin-node-security eslint-plugin-conventions eslint-plugin-maintainability eslint-plugin-modularity eslint-plugin-modernization eslint-plugin-reliability eslint-plugin-operability eslint-plugin-react-a11y eslint-plugin-react-features eslint-plugin-import-next; do
             # Resolve npm package name
             case "$pkg" in
               eslint-devkit) NPM_NAME="@interlace/eslint-devkit" ;;
-              cli) NPM_NAME="@interlace/cli" ;;
               *) NPM_NAME="$pkg" ;;
             esac
             
@@ -228,7 +233,7 @@ jobs:
             # Note: The release loop handles version bumping and skip logic
             # Here we just filter Nx affected to publishable packages
             PUBLISHABLE_PACKAGES=""
-            for pkg in eslint-devkit eslint-plugin-secure-coding eslint-plugin-crypto eslint-plugin-jwt eslint-plugin-pg eslint-plugin-mongodb-security eslint-plugin-express-security eslint-plugin-nestjs-security eslint-plugin-browser-security eslint-plugin-lambda-security eslint-plugin-vercel-ai-security eslint-plugin-node-security eslint-plugin-conventions eslint-plugin-maintainability eslint-plugin-modularity eslint-plugin-modernization eslint-plugin-reliability eslint-plugin-operability eslint-plugin-react-a11y eslint-plugin-react-features eslint-plugin-import-next cli; do
+            for pkg in eslint-devkit eslint-plugin-secure-coding eslint-plugin-crypto eslint-plugin-jwt eslint-plugin-pg eslint-plugin-mongodb-security eslint-plugin-express-security eslint-plugin-nestjs-security eslint-plugin-browser-security eslint-plugin-lambda-security eslint-plugin-vercel-ai-security eslint-plugin-node-security eslint-plugin-conventions eslint-plugin-maintainability eslint-plugin-modularity eslint-plugin-modernization eslint-plugin-reliability eslint-plugin-operability eslint-plugin-react-a11y eslint-plugin-react-features eslint-plugin-import-next; do
               if echo "$AFFECTED" | grep -q "^$pkg$"; then
                 # Verify package.json exists
                 if [ ! -f "./packages/$pkg/package.json" ]; then
@@ -302,7 +307,6 @@ jobs:
                 # Resolve NPM name
                 case "$pkg" in
                   eslint-devkit) NPM_NAME="@interlace/eslint-devkit" ;;
-                  cli) NPM_NAME="@interlace/cli" ;;
                   *) NPM_NAME="$pkg" ;;
                 esac
                 
@@ -483,6 +487,7 @@ jobs:
           FORCE_VERSION: ${{ inputs.force-version }}
           GENERATE_CHANGELOG: ${{ inputs.generate-changelog }}
           RUN_CI: ${{ inputs.run-ci }}
+          FIRST_TIME_ONLY: ${{ inputs.first-time-only }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
@@ -546,7 +551,6 @@ jobs:
                 # Resolve NPM name
                 case "$PKG" in
                   eslint-devkit) NPM_NAME="@interlace/eslint-devkit" ;;
-                  cli) NPM_NAME="@interlace/cli" ;;
                   *) NPM_NAME="$PKG" ;;
                 esac
                 

@@ -6,7 +6,7 @@ category: quality
 autofix: suggestions
 ---
 
-> **Keywords:** dependency version, package.json, semantic versioning, caret, tilde, exact version, version strategy, ESLint rule, monorepo, dependency management, npm, pnpm, yarn, auto-fix, LLM-optimized, code quality
+> **Keywords:** dependency version, package.json, semantic versioning, caret, tilde, exact version, version strategy, ESLint rule, monorepo, dependency management, npm, npm, yarn, auto-fix, LLM-optimized, code quality
 
 
 <!-- @rule-summary -->

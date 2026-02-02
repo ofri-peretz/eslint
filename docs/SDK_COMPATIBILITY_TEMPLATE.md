@@ -54,7 +54,7 @@ beforeAll(async () => {
     sdk = await import('{package}');
   } catch {
     throw new Error(
-      '{package} not installed. Run: pnpm add {package} --save-dev',
+      '{package} not installed. Run: npm add {package} --save-dev',
     );
   }
 });
@@ -181,8 +181,8 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - name: ⚙️ Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: ⚙️ Setup npm
+        uses: npm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -190,10 +190,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
+          cache: "npm"
 
       - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: 🔍 Get version information
         id: versions
@@ -205,7 +205,7 @@ jobs:
       - name: 🔄 Install latest SDK version
         run: |
           cd ${{ env.PLUGIN_PATH }}
-          pnpm add ${{ env.SDK_PACKAGE }}@latest --save-dev --ignore-workspace-root-check
+          npm add ${{ env.SDK_PACKAGE }}@latest --save-dev --ignore-workspace-root-check
 
       - name: 🧪 Run Interface Compatibility Tests
         id: test
@@ -215,7 +215,7 @@ jobs:
           mkdir -p .compatibility-results
 
           set +e
-          pnpm vitest run \
+          npm vitest run \
             --reporter=verbose \
             --reporter=json \
             --outputFile=.compatibility-results/test-results.json \
@@ -273,7 +273,7 @@ Add the SDK package at the **workspace root** (proper monorepo pattern):
 
 ```bash
 # From workspace root - use -w flag
-pnpm add {package} --save-dev -w
+npm add {package} --save-dev -w
 ```
 
 This ensures:
@@ -302,11 +302,11 @@ Ensure these labels exist in the repository:
 ```bash
 # Run compatibility tests for a specific plugin
 cd packages/eslint-plugin-pg
-pnpm vitest run src/__compatibility__/**/*.spec.ts --reporter=verbose
+npm vitest run src/__compatibility__/**/*.spec.ts --reporter=verbose
 
 # Install latest SDK and test
-pnpm add pg@latest --save-dev
-pnpm vitest run src/__compatibility__/**/*.spec.ts
+npm add pg@latest --save-dev
+npm vitest run src/__compatibility__/**/*.spec.ts
 ```
 
 ---

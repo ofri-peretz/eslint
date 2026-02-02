@@ -10,10 +10,10 @@ Get started with the CLI in 30 seconds:
 
 ```bash
 # 1. Install (in monorepo)
-pnpm install
+npm install
 
 # 2. Build
-pnpm nx build cli
+npx nx build cli
 
 # 3. Use the CLI
 node dist/packages/cli/bin/forge.js --help
@@ -32,10 +32,10 @@ forge --help
 
 ```bash
 # Install in the monorepo
-pnpm install
+npm install
 
 # Build the CLI
-pnpm nx build cli
+npx nx build cli
 
 # Link globally (optional)
 npm link
@@ -169,7 +169,7 @@ The CLI is designed to work seamlessly with GitHub Actions:
 
 ```bash
 # Build the CLI
-pnpm nx build cli
+npx nx build cli
 
 # Run locally
 node dist/packages/cli/bin/forge.js --help

@@ -8,7 +8,7 @@ cwe: CWE-829
 autofix: false
 ---
 
-> **Keywords:** lock-file, package-lock, yarn.lock, pnpm-lock, supply chain, security, ESLint rule, CWE-829, deterministic builds
+> **Keywords:** lock-file, package-lock, yarn.lock, npm-lock, supply chain, security, ESLint rule, CWE-829, deterministic builds
 > **CWE:** [CWE-829: Inclusion of Functionality from Untrusted Control Sphere](https://cwe.mitre.org/data/definitions/829.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M2: Inadequate Supply Chain Security](https://owasp.org/www-project-mobile-top-10/)
 
@@ -95,7 +95,7 @@ This rule supports the following configuration in your ESLint config:
 {
   "rules": {
     "node-security/lock-file": ["error", {
-      "packageManager": "npm" // "npm", "yarn", or "pnpm"
+      "packageManager": "npm" // "npm", "yarn", or "npm"
     }]
   }
 }
@@ -109,7 +109,7 @@ This rule supports the following configuration in your ESLint config:
 // Project root without any of the following:
 // - package-lock.json (npm)
 // - yarn.lock (yarn)
-// - pnpm-lock.yaml (pnpm)
+// - npm-lock.yaml (npm)
 ```
 
 ### ✅ Correct
@@ -133,7 +133,7 @@ The following patterns are **not detected** due to static analysis limitations:
 
 **Why**: If you use a non-standard or custom package manager that uses a different filename, the rule will not recognize it.
 
-**Mitigation**: Standardize on `npm`, `yarn`, or `pnpm`.
+**Mitigation**: Standardize on `npm`, `yarn`, or `npm`.
 
 ## References
 

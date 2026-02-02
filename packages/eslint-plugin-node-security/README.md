@@ -14,7 +14,7 @@ Part of the [Interlace ESLint Ecosystem](https://github.com/ofri-peretz/eslint).
 ## Installation
 
 ```bash
-pnpm add -D eslint-plugin-node-security
+npm add -D eslint-plugin-node-security
 ```
 
 ## Usage (Flat Config)

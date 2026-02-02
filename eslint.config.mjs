@@ -14,7 +14,12 @@ export default [
     ],
   },
   {
-    files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
+    linterOptions: {
+      reportUnusedDisableDirectives: 'error',
+    },
+  },
+  {
+    files: ['**/*.ts', '**/*.tsx'],
     rules: {
       '@nx/enforce-module-boundaries': [
         'error',
@@ -29,6 +34,22 @@ export default [
           ],
         },
       ],
+      'unicorn/prefer-node-protocol': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+      'no-unused-vars': 'off',
+    },
+  },
+  {
+    files: ['**/*.js', '**/*.jsx', '**/*.mjs', '**/*.cjs'],
+    rules: {
+      'no-unused-vars': 'error',
       'unicorn/prefer-node-protocol': 'error',
     },
   },

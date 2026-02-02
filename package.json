@@ -31,7 +31,6 @@
     "publish:plugin": "nx run eslint-plugin:publish",
     "publish:devkit": "nx run eslint-devkit:publish",
     "publish:secure-coding": "nx run eslint-plugin-secure-coding:publish",
-    "publish:cli": "nx run cli:publish",
     "publish:all": "npx nx run-many -t build --all && nx release publish",
     "ci:trigger": "gh workflow run ci.yml --ref local-playground-app && echo '✅ Workflow triggered!'",
     "ci:status": "tsx scripts/ci-status.ts",

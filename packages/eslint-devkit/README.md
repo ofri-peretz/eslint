@@ -27,7 +27,7 @@ Create your first LLM-optimized rule in 2 minutes:
 ```bash
 npm install --save-dev @interlace/eslint-devkit @typescript-eslint/parser typescript
 # or
-pnpm add -D @interlace/eslint-devkit @typescript-eslint/parser typescript
+npm add -D @interlace/eslint-devkit @typescript-eslint/parser typescript
 # or
 yarn add -D @interlace/eslint-devkit @typescript-eslint/parser typescript
 ```

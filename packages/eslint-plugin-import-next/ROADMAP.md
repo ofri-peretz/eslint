@@ -329,7 +329,7 @@ packages/
     └── main.ts   ← Imports from @monorepo/shared
 ```
 
-**Proposed Enhancement**: Workspace-aware `no-unused-modules` that understands pnpm/npm/Yarn workspaces
+**Proposed Enhancement**: Workspace-aware `no-unused-modules` that understands npm/npm/Yarn workspaces
 
 ---
 

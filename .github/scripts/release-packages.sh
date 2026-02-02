@@ -14,6 +14,7 @@
 #   FORCE_VERSION     - Force specific version (optional)
 #   GENERATE_CHANGELOG - "true" or "false"
 #   RUN_CI            - "true" or "false"
+#   FIRST_TIME_ONLY   - "true" or "false"
 #
 # Outputs (written to $GITHUB_OUTPUT if set):
 #   released - Space-separated list of released packages
@@ -41,6 +42,8 @@ echo ""
 
 # Convert comma-separated to array
 IFS=',' read -ra PACKAGE_ARRAY <<< "$PACKAGES"
+
+FIRST_TIME_ONLY=${FIRST_TIME_ONLY:-"false"}
 
 for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
   echo ""
@@ -104,6 +107,23 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
   
   echo "🎯 Target project: $PACKAGE"
   echo "📛 NPM name: $NPM_NAME"
+
+  # ──────────────────────────────────────────────────────────────
+  # FIRST TIME ONLY CHECK
+  # ──────────────────────────────────────────────────────────────
+  if [ "$FIRST_TIME_ONLY" = "true" ]; then
+    echo "🔍 Checking if $NPM_NAME exists on npm (first-time-only mode)..."
+    if npm view "$NPM_NAME" version >/dev/null 2>&1; then
+      EXISTS_VER=$(npm view "$NPM_NAME" version)
+      echo "⏭️ SKIPPED: $PACKAGE"
+      echo "   └─ Reason: Package already exists on npm ($EXISTS_VER)"
+      echo "   └─ Mode: first-time-only is enabled"
+      SKIPPED_PACKAGES="$SKIPPED_PACKAGES $PACKAGE(exists:$EXISTS_VER)"
+      continue
+    else
+      echo "🆕 $PACKAGE does not exist on npm - proceeding with first release"
+    fi
+  fi
   
   # ──────────────────────────────────────────────────────────────
   # TAG RECONCILIATION - Deadlock Prevention

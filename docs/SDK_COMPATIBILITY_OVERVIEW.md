@@ -226,13 +226,13 @@ it('exports Query class', () => {
 
 ```bash
 # Run all compatibility tests from workspace root
-pnpm vitest run packages/*/src/__compatibility__/*.spec.ts
+npm vitest run packages/*/src/__compatibility__/*.spec.ts
 
 # Run specific plugin
-pnpm vitest run packages/eslint-plugin-pg/src/__compatibility__/*.spec.ts
+npm vitest run packages/eslint-plugin-pg/src/__compatibility__/*.spec.ts
 
 # With verbose output
-pnpm vitest run packages/eslint-plugin-pg/src/__compatibility__/*.spec.ts --reporter=verbose
+npm vitest run packages/eslint-plugin-pg/src/__compatibility__/*.spec.ts --reporter=verbose
 ```
 
 **Expected Output:**
@@ -336,7 +336,7 @@ Ensure these labels exist:
 ### Step 4: Install SDK
 
 ```bash
-pnpm add {sdk}@latest --save-dev -w
+npm add {sdk}@latest --save-dev -w
 ```
 
 ---
