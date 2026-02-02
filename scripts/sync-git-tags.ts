@@ -6,7 +6,7 @@
  * Useful when packages are published manually without going through nx release.
  * 
  * Usage:
- *   pnpm tsx scripts/sync-git-tags.ts [--dry-run] [--commit SHA]
+ *   npx tsx scripts/sync-git-tags.ts [--dry-run] [--commit SHA]
  * 
  * Options:
  *   --dry-run    Preview what tags would be created without creating them
@@ -158,7 +158,7 @@ function main() {
     console.log('\n💡 Next steps:');
     console.log('  1. Review tags: git tag --list | grep -E "@(1\\.|2\\.)"');
     console.log('  2. Push tags: git push --tags');
-    console.log('  3. Verify: pnpm nx release version --dry-run');
+    console.log('  3. Verify: npx nx release version --dry-run');
   } else if (dryRun) {
     console.log('\n💡 Run without --dry-run to create tags');
   }

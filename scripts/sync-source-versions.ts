@@ -6,8 +6,8 @@
  * Run this after bumping package.json versions to keep source code in sync.
  *
  * Usage:
- *   pnpm tsx scripts/sync-source-versions.ts
- *   pnpm tsx scripts/sync-source-versions.ts --dry-run
+ *   npx tsx scripts/sync-source-versions.ts
+ *   npx tsx scripts/sync-source-versions.ts --dry-run
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';

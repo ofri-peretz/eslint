@@ -13,7 +13,7 @@
  * - Uses block delimiters to preserve user content
  * - Repair mode scaffolds missing sections
  *
- * Usage: pnpm tsx scripts/sync-readme-rules.ts [--dry-run] [--plugin <name>]
+ * Usage: npx tsx scripts/sync-readme-rules.ts [--dry-run] [--plugin <name>]
  */
 
 import * as fs from 'fs';

@@ -148,8 +148,8 @@ export interface ${plugin.sdkName.replace(/[^a-zA-Z]/g, '')}SecurityRuleOptions 
 # Using npm
 npm install --save-dev ${plugin.fullName}
 
-# Using pnpm
-pnpm add -D ${plugin.fullName}
+# Using npm
+npm install -D ${plugin.fullName}
 
 # Using yarn
 yarn add -D ${plugin.fullName}

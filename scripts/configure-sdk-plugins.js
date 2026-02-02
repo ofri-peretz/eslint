@@ -163,7 +163,7 @@ PLUGINS_CONFIG.forEach(plugin => {
         executor: 'nx:run-commands',
         dependsOn: ['^nx-release-publish'],
         options: {
-          command: 'pnpm publish dist/{projectRoot} --access public --no-git-checks',
+          command: 'npx nx release publish dist/{projectRoot} --access public --no-git-checks',
           cwd: '{workspaceRoot}'
         }
       },
@@ -171,7 +171,7 @@ PLUGINS_CONFIG.forEach(plugin => {
         executor: 'nx:run-commands',
         dependsOn: ['build'],
         options: {
-          command: `npm publish dist/packages/${plugin.fullName} --access public`,
+          command: `npx nx release publish dist/packages/${plugin.fullName} --access public`,
           cwd: '{workspaceRoot}'
         }
       }

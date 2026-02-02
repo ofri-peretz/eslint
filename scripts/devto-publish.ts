@@ -6,9 +6,9 @@
  * Uses the V1 API with proper authentication.
  *
  * Usage:
- *   pnpm devto:publish              # Dry run (default)
- *   pnpm devto:publish --live       # Actually publish to dev.to
- *   pnpm devto:publish --article pg/01-sql-injection.md  # Single article
+ *   npm devto:publish              # Dry run (default)
+ *   npm devto:publish --live       # Actually publish to dev.to
+ *   npm devto:publish --article pg/01-sql-injection.md  # Single article
  *
  * Environment:
  *   DEV_TO_API_KEY - Your dev.to API key (from https://dev.to/settings/extensions)
@@ -301,7 +301,7 @@ async function main() {
     console.log('🔍 DRY RUN COMPLETE - No articles were published');
     console.log('');
     console.log('To publish for real, run:');
-    console.log('  pnpm devto:publish --live');
+    console.log('  npm devto:publish --live');
     console.log('');
     process.exit(0);
   }

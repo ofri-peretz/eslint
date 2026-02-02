@@ -69,8 +69,31 @@ async function main() {
     const article = await fetchArticle(path);
     
     if (article) {
+      // Keep only needed fields to keep cache small
+      const minimalistArticle = {
+        id: article.id,
+        title: article.title,
+        description: article.description,
+        readable_publish_date: article.readable_publish_date,
+        url: article.url,
+        cover_image: article.cover_image,
+        social_image: article.social_image,
+        tag_list: article.tag_list,
+        reading_time_minutes: article.reading_time_minutes,
+        public_reactions_count: article.public_reactions_count,
+        comments_count: article.comments_count,
+        user: {
+          name: article.user.name,
+          username: article.user.username,
+          profile_image_90: article.user.profile_image_90,
+        },
+        organization: article.organization ? {
+          name: article.organization.name,
+        } : null,
+      };
+
       cache.articles[path] = {
-        ...article,
+        ...minimalistArticle,
         _cachedAt: new Date().toISOString()
       };
       console.log(`✓ "${article.title.slice(0, 40)}..."`);

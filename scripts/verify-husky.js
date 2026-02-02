@@ -25,7 +25,7 @@ let hasErrors = false;
 // Check if .husky directory exists
 if (!fs.existsSync(HUSKY_DIR)) {
   console.error(`${RED}✗${RESET} .husky directory not found`);
-  console.log(`${YELLOW}→${RESET} Run: pnpm install`);
+  console.log(`${YELLOW}→${RESET} Run: npm install`);
   hasErrors = true;
 } else {
   console.log(`${GREEN}✓${RESET} .husky directory exists`);
@@ -105,7 +105,7 @@ console.log('\n' + '='.repeat(50));
 if (hasErrors) {
   console.log(`\n${RED}✗ Husky setup has issues${RESET}`);
   console.log(`\n${YELLOW}Fix by running:${RESET}`);
-  console.log(`  pnpm install`);
+  console.log(`  npm install`);
   console.log(`  git config commit.template .gitmessage`);
   console.log(`  chmod +x .husky/*`);
   process.exit(1);

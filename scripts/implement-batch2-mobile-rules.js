@@ -454,7 +454,7 @@ export const requirePackageLock = createRule<[], MessageIds>({
         for (let i = 0; i < 5; i++) {
           if (fs.existsSync(path.join(dir, 'package-lock.json')) ||
               fs.existsSync(path.join(dir, 'yarn.lock')) ||
-              fs.existsSync(path.join(dir, 'pnpm-lock.yaml'))) {
+              fs.existsSync(path.join(dir, 'npm-lock.yaml'))) {
             found = true;
             break;
           }

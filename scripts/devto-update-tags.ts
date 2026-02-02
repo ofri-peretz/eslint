@@ -7,8 +7,8 @@
  * 2. Plugin-specific articles have their plugin tag (jwt, crypto, etc.)
  *
  * Usage:
- *   pnpm devto:update-tags              # Dry run (default)
- *   pnpm devto:update-tags --live       # Actually update tags
+ *   npm devto:update-tags              # Dry run (default)
+ *   npm devto:update-tags --live       # Actually update tags
  *
  * Environment:
  *   DEV_TO_API_KEY - Your dev.to API key (from https://dev.to/settings/extensions)
@@ -393,7 +393,7 @@ async function main() {
     console.log('');
     console.log('To apply these changes, run:');
     console.log('  export DEV_TO_API_KEY="your-key"');
-    console.log('  pnpm devto:update-tags --live');
+    console.log('  npm devto:update-tags --live');
     console.log('');
     process.exit(0);
   }

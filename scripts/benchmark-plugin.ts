@@ -2,7 +2,7 @@
 /**
  * Performance Benchmarks for eslint-plugin-llm-optimized
  *
- * Run with: pnpm tsx scripts/benchmark-plugin.ts
+ * Run with: npx tsx scripts/benchmark-plugin.ts
  *
  * This script measures performance of core plugin utilities:
  * - LRU Cache operations

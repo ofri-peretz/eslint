@@ -5,7 +5,7 @@
  * Checks all markdown files for broken links (relative, absolute, GitHub, anchors)
  * 
  * Usage:
- *   pnpm tsx scripts/check-markdown-links.ts
+ *   npx tsx scripts/check-markdown-links.ts
  */
 
 import { readFileSync, existsSync, statSync } from 'node:fs';

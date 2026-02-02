@@ -6,7 +6,7 @@
  * This prevents version drift between built packages and their metadata.
  *
  * Usage:
- *   pnpm tsx scripts/check-source-version-sync.ts
+ *   npx tsx scripts/check-source-version-sync.ts
  *
  * Checked patterns:
  *   - plugin.meta.version in index.ts files
@@ -147,7 +147,7 @@ function printResults(): void {
 
   console.log('💡 To fix:');
   console.log('   Update the version in source files to match package.json');
-  console.log('   Or run: pnpm exec tsx scripts/sync-source-versions.ts');
+  console.log('   Or run: npm exec tsx scripts/sync-source-versions.ts');
   console.log('');
 }
 

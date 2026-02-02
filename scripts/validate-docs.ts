@@ -13,7 +13,7 @@
  * 4. Auto-generated blocks are properly delimited
  * 5. Rules table is in sync with source code (if delimiters exist)
  *
- * Usage: pnpm tsx scripts/validate-docs.ts [--plugin <name>] [--fix]
+ * Usage: npx tsx scripts/validate-docs.ts [--plugin <name>] [--fix]
  *
  * Exit codes:
  *   0 = All checks pass

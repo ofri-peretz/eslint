@@ -88,7 +88,7 @@ echo "   📂 Directory: $DIST_PATH"
 echo ""
 
 cd "$DIST_PATH"
-npm publish --access public
+npx nx release publish --access public
 
 echo ""
 echo "═══════════════════════════════════════════════════════════════"
