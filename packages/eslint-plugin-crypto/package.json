@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-crypto",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "Security-focused ESLint plugin with 24 AI-parseable rules for cryptographic best practices. Detects weak algorithms, insecure key handling, CVE-specific vulnerabilities, and deprecated crypto patterns.",
   "type": "commonjs",
   "main": "./src/index.js",
