@@ -1,0 +1,92 @@
+{
+  "plugin": "nestjs-security",
+  "package": "eslint-plugin-nestjs-security",
+  "rules": [
+    {
+      "name": "Approach",
+      "cwe": "",
+      "owasp": "",
+      "cvss": "",
+      "description": "ESLint Can See?",
+      "recommended": false,
+      "warns": false,
+      "fixable": false,
+      "hasSuggestions": false,
+      "deprecated": false,
+      "category": "General",
+      "href": "/docs/nestjs-security/rules/Approach"
+    },
+    {
+      "name": "require-guards",
+      "cwe": "CWE-284",
+      "owasp": "",
+      "cvss": "9.8",
+      "description": "[require-guards](#require-guards)",
+      "recommended": true,
+      "warns": false,
+      "fixable": false,
+      "hasSuggestions": true,
+      "deprecated": false,
+      "category": "General",
+      "href": "/docs/nestjs-security/rules/require-guards"
+    },
+    {
+      "name": "no-exposed-private-fields",
+      "cwe": "CWE-200",
+      "owasp": "",
+      "cvss": "7.5",
+      "description": "[no-exposed-private-fields](#no-exposed-private-fields)",
+      "recommended": true,
+      "warns": true,
+      "fixable": false,
+      "hasSuggestions": true,
+      "deprecated": false,
+      "category": "General",
+      "href": "/docs/nestjs-security/rules/no-exposed-private-fields"
+    },
+    {
+      "name": "no-missing-validation-pipe",
+      "cwe": "CWE-20",
+      "owasp": "",
+      "cvss": "8.6",
+      "description": "[no-missing-validation-pipe](#no-missing-validation-pipe)",
+      "recommended": true,
+      "warns": true,
+      "fixable": false,
+      "hasSuggestions": true,
+      "deprecated": false,
+      "category": "General",
+      "href": "/docs/nestjs-security/rules/no-missing-validation-pipe"
+    },
+    {
+      "name": "require-class-validator",
+      "cwe": "CWE-20",
+      "owasp": "",
+      "cvss": "7.5",
+      "description": "[require-class-validator](#require-class-validator)",
+      "recommended": true,
+      "warns": true,
+      "fixable": false,
+      "hasSuggestions": true,
+      "deprecated": false,
+      "category": "General",
+      "href": "/docs/nestjs-security/rules/require-class-validator"
+    },
+    {
+      "name": "require-throttler",
+      "cwe": "CWE-770",
+      "owasp": "",
+      "cvss": "7.5",
+      "description": "[require-throttler](#require-throttler)",
+      "recommended": true,
+      "warns": true,
+      "fixable": false,
+      "hasSuggestions": true,
+      "deprecated": false,
+      "category": "General",
+      "href": "/docs/nestjs-security/rules/require-throttler"
+    }
+  ],
+  "totalRules": 6,
+  "lastSynced": "2026-02-02T07:13:53.022Z"
+}
