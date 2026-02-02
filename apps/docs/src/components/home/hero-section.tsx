@@ -5,7 +5,6 @@ import { ArrowRight, ChevronRight } from 'lucide-react';
 import { ShimmerButton } from '@/components/ui/shimmer-button';
 import { AnimatedGradientText } from '@/components/ui/animated-gradient-text';
 import { StarsBackground, ShootingStars, Meteors } from '@/components/ui/stars-background';
-import { cn } from '@/lib/utils';
 
 /**
  * Hero Section Component (Client-side)

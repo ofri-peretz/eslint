@@ -10,9 +10,9 @@
  * CRITICAL: These tests lock the animation behavior, collision mechanics, and theme integration.
  */
 
-import { describe, it, expect } from 'vitest';
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { readFileSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 // =========================================
 // ACETERNITY UI SPECIFICATION
@@ -46,14 +46,14 @@ const ANIMATION_DEFAULTS = {
 };
 
 /**
- * Explosion particle count
+ * Explosion particle count (reduced from 20 for performance)
  */
-const EXPLOSION_PARTICLE_COUNT = 20;
+const EXPLOSION_PARTICLE_COUNT = 10;
 
 /**
- * Collision detection interval in milliseconds
+ * Collision detection interval in milliseconds (increased from 50ms for 75% less CPU usage)
  */
-const COLLISION_CHECK_INTERVAL_MS = 50;
+const COLLISION_CHECK_INTERVAL_MS = 200;
 
 /**
  * Explosion animation duration in milliseconds
@@ -130,12 +130,12 @@ describe('BackgroundBeamsWithCollision: Aceternity UI Specification Compliance',
   });
 
   describe('Explosion Configuration', () => {
-    it('explosion generates 20 particles', () => {
-      expect(EXPLOSION_PARTICLE_COUNT).toBe(20);
+    it('explosion generates 10 particles (optimized from 20)', () => {
+      expect(EXPLOSION_PARTICLE_COUNT).toBe(10);
     });
 
-    it('collision is checked every 50ms', () => {
-      expect(COLLISION_CHECK_INTERVAL_MS).toBe(50);
+    it('collision is checked every 200ms (optimized from 50ms for 75% less CPU)', () => {
+      expect(COLLISION_CHECK_INTERVAL_MS).toBe(200);
     });
 
     it('explosion animation lasts 2000ms', () => {
@@ -952,8 +952,3 @@ describe('BackgroundBeamsWithCollision: ArticlesClient Integration', () => {
     });
   });
 });
-
-// Helper function to be used in beforeAll
-function beforeAll(fn: () => void) {
-  fn();
-}
