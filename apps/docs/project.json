@@ -29,13 +29,6 @@
     "eslint-plugin-react-a11y"
   ],
   "targets": {
-    "validate-mermaid": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "tsx ../../scripts/validate-mermaid-syntax.ts",
-        "cwd": "{projectRoot}"
-      }
-    },
     "test": {
       "executor": "nx:run-commands",
       "options": {

@@ -29,6 +29,7 @@ export default [
           ],
         },
       ],
+      'unicorn/prefer-node-protocol': 'error',
     },
   },
   {
