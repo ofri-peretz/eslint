@@ -3,5 +3,5 @@
     "framework": "nextjs",
     "buildCommand": "pnpm --filter docs run build",
     "outputDirectory": "apps/docs/.next",
-    "installCommand": "pnpm install"
+    "installCommand": "corepack enable && pnpm install"
 }
