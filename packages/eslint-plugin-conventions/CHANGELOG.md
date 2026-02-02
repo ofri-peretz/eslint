@@ -1,3 +1,7 @@
+## 4.0.1 (2026-02-02)
+
+This was a version bump only for eslint-plugin-conventions to align it with other projects, there were no code changes.
+
 # 4.0.0 (2026-02-02)
 
 This was a version bump only for eslint-plugin-conventions to align it with other projects, there were no code changes.
