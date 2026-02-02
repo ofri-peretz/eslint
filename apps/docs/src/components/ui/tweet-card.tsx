@@ -178,7 +178,18 @@ export const TweetBody = ({ tweet }: { tweet: EnrichedTweet }) => (
 )
 
 export const TweetMedia = ({ tweet }: { tweet: EnrichedTweet }) => {
-  if (!tweet.video && !tweet.photos) return null
+  // Check for card image (URL preview)
+  // @ts-expect-error package doesn't have complete type definitions for card
+  const cardImageUrl = tweet?.card?.binding_values?.photo_image_full_size_large?.image_value?.url
+    // @ts-expect-error package doesn't have complete type definitions for card
+    || tweet?.card?.binding_values?.thumbnail_image_large?.image_value?.url
+    // @ts-expect-error package doesn't have complete type definitions for card
+    || tweet?.card?.binding_values?.thumbnail_image?.image_value?.url;
+
+  const hasMedia = tweet.video || tweet.photos || cardImageUrl;
+  
+  if (!hasMedia) return null;
+  
   return (
     <div className="flex flex-1 items-center justify-center">
       {tweet.video && (
@@ -211,19 +222,13 @@ export const TweetMedia = ({ tweet }: { tweet: EnrichedTweet }) => {
           <div className="shrink-0 snap-center sm:w-2" />
         </div>
       )}
-      {!tweet.video &&
-        !tweet.photos &&
-        // @ts-expect-error package doesn't have type definitions
-        tweet?.card?.binding_values?.thumbnail_image_large?.image_value.url && (
-          <img
-            src={
-              // @ts-expect-error package doesn't have type definitions
-              tweet.card.binding_values.thumbnail_image_large.image_value.url
-            }
-            className="h-64 rounded-xl border object-cover shadow-sm"
-            alt={tweet.text}
-          />
-        )}
+      {!tweet.video && !tweet.photos && cardImageUrl && (
+        <img
+          src={cardImageUrl}
+          className="w-full rounded-xl border object-cover shadow-sm"
+          alt={tweet.text}
+        />
+      )}
     </div>
   )
 }
