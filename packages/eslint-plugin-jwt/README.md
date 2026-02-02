@@ -16,7 +16,8 @@
 
 ## Description
 
-Secure your JWT implementation with precision. This plugin enforces critical security best practices, including algorithm whitelisting, expiration validation, and protection against common attacks like algorithm confusion and 'none' algorithm bypasses. Designed for modern stacks, it provides AI-optimized error messages that guide developers to the correct fix instantly, ensuring your authentication layer remains robust against evolving threats.
+This plugin provides Security validation for JSON Web Tokens (JWT) implementation (signing, verification).
+By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
 
 ## Philosophy
 
@@ -24,19 +25,18 @@ Secure your JWT implementation with precision. This plugin enforces critical sec
 
 ## Getting Started
 
-- To check out the [guide](https://eslint.interlace.tools/docs/jwt), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- 要查看中文 [指南](https://eslint.interlace.tools/docs/jwt), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- [가이드](https://eslint.interlace.tools/docs/jwt) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
-- [ガイド](https://eslint.interlace.tools/docs/jwt)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
-- Para ver la [guía](https://eslint.interlace.tools/docs/jwt), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/jwt)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-jwt), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/security/plugin-jwt), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- [가이드](https://eslint.interlace.tools/docs/security/plugin-jwt) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/security/plugin-jwt)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
+- Para ver la [guía](https://eslint.interlace.tools/docs/security/plugin-jwt), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/security/plugin-jwt)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
 
 ```bash
 npm install eslint-plugin-jwt --save-dev
 ```
 
 ## 💡 What You Get
-
 - **13 Security Rules** - Algorithm attacks, replay prevention, claim validation
 - **6 JWT Libraries** - jsonwebtoken, jose, express-jwt, @nestjs/jwt, jwks-rsa, jwt-decode
 - **2025 Research** - "Back to the Future" replay attack prevention (LightSEC 2025)
@@ -44,7 +44,6 @@ npm install eslint-plugin-jwt --save-dev
 - **CWE References** - Every rule maps to Common Weakness Enumeration
 
 ## ⚙️ Configuration Presets
-
 | Preset        | Description                                               |
 | :------------ | :-------------------------------------------------------- |
 | `recommended` | Recommended preset - balanced security                    |
@@ -53,7 +52,6 @@ npm install eslint-plugin-jwt --save-dev
 | `all`         | All rules preset                                          |
 
 ## 📚 Supported Libraries
-
 | Library        | npm                                                                                                                   | Downloads                                                                                                                    | Detection                       |
 | :------------- | :-------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------- | :------------------------------ |
 | `jsonwebtoken` | [![npm](https://img.shields.io/npm/v/jsonwebtoken.svg?style=flat-square)](https://www.npmjs.com/package/jsonwebtoken) | [![downloads](https://img.shields.io/npm/dt/jsonwebtoken.svg?style=flat-square)](https://www.npmjs.com/package/jsonwebtoken) | Signing, Verification, Decoding |
@@ -61,7 +59,6 @@ npm install eslint-plugin-jwt --save-dev
 | `jwt-decode`   | [![npm](https://img.shields.io/npm/v/jwt-decode.svg?style=flat-square)](https://www.npmjs.com/package/jwt-decode)     | [![downloads](https://img.shields.io/npm/dt/jwt-decode.svg?style=flat-square)](https://www.npmjs.com/package/jwt-decode)     | Unsafe Decoding                 |
 
 ## 🤖 AI-Optimized Messages
-
 Every rule uses `formatLLMMessage` for structured output:
 
 ```
@@ -78,52 +75,52 @@ By structuring errors with specific CWE codes, OWASP categories, and direct fix 
 
 **Legend**
 
-| Icon | Description                                                        |
-| :--: | :----------------------------------------------------------------- |
-|  💼  | **Recommended**: Included in the recommended preset.               |
-|  ⚠️  | **Warns**: Set towarn in recommended preset.                       |
-|  🔧  | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
-|  💡  | **Suggestions**: Providing code suggestions in IDE.                |
-|  🚫  | **Deprecated**: This rule is deprecated.                           |
+| Icon | Description |
+| :---: | :--- |
+| 💼 | **Recommended**: Included in the recommended preset. |
+| ⚠️ | **Warns**: Set towarn in recommended preset. |
+| 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
+| 💡 | **Suggestions**: Providing code suggestions in IDE. |
+| 🚫 | **Deprecated**: This rule is deprecated. |
 
-| Rule                                                                                                     |   CWE   |  OWASP   | CVSS | Description                                                              | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
-| :------------------------------------------------------------------------------------------------------- | :-----: | :------: | :--: | :----------------------------------------------------------------------- | :-: | :-: | :-: | :-: | :-: |
-| [no-algorithm-none](https://eslint.interlace.tools/docs/jwt/rules/no-algorithm-none)                     | CWE-347 | A02:2025 | 9.8  | [no-algorithm-none](docs/rules/no-algorithm-none.md)                     | 💼  |     |     | 💡  |     |
-| [no-algorithm-confusion](https://eslint.interlace.tools/docs/jwt/rules/no-algorithm-confusion)           | CWE-347 | A02:2025 | 9.8  | [no-algorithm-confusion](docs/rules/no-algorithm-confusion.md)           | 💼  |     |     | 💡  |     |
-| [require-algorithm-whitelist](https://eslint.interlace.tools/docs/jwt/rules/require-algorithm-whitelist) | CWE-757 | A02:2025 | 7.5  | [require-algorithm-whitelist](docs/rules/require-algorithm-whitelist.md) | 💼  | ⚠️  |     | 💡  |     |
-| [no-decode-without-verify](https://eslint.interlace.tools/docs/jwt/rules/no-decode-without-verify)       | CWE-345 | A08:2025 | 7.5  | [no-decode-without-verify](docs/rules/no-decode-without-verify.md)       | 💼  | ⚠️  |     | 💡  |     |
-| [no-weak-secret](https://eslint.interlace.tools/docs/jwt/rules/no-weak-secret)                           | CWE-326 | A02:2025 | 7.5  | [no-weak-secret](docs/rules/no-weak-secret.md)                           | 💼  |     |     | 💡  |     |
-| [no-hardcoded-secret](https://eslint.interlace.tools/docs/jwt/rules/no-hardcoded-secret)                 | CWE-798 | A05:2025 | 7.9  | [no-hardcoded-secret](docs/rules/no-hardcoded-secret.md)                 | 💼  |     |     | 💡  |     |
-| [no-timestamp-manipulation](https://eslint.interlace.tools/docs/jwt/rules/no-timestamp-manipulation)     | CWE-294 | A05:2025 | 7.5  | [no-timestamp-manipulation](docs/rules/no-timestamp-manipulation.md)     | 💼  |     |     | 💡  |     |
-| [require-expiration](https://eslint.interlace.tools/docs/jwt/rules/require-expiration)                   | CWE-613 | A04:2025 | 5.3  | [require-expiration](docs/rules/require-expiration.md)                   | 💼  | ⚠️  |     | 💡  |     |
-| [require-issued-at](https://eslint.interlace.tools/docs/jwt/rules/require-issued-at)                     | CWE-294 | A04:2025 | 5.3  | [require-issued-at](docs/rules/require-issued-at.md)                     |     |     |     | 💡  |     |
-| [require-issuer-validation](https://eslint.interlace.tools/docs/jwt/rules/require-issuer-validation)     | CWE-287 | A07:2025 | 5.3  | [require-issuer-validation](docs/rules/require-issuer-validation.md)     |     |     |     | 💡  |     |
-| [require-audience-validation](https://eslint.interlace.tools/docs/jwt/rules/require-audience-validation) | CWE-287 | A07:2025 | 5.3  | [require-audience-validation](docs/rules/require-audience-validation.md) |     |     |     | 💡  |     |
-| [require-max-age](https://eslint.interlace.tools/docs/jwt/rules/require-max-age)                         | CWE-294 | A04:2025 | 5.3  | [require-max-age](docs/rules/require-max-age.md)                         |     |     |     | 💡  |     |
-| [no-sensitive-payload](https://eslint.interlace.tools/docs/jwt/rules/no-sensitive-payload)               | CWE-359 | A01:2025 | 5.3  | [no-sensitive-payload](docs/rules/no-sensitive-payload.md)               | 💼  | ⚠️  |     | 💡  |     |
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-algorithm-confusion](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-algorithm-confusion) | CWE-347 | A02:2025 | 9.8 | ESLint rule documentation for no-algorithm-confusion | 💼 |  |  | 💡 |  |
+| [no-algorithm-none](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-algorithm-none) | CWE-347 | A02:2025 | 9.8 | ESLint rule documentation for no-algorithm-none | 💼 |  |  | 💡 |  |
+| [no-decode-without-verify](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-decode-without-verify) | CWE-345 | A08:2025 | 7.5 | ESLint rule documentation for no-decode-without-verify | 💼 | ⚠️ |  | 💡 |  |
+| [no-hardcoded-secret](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-hardcoded-secret) | CWE-798 | A05:2025 | 7.9 | ESLint rule documentation for no-hardcoded-secret | 💼 |  |  | 💡 |  |
+| [no-sensitive-payload](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-sensitive-payload) | CWE-359 | A01:2025 | 5.3 | ESLint rule documentation for no-sensitive-payload | 💼 | ⚠️ |  | 💡 |  |
+| [no-timestamp-manipulation](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-timestamp-manipulation) | CWE-294 | A05:2025 | 7.5 | ESLint rule documentation for no-timestamp-manipulation | 💼 |  |  | 💡 |  |
+| [no-weak-secret](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-weak-secret) | CWE-326 | A02:2025 | 7.5 | ESLint rule documentation for no-weak-secret | 💼 |  |  | 💡 |  |
+| [require-algorithm-whitelist](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-algorithm-whitelist) | CWE-757 | A02:2025 | 7.5 | ESLint rule documentation for require-algorithm-whitelist | 💼 | ⚠️ |  | 💡 |  |
+| [require-audience-validation](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-audience-validation) | CWE-287 | A07:2025 | 5.3 | ESLint rule documentation for require-audience-validation |  |  |  | 💡 |  |
+| [require-expiration](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-expiration) | CWE-613 | A04:2025 | 5.3 | ESLint rule documentation for require-expiration | 💼 | ⚠️ |  | 💡 |  |
+| [require-issued-at](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-issued-at) | CWE-294 | A04:2025 | 5.3 | ESLint rule documentation for require-issued-at |  |  |  | 💡 |  |
+| [require-issuer-validation](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-issuer-validation) | CWE-287 | A07:2025 | 5.3 | ESLint rule documentation for require-issuer-validation |  |  |  | 💡 |  |
+| [require-max-age](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-max-age) | CWE-294 | A04:2025 | 5.3 | ESLint rule documentation for require-max-age |  |  |  | 💡 |  |
 
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin                                                                                               |                                                                              Downloads                                                                               | Description                                 |
-| :--------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------ |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)           |      [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding)      | General security rules & OWASP guidelines.  |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                                 |                 [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg)                 | PostgreSQL security & best practices.       |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                         |             [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto)             | NodeJS Cryptography security rules.         |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               |                [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt)                | JWT security & best practices.              |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)     |   [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security)   | Browser-specific security & XSS prevention. |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)     |   [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security)   | Express.js security hardening rules.        |
-| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)       |    [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security)    | AWS Lambda security best practices.         |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)       |    [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security)    | NestJS security rules & patterns.           |
-| [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security)     |    [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security)    | MongoDB security best practices.           |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening.           |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)               |        [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next)        | Next-gen import sorting & architecture.     |
+| Plugin | Downloads | Description |
+| :--- | :---: | :--- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | AWS Lambda security best practices. |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | NestJS security rules & patterns. |
+| [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
 
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/docs/jwt"><img src="https://eslint.interlace.tools/images/og-jwt.png" alt="ESLint Interlace Plugin" width="300" /></a>
+  <a href="https://eslint.interlace.tools/docs/security/plugin-jwt"><img src="https://eslint.interlace.tools/images/og-jwt.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 </p>

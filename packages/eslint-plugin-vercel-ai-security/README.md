@@ -16,7 +16,8 @@
 
 ## Description
 
-This plugin enforces security best practices for applications using the Vercel AI SDK, specifically targeting prompt injection and data handling vulnerabilities. It ensures that your AI integrations remain secure by validating inputs, outputs, and preventing common pitfalls associated with Large Language Models. By adopting these rules, you can confidently build AI-powered features while maintaining a robust security posture.
+This plugin provides Security rules for Vercel AI SDK usage (prompt injection, data handling).
+By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
 
 ## Philosophy
 
@@ -24,19 +25,18 @@ This plugin enforces security best practices for applications using the Vercel A
 
 ## Getting Started
 
-- To check out the [guide](https://eslint.interlace.tools/docs/vercel-ai-security), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- 要查看中文 [指南](https://eslint.interlace.tools/docs/vercel-ai-security), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- [가이드](https://eslint.interlace.tools/docs/vercel-ai-security) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
-- [ガイド](https://eslint.interlace.tools/docs/vercel-ai-security)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
-- Para ver la [guía](https://eslint.interlace.tools/docs/vercel-ai-security), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/vercel-ai-security)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- [가이드](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
+- Para ver la [guía](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
 
 ```bash
 npm install eslint-plugin-vercel-ai-security --save-dev
 ```
 
 ## 🔧 Supported AI SDK Functions
-
 | Function               | Full Coverage                  |
 | ---------------------- | ------------------------------ |
 | `generateText`         | ✅ All 19 rules                |
@@ -49,7 +49,6 @@ npm install eslint-plugin-vercel-ai-security --save-dev
 ---
 
 ## ⚙️ Configuration Presets
-
 | Preset        | Description                              |
 | :------------ | :--------------------------------------- |
 | `recommended` | Balanced security (7 errors, 7 warnings) |
@@ -59,7 +58,6 @@ npm install eslint-plugin-vercel-ai-security --save-dev
 ---
 
 ## 📊 Test Coverage
-
 | Metric        | Coverage |
 | ------------- | -------- |
 | **Rules**     | 19       |
@@ -70,7 +68,6 @@ npm install eslint-plugin-vercel-ai-security --save-dev
 ---
 
 ## 🤖 AI-Agent Optimized Messages
-
 All rule messages follow a structured format optimized for AI coding assistants:
 
 ```
@@ -80,44 +77,7 @@ All rule messages follow a structured format optimized for AI coding assistants:
 
 By providing this structured context (CWE, OWASP, Fix), we enable AI tools to **reason** about the security flaw rather than hallucinating. This allows Copilot/Cursor to suggest the _exact_ correct fix immediately.
 
-## Rules
-
-**Legend**
-
-| Icon | Description                                                        |
-| :--: | :----------------------------------------------------------------- |
-|  💼  | **Recommended**: Included in the recommended preset.               |
-|  ⚠️  | **Warns**: Set towarn in recommended preset.                       |
-|  🔧  | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
-|  💡  | **Suggestions**: Providing code suggestions in IDE.                |
-|  🚫  | **Deprecated**: This rule is deprecated.                           |
-
-| Rule                                                                                                                          |   CWE   | OWASP | CVSS | Description                                                                      | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
-| :---------------------------------------------------------------------------------------------------------------------------- | :-----: | :---: | :--: | :------------------------------------------------------------------------------- | :-: | :-: | :-: | :-: | :-: |
-| [require-validated-prompt](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-validated-prompt)             | CWE-74  |       | 9.0  | [require-validated-prompt](./docs/rules/require-validated-prompt.md)             | 💼  |     |     |     |     |
-| [no-sensitive-in-prompt](https://eslint.interlace.tools/docs/vercel-ai-security/rules/no-sensitive-in-prompt)                 | CWE-200 |       | 8.0  | [no-sensitive-in-prompt](./docs/rules/no-sensitive-in-prompt.md)                 | 💼  |     |     |     |     |
-| [no-training-data-exposure](https://eslint.interlace.tools/docs/vercel-ai-security/rules/no-training-data-exposure)           | CWE-359 |       | 7.0  | [no-training-data-exposure](./docs/rules/no-training-data-exposure.md)           | 💼  | ⚠️  |     |     |     |
-| [require-request-timeout](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-request-timeout)               | CWE-400 |       | 5.0  | [require-request-timeout](./docs/rules/require-request-timeout.md)               | 💼  | ⚠️  |     |     |     |
-| [no-unsafe-output-handling](https://eslint.interlace.tools/docs/vercel-ai-security/rules/no-unsafe-output-handling)           | CWE-94  |       | 9.8  | [no-unsafe-output-handling](./docs/rules/no-unsafe-output-handling.md)           | 💼  |     |     |     |     |
-| [require-tool-confirmation](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-tool-confirmation)           | CWE-862 |       | 7.0  | [require-tool-confirmation](./docs/rules/require-tool-confirmation.md)           | 💼  |     |     |     |     |
-| [no-system-prompt-leak](https://eslint.interlace.tools/docs/vercel-ai-security/rules/no-system-prompt-leak)                   | CWE-200 |       | 7.5  | [no-system-prompt-leak](./docs/rules/no-system-prompt-leak.md)                   | 💼  |     |     |     |     |
-| [require-embedding-validation](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-embedding-validation)     | CWE-20  |       | 5.5  | [require-embedding-validation](./docs/rules/require-embedding-validation.md)     |     |     |     | 💡  |     |
-| [require-output-validation](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-output-validation)           | CWE-707 |       | 5.0  | [require-output-validation](./docs/rules/require-output-validation.md)           |     |     |     | 💡  |     |
-| [require-max-tokens](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-max-tokens)                         | CWE-770 |       | 6.5  | [require-max-tokens](./docs/rules/require-max-tokens.md)                         | 💼  | ⚠️  |     |     |     |
-| [require-max-steps](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-max-steps)                           | CWE-834 |       | 6.5  | [require-max-steps](./docs/rules/require-max-steps.md)                           | 💼  | ⚠️  |     |     |     |
-| [require-abort-signal](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-abort-signal)                     | CWE-404 |       | 4.0  | [require-abort-signal](./docs/rules/require-abort-signal.md)                     |     |     |     | 💡  |     |
-| [no-dynamic-system-prompt](https://eslint.interlace.tools/docs/vercel-ai-security/rules/no-dynamic-system-prompt)             | CWE-74  |       | 8.0  | [no-dynamic-system-prompt](./docs/rules/no-dynamic-system-prompt.md)             | 💼  |     |     |     |     |
-| [require-tool-schema](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-tool-schema)                       | CWE-20  |       | 7.5  | [require-tool-schema](./docs/rules/require-tool-schema.md)                       | 💼  | ⚠️  |     |     |     |
-| [no-hardcoded-api-keys](https://eslint.interlace.tools/docs/vercel-ai-security/rules/no-hardcoded-api-keys)                   | CWE-798 |       | 8.5  | [no-hardcoded-api-keys](./docs/rules/no-hardcoded-api-keys.md)                   | 💼  |     |     |     |     |
-| [require-output-filtering](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-output-filtering)             | CWE-200 |       | 6.5  | [require-output-filtering](./docs/rules/require-output-filtering.md)             | 💼  | ⚠️  |     |     |     |
-| [require-rag-content-validation](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-rag-content-validation) | CWE-74  |       | 6.0  | [require-rag-content-validation](./docs/rules/require-rag-content-validation.md) | 💼  | ⚠️  |     |     |     |
-| [require-error-handling](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-error-handling)                 | CWE-755 |       | 5.0  | [require-error-handling](./docs/rules/require-error-handling.md)                 |     |     |     | 💡  |     |
-| [require-audit-logging](https://eslint.interlace.tools/docs/vercel-ai-security/rules/require-audit-logging)                   | CWE-778 |       | 4.0  | [require-audit-logging](./docs/rules/require-audit-logging.md)                   |     |     |     | 💡  |     |
-
----
-
 ## 📦 Compatibility
-
 | Package              | Version                                                                                                   |
 | -------------------- | --------------------------------------------------------------------------------------------------------- |
 | `ai` (Vercel AI SDK) | [![npm](https://img.shields.io/npm/v/ai.svg?style=flat-square)](https://www.npmjs.com/package/ai)         |
@@ -127,7 +87,6 @@ By providing this structured context (CWE, OWASP, Fix), we enable AI tools to **
 ---
 
 ## 🙋 FAQ
-
 ### What's the difference between this and generic AI security linters?
 
 Generic linters guess at patterns. This plugin knows the **exact** Vercel AI SDK API.
@@ -148,36 +107,66 @@ await generateText({ prompt: internalPrompt });
 TypeScript/JavaScript are memory-safe languages. Memory corruption vulnerabilities (buffer overflows, use-after-free, etc.) are not possible in these environments.
 
 ## 📚 Supported Libraries
-
 | Library              | npm                                                                                               | Downloads                                                                                                | Detection                      |
 | -------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------ |
 | `ai` (Vercel AI SDK) | [![npm](https://img.shields.io/npm/v/ai.svg?style=flat-square)](https://www.npmjs.com/package/ai) | [![downloads](https://img.shields.io/npm/dt/ai.svg?style=flat-square)](https://www.npmjs.com/package/ai) | Prompt Injection, Data Leakage |
+
+## Rules
+
+**Legend**
+
+| Icon | Description |
+| :---: | :--- |
+| 💼 | **Recommended**: Included in the recommended preset. |
+| ⚠️ | **Warns**: Set towarn in recommended preset. |
+| 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
+| 💡 | **Suggestions**: Providing code suggestions in IDE. |
+| 🚫 | **Deprecated**: This rule is deprecated. |
+
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-dynamic-system-prompt](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-dynamic-system-prompt) | CWE-74 |  | 8.0 | ESLint rule documentation for no-dynamic-system-prompt | 💼 |  |  |  |  |
+| [no-hardcoded-api-keys](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-hardcoded-api-keys) | CWE-798 |  | 8.5 | ESLint rule documentation for no-hardcoded-api-keys | 💼 |  |  |  |  |
+| [no-sensitive-in-prompt](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-sensitive-in-prompt) | CWE-200 |  | 8.0 | ESLint rule documentation for no-sensitive-in-prompt | 💼 |  |  |  |  |
+| [no-system-prompt-leak](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-system-prompt-leak) | CWE-200 |  | 7.5 | ESLint rule documentation for no-system-prompt-leak | 💼 |  |  |  |  |
+| [no-training-data-exposure](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-training-data-exposure) | CWE-359 |  | 7.0 | ESLint rule documentation for no-training-data-exposure | 💼 | ⚠️ |  |  |  |
+| [no-unsafe-output-handling](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-unsafe-output-handling) | CWE-94 |  | 9.8 | ESLint rule documentation for no-unsafe-output-handling | 💼 |  |  |  |  |
+| [require-abort-signal](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-abort-signal) | CWE-404 |  | 4.0 | ESLint rule documentation for require-abort-signal |  |  |  | 💡 |  |
+| [require-audit-logging](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-audit-logging) | CWE-778 |  | 4.0 | ESLint rule documentation for require-audit-logging |  |  |  | 💡 |  |
+| [require-embedding-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-embedding-validation) | CWE-20 |  | 5.5 | ESLint rule documentation for require-embedding-validation |  |  |  | 💡 |  |
+| [require-error-handling](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-error-handling) | CWE-755 |  | 5.0 | ESLint rule documentation for require-error-handling |  |  |  | 💡 |  |
+| [require-max-steps](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-steps) | CWE-834 |  | 6.5 | ESLint rule documentation for require-max-steps | 💼 | ⚠️ |  |  |  |
+| [require-max-tokens](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-tokens) | CWE-770 |  | 6.5 | ESLint rule documentation for require-max-tokens | 💼 | ⚠️ |  |  |  |
+| [require-output-filtering](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-output-filtering) | CWE-200 |  | 6.5 | ESLint rule documentation for require-output-filtering | 💼 | ⚠️ |  |  |  |
+| [require-output-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-output-validation) | CWE-707 |  | 5.0 | ESLint rule documentation for require-output-validation |  |  |  | 💡 |  |
+| [require-rag-content-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-rag-content-validation) | CWE-74 |  | 6.0 | ESLint rule documentation for require-rag-content-validation | 💼 | ⚠️ |  |  |  |
+| [require-request-timeout](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-request-timeout) | CWE-400 |  | 5.0 | ESLint rule documentation for require-request-timeout | 💼 | ⚠️ |  |  |  |
+| [require-tool-confirmation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-tool-confirmation) | CWE-862 |  | 7.0 | ESLint rule documentation for require-tool-confirmation | 💼 |  |  |  |  |
+| [require-tool-schema](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-tool-schema) | CWE-20 |  | 7.5 | ESLint rule documentation for require-tool-schema | 💼 | ⚠️ |  |  |  |
+| [require-validated-prompt](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-validated-prompt) | CWE-74 |  | 9.0 | ESLint rule documentation for require-validated-prompt | 💼 |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin                                                                                               |                                                                              Downloads                                                                               | Description                                 |
-| :--------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------ |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)           |      [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding)      | General security rules & OWASP guidelines.  |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                                 |                 [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg)                 | PostgreSQL security & best practices.       |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                         |             [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto)             | NodeJS Cryptography security rules.         |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               |                [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt)                | JWT security & best practices.              |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)     |   [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security)   | Browser-specific security & XSS prevention. |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security rules.               |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)     |   [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security)   | Express.js security hardening rules.        |
-| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)       |    [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security)    | AWS Lambda security best practices.         |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)       |    [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security)    | NestJS security rules & patterns.           |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)               |        [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next)        | Next-gen import sorting & architecture.     |
+| Plugin | Downloads | Description |
+| :--- | :---: | :--- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | AWS Lambda security best practices. |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | NestJS security rules & patterns. |
+| [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
 
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/docs/vercel-ai-security"><img src="https://eslint.interlace.tools/images/og-ai-security.png" alt="ESLint Interlace Plugin" width="300" /></a>
-</p>
-
-<p align="center">
-  <a href="https://eslint.interlace.tools/docs/vercel-ai-security"><img src="https://eslint.interlace.tools/images/og-vercel-ai-security.png" alt="ESLint Interlace Plugin" width="300" /></a>
+  <a href="https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security"><img src="https://eslint.interlace.tools/images/og-vercel-ai-security.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 </p>

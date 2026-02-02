@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  Error handling, null safety, and runtime reliability rules for robust applications.
+  Security-focused ESLint plugin.
 </p>
 
 <p align="center">
@@ -16,27 +16,27 @@
 
 ## Description
 
-This plugin enforces reliable code patterns by detecting unhandled promises, silent error swallowing, missing null checks, and network timeouts. It helps teams build applications that fail gracefully and recover predictably.
+This plugin provides Security-focused ESLint plugin.
+By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
 
 ## Philosophy
 
-**Interlace** fosters **strength through integration**. Reliability isn't optional — it's foundational. These rules catch common runtime failure patterns before they cause incidents in production.
+**Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
 ## Getting Started
 
-- To check out the [guide](https://eslint.interlace.tools/docs/reliability), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- 要查看中文 [指南](https://eslint.interlace.tools/docs/reliability), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- [가이드](https://eslint.interlace.tools/docs/reliability) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
-- [ガイド](https://eslint.interlace.tools/docs/reliability)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
-- Para ver la [guía](https://eslint.interlace.tools/docs/reliability), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/reliability)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-reliability), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/quality/plugin-reliability), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- [가이드](https://eslint.interlace.tools/docs/quality/plugin-reliability) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/quality/plugin-reliability)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
+- Para ver la [guía](https://eslint.interlace.tools/docs/quality/plugin-reliability), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/quality/plugin-reliability)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
 
 ```bash
 npm install eslint-plugin-reliability --save-dev
 ```
 
 ## ⚙️ Configuration Presets
-
 | Preset        | Description                                   |
 | :------------ | :-------------------------------------------- |
 | `recommended` | Balanced reliability checks for most projects |
@@ -44,7 +44,6 @@ npm install eslint-plugin-reliability --save-dev
 ---
 
 ## 🏢 Usage Example
-
 ```js
 // eslint.config.js
 import reliability from 'eslint-plugin-reliability';
@@ -54,54 +53,7 @@ export default [reliability.configs.recommended];
 
 ---
 
-## AI-Optimized Messages
-
-This plugin is optimized for ESLint's [Model Context Protocol (MCP)](https://eslint.org/docs/latest/use/mcp), enabling AI assistants like **Cursor**, **GitHub Copilot**, and **Claude** to:
-
-- Understand the exact issue via structured context
-- Apply the correct fix using guidance
-- Provide educational context to developers
-
-```json
-// .cursor/mcp.json
-{
-  "mcpServers": {
-    "eslint": {
-      "command": "npx",
-      "args": ["@eslint/mcp@latest"]
-    }
-  }
-}
-```
-
----
-
-## Rules
-
-### Error Handling
-
-| Rule                                                                 | Description                                   | 💼  | ⚠️  |
-| :------------------------------------------------------------------- | :-------------------------------------------- | :-: | :-: |
-| [no-unhandled-promise](./docs/rules/no-unhandled-promise.md)         | Detect unhandled promise rejections           |     |     |
-| [no-silent-errors](./docs/rules/no-silent-errors.md)                 | Detect empty catch blocks that swallow errors | 💼  | ⚠️  |
-| [no-missing-error-context](./docs/rules/no-missing-error-context.md) | Require error context when re-throwing        |     |     |
-| [error-message](./docs/rules/error-message.md)                       | Require meaningful error messages             |     |     |
-
-### Runtime Safety
-
-| Rule                                                                 | Description                                    | 💼  | ⚠️  |
-| :------------------------------------------------------------------- | :--------------------------------------------- | :-: | :-: |
-| [no-missing-null-checks](./docs/rules/no-missing-null-checks.md)     | Detect potential null/undefined dereferences   | 💼  | ⚠️  |
-| [no-unsafe-type-narrowing](./docs/rules/no-unsafe-type-narrowing.md) | Detect unsafe type narrowing patterns          |     |     |
-| [require-network-timeout](./docs/rules/require-network-timeout.md)   | Require timeouts on network requests           | 💼  |     |
-| [no-await-in-loop](./docs/rules/no-await-in-loop.md)                 | Detect sequential await in loops (performance) |     |     |
-
-**Legend**: 💼 Recommended | ⚠️ Warns (not error)
-
----
-
 ## Why These Rules?
-
 ### `no-silent-errors`
 
 Empty catch blocks hide errors, making debugging impossible.
@@ -174,20 +126,45 @@ const results = await Promise.all(userIds.map((id) => fetchUser(id)));
 
 ---
 
+## Rules
+
+**Legend**
+
+| Icon | Description |
+| :---: | :--- |
+| 💼 | **Recommended**: Included in the recommended preset. |
+| ⚠️ | **Warns**: Set towarn in recommended preset. |
+| 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
+| 💡 | **Suggestions**: Providing code suggestions in IDE. |
+| 🚫 | **Deprecated**: This rule is deprecated. |
+
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [error-handling](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/error-handling) |  |  |  | Enforce error handling |  |  |  |  |  |
+| [reliability](https://eslint.interlace.tools/docs/quality/plugin-reliability/rules/reliability) |  |  |  | Enforce reliability |  |  |  |  |  |
+
 ## 🔗 Related ESLint Plugins
 
-Part of the **Interlace ESLint Ecosystem** — AI-native quality plugins with LLM-optimized error messages:
+Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin                                                                                         |                                                                            Downloads                                                                             | Description                         |
-| :--------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------- |
-| [`eslint-plugin-operability`](https://www.npmjs.com/package/eslint-plugin-operability)         |     [![downloads](https://img.shields.io/npm/dt/eslint-plugin-operability.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-operability)     | Production readiness & debug code   |
-| [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-maintainability.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-maintainability) | Cognitive complexity & code quality |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)     |    [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding)  | Security best practices & OWASP     |
+| Plugin | Downloads | Description |
+| :--- | :---: | :--- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | AWS Lambda security best practices. |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | NestJS security rules & patterns. |
+| [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
 
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/docs/reliability"><img src="https://eslint.interlace.tools/images/og-quality.png" alt="ESLint Interlace Plugin" width="300" /></a>
+  <a href="https://eslint.interlace.tools/docs/quality/plugin-reliability"><img src="https://eslint.interlace.tools/images/og-reliability.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 </p>

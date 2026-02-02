@@ -1,11 +1,3 @@
-## 3.0.1 (2026-02-02)
-
-This was a version bump only for eslint-plugin-reliability to align it with other projects, there were no code changes.
-
-# 3.0.0 (2026-02-02)
-
-This was a version bump only for eslint-plugin-reliability to align it with other projects, there were no code changes.
-
 # Changelog
 
 All notable changes to `eslint-plugin-reliability` will be documented in this file.
@@ -13,12 +5,18 @@ All notable changes to `eslint-plugin-reliability` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
 ### Documentation
 
 - 📘 Launched new documentation site: [eslint.interlace.tools](https://eslint.interlace.tools/)
 - 📝 Achieved 100% documentation parity (both .md and .mdx files)
+
+## [3.0.1] - 2026-02-02
+
+This was a version bump only for eslint-plugin-reliability to align it with other projects, there were no code changes.
+
+## [3.0.0] - 2026-02-02
+
+This was a version bump only for eslint-plugin-reliability to align it with other projects, there were no code changes.
 
 ## [1.0.0] - 2026-01-26
 

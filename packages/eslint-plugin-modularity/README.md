@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  Architecture rules for DDD patterns, module isolation, and clean design.
+  Security-focused ESLint plugin.
 </p>
 
 <p align="center">
@@ -16,27 +16,27 @@
 
 ## Description
 
-This plugin enforces Domain-Driven Design (DDD) patterns, module isolation, and architectural best practices. It helps teams maintain clean, layered architectures by detecting anemic domain models, mutable value objects, and architectural boundary violations.
+This plugin provides Security-focused ESLint plugin.
+By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
 
 ## Philosophy
 
-**Interlace** fosters **strength through integration**. Good architecture isn't just documentation — it should be enforced. These rules encode architectural decisions as code, preventing drift and maintaining design integrity over time.
+**Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
 ## Getting Started
 
-- To check out the [guide](https://eslint.interlace.tools/docs/modularity), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- 要查看中文 [指南](https://eslint.interlace.tools/docs/modularity), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- [가이드](https://eslint.interlace.tools/docs/modularity) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
-- [ガイド](https://eslint.interlace.tools/docs/modularity)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
-- Para ver la [guía](https://eslint.interlace.tools/docs/modularity), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/modularity)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-modularity), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/quality/plugin-modularity), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- [가이드](https://eslint.interlace.tools/docs/quality/plugin-modularity) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/quality/plugin-modularity)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
+- Para ver la [guía](https://eslint.interlace.tools/docs/quality/plugin-modularity), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/quality/plugin-modularity)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
 
 ```bash
 npm install eslint-plugin-modularity --save-dev
 ```
 
 ## ⚙️ Configuration Presets
-
 | Preset        | Description                                |
 | :------------ | :----------------------------------------- |
 | `recommended` | Balanced DDD and architecture enforcement  |
@@ -45,7 +45,6 @@ npm install eslint-plugin-modularity --save-dev
 ---
 
 ## 🏢 Usage Example
-
 ```js
 // eslint.config.js
 import modularity from 'eslint-plugin-modularity';
@@ -63,44 +62,7 @@ export default [
 
 ---
 
-## AI-Optimized Messages
-
-This plugin is optimized for ESLint's [Model Context Protocol (MCP)](https://eslint.org/docs/latest/use/mcp), enabling AI assistants like **Cursor**, **GitHub Copilot**, and **Claude** to:
-
-- Understand the exact issue via structured context
-- Apply the correct fix using guidance
-- Provide educational context to developers
-
-```json
-// .cursor/mcp.json
-{
-  "mcpServers": {
-    "eslint": {
-      "command": "npx",
-      "args": ["@eslint/mcp@latest"]
-    }
-  }
-}
-```
-
----
-
-## Rules
-
-| Rule                                                                             | Description                                    | 💼  | ⚠️  |
-| :------------------------------------------------------------------------------- | :--------------------------------------------- | :-: | :-: |
-| [ddd-anemic-domain-model](./docs/rules/ddd-anemic-domain-model.md)               | Detect anemic domain models lacking behavior   | 💼  | ⚠️  |
-| [ddd-value-object-immutability](./docs/rules/ddd-value-object-immutability.md)   | Enforce immutability in value objects          | 💼  |     |
-| [enforce-naming](./docs/rules/enforce-naming.md)                                 | Enforce consistent naming conventions by layer | 💼  | ⚠️  |
-| [enforce-rest-conventions](./docs/rules/enforce-rest-conventions.md)             | Enforce RESTful naming in API controllers      | 💼  |     |
-| [no-external-api-calls-in-utils](./docs/rules/no-external-api-calls-in-utils.md) | Prevent external API calls in utility modules  | 💼  |     |
-
-**Legend**: 💼 Recommended | ⚠️ Warns (not error)
-
----
-
 ## Why These Rules?
-
 ### `ddd-anemic-domain-model`
 
 Detects domain entities that are just data containers without behavior — a common anti-pattern.
@@ -176,20 +138,48 @@ export function format(data: Data): FormattedData {
 
 ---
 
+## Rules
+
+**Legend**
+
+| Icon | Description |
+| :---: | :--- |
+| 💼 | **Recommended**: Included in the recommended preset. |
+| ⚠️ | **Warns**: Set towarn in recommended preset. |
+| 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
+| 💡 | **Suggestions**: Providing code suggestions in IDE. |
+| 🚫 | **Deprecated**: This rule is deprecated. |
+
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [ddd-anemic-domain-model](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-anemic-domain-model) |  |  |  | ESLint rule documentation for ddd-anemic-domain-model |  |  |  |  |  |
+| [ddd-value-object-immutability](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-value-object-immutability) |  |  |  | ESLint rule documentation for ddd-value-object-immutability |  |  |  |  |  |
+| [enforce-naming](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-naming) |  |  |  | ESLint rule documentation for enforce-naming |  |  |  |  |  |
+| [enforce-rest-conventions](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-rest-conventions) |  |  |  | ESLint rule documentation for enforce-rest-conventions |  |  |  |  |  |
+| [no-external-api-calls-in-utils](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/no-external-api-calls-in-utils) |  |  |  | ESLint rule documentation for no-external-api-calls-in-utils |  |  |  |  |  |
+
 ## 🔗 Related ESLint Plugins
 
-Part of the **Interlace ESLint Ecosystem** — AI-native quality plugins with LLM-optimized error messages:
+Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin                                                                                         |                                                                            Downloads                                                                             | Description                               |
-| :--------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------- |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)         |      [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next)     | Import ordering & dependency architecture |
-| [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-maintainability.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-maintainability) | Cognitive complexity & code quality       |
-| [`eslint-plugin-modernization`](https://www.npmjs.com/package/eslint-plugin-modernization)     |   [![downloads](https://img.shields.io/npm/dt/eslint-plugin-modernization.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-modernization)   | Modernize to ES2022+ syntax               |
+| Plugin | Downloads | Description |
+| :--- | :---: | :--- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | AWS Lambda security best practices. |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | NestJS security rules & patterns. |
+| [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
 
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/docs/modularity"><img src="https://eslint.interlace.tools/images/og-architecture.png" alt="ESLint Interlace Plugin" width="300" /></a>
+  <a href="https://eslint.interlace.tools/docs/quality/plugin-modularity"><img src="https://eslint.interlace.tools/images/og-modularity.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 </p>

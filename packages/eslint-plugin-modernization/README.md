@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  Modernize JavaScript to ES2022+ syntax with AI-assisted guidance.
+  Security-focused ESLint plugin.
 </p>
 
 <p align="center">
@@ -16,27 +16,27 @@
 
 ## Description
 
-This plugin helps migrate legacy JavaScript code to modern ES2022+ syntax. It detects outdated patterns and provides AI-parseable fix guidance, enabling developers and AI assistants to modernize codebases safely and consistently.
+This plugin provides Security-focused ESLint plugin.
+By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
 
 ## Philosophy
 
-**Interlace** fosters **strength through integration**. Code modernization shouldn't be a one-time effort — it should be continuous. These rules catch legacy patterns as they're written, preventing technical debt accumulation.
+**Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
 ## Getting Started
 
-- To check out the [guide](https://eslint.interlace.tools/docs/modernization), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- 要查看中文 [指南](https://eslint.interlace.tools/docs/modernization), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- [가이드](https://eslint.interlace.tools/docs/modernization) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
-- [ガイド](https://eslint.interlace.tools/docs/modernization)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
-- Para ver la [guía](https://eslint.interlace.tools/docs/modernization), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/modernization)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-modernization), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/quality/plugin-modernization), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- [가이드](https://eslint.interlace.tools/docs/quality/plugin-modernization) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/quality/plugin-modernization)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
+- Para ver la [guía](https://eslint.interlace.tools/docs/quality/plugin-modernization), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/quality/plugin-modernization)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
 
 ```bash
 npm install eslint-plugin-modernization --save-dev
 ```
 
 ## ⚙️ Configuration Presets
-
 | Preset        | Description                                      |
 | :------------ | :----------------------------------------------- |
 | `recommended` | Balanced modernization for most projects         |
@@ -45,7 +45,6 @@ npm install eslint-plugin-modernization --save-dev
 ---
 
 ## 🏢 Usage Example
-
 ```js
 // eslint.config.js
 import modernization from 'eslint-plugin-modernization';
@@ -60,42 +59,7 @@ export default [
 
 ---
 
-## AI-Optimized Messages
-
-This plugin is optimized for ESLint's [Model Context Protocol (MCP)](https://eslint.org/docs/latest/use/mcp), enabling AI assistants like **Cursor**, **GitHub Copilot**, and **Claude** to:
-
-- Understand the exact issue via structured context
-- Apply the correct fix using guidance
-- Provide educational context to developers
-
-```json
-// .cursor/mcp.json
-{
-  "mcpServers": {
-    "eslint": {
-      "command": "npx",
-      "args": ["@eslint/mcp@latest"]
-    }
-  }
-}
-```
-
----
-
-## Rules
-
-| Rule                                                       | Description                                              | 💼  | ⚠️  | 🔧  |
-| :--------------------------------------------------------- | :------------------------------------------------------- | :-: | :-: | :-: |
-| [no-instanceof-array](./docs/rules/no-instanceof-array.md) | Prefer `Array.isArray()` over `instanceof Array`         | 💼  |     | 🔧  |
-| [prefer-at](./docs/rules/prefer-at.md)                     | Prefer `Array.at()` for negative index access            | 💼  | ⚠️  | 🔧  |
-| [prefer-event-target](./docs/rules/prefer-event-target.md) | Prefer `EventTarget` over `EventEmitter` in browser code | 💼  | ⚠️  |     |
-
-**Legend**: 💼 Recommended | ⚠️ Warns (not error) | 🔧 Auto-fixable
-
----
-
 ## Why These Rules?
-
 ### `no-instanceof-array`
 
 `instanceof Array` fails across different realms (iframes, workers). `Array.isArray()` is the correct, reliable check.
@@ -136,20 +100,46 @@ const target = new EventTarget();
 
 ---
 
+## Rules
+
+**Legend**
+
+| Icon | Description |
+| :---: | :--- |
+| 💼 | **Recommended**: Included in the recommended preset. |
+| ⚠️ | **Warns**: Set towarn in recommended preset. |
+| 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
+| 💡 | **Suggestions**: Providing code suggestions in IDE. |
+| 🚫 | **Deprecated**: This rule is deprecated. |
+
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-instanceof-array](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/no-instanceof-array) |  |  |  | ESLint rule documentation for no-instanceof-array |  |  |  |  |  |
+| [prefer-at](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-at) |  |  |  | ESLint rule documentation for prefer-at |  |  |  |  |  |
+| [prefer-event-target](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-event-target) |  |  |  | ESLint rule documentation for prefer-event-target |  |  |  |  |  |
+
 ## 🔗 Related ESLint Plugins
 
-Part of the **Interlace ESLint Ecosystem** — AI-native quality plugins with LLM-optimized error messages:
+Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin                                                                                         |                                                                            Downloads                                                                             | Description                         |
-| :--------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------- |
-| [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-maintainability.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-maintainability) | Cognitive complexity & code quality |
-| [`eslint-plugin-modularity`](https://www.npmjs.com/package/eslint-plugin-modularity)           |       [![downloads](https://img.shields.io/npm/dt/eslint-plugin-modularity.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-modularity)     | DDD patterns & architecture rules   |
-| [`eslint-plugin-conventions`](https://www.npmjs.com/package/eslint-plugin-conventions)         |      [![downloads](https://img.shields.io/npm/dt/eslint-plugin-conventions.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-conventions)    | Code conventions & style            |
+| Plugin | Downloads | Description |
+| :--- | :---: | :--- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | AWS Lambda security best practices. |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | NestJS security rules & patterns. |
+| [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
 
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/docs/modernization"><img src="https://eslint.interlace.tools/images/og-quality.png" alt="ESLint Interlace Plugin" width="300" /></a>
+  <a href="https://eslint.interlace.tools/docs/quality/plugin-modernization"><img src="https://eslint.interlace.tools/images/og-modernization.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 </p>

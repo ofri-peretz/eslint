@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const packagesDir = path.join(process.cwd(), 'packages');
+const docsDir = path.join(process.cwd(), 'apps/docs/content/docs');
 
 // Get all directories in packages/
 const packages = fs.readdirSync(packagesDir, { withFileTypes: true })
@@ -9,7 +10,7 @@ const packages = fs.readdirSync(packagesDir, { withFileTypes: true })
     .map(dirent => dirent.name)
     .filter(name => name.startsWith('eslint-plugin-'));
 
-// Map of short specific descriptions
+// Map of short specific descriptions for the Plugin itself
 const DESCRIPTIONS = {
     'eslint-plugin-express-security': 'Comprehensive security rules for Express.js applications, mapping to OWASP Top 10.',
     'eslint-plugin-crypto': 'Cryptographic security rules enforcing best practices and modern standards (Node.js crypto).',
@@ -25,9 +26,11 @@ const DESCRIPTIONS = {
     'eslint-plugin-mongodb-security': 'Security rules for MongoDB queries and interactions (NoSQL injection).',
     'eslint-plugin-quality': 'Code quality, maintainability standards, and cognitive complexity limits.',
     'eslint-plugin-react-a11y': 'Accessibility (a11y) rules for React applications, enforcing WCAG standards.',
-    'eslint-plugin-architecture': 'Architectural boundaries, circular dependency detection, and module structure.'
+    'eslint-plugin-architecture': 'Architectural boundaries, circular dependency detection, and module structure.',
+    'eslint-plugin-node-security': 'Security rules for Node.js core modules (fs, child_process, crypto, etc).'
 };
 
+// CVSS fallback map
 const CVSS_MAP = {
     'no-insecure-rsa-padding': '7.4',
     'no-cryptojs-weak-random': '5.3',
@@ -63,18 +66,61 @@ const ECOSYSTEM_TABLE = `## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin | NPM | Downloads | License | Description |
-| :--- | :---: | :---: | :---: | :--- |
-| [\`eslint-plugin-secure-coding\`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![npm](https://img.shields.io/npm/v/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![license](https://img.shields.io/npm/l/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
-| [\`eslint-plugin-pg\`](https://www.npmjs.com/package/eslint-plugin-pg) | [![npm](https://img.shields.io/npm/v/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | [![license](https://img.shields.io/npm/l/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
-| [\`eslint-plugin-crypto\`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![npm](https://img.shields.io/npm/v/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | [![license](https://img.shields.io/npm/l/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
-| [\`eslint-plugin-jwt\`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![npm](https://img.shields.io/npm/v/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | [![license](https://img.shields.io/npm/l/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
-| [\`eslint-plugin-browser-security\`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
-| [\`eslint-plugin-vercel-ai-security\`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security rules. |
-| [\`eslint-plugin-express-security\`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
-| [\`eslint-plugin-lambda-security\`](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | AWS Lambda security best practices. |
-| [\`eslint-plugin-nestjs-security\`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![npm](https://img.shields.io/npm/v/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![license](https://img.shields.io/npm/l/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | NestJS security rules & patterns. |
-| [\`eslint-plugin-import-next\`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![npm](https://img.shields.io/npm/v/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | [![license](https://img.shields.io/npm/l/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |`;
+| Plugin | Downloads | Description |
+| :--- | :---: | :--- |
+| [\`eslint-plugin-secure-coding\`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
+| [\`eslint-plugin-pg\`](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
+| [\`eslint-plugin-crypto\`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
+| [\`eslint-plugin-jwt\`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
+| [\`eslint-plugin-browser-security\`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
+| [\`eslint-plugin-express-security\`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
+| [\`eslint-plugin-lambda-security\`](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | AWS Lambda security best practices. |
+| [\`eslint-plugin-nestjs-security\`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | NestJS security rules & patterns. |
+| [\`eslint-plugin-mongodb-security\`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
+| [\`eslint-plugin-vercel-ai-security\`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
+| [\`eslint-plugin-import-next\`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |`;
+
+// Categories for specific plugins
+const CATEGORIES = {
+   // 'eslint-plugin-secure-coding': { ... } DISABLED to enforce single table
+};
+
+/**
+ * Find the documentation path for a plugin
+ */
+function findDocsPath(pluginName) {
+    const name = pluginName.replace('eslint-plugin-', '');
+    // Check known categories
+    const categories = ['security', 'quality'];
+    
+    for (const cat of categories) {
+        if (fs.existsSync(path.join(docsDir, cat, `plugin-${name}`))) {
+             return `${cat}/plugin-${name}`;
+        }
+    }
+    // Check root
+    if (fs.existsSync(path.join(docsDir, `plugin-${name}`))) {
+        return `plugin-${name}`;
+    }
+    // Fallback
+    return name;
+}
+
+/**
+ * Get description from MDX doc
+ */
+function getMdxDescription(docsSubPath, ruleName) {
+    const mdxPath = path.join(docsDir, docsSubPath, 'rules', `${ruleName}.mdx`);
+    if (fs.existsSync(mdxPath)) {
+        const content = fs.readFileSync(mdxPath, 'utf8');
+        // Simple frontmatter extraction if available, else first sentence
+        const match = content.match(/description:\s*(.*)/i);
+        if (match) {
+            return match[1].trim().replace(/^['"]|['"]$/g, ''); // strip quotes
+        }
+    }
+    return '';
+}
 
 packages.forEach(pkg => {
     const readmePath = path.join(packagesDir, pkg, 'README.md');
@@ -86,214 +132,169 @@ packages.forEach(pkg => {
     const pluginName = pkg.replace('eslint-plugin-', '');
     const shortDesc = DESCRIPTIONS[pkg] || 'Security-focused ESLint plugin.';
 
-    const docUrl = `https://eslint.interlace.tools/docs/${pluginName}`;
+    // Resolve Docs URL
+    const docsSubPath = findDocsPath(pkg);
+    const docUrl = `https://eslint.interlace.tools/docs/${docsSubPath}`;
     const baseUrl = `https://eslint.interlace.tools`;
 
-    // --- 1. EXTRACT DATA TO PRESERVE ---
-
-    // A. Rules Table Rows
-    // We look for rows that look like rule definitions, extracting them to rebuild the table.
-    const ruleRows = [];
-    const processedRules = new Set();
-    
-    // Regex strategies for extraction
+    // --- 1. HARVEST METADATA from existing README ---
+    // We scrape existing tables to preserve manual CWE/OWASP/CVSS tags
+    const ruleMetadata = {};
     const ruleRowRegex = /^\|\s*\[?([a-zA-Z0-9\-\/]+)\]?.*\|.*$/;
 
     lines.forEach(line => {
         const match = line.match(ruleRowRegex);
-        if (match && !line.includes('---') && !line.toLowerCase().includes('| rule |') && !line.toLowerCase().includes('| icon |')) {
-             // It's likely a rule row.
-             // We need to parse it to ensure it has all columns: Rule, CWE, OWASP, CVSS, Desc, Flags
-             // If strict parsing fails, we try to salvage what we can or skip if it's garbage/header.
-             
-             // Check if it's already in processedRules (deduplication)
-             const rawRuleName = match[1];
-             if (processedRules.has(rawRuleName) || processedRules.has(`[${rawRuleName}]`)) return;
-             // Skip header/misc rows artifacts
-             if (['Rule', 'Plugin', 'OWASP', 'Library', 'CWE', 'CVSS', 'Detection'].includes(rawRuleName)) return;
-             
+        if (match && !line.includes('---')) {
+             const rawRuleName = match[1].replace(/\[|\]/g, ''); // Clean logic
              // Extract Cells
-             const parts = line.split('|').map(c => c.trim()).filter((c, i) => i !== 0 && i !== line.split('|').length - 1); // remove outer empty splits if | is at ends
-             // Wait, split result for "| A | B |" is ["", " A ", " B ", ""]
-             
              const cells = line.split('|').map(c => c.trim());
-             // Remove empty start/end if they exist (markdown tables usually have leading/trailing pipes)
-             if (cells[0] === '') cells.shift();
-             if (cells[cells.length-1] === '') cells.pop();
-
-             // Basic validation: needs at least Rule and Desc? 
-             // Existing standard tables have ~10 columns.
-             // If < 3, probably not a rule row.
              if (cells.length < 3) return;
-
-             processedRules.add(rawRuleName);
              
-             // Normalize Row Data
-             // Enforce absolute documentation link
-             const rule = `[${rawRuleName}](${docUrl}/rules/${rawRuleName})`;
-
+             // Extract Metadata
              let cwe = cells.find(c => c.includes('CWE-')) || '';
-             let owasp = cells.find(c => c.includes(':202')) || ''; // 2021 or 2025
+             let owasp = cells.find(c => c.includes(':202')) || '';
              if (owasp) owasp = owasp.replace('2021', '2025');
-
              let cvss = cells.find(c => /^[0-9]\.[0-9]$/.test(c)) || '';
-             // Fallback CVSS
-             if (!cvss) {
-                 const shortRuleName = rawRuleName.split('/').pop();
-                 cvss = CVSS_MAP[shortRuleName] || '';
-             }
-
-             // Description: Find the longest cell that isn't the others
-             const getWeight = (c) => {
-                 if (c === rule) return -1;
-                 if (c.includes('CWE-')) return -1;
-                 if (c.includes(':202')) return -1;
-                 if (/^[0-9]\.[0-9]$/.test(c)) return -1;
-                 if (['💼','⚠️','🔧','💡','🚫'].includes(c)) return -1;
-                 return c.length;
-             };
-             const desc = cells.reduce((prev, curr) => getWeight(curr) > getWeight(prev) ? curr : prev, '');
-
-             const hasFlag = (icon) => cells.includes(icon) ? icon : '';
              
-             ruleRows.push(`| ${rule} | ${cwe} | ${owasp} | ${cvss} | ${desc} | ${hasFlag('💼')} | ${hasFlag('⚠️')} | ${hasFlag('🔧')} | ${hasFlag('💡')} | ${hasFlag('🚫')} |`);
+             // Flags
+             const flags = {
+                 recommended: cells.includes('💼'),
+                 warn: cells.includes('⚠️'),
+                 fixable: cells.includes('🔧'),
+                 suggestions: cells.includes('💡'),
+                 deprecated: cells.includes('🚫')
+             };
+             
+             ruleMetadata[rawRuleName] = { cwe, owasp, cvss, flags };
         }
     });
 
-    // B. Custom Sections (Preserve "Usage Examples", "Configuration Presets", etc.)
-    // We scan for ## headers that are NOT standard.
-    // NOTE: 'Installation' and 'Getting Started' variants should be skipped to avoid duplication.
+    // --- 2. GET REAL RULES FROM SOURCE ---
+    const rulesDir = path.join(packagesDir, pkg, 'src/rules');
+    let realRules = [];
+    if (fs.existsSync(rulesDir)) {
+        realRules = fs.readdirSync(rulesDir, { withFileTypes: true })
+            .filter(d => {
+                if (d.name.startsWith('__')) return false;
+                if (d.name.startsWith('index.')) return false;
+                if (d.isDirectory()) return true;
+                if (d.isFile() && (d.name.endsWith('.ts') || d.name.endsWith('.js'))) return true;
+                return false;
+            })
+            .map(d => d.name.replace(/\.(ts|js)$/, ''));
+    }
+
+    // --- 3. CUSTOM SECTIONS (Preserve) ---
     const STANDARD_HEADERS = [
-        '# ',
-        '## Description',
-        '## Philosophy',
-        '## Getting Started',
-        '## Rules',
-        '## 🔗 Related ESLint Plugins', 
-        '## 📄 License',
-        '## License', // Legacy plain license header
-        '## Documentation', // User wants to strip this in favor of standard Getting Started links
-        '## Installation', // Legacy: we actively skip this later, but need to identify it as 'known' to not treat as custom
-        '## 📦 Installation', // Also skip
-        '## 🚀 Quick Start', // Keep this as a custom section we want to preserve? Or merge?
-        '## 🛡️ Security Research Coverage', // User explicitly requested to DROP this
-        '## Security Research Coverage',
-        '## 🛡 Security Research Coverage', // Variant
-        '## References', // User requested to DROP this (drive traffic to docs)
-        '## 📖 References'
+        '# ', '## Description', '## Philosophy', '## Getting Started', 
+        '## Rules', '## 🔗 Related ESLint Plugins', '## 📄 License', 
+        '## License', '## Documentation', '## Installation', 
+        '## 📦 Installation', '## 🚀 Quick Start', '## 🛡️ Security Research Coverage',
+        '## References'
+    ];
+    
+    // Explicitly ignore these headers to reduce busyness/duplication
+    const IGNORED_HEADERS = [
+        '## AI-Optimized Messages',
+        '## 🏢 Enterprise Integration Example', 
+        '## 🧭 Type-safe rule configuration', 
+        '## 🔒 Privacy', 
+        '## Q:', 
+        '**Q:',
+        '## Command Execution'
     ];
 
     const customSections = [];
     let currentCustomSection = null;
-    let existingDescription = [];
-    let captureDescription = false;
     let capture = false;
 
     lines.forEach(line => {
         const trimmed = line.trim();
-        
-        if (line.startsWith('## ')) {
-            // Check if it's Description specifically to capture it separate from generic custom sections
-            if (trimmed === '## Description') {
-                captureDescription = true;
-                capture = false;
-                currentCustomSection = null;
-                return;
-            } else {
-                captureDescription = false;
-            }
-
-            // Check if it's one of our core generated sections (including Description which we handled above)
+        if (line.startsWith('## ') || line.startsWith('**Q:')) {
             const isCore = STANDARD_HEADERS.some(h => trimmed.startsWith(h));
-            
-            // Check if it's a section we want to NUKE because it's redundant (Transformation 2026-01-11)
-            const isLegacyInstallation = ['## Installation', '## 📦 Installation', '## 🚀 Quick Start', '## 🛡️ Security Research Coverage', '## Security Research Coverage', '## References', '## 📖 References'].some(h => trimmed.startsWith(h));
+            const isIgnored = IGNORED_HEADERS.some(h => trimmed.startsWith(h));
 
-            if (isCore || isLegacyInstallation) {
+            // Also skip core variants if they are about to be regenerated OR ignored
+            if (isCore || isIgnored) {
                 capture = false;
                 currentCustomSection = null;
             } else {
-                // It is a truly custom section (e.g. "Available Presets", "Supported Functions", "FAQ")
                 currentCustomSection = { header: line, content: [] };
                 customSections.push(currentCustomSection);
                 capture = true;
             }
-        } else if (captureDescription) {
-            existingDescription.push(line);
         } else if (capture && currentCustomSection) {
             currentCustomSection.content.push(line);
         }
     });
 
-    // --- 2. RECONSTRUCT CONTENT ---
-
+    // --- 4. RECONSTRUCT CONTENT ---
     const output = [];
 
-    // 1. Header & Logo (No H1 Title as per user request "Structure starts with Logo")
+    // Header & Logo
     output.push('<p align="center">');
     output.push(`  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>`);
     output.push('</p>');
     output.push('');
     output.push('<p align="center">');
-    output.push(`  ${shortDesc}`);
+    // For Node Security, use specific descriptions
+    if (pkg.includes('node-security')) {
+         output.push('  Security-focused ESLint plugin for Node.js built-in modules (fs, child_process, vm, crypto, Buffer).');
+    } else {
+         output.push(`  ${shortDesc}`);
+    }
     output.push('</p>');
     output.push('');
     
-    // 2. Badges
+    // Badges
     output.push('<p align="center">');
     output.push(`  <a href="https://www.npmjs.com/package/${pkg}" target="_blank"><img src="https://img.shields.io/npm/v/${pkg}.svg" alt="NPM Version" /></a>`);
     output.push(`  <a href="https://www.npmjs.com/package/${pkg}" target="_blank"><img src="https://img.shields.io/npm/dm/${pkg}.svg" alt="NPM Downloads" /></a>`);
     output.push(`  <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>`);
     output.push(`  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=${pluginName}" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=${pluginName}" alt="Codecov" /></a>`);
-    output.push(`  <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Dec_2025-blue?logo=rocket&logoColor=white" alt="Dec 2025" /></a>`);
+    output.push(`  <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>`);
     output.push('</p>');
     output.push('');
 
-    // 3. Description Section (Preserve existing elaboration if found)
+    // Description
     output.push('## Description');
     output.push('');
-    const cleanDesc = existingDescription.join('\n').trim();
-    if (cleanDesc.length > 10) {
-        output.push(cleanDesc);
-    } else {
-        output.push(shortDesc);
-    }
+    // We use the short description as base, assumed ample enough or user edits manual if needed.
+    // For now we default to the clean standard description.
+    output.push(`This plugin provides ${shortDesc}`);
+    output.push(`By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.`);
     output.push('');
     
-    // 4. Philosophy
+    // Philosophy
     output.push(PHILOSOPHY_TEXT);
     output.push('');
 
-    // 5. Getting Started (SINGLE source of truth)
+    // Getting Started
     output.push('## Getting Started');
     output.push('');
     output.push(`- To check out the [guide](${docUrl}), visit [eslint.interlace.tools](${baseUrl}). 📚`);
     output.push(`- 要查看中文 [指南](${docUrl}), 请访问 [eslint.interlace.tools](${baseUrl}). 📚`);
     output.push(`- [가이드](${docUrl}) 문서는 [eslint.interlace.tools](${baseUrl})에서 확인하실 수 있습니다. 📚`);
     output.push(`- [ガイド](${docUrl})は [eslint.interlace.tools](${baseUrl})でご確認ください。 📚`);
+    output.push(`- Para ver la [guía](${docUrl}), visita [eslint.interlace.tools](${baseUrl}). 📚`);
+    output.push(`- للاطلاع على [الدليل](${docUrl})، قم بزيارة [eslint.interlace.tools](${baseUrl}). 📚`);
     output.push('');
     output.push('```bash');
     output.push(`npm install ${pkg} --save-dev`);
     output.push('```');
     output.push('');
 
-    // 6. Custom Sections (Usage Examples, etc.)
+    // Custom Sections (e.g. Configuration Presets)
     customSections.forEach(section => {
-        // Filter out redundant documentation links if they sneaked into a custom section
-        const filteredContent = section.content.filter(line => 
-            !line.includes('[Rules Reference]') && 
-            !line.includes('./docs/RULES.md')
-        );
-        
+        const filteredContent = section.content.filter(line => !line.includes('[Rules Reference]') && !line.includes('./docs/RULES.md'));
         if (filteredContent.length === 0 && section.header.includes('Documentation')) return;
-
         output.push(section.header);
         output.push(filteredContent.join('\n').trim());
         output.push('');
     });
 
-    // 7. Rules Table
-    if (ruleRows.length > 0) {
+    // Rules
+    if (realRules.length > 0) {
         output.push('## Rules');
         output.push('');
         output.push('**Legend**');
@@ -306,24 +307,72 @@ packages.forEach(pkg => {
         output.push('| 💡 | **Suggestions**: Providing code suggestions in IDE. |');
         output.push('| 🚫 | **Deprecated**: This rule is deprecated. |');
         output.push('');
-        output.push('| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |');
-        output.push('| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |');
-        output.push(ruleRows.join('\n'));
-        output.push('');
+
+        const generateRow = (ruleName) => {
+            const meta = ruleMetadata[ruleName] || {};
+            const desc = getMdxDescription(docsSubPath, ruleName) || `Enforce ${ruleName.replace(/-/g, ' ')}`;
+            const link = `[${ruleName}](${docUrl}/rules/${ruleName})`;
+            
+            // Fallbacks
+            const cwe = meta.cwe || '';
+            const owasp = meta.owasp || '';
+            const cvss = meta.cvss || CVSS_MAP[ruleName] || '';
+            
+            const has = (key) => (meta.flags && meta.flags[key]) ? ({
+                recommended: '💼', warn: '⚠️', fixable: '🔧', suggestions: '💡', deprecated: '🚫'
+            })[key] : '';
+
+            return `| ${link} | ${cwe} | ${owasp} | ${cvss} | ${desc} | ${has('recommended')} | ${has('warn')} | ${has('fixable')} | ${has('suggestions')} | ${has('deprecated')} |`;
+        };
+
+        const hasCategories = CATEGORIES[pkg];
+        
+        if (hasCategories) {
+            // Categorized Tables
+            Object.entries(hasCategories).forEach(([catName, supportedRules]) => {
+                // Intersect with realRules to ensure we only show existing rules
+                const rulesInCat = supportedRules.filter(r => realRules.includes(r));
+                if (rulesInCat.length > 0) {
+                    output.push(`### ${catName}`);
+                    output.push('');
+                    output.push('| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |');
+                    output.push('| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |');
+                    rulesInCat.forEach(r => output.push(generateRow(r)));
+                    output.push('');
+                }
+            });
+            
+            // Catch-all for uncategorized
+            const allCategorized = Object.values(hasCategories).flat();
+            const leftover = realRules.filter(r => !allCategorized.includes(r));
+            if (leftover.length > 0) {
+                output.push('### Other Rules');
+                output.push('');
+                output.push('| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |');
+                output.push('| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |');
+                leftover.forEach(r => output.push(generateRow(r)));
+                output.push('');
+            }
+        } else {
+            // Single Table
+            output.push('| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |');
+            output.push('| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |');
+            realRules.sort().forEach(r => output.push(generateRow(r)));
+            output.push('');
+        }
     }
 
-    // 8. Ecosystem Table
+    // Ecosystem
     output.push(ECOSYSTEM_TABLE);
     output.push('');
 
-    // 9. Footer Image
-    // Use generic footer link
+    // License
     output.push(`## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 `);
     output.push(`<p align="center">`);
-    output.push(`  <a href="https://eslint.interlace.tools/docs/${pluginName}"><img src="https://eslint.interlace.tools/images/og-${pluginName}.png" alt="ESLint Interlace Plugin" width="100%" /></a>`);
+    output.push(`  <a href="https://eslint.interlace.tools/docs/${docsSubPath}"><img src="https://eslint.interlace.tools/images/og-${pluginName}.png" alt="ESLint Interlace Plugin" width="100%" /></a>`);
     output.push(`</p>`);
 
     fs.writeFileSync(readmePath, output.join('\n'));

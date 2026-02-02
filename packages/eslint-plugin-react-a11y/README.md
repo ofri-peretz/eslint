@@ -16,31 +16,27 @@
 
 ## Description
 
-This plugin ensures your React applications are accessible to all users by strictly enforcing WCAG standards. It automatically detects common accessibility issues in your JSX, such as missing alt text or improper aria labels, and guides you toward compliant solutions. Implementing these rules helps you build inclusive web experiences that meet modern accessibility requirements.
+This plugin provides Accessibility (a11y) rules for React applications, enforcing WCAG standards.
+By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
 
 ## Philosophy
 
-**Interlace** fosters **strength through integration**. We **interlace** accessibility directly into your workflow, creating inclusive applications by design. Tools should **guide rather than gatekeep**, providing educational feedback that strengthens developers.
-
-**Why an independent ecosystem?** 🚀 Ship fast without upstream bureaucracy • 🤖 AI-optimized messages (WCAG, severity, fixes) • ⚡ Unified codebase for performance • 🏗️ Consistent patterns across all plugins • 📚 Educational "why" explanations
-
-All rules are **clean-room implementations** following `eslint-plugin-jsx-a11y` naming conventions — familiar API, better engineering.
+**Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
 
 ## Getting Started
 
-- To check out the [guide](https://eslint.interlace.tools/docs/react-a11y), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- 要查看中文 [指南](https://eslint.interlace.tools/docs/react-a11y), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- [가이드](https://eslint.interlace.tools/docs/react-a11y) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
-- [ガイド](https://eslint.interlace.tools/docs/react-a11y)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
-- Para ver la [guía](https://eslint.interlace.tools/docs/react-a11y), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/react-a11y)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- To check out the [guide](https://eslint.interlace.tools/docs/quality/plugin-react-a11y), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/quality/plugin-react-a11y), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- [가이드](https://eslint.interlace.tools/docs/quality/plugin-react-a11y) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/quality/plugin-react-a11y)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
+- Para ver la [guía](https://eslint.interlace.tools/docs/quality/plugin-react-a11y), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/quality/plugin-react-a11y)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
 
 ```bash
 npm install eslint-plugin-react-a11y --save-dev
 ```
 
 ## Quick Start
-
 ```javascript
 // eslint.config.js
 import reactA11y from 'eslint-plugin-react-a11y';
@@ -49,7 +45,6 @@ export default [reactA11y.configs.recommended];
 ```
 
 ## ⚙️ Configuration Presets
-
 | Preset        | Description                                                                   |
 | :------------ | :---------------------------------------------------------------------------- |
 | `recommended` | Enables critical accessibility rules (WCAG Level A as errors, AA as warnings) |
@@ -58,7 +53,6 @@ export default [reactA11y.configs.recommended];
 | `wcag-aa`     | Includes Level A + additional rules for Level AA compliance                   |
 
 ## Configuration Examples
-
 ### Basic Usage
 
 ```javascript
@@ -132,82 +126,76 @@ export default [
 
 **Legend**
 
-| Icon | Description                                                        |
-| :--: | :----------------------------------------------------------------- |
-|  💼  | **Recommended**: Included in the recommended preset.               |
-|  ⚠️  | **Warns**: Set towarn in recommended preset.                       |
-|  🔧  | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
-|  💡  | **Suggestions**: Providing code suggestions in IDE.                |
-|  🚫  | **Deprecated**: This rule is deprecated.                           |
+| Icon | Description |
+| :---: | :--- |
+| 💼 | **Recommended**: Included in the recommended preset. |
+| ⚠️ | **Warns**: Set towarn in recommended preset. |
+| 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
+| 💡 | **Suggestions**: Providing code suggestions in IDE. |
+| 🚫 | **Deprecated**: This rule is deprecated. |
 
-| Rule                                                                                                                | WCAG Criterion | Description                                           | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
-| :------------------------------------------------------------------------------------------------------------------ | :------------- | :---------------------------------------------------- | :-: | :-: | :-: | :-: | :-: |
-| [`alt-text`](https://eslint.interlace.tools/docs/react-a11y/rules/alt-text)                                         | 1.1.1          | Image missing alt text                                | 💼  |     |     |     |     |
-| [`html-has-lang`](https://eslint.interlace.tools/docs/react-a11y/rules/html-has-lang)                               | 3.1.1          | html element missing lang attribute                   | 💼  |     |     |     |     |
-| [`iframe-has-title`](https://eslint.interlace.tools/docs/react-a11y/rules/iframe-has-title)                         | 2.4.1          | iframe element missing title                          | 💼  |     |     |     |     |
-| [`mouse-events-have-key-events`](https://eslint.interlace.tools/docs/react-a11y/rules/mouse-events-have-key-events) | 2.1.1          | onMouseOver must be accompanied by onFocus            | 💼  |     |     |     |     |
-| [`no-access-key`](https://eslint.interlace.tools/docs/react-a11y/rules/no-access-key)                               | 2.1.1          | No access key attribute allowed                       | 💼  |     |     |     |     |
-| [`no-autofocus`](https://eslint.interlace.tools/docs/react-a11y/rules/no-autofocus)                                 | 2.4.3          | No autofocus attribute allowed                        | 💼  |     |     |     |     |
-| [`no-distracting-elements`](https://eslint.interlace.tools/docs/react-a11y/rules/no-distracting-elements)           | 2.2.2          | Distracting elements (marquee, blink) are not allowed | 💼  |     |     |     |     |
-| [`aria-props`](https://eslint.interlace.tools/docs/react-a11y/rules/aria-props)                                     | 4.1.2          | Invalid ARIA attribute                                | 💼  |     |     |     |     |
-| [`aria-role`](https://eslint.interlace.tools/docs/react-a11y/rules/aria-role)                                       | 4.1.2          | Invalid ARIA role                                     | 💼  |     |     |     |     |
-| [`role-has-required-aria-props`](https://eslint.interlace.tools/docs/react-a11y/rules/role-has-required-aria-props) | 4.1.2          | Role missing required aria props                      | 💼  |     |     |     |     |
-| [`aria-unsupported-elements`](https://eslint.interlace.tools/docs/react-a11y/rules/aria-unsupported-elements)       | 4.1.2          | Element does not support ARIA roles/props             | 💼  |     |     |     |     |
-| [`click-events-have-key-events`](https://eslint.interlace.tools/docs/react-a11y/rules/click-events-have-key-events) | 2.1.1          | onClick must be accompanied by onKeyUp/KeyDown        | 💼  |     |     |     |     |
-| [`heading-has-content`](https://eslint.interlace.tools/docs/react-a11y/rules/heading-has-content)                   | 1.3.1          | Headings must have content                            | 💼  |     |     |     |     |
-| [`label-has-associated-control`](https://eslint.interlace.tools/docs/react-a11y/rules/label-has-associated-control) | 3.3.2          | Form label must be associated with a control          | 💼  |     |     |     |     |
-| [`tabindex-no-positive`](https://eslint.interlace.tools/docs/react-a11y/rules/tabindex-no-positive)                 | 2.4.3          | Avoid positive tabIndex                               | 💼  |     |     |     |     |
-
----
-
-## AI-Optimized Messages
-
-This plugin is optimized for ESLint's [Model Context Protocol (MCP)](https://eslint.org/docs/latest/use/mcp), enabling AI assistants like **Cursor**, **GitHub Copilot**, and **Claude** to:
-
-- Understand the exact vulnerability type via CWE references
-- Apply the correct fix using structured guidance
-- Provide educational context to developers
-
-```bash
-src/components/Button.tsx
-  12:5   error  🔒 CWE-20 WCAG:4.1.2 CVSS:5.3 | Interactive element missing accessible name | CRITICAL [WCAG 2.1 A]
-                    Fix: Add aria-label="Submit Order" or inner text | https://eslint.interlace.tools/...
-```
-
-```json
-// .cursor/mcp.json
-{
-  "mcpServers": {
-    "eslint": {
-      "command": "npx",
-      "args": ["@eslint/mcp@latest"]
-    }
-  }
-}
-```
-
-By providing this structured context (CWE, OWASP, Fix), we enable AI tools to **reason** about the security flaw rather than hallucinating. This allows Copilot/Cursor to suggest the _exact_ correct fix immediately.
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [alt-text](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/alt-text) |  |  |  | Enforce alt text |  |  |  |  |  |
+| [anchor-ambiguous-text](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/anchor-ambiguous-text) |  |  |  | Enforce anchor ambiguous text |  |  |  |  |  |
+| [anchor-has-content](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/anchor-has-content) |  |  |  | Enforce anchor has content |  |  |  |  |  |
+| [anchor-is-valid](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/anchor-is-valid) |  |  |  | Enforce anchor is valid |  |  |  |  |  |
+| [aria-activedescendant-has-tabindex](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/aria-activedescendant-has-tabindex) |  |  |  | Enforce aria activedescendant has tabindex |  |  |  |  |  |
+| [aria-props](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/aria-props) |  |  |  | Enforce aria props |  |  |  |  |  |
+| [aria-role](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/aria-role) |  |  |  | Enforce aria role |  |  |  |  |  |
+| [aria-unsupported-elements](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/aria-unsupported-elements) |  |  |  | Enforce aria unsupported elements |  |  |  |  |  |
+| [autocomplete-valid](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/autocomplete-valid) |  |  |  | Enforce autocomplete valid |  |  |  |  |  |
+| [click-events-have-key-events](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/click-events-have-key-events) |  |  |  | Enforce click events have key events |  |  |  |  |  |
+| [control-has-associated-label](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/control-has-associated-label) |  |  |  | Enforce control has associated label |  |  |  |  |  |
+| [heading-has-content](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/heading-has-content) |  |  |  | Enforce heading has content |  |  |  |  |  |
+| [html-has-lang](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/html-has-lang) |  |  |  | Enforce html has lang |  |  |  |  |  |
+| [iframe-has-title](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/iframe-has-title) |  |  |  | Enforce iframe has title |  |  |  |  |  |
+| [img-redundant-alt](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/img-redundant-alt) |  |  |  | Enforce img redundant alt |  |  |  |  |  |
+| [interactive-supports-focus](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/interactive-supports-focus) |  |  |  | Enforce interactive supports focus |  |  |  |  |  |
+| [label-has-associated-control](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/label-has-associated-control) |  |  |  | Enforce label has associated control |  |  |  |  |  |
+| [lang](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/lang) |  |  |  | Enforce lang |  |  |  |  |  |
+| [media-has-caption](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/media-has-caption) |  |  |  | Enforce media has caption |  |  |  |  |  |
+| [mouse-events-have-key-events](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/mouse-events-have-key-events) |  |  |  | Enforce mouse events have key events |  |  |  |  |  |
+| [no-access-key](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-access-key) |  |  |  | Enforce no access key |  |  |  |  |  |
+| [no-aria-hidden-on-focusable](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-aria-hidden-on-focusable) |  |  |  | Enforce no aria hidden on focusable |  |  |  |  |  |
+| [no-autofocus](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-autofocus) |  |  |  | Enforce no autofocus |  |  |  |  |  |
+| [no-distracting-elements](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-distracting-elements) |  |  |  | Enforce no distracting elements |  |  |  |  |  |
+| [no-interactive-element-to-noninteractive-role](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-interactive-element-to-noninteractive-role) |  |  |  | Enforce no interactive element to noninteractive role |  |  |  |  |  |
+| [no-keyboard-inaccessible-elements](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-keyboard-inaccessible-elements) |  |  |  | Enforce no keyboard inaccessible elements |  |  |  |  |  |
+| [no-missing-aria-labels](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-missing-aria-labels) |  |  |  | Enforce no missing aria labels |  |  |  |  |  |
+| [no-noninteractive-element-interactions](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-noninteractive-element-interactions) |  |  |  | Enforce no noninteractive element interactions |  |  |  |  |  |
+| [no-noninteractive-element-to-interactive-role](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-noninteractive-element-to-interactive-role) |  |  |  | Enforce no noninteractive element to interactive role |  |  |  |  |  |
+| [no-noninteractive-tabindex](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-noninteractive-tabindex) |  |  |  | Enforce no noninteractive tabindex |  |  |  |  |  |
+| [no-redundant-roles](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-redundant-roles) |  |  |  | Enforce no redundant roles |  |  |  |  |  |
+| [no-static-element-interactions](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/no-static-element-interactions) |  |  |  | Enforce no static element interactions |  |  |  |  |  |
+| [prefer-tag-over-role](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/prefer-tag-over-role) |  |  |  | Enforce prefer tag over role |  |  |  |  |  |
+| [role-has-required-aria-props](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/role-has-required-aria-props) |  |  |  | Enforce role has required aria props |  |  |  |  |  |
+| [role-supports-aria-props](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/role-supports-aria-props) |  |  |  | Enforce role supports aria props |  |  |  |  |  |
+| [scope](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/scope) |  |  |  | Enforce scope |  |  |  |  |  |
+| [tabindex-no-positive](https://eslint.interlace.tools/docs/quality/plugin-react-a11y/rules/tabindex-no-positive) |  |  |  | Enforce tabindex no positive |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin                                                                                           |                                                                            Downloads                                                                             | Description                                 |
-| :----------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------ |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)       |    [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding)    | General security rules & OWASP guidelines.  |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                             |               [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg)               | PostgreSQL security & best practices.       |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                     |           [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto)           | NodeJS Cryptography security rules.         |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                           |              [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt)              | JWT security & best practices.              |
+| Plugin | Downloads | Description |
+| :--- | :---: | :--- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
 | [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules.        |
-| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)   |  [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security)  | AWS Lambda security best practices.         |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)   |  [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security)  | NestJS security rules & patterns.           |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)           |      [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next)      | Next-gen import sorting & architecture.     |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | AWS Lambda security best practices. |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | NestJS security rules & patterns. |
+| [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
 
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/docs/react-a11y"><img src="https://eslint.interlace.tools/images/og-react-a11y.png" alt="ESLint Interlace Plugin" width="300" /></a>
+  <a href="https://eslint.interlace.tools/docs/quality/plugin-react-a11y"><img src="https://eslint.interlace.tools/images/og-react-a11y.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 </p>

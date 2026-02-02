@@ -16,7 +16,8 @@
 
 ## Description
 
-This plugin provides a suite of browser-specific security rules designed to prevent Cross-Site Scripting (XSS) and other client-side vulnerabilities. It scans your code for dangerous patterns, such as unsafe DOM manipulation and insecure storage practices, offering real-time feedback to developers. Using this plugin ensures that your frontend applications adhere to modern security standards and protect user data effectively.
+This plugin provides Browser-specific security rules to prevent XSS and other client-side attacks.
+By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
 
 ## Philosophy
 
@@ -24,19 +25,18 @@ This plugin provides a suite of browser-specific security rules designed to prev
 
 ## Getting Started
 
-- To check out the [guide](https://eslint.interlace.tools/docs/browser-security), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- 要查看中文 [指南](https://eslint.interlace.tools/docs/browser-security), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- [가이드](https://eslint.interlace.tools/docs/browser-security) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
-- [ガイド](https://eslint.interlace.tools/docs/browser-security)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
-- Para ver la [guía](https://eslint.interlace.tools/docs/browser-security), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/browser-security)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- To check out the [guide](https://eslint.interlace.tools/docs/security/plugin-browser-security), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- 要查看中文 [指南](https://eslint.interlace.tools/docs/security/plugin-browser-security), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- [가이드](https://eslint.interlace.tools/docs/security/plugin-browser-security) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
+- [ガイド](https://eslint.interlace.tools/docs/security/plugin-browser-security)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
+- Para ver la [guía](https://eslint.interlace.tools/docs/security/plugin-browser-security), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+- للاطلاع على [الدليل](https://eslint.interlace.tools/docs/security/plugin-browser-security)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
 
 ```bash
 npm install eslint-plugin-browser-security --save-dev
 ```
 
 ## 💡 What You Get
-
 - **21 security rules** targeting browser-specific vulnerabilities
 - **XSS prevention** via DOM manipulation and dynamic content detection
 - **Storage security** preventing sensitive data exposure in localStorage/sessionStorage/IndexedDB
@@ -45,7 +45,6 @@ npm install eslint-plugin-browser-security --save-dev
 - **OWASP Top 10 coverage** for browser security patterns
 
 ## 🎯 Why This Plugin?
-
 Modern browser applications face unique security challenges across storage APIs, cross-origin communication, and dynamic content rendering. This plugin provides static analysis rules specifically designed for browser security patterns:
 
 - **XSS Prevention**: Detects dangerous DOM manipulation patterns
@@ -55,7 +54,6 @@ Modern browser applications face unique security challenges across storage APIs,
 - **LLM-Optimized**: All rules include AI-friendly remediation guidance
 
 ## 🔍 Detection Examples
-
 ### ❌ Vulnerable Code
 
 ```javascript
@@ -94,14 +92,12 @@ window.addEventListener('message', (event) => {
 ```
 
 ## ⚙️ Configuration Presets
-
 | Preset        | Description                                         |
 | :------------ | :-------------------------------------------------- |
 | `recommended` | Recommended security configuration                  |
 | `strict`      | Strict security configuration - all rules as errors |
 
 ## 🤖 LLM-Optimized Messages
-
 All rules include structured remediation guidance designed for AI assistants:
 
 ```
@@ -129,60 +125,84 @@ By providing this structured context (CWE, OWASP, Fix), we enable AI tools to **
 
 **Legend**
 
-| Icon | Description                                                        |
-| :--: | :----------------------------------------------------------------- |
-|  💼  | **Recommended**: Included in the recommended preset.               |
-|  ⚠️  | **Warns**: Set towarn in recommended preset.                       |
-|  🔧  | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
-|  💡  | **Suggestions**: Providing code suggestions in IDE.                |
-|  🚫  | **Deprecated**: This rule is deprecated.                           |
+| Icon | Description |
+| :---: | :--- |
+| 💼 | **Recommended**: Included in the recommended preset. |
+| ⚠️ | **Warns**: Set towarn in recommended preset. |
+| 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
+| 💡 | **Suggestions**: Providing code suggestions in IDE. |
+| 🚫 | **Deprecated**: This rule is deprecated. |
 
-| Rule                                                                                                                            |   CWE    |  OWASP   | CVSS | Description                                                                          | 💼  | ⚠️  | 🔧  | 💡  | 🚫  |
-| :------------------------------------------------------------------------------------------------------------------------------ | :------: | :------: | :--: | :----------------------------------------------------------------------------------- | :-: | :-: | :-: | :-: | :-: |
-| [no-eval](https://eslint.interlace.tools/docs/browser-security/rules/no-eval)                                                   |  CWE-95  | A03:2025 | 9.8  | [no-eval](./docs/rules/no-eval.md)                                                   | 💼  |     |     | 💡  | 🚫  |
-| [no-innerhtml](https://eslint.interlace.tools/docs/browser-security/rules/no-innerhtml)                                         |  CWE-79  | A03:2025 | 6.1  | [no-innerhtml](./docs/rules/no-innerhtml.md)                                         | 💼  |     |     | 💡  |     |
-| [require-postmessage-origin-check](https://eslint.interlace.tools/docs/browser-security/rules/require-postmessage-origin-check) | CWE-346  | A01:2025 | 8.8  | [require-postmessage-origin-check](./docs/rules/require-postmessage-origin-check.md) | 💼  |     |     |     |     |
-| [no-postmessage-wildcard-origin](https://eslint.interlace.tools/docs/browser-security/rules/no-postmessage-wildcard-origin)     | CWE-346  | A01:2025 | 8.8  | [no-postmessage-wildcard-origin](./docs/rules/no-postmessage-wildcard-origin.md)     | 💼  |     |     |     |     |
-| [no-postmessage-innerhtml](https://eslint.interlace.tools/docs/browser-security/rules/no-postmessage-innerhtml)                 |  CWE-79  | A03:2025 | 6.1  | [no-postmessage-innerhtml](./docs/rules/no-postmessage-innerhtml.md)                 | 💼  |     |     |     |     |
-| [no-sensitive-localstorage](https://eslint.interlace.tools/docs/browser-security/rules/no-sensitive-localstorage)               | CWE-922  | A02:2025 | 7.5  | [no-sensitive-localstorage](./docs/rules/no-sensitive-localstorage.md)               | 💼  |     |     | 💡  |     |
-| [no-sensitive-sessionstorage](https://eslint.interlace.tools/docs/browser-security/rules/no-sensitive-sessionstorage)           | CWE-922  | A02:2025 | 7.5  | [no-sensitive-sessionstorage](./docs/rules/no-sensitive-sessionstorage.md)           | 💼  |     |     | 💡  |     |
-| [no-sensitive-indexeddb](https://eslint.interlace.tools/docs/browser-security/rules/no-sensitive-indexeddb)                     | CWE-922  | A02:2025 | 7.5  | [no-sensitive-indexeddb](./docs/rules/no-sensitive-indexeddb.md)                     | 💼  |     |     | 💡  |     |
-| [no-jwt-in-storage](https://eslint.interlace.tools/docs/browser-security/rules/no-jwt-in-storage)                               | CWE-922  | A02:2025 | 7.5  | [no-jwt-in-storage](./docs/rules/no-jwt-in-storage.md)                               | 💼  |     |     | 💡  |     |
-| [no-sensitive-cookie-js](https://eslint.interlace.tools/docs/browser-security/rules/no-sensitive-cookie-js)                     | CWE-1004 | A02:2025 | 5.3  | [no-sensitive-cookie-js](./docs/rules/no-sensitive-cookie-js.md)                     | 💼  |     |     | 💡  |     |
-| [no-cookie-auth-tokens](https://eslint.interlace.tools/docs/browser-security/rules/no-cookie-auth-tokens)                       | CWE-1004 | A02:2025 | 5.3  | [no-cookie-auth-tokens](./docs/rules/no-cookie-auth-tokens.md)                       | 💼  |     |     | 💡  |     |
-| [require-cookie-secure-attrs](https://eslint.interlace.tools/docs/browser-security/rules/require-cookie-secure-attrs)           | CWE-614  | A05:2025 | 5.3  | [require-cookie-secure-attrs](./docs/rules/require-cookie-secure-attrs.md)           | 💼  |     |     |     | 🚫  |
-| [require-websocket-wss](https://eslint.interlace.tools/docs/browser-security/rules/require-websocket-wss)                       | CWE-319  | A02:2025 | 7.5  | [require-websocket-wss](./docs/rules/require-websocket-wss.md)                       | 💼  |     |     | 💡  | 🚫  |
-| [no-websocket-innerhtml](https://eslint.interlace.tools/docs/browser-security/rules/no-websocket-innerhtml)                     |  CWE-79  | A03:2025 | 6.1  | [no-websocket-innerhtml](./docs/rules/no-websocket-innerhtml.md)                     | 💼  |     |     | 💡  |     |
-| [no-websocket-eval](https://eslint.interlace.tools/docs/browser-security/rules/no-websocket-eval)                               |  CWE-95  | A03:2025 | 9.8  | [no-websocket-eval](./docs/rules/no-websocket-eval.md)                               | 💼  |     |     | 💡  |     |
-| [no-filereader-innerhtml](https://eslint.interlace.tools/docs/browser-security/rules/no-filereader-innerhtml)                   |  CWE-79  | A03:2025 | 6.1  | [no-filereader-innerhtml](./docs/rules/no-filereader-innerhtml.md)                   | 💼  |     |     | 💡  |     |
-| [require-blob-url-revocation](https://eslint.interlace.tools/docs/browser-security/rules/require-blob-url-revocation)           | CWE-401  | A04:2025 | 5.3  | [require-blob-url-revocation](./docs/rules/require-blob-url-revocation.md)           | 💼  | ⚠️  |     | 💡  |     |
-| [no-dynamic-service-worker-url](https://eslint.interlace.tools/docs/browser-security/rules/no-dynamic-service-worker-url)       | CWE-829  | A08:2025 | 7.5  | [no-dynamic-service-worker-url](./docs/rules/no-dynamic-service-worker-url.md)       | 💼  |     |     | 💡  |     |
-| [no-worker-message-innerhtml](https://eslint.interlace.tools/docs/browser-security/rules/no-worker-message-innerhtml)           |  CWE-79  | A03:2025 | 6.1  | [no-worker-message-innerhtml](./docs/rules/no-worker-message-innerhtml.md)           | 💼  |     |     |     |     |
-| [no-unsafe-inline-csp](https://eslint.interlace.tools/docs/browser-security/rules/no-unsafe-inline-csp)                         |  CWE-79  | A03:2025 | 6.1  | [no-unsafe-inline-csp](./docs/rules/no-unsafe-inline-csp.md)                         | 💼  |     |     | 💡  |     |
-| [no-unsafe-eval-csp](https://eslint.interlace.tools/docs/browser-security/rules/no-unsafe-eval-csp)                             |  CWE-95  | A03:2025 | 9.8  | [no-unsafe-eval-csp](./docs/rules/no-unsafe-eval-csp.md)                             | 💼  |     |     | 💡  |     |
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [detect-mixed-content](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/detect-mixed-content) |  |  |  | ESLint rule documentation for detect-mixed-content |  |  |  |  |  |
+| [no-allow-arbitrary-loads](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-allow-arbitrary-loads) |  |  |  | ESLint rule documentation for no-allow-arbitrary-loads |  |  |  |  |  |
+| [no-clickjacking](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-clickjacking) |  |  |  | ESLint rule documentation for no-clickjacking |  |  |  |  |  |
+| [no-client-side-auth-logic](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-client-side-auth-logic) |  |  |  | ESLint rule documentation for no-client-side-auth-logic |  |  |  |  |  |
+| [no-cookie-auth-tokens](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-cookie-auth-tokens) | CWE-1004 | A02:2025 | 5.3 | ESLint rule documentation for no-cookie-auth-tokens | 💼 |  |  | 💡 |  |
+| [no-credentials-in-query-params](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-credentials-in-query-params) |  |  |  | ESLint rule documentation for no-credentials-in-query-params |  |  |  |  |  |
+| [no-disabled-certificate-validation](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-disabled-certificate-validation) |  |  |  | ESLint rule documentation for no-disabled-certificate-validation |  |  |  |  |  |
+| [no-dynamic-service-worker-url](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-dynamic-service-worker-url) | CWE-829 | A08:2025 | 7.5 | ESLint rule documentation for no-dynamic-service-worker-url | 💼 |  |  | 💡 |  |
+| [no-eval](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-eval) | CWE-95 | A03:2025 | 9.8 | ESLint rule documentation for no-eval | 💼 |  |  | 💡 | 🚫 |
+| [no-filereader-innerhtml](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-filereader-innerhtml) | CWE-79 | A03:2025 | 6.1 | ESLint rule documentation for no-filereader-innerhtml | 💼 |  |  | 💡 |  |
+| [no-http-urls](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-http-urls) |  |  |  | ESLint rule documentation for no-http-urls |  |  |  |  |  |
+| [no-innerhtml](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-innerhtml) | CWE-79 | A03:2025 | 6.1 | ESLint rule documentation for no-innerhtml | 💼 |  |  | 💡 |  |
+| [no-insecure-redirects](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-insecure-redirects) |  |  |  | ESLint rule documentation for no-insecure-redirects |  |  |  |  |  |
+| [no-insecure-websocket](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-insecure-websocket) |  |  |  | ESLint rule documentation for no-insecure-websocket |  |  |  |  |  |
+| [no-jwt-in-storage](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-jwt-in-storage) | CWE-922 | A02:2025 | 7.5 | ESLint rule documentation for no-jwt-in-storage | 💼 |  |  | 💡 |  |
+| [no-missing-cors-check](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-missing-cors-check) |  |  |  | ESLint rule documentation for no-missing-cors-check |  |  |  |  |  |
+| [no-missing-csrf-protection](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-missing-csrf-protection) |  |  |  | ESLint rule documentation for no-missing-csrf-protection |  |  |  |  |  |
+| [no-missing-security-headers](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-missing-security-headers) |  |  |  | ESLint rule documentation for no-missing-security-headers |  |  |  |  |  |
+| [no-password-in-url](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-password-in-url) |  |  |  | ESLint rule documentation for no-password-in-url |  |  |  |  |  |
+| [no-permissive-cors](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-permissive-cors) |  |  |  | ESLint rule documentation for no-permissive-cors |  |  |  |  |  |
+| [no-postmessage-innerhtml](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-postmessage-innerhtml) | CWE-79 | A03:2025 | 6.1 | ESLint rule documentation for no-postmessage-innerhtml | 💼 |  |  |  |  |
+| [no-postmessage-wildcard-origin](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-postmessage-wildcard-origin) | CWE-346 | A01:2025 | 8.8 | ESLint rule documentation for no-postmessage-wildcard-origin | 💼 |  |  |  |  |
+| [no-sensitive-cookie-js](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-sensitive-cookie-js) | CWE-1004 | A02:2025 | 5.3 | ESLint rule documentation for no-sensitive-cookie-js | 💼 |  |  | 💡 |  |
+| [no-sensitive-data-in-analytics](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-sensitive-data-in-analytics) |  |  |  | ESLint rule documentation for no-sensitive-data-in-analytics |  |  |  |  |  |
+| [no-sensitive-data-in-cache](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-sensitive-data-in-cache) |  |  |  | ESLint rule documentation for no-sensitive-data-in-cache |  |  |  |  |  |
+| [no-sensitive-indexeddb](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-sensitive-indexeddb) | CWE-922 | A02:2025 | 7.5 | ESLint rule documentation for no-sensitive-indexeddb | 💼 |  |  | 💡 |  |
+| [no-sensitive-localstorage](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-sensitive-localstorage) | CWE-922 | A02:2025 | 7.5 | ESLint rule documentation for no-sensitive-localstorage | 💼 |  |  | 💡 |  |
+| [no-sensitive-sessionstorage](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-sensitive-sessionstorage) | CWE-922 | A02:2025 | 7.5 | ESLint rule documentation for no-sensitive-sessionstorage | 💼 |  |  | 💡 |  |
+| [no-tracking-without-consent](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-tracking-without-consent) |  |  |  | ESLint rule documentation for no-tracking-without-consent |  |  |  |  |  |
+| [no-unencrypted-transmission](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-unencrypted-transmission) |  |  |  | ESLint rule documentation for no-unencrypted-transmission |  |  |  |  |  |
+| [no-unescaped-url-parameter](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-unescaped-url-parameter) |  |  |  | ESLint rule documentation for no-unescaped-url-parameter |  |  |  |  |  |
+| [no-unsafe-eval-csp](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-unsafe-eval-csp) | CWE-95 | A03:2025 | 9.8 | ESLint rule documentation for no-unsafe-eval-csp | 💼 |  |  | 💡 |  |
+| [no-unsafe-inline-csp](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-unsafe-inline-csp) | CWE-79 | A03:2025 | 6.1 | ESLint rule documentation for no-unsafe-inline-csp | 💼 |  |  | 💡 |  |
+| [no-unvalidated-deeplinks](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-unvalidated-deeplinks) |  |  |  | ESLint rule documentation for no-unvalidated-deeplinks |  |  |  |  |  |
+| [no-websocket-eval](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-websocket-eval) | CWE-95 | A03:2025 | 9.8 | ESLint rule documentation for no-websocket-eval | 💼 |  |  | 💡 |  |
+| [no-websocket-innerhtml](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-websocket-innerhtml) | CWE-79 | A03:2025 | 6.1 | ESLint rule documentation for no-websocket-innerhtml | 💼 |  |  | 💡 |  |
+| [no-worker-message-innerhtml](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/no-worker-message-innerhtml) | CWE-79 | A03:2025 | 6.1 | ESLint rule documentation for no-worker-message-innerhtml | 💼 |  |  |  |  |
+| [require-blob-url-revocation](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/require-blob-url-revocation) | CWE-401 | A04:2025 | 5.3 | ESLint rule documentation for require-blob-url-revocation | 💼 | ⚠️ |  | 💡 |  |
+| [require-cookie-secure-attrs](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/require-cookie-secure-attrs) | CWE-614 | A05:2025 | 5.3 | ESLint rule documentation for require-cookie-secure-attrs | 💼 |  |  |  | 🚫 |
+| [require-csp-headers](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/require-csp-headers) |  |  |  | ESLint rule documentation for require-csp-headers |  |  |  |  |  |
+| [require-https-only](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/require-https-only) |  |  |  | ESLint rule documentation for require-https-only |  |  |  |  |  |
+| [require-mime-type-validation](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/require-mime-type-validation) |  |  |  | ESLint rule documentation for require-mime-type-validation |  |  |  |  |  |
+| [require-postmessage-origin-check](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/require-postmessage-origin-check) | CWE-346 | A01:2025 | 8.8 | ESLint rule documentation for require-postmessage-origin-check | 💼 |  |  |  |  |
+| [require-url-validation](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/require-url-validation) |  |  |  | ESLint rule documentation for require-url-validation |  |  |  |  |  |
+| [require-websocket-wss](https://eslint.interlace.tools/docs/security/plugin-browser-security/rules/require-websocket-wss) | CWE-319 | A02:2025 | 7.5 | ESLint rule documentation for require-websocket-wss | 💼 |  |  | 💡 | 🚫 |
 
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
 
-| Plugin                                                                                               |                                                                              Downloads                                                                               | Description                                 |
-| :--------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------ |
-| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding)           |      [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding)      | General security rules & OWASP guidelines.  |
-| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg)                                 |                 [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg)                 | PostgreSQL security & best practices.       |
-| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto)                         |             [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto)             | NodeJS Cryptography security rules.         |
-| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt)                               |                [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt)                | JWT security & best practices.              |
-| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security)     |   [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security)   | Browser-specific security & XSS prevention. |
-| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security)     |   [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security)   | Express.js security hardening rules.        |
-| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security)       |    [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security)    | AWS Lambda security best practices.         |
-| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security)       |    [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security)    | NestJS security rules & patterns.           |
-| [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security)     |    [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security)    | MongoDB security best practices.           |
-| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening.           |
-| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next)               |        [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next)        | Next-gen import sorting & architecture.     |
+| Plugin | Downloads | Description |
+| :--- | :---: | :--- |
+| [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-secure-coding.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-secure-coding) | General security rules & OWASP guidelines. |
+| [`eslint-plugin-pg`](https://www.npmjs.com/package/eslint-plugin-pg) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-pg.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-pg) | PostgreSQL security & best practices. |
+| [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-crypto.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-crypto) | NodeJS Cryptography security rules. |
+| [`eslint-plugin-jwt`](https://www.npmjs.com/package/eslint-plugin-jwt) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-jwt.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-jwt) | JWT security & best practices. |
+| [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-browser-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-browser-security) | Browser-specific security & XSS prevention. |
+| [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-express-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-express-security) | Express.js security hardening rules. |
+| [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-lambda-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-lambda-security) | AWS Lambda security best practices. |
+| [`eslint-plugin-nestjs-security`](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-nestjs-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-nestjs-security) | NestJS security rules & patterns. |
+| [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
+| [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
+| [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
 
 ## 📄 License
 
 MIT © [Ofri Peretz](https://github.com/ofri-peretz)
 
 <p align="center">
-  <a href="https://eslint.interlace.tools/docs/browser-security"><img src="https://eslint.interlace.tools/images/og-browser-security.png" alt="ESLint Interlace Plugin" width="300" /></a>
+  <a href="https://eslint.interlace.tools/docs/security/plugin-browser-security"><img src="https://eslint.interlace.tools/images/og-browser-security.png" alt="ESLint Interlace Plugin" width="100%" /></a>
 </p>
