@@ -1,7 +1,6 @@
 {
     "$schema": "https://openapi.vercel.sh/vercel.json",
     "framework": "nextjs",
-    "buildCommand": "npx pnpm@9.15.4 --filter docs run build",
-    "outputDirectory": "apps/docs/.next",
-    "installCommand": "npx pnpm@9.15.4 install"
+    "buildCommand": "pnpm --filter docs run build",
+    "outputDirectory": "apps/docs/.next"
 }
