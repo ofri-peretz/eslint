@@ -1,151 +1,151 @@
 {
-    "summary": {
-        "totalCoverage": 85.4,
-        "totalFiles": 245,
-        "totalLines": 12500,
-        "coveredLines": 10625,
-        "uncoveredLines": 1875
-    },
-    "plugins": {
-        "security": [
-            {
-                "name": "eslint-plugin-browser-security",
-                "slug": "browser-security",
-                "coverage": 90.2,
-                "status": "production",
-                "category": "security"
-            },
-            {
-                "name": "eslint-plugin-jwt",
-                "slug": "jwt",
-                "coverage": 92.1,
-                "status": "production",
-                "category": "security"
-            },
-            {
-                "name": "eslint-plugin-secure-coding",
-                "slug": "secure-coding",
-                "coverage": 85.3,
-                "status": "production",
-                "category": "security"
-            },
-            {
-                "name": "eslint-plugin-crypto",
-                "slug": "crypto",
-                "coverage": 88.5,
-                "status": "production",
-                "category": "security"
-            },
-            {
-                "name": "eslint-plugin-node-security",
-                "slug": "node-security",
-                "coverage": 83.4,
-                "status": "production",
-                "category": "security"
-            },
-            {
-                "name": "eslint-plugin-mongodb-security",
-                "slug": "mongodb-security",
-                "coverage": 86.1,
-                "status": "production",
-                "category": "security"
-            },
-            {
-                "name": "eslint-plugin-pg",
-                "slug": "pg",
-                "coverage": 89.2,
-                "status": "production",
-                "category": "security"
-            },
-            {
-                "name": "eslint-plugin-express-security",
-                "slug": "express-security",
-                "coverage": 87.3,
-                "status": "production",
-                "category": "security"
-            },
-            {
-                "name": "eslint-plugin-nestjs-security",
-                "slug": "nestjs-security",
-                "coverage": 84.6,
-                "status": "production",
-                "category": "security"
-            },
-            {
-                "name": "eslint-plugin-lambda-security",
-                "slug": "lambda-security",
-                "coverage": 85.8,
-                "status": "production",
-                "category": "security"
-            },
-            {
-                "name": "eslint-plugin-vercel-ai-security",
-                "slug": "vercel-ai-security",
-                "coverage": 84.6,
-                "status": "production",
-                "category": "security"
-            }
-        ],
-        "quality": [
-            {
-                "name": "eslint-plugin-conventions",
-                "slug": "conventions",
-                "coverage": 82.3,
-                "status": "production",
-                "category": "quality"
-            },
-            {
-                "name": "eslint-plugin-maintainability",
-                "slug": "maintainability",
-                "coverage": 80.1,
-                "status": "production",
-                "category": "quality"
-            },
-            {
-                "name": "eslint-plugin-reliability",
-                "slug": "reliability",
-                "coverage": 81.5,
-                "status": "production",
-                "category": "quality"
-            },
-            {
-                "name": "eslint-plugin-modularity",
-                "slug": "modularity",
-                "coverage": 79.8,
-                "status": "production",
-                "category": "quality"
-            },
-            {
-                "name": "eslint-plugin-operability",
-                "slug": "operability",
-                "coverage": 78.5,
-                "status": "production",
-                "category": "quality"
-            },
-            {
-                "name": "eslint-plugin-modernization",
-                "slug": "modernization",
-                "coverage": 82.0,
-                "status": "production",
-                "category": "quality"
-            },
-            {
-                "name": "eslint-plugin-import-next",
-                "slug": "import-next",
-                "coverage": 88.4,
-                "status": "production",
-                "category": "quality"
-            }
-        ]
-    },
-    "standards": {
-        "coreSecurity": 85,
-        "frameworkPlugins": 80,
-        "qualityPlugins": 75
-    },
-    "meta": {
-        "generatedAt": "2026-02-01T16:00:00Z",
-        "source": "estimated",
-        "ttl": 14400
-    }
+  "summary": {
+    "totalCoverage": 85,
+    "totalFiles": 245,
+    "totalLines": 12500,
+    "coveredLines": 10625,
+    "uncoveredLines": 1875
+  },
+  "plugins": {
+    "security": [
+      {
+        "name": "eslint-plugin-browser-security",
+        "slug": "browser-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-node-security",
+        "slug": "node-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-secure-coding",
+        "slug": "secure-coding",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-vercel-ai-security",
+        "slug": "vercel-ai-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-mongodb-security",
+        "slug": "mongodb-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-pg",
+        "slug": "pg",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-jwt",
+        "slug": "jwt",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-crypto",
+        "slug": "crypto",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-lambda-security",
+        "slug": "lambda-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-express-security",
+        "slug": "express-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      },
+      {
+        "name": "eslint-plugin-nestjs-security",
+        "slug": "nestjs-security",
+        "coverage": 85,
+        "status": "production",
+        "category": "security"
+      }
+    ],
+    "quality": [
+      {
+        "name": "eslint-plugin-import-next",
+        "slug": "import-next",
+        "coverage": 80,
+        "status": "production",
+        "category": "quality"
+      },
+      {
+        "name": "eslint-plugin-conventions",
+        "slug": "conventions",
+        "coverage": 80,
+        "status": "production",
+        "category": "quality"
+      },
+      {
+        "name": "eslint-plugin-maintainability",
+        "slug": "maintainability",
+        "coverage": 80,
+        "status": "production",
+        "category": "quality"
+      },
+      {
+        "name": "eslint-plugin-reliability",
+        "slug": "reliability",
+        "coverage": 80,
+        "status": "production",
+        "category": "quality"
+      },
+      {
+        "name": "eslint-plugin-modularity",
+        "slug": "modularity",
+        "coverage": 80,
+        "status": "production",
+        "category": "quality"
+      },
+      {
+        "name": "eslint-plugin-operability",
+        "slug": "operability",
+        "coverage": 80,
+        "status": "production",
+        "category": "quality"
+      },
+      {
+        "name": "eslint-plugin-modernization",
+        "slug": "modernization",
+        "coverage": 80,
+        "status": "production",
+        "category": "quality"
+      }
+    ]
+  },
+  "standards": {
+    "coreSecurity": 85,
+    "frameworkPlugins": 80,
+    "qualityPlugins": 75
+  },
+  "meta": {
+    "generatedAt": "2026-02-02T06:49:45.319Z",
+    "source": "estimated",
+    "ttl": 14400
+  }
 }
