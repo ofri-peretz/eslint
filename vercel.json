@@ -1,7 +1,7 @@
 {
     "$schema": "https://openapi.vercel.sh/vercel.json",
     "framework": "nextjs",
-    "installCommand": "npm install --legacy-peer-deps",
+    "installCommand": "rm -f pnpm-lock.yaml && npm install --legacy-peer-deps",
     "buildCommand": "npx nx run docs:build",
     "outputDirectory": "apps/docs/.next"
 }
