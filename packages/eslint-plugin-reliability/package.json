@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-reliability",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "ESLint rules for runtime stability, fault tolerance, and type safety.",
   "type": "commonjs",
   "main": "./src/index.js",
