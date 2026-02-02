@@ -191,7 +191,7 @@ export const TweetMedia = ({ tweet }: { tweet: EnrichedTweet }) => {
   if (!hasMedia) return null;
   
   return (
-    <div className="flex flex-1 items-center justify-center">
+    <div className="flex flex-1 items-center justify-center mt-2">
       {tweet.video && (
         <video
           poster={tweet.video.poster}
@@ -199,15 +199,15 @@ export const TweetMedia = ({ tweet }: { tweet: EnrichedTweet }) => {
           loop
           muted
           playsInline
-          className="rounded-xl border shadow-sm"
+          className="w-full rounded-2xl border border-neutral-200 shadow-sm dark:border-neutral-800"
         >
           <source src={tweet.video.variants[0].src} type="video/mp4" />
           Your browser does not support the video tag.
         </video>
       )}
       {tweet.photos && (
-        <div className="relative flex transform-gpu snap-x snap-mandatory gap-4 overflow-x-auto">
-          <div className="shrink-0 snap-center sm:w-2" />
+        <div className="relative flex w-full transform-gpu snap-x snap-mandatory gap-3 overflow-x-auto">
+          <div className="shrink-0 snap-center sm:w-1" />
           {tweet.photos.map((photo) => (
             <img
               key={photo.url}
@@ -216,16 +216,16 @@ export const TweetMedia = ({ tweet }: { tweet: EnrichedTweet }) => {
               height={photo.height}
               title={"Photo by " + tweet.user.name}
               alt={tweet.text}
-              className="h-64 w-5/6 shrink-0 snap-center snap-always rounded-xl border object-cover shadow-sm"
+              className="h-64 w-5/6 shrink-0 snap-center snap-always rounded-2xl border border-neutral-200 object-cover shadow-sm dark:border-neutral-800"
             />
           ))}
-          <div className="shrink-0 snap-center sm:w-2" />
+          <div className="shrink-0 snap-center sm:w-1" />
         </div>
       )}
       {!tweet.video && !tweet.photos && cardImageUrl && (
         <img
           src={cardImageUrl}
-          className="w-full rounded-xl border object-cover shadow-sm"
+          className="w-full rounded-2xl border border-neutral-200 object-cover shadow-sm dark:border-neutral-800"
           alt={tweet.text}
         />
       )}
@@ -253,7 +253,13 @@ export const MagicTweet = ({
     >
       <div
         className={cn(
-          "relative flex h-full w-full max-w-lg flex-col gap-4 overflow-hidden rounded-xl border bg-white p-5 transition-all duration-200 group-hover:border-fd-primary/50 group-hover:shadow-lg",
+          // Magic UI-inspired styling: larger radii, deeper shadows, more padding
+          "relative flex h-full w-full max-w-lg flex-col gap-4 overflow-hidden",
+          "rounded-3xl border border-neutral-200 bg-white p-6",
+          "shadow-lg shadow-neutral-200/50",
+          "transition-all duration-300 ease-out",
+          "group-hover:shadow-xl group-hover:shadow-neutral-300/50 group-hover:-translate-y-0.5",
+          "dark:border-neutral-800 dark:bg-neutral-950 dark:shadow-neutral-900/50",
           className
         )}
         {...props}
