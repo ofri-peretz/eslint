@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-node-security",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Security-focused ESLint plugin for Node.js built-in modules (fs, child_process, vm, path, Buffer). Detects command injection, path traversal, code execution vulnerabilities with AI-parseable error messages.",
   "type": "commonjs",
   "main": "./src/index.js",
