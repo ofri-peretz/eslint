@@ -13,7 +13,7 @@ import { execSync } from 'child_process';
 // ═══════════════════════════════════════════════════════════════
 function getNxProjectNames() {
   try {
-    const output = execSync('pnpm nx show projects', { 
+    const output = execSync('npx nx show projects', { 
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe'] // Suppress stderr
     });

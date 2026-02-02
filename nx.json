@@ -144,8 +144,15 @@
       "eslint-plugin-lambda-security",
       "eslint-plugin-mongodb-security",
       "eslint-plugin-node-security",
+      "eslint-plugin-conventions",
+      "eslint-plugin-maintainability",
       "eslint-plugin-modularity",
-      "eslint-plugin-modernization"
+      "eslint-plugin-modernization",
+      "eslint-plugin-reliability",
+      "eslint-plugin-operability",
+      "eslint-plugin-react-a11y",
+      "eslint-plugin-react-features",
+      "cli"
     ],
     "projectsRelationship": "independent",
     "conventionalCommits": {
