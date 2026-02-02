@@ -101,6 +101,45 @@ This site includes modern AI/LLM configuration:
 | ---------------------- | --------------------------------------------------------------- |
 | `NEXT_PUBLIC_BASE_URL` | Production URL (default: `https://interlace-eslint.vercel.app`) |
 
+## JSON Data Sync (GitHub Actions → ISR)
+
+Statistical data is collected via **scheduled GitHub Actions** and stored as JSON files in `src/data/`. These are consumed by the site via Next.js ISR with automatic caching.
+
+| Workflow                    | Output File           | Schedule         | Purpose                              |
+| --------------------------- | --------------------- | ---------------- | ------------------------------------ |
+| `update-docs-stats.yml`     | `plugin-stats.json`   | Daily 6 AM UTC   | Plugin counts, rule counts, versions |
+| `update-coverage-stats.yml` | `coverage-stats.json` | Daily 7 AM UTC   | Test coverage per plugin             |
+| `sync-docs-data.yml`        | Multiple files        | Weekly + on push | README tables, metadata              |
+
+### Key APIs
+
+```typescript
+import { getDisplayStats, getEcosystemStats } from '@/lib/stats-loader';
+
+// Use in Server Components
+const stats = await getDisplayStats();
+// Returns: { plugins: 18, rules: 332, coverage: 85, ... }
+```
+
+### Testing Data Flow
+
+```bash
+# Run stats-loader tests
+npx vitest run apps/docs/src/__tests__/stats-loader.test.ts
+
+# Run sync script tests
+npx vitest run apps/docs/scripts/sync-plugin-stats.test.ts
+```
+
+📄 **Full documentation**: See [`docs/DATA_SYNC_ARCHITECTURE.md`](./docs/DATA_SYNC_ARCHITECTURE.md) for:
+
+- JSON schemas with validation
+- Trustworthiness assessment
+- Fallback behavior
+- Manual workflow execution
+
+---
+
 ## Testing Before Commit
 
 1. Run `nx dev docs` and verify pages load

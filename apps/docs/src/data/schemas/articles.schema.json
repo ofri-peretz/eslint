@@ -1,0 +1,100 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://eslint.interlace.tools/schemas/articles.json",
+    "title": "ArticlesData",
+    "description": "External articles fetched from Dev.to API for the /articles page",
+    "type": "object",
+    "required": [
+        "articles",
+        "fetchedAt"
+    ],
+    "properties": {
+        "articles": {
+            "type": "array",
+            "description": "List of articles sorted by publish date descending",
+            "items": {
+                "$ref": "#/definitions/DevToArticle"
+            }
+        },
+        "fetchedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when articles were fetched"
+        }
+    },
+    "definitions": {
+        "DevToArticle": {
+            "type": "object",
+            "required": [
+                "id",
+                "title",
+                "url",
+                "published_at"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "description": "Dev.to article ID"
+                },
+                "title": {
+                    "type": "string",
+                    "description": "Article title"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Short description/excerpt"
+                },
+                "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Canonical URL to the article"
+                },
+                "cover_image": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "format": "uri",
+                    "description": "Cover image URL (may be null)"
+                },
+                "social_image": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "format": "uri",
+                    "description": "Social sharing image URL (may be null)"
+                },
+                "published_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Publication timestamp"
+                },
+                "tag_list": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Tags associated with the article"
+                },
+                "reading_time_minutes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Estimated reading time"
+                },
+                "positive_reactions_count": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Number of positive reactions (likes)"
+                },
+                "comments_count": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Number of comments"
+                }
+            },
+            "additionalProperties": true
+        }
+    },
+    "additionalProperties": false
+}
