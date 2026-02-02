@@ -14,7 +14,7 @@
 # SCHEDULE: Every Monday at 6 AM UTC
 # ═══════════════════════════════════════════════════════════════════════════════
 
-name: "SDK: Lambda / Middy"
+name: "SDK: AWS Lambda Ecosystem (Middy)"
 
 on:
   schedule:
