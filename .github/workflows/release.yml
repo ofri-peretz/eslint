@@ -142,7 +142,7 @@ jobs:
           cache: "npm"
 
       - name: 📦 Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts --prefer-offline --no-audit
 
       - name: 🧹 Clean up orphaned tags
         id: cleanup-tags
@@ -445,7 +445,7 @@ jobs:
           cache: "npm"
 
       - name: 📦 Install dependencies
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit
 
       - name: ⬆️ Upgrade npm for Trusted Publishers
         run: |
