@@ -286,7 +286,9 @@ jobs:
 
       - name: 📊 Summary
         run: |
-          echo "## 🔍 Package Detection" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔍 Package Detection Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This run will process the following packages based on changes detected since the last release tag." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           VERSION_SPEC="${{ inputs.version-specifier }}"
@@ -294,15 +296,15 @@ jobs:
           if [ "${{ steps.detect.outputs.package-count }}" = "0" ]; then
             echo "ℹ️ No packages to release" >> $GITHUB_STEP_SUMMARY
           else
-            echo "**Version Specifier:** \`$VERSION_SPEC\`" >> $GITHUB_STEP_SUMMARY
+            echo "### 📦 Impacted Packages" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "| Package | Current | Bump | Commits Since Release |" >> $GITHUB_STEP_SUMMARY
-            echo "|---------|---------|------|----------------------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Status | Package | Current | Target | Changes (Summary) |" >> $GITHUB_STEP_SUMMARY
+            echo "|:---:|:---|:---|:---|:---|" >> $GITHUB_STEP_SUMMARY
             
             echo "${{ steps.detect.outputs.packages }}" | tr ',' '\n' | while read pkg; do
               if [ -n "$pkg" ]; then
                 # Get current version
-                CURRENT_VER=$(node -p "require('./packages/$pkg/package.json').version" 2>/dev/null || echo "N/A")
+                CURRENT_VER=$(node -p "require('./packages/$pkg/package.json').version" 2>/dev/null || echo "0.0.0")
                 
                 # Resolve NPM name
                 case "$pkg" in
@@ -320,48 +322,87 @@ jobs:
                 # Find last tag for this package
                 LAST_TAG=$(git tag --list "${pkg}@*" --sort=-version:refname 2>/dev/null | head -1 || echo "")
                 
-                # Count commits since last tag for this package
-                if [ -n "$LAST_TAG" ]; then
-                  COMMIT_COUNT=$(git log --oneline "$LAST_TAG..HEAD" -- "packages/$pkg/" 2>/dev/null | wc -l | tr -d ' ')
-                elif [ "$IS_FIRST_RELEASE" = "true" ]; then
-                  COMMIT_COUNT="🆕 First Release"
-                else
-                  COMMIT_COUNT="(no tag)"
-                fi
-                
-                # Determine bump type
+                # Determine bump type for prediction
+                BUMP_TYPE="patch"
                 if [ "$IS_FIRST_RELEASE" = "true" ]; then
-                  BUMP="🆕 initial"
+                  BUMP_TYPE="initial"
+                  STATUS_ICON="🆕"
                 elif [ "$VERSION_SPEC" = "auto" ]; then
-                  # Check if there's a feat commit (minor) or just fix (patch)
                   if [ -n "$LAST_TAG" ] && git log --oneline "$LAST_TAG..HEAD" -- "packages/$pkg/" 2>/dev/null | grep -qE "^[a-f0-9]+ feat"; then
-                    BUMP="minor ⬆️"
+                    BUMP_TYPE="minor"
+                    STATUS_ICON="⬆️"
                   else
-                    BUMP="patch 🔧"
+                    BUMP_TYPE="patch"
+                    STATUS_ICON="🔧"
                   fi
                 else
-                  BUMP="$VERSION_SPEC 📦"
+                  BUMP_TYPE="$VERSION_SPEC"
+                  STATUS_ICON="📦"
                 fi
                 
-                echo "| \`$pkg\` | \`$CURRENT_VER\` | $BUMP | $COMMIT_COUNT |" >> $GITHUB_STEP_SUMMARY
+                # Predict Target Version
+                TARGET_VER=$(node -e "
+                  const current = '$CURRENT_VER';
+                  const bump = '$BUMP_TYPE';
+                  if (bump === 'initial') { console.log(current); process.exit(0); }
+                  const parts = current.split('.').map(v => parseInt(v) || 0);
+                  while(parts.length < 3) parts.push(0);
+                  if (bump.includes('major')) { parts[0]++; parts[1]=0; parts[2]=0; }
+                  else if (bump.includes('minor')) { parts[1]++; parts[2]=0; }
+                  else if (bump.includes('patch')) { parts[2]++; }
+                  console.log(parts.join('.'));
+                " 2>/dev/null || echo "???")
+
+                # Get Changes Summary (top 3 files)
+                if [ "$IS_FIRST_RELEASE" = "true" ]; then
+                  CHANGES_SUMMARY="Full initial workspace"
+                elif [ -n "$LAST_TAG" ]; then
+                  # Filter out empty lines and package.json if it's the only change
+                  FILES=$(git diff --name-only "$LAST_TAG..HEAD" -- "packages/$pkg/" | sed "s|packages/$pkg/||" | grep -v "^$" | head -3 | tr '\n' ',' | sed 's/,$//')
+                  COUNT=$(git diff --name-only "$LAST_TAG..HEAD" -- "packages/$pkg/" | grep -v "^$" | wc -l | tr -d ' ')
+                  if [ -z "$FILES" ]; then
+                    CHANGES_SUMMARY="No file changes (metadata only)"
+                  elif [ "$COUNT" -gt 3 ]; then
+                    CHANGES_SUMMARY="\`$FILES\` (+$(($COUNT-3)) more)"
+                  else
+                    CHANGES_SUMMARY="\`$FILES\`"
+                  fi
+                else
+                  CHANGES_SUMMARY="No history found"
+                fi
+                
+                echo "| $STATUS_ICON | \`$pkg\` | $CURRENT_VER | **$TARGET_VER** | $CHANGES_SUMMARY |" >> $GITHUB_STEP_SUMMARY
               fi
             done
             
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### 📝 Recent Commits per Package" >> $GITHUB_STEP_SUMMARY
+            echo "---" >> $GITHUB_STEP_SUMMARY
+            echo "### 📝 Commit Details" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             
             echo "${{ steps.detect.outputs.packages }}" | tr ',' '\n' | while read pkg; do
               if [ -n "$pkg" ]; then
                 LAST_TAG=$(git tag --list "${pkg}@*" --sort=-version:refname 2>/dev/null | head -1 || echo "")
-                echo "**$pkg**" >> $GITHUB_STEP_SUMMARY
+                echo "<details>" >> $GITHUB_STEP_SUMMARY
+                echo "<summary>Recent commits for <b>$pkg</b></summary>" >> $GITHUB_STEP_SUMMARY
+                echo "" >> $GITHUB_STEP_SUMMARY
                 if [ -n "$LAST_TAG" ]; then
-                  echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-                  git log --oneline "$LAST_TAG..HEAD" -- "packages/$pkg/" 2>/dev/null | head -5 >> $GITHUB_STEP_SUMMARY || echo "No commits found" >> $GITHUB_STEP_SUMMARY
+                  echo "\`\`\`text" >> $GITHUB_STEP_SUMMARY
+                  git log --oneline "$LAST_TAG..HEAD" -- "packages/$pkg/" 2>/dev/null | head -10 >> $GITHUB_STEP_SUMMARY || echo "No commits found" >> $GITHUB_STEP_SUMMARY
                   echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
                 else
-                  echo "(No release tag found)" >> $GITHUB_STEP_SUMMARY
+                  IS_FIRST_RELEASE_LOCAL=false
+                  case "$pkg" in
+                    eslint-devkit) NPM_NAME_LOCAL="@interlace/eslint-devkit" ;;
+                    *) NPM_NAME_LOCAL="$pkg" ;;
+                  esac
+                  if npm view "$NPM_NAME_LOCAL" version 2>&1 | grep -qiE "(404|not found|no such package)"; then
+                    echo "🆕 Initial release - all commits included" >> $GITHUB_STEP_SUMMARY
+                  else
+                    echo "⚠️ No release tag found for comparison" >> $GITHUB_STEP_SUMMARY
+                  fi
                 fi
+                echo "</details>" >> $GITHUB_STEP_SUMMARY
                 echo "" >> $GITHUB_STEP_SUMMARY
               fi
             done
