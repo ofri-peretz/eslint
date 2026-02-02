@@ -16,19 +16,20 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  NODE_VERSION: "24"
-
 jobs:
   # ═══════════════════════════════════════════════════════════════════════════
   # CI: Test, Build, Typecheck affected packages
   # ═══════════════════════════════════════════════════════════════════════════
   ci:
-    name: CI
+    name: CI (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [18, 20, 22, 24]
 
     steps:
       - name: 📥 Checkout repository
@@ -84,7 +85,7 @@ jobs:
         if: steps.docs_only.outputs.docs_only != 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: ${{ matrix.node-version }}
           cache: "npm"
 
       - name: 📦 Install dependencies
