@@ -18,10 +18,21 @@ export function getPageImage(page: InferPageType<typeof source>) {
   };
 }
 
+// Extended page data type for LLM text extraction
+interface PageDataWithText {
+  title?: string;
+  getText?: (format: string) => Promise<string>;
+}
+
 export async function getLLMText(page: InferPageType<typeof source>) {
-  const processed = await page.data.getText('processed');
-
-  return `# ${page.data.title}
-
-${processed}`;
+  const data = page.data as unknown as PageDataWithText;
+  
+  // getText may not be available depending on fumadocs configuration
+  if (typeof data.getText === 'function') {
+    const processed = await data.getText('processed');
+    return `# ${data.title ?? 'Untitled'}\n\n${processed}`;
+  }
+  
+  // Fallback if getText is not available
+  return `# ${data.title ?? 'Untitled'}`;
 }

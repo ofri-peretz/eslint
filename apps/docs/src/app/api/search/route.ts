@@ -1,6 +1,14 @@
 import { source } from '@/lib/source';
 import { createFromSource } from 'fumadocs-core/search/server';
 import { getSearchTags } from '@/lib/search-utils';
+import type { StructuredData } from 'fumadocs-core/mdx-plugins';
+
+// Extended page data type that includes MDX-processed structuredData
+interface PageDataWithStructure {
+  title?: string;
+  description?: string;
+  structuredData?: StructuredData;
+}
 
 /**
  * Search API with Orama
@@ -17,13 +25,17 @@ export const { GET } = createFromSource(source, {
     // Get pillar tag from URL
     const tags = getSearchTags(page.url);
     
+    // Cast to access structuredData which exists at runtime
+    const data = page.data as unknown as PageDataWithStructure;
+    
     return {
       id: page.url,
-      title: page.data.title,
-      description: page.data.description,
+      // Provide fallback for title (required by AdvancedIndex)
+      title: data.title ?? 'Untitled',
+      description: data.description ?? '',
       url: page.url,
-      // Use structured data from the page
-      structuredData: page.data.structuredData,
+      // structuredData is required by AdvancedIndex
+      structuredData: data.structuredData ?? { headings: [], contents: [] },
       // Add pillar tags for filtering
       tag: tags.length > 0 ? tags : undefined,
     };

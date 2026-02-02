@@ -52,9 +52,6 @@
     },
     "build": {
       "executor": "nx:run-commands",
-      "dependsOn": [
-        "validate-mermaid"
-      ],
       "outputs": [
         "{projectRoot}/.next"
       ],
