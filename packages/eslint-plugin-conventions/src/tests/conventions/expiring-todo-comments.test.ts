@@ -46,15 +46,6 @@ describe('expiring-todo-comments', () => {
     vi.restoreAllMocks();
   });
 
-  // Debug test
-  it('debug single case', () => {
-    const code = '// TODO [2099-12-31]: This is not expired';
-    ruleTester.run('debug', expiringTodoComments, {
-      valid: [code],
-      invalid: [],
-    });
-  });
-
   describe('Date conditions', () => {
     const pastDate = '2000-01-01'; // Definitely expired
     const futureDate = '2099-12-31'; // Definitely not expired

@@ -8,9 +8,9 @@
  * 4. LLM format consistency
  */
 import { describe, it, expect } from 'vitest';
-import { execSync } from 'child_process';
-import * as fs from 'fs';
-import * as path from 'path';
+import { execSync } from 'node:child_process';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 // Get workspace root (3 levels up from this test file)
 const WORKSPACE_ROOT = path.resolve(__dirname, '../../../../..');

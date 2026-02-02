@@ -11,7 +11,8 @@ export default [
           ignoredFiles: [
             '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
             '{projectRoot}/vite.config.{js,ts,mjs,mts}',
-            '{projectRoot}/vitest.config.{js,mjs,ts,mts}'
+            '{projectRoot}/vitest.config.{js,mjs,ts,mts}',
+            '{projectRoot}/**/*.test.{js,cjs,mjs,ts,cts,mts}',
           ],
           ignoredDependencies: ['vitest', '@nx/vite', 'vite'],
         },

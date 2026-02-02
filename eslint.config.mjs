@@ -75,6 +75,9 @@ export default [
             '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
             '{projectRoot}/vitest.config.{js,mjs,ts,mts}',
             '{projectRoot}/vite.config.{js,ts,mjs,mts}',
+            '{projectRoot}/**/*.test.{js,cjs,mjs,ts,cts,mts}',
+            '{projectRoot}/docs/**/*.md', // Doc examples reference external packages
+            '{projectRoot}/benchmark/**/*', // Benchmark files reference external packages
           ],
           ignoredDependencies: [
             'eslint', // Peer dependency - provided by consuming projects
