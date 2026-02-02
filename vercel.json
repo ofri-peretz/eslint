@@ -3,5 +3,8 @@
     "framework": "nextjs",
     "installCommand": "npm install",
     "buildCommand": "cd apps/docs && next build",
-    "outputDirectory": "apps/docs/.next"
+    "outputDirectory": "apps/docs/.next",
+    "git": {
+        "ignoreCommand": "exit 0"
+    }
 }
