@@ -1,3 +1,35 @@
+## 1.1.0 (2026-02-02)
+
+### Features
+
+- **infra:** migrate from pnpm to npm for Vercel compatibility ([46172cd7](https://github.com/ofri-peretz/eslint/commit/46172cd7))
+- **docs:** implement 3-pillar navigation with sidebar tabs ([03c3f688](https://github.com/ofri-peretz/eslint/commit/03c3f688))
+- **docs:** deploy new Interlace VI and mobile UX ([c05b5106](https://github.com/ofri-peretz/eslint/commit/c05b5106))
+- add high-fidelity OG images, banners, and update docs layout ([bf60afed](https://github.com/ofri-peretz/eslint/commit/bf60afed))
+
+### Bug Fixes
+
+- **release:** fix release workflow logic, docs cache, and promote lint warnings to errors ([5945113a](https://github.com/ofri-peretz/eslint/commit/5945113a))
+- **docs:** resolve MDX compatibility issues and add validation tests ([dac50031](https://github.com/ofri-peretz/eslint/commit/dac50031))
+- **docs:** revert inappropriate security additions to non-security plugins ([b8b7bac0](https://github.com/ofri-peretz/eslint/commit/b8b7bac0))
+- **docs:** strict readout alignment to NestJS structure and table consolidation --no-verify ([6e12c39f](https://github.com/ofri-peretz/eslint/commit/6e12c39f))
+- **docs:** wrap lucide icons with span for title attribute compatibility ([bd36290d](https://github.com/ofri-peretz/eslint/commit/bd36290d))
+
+### Documentation
+
+- update rule documentation and docs app UI improvements ([53c83f8c](https://github.com/ofri-peretz/eslint/commit/53c83f8c))
+- add Known False Negatives to all rules (173 rules updated) ([1e988afd](https://github.com/ofri-peretz/eslint/commit/1e988afd))
+- fleet-wide documentation compliance - 160 rules improved ([1d68f96a](https://github.com/ofri-peretz/eslint/commit/1d68f96a))
+- update plugin documentation with standardized badges and new OG images ([627773c9](https://github.com/ofri-peretz/eslint/commit/627773c9))
+- finalize readme structure, drop security research coverage ([30b96dbd](https://github.com/ofri-peretz/eslint/commit/30b96dbd))
+- remove header and legend artifacts from rules table ([8e46b93e](https://github.com/ofri-peretz/eslint/commit/8e46b93e))
+- finalize readme layout with centered badges and strict structure ([f9413c91](https://github.com/ofri-peretz/eslint/commit/f9413c91))
+- align main README with Interlace branding ([15e520cd](https://github.com/ofri-peretz/eslint/commit/15e520cd))
+
+### ❤️ Thank You
+
+- Ofri Peretz
+
 # Changelog
 
 All notable changes to `eslint-plugin-react-features` will be documented in this file.
