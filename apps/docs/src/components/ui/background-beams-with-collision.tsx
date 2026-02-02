@@ -18,7 +18,7 @@ import React, { useRef, useState, useEffect } from "react";
  *
  * @example
  * ```tsx
- * <BackgroundBeamsWithCollision>
+ * <BackgroundBeamsWithCollision> 
  *   <h1>Your Content Here</h1>
  * </BackgroundBeamsWithCollision>
  * ```
