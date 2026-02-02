@@ -13,7 +13,7 @@
       "rules": 31,
       "description": "Security-focused ESLint plugin for Node",
       "category": "security",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "published": true
     },
     {
@@ -101,7 +101,7 @@
       "rules": 9,
       "description": "ESLint rules for team-specific disciplinary patterns and code conventions",
       "category": "quality",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "published": true
     },
     {
@@ -109,7 +109,7 @@
       "rules": 8,
       "description": "ESLint rules for reducing cognitive load and ensuring code readability",
       "category": "quality",
-      "version": "1.0.5",
+      "version": "2.0.0",
       "published": true
     },
     {
@@ -117,7 +117,7 @@
       "rules": 8,
       "description": "ESLint rules for runtime stability, fault tolerance, and type safety",
       "category": "quality",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "published": true
     },
     {
@@ -133,7 +133,7 @@
       "rules": 6,
       "description": "ESLint rules for production behavior, resource hygiene, and log quality",
       "category": "quality",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "published": true
     },
     {
@@ -149,7 +149,7 @@
       "rules": 52,
       "description": "ESLint React rules for modern react features, hooks, and patterns",
       "category": "react",
-      "version": "1.0.5",
+      "version": "1.1.0",
       "published": false
     },
     {
@@ -157,12 +157,12 @@
       "rules": 39,
       "description": "React accessibility ESLint plugin with 37 LLM-optimized rules for WCAG 2",
       "category": "react",
-      "version": "2.0.5",
+      "version": "2.1.0",
       "published": false
     }
   ],
   "totalRules": 332,
   "totalPlugins": 18,
   "allPluginsCount": 20,
-  "generatedAt": "2026-02-02T07:38:20.650Z"
+  "generatedAt": "2026-02-02T07:48:24.180Z"
 }
