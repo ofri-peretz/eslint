@@ -1,3 +1,7 @@
+# 3.0.0 (2026-02-02)
+
+This was a version bump only for eslint-plugin-conventions to align it with other projects, there were no code changes.
+
 # Changelog
 
 All notable changes to `eslint-plugin-conventions` will be documented in this file.
