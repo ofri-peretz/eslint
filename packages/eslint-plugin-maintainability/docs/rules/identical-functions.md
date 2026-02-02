@@ -1,18 +1,19 @@
 ---
 title: identical-functions
-description: identical-functions
-category: quality
-severity: low
+description: Detects duplicate function implementations with DRY refactoring suggestions
 tags: ['quality', 'maintainability']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
-
 
 > **Keywords:** code duplication, DRY principle, CWE-1104, ESLint rule, duplicate code, refactoring, SonarQube, auto-fix, LLM-optimized, code quality
 
-Detects duplicate function implementations with DRY refactoring suggestions. This rule is part of [`@eslint/eslint-plugin-quality`](https://www.npmjs.com/package/@eslint/eslint-plugin-quality) and provides LLM-optimized error messages with fix suggestions.
+
+<!-- @rule-summary -->
+Detects duplicate function implementations with DRY refactoring suggestions
+<!-- @/rule-summary -->
+
+Detects duplicate function implementations with DRY refactoring suggestions. This rule is part of [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability) and provides LLM-optimized error messages with fix suggestions.
 
 **💡 Provides suggestions**
 
@@ -158,7 +159,7 @@ const processGuestOrder = (order: GuestOrder) => processOrder(order);
 ```javascript
 {
   rules: {
-    'quality/identical-functions': ['error', {
+    'maintainability/identical-functions': ['error', {
       minLines: 3,
       similarityThreshold: 0.85
     }]
@@ -171,7 +172,7 @@ const processGuestOrder = (order: GuestOrder) => processOrder(order);
 ```javascript
 {
   rules: {
-    'quality/identical-functions': ['error', {
+    'maintainability/identical-functions': ['error', {
       minLines: 2,              // Catch even small duplications
       similarityThreshold: 0.7,  // Lower threshold = more sensitive
       ignoreTestFiles: false     // Check test files too
@@ -185,7 +186,7 @@ const processGuestOrder = (order: GuestOrder) => processOrder(order);
 ```javascript
 {
   rules: {
-    'quality/identical-functions': ['warn', {
+    'maintainability/identical-functions': ['warn', {
       minLines: 5,               // Only large duplications
       similarityThreshold: 0.95, // Must be nearly identical
       ignoreTestFiles: true

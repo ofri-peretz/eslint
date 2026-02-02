@@ -1,17 +1,21 @@
 ---
 title: no-namespace
 description: no-namespace rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-namespace
+---
+
+
+<!-- @rule-summary -->
+no-namespace rule
+<!-- @/rule-summary -->
+
+# no-namespace
 
 > **Keywords:** React, namespace import, named imports, tree shaking, bundle size, ESLint rule, LLM-optimized
 
-Prevent namespace imports in React applications. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Prevent namespace imports in React applications. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -133,6 +137,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

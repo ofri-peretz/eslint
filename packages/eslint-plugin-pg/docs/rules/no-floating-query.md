@@ -1,14 +1,19 @@
 ---
 title: no-floating-query
-description: no-floating-query
+description: Ensures query promises are awaited or handled.
+tags: ['security', 'postgres']
 category: security
 severity: medium
-tags: ['security', 'postgres']
+cwe: CWE-252
 autofix: false
 ---
 
-
 > **Keywords:** unhandled promise, CWE-252, pg, node-postgres, async
+
+<!-- @rule-summary -->
+Ensures query promises are awaited or handled.
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Ensures query promises are awaited or handled.

@@ -1,15 +1,21 @@
 ---
 title: lock-file
 description: "CWE: [CWE-829](https://cwe.mitre.org/data/definitions/829.html)"
+tags: ['security', 'node']
 category: security
 severity: medium
-tags: ['security', 'node']
+cwe: CWE-829
 autofix: false
 ---
 
 > **Keywords:** lock-file, package-lock, yarn.lock, pnpm-lock, supply chain, security, ESLint rule, CWE-829, deterministic builds
 > **CWE:** [CWE-829: Inclusion of Functionality from Untrusted Control Sphere](https://cwe.mitre.org/data/definitions/829.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M2: Inadequate Supply Chain Security](https://owasp.org/www-project-mobile-top-10/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-829](https://cwe.mitre.org/data/definitions/829.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: lock-file. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security).
 

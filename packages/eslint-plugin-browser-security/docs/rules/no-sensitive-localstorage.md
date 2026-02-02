@@ -1,14 +1,19 @@
 ---
 title: no-sensitive-localstorage
-description: no-sensitive-localstorage
+description: Detects storage of sensitive data (tokens, passwords, PII) in localStorage
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-922
 autofix: false
 ---
 
-
 > **Keywords:** localStorage, sessionStorage, tokens, CWE-922, security, XSS, sensitive data
+
+<!-- @rule-summary -->
+Detects storage of sensitive data (tokens, passwords, PII) in localStorage
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-359](https://cwe.mitre.org/data/definitions/359.html)  
 **OWASP Mobile:** [M9: Insecure Data Storage](https://owasp.org/www-project-mobile-top-10/)
 

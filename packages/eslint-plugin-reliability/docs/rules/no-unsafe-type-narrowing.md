@@ -1,15 +1,17 @@
 ---
 title: no-unsafe-type-narrowing
 description: "ESLint Rule: no-unsafe-type-narrowing with LLM-optimized suggestions and auto-fix capabilities."
-category: quality
-severity: low
 tags: ['quality', 'reliability']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
 > **Keywords:** no unsafe type narrowing, quality, ESLint rule, JavaScript, TypeScript, SonarQube RSPEC-4326
+
+
+<!-- @rule-summary -->
+ESLint Rule: no-unsafe-type-narrowing with LLM-optimized suggestions and auto-fix capabilities.
+<!-- @/rule-summary -->
 
 ESLint Rule: no-unsafe-type-narrowing with LLM-optimized suggestions and auto-fix capabilities.
 
@@ -87,7 +89,7 @@ flowchart TD
 export default [
   {
     rules: {
-      'quality/no-unsafe-type-narrowing': 'error',
+      'reliability/no-unsafe-type-narrowing': 'error',
     },
   },
 ];

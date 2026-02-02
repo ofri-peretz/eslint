@@ -1,15 +1,17 @@
 ---
 title: no-debug-code-in-production
 description: Detects debug code that should not be present in production builds.
-category: quality
-severity: low
 tags: ['quality', 'operability', 'production']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
 > **Keywords:** console.log, DEBUG, **DEV**, [CWE-489](https://cwe.mitre.org/data/definitions/489.html), leftover debug, production security
+
+
+<!-- @rule-summary -->
+Detects debug code that should not be present in production builds.
+<!-- @/rule-summary -->
 
 Detects debug code that should not be present in production builds.
 

@@ -158,22 +158,20 @@ export async function RemoteReadme({ plugin, sections = ['full'] }: RemoteReadme
   }
   
   // Compile with MDX
+  let compiledContent: Awaited<ReturnType<typeof compileRemoteMDX>> | null = null;
+  let compilationError: Error | null = null;
+  
   try {
-    const { Body, toc } = await compileRemoteMDX(contentToCompile, {
+    compiledContent = await compileRemoteMDX(contentToCompile, {
       pluginName: plugin,
     });
-    
-    return (
-      <RemoteTocProvider toc={toc}>
-        <div className="remote-readme">
-          <Body />
-        </div>
-      </RemoteTocProvider>
-    );
   } catch (error) {
     console.error(`[RemoteReadme] Compilation error for ${plugin}:`, error);
+    compilationError = error instanceof Error ? error : new Error(String(error));
+  }
     
-    // Fallback - at least show the raw markdown
+  // Fallback - show raw markdown on compilation error
+  if (compilationError || !compiledContent) {
     return (
       <div className="prose prose-neutral dark:prose-invert max-w-none">
         <pre className="whitespace-pre-wrap text-sm bg-fd-muted p-4 rounded-lg overflow-auto">
@@ -182,6 +180,16 @@ export async function RemoteReadme({ plugin, sections = ['full'] }: RemoteReadme
       </div>
     );
   }
+  
+  const { Body, toc } = compiledContent;
+    
+  return (
+    <RemoteTocProvider toc={toc}>
+      <div className="remote-readme">
+        <Body />
+      </div>
+    </RemoteTocProvider>
+  );
 }
 
 export default RemoteReadme;

@@ -1,14 +1,19 @@
 ---
 title: no-data-in-temp-storage
-description: no-data-in-temp-storage
+description: Temporary directories (/tmp, /var/tmp, temp/) are often world-readable or persist longer than expected
+tags: ['security', 'node']
 category: security
 severity: medium
-tags: ['security', 'node']
+cwe: CWE-312
 autofix: false
 ---
 
-
 > Prevents sensitive data in temporary directories
+
+
+<!-- @rule-summary -->
+Temporary directories (/tmp, /var/tmp, temp/) are often world-readable or persist longer than expected
+<!-- @/rule-summary -->
 
 **Severity:** 🔴 CRITICAL | 🟠 HIGH  
 **CWE:** [CWE-312](https://cwe.mitre.org/data/definitions/312.html)  

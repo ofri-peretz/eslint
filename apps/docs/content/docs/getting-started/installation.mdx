@@ -4,11 +4,9 @@ description: Install ESLint Interlace plugins in your project
 icon: Download
 ---
 
-import { CheckCircle, AlertTriangle } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 
 ## Prerequisites
-
-Before installing ESLint Interlace, ensure your project meets these requirements:
 
 <Cards>
   <Card title="Node.js 18+" icon={<CheckCircle />}>
@@ -20,143 +18,160 @@ Before installing ESLint Interlace, ensure your project meets these requirements
 </Cards>
 
 <Callout type="warning" title="ESLint Version">
-  ESLint Interlace requires **ESLint 9.x** or later with flat config support. If
-  you're using ESLint 8.x, see our [Flat Config
-  Migration](/docs/getting-started/flat-config) guide.
+  ESLint Interlace requires **ESLint 9.x** with flat config. See our [Flat
+  Config Migration](/docs/getting-started/flat-config) guide if you're
+  upgrading.
 </Callout>
+
+---
 
 ## Quick Start
 
-Install the complete ESLint Interlace preset that includes all plugins:
+Install ESLint and your first security plugin. Choose your package manager:
 
-<Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
-  <Tab value="npm">
-    ```bash npm install eslint-config-interlace eslint --save-dev ```
-  </Tab>
-  <Tab value="pnpm">```bash pnpm add eslint-config-interlace eslint -D ```</Tab>
-  <Tab value="yarn">
-    ```bash yarn add eslint-config-interlace eslint --dev ```
-  </Tab>
-  <Tab value="bun">
-    ```bash bun add eslint-config-interlace eslint --dev ```
-  </Tab>
-</Tabs>
+### npm
 
-## Individual Plugins
-
-Install only the plugins you need:
-
-### Security Plugins
-
-```bash
-npm install --save-dev \
-  eslint-plugin-browser-security \
-  eslint-plugin-crypto \
-  eslint-plugin-jwt \
-  eslint-plugin-secure-coding \
-  eslint-plugin-secrets
+```bash tab="secure-coding"
+npm install eslint eslint-plugin-secure-coding --save-dev
 ```
 
-### React Security
-
-```bash
-npm install --save-dev \
-  eslint-plugin-react-native-security
+```bash tab="browser-security"
+npm install eslint eslint-plugin-browser-security --save-dev
 ```
 
-### Quality Plugins
-
-```bash
-npm install --save-dev \
-  eslint-plugin-react-best-practices \
-  eslint-plugin-react-hooks-best-practices \
-  eslint-plugin-documentation
+```bash tab="jwt"
+npm install eslint eslint-plugin-jwt --save-dev
 ```
 
-### Node.js Plugins
-
-```bash
-npm install --save-dev \
-  eslint-plugin-node-security
+```bash tab="node-security"
+npm install eslint eslint-plugin-node-security --save-dev
 ```
 
-## Monorepo Setup
+### pnpm
 
-### Nx Workspace
-
-For Nx monorepos, install at the root and configure per-project:
-
-```bash title="Root installation"
-npm install eslint-config-interlace --save-dev -w
+```bash tab="secure-coding"
+pnpm add eslint eslint-plugin-secure-coding -D
 ```
 
-```js title="apps/my-app/eslint.config.js"
-import interlace from 'eslint-config-interlace';
-import baseConfig from '../../eslint.config.js';
-
-export default [
-  ...baseConfig,
-  ...interlace.configs.recommended,
-  {
-    files: ['**/*.tsx'],
-    rules: {
-      // App-specific overrides
-    },
-  },
-];
+```bash tab="browser-security"
+pnpm add eslint eslint-plugin-browser-security -D
 ```
 
-### Turborepo
-
-```bash title="Root installation"
-npm install eslint-config-interlace --save-dev
+```bash tab="jwt"
+pnpm add eslint eslint-plugin-jwt -D
 ```
 
-Share config via internal package or use `tsconfig` paths:
-
-```js title="packages/eslint-config/index.js"
-import interlace from 'eslint-config-interlace';
-
-export default [...interlace.configs.recommended];
+```bash tab="node-security"
+pnpm add eslint eslint-plugin-node-security -D
 ```
 
-### pnpm Workspaces
+### yarn
 
-```bash
-pnpm add eslint-config-interlace -D -w
+```bash tab="secure-coding"
+yarn add eslint eslint-plugin-secure-coding --dev
 ```
 
-## TypeScript Projects
+```bash tab="browser-security"
+yarn add eslint eslint-plugin-browser-security --dev
+```
 
-For TypeScript projects, no additional configuration is needed. ESLint Interlace automatically detects `.ts` and `.tsx` files:
+```bash tab="jwt"
+yarn add eslint eslint-plugin-jwt --dev
+```
+
+```bash tab="node-security"
+yarn add eslint eslint-plugin-node-security --dev
+```
+
+Then create `eslint.config.js`:
 
 ```js title="eslint.config.js"
-import interlace from 'eslint-config-interlace';
+import secureCoding from 'eslint-plugin-secure-coding';
 
-export default [
-  ...interlace.configs.recommended,
-  {
-    files: ['**/*.ts', '**/*.tsx'],
-    // TypeScript files are automatically handled
-  },
-];
+export default [secureCoding.configs.recommended];
 ```
 
-<Callout type="info" title="Type-Aware Rules">
-  Some security rules benefit from TypeScript type information. Enable
-  type-aware linting for maximum coverage.
-</Callout>
+---
+
+## Security Plugins
+
+Choose the plugins that match your stack:
+
+<Cards>
+  <Card title="Browser Security" href="/docs/security/plugin-browser-security">
+    XSS prevention, DOM security, client-side vulnerabilities (50+ rules)
+  </Card>
+  <Card title="Secure Coding" href="/docs/security/plugin-secure-coding">
+    Injection prevention, input validation (26 rules)
+  </Card>
+  <Card title="JWT" href="/docs/security/plugin-jwt">
+    Token security, algorithm confusion (13 rules)
+  </Card>
+  <Card title="Node Security" href="/docs/security/plugin-node-security">
+    Server-side patterns, cryptography (31 rules)
+  </Card>
+</Cards>
+
+### Database Security
+
+<Cards>
+  <Card title="MongoDB Security" href="/docs/security/plugin-mongodb-security">
+    NoSQL injection prevention (19 rules)
+  </Card>
+  <Card title="PostgreSQL" href="/docs/security/plugin-pg">
+    SQL injection prevention (15 rules)
+  </Card>
+</Cards>
+
+### Framework Security
+
+<Cards>
+  <Card title="Express" href="/docs/security/plugin-express-security">
+    Express.js hardening (14 rules)
+  </Card>
+  <Card title="NestJS" href="/docs/security/plugin-nestjs-security">
+    NestJS security patterns (10 rules)
+  </Card>
+  <Card title="AWS Lambda" href="/docs/security/plugin-lambda-security">
+    Lambda & Middy security (16 rules)
+  </Card>
+  <Card title="Vercel AI" href="/docs/security/plugin-vercel-ai-security">
+    AI SDK security (22 rules)
+  </Card>
+</Cards>
+
+---
+
+## Quality Plugins
+
+<Cards>
+  <Card title="Import Next" href="/docs/quality/plugin-import-next">
+    Fast import organization, 100x faster cycle detection (61 rules)
+  </Card>
+  <Card title="Conventions" href="/docs/quality/plugin-conventions">
+    Team coding standards (9 rules)
+  </Card>
+  <Card title="Maintainability" href="/docs/quality/plugin-maintainability">
+    Code readability (8 rules)
+  </Card>
+  <Card title="Reliability" href="/docs/quality/plugin-reliability">
+    Error handling patterns (8 rules)
+  </Card>
+  <Card title="Modularity" href="/docs/quality/plugin-modularity">
+    Clean architecture (7 rules)
+  </Card>
+</Cards>
+
+---
 
 ## Verify Installation
-
-Run ESLint to verify the installation:
 
 ```bash
 npx eslint --version
 npx eslint .
 ```
 
-You should see ESLint running with Interlace rules. If you encounter issues, check our [Troubleshooting](/docs/getting-started/troubleshooting) guide.
+---
 
 ## Next Steps
 

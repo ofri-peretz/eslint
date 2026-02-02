@@ -1,17 +1,21 @@
 ---
 title: prefer-es6-class
 description: prefer-es6-class rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# prefer-es6-class
+---
+
+
+<!-- @rule-summary -->
+prefer-es6-class rule
+<!-- @/rule-summary -->
+
+# prefer-es6-class
 
 > **Keywords:** React, ES6 class, createClass, migration, ESLint rule, modern syntax, LLM-optimized
 
-Prefer ES6 class syntax over `React.createClass`. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Prefer ES6 class syntax over `React.createClass`. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -115,6 +119,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

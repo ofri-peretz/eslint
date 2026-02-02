@@ -1,14 +1,19 @@
 ---
 title: require-output-filtering
-description: require-output-filtering
+description: This rule identifies tool execute functions that return raw data from data sources (databases, APIs, file systems) wi...
+tags: ['security', 'ai']
 category: security
 severity: medium
-tags: ['security', 'ai']
+cwe: CWE-200
 autofix: false
 ---
 
-
 > Requires filtering of sensitive data returned by AI tools.
+
+
+<!-- @rule-summary -->
+This rule identifies tool execute functions that return raw data from data sources (databases, APIs, file systems) wi...
+<!-- @/rule-summary -->
 
 ## 📊 Rule Details
 

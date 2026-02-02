@@ -1,14 +1,19 @@
 ---
 title: require-tool-confirmation
-description: require-tool-confirmation
+description: "This rule identifies destructive tools (delete, transfer, execute, etc.) that don't require human confirmation before..."
+tags: ['security', 'ai']
 category: security
 severity: medium
-tags: ['security', 'ai']
+cwe: CWE-862
 autofix: false
 ---
 
-
 > Requires human confirmation for destructive tool operations.
+
+
+<!-- @rule-summary -->
+This rule identifies destructive tools (delete, transfer, execute, etc.) that don't require human confirmation before...
+<!-- @/rule-summary -->
 
 ## 📊 Rule Details
 

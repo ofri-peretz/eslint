@@ -1,15 +1,21 @@
 ---
 title: require-dependency-integrity
 description: "CWE: [CWE-494](https://cwe.mitre.org/data/definitions/494.html)"
+tags: ['security', 'node']
 category: security
 severity: medium
-tags: ['security', 'node']
+cwe: CWE-494
 autofix: false
 ---
 
 > **Keywords:** require-dependency-integrity, SRI, Subresource Integrity, security, ESLint rule, supply chain, CDN, CWE-494
 > **CWE:** [CWE-494: Download of Code Without Integrity Check](https://cwe.mitre.org/data/definitions/494.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M2: Inadequate Supply Chain Security](https://owasp.org/www-project-mobile-top-10/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-494](https://cwe.mitre.org/data/definitions/494.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: require-dependency-integrity. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security).
 

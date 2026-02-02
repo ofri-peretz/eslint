@@ -1,14 +1,19 @@
 ---
 title: require-rag-content-validation
-description: require-rag-content-validation
+description: This rule identifies code patterns where content retrieved from vector stores or document retrieval systems is used d...
+tags: ['security', 'ai']
 category: security
 severity: medium
-tags: ['security', 'ai']
+cwe: CWE-74
 autofix: false
 ---
 
-
 > Requires validation of RAG content before including in AI prompts.
+
+
+<!-- @rule-summary -->
+This rule identifies code patterns where content retrieved from vector stores or document retrieval systems is used d...
+<!-- @/rule-summary -->
 
 ## 📊 Rule Details
 

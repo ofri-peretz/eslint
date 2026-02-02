@@ -1,15 +1,21 @@
 ---
 title: no-credentials-in-query-params
 description: "CWE: [CWE-598](https://cwe.mitre.org/data/definitions/598.html)"
+tags: ['security', 'browser']
 category: security
 severity: high
-tags: ['security', 'browser']
+cwe: CWE-598
 autofix: false
 ---
 
 > **Keywords:** no-credentials-in-query-params, credentials, URL, query string, security, ESLint rule, CWE-598
 > **CWE:** [CWE-598: Use of GET Request with Sensitive Query Strings](https://cwe.mitre.org/data/definitions/598.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M1: Improper Credential Usage](https://owasp.org/www-project-mobile-top-10/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-598](https://cwe.mitre.org/data/definitions/598.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: no-credentials-in-query-params. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 

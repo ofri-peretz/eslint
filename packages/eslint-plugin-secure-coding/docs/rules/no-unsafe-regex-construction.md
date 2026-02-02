@@ -1,14 +1,19 @@
 ---
 title: no-unsafe-regex-construction
-description: no-unsafe-regex-construction
+description: "ESLint Rule: no-unsafe-regex-construction with LLM-optimized suggestions and auto-fix capabilities"
+tags: ['security', 'core']
 category: security
 severity: medium
-tags: ['security', 'core']
+cwe: CWE-400
 autofix: false
 ---
 
-
 > **Keywords:** no unsafe regex construction, security, ESLint rule, JavaScript, TypeScript, CWE-400, CWE-185, ReDoS, injection
+
+<!-- @rule-summary -->
+ESLint Rule: no-unsafe-regex-construction with LLM-optimized suggestions and auto-fix capabilities
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

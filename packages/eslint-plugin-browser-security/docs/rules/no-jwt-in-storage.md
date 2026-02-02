@@ -1,14 +1,20 @@
 ---
 title: no-jwt-in-storage
-description: no-jwt-in-storage
+description: This rule prevents storing JWT tokens in browser storage (localStorage/sessionStorage)
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-311
+owasp: "A02:2021"
 autofix: false
 ---
 
-
 > 🔒 Disallow storing JWT tokens in localStorage or sessionStorage
+
+<!-- @rule-summary -->
+This rule prevents storing JWT tokens in browser storage (localStorage/sessionStorage)
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-311](https://cwe.mitre.org/data/definitions/311.html)  
 **OWASP Mobile:** [M9: Insecure Data Storage](https://owasp.org/www-project-mobile-top-10/)
 

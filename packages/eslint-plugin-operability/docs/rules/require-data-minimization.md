@@ -1,15 +1,17 @@
 ---
 title: require-data-minimization
 description: Identifies excessive data collection patterns that violate privacy principles
-category: quality
-severity: low
 tags: ['quality', 'operability', 'production']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
 > Identifies excessive data collection patterns that violate privacy principles
+
+
+<!-- @rule-summary -->
+Identifies excessive data collection patterns that violate privacy principles
+<!-- @/rule-summary -->
 
 **Severity:** 🟡 MEDIUM  
 **CWE:** [CWE-213: Exposure of Sensitive Information Due to Incompatible Policies](https://cwe.mitre.org/data/definitions/213.html)  

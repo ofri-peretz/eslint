@@ -1,18 +1,19 @@
 ---
 title: consistent-function-scoping
-description: consistent-function-scoping
-category: quality
-severity: low
+description: Move functions to the highest possible scope
 tags: ['quality', 'maintainability']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
-
 
 > **Keywords:** function scope, hoisting, nested functions, ESLint rule, performance, LLM-optimized
 
-Move functions to the highest possible scope. This rule is part of [`@eslint/eslint-plugin-architecture`](https://www.npmjs.com/package/@eslint/eslint-plugin-architecture).
+
+<!-- @rule-summary -->
+Move functions to the highest possible scope
+<!-- @/rule-summary -->
+
+Move functions to the highest possible scope. This rule is part of [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability).
 
 ## Quick Summary
 
@@ -117,6 +118,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

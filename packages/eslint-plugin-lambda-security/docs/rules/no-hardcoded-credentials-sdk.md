@@ -1,14 +1,19 @@
 ---
 title: no-hardcoded-credentials-sdk
-description: no-hardcoded-credentials-sdk
+description: Detects hardcoded AWS credentials in SDK client configurations
+tags: ['security', 'lambda']
 category: security
 severity: critical
-tags: ['security', 'lambda']
+cwe: CWE-798
 autofix: false
 ---
 
-
 > **Keywords:** AWS credentials, hardcoded secrets, CWE-798, security, ESLint rule, Lambda, SDK, credential provider, auto-fix, LLM-optimized
+
+<!-- @rule-summary -->
+Detects hardcoded AWS credentials in SDK client configurations
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-522](https://cwe.mitre.org/data/definitions/522.html)  
 **OWASP Mobile:** [M1: Improper Credential Usage](https://owasp.org/www-project-mobile-top-10/)
 

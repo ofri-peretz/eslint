@@ -5,8 +5,8 @@
 #
 # Runs daily and updates:
 # - Rule counts per plugin
-# - Coverage statistics
-# - Other analytics data
+# - Plugin metadata
+# - Ecosystem totals
 #
 # The docs site uses ISR with TTL-based caching for these files,
 # so updates are reflected without redeployment.
@@ -56,57 +56,127 @@ jobs:
 
             - name: Generate plugin statistics
               run: |
-                  # Generate rule counts per plugin
-                  node -e "
-                    const fs = require('fs');
-                    const path = require('path');
+                  node << 'EOF'
+                  const fs = require('fs');
+                  const path = require('path');
+
+                  const packagesDir = 'packages';
+                  const plugins = fs.readdirSync(packagesDir)
+                    .filter(d => d.startsWith('eslint-plugin-') && fs.statSync(path.join(packagesDir, d)).isDirectory());
+
+                  const pluginStats = [];
+                  let totalRules = 0;
+
+                  // Category mapping based on plugin name patterns
+                  const getCategoryFromName = (name) => {
+                    const securityKeywords = ['security', 'jwt', 'crypto', 'pg', 'mongodb', 'secure'];
+                    const frameworkKeywords = ['express', 'nestjs', 'lambda', 'vercel-ai'];
+                    const reactKeywords = ['react'];
                     
-                    const packagesDir = 'packages';
-                    const plugins = fs.readdirSync(packagesDir)
-                      .filter(d => d.startsWith('eslint-plugin-') && fs.statSync(path.join(packagesDir, d)).isDirectory());
-                    
-                    const stats = {};
-                    let totalRules = 0;
-                    
-                    for (const plugin of plugins) {
-                      const rulesDir = path.join(packagesDir, plugin, 'docs', 'rules');
-                      let ruleCount = 0;
-                      
-                      if (fs.existsSync(rulesDir)) {
-                        ruleCount = fs.readdirSync(rulesDir).filter(f => f.endsWith('.md')).length;
-                      }
-                      
-                      const name = plugin.replace('eslint-plugin-', '');
-                      stats[name] = {
-                        name: plugin,
-                        rules: ruleCount,
-                        category: plugin.includes('security') || ['jwt', 'crypto', 'pg'].some(s => plugin.includes(s)) ? 'security' : 'quality'
-                      };
-                      totalRules += ruleCount;
+                    if (frameworkKeywords.some(k => name.includes(k))) return 'framework';
+                    if (securityKeywords.some(k => name.includes(k))) return 'security';
+                    if (reactKeywords.some(k => name.includes(k))) return 'react';
+                    return 'quality';
+                  };
+
+                  // Check if plugin is published (has version in package.json)
+                  const isPublished = (pluginDir) => {
+                    try {
+                      const pkgPath = path.join(packagesDir, pluginDir, 'package.json');
+                      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+                      // Consider published if it has a version and no "private: true"
+                      return pkg.version && !pkg.private;
+                    } catch {
+                      return false;
                     }
+                  };
+
+                  // Get description from package.json
+                  const getDescription = (pluginDir) => {
+                    try {
+                      const pkgPath = path.join(packagesDir, pluginDir, 'package.json');
+                      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+                      return pkg.description || '';
+                    } catch {
+                      return '';
+                    }
+                  };
+
+                  // Get version from package.json
+                  const getVersion = (pluginDir) => {
+                    try {
+                      const pkgPath = path.join(packagesDir, pluginDir, 'package.json');
+                      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+                      return pkg.version || '0.0.0';
+                    } catch {
+                      return '0.0.0';
+                    }
+                  };
+
+                  for (const plugin of plugins) {
+                    // Count rules from docs/rules directory
+                    const rulesDir = path.join(packagesDir, plugin, 'docs', 'rules');
+                    let ruleCount = 0;
                     
-                    const output = {
-                      updated: new Date().toISOString(),
-                      totalPlugins: plugins.length,
-                      totalRules,
-                      plugins: stats
-                    };
+                    if (fs.existsSync(rulesDir)) {
+                      ruleCount = fs.readdirSync(rulesDir).filter(f => f.endsWith('.md')).length;
+                    }
+
+                    // If no docs, try counting from src/rules
+                    if (ruleCount === 0) {
+                      const srcRulesDir = path.join(packagesDir, plugin, 'src', 'rules');
+                      if (fs.existsSync(srcRulesDir)) {
+                        ruleCount = fs.readdirSync(srcRulesDir)
+                          .filter(f => f.endsWith('.ts') && !f.includes('.test.') && !f.includes('.spec.'))
+                          .length;
+                      }
+                    }
+
+                    pluginStats.push({
+                      name: plugin,
+                      rules: ruleCount,
+                      description: getDescription(plugin),
+                      category: getCategoryFromName(plugin),
+                      version: getVersion(plugin),
+                      published: isPublished(plugin)
+                    });
                     
-                    fs.mkdirSync('apps/docs/public/data', { recursive: true });
-                    fs.writeFileSync('apps/docs/public/data/plugin-stats.json', JSON.stringify(output, null, 2));
-                    console.log('Generated plugin stats:', output);
-                  "
+                    totalRules += ruleCount;
+                  }
+
+                  // Sort by rule count descending
+                  pluginStats.sort((a, b) => b.rules - a.rules);
+
+                  const output = {
+                    plugins: pluginStats,
+                    totalRules,
+                    totalPlugins: pluginStats.filter(p => p.published).length,
+                    allPluginsCount: plugins.length,
+                    generatedAt: new Date().toISOString()
+                  };
+
+                  // Write to apps/docs/src/data directory
+                  const outputDir = 'apps/docs/src/data';
+                  fs.mkdirSync(outputDir, { recursive: true });
+                  fs.writeFileSync(path.join(outputDir, 'plugin-stats.json'), JSON.stringify(output, null, 2));
+                  
+                  console.log('Generated plugin stats:');
+                  console.log(`  Total plugins: ${output.allPluginsCount}`);
+                  console.log(`  Published plugins: ${output.totalPlugins}`);
+                  console.log(`  Total rules: ${output.totalRules}`);
+                  console.log(`  Output: ${outputDir}/plugin-stats.json`);
+                  EOF
 
             - name: Check for changes
               id: changes
               run: |
-                  git diff --quiet apps/docs/public/data/ || echo "changes=true" >> $GITHUB_OUTPUT
+                  git diff --quiet apps/docs/src/data/ || echo "changes=true" >> $GITHUB_OUTPUT
 
             - name: Commit and push
               if: steps.changes.outputs.changes == 'true'
               run: |
                   git config --local user.email "github-actions[bot]@users.noreply.github.com"
                   git config --local user.name "github-actions[bot]"
-                  git add apps/docs/public/data/
+                  git add apps/docs/src/data/
                   git commit -m "chore(docs): update plugin statistics [automated]"
                   git push

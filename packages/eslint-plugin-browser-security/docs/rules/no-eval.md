@@ -1,14 +1,19 @@
 ---
 title: no-eval
-description: no-eval
+description: Detects dangerous eval() and similar code execution patterns
+tags: ['security', 'browser']
 category: security
 severity: critical
-tags: ['security', 'browser']
+cwe: CWE-94
 autofix: false
 ---
 
-
 > **Keywords:** eval, code injection, CWE-94, security, dynamic code execution, Function constructor
+
+<!-- @rule-summary -->
+Detects dangerous eval() and similar code execution patterns
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-95](https://cwe.mitre.org/data/definitions/95.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

@@ -1,14 +1,19 @@
 ---
 title: no-clickjacking
-description: no-clickjacking
+description: Detects clickjacking vulnerabilities and missing frame protections
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-1021
 autofix: false
 ---
 
-
 > **Keywords:** clickjacking, CWE-1021, iframe, X-Frame-Options, CSP, UI redressing
+
+<!-- @rule-summary -->
+Detects clickjacking vulnerabilities and missing frame protections
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

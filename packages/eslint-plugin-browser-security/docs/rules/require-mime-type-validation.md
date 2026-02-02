@@ -1,15 +1,21 @@
 ---
 title: require-mime-type-validation
 description: "CWE: [CWE-434](https://cwe.mitre.org/data/definitions/434.html)"
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-434
 autofix: false
 ---
 
 > **Keywords:** require mime type validation, file upload, security, ESLint rule, [CWE-434](https://cwe.mitre.org/data/definitions/434.html), multer, unrestricted upload
 > **CWE:** [CWE-434: Unrestricted Upload of File with Dangerous Type](https://cwe.mitre.org/data/definitions/434.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M4: Insufficient Input/Output Validation](https://owasp.org/www-project-mobile-top-10/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-434](https://cwe.mitre.org/data/definitions/434.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: require-mime-type-validation. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 

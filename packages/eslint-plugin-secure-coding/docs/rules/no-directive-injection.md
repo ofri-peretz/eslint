@@ -1,14 +1,19 @@
 ---
 title: no-directive-injection
-description: no-directive-injection
+description: Detects directive injection vulnerabilities in template systems
+tags: ['security', 'core']
 category: security
 severity: critical
-tags: ['security', 'core']
+cwe: CWE-94
 autofix: false
 ---
 
-
 > **Keywords:** directive injection, CWE-94, template injection, Angular, Vue, React, SSTI, XSS
+
+<!-- @rule-summary -->
+Detects directive injection vulnerabilities in template systems
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

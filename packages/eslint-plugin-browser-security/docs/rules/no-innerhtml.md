@@ -1,14 +1,19 @@
 ---
 title: no-innerhtml
-description: no-innerhtml
+description: Detects dangerous innerHTML/outerHTML assignments that can lead to Cross-Site Scripting (XSS)
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-79
 autofix: false
 ---
 
-
 > **Keywords:** XSS, innerHTML, outerHTML, CWE-79, security, DOM manipulation, sanitization, DOMPurify
+
+<!-- @rule-summary -->
+Detects dangerous innerHTML/outerHTML assignments that can lead to Cross-Site Scripting (XSS)
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

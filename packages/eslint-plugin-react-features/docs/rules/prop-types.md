@@ -1,17 +1,21 @@
 ---
 title: prop-types
 description: prop-types rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# prop-types
+---
+
+
+<!-- @rule-summary -->
+prop-types rule
+<!-- @/rule-summary -->
+
+# prop-types
 
 > **Keywords:** React, PropTypes, validation, type checking, runtime validation, ESLint rule, LLM-optimized
 
-Enforce prop types validation for React components. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Enforce prop types validation for React components. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -183,6 +187,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

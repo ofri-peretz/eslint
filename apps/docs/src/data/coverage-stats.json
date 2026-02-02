@@ -16,13 +16,6 @@
                 "category": "security"
             },
             {
-                "name": "eslint-plugin-crypto",
-                "slug": "crypto",
-                "coverage": 88.5,
-                "status": "production",
-                "category": "security"
-            },
-            {
                 "name": "eslint-plugin-jwt",
                 "slug": "jwt",
                 "coverage": 92.1,
@@ -37,9 +30,9 @@
                 "category": "security"
             },
             {
-                "name": "eslint-plugin-secrets",
-                "slug": "secrets",
-                "coverage": 87.8,
+                "name": "eslint-plugin-crypto",
+                "slug": "crypto",
+                "coverage": 88.5,
                 "status": "production",
                 "category": "security"
             },
@@ -51,6 +44,13 @@
                 "category": "security"
             },
             {
+                "name": "eslint-plugin-mongodb-security",
+                "slug": "mongodb-security",
+                "coverage": 86.1,
+                "status": "production",
+                "category": "security"
+            },
+            {
                 "name": "eslint-plugin-pg",
                 "slug": "pg",
                 "coverage": 89.2,
@@ -58,9 +58,23 @@
                 "category": "security"
             },
             {
-                "name": "eslint-plugin-mongodb-security",
-                "slug": "mongodb-security",
-                "coverage": 86.1,
+                "name": "eslint-plugin-express-security",
+                "slug": "express-security",
+                "coverage": 87.3,
+                "status": "production",
+                "category": "security"
+            },
+            {
+                "name": "eslint-plugin-nestjs-security",
+                "slug": "nestjs-security",
+                "coverage": 84.6,
+                "status": "production",
+                "category": "security"
+            },
+            {
+                "name": "eslint-plugin-lambda-security",
+                "slug": "lambda-security",
+                "coverage": 85.8,
                 "status": "production",
                 "category": "security"
             },
@@ -74,23 +88,51 @@
         ],
         "quality": [
             {
-                "name": "eslint-plugin-react-best-practices",
-                "slug": "react-best-practices",
+                "name": "eslint-plugin-conventions",
+                "slug": "conventions",
                 "coverage": 82.3,
                 "status": "production",
                 "category": "quality"
             },
             {
-                "name": "eslint-plugin-react-hooks-best-practices",
-                "slug": "react-hooks-best-practices",
+                "name": "eslint-plugin-maintainability",
+                "slug": "maintainability",
                 "coverage": 80.1,
                 "status": "production",
                 "category": "quality"
             },
             {
-                "name": "eslint-plugin-documentation",
-                "slug": "documentation",
+                "name": "eslint-plugin-reliability",
+                "slug": "reliability",
+                "coverage": 81.5,
+                "status": "production",
+                "category": "quality"
+            },
+            {
+                "name": "eslint-plugin-modularity",
+                "slug": "modularity",
+                "coverage": 79.8,
+                "status": "production",
+                "category": "quality"
+            },
+            {
+                "name": "eslint-plugin-operability",
+                "slug": "operability",
                 "coverage": 78.5,
+                "status": "production",
+                "category": "quality"
+            },
+            {
+                "name": "eslint-plugin-modernization",
+                "slug": "modernization",
+                "coverage": 82.0,
+                "status": "production",
+                "category": "quality"
+            },
+            {
+                "name": "eslint-plugin-import-next",
+                "slug": "import-next",
+                "coverage": 88.4,
                 "status": "production",
                 "category": "quality"
             }
@@ -102,8 +144,8 @@
         "qualityPlugins": 75
     },
     "meta": {
-        "generatedAt": "2026-01-31T12:00:00Z",
-        "source": "codecov",
+        "generatedAt": "2026-02-01T16:00:00Z",
+        "source": "estimated",
         "ttl": 14400
     }
 }

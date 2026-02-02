@@ -1,14 +1,19 @@
 ---
 title: require-max-age
-description: require-max-age
+description: This rule mandates maxAge in verify operations
+tags: ['security', 'jwt']
 category: security
 severity: medium
-tags: ['security', 'jwt']
+cwe: CWE-294
 autofix: false
 ---
 
-
 > Require maxAge option in verify operations to enforce token freshness
+
+
+<!-- @rule-summary -->
+This rule mandates maxAge in verify operations
+<!-- @/rule-summary -->
 
 **Severity:** 🟡 Medium  
 **CWE:** [CWE-294](https://cwe.mitre.org/data/definitions/294.html)

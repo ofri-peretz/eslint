@@ -1,14 +1,19 @@
 ---
 title: no-unlimited-resource-allocation
-description: no-unlimited-resource-allocation
+description: Detects unlimited resource allocation that could cause DoS
+tags: ['security', 'core']
 category: security
 severity: medium
-tags: ['security', 'core']
+cwe: CWE-770
 autofix: false
 ---
 
-
 > **Keywords:** resource allocation, CWE-770, DoS, memory exhaustion, security, rate limiting
+
+<!-- @rule-summary -->
+Detects unlimited resource allocation that could cause DoS
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

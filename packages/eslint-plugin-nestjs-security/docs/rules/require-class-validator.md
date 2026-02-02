@@ -1,14 +1,20 @@
 ---
 title: require-class-validator
-description: require-class-validator
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+tags: ['security', 'nestjs']
 category: security
 severity: medium
-tags: ['security', 'nestjs']
+cwe: CWE-20
+owasp: "A03:2021"
 autofix: false
 ---
 
-
 > Require class-validator decorators on DTO properties
+
+
+<!-- @rule-summary -->
+The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
+<!-- @/rule-summary -->
 
 ## Error Message Format
 

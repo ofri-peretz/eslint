@@ -1,17 +1,19 @@
 ---
 title: expiring-todo-comments
-description: Add expiration conditions to TODO comments to prevent forgotten tasks. This rule is part of @eslint/eslint-plugin-quality and provides LLM-optimized error messa
-category: quality
-severity: low
+description: Add expiration conditions to TODO comments to prevent forgotten tasks. This rule is part of eslint-plugin-conventions and provides LLM-optimized error messa
 tags: ['quality', 'conventions', 'style']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
 > **Keywords:** TODO, FIXME, XXX, expiration, comments, technical debt, code quality, ESLint rule, version, date, LLM-optimized
 
-Add expiration conditions to TODO comments to prevent forgotten tasks. This rule is part of [`@eslint/eslint-plugin-quality`](https://www.npmjs.com/package/@eslint/eslint-plugin-quality) and provides LLM-optimized error messages.
+
+<!-- @rule-summary -->
+Add expiration conditions to TODO comments to prevent forgotten tasks. This rule is part of eslint-plugin-conventions and provides LLM-optimized error messa
+<!-- @/rule-summary -->
+
+Add expiration conditions to TODO comments to prevent forgotten tasks. This rule is part of [`eslint-plugin-conventions`](https://www.npmjs.com/package/eslint-plugin-conventions) and provides LLM-optimized error messages.
 
 ## Quick Summary
 
@@ -138,7 +140,7 @@ currentImplementation();
 ```javascript
 {
   rules: {
-    'quality/expiring-todo-comments': 'warn'
+    'conventions/expiring-todo-comments': 'warn'
   }
 }
 ```
@@ -148,7 +150,7 @@ currentImplementation();
 ```javascript
 {
   rules: {
-    'quality/expiring-todo-comments': ['warn', {
+    'conventions/expiring-todo-comments': ['warn', {
       terms: ['TODO', 'FIXME', 'XXX', 'HACK', 'BUG']
     }]
   }
@@ -160,7 +162,7 @@ currentImplementation();
 ```javascript
 {
   rules: {
-    'quality/expiring-todo-comments': ['error', {
+    'conventions/expiring-todo-comments': ['error', {
       terms: ['TODO', 'FIXME']
     }]
   }

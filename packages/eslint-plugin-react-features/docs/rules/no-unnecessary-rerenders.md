@@ -1,13 +1,17 @@
 ---
 title: no-unnecessary-rerenders
 description: no-unnecessary-rerenders rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-unnecessary-rerenders
+---
+
+
+<!-- @rule-summary -->
+no-unnecessary-rerenders rule
+<!-- @/rule-summary -->
+
+# no-unnecessary-rerenders
 
 > **Keywords:** no unnecessary rerenders, performance, ESLint rule, JavaScript, TypeScript
 
@@ -148,5 +152,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

@@ -1,15 +1,21 @@
 ---
 title: no-insecure-websocket
 description: "CWE: [CWE-319](https://cwe.mitre.org/data/definitions/319.html)"
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-319
 autofix: false
 ---
 
 > **Keywords:** no insecure websocket, security, ESLint rule, [CWE-319](https://cwe.mitre.org/data/definitions/319.html), wss, encryption, MitM
 > **CWE:** [CWE-319: Cleartext Transmission of Sensitive Information](https://cwe.mitre.org/data/definitions/319.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M5: Insufficient Communication Layer Security](https://owasp.org/www-project-mobile-top-10/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-319](https://cwe.mitre.org/data/definitions/319.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: no-insecure-websocket. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 

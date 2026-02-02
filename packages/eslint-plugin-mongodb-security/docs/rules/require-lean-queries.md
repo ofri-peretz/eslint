@@ -1,14 +1,20 @@
 ---
 title: require-lean-queries
-description: require-lean-queries
+description: Suggests using .lean() for read-only Mongoose queries to reduce memory usage.
+tags: ['security', 'mongodb']
 category: security
 severity: medium
-tags: ['security', 'mongodb']
+cwe: CWE-400
+owasp: "A04:2021"
 autofix: false
 ---
 
-
 > **Keywords:** CWE-400, lean, performance, Mongoose, memory
+
+
+<!-- @rule-summary -->
+Suggests using .lean() for read-only Mongoose queries to reduce memory usage.
+<!-- @/rule-summary -->
 
 Suggests using `.lean()` for read-only Mongoose queries to reduce memory usage.
 

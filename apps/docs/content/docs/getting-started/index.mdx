@@ -18,54 +18,61 @@ import {
 
 ESLint Interlace is a comprehensive ecosystem of **security and quality ESLint plugins** designed to protect your JavaScript and TypeScript applications from vulnerabilities while enforcing best practices.
 
-<Callout type="info" title="Quick Start">
-  Install the complete suite with a single command: `npm install
-  eslint-config-interlace`
+<Callout type="info" title="Multiple Plugins, One Ecosystem">
+  ESLint Interlace provides **18+ specialized plugins** that work independently
+  or together. Install only what you need—each plugin is published separately on
+  npm.
 </Callout>
 
 ## Why Interlace?
 
 <Cards>
-  <Card title="🛡️ Security First" href="/docs/plugins#security">
-    11 specialized plugins protecting against XSS, SQL injection, insecure
-    tokens, weak cryptography, and more.
+  <Card title="🛡️ Security First" href="/docs/security">
+    11+ security plugins protecting against XSS, SQL injection, insecure tokens,
+    weak cryptography, and more.
   </Card>
-  <Card title="📐 Quality Enforced" href="/docs/plugins#quality">
-    8 plugins ensuring React best practices, proper hook usage, documentation
-    standards, and code architecture.
+  <Card title="📐 Quality Enforced" href="/docs/quality">
+    7+ quality plugins ensuring code conventions, modularity, reliability, and
+    modern patterns.
   </Card>
-  <Card title="🤖 AI-Native" href="/docs/concepts/ai-integration">
+  <Card
+    title="🤖 AI-Native"
+    href="/docs/getting-started/concepts/ai-integration"
+  >
     Structured metadata (CWE, OWASP, CVSS) enables AI agents to fix
     vulnerabilities accurately—no hallucinations.
   </Card>
 </Cards>
 
-## The Interlace Advantage
+## The Plugin Ecosystem
 
-| Feature               | Traditional Linters | ESLint Interlace                  |
-| --------------------- | ------------------- | --------------------------------- |
-| **Security Coverage** | Generic rules       | CWE/OWASP-mapped rules            |
-| **AI Compatibility**  | Plain text errors   | Structured metadata               |
-| **Fix Suggestions**   | Basic hints         | Precise remediation patterns      |
-| **Severity Scoring**  | Error/Warning       | CVSS-based risk scores            |
-| **Framework Support** | Generic             | React, Next.js, Node.js optimized |
+Interlace lets you **choose your own coverage**—install only the plugins you need:
+
+| Approach          | Example                          | Best For            |
+| ----------------- | -------------------------------- | ------------------- |
+| **Start Small**   | `eslint-plugin-browser-security` | Single focus area   |
+| **Mix & Match**   | Security + Quality plugins       | Customized coverage |
+| **Full Coverage** | All security + quality plugins   | Maximum protection  |
 
 ## Quick Setup Guide
 
 <Steps>
 
-### Install the package
+### Install the plugins you need
 
-```bash tab="npm"
-npm install eslint-config-interlace
-```
+Pick the plugins for your use case:
 
-```bash tab="pnpm"
-pnpm add eslint-config-interlace
-```
+```bash
+# Core security plugins
+npm install --save-dev \
+  eslint-plugin-browser-security \
+  eslint-plugin-secure-coding \
+  eslint-plugin-jwt
 
-```bash tab="yarn"
-yarn add eslint-config-interlace
+# Quality plugins
+npm install --save-dev \
+  eslint-plugin-conventions \
+  eslint-plugin-reliability
 ```
 
 ### Configure ESLint
@@ -73,9 +80,19 @@ yarn add eslint-config-interlace
 Create `eslint.config.js` in your project root:
 
 ```js title="eslint.config.js"
-import interlace from 'eslint-config-interlace';
+import browserSecurity from 'eslint-plugin-browser-security';
+import secureCoding from 'eslint-plugin-secure-coding';
+import jwt from 'eslint-plugin-jwt';
+import conventions from 'eslint-plugin-conventions';
 
-export default [...interlace.configs.recommended];
+export default [
+  // Security
+  browserSecurity.configs.recommended,
+  secureCoding.configs.recommended,
+  jwt.configs.recommended,
+  // Quality
+  conventions.configs.recommended,
+];
 ```
 
 ### Run the linter
@@ -119,29 +136,39 @@ npx eslint .
   </Card>
 </Cards>
 
-## Plugin Categories
+## Available Plugins
 
 ### Security Plugins
 
 Protect your application from common vulnerabilities:
 
-- **browser-security** — XSS prevention, DOM security
-- **crypto** — Weak algorithm detection, secure random
-- **jwt** — Token security, secret exposure
-- **secure-coding** — Injection prevention, input validation
-- **secrets** — Hardcoded credentials detection
-- **react-native-security** — Mobile-specific vulnerabilities
-- **node-security** — Server-side security patterns
+| Plugin                 | Focus Area                                      | Rules |
+| ---------------------- | ----------------------------------------------- | ----- |
+| **browser-security**   | XSS prevention, DOM security                    | 50+   |
+| **jwt**                | Token security, algorithm confusion             | 13    |
+| **express-security**   | Express.js hardening                            | 14    |
+| **node-security**      | Server-side security patterns (includes crypto) | 31    |
+| **mongodb-security**   | NoSQL injection prevention                      | 19    |
+| **pg**                 | PostgreSQL security                             | 15    |
+| **secure-coding**      | General injection prevention                    | 26    |
+| **vercel-ai-security** | AI SDK safety                                   | 22    |
+| **lambda-security**    | AWS Lambda security                             | 16    |
+| **nestjs-security**    | NestJS security patterns                        | 10    |
+| **crypto**             | _(Deprecated)_ Merged into node-security        | —     |
 
-### Quality Plugins
+### Quality & Architecture Plugins
 
 Enforce best practices and maintainability:
 
-- **react-best-practices** — Component patterns, performance
-- **react-hooks-best-practices** — Hook rules, dependency arrays
-- **documentation** — JSDoc enforcement, API documentation
-- **react-usememo** — Memoization optimization
-- **react-perf** — Performance anti-patterns
+| Plugin              | Focus Area                                 | Rules |
+| ------------------- | ------------------------------------------ | ----- |
+| **import-next**     | Import organization (100x faster no-cycle) | 61    |
+| **conventions**     | Team coding standards                      | 9     |
+| **maintainability** | Code readability                           | 8     |
+| **reliability**     | Error handling patterns                    | 8     |
+| **modularity**      | Clean architecture                         | 7     |
+| **operability**     | Logging and metrics                        | 6     |
+| **modernization**   | ES2022+ patterns                           | 5     |
 
 <Callout type="success" title="Start Secure">
   Ready to protect your codebase? Head to the [Installation

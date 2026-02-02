@@ -1,16 +1,17 @@
 ---
 title: nested-complexity-hotspots
-description: nested-complexity-hotspots
-category: quality
-severity: medium
+description: "ESLint Rule: nested-complexity-hotspots with LLM-optimized suggestions and auto-fix capabilities."
 tags: ['quality', 'maintainability']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
-
 > **Keywords:** nested complexity hotspots, complexity, ESLint rule, JavaScript, TypeScript
+
+
+<!-- @rule-summary -->
+ESLint Rule: nested-complexity-hotspots with LLM-optimized suggestions and auto-fix capabilities.
+<!-- @/rule-summary -->
 
 ESLint Rule: nested-complexity-hotspots with LLM-optimized suggestions and auto-fix capabilities.
 
@@ -88,7 +89,7 @@ flowchart TD
 export default [
   {
     rules: {
-      'quality/nested-complexity-hotspots': 'error',
+      'maintainability/nested-complexity-hotspots': 'error',
     },
   },
 ];

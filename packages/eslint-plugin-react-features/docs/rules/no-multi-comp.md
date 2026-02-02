@@ -1,17 +1,21 @@
 ---
 title: no-multi-comp
 description: no-multi-comp rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-multi-comp
+---
+
+
+<!-- @rule-summary -->
+no-multi-comp rule
+<!-- @/rule-summary -->
+
+# no-multi-comp
 
 > **Keywords:** React, components, file organization, single responsibility, code structure, ESLint rule, LLM-optimized
 
-Prevent multiple component definitions per file. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Prevent multiple component definitions per file. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -178,6 +182,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

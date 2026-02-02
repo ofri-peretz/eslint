@@ -1,14 +1,19 @@
 ---
 title: require-issuer-validation
-description: require-issuer-validation
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+tags: ['security', 'jwt']
 category: security
 severity: medium
-tags: ['security', 'jwt']
+cwe: CWE-287
 autofix: false
 ---
 
-
 > Require issuer (iss) claim validation in JWT verify operations
+
+
+<!-- @rule-summary -->
+The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
+<!-- @/rule-summary -->
 
 **Severity:** 🟡 Medium  
 **CWE:** [CWE-287](https://cwe.mitre.org/data/definitions/287.html)

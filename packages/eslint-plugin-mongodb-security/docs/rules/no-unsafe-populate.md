@@ -1,14 +1,20 @@
 ---
 title: no-unsafe-populate
-description: no-unsafe-populate
+description: Detects user-controlled populate() paths that could lead to data exposure or injection.
+tags: ['security', 'mongodb']
 category: security
 severity: medium
-tags: ['security', 'mongodb']
+cwe: CWE-943
+owasp: "A03:2021"
 autofix: false
 ---
 
-
 > **Keywords:** CWE-943, populate, Mongoose, injection, CVE-2025-23061, security
+
+
+<!-- @rule-summary -->
+Detects user-controlled populate() paths that could lead to data exposure or injection.
+<!-- @/rule-summary -->
 
 Detects user-controlled `populate()` paths that could lead to data exposure or injection.
 

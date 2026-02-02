@@ -1,17 +1,22 @@
 ---
 title: no-unvalidated-event-body
 description: Detect Lambda handlers using event body without validation
+tags: ['security', 'input-validation', 'cwe-20', 'lambda', 'aws']
 category: security
 severity: high
-tags: ['security', 'input-validation', 'cwe-20', 'lambda', 'aws']
-autofix: false
 cwe: CWE-20
-owasp: A03:2021-Injection
+owasp: "A03:2021"
+autofix: false
 ---
 
 > **Keywords:** input validation, event body, injection, CWE-20, Lambda, Zod, Joi, Middy, serverless
 > **CWE:** [CWE-20](https://cwe.mitre.org/data/definitions/20.html)  
 > **OWASP:** [A03:2021-Injection](https://owasp.org/Top10/A03_2021-Injection/)
+
+
+<!-- @rule-summary -->
+Detect Lambda handlers using event body without validation
+<!-- @/rule-summary -->
 
 Detects Lambda handlers that use event body, query parameters, or path parameters without validation. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) and provides LLM-optimized error messages.
 

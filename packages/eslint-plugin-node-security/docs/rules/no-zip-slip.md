@@ -1,14 +1,19 @@
 ---
 title: no-zip-slip
-description: no-zip-slip
+description: Detects zip slip/archive extraction vulnerabilities
+tags: ['security', 'node']
 category: security
 severity: medium
-tags: ['security', 'node']
+cwe: CWE-22
 autofix: false
 ---
 
-
 > **Keywords:** zip slip, CWE-22, path traversal, archive extraction, tar, security
+
+<!-- @rule-summary -->
+Detects zip slip/archive extraction vulnerabilities
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

@@ -1,13 +1,17 @@
 ---
 title: heading-has-content
 description: heading-has-content rule
-category: quality
-severity: low
 tags: ['quality', 'react', 'accessibility', 'a11y']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# heading-has-content
+---
+
+
+<!-- @rule-summary -->
+heading-has-content rule
+<!-- @/rule-summary -->
+
+# heading-has-content
 
 > **Keywords:** heading-has-content, accessibility, ESLint rule, WCAG, a11y, React accessibility
 
@@ -107,5 +111,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

@@ -1,13 +1,17 @@
 ---
 title: no-interactive-element-to-noninteractive-role
 description: no-interactive-element-to-noninteractive-role rule
-category: quality
-severity: low
 tags: ['quality', 'react', 'accessibility', 'a11y']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-interactive-element-to-noninteractive-role
+---
+
+
+<!-- @rule-summary -->
+no-interactive-element-to-noninteractive-role rule
+<!-- @/rule-summary -->
+
+# no-interactive-element-to-noninteractive-role
 
 > **Keywords:** no-interactive-element-to-noninteractive-role, accessibility, ESLint rule, WCAG, a11y, React accessibility
 
@@ -121,5 +125,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

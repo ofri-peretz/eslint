@@ -1,16 +1,22 @@
 ---
 title: detect-eval-with-expression
-description: detect-eval-with-expression
+description: Detects eval(variable) which can allow an attacker to run arbitrary code inside your process
+tags: ['security', 'node']
 category: security
 severity: critical
-tags: ['security', 'node']
+cwe: CWE-95
+owasp: "A03:2021"
 autofix: false
 ---
-
 
 > **Keywords:** eval, code injection, CWE-95, security, ESLint rule, remote code execution, RCE, arbitrary code execution, Function constructor, auto-fix, LLM-optimized, code security
 > **CWE:** [CWE-95](https://cwe.mitre.org/data/definitions/95.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
+
+
+<!-- @rule-summary -->
+Detects eval(variable) which can allow an attacker to run arbitrary code inside your process
+<!-- @/rule-summary -->
 
 Detects `eval(variable)` which can allow an attacker to run arbitrary code inside your process. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages with fix suggestions.
 

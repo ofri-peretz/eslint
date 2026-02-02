@@ -1,14 +1,19 @@
 ---
 title: no-secrets-in-env
-description: no-secrets-in-env
+description: Detects secrets defined directly in environment variable configurations
+tags: ['security', 'lambda']
 category: security
 severity: medium
-tags: ['security', 'lambda']
+cwe: CWE-798
 autofix: false
 ---
 
-
 > **Keywords:** secrets, environment variables, Lambda, CWE-798, security, hardcoded secrets
+
+<!-- @rule-summary -->
+Detects secrets defined directly in environment variable configurations
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

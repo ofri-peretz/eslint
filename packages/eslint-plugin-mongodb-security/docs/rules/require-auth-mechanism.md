@@ -1,14 +1,20 @@
 ---
 title: require-auth-mechanism
-description: require-auth-mechanism
+description: Requires explicit authentication mechanism specification for MongoDB connections.
+tags: ['security', 'mongodb']
 category: security
 severity: high
-tags: ['security', 'mongodb']
+cwe: CWE-287
+owasp: "A07:2021"
 autofix: false
 ---
 
-
 > **Keywords:** CWE-287, authentication, SCRAM-SHA-256, MongoDB, security
+
+
+<!-- @rule-summary -->
+Requires explicit authentication mechanism specification for MongoDB connections.
+<!-- @/rule-summary -->
 
 Requires explicit authentication mechanism specification for MongoDB connections.
 

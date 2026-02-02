@@ -1,13 +1,17 @@
 ---
 title: media-has-caption
 description: media-has-caption rule
-category: quality
-severity: low
 tags: ['quality', 'react', 'accessibility', 'a11y']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# media-has-caption
+---
+
+
+<!-- @rule-summary -->
+media-has-caption rule
+<!-- @/rule-summary -->
+
+# media-has-caption
 
 > **Keywords:** media-has-caption, accessibility, ESLint rule, WCAG, a11y, React accessibility
 
@@ -107,5 +111,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

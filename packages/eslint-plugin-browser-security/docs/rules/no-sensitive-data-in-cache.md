@@ -1,15 +1,21 @@
 ---
 title: no-sensitive-data-in-cache
 description: "CWE: [CWE-200](https://cwe.mitre.org/data/definitions/200.html)"
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-200
 autofix: false
 ---
 
 > **Keywords:** no sensitive data in cache, browser storage, localStorage, security, ESLint rule, [CWE-200](https://cwe.mitre.org/data/definitions/200.html), information disclosure
 > **CWE:** [CWE-200: Exposure of Sensitive Information to an Unauthorized Actor](https://cwe.mitre.org/data/definitions/200.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M9: Insecure Data Storage](https://owasp.org/www-project-mobile-top-10/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-200](https://cwe.mitre.org/data/definitions/200.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: no-sensitive-data-in-cache. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 

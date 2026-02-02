@@ -1,17 +1,21 @@
 ---
 title: hooks-exhaustive-deps
 description: hooks-exhaustive-deps rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# hooks-exhaustive-deps
+---
+
+
+<!-- @rule-summary -->
+hooks-exhaustive-deps rule
+<!-- @/rule-summary -->
+
+# hooks-exhaustive-deps
 
 > **Keywords:** React, hooks, useEffect, useCallback, useMemo, dependencies, stale closure, ESLint rule, performance, LLM-optimized
 
-Enforce exhaustive dependencies in React hooks to prevent stale closures. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features) and provides LLM-optimized error messages with suggestions.
+Enforce exhaustive dependencies in React hooks to prevent stale closures. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and provides LLM-optimized error messages with suggestions.
 
 ## Quick Summary
 
@@ -309,6 +313,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

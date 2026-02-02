@@ -1,14 +1,20 @@
 ---
 title: no-filereader-innerhtml
-description: no-filereader-innerhtml
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-693
+owasp: "A03:2021"
 autofix: false
 ---
 
-
 > 🔒 Disallow using innerHTML with FileReader data
+
+<!-- @rule-summary -->
+The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

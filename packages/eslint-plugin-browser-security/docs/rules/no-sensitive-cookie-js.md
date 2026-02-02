@@ -1,14 +1,20 @@
 ---
 title: no-sensitive-cookie-js
-description: no-sensitive-cookie-js
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-359
+owasp: "A02:2021"
 autofix: false
 ---
 
-
 > 🔒 Disallow storing sensitive data (tokens, passwords) in cookies via JavaScript
+
+<!-- @rule-summary -->
+The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-359](https://cwe.mitre.org/data/definitions/359.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

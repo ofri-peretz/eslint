@@ -1,18 +1,19 @@
 ---
 title: consistent-existence-index-check
-description: consistent-existence-index-check
-category: quality
-severity: low
+description: Enforce consistent style for checking if an element exists in an array
 tags: ['quality', 'conventions']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
-
 
 > **Keywords:** indexOf, includes, array, consistency, ESLint rule, auto-fix, LLM-optimized
 
-Enforce consistent style for checking if an element exists in an array. This rule is part of [`@eslint/eslint-plugin-architecture`](https://www.npmjs.com/package/@eslint/eslint-plugin-architecture).
+
+<!-- @rule-summary -->
+Enforce consistent style for checking if an element exists in an array
+<!-- @/rule-summary -->
+
+Enforce consistent style for checking if an element exists in an array. This rule is part of [`eslint-plugin-conventions`](https://www.npmjs.com/package/eslint-plugin-conventions).
 
 ## Quick Summary
 
@@ -106,6 +107,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

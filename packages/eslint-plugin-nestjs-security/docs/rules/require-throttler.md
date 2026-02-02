@@ -1,14 +1,20 @@
 ---
 title: require-throttler
-description: require-throttler
+description: This rule detects NestJS controllers and route handlers that lack rate limiting, which can make the application vulne...
+tags: ['security', 'nestjs']
 category: security
 severity: medium
-tags: ['security', 'nestjs']
+cwe: CWE-770
+owasp: "A05:2021"
 autofix: false
 ---
 
-
 > Require ThrottlerGuard or @Throttle decorator for rate limiting
+
+
+<!-- @rule-summary -->
+This rule detects NestJS controllers and route handlers that lack rate limiting, which can make the application vulne...
+<!-- @/rule-summary -->
 
 ## Rule Details
 

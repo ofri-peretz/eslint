@@ -1,13 +1,17 @@
 ---
 title: no-autofocus
 description: no-autofocus rule
-category: quality
-severity: low
 tags: ['quality', 'react', 'accessibility', 'a11y']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-autofocus
+---
+
+
+<!-- @rule-summary -->
+no-autofocus rule
+<!-- @/rule-summary -->
+
+# no-autofocus
 
 > **Keywords:** no-autofocus, accessibility, ESLint rule, WCAG, a11y, React accessibility
 
@@ -121,5 +125,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

@@ -1,14 +1,19 @@
 ---
 title: require-output-validation
-description: require-output-validation
+description: This rule identifies code patterns where AI-generated output is displayed to users without validation or fact-checking.
+tags: ['security', 'ai']
 category: security
 severity: medium
-tags: ['security', 'ai']
+cwe: CWE-707
 autofix: false
 ---
 
-
 > Requires validation of AI output before displaying to users.
+
+
+<!-- @rule-summary -->
+This rule identifies code patterns where AI-generated output is displayed to users without validation or fact-checking.
+<!-- @/rule-summary -->
 
 ## 📊 Rule Details
 

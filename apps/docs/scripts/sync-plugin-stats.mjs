@@ -51,21 +51,39 @@ export function getPackageMetadata(packagePath) {
 }
 
 export function getCategory(packageName) {
+  // Framework plugins - Express, NestJS, Lambda
   if (packageName.includes('express') || 
       packageName.includes('nestjs') || 
       packageName.includes('lambda')) {
     return 'framework';
   }
+  
+  // Architecture plugins
   if (packageName.includes('import-next') || 
       packageName.includes('architecture')) {
     return 'architecture';
   }
-  if (packageName.includes('quality')) {
+  
+  // Quality/Governance plugins - code quality, maintainability, conventions
+  const qualityPlugins = [
+    'conventions',
+    'maintainability',
+    'modularity',
+    'operability',
+    'reliability',
+    'modernization',
+    'quality',
+  ];
+  if (qualityPlugins.some(q => packageName.includes(q))) {
     return 'quality';
   }
+  
+  // React plugins
   if (packageName.includes('react')) {
     return 'react';
   }
+  
+  // Default to security for all security-focused plugins
   return 'security';
 }
 

@@ -1,13 +1,17 @@
 ---
 title: aria-props
 description: aria-props rule
-category: quality
-severity: low
 tags: ['quality', 'react', 'accessibility', 'a11y']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# aria-props
+---
+
+
+<!-- @rule-summary -->
+aria-props rule
+<!-- @/rule-summary -->
+
+# aria-props
 
 > **Keywords:** aria-props, accessibility, ESLint rule, WCAG, a11y, React accessibility
 
@@ -107,5 +111,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

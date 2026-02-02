@@ -1,17 +1,19 @@
 ---
 title: no-verbose-error-messages
 description: Prevent exposing stack traces to users in API responses
-category: quality
-severity: medium
 tags: ['quality', 'operability', 'production', 'error-handling', 'cwe-209']
+category: quality
 autofix: false
-cwe: CWE-209
-owasp: A01:2021-Broken-Access-Control
 ---
 
 > **Keywords:** stack trace, error message, information disclosure, CWE-209, production, API response
 > **CWE:** [CWE-209](https://cwe.mitre.org/data/definitions/209.html)  
 > **OWASP:** [A01:2021-Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
+
+
+<!-- @rule-summary -->
+Prevent exposing stack traces to users in API responses
+<!-- @/rule-summary -->
 
 Prevents exposing stack traces and verbose error details to users through API responses. This rule is part of [`eslint-plugin-operability`](https://www.npmjs.com/package/eslint-plugin-operability) and provides LLM-optimized error messages.
 

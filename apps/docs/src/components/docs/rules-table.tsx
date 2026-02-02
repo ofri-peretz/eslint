@@ -6,9 +6,24 @@
  */
 
 import Link from 'next/link';
-import { Briefcase, Wrench, Lightbulb, AlertTriangle } from 'lucide-react';
+import { Briefcase, Wrench, Lightbulb, AlertTriangle, ExternalLink } from 'lucide-react';
 
 const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/ofri-peretz/eslint/main/packages';
+
+// Security plugins that should link to /docs/security/
+const SECURITY_PLUGINS = [
+  'browser-security',
+  'secure-coding',
+  'jwt',
+  'node-security',
+  'crypto',
+  'mongodb-security',
+  'pg',
+  'express-security',
+  'nestjs-security',
+  'lambda-security',
+  'vercel-ai-security',
+];
 
 interface RulesTableProps {
   /** Plugin slug (e.g., 'import-next', 'browser-security') */
@@ -17,6 +32,8 @@ interface RulesTableProps {
   limit?: number;
   /** Optional: Show compact view */
   compact?: boolean;
+  /** Optional: Show links column instead of description */
+  showLinks?: boolean;
 }
 
 interface ParsedRule {
@@ -33,11 +50,19 @@ interface ParsedRule {
 }
 
 /**
+ * Determine the category path for a plugin
+ */
+function getPluginCategory(plugin: string): 'security' | 'quality' {
+  return SECURITY_PLUGINS.includes(plugin) ? 'security' : 'quality';
+}
+
+/**
  * Fetch README and parse rules table
  */
 async function fetchRules(plugin: string): Promise<ParsedRule[]> {
   const packageName = `eslint-plugin-${plugin}`;
   const url = `${GITHUB_RAW_BASE}/${packageName}/README.md`;
+  const category = getPluginCategory(plugin);
   
   try {
     const res = await fetch(url, {
@@ -50,7 +75,12 @@ async function fetchRules(plugin: string): Promise<ParsedRule[]> {
     }
     
     const markdown = await res.text();
-    return parseRulesFromReadme(markdown, plugin);
+    const rules = parseRulesFromReadme(markdown, plugin, category);
+    
+    // Fetch descriptions from individual rule docs (in parallel)
+    const rulesWithDescriptions = await fetchRuleDescriptions(plugin, rules);
+    
+    return rulesWithDescriptions;
   } catch (error) {
     console.error(`[RulesTable] Error fetching ${plugin}:`, error);
     return [];
@@ -58,9 +88,101 @@ async function fetchRules(plugin: string): Promise<ParsedRule[]> {
 }
 
 /**
+ * Fetch descriptions from individual rule docs
+ * Priority: 1) frontmatter.description  2) @rule-summary anchor  3) blockquote fallback
+ */
+async function fetchRuleDescriptions(plugin: string, rules: ParsedRule[]): Promise<ParsedRule[]> {
+  const packageName = `eslint-plugin-${plugin}`;
+  
+  const fetchPromises = rules.map(async (rule) => {
+    try {
+      const ruleDocUrl = `${GITHUB_RAW_BASE}/${packageName}/docs/rules/${rule.name}.md`;
+      const res = await fetch(ruleDocUrl, {
+        next: { revalidate: 21600 }, // 6 hour cache
+      });
+      
+      if (!res.ok) {
+        return rule;
+      }
+      
+      const content = await res.text();
+      
+      // 1. Try to extract description from frontmatter
+      const frontmatterMatch = content.match(/^---\s*\n([\s\S]*?)\n---/);
+      if (frontmatterMatch) {
+        const frontmatter = frontmatterMatch[1];
+        // Look for description field (not just the title repeated)
+        const descMatch = frontmatter.match(/^description:\s*["']?(.+?)["']?\s*$/m);
+        if (descMatch && descMatch[1] && descMatch[1] !== rule.name && descMatch[1].length > 15) {
+          return { ...rule, description: descMatch[1].trim() };
+        }
+      }
+      
+      // 2. Try to extract from @rule-summary anchor
+      const anchorMatch = content.match(/<!--\s*@rule-summary\s*-->([\s\S]*?)<!--\s*@\/rule-summary\s*-->/);
+      if (anchorMatch && anchorMatch[1]) {
+        const desc = anchorMatch[1].replace(/[`*~_]/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').trim();
+        if (desc && desc.length > 10) {
+          // Take first sentence or first 150 chars
+          const firstSentence = desc.split(/\.\s/)[0];
+          return { ...rule, description: firstSentence.length < 150 ? firstSentence : desc.slice(0, 147) + '...' };
+        }
+      }
+      
+      // 3. Fallback: Find first paragraph after frontmatter (not a blockquote, not keywords)
+      const frontmatterEnd = content.indexOf('---', 3);
+      if (frontmatterEnd !== -1) {
+        const afterFrontmatter = content.slice(frontmatterEnd + 3).trim();
+        const lines = afterFrontmatter.split('\n');
+        
+        for (const line of lines) {
+          const trimmed = line.trim();
+          // Skip empty lines, blockquotes, headers, and badges
+          if (!trimmed || trimmed.startsWith('>') || trimmed.startsWith('#') || 
+              trimmed.startsWith('*') || trimmed.startsWith('|') ||
+              trimmed.toLowerCase().includes('keywords:')) {
+            continue;
+          }
+          // Found a regular paragraph
+          const desc = trimmed.replace(/[`*~_]/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').trim();
+          if (desc && desc.length > 20 && !desc.includes('🚨') && !desc.includes('💡')) {
+            return { ...rule, description: desc.length < 150 ? desc : desc.slice(0, 147) + '...' };
+          }
+        }
+      }
+      
+      return rule;
+    } catch {
+      return rule;
+    }
+  });
+  
+  return Promise.all(fetchPromises);
+}
+
+/**
+ * Strip markdown formatting from a string
+ */
+function stripMarkdown(text: string): string {
+  if (!text) return '';
+  
+  // Remove markdown links, keeping only the text part
+  let result = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+  
+  // Remove backticks, bold, italic markers
+  result = result.replace(/[`*~_]/g, '');
+  
+  // Remove any remaining URLs or file paths
+  result = result.replace(/\(\.\/[^)]+\)/g, '');
+  result = result.replace(/https?:\/\/[^\s]+/g, '');
+  
+  return result.trim();
+}
+
+/**
  * Parse rules from README markdown tables
  */
-function parseRulesFromReadme(markdown: string, plugin: string): ParsedRule[] {
+function parseRulesFromReadme(markdown: string, plugin: string, category: 'security' | 'quality'): ParsedRule[] {
   const rules: ParsedRule[] = [];
   
   // Find markdown tables with Rule column
@@ -77,7 +199,6 @@ function parseRulesFromReadme(markdown: string, plugin: string): ParsedRule[] {
     // Only process tables with Rule column
     if (ruleIdx === -1) continue;
     
-    const descIdx = headerCells.findIndex(h => h.toLowerCase() === 'description');
     const cweIdx = headerCells.findIndex(h => h.toLowerCase() === 'cwe');
     const owaspIdx = headerCells.findIndex(h => h.toLowerCase() === 'owasp');
     
@@ -97,20 +218,17 @@ function parseRulesFromReadme(markdown: string, plugin: string): ParsedRule[] {
       
       if (!ruleName || ruleName.includes('|') || ruleName.length < 2) continue;
       
-      const stripMd = (val: string) => 
-        val.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1').replace(/[`*~]/g, '').trim();
-      
       rules.push({
         name: ruleName,
-        description: descIdx !== -1 ? cells[descIdx] || '' : '',
+        description: '', // Will be filled by fetchRuleDescriptions
         recommended: row.includes('💼'),
         warns: row.includes('⚠️'),
         fixable: row.includes('🔧'),
         hasSuggestions: row.includes('💡'),
         deprecated: row.includes('🚫'),
-        cwe: cweIdx !== -1 ? stripMd(cells[cweIdx] || '') : undefined,
-        owasp: owaspIdx !== -1 ? stripMd(cells[owaspIdx] || '') : undefined,
-        href: `/docs/quality/plugin-${plugin}/rules/${ruleName}`,
+        cwe: cweIdx !== -1 ? stripMarkdown(cells[cweIdx] || '') : undefined,
+        owasp: owaspIdx !== -1 ? stripMarkdown(cells[owaspIdx] || '') : undefined,
+        href: `/docs/${category}/plugin-${plugin}/rules/${ruleName}`,
       });
     }
   }
@@ -118,7 +236,7 @@ function parseRulesFromReadme(markdown: string, plugin: string): ParsedRule[] {
   return rules;
 }
 
-export async function RulesTable({ plugin, limit, compact }: RulesTableProps) {
+export async function RulesTable({ plugin, limit, compact, showLinks }: RulesTableProps) {
   const rules = await fetchRules(plugin);
   const displayRules = limit ? rules.slice(0, limit) : rules;
   
@@ -169,9 +287,11 @@ export async function RulesTable({ plugin, limit, compact }: RulesTableProps) {
           <thead>
             <tr className="border-b border-fd-border">
               <th className="text-left py-2 px-3 font-medium">Rule</th>
-              {!compact && <th className="text-left py-2 px-3 font-medium">Description</th>}
-              <th className="text-center py-2 px-3 font-medium w-16">💼</th>
-              <th className="text-center py-2 px-3 font-medium w-16">🔧</th>
+              <th className="text-center py-2 px-3 font-medium w-12">💼</th>
+              <th className="text-center py-2 px-3 font-medium w-12">🔧</th>
+              <th className="text-center py-2 px-3 font-medium w-12">💡</th>
+              <th className="text-center py-2 px-3 font-medium w-12">⚠️</th>
+              <th className="text-center py-2 px-3 font-medium w-14">Docs</th>
             </tr>
           </thead>
           <tbody>
@@ -184,17 +304,31 @@ export async function RulesTable({ plugin, limit, compact }: RulesTableProps) {
                   >
                     {rule.name}
                   </Link>
+                  {rule.description && (
+                    <p className="text-xs text-fd-muted-foreground mt-0.5 max-w-md">
+                      {rule.description}
+                    </p>
+                  )}
                 </td>
-                {!compact && (
-                  <td className="py-2 px-3 text-fd-muted-foreground">
-                    {rule.description}
-                  </td>
-                )}
                 <td className="text-center py-2 px-3">
                   {rule.recommended && <Briefcase className="h-4 w-4 text-fd-primary mx-auto" />}
                 </td>
                 <td className="text-center py-2 px-3">
                   {rule.fixable && <Wrench className="h-4 w-4 text-green-500 mx-auto" />}
+                </td>
+                <td className="text-center py-2 px-3">
+                  {rule.hasSuggestions && <Lightbulb className="h-4 w-4 text-amber-500 mx-auto" />}
+                </td>
+                <td className="text-center py-2 px-3">
+                  {rule.warns && <AlertTriangle className="h-4 w-4 text-orange-500 mx-auto" />}
+                </td>
+                <td className="text-center py-2 px-3">
+                  <Link 
+                    href={rule.href}
+                    className="inline-flex items-center justify-center text-fd-muted-foreground hover:text-fd-primary"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Link>
                 </td>
               </tr>
             ))}

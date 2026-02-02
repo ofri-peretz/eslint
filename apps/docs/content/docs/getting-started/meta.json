@@ -12,6 +12,7 @@
         "editor-integration",
         "troubleshooting",
         "---Concepts---",
+        "concepts/philosophy",
         "concepts/ai-integration",
         "concepts/ast-fundamentals",
         "concepts/security-metadata",

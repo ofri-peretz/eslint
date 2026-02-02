@@ -1,15 +1,21 @@
 ---
 title: no-tracking-without-consent
 description: "CWE: [CWE-359](https://cwe.mitre.org/data/definitions/359.html)"
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-359
 autofix: false
 ---
 
 > **Keywords:** no tracking without consent, privacy, GDPR, CCPA, analytics, security, ESLint rule, [CWE-359](https://cwe.mitre.org/data/definitions/359.html)
 > **CWE:** [CWE-359: Exposure of Private Information ('Privacy Violation')](https://cwe.mitre.org/data/definitions/359.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M6: Insecure Data Storage](https://owasp.org/www-project-mobile-top-10/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-359](https://cwe.mitre.org/data/definitions/359.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: no-tracking-without-consent. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 

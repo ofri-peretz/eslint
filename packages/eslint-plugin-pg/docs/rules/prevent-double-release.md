@@ -1,14 +1,19 @@
 ---
 title: prevent-double-release
-description: prevent-double-release
+description: Prevents calling client.release() multiple times on the same client.
+tags: ['security', 'postgres']
 category: security
 severity: medium
-tags: ['security', 'postgres']
+cwe: CWE-415
 autofix: false
 ---
 
-
 > **Keywords:** double release, connection pool, CWE-415, pg, node-postgres, pool corruption
+
+<!-- @rule-summary -->
+Prevents calling client.release() multiple times on the same client.
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Prevents calling `client.release()` multiple times on the same client.

@@ -1,13 +1,17 @@
 ---
 title: mouse-events-have-key-events
 description: mouse-events-have-key-events rule
-category: quality
-severity: low
 tags: ['quality', 'react', 'accessibility', 'a11y']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# mouse-events-have-key-events
+---
+
+
+<!-- @rule-summary -->
+mouse-events-have-key-events rule
+<!-- @/rule-summary -->
+
+# mouse-events-have-key-events
 
 > **Keywords:** mouse-events-have-key-events, accessibility, ESLint rule, WCAG, a11y, React accessibility
 
@@ -107,5 +111,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

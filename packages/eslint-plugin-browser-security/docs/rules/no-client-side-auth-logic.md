@@ -1,13 +1,18 @@
 ---
 title: no-client-side-auth-logic
 description: Prevent client-side authentication logic that can be bypassed. This rule is part of eslint-plugin-browser-security and provides LLM-optimized error messages.
+tags: ['security', 'browser', 'client-side', 'authentication']
 category: security
 severity: high
-tags: ['security', 'browser', 'client-side', 'authentication']
 autofix: false
 ---
 
 > **Keywords:** browser, security, authentication, client-side, ESLint rule, LLM-optimized
+
+
+<!-- @rule-summary -->
+Prevent client-side authentication logic that can be bypassed. This rule is part of eslint-plugin-browser-security and provides LLM-optimized error messages.
+<!-- @/rule-summary -->
 
 Prevent client-side authentication logic that can be bypassed. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 

@@ -1,14 +1,19 @@
 ---
 title: require-abort-signal
-description: require-abort-signal
+description: "This rule identifies streaming AI SDK calls (streamText, streamObject) that don't include an AbortSignal for cancella..."
+tags: ['security', 'ai']
 category: security
 severity: medium
-tags: ['security', 'ai']
+cwe: CWE-404
 autofix: false
 ---
 
-
 > Ensures streaming calls have AbortSignal for graceful cancellation.
+
+
+<!-- @rule-summary -->
+This rule identifies streaming AI SDK calls (streamText, streamObject) that don't include an AbortSignal for cancella...
+<!-- @/rule-summary -->
 
 ## 📊 Rule Details
 

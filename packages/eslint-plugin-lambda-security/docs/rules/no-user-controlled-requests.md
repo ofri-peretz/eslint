@@ -1,17 +1,22 @@
 ---
 title: no-user-controlled-requests
 description: Detect HTTP requests with user-controlled URLs (SSRF)
+tags: ['security', 'ssrf', 'cwe-918', 'lambda', 'aws']
 category: security
 severity: critical
-tags: ['security', 'ssrf', 'cwe-918', 'lambda', 'aws']
-autofix: false
 cwe: CWE-918
-owasp: A10:2021-Server-Side-Request-Forgery
+owasp: "A10:2021"
+autofix: false
 ---
 
 > **Keywords:** SSRF, Server-Side Request Forgery, fetch, axios, user input, CWE-918, Lambda, serverless
 > **CWE:** [CWE-918](https://cwe.mitre.org/data/definitions/918.html)  
 > **OWASP:** [A10:2021-Server-Side Request Forgery](https://owasp.org/Top10/A10_2021-Server-Side_Request_Forgery_%28SSRF%29/)
+
+
+<!-- @rule-summary -->
+Detect HTTP requests with user-controlled URLs (SSRF)
+<!-- @/rule-summary -->
 
 Detects HTTP requests where the URL contains user-controlled input from Lambda events. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) and provides LLM-optimized error messages.
 

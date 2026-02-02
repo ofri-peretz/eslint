@@ -1,14 +1,20 @@
 ---
 title: no-missing-validation-pipe
-description: no-missing-validation-pipe
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+tags: ['security', 'nestjs']
 category: security
 severity: medium
-tags: ['security', 'nestjs']
+cwe: CWE-20
+owasp: "A03:2021"
 autofix: false
 ---
 
-
 > Require ValidationPipe for DTO input parameters
+
+
+<!-- @rule-summary -->
+The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
+<!-- @/rule-summary -->
 
 ## Error Message Format
 

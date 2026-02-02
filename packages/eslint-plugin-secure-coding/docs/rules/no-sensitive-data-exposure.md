@@ -1,14 +1,19 @@
 ---
 title: no-sensitive-data-exposure
-description: no-sensitive-data-exposure
+description: "ESLint Rule: no-sensitive-data-exposure"
+tags: ['security', 'core']
 category: security
 severity: medium
-tags: ['security', 'core']
+cwe: CWE-532
 autofix: false
 ---
 
-
 > **Keywords:** no sensitive data exposure, security, ESLint rule, JavaScript, TypeScript, CWE-532
+
+<!-- @rule-summary -->
+ESLint Rule: no-sensitive-data-exposure
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-359](https://cwe.mitre.org/data/definitions/359.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

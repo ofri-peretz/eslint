@@ -1,14 +1,19 @@
 ---
 title: no-unsafe-deserialization
-description: no-unsafe-deserialization
+description: Detects unsafe deserialization of untrusted data
+tags: ['security', 'core']
 category: security
 severity: medium
-tags: ['security', 'core']
+cwe: CWE-502
 autofix: false
 ---
 
-
 > **Keywords:** unsafe deserialization, CWE-502, RCE, code execution, YAML, pickle, security
+
+<!-- @rule-summary -->
+Detects unsafe deserialization of untrusted data
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

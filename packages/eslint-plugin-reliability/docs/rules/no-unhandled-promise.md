@@ -1,15 +1,17 @@
 ---
 title: no-unhandled-promise
 description: Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling. This rule detects promises that are created but never have
-category: quality
-severity: low
 tags: ['quality', 'reliability', 'async']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
 > **Keywords:** unhandled promise, promise rejection, async error handling, Promise, async/await, error handling, Node.js, JavaScript promises, async patterns, promise chains, try/catch, await, error propagation, [CWE-1024](https://cwe.mitre.org/data/definitions/1024.html), SonarQube RSPEC-4635
+
+
+<!-- @rule-summary -->
+Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling. This rule detects promises that are created but never have
+<!-- @/rule-summary -->
 
 Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling. This rule detects promises that are created but never have their rejection handled, preventing silent failures in production applications.
 
@@ -141,7 +143,7 @@ async function handleOrder(orderId) {
 export default [
   {
     rules: {
-      'quality/no-unhandled-promise': 'error',
+      'reliability/no-unhandled-promise': 'error',
     },
   },
 ];
@@ -152,7 +154,7 @@ export default [
 ```javascript
 {
   rules: {
-    'quality/no-unhandled-promise': ['error', {
+    'reliability/no-unhandled-promise': ['error', {
       ignoreInTests: true  // Default: true
     }]
   }
@@ -164,7 +166,7 @@ export default [
 ```javascript
 {
   rules: {
-    'quality/no-unhandled-promise': ['error', {
+    'reliability/no-unhandled-promise': ['error', {
       ignoreInTests: false,
       ignoreVoidExpressions: false
     }]

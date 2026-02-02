@@ -1,19 +1,23 @@
 ---
 title: no-cryptojs-weak-random
 description: Disallow crypto-js WordArray.random() (CVE-2020-36732)
+tags: ['security', 'cryptography', 'cwe-338', 'nodejs', 'cve']
 category: security
 severity: critical
-tags: ['security', 'cryptography', 'cwe-338', 'nodejs', 'cve']
-autofix: false
 cwe: CWE-338
-cve: CVE-2020-36732
-owasp: A02:2021-Cryptographic-Failures
+owasp: "A02:2021"
+autofix: false
 ---
 
 > **Keywords:** crypto-js, WordArray.random, weak random, Math.random, CVE-2020-36732, CWE-338, ESLint rule
 > **CWE:** [CWE-338](https://cwe.mitre.org/data/definitions/338.html)  
 > **CVE:** [CVE-2020-36732](https://nvd.nist.gov/vuln/detail/CVE-2020-36732)  
 > **OWASP:** [A02:2021-Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+
+
+<!-- @rule-summary -->
+Disallow crypto-js WordArray.random() (CVE-2020-36732)
+<!-- @/rule-summary -->
 
 Detects usage of `crypto-js` `WordArray.random()` which used insecure `Math.random()` in versions prior to 3.2.1. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages.
 

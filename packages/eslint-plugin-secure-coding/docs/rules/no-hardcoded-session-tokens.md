@@ -1,14 +1,19 @@
 ---
 title: no-hardcoded-session-tokens
-description: no-hardcoded-session-tokens
+description: This rule detects hardcoded JWT tokens (starting with eyJ), Bearer tokens, and session identifiers
+tags: ['security', 'core']
 category: security
 severity: critical
-tags: ['security', 'core']
+cwe: CWE-798
 autofix: false
 ---
 
-
 > Detects hardcoded session/JWT tokens in code
+
+
+<!-- @rule-summary -->
+This rule detects hardcoded JWT tokens (starting with eyJ), Bearer tokens, and session identifiers
+<!-- @/rule-summary -->
 
 **Severity:** 🔴 CRITICAL  
 **CWE:** [CWE-798: Use of Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html)  

@@ -1,14 +1,19 @@
 ---
 title: require-validated-prompt
-description: require-validated-prompt
+description: This rule identifies code patterns where user-controlled input is passed directly to AI prompts without validation or...
+tags: ['security', 'ai']
 category: security
 severity: medium
-tags: ['security', 'ai']
+cwe: CWE-74
 autofix: false
 ---
 
-
 > Prevents prompt injection by detecting unvalidated user input in AI prompts.
+
+
+<!-- @rule-summary -->
+This rule identifies code patterns where user-controlled input is passed directly to AI prompts without validation or...
+<!-- @/rule-summary -->
 
 ## 📊 Rule Details
 

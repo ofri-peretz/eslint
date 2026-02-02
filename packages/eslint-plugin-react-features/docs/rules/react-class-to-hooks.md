@@ -1,17 +1,21 @@
 ---
 title: react-class-to-hooks
 description: react-class-to-hooks rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# react-class-to-hooks
+---
+
+
+<!-- @rule-summary -->
+react-class-to-hooks rule
+<!-- @/rule-summary -->
+
+# react-class-to-hooks
 
 > **Keywords:** React, hooks, migration, ESLint rule, class components, functional components, React modernization, auto-fix, LLM-optimized, React migration
 
-Suggest migrating React class components to hooks with detailed migration path. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features) and provides LLM-optimized error messages with fix suggestions.
+Suggest migrating React class components to hooks with detailed migration path. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and provides LLM-optimized error messages with fix suggestions.
 
 **💡 Provides suggestions** | **🔧 Automatically fixable**
 
@@ -158,6 +162,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

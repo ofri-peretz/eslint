@@ -1,14 +1,20 @@
 ---
 title: require-blob-url-revocation
-description: require-blob-url-revocation
+description: Require revoking Blob URLs after use to prevent memory leaks.
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-401
+owasp: "A04:2021"
 autofix: false
 ---
 
-
 > Require Blob Url Revocation
+
+
+<!-- @rule-summary -->
+Require revoking Blob URLs after use to prevent memory leaks.
+<!-- @/rule-summary -->
 
 Require revoking Blob URLs after use to prevent memory leaks.
 

@@ -1,14 +1,19 @@
 ---
 title: no-insecure-redirects
-description: no-insecure-redirects
+description: "ESLint Rule: no-insecure-redirects"
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-601
 autofix: false
 ---
 
-
 > **Keywords:** no insecure redirects, security, ESLint rule, JavaScript, TypeScript, CWE-601
+
+<!-- @rule-summary -->
+ESLint Rule: no-insecure-redirects
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

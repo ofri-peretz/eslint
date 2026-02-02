@@ -1,18 +1,19 @@
 ---
 title: no-await-in-loop
-description: no-await-in-loop
-category: quality
-severity: low
+description: Disallow await inside loops without considering concurrency implications
 tags: ['quality', 'reliability']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
-
 
 > **Keywords:** async, await, loop, Promise.all, concurrency, performance, ESLint rule, sequential, parallel, LLM-optimized
 
-Disallow await inside loops without considering concurrency implications. This rule is part of [`@eslint/eslint-plugin-architecture`](https://www.npmjs.com/package/@eslint/eslint-plugin-architecture) and provides LLM-optimized error messages with concurrency pattern suggestions.
+
+<!-- @rule-summary -->
+Disallow await inside loops without considering concurrency implications
+<!-- @/rule-summary -->
+
+Disallow await inside loops without considering concurrency implications. This rule is part of [`eslint-plugin-reliability`](https://www.npmjs.com/package/eslint-plugin-reliability) and provides LLM-optimized error messages with concurrency pattern suggestions.
 
 ## Quick Summary
 
@@ -281,6 +282,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

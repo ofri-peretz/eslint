@@ -1,14 +1,19 @@
 ---
 title: no-system-prompt-leak
-description: no-system-prompt-leak
+description: This rule identifies code patterns where system prompts or AI instructions are returned in API responses, logged, or ...
+tags: ['security', 'ai']
 category: security
 severity: medium
-tags: ['security', 'ai']
+cwe: CWE-200
 autofix: false
 ---
 
-
 > Prevents system prompts from being exposed in API responses or client code.
+
+
+<!-- @rule-summary -->
+This rule identifies code patterns where system prompts or AI instructions are returned in API responses, logged, or ...
+<!-- @/rule-summary -->
 
 ## 📊 Rule Details
 

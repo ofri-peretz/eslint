@@ -1,13 +1,17 @@
 ---
 title: role-has-required-aria-props
 description: role-has-required-aria-props rule
-category: quality
-severity: low
 tags: ['quality', 'react', 'accessibility', 'a11y']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# role-has-required-aria-props
+---
+
+
+<!-- @rule-summary -->
+role-has-required-aria-props rule
+<!-- @/rule-summary -->
+
+# role-has-required-aria-props
 
 > **Keywords:** role-has-required-aria-props, accessibility, ESLint rule, WCAG, a11y, React accessibility
 
@@ -107,5 +111,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Apply the same rule to imported modules. Use module boundaries and explicit exports.
-
-

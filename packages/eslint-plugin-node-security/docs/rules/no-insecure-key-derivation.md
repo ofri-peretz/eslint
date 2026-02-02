@@ -1,17 +1,22 @@
 ---
 title: no-insecure-key-derivation
 description: Disallow PBKDF2 with insufficient iterations (< 100,000)
+tags: ['security', 'cryptography', 'cwe-916', 'nodejs', 'password']
 category: security
 severity: high
-tags: ['security', 'cryptography', 'cwe-916', 'nodejs', 'password']
-autofix: false
 cwe: CWE-916
-owasp: A02:2021-Cryptographic-Failures
+owasp: "A02:2021"
+autofix: false
 ---
 
 > **Keywords:** PBKDF2, key derivation, iterations, password hashing, CWE-916, security, ESLint rule, scrypt, Argon2
 > **CWE:** [CWE-916](https://cwe.mitre.org/data/definitions/916.html)  
 > **OWASP:** [A02:2021-Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+
+
+<!-- @rule-summary -->
+Disallow PBKDF2 with insufficient iterations (< 100,000)
+<!-- @/rule-summary -->
 
 Detects PBKDF2 usage with insufficient iterations. OWASP 2023 recommends minimum 600,000 iterations for PBKDF2-SHA256. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages with fix suggestions.
 

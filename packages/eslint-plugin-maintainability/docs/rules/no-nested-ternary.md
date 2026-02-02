@@ -1,18 +1,19 @@
 ---
 title: no-nested-ternary
-description: no-nested-ternary
-category: quality
-severity: low
+description: Prevent nested ternary expressions for better readability
 tags: ['quality', 'maintainability']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
-
 
 > **Keywords:** ternary, conditional, nested, readability, ESLint rule, code quality, refactoring, LLM-optimized
 
-Prevent nested ternary expressions for better readability. This rule is part of [`@eslint/eslint-plugin-quality`](https://www.npmjs.com/package/@eslint/eslint-plugin-quality) and provides LLM-optimized error messages with suggestions.
+
+<!-- @rule-summary -->
+Prevent nested ternary expressions for better readability
+<!-- @/rule-summary -->
+
+Prevent nested ternary expressions for better readability. This rule is part of [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability) and provides LLM-optimized error messages with suggestions.
 
 ## Quick Summary
 
@@ -149,7 +150,7 @@ function getStatusColor(status: string): string {
 ```javascript
 {
   rules: {
-    'quality/no-nested-ternary': 'warn'
+    'maintainability/no-nested-ternary': 'warn'
   }
 }
 ```
@@ -159,7 +160,7 @@ function getStatusColor(status: string): string {
 ```javascript
 {
   rules: {
-    'quality/no-nested-ternary': 'error'
+    'maintainability/no-nested-ternary': 'error'
   }
 }
 ```

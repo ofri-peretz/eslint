@@ -159,8 +159,8 @@ function transformMermaidBlocks(source: string): string {
  */
 function remarkMermaid() {
   return () => (tree: Root) => {
-    visit(tree, 'code', (node: any, index: number, parent: any) => {
-      if (node.lang === 'mermaid' && parent && typeof index === 'number') {
+    visit(tree, 'code', (node: any, index: number | undefined, parent: any) => {
+      if (node.lang === 'mermaid' && parent && index !== undefined) {
         // Transform to MDX JSX element
         const chart = node.value.replace(/"/g, '\\"').replace(/\n/g, '\\n');
         parent.children[index] = {

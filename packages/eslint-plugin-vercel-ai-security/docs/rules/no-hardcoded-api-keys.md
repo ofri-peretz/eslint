@@ -1,14 +1,19 @@
 ---
 title: no-hardcoded-api-keys
-description: no-hardcoded-api-keys
+description: This rule identifies hardcoded API keys, tokens, and secrets in your codebase that are used with AI SDK providers
+tags: ['security', 'ai']
 category: security
 severity: critical
-tags: ['security', 'ai']
+cwe: CWE-798
 autofix: false
 ---
 
-
 > Detects hardcoded API keys and secrets in AI SDK configuration.
+
+
+<!-- @rule-summary -->
+This rule identifies hardcoded API keys, tokens, and secrets in your codebase that are used with AI SDK providers
+<!-- @/rule-summary -->
 
 ## 📊 Rule Details
 

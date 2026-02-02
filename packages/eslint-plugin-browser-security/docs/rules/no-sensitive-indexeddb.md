@@ -1,14 +1,20 @@
 ---
 title: no-sensitive-indexeddb
-description: no-sensitive-indexeddb
+description: Prevent storing sensitive data in IndexedDB.
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-922
+owasp: "A02:2021"
 autofix: false
 ---
 
-
 > No Sensitive Indexeddb
+
+
+<!-- @rule-summary -->
+Prevent storing sensitive data in IndexedDB.
+<!-- @/rule-summary -->
 
 Prevent storing sensitive data in IndexedDB.
 

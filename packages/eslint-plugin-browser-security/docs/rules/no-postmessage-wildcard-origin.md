@@ -1,14 +1,20 @@
 ---
 title: no-postmessage-wildcard-origin
-description: no-postmessage-wildcard-origin
+description: "This rule prevents using \"\" as the targetOrigin parameter in postMessage() calls"
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-693
+owasp: "A01:2021"
 autofix: false
 ---
 
-
 > 🔒 Disallow using wildcard (\*) as targetOrigin in postMessage calls
+
+<!-- @rule-summary -->
+This rule prevents using "" as the targetOrigin parameter in postMessage() calls
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

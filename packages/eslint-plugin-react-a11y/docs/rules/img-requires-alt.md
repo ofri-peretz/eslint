@@ -1,13 +1,17 @@
 ---
 title: img-requires-alt
 description: img-requires-alt rule
-category: quality
-severity: low
 tags: ['quality', 'react', 'accessibility', 'a11y']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# img-requires-alt
+---
+
+
+<!-- @rule-summary -->
+img-requires-alt rule
+<!-- @/rule-summary -->
+
+# img-requires-alt
 
 > **Keywords:** img-requires-alt, accessibility, ESLint rule, WCAG, a11y, React accessibility
 
@@ -107,5 +111,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Apply the same rule to imported modules. Use module boundaries and explicit exports.
-
-

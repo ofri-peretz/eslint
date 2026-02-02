@@ -1,14 +1,19 @@
 ---
 title: no-insecure-comparison
-description: no-insecure-comparison
+description: Detects insecure comparison operators (==, !=) that can lead to type coercion vulnerabilities
+tags: ['security', 'core']
 category: security
 severity: medium
-tags: ['security', 'core']
+cwe: CWE-697
 autofix: false
 ---
 
-
 > **Keywords:** insecure comparison, CWE-697, security, ESLint rule, loose equality, type coercion, == vs ===, strict equality, JavaScript security, auto-fix, LLM-optimized, code security
+
+<!-- @rule-summary -->
+Detects insecure comparison operators (==, !=) that can lead to type coercion vulnerabilities
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

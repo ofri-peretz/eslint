@@ -1,18 +1,19 @@
 ---
 title: no-unreadable-iife
-description: no-unreadable-iife
-category: quality
-severity: low
+description: Disallow unreadable IIFE (Immediately Invoked Function Expression) patterns
 tags: ['quality', 'maintainability']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
-
 
 > **Keywords:** IIFE, immediately invoked, readability, ESLint rule, function expressions, LLM-optimized
 
-Disallow unreadable IIFE (Immediately Invoked Function Expression) patterns. This rule is part of [`@eslint/eslint-plugin-architecture`](https://www.npmjs.com/package/@eslint/eslint-plugin-architecture).
+
+<!-- @rule-summary -->
+Disallow unreadable IIFE (Immediately Invoked Function Expression) patterns
+<!-- @/rule-summary -->
+
+Disallow unreadable IIFE (Immediately Invoked Function Expression) patterns. This rule is part of [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability).
 
 ## Quick Summary
 
@@ -135,6 +136,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

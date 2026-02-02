@@ -1,14 +1,19 @@
 ---
 title: no-sensitive-data-in-analytics
-description: no-sensitive-data-in-analytics
+description: This rule detects when sensitive user data (email, SSN, credit card, password, phone, address) is passed to analytics...
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-359
 autofix: false
 ---
 
-
 > Prevents PII being sent to analytics services
+
+
+<!-- @rule-summary -->
+This rule detects when sensitive user data (email, SSN, credit card, password, phone, address) is passed to analytics...
+<!-- @/rule-summary -->
 
 **Severity:** 🟠 HIGH  
 **CWE:** [CWE-359: Exposure of Private Personal Information to an Unauthorized Actor](https://cwe.mitre.org/data/definitions/359.html)  

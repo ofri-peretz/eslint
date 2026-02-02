@@ -1,13 +1,17 @@
 ---
 title: aria-role
 description: aria-role rule
-category: quality
-severity: low
 tags: ['quality', 'react', 'accessibility', 'a11y']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# aria-role
+---
+
+
+<!-- @rule-summary -->
+aria-role rule
+<!-- @/rule-summary -->
+
+# aria-role
 
 > **Keywords:** aria-role, accessibility, ESLint rule, WCAG, a11y, React accessibility
 
@@ -107,5 +111,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

@@ -65,54 +65,6 @@
       "published": true
     },
     {
-      "name": "eslint-plugin-conventions",
-      "rules": 9,
-      "description": "ESLint rules for team-specific disciplinary patterns and code conventions",
-      "category": "security",
-      "version": "1.0.0",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-maintainability",
-      "rules": 8,
-      "description": "ESLint rules for reducing cognitive load and ensuring code readability",
-      "category": "security",
-      "version": "1.0.5",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-reliability",
-      "rules": 8,
-      "description": "ESLint rules for runtime stability, fault tolerance, and type safety",
-      "category": "security",
-      "version": "1.0.0",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-modularity",
-      "rules": 7,
-      "description": "ESLint rules for architecture, DDD patterns, and module isolation with AI-parseable guidance",
-      "category": "security",
-      "version": "1.0.0",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-operability",
-      "rules": 6,
-      "description": "ESLint rules for production behavior, resource hygiene, and log quality",
-      "category": "security",
-      "version": "1.0.0",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-modernization",
-      "rules": 5,
-      "description": "ESLint rules for modernizing JavaScript to ES2022+ syntax with AI-parseable guidance",
-      "category": "security",
-      "version": "1.0.0",
-      "published": true
-    },
-    {
       "name": "eslint-plugin-lambda-security",
       "rules": 16,
       "description": "Security-focused ESLint plugin for AWS Lambda and Middy applications",
@@ -145,6 +97,54 @@
       "published": true
     },
     {
+      "name": "eslint-plugin-conventions",
+      "rules": 9,
+      "description": "ESLint rules for team-specific disciplinary patterns and code conventions",
+      "category": "quality",
+      "version": "1.0.0",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-maintainability",
+      "rules": 8,
+      "description": "ESLint rules for reducing cognitive load and ensuring code readability",
+      "category": "quality",
+      "version": "1.0.5",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-reliability",
+      "rules": 8,
+      "description": "ESLint rules for runtime stability, fault tolerance, and type safety",
+      "category": "quality",
+      "version": "1.0.0",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-modularity",
+      "rules": 7,
+      "description": "ESLint rules for architecture, DDD patterns, and module isolation with AI-parseable guidance",
+      "category": "quality",
+      "version": "1.0.0",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-operability",
+      "rules": 6,
+      "description": "ESLint rules for production behavior, resource hygiene, and log quality",
+      "category": "quality",
+      "version": "1.0.0",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-modernization",
+      "rules": 5,
+      "description": "ESLint rules for modernizing JavaScript to ES2022+ syntax with AI-parseable guidance",
+      "category": "quality",
+      "version": "1.0.0",
+      "published": true
+    },
+    {
       "name": "eslint-plugin-react-features",
       "rules": 52,
       "description": "ESLint React rules for modern react features, hooks, and patterns",
@@ -164,5 +164,5 @@
   "totalRules": 332,
   "totalPlugins": 18,
   "allPluginsCount": 20,
-  "generatedAt": "2026-02-01T03:39:37.656Z"
+  "generatedAt": "2026-02-02T02:32:51.737Z"
 }

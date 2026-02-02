@@ -1,0 +1,184 @@
+---
+title: Philosophy
+description: Why we built an ecosystem of specialized ESLint plugins
+icon: Lightbulb
+---
+
+import { Shield, Package, Zap, Target, Layers, Users } from 'lucide-react';
+
+## The Interlace Philosophy
+
+ESLint Interlace isn't a single plugin—it's an **ecosystem of 18+ specialized plugins**. This is by design.
+
+<Callout type="info" title="Core Belief">
+  Security and code quality are not one-size-fits-all. Different projects have
+  different needs, and forcing everyone to use the same monolithic ruleset
+  creates noise and friction.
+</Callout>
+
+---
+
+## Why Many Plugins?
+
+### 1. Install Only What You Need
+
+<Cards>
+  <Card title="Zero Bloat" icon={<Package />}>
+    A React Native app doesn't need PostgreSQL rules. A Node.js API doesn't need
+    browser security rules. Install only what applies to your stack.
+  </Card>
+  <Card title="Faster Linting" icon={<Zap />}>
+    Fewer rules = faster execution. Why parse every file against 500 rules when
+    you only need 50?
+  </Card>
+</Cards>
+
+### 2. Focused Expertise
+
+Each plugin is **laser-focused** on one domain:
+
+| Plugin               | Domain Expertise                               |
+| -------------------- | ---------------------------------------------- |
+| `browser-security`   | Client-side XSS, DOM manipulation, postMessage |
+| `jwt`                | Token algorithms, expiration, secret handling  |
+| `mongodb-security`   | NoSQL injection, $where, aggregation attacks   |
+| `pg`                 | SQL injection, COPY FROM, prepared statements  |
+| `vercel-ai-security` | Prompt injection, tool result validation       |
+
+This focus means:
+
+- **Deeper coverage** — We can go deep instead of broad
+- **Domain experts** — Each plugin maintained by specialists
+- **Better errors** — Context-aware messages, not generic "security issue"
+
+### 3. Independent Releases
+
+When we fix a JWT vulnerability rule, you don't need to update your entire linting setup. Independent versioning means:
+
+- **Surgical updates** — Update only affected plugins
+- **No breaking cascades** — One plugin's major version doesn't force others
+- **Faster iteration** — We can ship fixes without coordinating 18 changelogs
+
+---
+
+## The Two Pillars
+
+ESLint Interlace organizes plugins into two main categories:
+
+<div className="grid md:grid-cols-2 gap-6 my-8">
+  <div className="p-6 border rounded-xl bg-gradient-to-br from-orange-500/10 to-transparent">
+    <Shield className="size-10 text-orange-500 mb-4" />
+    <h3 className="text-xl font-bold mb-2">Security Plugins (11+)</h3>
+    <span className="text-fd-muted-foreground block">
+      Vulnerability detection with CWE/OWASP mapping. Every rule is actionable
+      and AI-parseable.
+    </span>
+  </div>
+  <div className="p-6 border rounded-xl bg-gradient-to-br from-purple-500/10 to-transparent">
+    <Layers className="size-10 text-purple-500 mb-4" />
+    <h3 className="text-xl font-bold mb-2">Quality Plugins (7+)</h3>
+    <span className="text-fd-muted-foreground block">
+      Code architecture, conventions, and maintainability. Rules that prevent
+      tech debt.
+    </span>
+  </div>
+</div>
+
+---
+
+## Design Principles
+
+### AI-Native from Day One
+
+Every rule in Interlace includes structured metadata:
+
+```js
+// Every error includes:
+{
+  messageId: 'insecureJwtAlgorithm',
+  data: {
+    cwe: 'CWE-327',
+    owasp: 'A02:2021',
+    cvss: 7.5,
+    fix: 'Use RS256 or ES256 instead of HS256 with public keys'
+  }
+}
+```
+
+This enables AI assistants (Copilot, Cursor, Claude) to:
+
+- Understand the **severity** of issues
+- Apply the **correct fix** without hallucinating
+- Prioritize by **risk score**
+
+### Performance First
+
+We don't just add rules—we optimize them:
+
+- **100x faster** cycle detection in `import-next`
+- **Parallel rule execution** where possible
+- **Lazy AST traversal** to avoid unnecessary work
+
+### Framework-Aware
+
+Generic rules produce false positives. Framework-aware rules understand context:
+
+- `express-security` knows Express middleware patterns
+- `nestjs-security` understands decorators and DI
+- `lambda-security` recognizes handler signatures
+
+---
+
+## Adoption Strategies
+
+### Start Small
+
+```bash
+# Week 1: Core security
+npm install eslint-plugin-browser-security eslint-plugin-secure-coding
+
+# Week 2: Add framework-specific
+npm install eslint-plugin-express-security
+
+# Week 3: Add quality
+npm install eslint-plugin-conventions eslint-plugin-reliability
+```
+
+### By Stack
+
+| Stack               | Recommended Plugins                        |
+| ------------------- | ------------------------------------------ |
+| **React SPA**       | browser-security, secure-coding            |
+| **Next.js**         | browser-security, import-next, conventions |
+| **Express API**     | express-security, node-security, jwt       |
+| **NestJS**          | nestjs-security, jwt, mongodb-security     |
+| **AWS Lambda**      | lambda-security, node-security             |
+| **AI Applications** | vercel-ai-security, secure-coding          |
+
+---
+
+## Community & Contribution
+
+Each plugin is:
+
+- **Open source** (MIT licensed)
+- **Independently maintainable** — You can fork just one plugin
+- **Test-covered** — 85%+ coverage for security plugins
+
+We believe security tooling should be transparent. Every rule's logic is visible, testable, and auditable.
+
+---
+
+## Next Steps
+
+<Cards>
+  <Card title="Installation" href="/docs/getting-started/installation">
+    Start installing plugins for your stack
+  </Card>
+  <Card title="Security Plugins" href="/docs/security">
+    Explore the security plugin suite
+  </Card>
+  <Card title="Quality Plugins" href="/docs/quality">
+    Explore the quality plugin suite
+  </Card>
+</Cards>

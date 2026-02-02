@@ -1,14 +1,19 @@
 ---
 title: no-insecure-cookie-options
-description: no-insecure-cookie-options
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+tags: ['security', 'express']
 category: security
 severity: medium
-tags: ['security', 'express']
+cwe: CWE-614
 autofix: false
 ---
 
-
 > Require secure cookie flags (httpOnly, secure, sameSite)
+
+
+<!-- @rule-summary -->
+The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
+<!-- @/rule-summary -->
 
 **Severity:** 🔴 High  
 **CWE:** [CWE-614](https://cwe.mitre.org/data/definitions/614.html)

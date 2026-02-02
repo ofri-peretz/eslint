@@ -26,7 +26,7 @@ We believe in **radical transparency**. Every line of security logic in Interlac
 ## How It Works
 
 1. **Codecov Integration** — Coverage is measured on every CI run
-2. **API Caching** — Data is cached using our json-cache policy (4-hour TTL)
+2. **JSON Caching** — Data is cached using our json-cache policy (4-hour TTL)
 3. **Real-Time Display** — This page shows live metrics from the ecosystem
 
 ---
@@ -56,42 +56,6 @@ High test coverage in security tooling means:
     Changes are validated against known vulnerability patterns.
   </Card>
 </Cards>
-
----
-
-## API Access
-
-You can programmatically access coverage data via our API:
-
-```bash
-# Get repository summary
-curl https://interlace.dev/api/stats
-
-# Get per-plugin breakdown
-curl https://interlace.dev/api/stats?type=components
-```
-
-### Response Format
-
-```json
-{
-  "success": true,
-  "data": {
-    "name": "eslint",
-    "totals": {
-      "files": 245,
-      "lines": 12500,
-      "hits": 10625,
-      "misses": 1875,
-      "coverage": 85.0
-    }
-  },
-  "meta": {
-    "source": "codecov",
-    "ttl": 14400
-  }
-}
-```
 
 ---
 

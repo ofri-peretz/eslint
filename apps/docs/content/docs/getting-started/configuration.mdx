@@ -6,9 +6,15 @@ icon: Settings
 
 import { Shield, Zap, Settings } from 'lucide-react';
 
+<Callout type="info" title="Plugin-Based Configuration">
+  ESLint Interlace is a collection of independent plugins. Each plugin provides
+  its own `recommended` and `strict` configs. The examples below show
+  `eslint-plugin-browser-security` but apply to all Interlace plugins.
+</Callout>
+
 ## Configuration Presets
 
-ESLint Interlace provides three preset configurations:
+Each Interlace plugin provides preset configurations:
 
 <Cards>
   <Card title="Recommended" icon={<Shield />}>
@@ -17,46 +23,50 @@ ESLint Interlace provides three preset configurations:
   <Card title="Strict" icon={<Zap />}>
     Maximum security. All rules as errors. For high-security applications.
   </Card>
-  <Card title="Minimal" icon={<Settings />}>
-    Core security rules only. Minimal false positives.
-  </Card>
 </Cards>
 
 ### Using Presets
 
 ```js title="eslint.config.js"
-import interlace from 'eslint-config-interlace';
+import browserSecurity from 'eslint-plugin-browser-security';
+import secureCoding from 'eslint-plugin-secure-coding';
 
-// Choose your preset
 export default [
-  ...interlace.configs.recommended, // Balanced (default)
-  // ...interlace.configs.strict,    // Maximum security
-  // ...interlace.configs.minimal,   // Core rules only
+  // Use recommended preset from each plugin
+  browserSecurity.configs.recommended,
+  secureCoding.configs.recommended,
+
+  // Or use strict preset for maximum security
+  // browserSecurity.configs.strict,
+  // secureCoding.configs.strict,
 ];
 ```
 
 ## Custom Configuration
 
-### Individual Plugin Configuration
+### Multi-Plugin Configuration
 
-Import and configure specific plugins:
+Combine multiple plugins for comprehensive coverage:
 
 ```js title="eslint.config.js"
 import browserSecurity from 'eslint-plugin-browser-security';
-import crypto from 'eslint-plugin-crypto';
 import jwt from 'eslint-plugin-jwt';
+import secureCoding from 'eslint-plugin-secure-coding';
+import conventions from 'eslint-plugin-conventions';
 
 export default [
-  // Apply recommended configs from each plugin
+  // Security plugins
   browserSecurity.configs.recommended,
-  crypto.configs.recommended,
   jwt.configs.recommended,
+  secureCoding.configs.recommended,
+
+  // Quality plugins
+  conventions.configs.recommended,
 
   // Custom rule overrides
   {
     rules: {
       'browser-security/no-insecure-url': 'error',
-      'crypto/no-weak-algorithms': 'warn',
       'jwt/no-hardcoded-secret': 'error',
     },
   },
@@ -76,10 +86,14 @@ export default [
 Apply different rules to different file types:
 
 ```js title="eslint.config.js"
-import interlace from 'eslint-config-interlace';
+import browserSecurity from 'eslint-plugin-browser-security';
+import secureCoding from 'eslint-plugin-secure-coding';
+import jwt from 'eslint-plugin-jwt';
 
 export default [
-  ...interlace.configs.recommended,
+  browserSecurity.configs.recommended,
+  secureCoding.configs.recommended,
+  jwt.configs.recommended,
 
   // Stricter rules for API routes
   {
@@ -94,7 +108,7 @@ export default [
   {
     files: ['**/*.test.ts', '**/*.spec.ts'],
     rules: {
-      'secrets/no-hardcoded-credentials': 'off',
+      'browser-security/no-insecure-url': 'off',
     },
   },
 ];
@@ -105,7 +119,7 @@ export default [
 ### Using `ignores` Property
 
 ```js title="eslint.config.js"
-import interlace from 'eslint-config-interlace';
+import browserSecurity from 'eslint-plugin-browser-security';
 
 export default [
   {
@@ -117,7 +131,7 @@ export default [
       'coverage/**',
     ],
   },
-  ...interlace.configs.recommended,
+  browserSecurity.configs.recommended,
 ];
 ```
 
@@ -145,10 +159,10 @@ const testToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...';
 Some rules can use TypeScript type information for more accurate detection:
 
 ```js title="eslint.config.js"
-import interlace from 'eslint-config-interlace';
+import browserSecurity from 'eslint-plugin-browser-security';
 import tseslint from 'typescript-eslint';
 
-export default tseslint.config(...interlace.configs.recommended, {
+export default tseslint.config(browserSecurity.configs.recommended, {
   languageOptions: {
     parserOptions: {
       project: './tsconfig.json',
@@ -162,17 +176,22 @@ export default tseslint.config(...interlace.configs.recommended, {
 For monorepos with multiple `tsconfig.json` files:
 
 ```js title="eslint.config.js"
-import interlace from 'eslint-config-interlace';
+import browserSecurity from 'eslint-plugin-browser-security';
+import secureCoding from 'eslint-plugin-secure-coding';
 import tseslint from 'typescript-eslint';
 
-export default tseslint.config(...interlace.configs.recommended, {
-  languageOptions: {
-    parserOptions: {
-      project: ['./tsconfig.json', './packages/*/tsconfig.json'],
-      tsconfigRootDir: import.meta.dirname,
+export default tseslint.config(
+  browserSecurity.configs.recommended,
+  secureCoding.configs.recommended,
+  {
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.json', './packages/*/tsconfig.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
   },
-});
+);
 ```
 
 ## Shared Team Configuration
@@ -180,15 +199,25 @@ export default tseslint.config(...interlace.configs.recommended, {
 ### Create a Shared Package
 
 ```js title="packages/eslint-config-mycompany/index.js"
-import interlace from 'eslint-config-interlace';
+import browserSecurity from 'eslint-plugin-browser-security';
+import secureCoding from 'eslint-plugin-secure-coding';
+import jwt from 'eslint-plugin-jwt';
+import conventions from 'eslint-plugin-conventions';
 
 export default [
-  ...interlace.configs.strict,
+  // Security plugins
+  browserSecurity.configs.strict,
+  secureCoding.configs.strict,
+  jwt.configs.strict,
+
+  // Quality plugins
+  conventions.configs.recommended,
+
   {
     rules: {
       // Company-wide overrides
-      'secrets/no-hardcoded-credentials': 'error',
       'jwt/no-algorithm-none': 'error',
+      'browser-security/no-insecure-url': 'error',
     },
   },
 ];
@@ -218,8 +247,5 @@ export default [
     href="/docs/getting-started/editor-integration"
   >
     Set up your IDE for real-time linting
-  </Card>
-  <Card title="CI/CD Integration" href="/docs/advanced/ci-cd">
-    Add linting to your pipeline
   </Card>
 </Cards>

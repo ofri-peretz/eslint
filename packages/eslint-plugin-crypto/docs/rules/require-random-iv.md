@@ -1,15 +1,22 @@
 ---
 title: require-random-iv
 description: "CWE: [CWE-329](https://cwe.mitre.org/data/definitions/329.html)"
+tags: ['security', 'crypto']
 category: security
 severity: medium
-tags: ['security', 'crypto']
+cwe: CWE-329
+owasp: "A02:2021"
 autofix: false
 ---
 
 > **Keywords:** require-random-iv, cryptographically secure, initialization vector, IV, entropy, security, ESLint rule, CWE-329, predictable IV
 > **CWE:** [CWE-329: Not Using an Unpredictable IV with CBC Mode](https://cwe.mitre.org/data/definitions/329.html)  
 > **OWASP:** [OWASP Top 10 A02:2021 - Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-329](https://cwe.mitre.org/data/definitions/329.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: require-random-iv. This rule is part of [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto).
 

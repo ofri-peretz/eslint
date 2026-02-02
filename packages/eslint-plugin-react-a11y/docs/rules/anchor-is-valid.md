@@ -1,13 +1,17 @@
 ---
 title: anchor-is-valid
 description: anchor-is-valid rule
-category: quality
-severity: low
 tags: ['quality', 'react', 'accessibility', 'a11y']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# anchor-is-valid
+---
+
+
+<!-- @rule-summary -->
+anchor-is-valid rule
+<!-- @/rule-summary -->
+
+# anchor-is-valid
 
 > **Keywords:** anchor-is-valid, accessibility, ESLint rule, WCAG, a11y, React accessibility
 
@@ -107,5 +111,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

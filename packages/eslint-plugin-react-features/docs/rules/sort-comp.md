@@ -1,17 +1,21 @@
 ---
 title: sort-comp
 description: sort-comp rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# sort-comp
+---
+
+
+<!-- @rule-summary -->
+sort-comp rule
+<!-- @/rule-summary -->
+
+# sort-comp
 
 > **Keywords:** React, component methods, ordering, lifecycle, code organization, ESLint rule, LLM-optimized
 
-Enforce component method ordering in React class components. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Enforce component method ordering in React class components. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -219,6 +223,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

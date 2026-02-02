@@ -1,15 +1,21 @@
 ---
 title: require-secure-defaults
 description: "CWE: [CWE-1188](https://cwe.mitre.org/data/definitions/1188.html)"
+tags: ['security', 'core']
 category: security
 severity: medium
-tags: ['security', 'core']
+cwe: CWE-1188
 autofix: false
 ---
 
 > **Keywords:** require secure defaults, security, ESLint rule, [CWE-1188](https://cwe.mitre.org/data/definitions/1188.html), secure-by-default, configuration, hardened
 > **CWE:** [CWE-1188: Insecure Default Initialization](https://cwe.mitre.org/data/definitions/1188.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M8: Security Misconfiguration](https://owasp.org/www-project-mobile-top-10/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-1188](https://cwe.mitre.org/data/definitions/1188.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: require-secure-defaults. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 

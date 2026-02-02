@@ -1,14 +1,19 @@
 ---
 title: no-redos-vulnerable-regex
-description: no-redos-vulnerable-regex
+description: "ESLint Rule: no-redos-vulnerable-regex"
+tags: ['security', 'core']
 category: security
 severity: medium
-tags: ['security', 'core']
+cwe: CWE-400
 autofix: false
 ---
 
-
 > **Keywords:** no redos vulnerable regex, security, ESLint rule, JavaScript, TypeScript, CWE-400, CWE-1333, DoS, catastrophic backtracking
+
+<!-- @rule-summary -->
+ESLint Rule: no-redos-vulnerable-regex
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

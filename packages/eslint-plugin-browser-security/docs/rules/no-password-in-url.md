@@ -1,14 +1,19 @@
 ---
 title: no-password-in-url
-description: no-password-in-url
+description: This rule detects when URLs contain password-related query parameters or URL fragments
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-521
 autofix: false
 ---
 
-
 > Prevents passwords in URL query parameters or fragments
+
+
+<!-- @rule-summary -->
+This rule detects when URLs contain password-related query parameters or URL fragments
+<!-- @/rule-summary -->
 
 **Severity:** 🔴 CRITICAL  
 **CWE:** [CWE-521: Weak Password Requirements](https://cwe.mitre.org/data/definitions/521.html)  

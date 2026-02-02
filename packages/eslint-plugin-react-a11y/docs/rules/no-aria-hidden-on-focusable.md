@@ -1,13 +1,17 @@
 ---
 title: no-aria-hidden-on-focusable
 description: no-aria-hidden-on-focusable rule
-category: quality
-severity: low
 tags: ['quality', 'react', 'accessibility', 'a11y']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-aria-hidden-on-focusable
+---
+
+
+<!-- @rule-summary -->
+no-aria-hidden-on-focusable rule
+<!-- @/rule-summary -->
+
+# no-aria-hidden-on-focusable
 
 > **Keywords:** no-aria-hidden-on-focusable, accessibility, ESLint rule, WCAG, a11y, React accessibility
 
@@ -121,5 +125,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

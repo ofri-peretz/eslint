@@ -1,14 +1,19 @@
 ---
 title: no-missing-csrf-protection
-description: no-missing-csrf-protection
+description: Detects missing CSRF token validation in POST/PUT/DELETE requests
+tags: ['security', 'browser']
 category: security
 severity: high
-tags: ['security', 'browser']
+cwe: CWE-352
 autofix: false
 ---
 
-
 > **Keywords:** CSRF, CWE-352, security, ESLint rule, CSRF protection, token validation, middleware, Express, Fastify, LLM-optimized, code security
+
+<!-- @rule-summary -->
+Detects missing CSRF token validation in POST/PUT/DELETE requests
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-352](https://cwe.mitre.org/data/definitions/352.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

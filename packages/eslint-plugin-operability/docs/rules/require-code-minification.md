@@ -1,15 +1,18 @@
 ---
 title: require-code-minification
 description: Require minification configuration in build tools
-category: quality
-severity: low
 tags: ['quality', 'operability', 'production', 'build', 'cwe-656']
+category: quality
 autofix: false
-cwe: CWE-656
 ---
 
 > **Keywords:** minification, webpack, build, production, obfuscation, CWE-656, bundle size
 > **CWE:** [CWE-656](https://cwe.mitre.org/data/definitions/656.html)
+
+
+<!-- @rule-summary -->
+Require minification configuration in build tools
+<!-- @/rule-summary -->
 
 Detects build configurations where minification is explicitly disabled. This rule is part of [`eslint-plugin-operability`](https://www.npmjs.com/package/eslint-plugin-operability) and provides LLM-optimized error messages.
 

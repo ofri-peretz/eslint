@@ -1,13 +1,17 @@
 ---
 title: aria-unsupported-elements
 description: aria-unsupported-elements rule
-category: quality
-severity: low
 tags: ['quality', 'react', 'accessibility', 'a11y']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# aria-unsupported-elements
+---
+
+
+<!-- @rule-summary -->
+aria-unsupported-elements rule
+<!-- @/rule-summary -->
+
+# aria-unsupported-elements
 
 > **Keywords:** aria-unsupported-elements, accessibility, ESLint rule, WCAG, a11y, React accessibility
 
@@ -107,5 +111,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

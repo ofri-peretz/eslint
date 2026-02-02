@@ -1,17 +1,21 @@
 ---
 title: no-unknown-property
 description: no-unknown-property rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-unknown-property
+---
+
+
+<!-- @rule-summary -->
+no-unknown-property rule
+<!-- @/rule-summary -->
+
+# no-unknown-property
 
 > **Keywords:** React, JSX, props, HTML attributes, className, ESLint rule, DOM, LLM-optimized
 
-Prevent unknown DOM properties in JSX. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Prevent unknown DOM properties in JSX. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -123,6 +127,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

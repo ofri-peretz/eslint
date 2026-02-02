@@ -1,17 +1,22 @@
 ---
 title: no-static-iv
 description: Disallow static or hardcoded initialization vectors (IVs)
+tags: ['security', 'cryptography', 'cwe-329', 'nodejs']
 category: security
 severity: high
-tags: ['security', 'cryptography', 'cwe-329', 'nodejs']
-autofix: false
 cwe: CWE-329
-owasp: A02:2021-Cryptographic-Failures
+owasp: "A02:2021"
+autofix: false
 ---
 
 > **Keywords:** IV, initialization vector, hardcoded, static, nonce, CWE-329, security, ESLint rule, LLM-optimized
 > **CWE:** [CWE-329](https://cwe.mitre.org/data/definitions/329.html)  
 > **OWASP:** [A02:2021-Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+
+
+<!-- @rule-summary -->
+Disallow static or hardcoded initialization vectors (IVs)
+<!-- @/rule-summary -->
 
 Detects usage of hardcoded or static initialization vectors (IVs) in encryption operations. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages.
 

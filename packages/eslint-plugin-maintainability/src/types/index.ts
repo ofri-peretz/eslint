@@ -5,7 +5,7 @@
  */
 
 /**
- * Simplified type barrel for eslint-plugin-quality.
+ * Simplified type barrel for eslint-plugin-maintainability.
  * Many rules were moved/removed; provide placeholders to keep builds green while
  * still exposing option types. Replace with concrete types as rules evolve.
  */

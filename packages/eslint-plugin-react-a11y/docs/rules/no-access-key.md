@@ -1,13 +1,17 @@
 ---
 title: no-access-key
 description: no-access-key rule
-category: quality
-severity: low
 tags: ['quality', 'react', 'accessibility', 'a11y']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-access-key
+---
+
+
+<!-- @rule-summary -->
+no-access-key rule
+<!-- @/rule-summary -->
+
+# no-access-key
 
 > **Keywords:** no-access-key, accessibility, ESLint rule, WCAG, a11y, React accessibility
 
@@ -121,5 +125,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

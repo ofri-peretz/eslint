@@ -1,14 +1,20 @@
 ---
 title: no-arbitrary-file-access
-description: no-arbitrary-file-access
+description: Prevents file system access with unsanitized user input to protect against path traversal attacks.
+tags: ['security', 'node']
 category: security
 severity: medium
-tags: ['security', 'node']
+cwe: CWE-22
+owasp: "A01:2021"
 autofix: false
 ---
 
-
 > **Keywords:** path traversal, CWE-22, file access, LFI, directory traversal, fs, readFile, security
+
+
+<!-- @rule-summary -->
+Prevents file system access with unsanitized user input to protect against path traversal attacks.
+<!-- @/rule-summary -->
 
 Prevents file system access with unsanitized user input to protect against path traversal attacks.
 

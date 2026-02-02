@@ -1,17 +1,21 @@
 ---
 title: static-property-placement
 description: static-property-placement rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# static-property-placement
+---
+
+
+<!-- @rule-summary -->
+static-property-placement rule
+<!-- @/rule-summary -->
+
+# static-property-placement
 
 > **Keywords:** React, static properties, propTypes, defaultProps, organization, ESLint rule, LLM-optimized
 
-Enforce static property placement in React class components. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Enforce static property placement in React class components. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -215,6 +219,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

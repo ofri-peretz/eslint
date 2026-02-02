@@ -1,14 +1,19 @@
 ---
 title: require-helmet
-description: require-helmet
+description: This rule detects Express.js applications that are missing the helmet middleware
+tags: ['security', 'express']
 category: security
 severity: medium
-tags: ['security', 'express']
+cwe: CWE-693
 autofix: false
 ---
 
-
 > Require helmet middleware for security headers in Express.js applications
+
+
+<!-- @rule-summary -->
+This rule detects Express.js applications that are missing the helmet middleware
+<!-- @/rule-summary -->
 
 **Severity:** 🔴 High  
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)

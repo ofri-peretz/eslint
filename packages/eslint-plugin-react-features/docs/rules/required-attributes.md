@@ -1,17 +1,21 @@
 ---
 title: required-attributes
 description: required-attributes rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# required-attributes
+---
+
+
+<!-- @rule-summary -->
+required-attributes rule
+<!-- @/rule-summary -->
+
+# required-attributes
 
 > **Keywords:** React, accessibility, ESLint rule, required attributes, aria attributes, React props, auto-fix, LLM-optimized, React accessibility
 
-Enforce required attributes on React components with customizable ignore lists. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features) and provides LLM-optimized error messages with fix suggestions.
+Enforce required attributes on React components with customizable ignore lists. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and provides LLM-optimized error messages with fix suggestions.
 
 **💡 Provides suggestions** | **🔧 Automatically fixable**
 
@@ -177,5 +181,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Apply the same rule to imported modules. Use module boundaries and explicit exports.
-
-

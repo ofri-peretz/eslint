@@ -1,14 +1,19 @@
 ---
 title: no-graphql-introspection-production
-description: no-graphql-introspection-production
+description: This rule detects GraphQL servers with introspection enabled in production
+tags: ['security', 'express']
 category: security
 severity: medium
-tags: ['security', 'express']
+cwe: CWE-200
 autofix: false
 ---
 
-
 > Disallow GraphQL introspection in production environments
+
+
+<!-- @rule-summary -->
+This rule detects GraphQL servers with introspection enabled in production
+<!-- @/rule-summary -->
 
 **Severity:** 🟡 Warning  
 **CWE:** [CWE-200](https://cwe.mitre.org/data/definitions/200.html)

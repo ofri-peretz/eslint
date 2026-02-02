@@ -1,14 +1,19 @@
 ---
 title: detect-suspicious-dependencies
-description: detect-suspicious-dependencies
+description: This rule detects package imports that look like typosquatting attempts on popular npm packages
+tags: ['security', 'node']
 category: security
 severity: medium
-tags: ['security', 'node']
+cwe: CWE-506
 autofix: false
 ---
 
-
 > Detect typosquatting attacks in npm package imports
+
+
+<!-- @rule-summary -->
+This rule detects package imports that look like typosquatting attempts on popular npm packages
+<!-- @/rule-summary -->
 
 ## Rule Details
 

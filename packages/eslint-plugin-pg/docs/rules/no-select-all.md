@@ -1,14 +1,19 @@
 ---
 title: no-select-all
-description: no-select-all
+description: Discourages SELECT  in favor of explicit column lists.
+tags: ['security', 'postgres']
 category: security
 severity: medium
-tags: ['security', 'postgres']
+cwe: CWE-693
 autofix: false
 ---
 
-
 > **Keywords:** SELECT \*, performance, quality, pg, node-postgres
+
+<!-- @rule-summary -->
+Discourages SELECT  in favor of explicit column lists.
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Discourages `SELECT *` in favor of explicit column lists.

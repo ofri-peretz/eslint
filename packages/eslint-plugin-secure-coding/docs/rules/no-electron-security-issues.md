@@ -1,14 +1,19 @@
 ---
 title: no-electron-security-issues
-description: no-electron-security-issues
+description: Detects Electron security vulnerabilities and insecure configurations
+tags: ['security', 'core']
 category: security
 severity: medium
-tags: ['security', 'core']
+cwe: CWE-16
 autofix: false
 ---
 
-
 > **Keywords:** Electron, CWE-16, nodeIntegration, contextIsolation, desktop security
+
+<!-- @rule-summary -->
+Detects Electron security vulnerabilities and insecure configurations
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

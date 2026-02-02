@@ -1,14 +1,20 @@
 ---
 title: no-select-sensitive-fields
-description: no-select-sensitive-fields
+description: Detects queries that may return sensitive fields like passwords, tokens, or API keys.
+tags: ['security', 'mongodb']
 category: security
 severity: medium
-tags: ['security', 'mongodb']
+cwe: CWE-200
+owasp: "A01:2021"
 autofix: false
 ---
 
-
 > **Keywords:** CWE-200, information exposure, password, Mongoose, security
+
+
+<!-- @rule-summary -->
+Detects queries that may return sensitive fields like passwords, tokens, or API keys.
+<!-- @/rule-summary -->
 
 Detects queries that may return sensitive fields like passwords, tokens, or API keys.
 

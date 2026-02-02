@@ -1,17 +1,21 @@
 ---
 title: require-optimization
 description: require-optimization rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# require-optimization
+---
+
+
+<!-- @rule-summary -->
+require-optimization rule
+<!-- @/rule-summary -->
+
+# require-optimization
 
 > **Keywords:** React, performance, memo, useMemo, useCallback, optimization, re-renders, ESLint rule, LLM-optimized
 
-Suggest performance optimizations for React components based on usage patterns. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Suggest performance optimizations for React components based on usage patterns. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -209,6 +213,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Apply the same rule to imported modules. Use module boundaries and explicit exports.
-
-
-

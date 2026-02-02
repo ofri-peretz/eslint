@@ -1,14 +1,19 @@
 ---
 title: no-permissive-cors-middy
-description: no-permissive-cors-middy
+description: Detects permissive CORS configurations in Middy middleware
+tags: ['security', 'lambda']
 category: security
 severity: medium
-tags: ['security', 'lambda']
+cwe: CWE-942
 autofix: false
 ---
 
-
 > **Keywords:** CORS, Middy, Lambda middleware, CWE-942, security, wildcard origin
+
+<!-- @rule-summary -->
+Detects permissive CORS configurations in Middy middleware
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-942](https://cwe.mitre.org/data/definitions/942.html)  
 **OWASP Mobile:** [M8: Security Misconfiguration](https://owasp.org/www-project-mobile-top-10/)
 

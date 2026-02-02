@@ -1,18 +1,19 @@
 ---
 title: enforce-naming
-description: enforce-naming
-category: modularity
-severity: low
+description: Enforce domain-specific naming conventions with business context
 tags: ['architecture', 'modularity']
+category: modularity
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
-
 
 > **Keywords:** naming conventions, domain-driven design, DDD, ESLint rule, ubiquitous language, business glossary, code consistency, auto-fix, LLM-optimized, code quality
 
-Enforce domain-specific naming conventions with business context. This rule is part of [`@eslint/eslint-plugin-architecture`](https://www.npmjs.com/package/@eslint/eslint-plugin-architecture) and provides LLM-optimized error messages with fix suggestions.
+
+<!-- @rule-summary -->
+Enforce domain-specific naming conventions with business context
+<!-- @/rule-summary -->
+
+Enforce domain-specific naming conventions with business context. This rule is part of [`eslint-plugin-modularity`](https://www.npmjs.com/package/eslint-plugin-modularity) and provides LLM-optimized error messages with fix suggestions.
 
 **💡 Provides suggestions** | **🔧 Automatically fixable**
 
@@ -395,6 +396,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

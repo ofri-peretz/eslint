@@ -1,14 +1,19 @@
 ---
 title: no-unescaped-url-parameter
-description: no-unescaped-url-parameter
+description: Detects unescaped URL parameters that can lead to Cross-Site Scripting (XSS) or open redirect vulnerabilities
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-79
 autofix: false
 ---
 
-
 > **Keywords:** URL encoding, CWE-79, security, ESLint rule, URL parameters, encodeURIComponent, URLSearchParams, XSS, open redirect, auto-fix, LLM-optimized, code security
+
+<!-- @rule-summary -->
+Detects unescaped URL parameters that can lead to Cross-Site Scripting (XSS) or open redirect vulnerabilities
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-116](https://cwe.mitre.org/data/definitions/116.html)  
 **OWASP Mobile:** [M4: Insufficient Input/Output Validation](https://owasp.org/www-project-mobile-top-10/)
 

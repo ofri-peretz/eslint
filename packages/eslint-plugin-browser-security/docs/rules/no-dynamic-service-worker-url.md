@@ -1,14 +1,20 @@
 ---
 title: no-dynamic-service-worker-url
-description: no-dynamic-service-worker-url
+description: Prevent dynamic URLs in service worker registration.
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-829
+owasp: "A08:2021"
 autofix: false
 ---
 
-
 > No Dynamic Service Worker Url
+
+
+<!-- @rule-summary -->
+Prevent dynamic URLs in service worker registration.
+<!-- @/rule-summary -->
 
 Prevent dynamic URLs in service worker registration.
 

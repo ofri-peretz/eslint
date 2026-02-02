@@ -1,14 +1,19 @@
 ---
 title: no-dynamic-system-prompt
-description: no-dynamic-system-prompt
+description: This rule identifies code patterns where system prompts contain dynamic or user-controlled content
+tags: ['security', 'ai']
 category: security
 severity: medium
-tags: ['security', 'ai']
+cwe: CWE-74
 autofix: false
 ---
 
-
 > Prevents dynamic content in system prompts to avoid agent confusion attacks.
+
+
+<!-- @rule-summary -->
+This rule identifies code patterns where system prompts contain dynamic or user-controlled content
+<!-- @/rule-summary -->
 
 ## 📊 Rule Details
 

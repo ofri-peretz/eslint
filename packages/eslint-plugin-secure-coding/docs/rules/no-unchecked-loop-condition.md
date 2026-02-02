@@ -1,14 +1,19 @@
 ---
 title: no-unchecked-loop-condition
-description: no-unchecked-loop-condition
+description: Detects unchecked loop conditions that could cause DoS
+tags: ['security', 'core']
 category: security
 severity: medium
-tags: ['security', 'core']
+cwe: CWE-400
 autofix: false
 ---
 
-
 > **Keywords:** unchecked loop, CWE-400, CWE-835, infinite loop, DoS, security
+
+<!-- @rule-summary -->
+Detects unchecked loop conditions that could cause DoS
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

@@ -5,6 +5,8 @@ import type { Metadata } from 'next';
 
 const inter = Inter({
   subsets: ['latin'],
+  display: 'swap',
+  preload: true,
 });
 
 export const metadata: Metadata = {
@@ -44,6 +46,13 @@ export const metadata: Metadata = {
 export default function Layout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="en" className={inter.className} suppressHydrationWarning>
+      <head>
+        {/* DNS prefetch for external domains - reduces lookup time */}
+        <link rel="dns-prefetch" href="https://media.dev.to" />
+        <link rel="dns-prefetch" href="https://dev-to-uploads.s3.amazonaws.com" />
+        <link rel="dns-prefetch" href="https://avatars.githubusercontent.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
       <body className="flex flex-col min-h-screen">
         <RootProvider>{children}</RootProvider>
       </body>

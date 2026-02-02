@@ -1,17 +1,21 @@
 ---
 title: no-invalid-html-attribute
 description: no-invalid-html-attribute rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-invalid-html-attribute
+---
+
+
+<!-- @rule-summary -->
+no-invalid-html-attribute rule
+<!-- @/rule-summary -->
+
+# no-invalid-html-attribute
 
 > **Keywords:** React, JSX, HTML attributes, validation, ESLint rule, accessibility, LLM-optimized
 
-Validate HTML attribute values in JSX. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Validate HTML attribute values in JSX. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -116,6 +120,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

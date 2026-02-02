@@ -1,14 +1,19 @@
 ---
 title: require-request-timeout
-description: require-request-timeout
+description: "This rule identifies AI SDK calls that don't have timeout or abort signal configuration."
+tags: ['security', 'ai']
 category: security
 severity: medium
-tags: ['security', 'ai']
+cwe: CWE-400
 autofix: false
 ---
 
-
 > Requires timeout configuration for AI SDK calls to prevent DoS.
+
+
+<!-- @rule-summary -->
+This rule identifies AI SDK calls that don't have timeout or abort signal configuration.
+<!-- @/rule-summary -->
 
 ## 📊 Rule Details
 

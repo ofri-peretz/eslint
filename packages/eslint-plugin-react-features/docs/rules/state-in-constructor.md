@@ -1,17 +1,21 @@
 ---
 title: state-in-constructor
 description: state-in-constructor rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# state-in-constructor
+---
+
+
+<!-- @rule-summary -->
+state-in-constructor rule
+<!-- @/rule-summary -->
+
+# state-in-constructor
 
 > **Keywords:** React, state, constructor, initialization, class component, ESLint rule, LLM-optimized
 
-Enforce state initialization in the constructor. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Enforce state initialization in the constructor. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -182,6 +186,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

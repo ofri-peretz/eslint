@@ -19,6 +19,8 @@
   },
   "dependencies": {
     "@fumadocs/mdx-remote": "^1.4.4",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-slot": "^1.2.4",
     "@tailwindcss/postcss": "*",
     "clsx": "^2.1.1",
     "fumadocs-core": "*",
@@ -28,6 +30,7 @@
     "motion": "^12.29.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-tweet": "^3.3.0",
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "*"
   },

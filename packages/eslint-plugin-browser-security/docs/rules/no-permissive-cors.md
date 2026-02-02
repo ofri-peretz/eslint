@@ -1,15 +1,21 @@
 ---
 title: no-permissive-cors
 description: "CWE: [CWE-942](https://cwe.mitre.org/data/definitions/942.html)"
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-942
 autofix: false
 ---
 
 > **Keywords:** no permissive cors, security, ESLint rule, [CWE-942](https://cwe.mitre.org/data/definitions/942.html), Access-Control-Allow-Origin, wildcard, API security
 > **CWE:** [CWE-942: Permissive Write of Outbound HTTP Headers](https://cwe.mitre.org/data/definitions/942.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M8: Security Misconfiguration](https://owasp.org/www-project-mobile-top-10/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-942](https://cwe.mitre.org/data/definitions/942.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: no-permissive-cors. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 

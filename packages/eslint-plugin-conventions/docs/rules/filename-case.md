@@ -1,18 +1,19 @@
 ---
 title: filename-case
-description: filename-case
-category: quality
-severity: low
+description: Enforce filename case conventions for consistency across your codebase
 tags: ['quality', 'conventions']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
-
 
 > **Keywords:** filename, naming convention, case style, kebab-case, camelCase, PascalCase, snake_case, ESLint rule, code consistency, LLM-optimized
 
-Enforce filename case conventions for consistency across your codebase. This rule is part of [`@eslint/eslint-plugin-architecture`](https://www.npmjs.com/package/@eslint/eslint-plugin-architecture) and provides LLM-optimized error messages with fix suggestions.
+
+<!-- @rule-summary -->
+Enforce filename case conventions for consistency across your codebase
+<!-- @/rule-summary -->
+
+Enforce filename case conventions for consistency across your codebase. This rule is part of [`eslint-plugin-conventions`](https://www.npmjs.com/package/eslint-plugin-conventions) and provides LLM-optimized error messages with fix suggestions.
 
 ## Quick Summary
 
@@ -224,6 +225,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

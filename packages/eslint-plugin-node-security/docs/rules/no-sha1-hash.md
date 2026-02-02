@@ -1,17 +1,22 @@
 ---
 title: no-sha1-hash
 description: Disallow sha1() from crypto-hash package (use sha256 or sha512)
+tags: ['security', 'cryptography', 'cwe-327', 'nodejs']
 category: security
 severity: high
-tags: ['security', 'cryptography', 'cwe-327', 'nodejs']
-autofix: false
 cwe: CWE-327
-owasp: A02:2021-Cryptographic-Failures
+owasp: "A02:2021"
+autofix: false
 ---
 
 > **Keywords:** SHA-1, crypto-hash, hash, cryptography, CWE-327, security, ESLint rule, LLM-optimized, broken hash, sha256, sha512
 > **CWE:** [CWE-327](https://cwe.mitre.org/data/definitions/327.html)  
 > **OWASP:** [A02:2021-Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+
+
+<!-- @rule-summary -->
+Disallow sha1() from crypto-hash package (use sha256 or sha512)
+<!-- @/rule-summary -->
 
 Detects `sha1()` usage from the `crypto-hash` package which is cryptographically broken. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages with fix suggestions.
 

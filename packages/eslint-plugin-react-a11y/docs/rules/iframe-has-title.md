@@ -1,13 +1,17 @@
 ---
 title: iframe-has-title
 description: iframe-has-title rule
-category: quality
-severity: low
 tags: ['quality', 'react', 'accessibility', 'a11y']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# iframe-has-title
+---
+
+
+<!-- @rule-summary -->
+iframe-has-title rule
+<!-- @/rule-summary -->
+
+# iframe-has-title
 
 > **Keywords:** iframe-has-title, accessibility, ESLint rule, WCAG, a11y, React accessibility
 
@@ -107,5 +111,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

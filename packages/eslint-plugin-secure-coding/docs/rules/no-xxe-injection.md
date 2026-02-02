@@ -1,14 +1,19 @@
 ---
 title: no-xxe-injection
-description: no-xxe-injection
+description: Detects XML External Entity (XXE) injection vulnerabilities
+tags: ['security', 'core']
 category: security
 severity: critical
-tags: ['security', 'core']
+cwe: CWE-611
 autofix: false
 ---
 
-
 > **Keywords:** XXE, XML External Entity, CWE-611, SSRF, file disclosure, security, XML parsing
+
+<!-- @rule-summary -->
+Detects XML External Entity (XXE) injection vulnerabilities
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

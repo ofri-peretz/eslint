@@ -1,14 +1,19 @@
 ---
 title: no-missing-security-headers
-description: no-missing-security-headers
+description: "ESLint Rule: no-missing-security-headers"
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-693
 autofix: false
 ---
 
-
 > **Keywords:** no missing security headers, security, ESLint rule, JavaScript, TypeScript, CWE-693
+
+<!-- @rule-summary -->
+ESLint Rule: no-missing-security-headers
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

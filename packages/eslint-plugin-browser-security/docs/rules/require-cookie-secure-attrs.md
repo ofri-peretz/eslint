@@ -1,14 +1,20 @@
 ---
 title: require-cookie-secure-attrs
-description: require-cookie-secure-attrs
+description: Require Secure and SameSite attributes on cookies.
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-614
+owasp: "A05:2021"
 autofix: false
 ---
 
-
 > Require Cookie Secure Attrs
+
+
+<!-- @rule-summary -->
+Require Secure and SameSite attributes on cookies.
+<!-- @/rule-summary -->
 
 Require Secure and SameSite attributes on cookies.
 

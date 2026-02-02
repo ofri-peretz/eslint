@@ -1,13 +1,17 @@
 ---
 title: control-has-associated-label
 description: control-has-associated-label rule
-category: quality
-severity: low
 tags: ['quality', 'react', 'accessibility', 'a11y']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# control-has-associated-label
+---
+
+
+<!-- @rule-summary -->
+control-has-associated-label rule
+<!-- @/rule-summary -->
+
+# control-has-associated-label
 
 > **Keywords:** control-has-associated-label, accessibility, ESLint rule, WCAG, a11y, React accessibility
 
@@ -107,5 +111,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

@@ -1,15 +1,21 @@
 ---
 title: require-csp-headers
 description: "CWE: [CWE-1021](https://cwe.mitre.org/data/definitions/1021.html)"
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-1021
 autofix: false
 ---
 
 > **Keywords:** require csp headers, Content Security Policy, security, ESLint rule, [CWE-1021](https://cwe.mitre.org/data/definitions/1021.html), XSS, Helmet
 > **CWE:** [CWE-1021: Improper Restriction of Rendered-UI Layers or Frames](https://cwe.mitre.org/data/definitions/1021.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M8: Security Misconfiguration](https://owasp.org/www-project-mobile-top-10/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-1021](https://cwe.mitre.org/data/definitions/1021.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: require-csp-headers. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 

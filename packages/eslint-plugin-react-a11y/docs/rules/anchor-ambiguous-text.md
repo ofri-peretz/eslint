@@ -1,13 +1,17 @@
 ---
 title: anchor-ambiguous-text
 description: anchor-ambiguous-text rule
-category: quality
-severity: low
 tags: ['quality', 'react', 'accessibility', 'a11y']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# anchor-ambiguous-text
+---
+
+
+<!-- @rule-summary -->
+anchor-ambiguous-text rule
+<!-- @/rule-summary -->
+
+# anchor-ambiguous-text
 
 > **Keywords:** anchor-ambiguous-text, accessibility, ESLint rule, WCAG, a11y, React accessibility
 
@@ -107,5 +111,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

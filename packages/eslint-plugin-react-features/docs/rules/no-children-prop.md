@@ -1,17 +1,21 @@
 ---
 title: no-children-prop
 description: no-children-prop rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-children-prop
+---
+
+
+<!-- @rule-summary -->
+no-children-prop rule
+<!-- @/rule-summary -->
+
+# no-children-prop
 
 > **Keywords:** React, children, props, composition, ESLint rule, best practices, LLM-optimized
 
-Prevent passing `children` as a prop. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Prevent passing `children` as a prop. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -120,6 +124,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

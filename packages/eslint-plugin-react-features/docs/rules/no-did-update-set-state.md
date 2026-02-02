@@ -1,17 +1,21 @@
 ---
 title: no-did-update-set-state
 description: no-did-update-set-state rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-did-update-set-state
+---
+
+
+<!-- @rule-summary -->
+no-did-update-set-state rule
+<!-- @/rule-summary -->
+
+# no-did-update-set-state
 
 > **Keywords:** React, componentDidUpdate, setState, infinite loop, lifecycle, ESLint rule, LLM-optimized
 
-Prevent calling `setState` in `componentDidUpdate` without a conditional. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Prevent calling `setState` in `componentDidUpdate` without a conditional. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -161,6 +165,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

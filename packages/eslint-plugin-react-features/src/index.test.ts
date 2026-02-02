@@ -4,7 +4,7 @@ import plugin, { rules, configs } from './index';
 describe('eslint-plugin-react-features plugin interface', () => {
   it('should export correct meta information', () => {
     expect(plugin.meta).toBeDefined();
-    expect(plugin.meta?.name).toBe('@eslint/eslint-plugin-react-features');
+    expect(plugin.meta?.name).toBe('eslint-plugin-react-features');
     expect(plugin.meta?.version).toBeDefined();
     expect(typeof plugin.meta?.version).toBe('string');
   });

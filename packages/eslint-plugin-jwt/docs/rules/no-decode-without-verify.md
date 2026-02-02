@@ -1,14 +1,19 @@
 ---
 title: no-decode-without-verify
-description: no-decode-without-verify
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+tags: ['security', 'jwt']
 category: security
 severity: medium
-tags: ['security', 'jwt']
+cwe: CWE-345
 autofix: false
 ---
 
-
 > Disallow trusting decoded JWT payload without signature verification
+
+
+<!-- @rule-summary -->
+The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
+<!-- @/rule-summary -->
 
 **Severity:** 🟠 High  
 **CWE:** [CWE-345](https://cwe.mitre.org/data/definitions/345.html)

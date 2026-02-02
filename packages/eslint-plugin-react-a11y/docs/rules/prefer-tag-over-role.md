@@ -1,13 +1,17 @@
 ---
 title: prefer-tag-over-role
 description: prefer-tag-over-role rule
-category: quality
-severity: low
 tags: ['quality', 'react', 'accessibility', 'a11y']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# prefer-tag-over-role
+---
+
+
+<!-- @rule-summary -->
+prefer-tag-over-role rule
+<!-- @/rule-summary -->
+
+# prefer-tag-over-role
 
 > **Keywords:** prefer-tag-over-role, accessibility, ESLint rule, WCAG, a11y, React accessibility
 
@@ -107,5 +111,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

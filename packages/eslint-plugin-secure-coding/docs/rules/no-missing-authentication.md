@@ -1,15 +1,21 @@
 ---
 title: no-missing-authentication
 description: "CWE: [CWE-287](https://cwe.mitre.org/data/definitions/287.html)"
+tags: ['security', 'core']
 category: security
 severity: high
-tags: ['security', 'core']
+cwe: CWE-287
 autofix: false
 ---
 
 > **Keywords:** no-missing-authentication, Express, Fastify, route handler, middleware, JWT, security, ESLint rule, CWE-287, broken authentication
 > **CWE:** [CWE-287: Improper Authentication](https://cwe.mitre.org/data/definitions/287.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M3: Insecure Communication](https://owasp.org/www-project-mobile-top-10/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-287](https://cwe.mitre.org/data/definitions/287.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: no-missing-authentication. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 

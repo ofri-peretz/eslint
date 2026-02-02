@@ -1,14 +1,20 @@
 ---
 title: no-hardcoded-connection-string
-description: no-hardcoded-connection-string
+description: Detects hardcoded MongoDB connection strings containing credentials in source code.
+tags: ['security', 'mongodb']
 category: security
 severity: critical
-tags: ['security', 'mongodb']
+cwe: CWE-798
+owasp: "A07:2021"
 autofix: false
 ---
 
-
 > **Keywords:** CWE-798, hardcoded credentials, MongoDB, connection string, secrets, security
+
+
+<!-- @rule-summary -->
+Detects hardcoded MongoDB connection strings containing credentials in source code.
+<!-- @/rule-summary -->
 
 Detects hardcoded MongoDB connection strings containing credentials in source code.
 

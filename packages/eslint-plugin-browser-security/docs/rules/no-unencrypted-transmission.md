@@ -1,14 +1,19 @@
 ---
 title: no-unencrypted-transmission
-description: no-unencrypted-transmission
+description: Detects unencrypted data transmission (HTTP vs HTTPS, plain text protocols)
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-319
 autofix: false
 ---
 
-
 > **Keywords:** unencrypted, CWE-319, security, ESLint rule, HTTP, HTTPS, encryption, TLS, SSL, data transmission, LLM-optimized, code security
+
+<!-- @rule-summary -->
+Detects unencrypted data transmission (HTTP vs HTTPS, plain text protocols)
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

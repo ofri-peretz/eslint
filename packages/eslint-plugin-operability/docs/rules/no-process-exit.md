@@ -1,17 +1,19 @@
 ---
 title: no-process-exit
-description: Prevents direct process.exit() calls to encourage graceful shutdown patterns. This rule is part of @eslint/eslint-plugin-quality.
-category: quality
-severity: low
+description: Prevents direct process.exit() calls to encourage graceful shutdown patterns. This rule is part of eslint-plugin-operability.
 tags: ['quality', 'operability', 'production']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
 > **Keywords:** process.exit, Node.js, graceful shutdown, ESLint rule, server, LLM-optimized
 
-Prevents direct `process.exit()` calls to encourage graceful shutdown patterns. This rule is part of [`@eslint/eslint-plugin-quality`](https://www.npmjs.com/package/@eslint/eslint-plugin-quality).
+
+<!-- @rule-summary -->
+Prevents direct process.exit() calls to encourage graceful shutdown patterns. This rule is part of eslint-plugin-operability.
+<!-- @/rule-summary -->
+
+Prevents direct `process.exit()` calls to encourage graceful shutdown patterns. This rule is part of [`eslint-plugin-operability`](https://www.npmjs.com/package/eslint-plugin-operability).
 
 ## Quick Summary
 
@@ -91,7 +93,7 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 ```javascript
 {
   rules: {
-    'quality/no-process-exit': 'warn'
+    'operability/no-process-exit': 'warn'
   }
 }
 ```

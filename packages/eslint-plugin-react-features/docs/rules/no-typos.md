@@ -1,17 +1,21 @@
 ---
 title: no-typos
 description: no-typos rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-typos
+---
+
+
+<!-- @rule-summary -->
+no-typos rule
+<!-- @/rule-summary -->
+
+# no-typos
 
 > **Keywords:** React, typos, lifecycle, static properties, ESLint rule, autocorrect, LLM-optimized
 
-Detect common typos in React component properties and lifecycle methods. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Detect common typos in React component properties and lifecycle methods. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -125,6 +129,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

@@ -1,14 +1,20 @@
 ---
 title: no-unbounded-find
-description: no-unbounded-find
+description: Requires limit() on find queries to prevent resource exhaustion from unbounded result sets.
+tags: ['security', 'mongodb']
 category: security
 severity: medium
-tags: ['security', 'mongodb']
+cwe: CWE-400
+owasp: "A04:2021"
 autofix: false
 ---
 
-
 > **Keywords:** CWE-400, resource exhaustion, limit, MongoDB, DoS, security
+
+
+<!-- @rule-summary -->
+Requires limit() on find queries to prevent resource exhaustion from unbounded result sets.
+<!-- @/rule-summary -->
 
 Requires `limit()` on find queries to prevent resource exhaustion from unbounded result sets.
 

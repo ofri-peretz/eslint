@@ -1,14 +1,19 @@
 ---
 title: require-express-body-parser-limits
-description: require-express-body-parser-limits
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+tags: ['security', 'express']
 category: security
 severity: medium
-tags: ['security', 'express']
+cwe: CWE-400
 autofix: false
 ---
 
-
 > Require size limits on body parser middleware to prevent DoS attacks
+
+
+<!-- @rule-summary -->
+The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
+<!-- @/rule-summary -->
 
 **Severity:** 🟡 Warning  
 **CWE:** [CWE-400](https://cwe.mitre.org/data/definitions/400.html)

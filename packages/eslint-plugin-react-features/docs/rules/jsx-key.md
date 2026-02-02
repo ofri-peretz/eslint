@@ -1,17 +1,21 @@
 ---
 title: jsx-key
 description: jsx-key rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# jsx-key
+---
+
+
+<!-- @rule-summary -->
+jsx-key rule
+<!-- @/rule-summary -->
+
+# jsx-key
 
 > **Keywords:** React, JSX, key prop, reconciliation, lists, map, iteration, ESLint rule, performance, LLM-optimized
 
-Detect missing or problematic React keys that could break reconciliation. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features) and provides LLM-optimized error messages with suggestions.
+Detect missing or problematic React keys that could break reconciliation. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and provides LLM-optimized error messages with suggestions.
 
 ## Quick Summary
 
@@ -274,6 +278,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

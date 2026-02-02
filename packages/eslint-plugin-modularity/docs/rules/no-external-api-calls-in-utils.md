@@ -1,16 +1,17 @@
 ---
 title: no-external-api-calls-in-utils
-description: no-external-api-calls-in-utils
-category: modularity
-severity: low
+description: "ESLint Rule: no-external-api-calls-in-utils with LLM-optimized suggestions and auto-fix capabilities."
 tags: ['architecture', 'modularity']
+category: modularity
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
-
 > **Keywords:** no external api calls in utils, architecture, ESLint rule, JavaScript, TypeScript, SonarQube RSPEC-1075
+
+
+<!-- @rule-summary -->
+ESLint Rule: no-external-api-calls-in-utils with LLM-optimized suggestions and auto-fix capabilities.
+<!-- @/rule-summary -->
 
 ESLint Rule: no-external-api-calls-in-utils with LLM-optimized suggestions and auto-fix capabilities.
 
@@ -149,5 +150,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

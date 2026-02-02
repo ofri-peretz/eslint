@@ -1,16 +1,17 @@
 ---
 title: max-parameters
-description: max-parameters
-category: quality
-severity: low
+description: "ESLint Rule: max-parameters with LLM-optimized suggestions and auto-fix capabilities."
 tags: ['quality', 'maintainability']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
-
 > **Keywords:** max parameters, quality, ESLint rule, JavaScript, TypeScript, SonarQube RSPEC-107
+
+
+<!-- @rule-summary -->
+ESLint Rule: max-parameters with LLM-optimized suggestions and auto-fix capabilities.
+<!-- @/rule-summary -->
 
 ESLint Rule: max-parameters with LLM-optimized suggestions and auto-fix capabilities.
 
@@ -88,7 +89,7 @@ flowchart TD
 export default [
   {
     rules: {
-      'quality/max-parameters': 'error',
+      'maintainability/max-parameters': 'error',
     },
   },
 ];

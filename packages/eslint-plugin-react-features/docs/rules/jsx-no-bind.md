@@ -1,17 +1,21 @@
 ---
 title: jsx-no-bind
 description: jsx-no-bind rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# jsx-no-bind
+---
+
+
+<!-- @rule-summary -->
+jsx-no-bind rule
+<!-- @/rule-summary -->
+
+# jsx-no-bind
 
 > **Keywords:** React, bind, arrow function, performance, ESLint rule, render, LLM-optimized
 
-Prevent using `.bind()` or arrow functions in JSX props. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Prevent using `.bind()` or arrow functions in JSX props. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -142,6 +146,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

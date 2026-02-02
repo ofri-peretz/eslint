@@ -1,14 +1,19 @@
 ---
 title: require-issued-at
-description: require-issued-at
+description: This rule ensures tokens have the iat claim for freshness validation
+tags: ['security', 'jwt']
 category: security
 severity: medium
-tags: ['security', 'jwt']
+cwe: CWE-294
 autofix: false
 ---
 
-
 > Require iat (issued at) claim for token freshness validation
+
+
+<!-- @rule-summary -->
+This rule ensures tokens have the iat claim for freshness validation
+<!-- @/rule-summary -->
 
 **Severity:** 🟡 Medium  
 **CWE:** [CWE-294](https://cwe.mitre.org/data/definitions/294.html)

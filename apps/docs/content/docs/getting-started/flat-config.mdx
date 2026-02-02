@@ -21,9 +21,13 @@ Delete your existing `.eslintrc.js`, `.eslintrc.json`, or `.eslintrc.yaml` files
 Create a new `eslint.config.js` file in your project root:
 
 ```js title="eslint.config.js"
-import interlace from 'eslint-config-interlace';
+import browserSecurity from 'eslint-plugin-browser-security';
+import secureCoding from 'eslint-plugin-secure-coding';
 
-export default [...interlace.configs.recommended];
+export default [
+  browserSecurity.configs.recommended,
+  secureCoding.configs.recommended,
+];
 ```
 
 ### Update package.json scripts

@@ -1,17 +1,22 @@
 ---
 title: no-deprecated-cipher-method
 description: Disallow deprecated crypto.createCipher/createDecipher methods
+tags: ['security', 'cryptography', 'cwe-327', 'nodejs', 'deprecated']
 category: security
 severity: high
-tags: ['security', 'cryptography', 'cwe-327', 'nodejs', 'deprecated']
-autofix: false
 cwe: CWE-327
-owasp: A02:2021-Cryptographic-Failures
+owasp: "A02:2021"
+autofix: false
 ---
 
 > **Keywords:** createCipher, createDecipher, deprecated, createCipheriv, CWE-327, security, ESLint rule
 > **CWE:** [CWE-327](https://cwe.mitre.org/data/definitions/327.html)  
 > **OWASP:** [A02:2021-Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+
+
+<!-- @rule-summary -->
+Disallow deprecated crypto.createCipher/createDecipher methods
+<!-- @/rule-summary -->
 
 Detects usage of deprecated `crypto.createCipher()` and `crypto.createDecipher()` methods which don't use an IV. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages with fix suggestions.
 

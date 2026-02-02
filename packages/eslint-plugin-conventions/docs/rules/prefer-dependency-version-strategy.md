@@ -1,15 +1,17 @@
 ---
 title: prefer-dependency-version-strategy
 description: Enforce consistent version strategy (caret ^, tilde ~, exact, range, or any) for package.json dependencies. This rule complements @nx/dependency-checks by ensur
-category: quality
-severity: low
 tags: ['quality', 'conventions', 'style']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
 > **Keywords:** dependency version, package.json, semantic versioning, caret, tilde, exact version, version strategy, ESLint rule, monorepo, dependency management, npm, pnpm, yarn, auto-fix, LLM-optimized, code quality
+
+
+<!-- @rule-summary -->
+Enforce consistent version strategy (caret ^, tilde ~, exact, range, or any) for package.json dependencies. This rule complements @nx/dependency-checks by ensur
+<!-- @/rule-summary -->
 
 Enforce consistent version strategy (caret `^`, tilde `~`, exact, range, or any) for `package.json` dependencies. This rule complements `@nx/dependency-checks` by ensuring version specifier format consistency across your monorepo.
 
@@ -153,7 +155,7 @@ flowchart TD
 
 ```javascript
 // eslint.config.mjs
-import llmOptimized from '@eslint/eslint-plugin-quality';
+import llmOptimized from 'eslint-plugin-conventions';
 
 export default [
   {

@@ -1,14 +1,19 @@
 ---
 title: check-query-params
-description: check-query-params
+description: Ensures the number of placeholders in SQL queries matches the provided parameters.
+tags: ['security', 'postgres']
 category: security
 severity: medium
-tags: ['security', 'postgres']
+cwe: CWE-89
 autofix: false
 ---
 
-
 > **Keywords:** query parameters, CWE-89, pg, node-postgres, quality, parameterized queries
+
+<!-- @rule-summary -->
+Ensures the number of placeholders in SQL queries matches the provided parameters.
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Ensures the number of placeholders in SQL queries matches the provided parameters.

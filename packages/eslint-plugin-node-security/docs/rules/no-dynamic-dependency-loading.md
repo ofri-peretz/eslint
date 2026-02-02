@@ -1,14 +1,19 @@
 ---
 title: no-dynamic-dependency-loading
-description: no-dynamic-dependency-loading
+description: This rule detects dynamically constructed paths in require() and import() statements
+tags: ['security', 'node']
 category: security
 severity: medium
-tags: ['security', 'node']
+cwe: CWE-1104
 autofix: false
 ---
 
-
 > Prevents runtime dependency injection with dynamic paths
+
+
+<!-- @rule-summary -->
+This rule detects dynamically constructed paths in require() and import() statements
+<!-- @/rule-summary -->
 
 **Severity:** 🟠 HIGH  
 **CWE:** [CWE-1104: Use of Unmaintained Third Party Components](https://cwe.mitre.org/data/definitions/1104.html)  

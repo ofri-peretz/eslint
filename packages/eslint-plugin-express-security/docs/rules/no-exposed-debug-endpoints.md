@@ -1,14 +1,20 @@
 ---
 title: no-exposed-debug-endpoints
-description: no-exposed-debug-endpoints
+description: Identifies potential debug, administration, or testing endpoints that are often left exposed in production environmen...
+tags: ['security', 'express']
 category: security
 severity: medium
-tags: ['security', 'express']
+cwe: CWE-489
+owasp: "A05:2021"
 autofix: false
 ---
 
-
 > **Keywords:** debug endpoint, admin path, exposed routes, express security, CWE-489, OWASP M8, test endpoints, health checks, information disclosure, unauthorized access, server security
+
+
+<!-- @rule-summary -->
+Identifies potential debug, administration, or testing endpoints that are often left exposed in production environmen...
+<!-- @/rule-summary -->
 
 **CWE:** [CWE-489](https://cwe.mitre.org/data/definitions/489.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10 M8](https://owasp.org/www-project-mobile-top-10/)

@@ -1,14 +1,19 @@
 ---
 title: no-sensitive-in-prompt
-description: no-sensitive-in-prompt
+description: This rule identifies code patterns where sensitive data like passwords, API keys, tokens, or personally identifiable ...
+tags: ['security', 'ai']
 category: security
 severity: medium
-tags: ['security', 'ai']
+cwe: CWE-200
 autofix: false
 ---
 
-
 > Prevents sensitive data (passwords, tokens, PII) from being sent to LLMs.
+
+
+<!-- @rule-summary -->
+This rule identifies code patterns where sensitive data like passwords, API keys, tokens, or personally identifiable ...
+<!-- @/rule-summary -->
 
 ## 📊 Rule Details
 

@@ -1,16 +1,20 @@
 ---
 title: no-unbounded-batch-processing
 description: Detect processing batch records without size validation
+tags: ['serverless', 'lambda', 'cwe-770', 'batch', 'aws']
 category: security
 severity: medium
-tags: ['serverless', 'lambda', 'cwe-770', 'batch', 'aws']
-autofix: false
 cwe: CWE-770
-owasp: A05:2021-Security-Misconfiguration
+autofix: false
 ---
 
 > **Keywords:** Lambda, batch, SQS, Records, size limit, CWE-770, AWS, serverless, denial of service
 > **CWE:** [CWE-770](https://cwe.mitre.org/data/definitions/770.html)
+
+
+<!-- @rule-summary -->
+Detect processing batch records without size validation
+<!-- @/rule-summary -->
 
 Detects Lambda handlers processing batch records (SQS, SNS, DynamoDB Streams) without validating batch size. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) and provides LLM-optimized error messages.
 

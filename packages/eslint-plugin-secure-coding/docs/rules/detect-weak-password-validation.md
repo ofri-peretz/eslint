@@ -1,14 +1,20 @@
 ---
 title: detect-weak-password-validation
-description: detect-weak-password-validation
+description: Detects weak password length requirements (less than 8 characters) in validation code.
+tags: ['security', 'core']
 category: security
 severity: medium
-tags: ['security', 'core']
+cwe: CWE-521
+owasp: "A07:2021"
 autofix: false
 ---
 
-
 > **Keywords:** password policy, weak password, CWE-521, authentication, password length, security
+
+
+<!-- @rule-summary -->
+Detects weak password length requirements (less than 8 characters) in validation code.
+<!-- @/rule-summary -->
 
 Detects weak password length requirements (less than 8 characters) in validation code.
 

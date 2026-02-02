@@ -1,14 +1,19 @@
 ---
 title: no-improper-type-validation
-description: no-improper-type-validation
+description: Detects improper type validation in user input handling
+tags: ['security', 'core']
 category: security
 severity: medium
-tags: ['security', 'core']
+cwe: CWE-1287
 autofix: false
 ---
 
-
 > **Keywords:** type validation, CWE-1287, type confusion, typeof, instanceof, security
+
+<!-- @rule-summary -->
+Detects improper type validation in user input handling
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-20](https://cwe.mitre.org/data/definitions/20.html)  
 **OWASP Mobile:** [M4: Insufficient Input/Output Validation](https://owasp.org/www-project-mobile-top-10/)
 

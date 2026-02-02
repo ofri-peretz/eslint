@@ -1,14 +1,19 @@
 ---
 title: no-weak-secret
-description: no-weak-secret
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+tags: ['security', 'jwt']
 category: security
 severity: critical
-tags: ['security', 'jwt']
+cwe: CWE-326
 autofix: false
 ---
 
-
 > Require strong secrets (256+ bits) for HMAC-based JWT signing
+
+
+<!-- @rule-summary -->
+The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
+<!-- @/rule-summary -->
 
 **Severity:** 🟠 High  
 **CWE:** [CWE-326](https://cwe.mitre.org/data/definitions/326.html)

@@ -1,14 +1,19 @@
 ---
 title: no-unvalidated-deeplinks
-description: no-unvalidated-deeplinks
+description: This rule detects when deep link URLs are opened without validation in React Native or mobile web apps
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-939
 autofix: false
 ---
 
-
 > Requires validation of deep link URLs before navigation
+
+
+<!-- @rule-summary -->
+This rule detects when deep link URLs are opened without validation in React Native or mobile web apps
+<!-- @/rule-summary -->
 
 **Severity:** 🟠 HIGH  
 **CWE:** [CWE-939: Improper Authorization in Handler for Custom URL Scheme](https://cwe.mitre.org/data/definitions/939.html)  

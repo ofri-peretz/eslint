@@ -39,7 +39,7 @@ export function Marquee({
   pauseOnHover = false,
   children,
   vertical = false,
-  repeat = 4,
+  repeat = 2, // Performance: Reduced from 4 to 2 (50% fewer DOM nodes)
   ...props
 }: MarqueeProps) {
   return (

@@ -1,14 +1,19 @@
 ---
 title: require-max-tokens
-description: require-max-tokens
+description: "This rule identifies AI SDK calls that don't specify a maxTokens limit"
+tags: ['security', 'ai']
 category: security
 severity: medium
-tags: ['security', 'ai']
+cwe: CWE-770
 autofix: false
 ---
 
-
 > Ensures all AI calls have token limits to prevent resource exhaustion.
+
+
+<!-- @rule-summary -->
+This rule identifies AI SDK calls that don't specify a maxTokens limit
+<!-- @/rule-summary -->
 
 ## 📊 Rule Details
 

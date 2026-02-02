@@ -1,14 +1,20 @@
 ---
 title: no-unsafe-copy-from
-description: no-unsafe-copy-from
+description: Prevents COPY FROM with file paths (should use STDIN for safe client-side data loading).
+tags: ['security', 'postgres']
 category: security
 severity: medium
-tags: ['security', 'postgres']
+cwe: CWE-73
+owasp: "A03:2021"
 autofix: false
 ---
 
-
 > **Keywords:** COPY FROM, file access, CWE-73, pg, node-postgres, security, path injection
+
+
+<!-- @rule-summary -->
+Prevents COPY FROM with file paths (should use STDIN for safe client-side data loading).
+<!-- @/rule-summary -->
 
 Prevents `COPY FROM` with file paths (should use STDIN for safe client-side data loading).
 

@@ -1,14 +1,20 @@
 ---
 title: no-cookie-auth-tokens
-description: no-cookie-auth-tokens
+description: Prevent storing authentication tokens in JavaScript-accessible cookies.
+tags: ['security', 'browser']
 category: security
 severity: high
-tags: ['security', 'browser']
+cwe: CWE-1004
+owasp: "A02:2021"
 autofix: false
 ---
 
-
 > No Cookie Auth Tokens
+
+
+<!-- @rule-summary -->
+Prevent storing authentication tokens in JavaScript-accessible cookies.
+<!-- @/rule-summary -->
 
 Prevent storing authentication tokens in JavaScript-accessible cookies.
 

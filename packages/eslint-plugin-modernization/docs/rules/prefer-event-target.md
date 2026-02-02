@@ -1,18 +1,19 @@
 ---
 title: prefer-event-target
-description: prefer-event-target
-category: modernization
-severity: low
+description: Prefer EventTarget over EventEmitter for isomorphic code
 tags: ['architecture', 'modernization']
+category: modernization
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
-
 
 > **Keywords:** EventTarget, EventEmitter, browser, Node.js, events, ESLint rule, LLM-optimized
 
-Prefer `EventTarget` over `EventEmitter` for isomorphic code. This rule is part of [`@eslint/eslint-plugin-architecture`](https://www.npmjs.com/package/@eslint/eslint-plugin-architecture).
+
+<!-- @rule-summary -->
+Prefer EventTarget over EventEmitter for isomorphic code
+<!-- @/rule-summary -->
+
+Prefer `EventTarget` over `EventEmitter` for isomorphic code. This rule is part of [`eslint-plugin-modernization`](https://www.npmjs.com/package/eslint-plugin-modernization).
 
 ## Quick Summary
 
@@ -112,6 +113,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

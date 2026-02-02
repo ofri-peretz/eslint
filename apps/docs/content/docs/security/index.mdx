@@ -10,61 +10,86 @@ import {
   Key,
   Code,
   Database,
-  Webhook,
-  EyeOff,
+  Server,
+  Cloud,
+  Bot,
 } from 'lucide-react';
 
-ESLint Interlace provides comprehensive security coverage across multiple domains.
+ESLint Interlace provides comprehensive security coverage across multiple domains with **11 specialized plugins**.
 
-## Plugin Categories
+## Core Security
 
 <Cards>
   <Card
-    title="Browser Security"
-    href="/docs/security/browser-security"
-    icon={<Globe />}
-  >
-    12 rules for XSS, cookie, and DOM security
-  </Card>
-  <Card title="Cryptography" href="/docs/security/crypto" icon={<Lock />}>
-    Secure cryptographic implementations
-  </Card>
-  <Card title="JWT" href="/docs/security/jwt" icon={<Key />}>
-    JSON Web Token security patterns
-  </Card>
-  <Card
     title="Secure Coding"
-    href="/docs/security/secure-coding"
+    href="/docs/security/plugin-secure-coding"
     icon={<Code />}
   >
-    General secure coding practices
+    26 rules for injection prevention, input validation, and secure patterns
   </Card>
   <Card
-    title="GraphQL Security"
-    href="/docs/security/graphql-security"
-    icon={<Database />}
+    title="Browser Security"
+    href="/docs/security/plugin-browser-security"
+    icon={<Globe />}
   >
-    GraphQL query protection
+    52 rules for XSS, cookie, and DOM security
   </Card>
   <Card
-    title="API Security"
-    href="/docs/security/api-security"
-    icon={<Webhook />}
+    title="Node Security"
+    href="/docs/security/plugin-node-security"
+    icon={<Server />}
   >
-    REST API security patterns
+    31 rules for server-side security and cryptography
   </Card>
+  <Card title="JWT" href="/docs/security/plugin-jwt" icon={<Key />}>
+    13 rules for JSON Web Token security patterns
+  </Card>
+</Cards>
+
+## Database Security
+
+<Cards>
   <Card
     title="MongoDB Security"
-    href="/docs/security/mongodb-security"
+    href="/docs/security/plugin-mongodb-security"
     icon={<Database />}
   >
-    NoSQL injection prevention
+    19 rules for NoSQL injection prevention
+  </Card>
+  <Card title="PostgreSQL" href="/docs/security/plugin-pg" icon={<Database />}>
+    13 rules for SQL injection prevention
+  </Card>
+</Cards>
+
+## Framework Security
+
+<Cards>
+  <Card
+    title="Express"
+    href="/docs/security/plugin-express-security"
+    icon={<Server />}
+  >
+    14 rules for Express.js security hardening
   </Card>
   <Card
-    title="Secrets Detection"
-    href="/docs/security/secrets"
-    icon={<EyeOff />}
+    title="NestJS"
+    href="/docs/security/plugin-nestjs-security"
+    icon={<Server />}
   >
-    Prevent hardcoded credentials
+    10 rules for NestJS security patterns
+  </Card>
+  <Card
+    title="AWS Lambda"
+    href="/docs/security/plugin-lambda-security"
+    icon={<Cloud />}
+  >
+    16 rules for serverless security
+  </Card>
+  <Card
+    title="Vercel AI"
+    href="/docs/security/plugin-vercel-ai-security"
+    icon={<Bot />}
+  >
+    22 rules for AI SDK security
   </Card>
 </Cards>

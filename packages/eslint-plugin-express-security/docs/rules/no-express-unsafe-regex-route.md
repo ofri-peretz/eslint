@@ -1,14 +1,19 @@
 ---
 title: no-express-unsafe-regex-route
-description: no-express-unsafe-regex-route
+description: This rule detects Regular Expression Denial of Service (ReDoS) vulnerabilities in Express route patterns
+tags: ['security', 'express']
 category: security
 severity: medium
-tags: ['security', 'express']
+cwe: CWE-1333
 autofix: false
 ---
 
-
 > Disallow vulnerable regular expressions in route definitions
+
+
+<!-- @rule-summary -->
+This rule detects Regular Expression Denial of Service (ReDoS) vulnerabilities in Express route patterns
+<!-- @/rule-summary -->
 
 **Severity:** 🔴 Critical  
 **CWE:** [CWE-1333](https://cwe.mitre.org/data/definitions/1333.html)

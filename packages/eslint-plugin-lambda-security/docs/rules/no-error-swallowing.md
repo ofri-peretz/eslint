@@ -1,17 +1,22 @@
 ---
 title: no-error-swallowing
 description: Detect empty catch blocks and missing error logging
+tags: ['serverless', 'lambda', 'cwe-390', 'logging', 'aws']
 category: security
 severity: medium
-tags: ['serverless', 'lambda', 'cwe-390', 'logging', 'aws']
-autofix: false
 cwe: CWE-390
-owasp: A09:2021-Security-Logging-and-Monitoring-Failures
+owasp: "A09:2021"
+autofix: false
 ---
 
 > **Keywords:** catch block, error handling, logging, CWE-390, Lambda, serverless, monitoring
 > **CWE:** [CWE-390](https://cwe.mitre.org/data/definitions/390.html)  
 > **OWASP:** [A09:2021-Security Logging and Monitoring Failures](https://owasp.org/Top10/A09_2021-Security_Logging_and_Monitoring_Failures/)
+
+
+<!-- @rule-summary -->
+Detect empty catch blocks and missing error logging
+<!-- @/rule-summary -->
 
 Detects empty catch blocks and catch handlers that don't log errors in Lambda handlers. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) and provides LLM-optimized error messages.
 

@@ -1,14 +1,19 @@
 ---
 title: detect-non-literal-regexp
-description: detect-non-literal-regexp
+description: Detects RegExp(variable), which might allow an attacker to DOS your server with a long-running regular expression
+tags: ['security', 'core']
 category: security
 severity: medium
-tags: ['security', 'core']
+cwe: CWE-400
 autofix: false
 ---
 
-
 > **Keywords:** ReDoS, CWE-400, security, ESLint rule, regular expression denial of service, RegExp, regex injection, performance, auto-fix, LLM-optimized, code security
+
+<!-- @rule-summary -->
+Detects RegExp(variable), which might allow an attacker to DOS your server with a long-running regular expression
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

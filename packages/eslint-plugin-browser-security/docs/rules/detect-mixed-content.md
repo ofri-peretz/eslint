@@ -1,14 +1,19 @@
 ---
 title: detect-mixed-content
-description: detect-mixed-content
+description: Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulnerabilities.
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-311
 autofix: false
 ---
 
-
 > **Keywords:** mixed content, HTTPS, HTTP, CWE-311, insecure resource, TLS, web security
+
+
+<!-- @rule-summary -->
+Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulnerabilities.
+<!-- @/rule-summary -->
 
 Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulnerabilities.
 

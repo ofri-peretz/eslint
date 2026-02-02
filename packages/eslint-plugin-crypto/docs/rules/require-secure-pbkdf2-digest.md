@@ -1,15 +1,22 @@
 ---
 title: require-secure-pbkdf2-digest
 description: "CWE: [CWE-328](https://cwe.mitre.org/data/definitions/328.html)"
+tags: ['security', 'crypto']
 category: security
 severity: medium
-tags: ['security', 'crypto']
+cwe: CWE-328
+owasp: "A02:2021"
 autofix: false
 ---
 
 > **Keywords:** require-secure-pbkdf2-digest, PBKDF2, hashing, SHA1, weak algorithm, security, ESLint rule, CWE-328, password storage
 > **CWE:** [CWE-328: Use of Weak Hash](https://cwe.mitre.org/data/definitions/328.html)  
 > **OWASP:** [OWASP Top 10 A02:2021 - Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-328](https://cwe.mitre.org/data/definitions/328.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: require-secure-pbkdf2-digest. This rule is part of [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto).
 

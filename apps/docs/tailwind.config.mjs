@@ -4,8 +4,11 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const monorepoRoot = path.resolve(__dirname, '../..');
 
-/** @type {import('tailwindcss').Config} */
-export default {
+/**
+ * Tailwind CSS Configuration
+ * @type {import('tailwindcss').Config}
+ */
+const tailwindConfig = {
   content: {
     files: [
       './src/**/*.{js,jsx,ts,tsx,mdx}',
@@ -20,3 +23,5 @@ export default {
   },
   // Removed safelist - using manual CSS rules in global.css instead
 };
+
+export default tailwindConfig;

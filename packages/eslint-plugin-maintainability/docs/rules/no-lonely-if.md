@@ -1,18 +1,19 @@
 ---
 title: no-lonely-if
-description: no-lonely-if
-category: quality
-severity: low
+description: Disallow if statements as the only statement in else blocks
 tags: ['quality', 'maintainability']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
-
 
 > **Keywords:** if, else, refactoring, readability, ESLint rule, code quality, LLM-optimized
 
-Disallow `if` statements as the only statement in `else` blocks. This rule is part of [`@eslint/eslint-plugin-quality`](https://www.npmjs.com/package/@eslint/eslint-plugin-quality).
+
+<!-- @rule-summary -->
+Disallow if statements as the only statement in else blocks
+<!-- @/rule-summary -->
+
+Disallow `if` statements as the only statement in `else` blocks. This rule is part of [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability).
 
 ## Quick Summary
 
@@ -91,7 +92,7 @@ if (a) {
 ```javascript
 {
   rules: {
-    'quality/no-lonely-if': 'warn'
+    'maintainability/no-lonely-if': 'warn'
   }
 }
 ```

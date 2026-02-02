@@ -1,17 +1,22 @@
 ---
 title: no-self-signed-certs
 description: Disallow rejectUnauthorized false in TLS options
+tags: ['security', 'tls', 'cwe-295', 'nodejs', 'mitm']
 category: security
 severity: critical
-tags: ['security', 'tls', 'cwe-295', 'nodejs', 'mitm']
-autofix: false
 cwe: CWE-295
-owasp: A07:2021-Identification-and-Authentication-Failures
+owasp: "A07:2021"
+autofix: false
 ---
 
 > **Keywords:** TLS, SSL, certificate, rejectUnauthorized, self-signed, MITM, CWE-295, security, ESLint rule
 > **CWE:** [CWE-295](https://cwe.mitre.org/data/definitions/295.html)  
 > **OWASP:** [A07:2021-Identification and Authentication Failures](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/)
+
+
+<!-- @rule-summary -->
+Disallow rejectUnauthorized false in TLS options
+<!-- @/rule-summary -->
 
 Detects disabling of TLS certificate validation via `rejectUnauthorized: false` or `NODE_TLS_REJECT_UNAUTHORIZED=0`. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages with fix suggestions.
 

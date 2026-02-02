@@ -1,17 +1,21 @@
 ---
 title: react-no-inline-functions
 description: react-no-inline-functions rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# react-no-inline-functions
+---
+
+
+<!-- @rule-summary -->
+react-no-inline-functions rule
+<!-- @/rule-summary -->
+
+# react-no-inline-functions
 
 > **Keywords:** React, performance, ESLint rule, inline functions, useCallback, React optimization, re-renders, auto-fix, LLM-optimized, React performance
 
-Prevent inline functions in React renders with performance metrics. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features) and provides LLM-optimized error messages with fix suggestions.
+Prevent inline functions in React renders with performance metrics. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and provides LLM-optimized error messages with fix suggestions.
 
 **💡 Provides suggestions** | **🔧 Automatically fixable**
 
@@ -83,8 +87,8 @@ function TodoList({ todos }: Props) {
 ### ESLint 9+ (Flat Config)
 
 ```typescript
-import llmOptimized from '@eslint/eslint-plugin-react-features';
-import type { ReactNoInlineFunctionsOptions } from '@eslint/eslint-plugin-react-features/types';
+import llmOptimized from 'eslint-plugin-react-features';
+import type { ReactNoInlineFunctionsOptions } from 'eslint-plugin-react-features/types';
 
 const inlineConfig: ReactNoInlineFunctionsOptions = {
   allowInEventHandlers: true, // Allow simple event handlers
@@ -109,16 +113,16 @@ export default [
 ### ESLint 8 (Legacy Config with JSDoc Types)
 
 ```javascript
-/** @type {import('@eslint/eslint-plugin-react-features/types').ReactNoInlineFunctionsOptions} */
+/** @type {import('eslint-plugin-react-features/types').ReactNoInlineFunctionsOptions} */
 const inlineConfig = {
   allowInEventHandlers: true, // Allow simple event handlers
   minArraySize: 5, // Only warn for large lists
 };
 
 module.exports = {
-  plugins: ['@eslint/eslint-plugin-react-features'],
+  plugins: ['eslint-plugin-react-features'],
   rules: {
-    '@eslint/eslint-plugin-react-features/performance/react-no-inline-functions':
+    'eslint-plugin-react-features/performance/react-no-inline-functions':
       ['warn', inlineConfig],
   },
 };
@@ -197,5 +201,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

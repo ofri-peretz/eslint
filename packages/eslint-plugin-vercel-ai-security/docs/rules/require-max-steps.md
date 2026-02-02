@@ -1,14 +1,19 @@
 ---
 title: require-max-steps
-description: require-max-steps
+description: "This rule identifies AI SDK calls that use tools but don't specify a maxSteps limit"
+tags: ['security', 'ai']
 category: security
 severity: medium
-tags: ['security', 'ai']
+cwe: CWE-834
 autofix: false
 ---
 
-
 > Prevents infinite tool calling loops in multi-step agents.
+
+
+<!-- @rule-summary -->
+This rule identifies AI SDK calls that use tools but don't specify a maxSteps limit
+<!-- @/rule-summary -->
 
 ## 📊 Rule Details
 

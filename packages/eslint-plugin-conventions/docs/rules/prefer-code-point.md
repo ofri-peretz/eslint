@@ -1,17 +1,19 @@
 ---
 title: prefer-code-point
-description: Prefer String.codePointAt() over String.charCodeAt(). This rule is part of @eslint/eslint-plugin-quality.
-category: quality
-severity: low
+description: Prefer String.codePointAt() over String.charCodeAt(). This rule is part of eslint-plugin-conventions.
 tags: ['quality', 'conventions', 'style']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
 > **Keywords:** codePointAt, charCodeAt, Unicode, emoji, ESLint rule, auto-fix, LLM-optimized
 
-Prefer `String.codePointAt()` over `String.charCodeAt()`. This rule is part of [`@eslint/eslint-plugin-quality`](https://www.npmjs.com/package/@eslint/eslint-plugin-quality).
+
+<!-- @rule-summary -->
+Prefer String.codePointAt() over String.charCodeAt(). This rule is part of eslint-plugin-conventions.
+<!-- @/rule-summary -->
+
+Prefer `String.codePointAt()` over `String.charCodeAt()`. This rule is part of [`eslint-plugin-conventions`](https://www.npmjs.com/package/eslint-plugin-conventions).
 
 ## Quick Summary
 
@@ -63,7 +65,7 @@ for (const char of string) {
 ```javascript
 {
   rules: {
-    'quality/prefer-code-point': 'warn'
+    'conventions/prefer-code-point': 'warn'
   }
 }
 ```

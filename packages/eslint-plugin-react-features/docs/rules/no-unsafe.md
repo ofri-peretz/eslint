@@ -1,15 +1,17 @@
 ---
 title: no-unsafe
 description: Warn about UNSAFE_ lifecycle methods. This rule is part of eslint-plugin-react-features and provides LLM-optimized error messages.
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
 > **Keywords:** React, UNSAFE, lifecycle, deprecated, ESLint rule, code quality, LLM-optimized
+
+
+<!-- @rule-summary -->
+Warn about UNSAFE_ lifecycle methods. This rule is part of eslint-plugin-react-features and provides LLM-optimized error messages.
+<!-- @/rule-summary -->
 
 Warn about UNSAFE\_ lifecycle methods. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and provides LLM-optimized error messages.
 

@@ -1,14 +1,19 @@
 ---
 title: no-cors-credentials-wildcard
-description: no-cors-credentials-wildcard
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+tags: ['security', 'express']
 category: security
 severity: high
-tags: ['security', 'express']
+cwe: CWE-942
 autofix: false
 ---
 
-
 > Disallow CORS credentials with wildcard origin
+
+
+<!-- @rule-summary -->
+The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
+<!-- @/rule-summary -->
 
 **Severity:** 🔴 Critical  
 **CWE:** [CWE-942](https://cwe.mitre.org/data/definitions/942.html)

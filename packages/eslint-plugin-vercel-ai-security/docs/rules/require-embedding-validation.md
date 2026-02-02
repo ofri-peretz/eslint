@@ -1,14 +1,19 @@
 ---
 title: require-embedding-validation
-description: require-embedding-validation
+description: This rule identifies code patterns where embeddings are stored in vector databases without validation.
+tags: ['security', 'ai']
 category: security
 severity: medium
-tags: ['security', 'ai']
+cwe: CWE-20
 autofix: false
 ---
 
-
 > Requires validation of embeddings before storage or similarity search.
+
+
+<!-- @rule-summary -->
+This rule identifies code patterns where embeddings are stored in vector databases without validation.
+<!-- @/rule-summary -->
 
 ## 📊 Rule Details
 

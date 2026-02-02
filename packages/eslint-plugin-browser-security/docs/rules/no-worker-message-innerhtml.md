@@ -1,14 +1,20 @@
 ---
 title: no-worker-message-innerhtml
-description: no-worker-message-innerhtml
+description: Disallow using innerHTML with Web Worker message data.
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-79
+owasp: "A03:2021"
 autofix: false
 ---
 
-
 > No Worker Message Innerhtml
+
+
+<!-- @rule-summary -->
+Disallow using innerHTML with Web Worker message data.
+<!-- @/rule-summary -->
 
 Disallow using innerHTML with Web Worker message data.
 

@@ -1,17 +1,21 @@
 ---
 title: no-redundant-should-component-update
 description: no-redundant-should-component-update rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-redundant-should-component-update
+---
+
+
+<!-- @rule-summary -->
+no-redundant-should-component-update rule
+<!-- @/rule-summary -->
+
+# no-redundant-should-component-update
 
 > **Keywords:** React, shouldComponentUpdate, performance, PureComponent, optimization, ESLint rule, LLM-optimized
 
-Prevent redundant `shouldComponentUpdate` implementations that just return `true`. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Prevent redundant `shouldComponentUpdate` implementations that just return `true`. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -153,6 +157,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

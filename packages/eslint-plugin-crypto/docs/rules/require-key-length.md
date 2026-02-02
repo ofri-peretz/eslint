@@ -1,15 +1,22 @@
 ---
 title: require-key-length
 description: "CWE: [CWE-326](https://cwe.mitre.org/data/definitions/326.html)"
+tags: ['security', 'crypto']
 category: security
 severity: medium
-tags: ['security', 'crypto']
+cwe: CWE-326
+owasp: "A02:2021"
 autofix: false
 ---
 
 > **Keywords:** require-key-length, AES-256, encryption strength, key size, security, ESLint rule, CWE-326, cryptographic bit-strength
 > **CWE:** [CWE-326: Inadequate Encryption Strength](https://cwe.mitre.org/data/definitions/326.html)  
 > **OWASP:** [OWASP Top 10 A02:2021 - Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-326](https://cwe.mitre.org/data/definitions/326.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: require-key-length. This rule is part of [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto).
 

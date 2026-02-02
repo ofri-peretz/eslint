@@ -1,14 +1,19 @@
 ---
 title: no-hardcoded-secret
-description: no-hardcoded-secret
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+tags: ['security', 'jwt']
 category: security
 severity: critical
-tags: ['security', 'jwt']
+cwe: CWE-798
 autofix: false
 ---
 
-
 > Disallow hardcoded secrets in JWT sign/verify operations
+
+
+<!-- @rule-summary -->
+The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
+<!-- @/rule-summary -->
 
 **🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
 

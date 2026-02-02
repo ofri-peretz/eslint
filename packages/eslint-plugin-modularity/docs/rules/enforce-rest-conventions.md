@@ -1,16 +1,17 @@
 ---
 title: enforce-rest-conventions
-description: enforce-rest-conventions
-category: modularity
-severity: low
+description: "ESLint Rule: enforce-rest-conventions with LLM-optimized suggestions and auto-fix capabilities."
 tags: ['architecture', 'modularity']
+category: modularity
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
-
 > **Keywords:** enforce rest conventions, api, ESLint rule, JavaScript, TypeScript
+
+
+<!-- @rule-summary -->
+ESLint Rule: enforce-rest-conventions with LLM-optimized suggestions and auto-fix capabilities.
+<!-- @/rule-summary -->
 
 ESLint Rule: enforce-rest-conventions with LLM-optimized suggestions and auto-fix capabilities.
 
@@ -135,5 +136,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

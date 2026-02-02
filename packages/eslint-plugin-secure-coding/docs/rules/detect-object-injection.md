@@ -1,16 +1,21 @@
 ---
 title: detect-object-injection
-description: detect-object-injection
+description: Detects variable[key] as a left- or right-hand assignment operand (prototype pollution)
+tags: ['security', 'core']
 category: security
 severity: critical
-tags: ['security', 'core']
+cwe: CWE-915
 autofix: false
 ---
-
 
 > **Keywords:** prototype pollution, CWE-915, security, ESLint rule, object injection, bracket notation, property injection, auto-fix, LLM-optimized, code security
 > **CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
+
+
+<!-- @rule-summary -->
+Detects variable[key] as a left- or right-hand assignment operand (prototype pollution)
+<!-- @/rule-summary -->
 
 Detects `variable[key]` as a left- or right-hand assignment operand (prototype pollution). This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages with fix suggestions.
 

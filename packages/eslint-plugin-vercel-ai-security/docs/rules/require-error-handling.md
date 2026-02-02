@@ -1,14 +1,19 @@
 ---
 title: require-error-handling
-description: require-error-handling
+description: "This rule identifies AI SDK calls that aren't wrapped in try-catch blocks"
+tags: ['security', 'ai']
 category: security
 severity: medium
-tags: ['security', 'ai']
+cwe: CWE-755
 autofix: false
 ---
 
-
 > Ensures AI SDK calls are wrapped in try-catch to prevent cascading failures.
+
+
+<!-- @rule-summary -->
+This rule identifies AI SDK calls that aren't wrapped in try-catch blocks
+<!-- @/rule-summary -->
 
 ## 📊 Rule Details
 

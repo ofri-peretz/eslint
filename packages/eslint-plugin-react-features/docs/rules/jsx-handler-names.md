@@ -1,17 +1,21 @@
 ---
 title: jsx-handler-names
 description: jsx-handler-names rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# jsx-handler-names
+---
+
+
+<!-- @rule-summary -->
+jsx-handler-names rule
+<!-- @/rule-summary -->
+
+# jsx-handler-names
 
 > **Keywords:** React, event handlers, naming conventions, onClick, onSubmit, handleClick, ESLint rule, LLM-optimized
 
-Enforces consistent naming conventions for event handler functions in JSX. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features) and provides LLM-optimized error messages.
+Enforces consistent naming conventions for event handler functions in JSX. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and provides LLM-optimized error messages.
 
 ## Quick Summary
 
@@ -183,6 +187,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

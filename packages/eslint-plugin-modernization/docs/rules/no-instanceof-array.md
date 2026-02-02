@@ -1,15 +1,17 @@
 ---
 title: no-instanceof-array
 description: Prefer Array.isArray() over instanceof Array for reliable type checking across different JavaScript realms (iframes, Web Workers).
-category: modernization
-severity: low
 tags: ['modernization', 'reliability', 'cross-realm']
+category: modernization
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
 > **Keywords:** no-instanceof-array, Array.isArray, type checking, cross-realm, iframes, web workers, reliability, ESLint rule, modernization
+
+
+<!-- @rule-summary -->
+Prefer Array.isArray() over instanceof Array for reliable type checking across different JavaScript realms (iframes, Web Workers).
+<!-- @/rule-summary -->
 
 Forbid use of `instanceof Array` in favor of `Array.isArray()`. This rule is part of [`eslint-plugin-modernization`](https://www.npmjs.com/package/eslint-plugin-modernization) and ensures robust array detection in environments with multiple execution contexts.
 

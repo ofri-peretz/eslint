@@ -1,14 +1,19 @@
 ---
 title: no-graphql-injection
-description: no-graphql-injection
+description: Detects GraphQL injection vulnerabilities and DoS attacks
+tags: ['security', 'core']
 category: security
 severity: critical
-tags: ['security', 'core']
+cwe: CWE-943
 autofix: false
 ---
 
-
 > **Keywords:** GraphQL injection, CWE-943, CWE-400, security, DoS, introspection, query complexity, LLM-optimized
+
+<!-- @rule-summary -->
+Detects GraphQL injection vulnerabilities and DoS attacks
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

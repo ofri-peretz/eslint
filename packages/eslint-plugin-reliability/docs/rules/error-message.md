@@ -1,17 +1,19 @@
 ---
 title: error-message
-description: Enforce providing a message when creating built-in Error objects for better debugging. This rule is part of @eslint/eslint-plugin-quality and provides LLM-optim
-category: quality
-severity: medium
+description: Enforce providing a message when creating built-in Error objects for better debugging. This rule is part of eslint-plugin-reliability and provides LLM-optim
 tags: ['quality', 'reliability', 'error-handling']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
 > **Keywords:** Error, message, debugging, exception, throw, ESLint rule, error handling, LLM-optimized
 
-Enforce providing a message when creating built-in Error objects for better debugging. This rule is part of [`@eslint/eslint-plugin-quality`](https://www.npmjs.com/package/@eslint/eslint-plugin-quality) and provides LLM-optimized error messages with suggestions.
+
+<!-- @rule-summary -->
+Enforce providing a message when creating built-in Error objects for better debugging. This rule is part of eslint-plugin-reliability and provides LLM-optim
+<!-- @/rule-summary -->
+
+Enforce providing a message when creating built-in Error objects for better debugging. This rule is part of [`eslint-plugin-reliability`](https://www.npmjs.com/package/eslint-plugin-reliability) and provides LLM-optimized error messages with suggestions.
 
 ## Quick Summary
 
@@ -127,7 +129,7 @@ throw new Error(`Invalid configuration: ${JSON.stringify(config)}`);
 ```javascript
 {
   rules: {
-    'quality/error-message': 'error'
+    'reliability/error-message': 'error'
   }
 }
 ```
@@ -137,7 +139,7 @@ throw new Error(`Invalid configuration: ${JSON.stringify(config)}`);
 ```javascript
 {
   rules: {
-    'quality/error-message': ['error', {
+    'reliability/error-message': ['error', {
       allowEmptyCatch: true
     }]
   }

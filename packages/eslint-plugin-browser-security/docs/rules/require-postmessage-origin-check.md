@@ -1,14 +1,19 @@
 ---
 title: require-postmessage-origin-check
-description: require-postmessage-origin-check
+description: Detects postMessage event handlers without origin validation
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-346
 autofix: false
 ---
 
-
 > **Keywords:** postMessage, cross-origin, CWE-346, security, iframe, message validation
+
+<!-- @rule-summary -->
+Detects postMessage event handlers without origin validation
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-494](https://cwe.mitre.org/data/definitions/494.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

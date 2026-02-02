@@ -1,14 +1,19 @@
 ---
 title: no-timestamp-manipulation
-description: no-timestamp-manipulation
+description: "This rule detects noTimestamp: true which disables automatic iat (issued at) claim generation"
+tags: ['security', 'jwt']
 category: security
 severity: medium
-tags: ['security', 'jwt']
+cwe: CWE-294
 autofix: false
 ---
 
-
 > Prevent disabling automatic timestamp generation which enables replay attacks
+
+
+<!-- @rule-summary -->
+This rule detects noTimestamp: true which disables automatic iat (issued at) claim generation
+<!-- @/rule-summary -->
 
 **Severity:** 🟠 High  
 **CWE:** [CWE-294](https://cwe.mitre.org/data/definitions/294.html)

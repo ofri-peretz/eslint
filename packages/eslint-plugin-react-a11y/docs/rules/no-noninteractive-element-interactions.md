@@ -1,13 +1,17 @@
 ---
 title: no-noninteractive-element-interactions
 description: no-noninteractive-element-interactions rule
-category: quality
-severity: low
 tags: ['quality', 'react', 'accessibility', 'a11y']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-noninteractive-element-interactions
+---
+
+
+<!-- @rule-summary -->
+no-noninteractive-element-interactions rule
+<!-- @/rule-summary -->
+
+# no-noninteractive-element-interactions
 
 > **Keywords:** no-noninteractive-element-interactions, accessibility, ESLint rule, WCAG, a11y, React accessibility
 
@@ -121,5 +125,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

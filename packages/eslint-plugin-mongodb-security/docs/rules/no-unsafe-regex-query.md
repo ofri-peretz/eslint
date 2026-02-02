@@ -1,14 +1,20 @@
 ---
 title: no-unsafe-regex-query
-description: no-unsafe-regex-query
+description: Detects user input in MongoDB $regex operators that could cause ReDoS (Regular Expression Denial of Service) or infor...
+tags: ['security', 'mongodb']
 category: security
 severity: medium
-tags: ['security', 'mongodb']
+cwe: CWE-400
+owasp: "A03:2021"
 autofix: false
 ---
 
-
 > **Keywords:** ReDoS, CWE-400, MongoDB, $regex, regular expression, denial of service
+
+
+<!-- @rule-summary -->
+Detects user input in MongoDB $regex operators that could cause ReDoS (Regular Expression Denial of Service) or infor...
+<!-- @/rule-summary -->
 
 Detects user input in MongoDB `$regex` operators that could cause ReDoS (Regular Expression Denial of Service) or information disclosure.
 

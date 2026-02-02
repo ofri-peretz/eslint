@@ -1,14 +1,19 @@
 ---
 title: no-algorithm-none
-description: no-algorithm-none
+description: This rule detects attempts to use the none algorithm which completely bypasses JWT signature verification
+tags: ['security', 'jwt']
 category: security
 severity: critical
-tags: ['security', 'jwt']
+cwe: CWE-347
 autofix: false
 ---
 
-
 > Disallow JWT "none" algorithm which bypasses signature verification (CVE-2022-23540)
+
+
+<!-- @rule-summary -->
+This rule detects attempts to use the none algorithm which completely bypasses JWT signature verification
+<!-- @/rule-summary -->
 
 **Severity:** 🔴 Critical  
 **CWE:** [CWE-347](https://cwe.mitre.org/data/definitions/347.html)  

@@ -1,14 +1,20 @@
 ---
 title: no-hardcoded-credentials
-description: no-hardcoded-credentials
+description: Detects hardcoded MongoDB authentication credentials in connection options.
+tags: ['security', 'mongodb']
 category: security
 severity: critical
-tags: ['security', 'mongodb']
+cwe: CWE-798
+owasp: "A07:2021"
 autofix: false
 ---
 
-
 > **Keywords:** CWE-798, hardcoded credentials, MongoDB, authentication, security
+
+
+<!-- @rule-summary -->
+Detects hardcoded MongoDB authentication credentials in connection options.
+<!-- @/rule-summary -->
 
 Detects hardcoded MongoDB authentication credentials in connection options.
 

@@ -1,17 +1,21 @@
 ---
 title: prefer-stateless-function
 description: prefer-stateless-function rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# prefer-stateless-function
+---
+
+
+<!-- @rule-summary -->
+prefer-stateless-function rule
+<!-- @/rule-summary -->
+
+# prefer-stateless-function
 
 > **Keywords:** React, class component, function component, hooks, ESLint rule, migration, LLM-optimized
 
-Prefer stateless function components over class components. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Prefer stateless function components over class components. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -133,6 +137,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

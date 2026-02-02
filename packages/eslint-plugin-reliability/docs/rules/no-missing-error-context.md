@@ -1,15 +1,17 @@
 ---
 title: no-missing-error-context
 description: "ESLint Rule: no-missing-error-context with LLM-optimized suggestions and auto-fix capabilities."
-category: quality
-severity: medium
 tags: ['quality', 'reliability', 'error-handling']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
 > **Keywords:** no missing error context, error-handling, ESLint rule, JavaScript, TypeScript, SonarQube RSPEC-1128
+
+
+<!-- @rule-summary -->
+ESLint Rule: no-missing-error-context with LLM-optimized suggestions and auto-fix capabilities.
+<!-- @/rule-summary -->
 
 ESLint Rule: no-missing-error-context with LLM-optimized suggestions and auto-fix capabilities.
 
@@ -87,7 +89,7 @@ flowchart TD
 export default [
   {
     rules: {
-      'quality/no-missing-error-context': 'error',
+      'reliability/no-missing-error-context': 'error',
     },
   },
 ];

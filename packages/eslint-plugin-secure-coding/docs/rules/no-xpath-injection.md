@@ -1,14 +1,19 @@
 ---
 title: no-xpath-injection
-description: no-xpath-injection
+description: Detects XPath injection vulnerabilities
+tags: ['security', 'core']
 category: security
 severity: critical
-tags: ['security', 'core']
+cwe: CWE-643
 autofix: false
 ---
 
-
 > **Keywords:** XPath injection, CWE-643, XML, security, data extraction, authentication bypass
+
+<!-- @rule-summary -->
+Detects XPath injection vulnerabilities
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

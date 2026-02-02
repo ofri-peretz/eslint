@@ -1,14 +1,19 @@
 ---
 title: no-privilege-escalation
-description: no-privilege-escalation
+description: Detects potential privilege escalation vulnerabilities where user input is used to assign roles or permissions withou...
+tags: ['security', 'core']
 category: security
 severity: medium
-tags: ['security', 'core']
+cwe: CWE-269
 autofix: false
 ---
 
-
 > **Keywords:** privilege escalation, CWE-269, security, ESLint rule, role assignment, permission bypass, access control, user input, role checks, LLM-optimized, code security
+
+<!-- @rule-summary -->
+Detects potential privilege escalation vulnerabilities where user input is used to assign roles or permissions withou...
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

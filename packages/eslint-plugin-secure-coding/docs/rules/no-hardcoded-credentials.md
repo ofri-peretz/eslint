@@ -1,14 +1,19 @@
 ---
 title: no-hardcoded-credentials
-description: no-hardcoded-credentials
+description: Detects hardcoded passwords, API keys, tokens, and other sensitive credentials in source code
+tags: ['security', 'core']
 category: security
 severity: critical
-tags: ['security', 'core']
+cwe: CWE-798
 autofix: false
 ---
 
-
 > **Keywords:** hardcoded credentials, CWE-798, security, ESLint rule, API keys, passwords, tokens, secrets, environment variables, secret management, OWASP, credential security, auto-fix, LLM-optimized, code security
+
+<!-- @rule-summary -->
+Detects hardcoded passwords, API keys, tokens, and other sensitive credentials in source code
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-522](https://cwe.mitre.org/data/definitions/522.html)  
 **OWASP Mobile:** [M1: Improper Credential Usage](https://owasp.org/www-project-mobile-top-10/)
 

@@ -3,6 +3,7 @@
     "description": "Core concepts and ecosystem transparency",
     "pages": [
         "---Core Concepts---",
+        "philosophy",
         "ai-integration",
         "ast-fundamentals",
         "security-metadata",

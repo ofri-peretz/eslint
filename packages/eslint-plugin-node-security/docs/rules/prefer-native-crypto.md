@@ -1,17 +1,22 @@
 ---
 title: prefer-native-crypto
 description: Prefer native crypto over third-party libraries
+tags: ['security', 'cryptography', 'cwe-1104', 'nodejs', 'best-practice']
 category: security
 severity: medium
-tags: ['security', 'cryptography', 'cwe-1104', 'nodejs', 'best-practice']
-autofix: false
 cwe: CWE-1104
-owasp: A06:2021-Vulnerable-and-Outdated-Components
+owasp: "A06:2021"
+autofix: false
 ---
 
 > **Keywords:** native crypto, third-party, crypto-js, forge, sjcl, CWE-1104, security, ESLint rule
 > **CWE:** [CWE-1104](https://cwe.mitre.org/data/definitions/1104.html)  
 > **OWASP:** [A06:2021-Vulnerable and Outdated Components](https://owasp.org/Top10/A06_2021-Vulnerable_and_Outdated_Components/)
+
+
+<!-- @rule-summary -->
+Prefer native crypto over third-party libraries
+<!-- @/rule-summary -->
 
 Suggests using native Node.js crypto or Web Crypto API instead of third-party cryptography libraries. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages.
 

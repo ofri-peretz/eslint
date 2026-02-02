@@ -1,13 +1,17 @@
 ---
 title: no-keyboard-inaccessible-elements
 description: no-keyboard-inaccessible-elements rule
-category: quality
-severity: low
 tags: ['quality', 'react', 'accessibility', 'a11y']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-keyboard-inaccessible-elements
+---
+
+
+<!-- @rule-summary -->
+no-keyboard-inaccessible-elements rule
+<!-- @/rule-summary -->
+
+# no-keyboard-inaccessible-elements
 
 > **Keywords:** no-keyboard-inaccessible-elements, accessibility, ESLint rule, WCAG, a11y, React accessibility
 
@@ -121,5 +125,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

@@ -1,14 +1,19 @@
 ---
 title: require-https-only
-description: require-https-only
+description: This rule detects HTTP (unencrypted) URLs in fetch() and axios requests
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-319
 autofix: false
 ---
 
-
 > Enforces HTTPS for all external requests
+
+
+<!-- @rule-summary -->
+This rule detects HTTP (unencrypted) URLs in fetch() and axios requests
+<!-- @/rule-summary -->
 
 **Severity:** 🔴 CRITICAL  
 **CWE:** [CWE-319: Cleartext Transmission of Sensitive Information](https://cwe.mitre.org/data/definitions/319.html)  

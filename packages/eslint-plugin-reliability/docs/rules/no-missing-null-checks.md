@@ -1,15 +1,17 @@
 ---
 title: no-missing-null-checks
 description: "ESLint Rule: no-missing-null-checks with LLM-optimized suggestions and auto-fix capabilities."
-category: quality
-severity: low
 tags: ['quality', 'reliability']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
 > **Keywords:** no missing null checks, quality, ESLint rule, JavaScript, TypeScript, [CWE-476](https://cwe.mitre.org/data/definitions/476.html), SonarQube RSPEC-2259
+
+
+<!-- @rule-summary -->
+ESLint Rule: no-missing-null-checks with LLM-optimized suggestions and auto-fix capabilities.
+<!-- @/rule-summary -->
 
 ESLint Rule: no-missing-null-checks with LLM-optimized suggestions and auto-fix capabilities.
 
@@ -87,7 +89,7 @@ flowchart TD
 export default [
   {
     rules: {
-      'quality/no-missing-null-checks': 'error',
+      'reliability/no-missing-null-checks': 'error',
     },
   },
 ];

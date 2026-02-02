@@ -1,15 +1,21 @@
 ---
 title: require-backend-authorization
 description: "CWE: [CWE-602](https://cwe.mitre.org/data/definitions/602.html)"
+tags: ['security', 'core']
 category: security
 severity: high
-tags: ['security', 'core']
+cwe: CWE-602
 autofix: false
 ---
 
 > **Keywords:** require-backend-authorization, client-side, server-side, access control, security, ESLint rule, CWE-602, authorization bypass
 > **CWE:** [CWE-602: Client-Side Enforcement of Server-Side Security](https://cwe.mitre.org/data/definitions/602.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M3: Insecure Communication](https://owasp.org/www-project-mobile-top-10/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-602](https://cwe.mitre.org/data/definitions/602.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: require-backend-authorization. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 

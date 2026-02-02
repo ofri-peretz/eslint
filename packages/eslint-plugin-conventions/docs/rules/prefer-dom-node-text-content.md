@@ -1,17 +1,19 @@
 ---
 title: prefer-dom-node-text-content
-description: Prefer textContent over innerText. This rule is part of @eslint/eslint-plugin-quality.
-category: quality
-severity: low
+description: Prefer textContent over innerText. This rule is part of eslint-plugin-conventions.
 tags: ['quality', 'conventions', 'style']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
 > **Keywords:** textContent, innerText, DOM, performance, ESLint rule, auto-fix, LLM-optimized
 
-Prefer `textContent` over `innerText`. This rule is part of [`@eslint/eslint-plugin-quality`](https://www.npmjs.com/package/@eslint/eslint-plugin-quality).
+
+<!-- @rule-summary -->
+Prefer textContent over innerText. This rule is part of eslint-plugin-conventions.
+<!-- @/rule-summary -->
+
+Prefer `textContent` over `innerText`. This rule is part of [`eslint-plugin-conventions`](https://www.npmjs.com/package/eslint-plugin-conventions).
 
 ## Quick Summary
 
@@ -61,7 +63,7 @@ element.textContent = 'Hello';  // Faster
 ```javascript
 {
   rules: {
-    'quality/prefer-dom-node-text-content': 'warn'
+    'conventions/prefer-dom-node-text-content': 'warn'
   }
 }
 ```

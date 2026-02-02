@@ -1,14 +1,19 @@
 ---
 title: require-audit-logging
-description: require-audit-logging
+description: "This rule identifies AI SDK calls that aren't preceded by logging statements"
+tags: ['security', 'ai']
 category: security
 severity: medium
-tags: ['security', 'ai']
+cwe: CWE-778
 autofix: false
 ---
 
-
 > Suggests audit logging for AI SDK operations.
+
+
+<!-- @rule-summary -->
+This rule identifies AI SDK calls that aren't preceded by logging statements
+<!-- @/rule-summary -->
 
 ## 📊 Rule Details
 

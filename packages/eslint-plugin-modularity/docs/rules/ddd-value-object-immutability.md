@@ -1,16 +1,17 @@
 ---
 title: ddd-value-object-immutability
-description: ddd-value-object-immutability
-category: modularity
-severity: low
+description: "ESLint Rule: ddd-value-object-immutability with LLM-optimized suggestions and auto-fix capabilities."
 tags: ['architecture', 'modularity']
+category: modularity
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
-
 > **Keywords:** ddd value object immutability, ddd, ESLint rule, JavaScript, TypeScript
+
+
+<!-- @rule-summary -->
+ESLint Rule: ddd-value-object-immutability with LLM-optimized suggestions and auto-fix capabilities.
+<!-- @/rule-summary -->
 
 ESLint Rule: ddd-value-object-immutability with LLM-optimized suggestions and auto-fix capabilities.
 
@@ -135,5 +136,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

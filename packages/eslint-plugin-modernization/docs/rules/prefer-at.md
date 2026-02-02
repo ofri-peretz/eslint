@@ -1,18 +1,19 @@
 ---
 title: prefer-at
-description: prefer-at
-category: modernization
-severity: low
+description: Prefer using Array.at() for accessing elements, especially with negative indices
 tags: ['architecture', 'modernization']
+category: modernization
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
-
 
 > **Keywords:** Array.at(), negative index, last element, ESLint rule, ES2022, auto-fix, LLM-optimized
 
-Prefer using `Array.at()` for accessing elements, especially with negative indices. This rule is part of [`@eslint/eslint-plugin-architecture`](https://www.npmjs.com/package/@eslint/eslint-plugin-architecture).
+
+<!-- @rule-summary -->
+Prefer using Array.at() for accessing elements, especially with negative indices
+<!-- @/rule-summary -->
+
+Prefer using `Array.at()` for accessing elements, especially with negative indices. This rule is part of [`eslint-plugin-modernization`](https://www.npmjs.com/package/eslint-plugin-modernization).
 
 ## Quick Summary
 
@@ -114,6 +115,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

@@ -1,17 +1,21 @@
 ---
 title: default-props-match-prop-types
 description: default-props-match-prop-types rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# default-props-match-prop-types
+---
+
+
+<!-- @rule-summary -->
+default-props-match-prop-types rule
+<!-- @/rule-summary -->
+
+# default-props-match-prop-types
 
 > **Keywords:** React, defaultProps, propTypes, validation, type safety, ESLint rule, LLM-optimized
 
-Validate that default props match their corresponding prop types. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Validate that default props match their corresponding prop types. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -127,6 +131,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

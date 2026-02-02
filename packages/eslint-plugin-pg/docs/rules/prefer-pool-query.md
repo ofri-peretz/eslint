@@ -1,14 +1,19 @@
 ---
 title: prefer-pool-query
-description: prefer-pool-query
+description: Suggests using pool.query() for single-shot queries instead of manual connect/release.
+tags: ['security', 'postgres']
 category: security
 severity: medium
-tags: ['security', 'postgres']
+cwe: CWE-693
 autofix: false
 ---
 
-
 > **Keywords:** pool, simplicity, quality, pg, node-postgres
+
+<!-- @rule-summary -->
+Suggests using pool.query() for single-shot queries instead of manual connect/release.
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Suggests using `pool.query()` for single-shot queries instead of manual connect/release.

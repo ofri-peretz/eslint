@@ -1,17 +1,21 @@
 ---
 title: jsx-max-depth
 description: jsx-max-depth rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# jsx-max-depth
+---
+
+
+<!-- @rule-summary -->
+jsx-max-depth rule
+<!-- @/rule-summary -->
+
+# jsx-max-depth
 
 > **Keywords:** React, JSX nesting, component depth, complexity, refactoring, ESLint rule, LLM-optimized
 
-Limits the maximum depth of JSX nesting to encourage component extraction and improve readability. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features) and provides LLM-optimized error messages.
+Limits the maximum depth of JSX nesting to encourage component extraction and improve readability. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and provides LLM-optimized error messages.
 
 ## Quick Summary
 
@@ -236,6 +240,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

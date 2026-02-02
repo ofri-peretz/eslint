@@ -1,14 +1,20 @@
 ---
 title: require-schema-validation
-description: require-schema-validation
+description: Requires validation options on Mongoose schema fields to prevent invalid or malicious data.
+tags: ['security', 'mongodb']
 category: security
 severity: medium
-tags: ['security', 'mongodb']
+cwe: CWE-20
+owasp: "A04:2021"
 autofix: false
 ---
 
-
 > **Keywords:** CWE-20, input validation, Mongoose, schema, security
+
+
+<!-- @rule-summary -->
+Requires validation options on Mongoose schema fields to prevent invalid or malicious data.
+<!-- @/rule-summary -->
 
 Requires validation options on Mongoose schema fields to prevent invalid or malicious data.
 

@@ -1,14 +1,19 @@
 ---
 title: no-unsafe-output-handling
-description: no-unsafe-output-handling
+description: This rule identifies code patterns where AI-generated output is passed directly to dangerous functions that can execu...
+tags: ['security', 'ai']
 category: security
 severity: medium
-tags: ['security', 'ai']
+cwe: CWE-94
 autofix: false
 ---
 
-
 > Prevents using AI-generated content in dangerous operations like eval, SQL, or innerHTML.
+
+
+<!-- @rule-summary -->
+This rule identifies code patterns where AI-generated output is passed directly to dangerous functions that can execu...
+<!-- @/rule-summary -->
 
 ## 📊 Rule Details
 

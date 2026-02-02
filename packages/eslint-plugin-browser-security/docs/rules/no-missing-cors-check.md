@@ -1,14 +1,19 @@
 ---
 title: no-missing-cors-check
-description: no-missing-cors-check
+description: Detects missing CORS validation (wildcard CORS, missing origin check) that can allow unauthorized cross-origin requests
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-346
 autofix: false
 ---
 
-
 > **Keywords:** CORS, cross-origin resource sharing, CWE-346, security, ESLint rule, origin validation, wildcard CORS, Access-Control-Allow-Origin, auto-fix, LLM-optimized, code security
+
+<!-- @rule-summary -->
+Detects missing CORS validation (wildcard CORS, missing origin check) that can allow unauthorized cross-origin requests
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-942](https://cwe.mitre.org/data/definitions/942.html)  
 **OWASP Mobile:** [M8: Security Misconfiguration](https://owasp.org/www-project-mobile-top-10/)
 

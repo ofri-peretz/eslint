@@ -1,14 +1,19 @@
 ---
 title: require-csrf-protection
-description: require-csrf-protection
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+tags: ['security', 'express']
 category: security
 severity: high
-tags: ['security', 'express']
+cwe: CWE-352
 autofix: false
 ---
 
-
 > Require CSRF protection middleware for state-changing HTTP methods
+
+
+<!-- @rule-summary -->
+The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
+<!-- @/rule-summary -->
 
 **Severity:** 🔴 High  
 **CWE:** [CWE-352](https://cwe.mitre.org/data/definitions/352.html)

@@ -1,14 +1,20 @@
 ---
 title: no-bypass-middleware
-description: no-bypass-middleware
+description: Detects Mongoose operations that bypass middleware hooks (pre/post hooks).
+tags: ['security', 'mongodb']
 category: security
 severity: medium
-tags: ['security', 'mongodb']
+cwe: CWE-284
+owasp: "A01:2021"
 autofix: false
 ---
 
-
 > **Keywords:** CWE-284, middleware, hooks, Mongoose, pre, post, security
+
+
+<!-- @rule-summary -->
+Detects Mongoose operations that bypass middleware hooks (pre/post hooks).
+<!-- @/rule-summary -->
 
 Detects Mongoose operations that bypass middleware hooks (pre/post hooks).
 

@@ -1,14 +1,19 @@
 ---
 title: detect-non-literal-fs-filename
-description: detect-non-literal-fs-filename
+description: Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system
+tags: ['security', 'node']
 category: security
 severity: medium
-tags: ['security', 'node']
+cwe: CWE-22
 autofix: false
 ---
 
-
 > **Keywords:** path traversal, CWE-22, security, ESLint rule, file system, fs module, directory traversal, file access, auto-fix, LLM-optimized, code security
+
+<!-- @rule-summary -->
+Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

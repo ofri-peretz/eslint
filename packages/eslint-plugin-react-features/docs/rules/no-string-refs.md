@@ -1,17 +1,21 @@
 ---
 title: no-string-refs
 description: no-string-refs rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-string-refs
+---
+
+
+<!-- @rule-summary -->
+no-string-refs rule
+<!-- @/rule-summary -->
+
+# no-string-refs
 
 > **Keywords:** React, refs, createRef, useRef, string refs, ESLint rule, deprecated, LLM-optimized
 
-Prevent string refs in React components (deprecated pattern). This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Prevent string refs in React components (deprecated pattern). This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -141,6 +145,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

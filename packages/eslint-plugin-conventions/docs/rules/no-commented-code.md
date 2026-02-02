@@ -1,15 +1,17 @@
 ---
 title: no-commented-code
 description: "ESLint Rule: no-commented-code with LLM-optimized suggestions and auto-fix capabilities."
-category: quality
-severity: low
 tags: ['quality', 'conventions', 'style']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
 > **Keywords:** no commented code, quality, ESLint rule, JavaScript, TypeScript, SonarQube RSPEC-125
+
+
+<!-- @rule-summary -->
+ESLint Rule: no-commented-code with LLM-optimized suggestions and auto-fix capabilities.
+<!-- @/rule-summary -->
 
 ESLint Rule: no-commented-code with LLM-optimized suggestions and auto-fix capabilities.
 
@@ -87,7 +89,7 @@ flowchart TD
 export default [
   {
     rules: {
-      'quality/no-commented-code': 'error',
+      'conventions/no-commented-code': 'error',
     },
   },
 ];

@@ -1,14 +1,19 @@
 ---
 title: no-algorithm-confusion
-description: no-algorithm-confusion
+description: This rule detects algorithm confusion attacks where symmetric algorithms (HS256, HS384, HS512) are used with asymmetr...
+tags: ['security', 'jwt']
 category: security
 severity: medium
-tags: ['security', 'jwt']
+cwe: CWE-347
 autofix: false
 ---
 
-
 > Prevent algorithm confusion attacks using symmetric algorithms with asymmetric keys
+
+
+<!-- @rule-summary -->
+This rule detects algorithm confusion attacks where symmetric algorithms (HS256, HS384, HS512) are used with asymmetr...
+<!-- @/rule-summary -->
 
 **🚨 Security rule** | **💡 Provides LLM-optimized guidance** | **⚠️ Set to error in `recommended`**
 

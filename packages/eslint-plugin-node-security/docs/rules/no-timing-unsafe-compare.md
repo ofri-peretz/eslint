@@ -1,17 +1,22 @@
 ---
 title: no-timing-unsafe-compare
 description: Disallow timing-unsafe comparison of secrets
+tags: ['security', 'timing-attack', 'cwe-208', 'nodejs']
 category: security
 severity: high
-tags: ['security', 'timing-attack', 'cwe-208', 'nodejs']
-autofix: false
 cwe: CWE-208
-owasp: A02:2021-Cryptographic-Failures
+owasp: "A02:2021"
+autofix: false
 ---
 
 > **Keywords:** timing attack, constant-time, timingSafeEqual, secret comparison, CWE-208, security, ESLint rule
 > **CWE:** [CWE-208](https://cwe.mitre.org/data/definitions/208.html)  
 > **OWASP:** [A02:2021-Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+
+
+<!-- @rule-summary -->
+Disallow timing-unsafe comparison of secrets
+<!-- @/rule-summary -->
 
 Detects timing-unsafe comparison of secrets using `===` or `==` operators. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages with fix suggestions.
 

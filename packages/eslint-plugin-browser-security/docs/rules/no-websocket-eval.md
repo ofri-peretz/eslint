@@ -1,14 +1,20 @@
 ---
 title: no-websocket-eval
-description: no-websocket-eval
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+tags: ['security', 'browser']
 category: security
 severity: critical
-tags: ['security', 'browser']
+cwe: CWE-319
+owasp: "A03:2021"
 autofix: false
 ---
 
-
 > 🔒 Disallow using eval() or Function() with WebSocket message data
+
+<!-- @rule-summary -->
+The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-319](https://cwe.mitre.org/data/definitions/319.html)  
 **OWASP Mobile:** [M5: Insecure Communication](https://owasp.org/www-project-mobile-top-10/)
 

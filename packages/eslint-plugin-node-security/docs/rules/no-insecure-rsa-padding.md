@@ -1,19 +1,23 @@
 ---
 title: no-insecure-rsa-padding
 description: Disallow RSA PKCS#1 v1.5 padding (CVE-2023-46809 Marvin Attack)
+tags: ['security', 'cryptography', 'cwe-327', 'nodejs', 'rsa']
 category: security
 severity: high
-tags: ['security', 'cryptography', 'cwe-327', 'nodejs', 'rsa']
-autofix: false
 cwe: CWE-327
-cve: CVE-2023-46809
-owasp: A02:2021-Cryptographic-Failures
+owasp: "A02:2021"
+autofix: false
 ---
 
 > **Keywords:** RSA, PKCS#1, padding, Marvin Attack, CVE-2023-46809, OAEP, CWE-327, security, ESLint rule
 > **CWE:** [CWE-327](https://cwe.mitre.org/data/definitions/327.html)  
 > **CVE:** [CVE-2023-46809](https://nvd.nist.gov/vuln/detail/CVE-2023-46809)  
 > **OWASP:** [A02:2021-Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+
+
+<!-- @rule-summary -->
+Disallow RSA PKCS#1 v1.5 padding (CVE-2023-46809 Marvin Attack)
+<!-- @/rule-summary -->
 
 Detects usage of RSA PKCS#1 v1.5 padding which is vulnerable to the Marvin Attack. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages with fix suggestions.
 

@@ -97,39 +97,20 @@ export async function RemoteRuleDoc({ plugin, rule }: RemoteRuleDocProps) {
   }
   
   // Compile with MDX (same as RemoteReadme)
+  let compiledContent: Awaited<ReturnType<typeof compileRemoteMDX>> | null = null;
+  let compilationError: Error | null = null;
+  
   try {
-    const { Body, toc } = await compileRemoteMDX(contentToCompile, {
+    compiledContent = await compileRemoteMDX(contentToCompile, {
       pluginName: plugin,
     });
-    
-    const githubUrl = `https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-${plugin}/docs/rules/${rule}.md`;
-    
-    return (
-      <RemoteTocProvider toc={toc}>
-        <div className="remote-rule-doc">
-          {/* Live from GitHub callout */}
-          <div className="mb-6 rounded-lg border border-fd-info/30 bg-fd-info/10 p-4">
-            <p className="text-sm text-fd-info-foreground">
-              <strong>📡 Live from GitHub</strong> — This documentation is fetched directly from{' '}
-              <a 
-                href={githubUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline hover:text-fd-primary"
-              >
-                {rule}.md
-              </a>
-              {' '}and cached for 6 hours.
-            </p>
-          </div>
-          <Body />
-        </div>
-      </RemoteTocProvider>
-    );
   } catch (error) {
     console.error(`[RemoteRuleDoc] Compilation error for ${plugin}/${rule}:`, error);
-    
-    // Fallback - show raw markdown
+    compilationError = error instanceof Error ? error : new Error(String(error));
+  }
+  
+  // Fallback - show raw markdown on compilation error
+  if (compilationError || !compiledContent) {
     return (
       <div className="prose prose-neutral dark:prose-invert max-w-none">
         <pre className="whitespace-pre-wrap text-sm bg-fd-muted p-4 rounded-lg overflow-auto">
@@ -138,6 +119,32 @@ export async function RemoteRuleDoc({ plugin, rule }: RemoteRuleDocProps) {
       </div>
     );
   }
+  
+  const { Body, toc } = compiledContent;
+  const githubUrl = `https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-${plugin}/docs/rules/${rule}.md`;
+  
+  return (
+    <RemoteTocProvider toc={toc}>
+      <div className="remote-rule-doc">
+        {/* Live from GitHub callout */}
+        <div className="mb-6 rounded-lg border border-fd-info/30 bg-fd-info/10 p-4">
+          <p className="text-sm text-fd-info-foreground">
+            <strong>📡 Live from GitHub</strong> — This documentation is fetched directly from{' '}
+            <a 
+              href={githubUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-fd-primary"
+            >
+              {rule}.md
+            </a>
+            {' '}and cached for 6 hours.
+          </p>
+        </div>
+        <Body />
+      </div>
+    </RemoteTocProvider>
+  );
 }
 
 export default RemoteRuleDoc;

@@ -1,13 +1,17 @@
 ---
 title: aria-activedescendant-has-tabindex
 description: aria-activedescendant-has-tabindex rule
-category: quality
-severity: low
 tags: ['quality', 'react', 'accessibility', 'a11y']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# aria-activedescendant-has-tabindex
+---
+
+
+<!-- @rule-summary -->
+aria-activedescendant-has-tabindex rule
+<!-- @/rule-summary -->
+
+# aria-activedescendant-has-tabindex
 
 > **Keywords:** aria-activedescendant-has-tabindex, accessibility, ESLint rule, WCAG, a11y, React accessibility
 
@@ -107,5 +111,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

@@ -1,14 +1,19 @@
 ---
 title: require-algorithm-whitelist
-description: require-algorithm-whitelist
+description: This rule enforces explicit algorithm specification in verify() calls
+tags: ['security', 'jwt']
 category: security
 severity: medium
-tags: ['security', 'jwt']
+cwe: CWE-757
 autofix: false
 ---
 
-
 > Require explicit algorithm specification in JWT verify operations
+
+
+<!-- @rule-summary -->
+This rule enforces explicit algorithm specification in verify() calls
+<!-- @/rule-summary -->
 
 **Severity:** 🟠 High  
 **CWE:** [CWE-757](https://cwe.mitre.org/data/definitions/757.html)

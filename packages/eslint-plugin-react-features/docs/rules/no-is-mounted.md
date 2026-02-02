@@ -1,17 +1,21 @@
 ---
 title: no-is-mounted
 description: no-is-mounted rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-is-mounted
+---
+
+
+<!-- @rule-summary -->
+no-is-mounted rule
+<!-- @/rule-summary -->
+
+# no-is-mounted
 
 > **Keywords:** React, isMounted, deprecated, memory leaks, ESLint rule, anti-pattern, LLM-optimized
 
-Prevent using `isMounted()` in React class components. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Prevent using `isMounted()` in React class components. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -149,6 +153,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

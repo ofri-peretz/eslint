@@ -1,15 +1,17 @@
 ---
 title: no-silent-errors
 description: "ESLint Rule: no-silent-errors with LLM-optimized suggestions and auto-fix capabilities."
-category: quality
-severity: medium
 tags: ['quality', 'reliability', 'error-handling']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
 > **Keywords:** no silent errors, error-handling, ESLint rule, JavaScript, TypeScript, SonarQube RSPEC-1186
+
+
+<!-- @rule-summary -->
+ESLint Rule: no-silent-errors with LLM-optimized suggestions and auto-fix capabilities.
+<!-- @/rule-summary -->
 
 ESLint Rule: no-silent-errors with LLM-optimized suggestions and auto-fix capabilities.
 
@@ -87,7 +89,7 @@ flowchart TD
 export default [
   {
     rules: {
-      'quality/no-silent-errors': 'error',
+      'reliability/no-silent-errors': 'error',
     },
   },
 ];

@@ -1,17 +1,19 @@
 ---
 title: no-console-spaces
-description: Disallow leading/trailing whitespace in console arguments. This rule is part of @eslint/eslint-plugin-quality.
-category: quality
-severity: low
+description: Disallow leading/trailing whitespace in console arguments. This rule is part of eslint-plugin-conventions.
 tags: ['quality', 'conventions', 'style']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
 > **Keywords:** console, logging, spaces, formatting, ESLint rule, auto-fix, LLM-optimized
 
-Disallow leading/trailing whitespace in console arguments. This rule is part of [`@eslint/eslint-plugin-quality`](https://www.npmjs.com/package/@eslint/eslint-plugin-quality).
+
+<!-- @rule-summary -->
+Disallow leading/trailing whitespace in console arguments. This rule is part of eslint-plugin-conventions.
+<!-- @/rule-summary -->
+
+Disallow leading/trailing whitespace in console arguments. This rule is part of [`eslint-plugin-conventions`](https://www.npmjs.com/package/eslint-plugin-conventions).
 
 ## Quick Summary
 
@@ -65,7 +67,7 @@ console.log(`Value: ${value}`);
 ```javascript
 {
   rules: {
-    'quality/no-console-spaces': 'warn'
+    'conventions/no-console-spaces': 'warn'
   }
 }
 ```

@@ -38,10 +38,6 @@ export function baseOptions(): BaseLayoutProps {
         active: 'nested-url',
       },
       {
-        text: 'Showcase',
-        url: '/showcase',
-      },
-      {
         text: 'Articles',
         url: '/articles',
       },

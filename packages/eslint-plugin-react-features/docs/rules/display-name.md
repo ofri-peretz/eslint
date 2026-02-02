@@ -1,17 +1,21 @@
 ---
 title: display-name
 description: display-name rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# display-name
+---
+
+
+<!-- @rule-summary -->
+display-name rule
+<!-- @/rule-summary -->
+
+# display-name
 
 > **Keywords:** React, displayName, component, debugging, DevTools, ESLint rule, naming, LLM-optimized
 
-Enforce component display names for better debugging experience. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features) and provides LLM-optimized error messages.
+Enforce component display names for better debugging experience. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and provides LLM-optimized error messages.
 
 ## Quick Summary
 
@@ -276,6 +280,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

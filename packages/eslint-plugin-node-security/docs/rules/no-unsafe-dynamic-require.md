@@ -1,14 +1,19 @@
 ---
 title: no-unsafe-dynamic-require
-description: no-unsafe-dynamic-require
+description: Disallows dynamic require() calls with non-literal arguments that could lead to security vulnerabilities
+tags: ['security', 'node']
 category: security
 severity: medium
-tags: ['security', 'node']
+cwe: CWE-494
 autofix: false
 ---
 
-
 > **Keywords:** require, code injection, security, ESLint rule, dynamic require, path traversal, arbitrary code execution, module loading, auto-fix, LLM-optimized, code security
+
+<!-- @rule-summary -->
+Disallows dynamic require() calls with non-literal arguments that could lead to security vulnerabilities
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-494](https://cwe.mitre.org/data/definitions/494.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

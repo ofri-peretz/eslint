@@ -1,14 +1,20 @@
 ---
 title: no-exposed-private-fields
-description: no-exposed-private-fields
+description: This rule detects sensitive fields (like passwords, tokens, secrets) in entity or DTO classes that are not excluded f...
+tags: ['security', 'nestjs']
 category: security
 severity: medium
-tags: ['security', 'nestjs']
+cwe: CWE-200
+owasp: "A01:2021"
 autofix: false
 ---
 
-
 > Detect exposed sensitive fields in DTOs/entities
+
+
+<!-- @rule-summary -->
+This rule detects sensitive fields (like passwords, tokens, secrets) in entity or DTO classes that are not excluded f...
+<!-- @/rule-summary -->
 
 ## Rule Details
 

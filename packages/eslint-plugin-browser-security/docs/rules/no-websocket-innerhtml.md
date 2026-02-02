@@ -1,14 +1,20 @@
 ---
 title: no-websocket-innerhtml
-description: no-websocket-innerhtml
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-319
+owasp: "A03:2021"
 autofix: false
 ---
 
-
 > 🔒 Disallow using innerHTML with WebSocket message data
+
+<!-- @rule-summary -->
+The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-319](https://cwe.mitre.org/data/definitions/319.html)  
 **OWASP Mobile:** [M5: Insecure Communication](https://owasp.org/www-project-mobile-top-10/)
 

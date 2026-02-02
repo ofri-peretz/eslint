@@ -1,18 +1,19 @@
 ---
 title: cognitive-complexity
-description: cognitive-complexity
-category: quality
-severity: medium
+description: Enforces a maximum cognitive complexity threshold with refactoring guidance
 tags: ['quality', 'maintainability']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
-
 
 > **Keywords:** cognitive complexity, code complexity, SonarQube, ESLint rule, code maintainability, refactoring, code quality, auto-fix, LLM-optimized
 
-Enforces a maximum cognitive complexity threshold with refactoring guidance. This rule is part of [`@eslint/eslint-plugin-quality`](https://www.npmjs.com/package/@eslint/eslint-plugin-quality) and provides LLM-optimized error messages with fix suggestions.
+
+<!-- @rule-summary -->
+Enforces a maximum cognitive complexity threshold with refactoring guidance
+<!-- @/rule-summary -->
+
+Enforces a maximum cognitive complexity threshold with refactoring guidance. This rule is part of [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability) and provides LLM-optimized error messages with fix suggestions.
 
 **💡 Provides suggestions** | **⚠️ Set to warn in `recommended`**
 
@@ -222,7 +223,7 @@ function processValidItem(item: OrderItem) {
 ```javascript
 {
   rules: {
-    'quality/cognitive-complexity': ['warn', {
+    'maintainability/cognitive-complexity': ['warn', {
       maxComplexity: 15
     }]
   }
@@ -234,7 +235,7 @@ function processValidItem(item: OrderItem) {
 ```javascript
 {
   rules: {
-    'quality/cognitive-complexity': ['error', {
+    'maintainability/cognitive-complexity': ['error', {
       maxComplexity: 10,
       includeMetrics: true
     }]
@@ -247,7 +248,7 @@ function processValidItem(item: OrderItem) {
 ```javascript
 {
   rules: {
-    'quality/cognitive-complexity': ['warn', {
+    'maintainability/cognitive-complexity': ['warn', {
       maxComplexity: 25,
       includeMetrics: false  // Less verbose for gradual refactoring
     }]

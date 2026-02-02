@@ -1,17 +1,21 @@
 ---
 title: no-access-state-in-setstate
 description: no-access-state-in-setstate rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-access-state-in-setstate
+---
+
+
+<!-- @rule-summary -->
+no-access-state-in-setstate rule
+<!-- @/rule-summary -->
+
+# no-access-state-in-setstate
 
 > **Keywords:** React, setState, this.state, functional updates, race conditions, class components, ESLint rule, LLM-optimized
 
-Disallows accessing `this.state` inside `setState` calls to prevent race conditions. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features) and provides LLM-optimized error messages.
+Disallows accessing `this.state` inside `setState` calls to prevent race conditions. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and provides LLM-optimized error messages.
 
 ## Quick Summary
 
@@ -235,6 +239,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

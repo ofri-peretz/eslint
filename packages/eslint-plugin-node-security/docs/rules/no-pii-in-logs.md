@@ -1,15 +1,21 @@
 ---
 title: no-pii-in-logs
 description: "CWE: [CWE-532](https://cwe.mitre.org/data/definitions/532.html)"
+tags: ['security', 'node']
 category: security
 severity: medium
-tags: ['security', 'node']
+cwe: CWE-532
 autofix: false
 ---
 
 > **Keywords:** no-pii-in-logs, PII, logging, privacy, console, security, ESLint rule, CWE-532, CWE-359
 > **CWE:** [CWE-532: Insertion of Sensitive Information into Log File](https://cwe.mitre.org/data/definitions/532.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M6: Inadequate Communication Usage](https://owasp.org/www-project-mobile-top-10/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-532](https://cwe.mitre.org/data/definitions/532.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: no-pii-in-logs. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security).
 

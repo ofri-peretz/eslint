@@ -1,17 +1,21 @@
 ---
 title: jsx-no-literals
 description: jsx-no-literals rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# jsx-no-literals
+---
+
+
+<!-- @rule-summary -->
+jsx-no-literals rule
+<!-- @/rule-summary -->
+
+# jsx-no-literals
 
 > **Keywords:** React, JSX, string literals, i18n, internationalization, translation, ESLint rule, LLM-optimized
 
-Prevents string literals directly in JSX to encourage internationalization and consistent text management. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features) and provides LLM-optimized error messages.
+Prevents string literals directly in JSX to encourage internationalization and consistent text management. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and provides LLM-optimized error messages.
 
 ## Quick Summary
 
@@ -278,6 +282,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

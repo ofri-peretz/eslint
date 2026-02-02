@@ -1,15 +1,17 @@
 ---
 title: no-find-dom-node
 description: Prevent using findDOMNode. This rule is part of eslint-plugin-react-features and provides LLM-optimized error messages.
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
 > **Keywords:** React, findDOMNode, deprecated, refs, ESLint rule, code quality, LLM-optimized
+
+
+<!-- @rule-summary -->
+Prevent using findDOMNode. This rule is part of eslint-plugin-react-features and provides LLM-optimized error messages.
+<!-- @/rule-summary -->
 
 Prevent using findDOMNode. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and provides LLM-optimized error messages.
 

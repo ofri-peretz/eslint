@@ -1,15 +1,21 @@
 ---
 title: require-url-validation
 description: "CWE: [CWE-601](https://cwe.mitre.org/data/definitions/601.html)"
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-601
 autofix: false
 ---
 
 > **Keywords:** require url validation, open redirect, security, ESLint rule, [CWE-601](https://cwe.mitre.org/data/definitions/601.html), window.location, phishing
 > **CWE:** [CWE-601: URL Redirection to Untrusted Site ('Open Redirect')](https://cwe.mitre.org/data/definitions/601.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M4: Insufficient Input/Output Validation](https://owasp.org/www-project-mobile-top-10/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-601](https://cwe.mitre.org/data/definitions/601.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: require-url-validation. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 

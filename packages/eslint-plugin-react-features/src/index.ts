@@ -5,7 +5,7 @@
  */
 
 /**
- * @eslint/eslint-plugin-react-features
+ * eslint-plugin-react-features
  */
 
 import type { TSESLint } from '@interlace/eslint-devkit';
@@ -197,7 +197,7 @@ export const rules = {
 
 export const plugin = {
   meta: {
-    name: '@eslint/eslint-plugin-react-features',
+    name: 'eslint-plugin-react-features',
     version: '1.0.0',
   },
   rules,

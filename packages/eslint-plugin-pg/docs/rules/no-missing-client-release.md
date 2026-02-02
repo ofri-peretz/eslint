@@ -1,14 +1,19 @@
 ---
 title: no-missing-client-release
-description: no-missing-client-release
+description: Ensures acquired pool clients are released back to the pool.
+tags: ['security', 'postgres']
 category: security
 severity: medium
-tags: ['security', 'postgres']
+cwe: CWE-772
 autofix: false
 ---
 
-
 > **Keywords:** connection leak, resource management, CWE-772, pg, node-postgres, pool
+
+<!-- @rule-summary -->
+Ensures acquired pool clients are released back to the pool.
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Ensures acquired pool clients are released back to the pool.

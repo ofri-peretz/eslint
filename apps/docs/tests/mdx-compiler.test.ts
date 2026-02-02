@@ -19,18 +19,18 @@ describe('MDX Compiler Module', () => {
   // ===========================================================================
   describe('Module Exports', () => {
     it('should export compileRemoteMDX function', async () => {
-      const module = await import('../src/lib/mdx-compiler');
-      expect(typeof module.compileRemoteMDX).toBe('function');
+      const mdxModule = await import('../src/lib/mdx-compiler');
+      expect(typeof mdxModule.compileRemoteMDX).toBe('function');
     });
 
     it('should export compileRemoteMarkdown function', async () => {
-      const module = await import('../src/lib/mdx-compiler');
-      expect(typeof module.compileRemoteMarkdown).toBe('function');
+      const mdxModule = await import('../src/lib/mdx-compiler');
+      expect(typeof mdxModule.compileRemoteMarkdown).toBe('function');
     });
 
     it('should export getFallbackContent function', async () => {
-      const module = await import('../src/lib/mdx-compiler');
-      expect(typeof module.getFallbackContent).toBe('function');
+      const mdxModule = await import('../src/lib/mdx-compiler');
+      expect(typeof mdxModule.getFallbackContent).toBe('function');
     });
   });
 

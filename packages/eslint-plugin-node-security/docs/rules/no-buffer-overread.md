@@ -1,14 +1,19 @@
 ---
 title: no-buffer-overread
-description: no-buffer-overread
+description: Detects buffer access beyond bounds
+tags: ['security', 'node']
 category: security
 severity: medium
-tags: ['security', 'node']
+cwe: CWE-126
 autofix: false
 ---
 
-
 > **Keywords:** buffer overread, CWE-126, out-of-bounds, memory safety, security, Node.js
+
+<!-- @rule-summary -->
+Detects buffer access beyond bounds
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

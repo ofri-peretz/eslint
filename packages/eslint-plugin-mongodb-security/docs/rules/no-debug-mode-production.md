@@ -1,14 +1,20 @@
 ---
 title: no-debug-mode-production
-description: no-debug-mode-production
+description: Detects Mongoose debug mode that could expose sensitive query information in production.
+tags: ['security', 'mongodb']
 category: security
 severity: medium
-tags: ['security', 'mongodb']
+cwe: CWE-489
+owasp: "A05:2021"
 autofix: false
 ---
 
-
 > **Keywords:** CWE-489, debug, Mongoose, logging, production, security
+
+
+<!-- @rule-summary -->
+Detects Mongoose debug mode that could expose sensitive query information in production.
+<!-- @/rule-summary -->
 
 Detects Mongoose debug mode that could expose sensitive query information in production.
 

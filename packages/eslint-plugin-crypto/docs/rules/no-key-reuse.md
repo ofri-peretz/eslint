@@ -1,15 +1,22 @@
 ---
 title: no-key-reuse
 description: "CWE: [CWE-327](https://cwe.mitre.org/data/definitions/327.html)"
+tags: ['security', 'crypto']
 category: security
 severity: medium
-tags: ['security', 'crypto']
+cwe: CWE-327
+owasp: "A02:2021"
 autofix: false
 ---
 
 > **Keywords:** no-key-reuse, key management, cryptographic key, security, ESLint rule, CWE-327, nonce reuse, AES-GCM
 > **CWE:** [CWE-327: Use of a Broken or Risky Cryptographic Algorithm](https://cwe.mitre.org/data/definitions/327.html)  
 > **OWASP:** [OWASP Top 10 A02:2021 - Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-327](https://cwe.mitre.org/data/definitions/327.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: no-key-reuse. This rule is part of [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto).
 

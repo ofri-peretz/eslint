@@ -1,16 +1,20 @@
 ---
 title: require-timeout-handling
 description: Require timeout handling in Lambda handlers with external calls
+tags: ['serverless', 'lambda', 'cwe-400', 'timeout', 'aws']
 category: reliability
 severity: medium
-tags: ['serverless', 'lambda', 'cwe-400', 'timeout', 'aws']
-autofix: false
 cwe: CWE-400
-owasp: A06:2021-Vulnerable-and-Outdated-Components
+autofix: false
 ---
 
 > **Keywords:** Lambda, timeout, context, getRemainingTimeInMillis, AbortController, CWE-400, AWS, serverless
 > **CWE:** [CWE-400](https://cwe.mitre.org/data/definitions/400.html)
+
+
+<!-- @rule-summary -->
+Require timeout handling in Lambda handlers with external calls
+<!-- @/rule-summary -->
 
 Warns when Lambda handlers make external calls without checking remaining execution time. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) and provides LLM-optimized error messages.
 

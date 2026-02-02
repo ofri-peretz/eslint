@@ -1,13 +1,17 @@
 ---
 title: react-render-optimization
 description: react-render-optimization rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# react-render-optimization
+---
+
+
+<!-- @rule-summary -->
+react-render-optimization rule
+<!-- @/rule-summary -->
+
+# react-render-optimization
 
 > **Keywords:** react render optimization, performance, ESLint rule, JavaScript, TypeScript
 
@@ -134,5 +138,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-

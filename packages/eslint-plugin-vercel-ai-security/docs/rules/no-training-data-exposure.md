@@ -1,14 +1,19 @@
 ---
 title: no-training-data-exposure
-description: no-training-data-exposure
+description: This rule identifies code patterns where user data might be sent to LLM training endpoints or when training data coll...
+tags: ['security', 'ai']
 category: security
 severity: medium
-tags: ['security', 'ai']
+cwe: CWE-359
 autofix: false
 ---
 
-
 > Prevents user data from being sent to LLM training endpoints.
+
+
+<!-- @rule-summary -->
+This rule identifies code patterns where user data might be sent to LLM training endpoints or when training data coll...
+<!-- @/rule-summary -->
 
 ## 📊 Rule Details
 

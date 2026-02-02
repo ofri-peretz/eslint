@@ -1,17 +1,22 @@
 ---
 title: no-exposed-error-details
 description: Detect Lambda handlers exposing internal error details in responses
+tags: ['security', 'information-disclosure', 'cwe-209', 'lambda', 'aws']
 category: security
 severity: medium
-tags: ['security', 'information-disclosure', 'cwe-209', 'lambda', 'aws']
-autofix: false
 cwe: CWE-209
-owasp: A01:2021-Broken-Access-Control
+owasp: "A01:2021"
+autofix: false
 ---
 
 > **Keywords:** error details, stack trace, information disclosure, CWE-209, Lambda, serverless
 > **CWE:** [CWE-209](https://cwe.mitre.org/data/definitions/209.html)  
 > **OWASP:** [A01:2021-Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
+
+
+<!-- @rule-summary -->
+Detect Lambda handlers exposing internal error details in responses
+<!-- @/rule-summary -->
 
 Detects Lambda handlers that expose internal error details (stack traces, config, paths) in API responses. This rule is part of [`eslint-plugin-lambda-security`](https://www.npmjs.com/package/eslint-plugin-lambda-security) and provides LLM-optimized error messages.
 

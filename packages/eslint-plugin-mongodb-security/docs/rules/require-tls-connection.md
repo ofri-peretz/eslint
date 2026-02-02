@@ -1,14 +1,20 @@
 ---
 title: require-tls-connection
-description: require-tls-connection
+description: Requires TLS/SSL encryption for MongoDB connections in production environments.
+tags: ['security', 'mongodb']
 category: security
 severity: medium
-tags: ['security', 'mongodb']
+cwe: CWE-295
+owasp: "A02:2021"
 autofix: false
 ---
 
-
 > **Keywords:** CWE-295, TLS, SSL, encryption, MongoDB, MitM, security
+
+
+<!-- @rule-summary -->
+Requires TLS/SSL encryption for MongoDB connections in production environments.
+<!-- @/rule-summary -->
 
 Requires TLS/SSL encryption for MongoDB connections in production environments.
 

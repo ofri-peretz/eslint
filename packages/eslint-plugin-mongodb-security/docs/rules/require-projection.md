@@ -1,14 +1,20 @@
 ---
 title: require-projection
-description: require-projection
+description: Requires field projection on queries to minimize data exposure.
+tags: ['security', 'mongodb']
 category: security
 severity: medium
-tags: ['security', 'mongodb']
+cwe: CWE-200
+owasp: "A01:2021"
 autofix: false
 ---
 
-
 > **Keywords:** CWE-200, projection, field selection, MongoDB, information exposure
+
+
+<!-- @rule-summary -->
+Requires field projection on queries to minimize data exposure.
+<!-- @/rule-summary -->
 
 Requires field projection on queries to minimize data exposure.
 

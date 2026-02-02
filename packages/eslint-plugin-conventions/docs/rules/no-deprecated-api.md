@@ -1,17 +1,19 @@
 ---
 title: no-deprecated-api
-description: Prevent usage of deprecated APIs with migration context and timeline. This rule is part of @eslint/eslint-plugin-quality and provides LLM-optimized error messag
-category: quality
-severity: low
+description: Prevent usage of deprecated APIs with migration context and timeline. This rule is part of eslint-plugin-conventions and provides LLM-optimized error messag
 tags: ['quality', 'conventions', 'style']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
 
 > **Keywords:** deprecated API, [CWE-1078](https://cwe.mitre.org/data/definitions/1078.html), migration, ESLint rule, API deprecation, code modernization, auto-fix, LLM-optimized, code maintenance
 
-Prevent usage of deprecated APIs with migration context and timeline. This rule is part of [`@eslint/eslint-plugin-quality`](https://www.npmjs.com/package/@eslint/eslint-plugin-quality) and provides LLM-optimized error messages with fix suggestions.
+
+<!-- @rule-summary -->
+Prevent usage of deprecated APIs with migration context and timeline. This rule is part of eslint-plugin-conventions and provides LLM-optimized error messag
+<!-- @/rule-summary -->
+
+Prevent usage of deprecated APIs with migration context and timeline. This rule is part of [`eslint-plugin-conventions`](https://www.npmjs.com/package/eslint-plugin-conventions) and provides LLM-optimized error messages with fix suggestions.
 
 **💡 Provides suggestions** | **🔧 Automatically fixable**
 
@@ -94,7 +96,7 @@ newFunction({ data: 'test' });
 ```javascript
 {
   rules: {
-    'quality/no-deprecated-api': ['error', {
+    'conventions/no-deprecated-api': ['error', {
       warnDaysBeforeRemoval: 90,
       apis: [
         {
@@ -124,7 +126,7 @@ newFunction({ data: 'test' });
 ```javascript
 {
   rules: {
-    'quality/no-deprecated-api': ['warn', {
+    'conventions/no-deprecated-api': ['warn', {
       warnDaysBeforeRemoval: 30,
       apis: [
         {

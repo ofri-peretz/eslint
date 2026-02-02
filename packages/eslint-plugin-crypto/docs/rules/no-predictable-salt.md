@@ -1,15 +1,22 @@
 ---
 title: no-predictable-salt
 description: "CWE: [CWE-331](https://cwe.mitre.org/data/definitions/331.html)"
+tags: ['security', 'crypto']
 category: security
 severity: medium
-tags: ['security', 'crypto']
+cwe: CWE-331
+owasp: "A02:2021"
 autofix: false
 ---
 
 > **Keywords:** no-predictable-salt, rainbow table, PBKDF2, scrypt, password hashing, security, ESLint rule, CWE-331, hardcoded salt
 > **CWE:** [CWE-331: Insufficient Entropy](https://cwe.mitre.org/data/definitions/331.html)  
 > **OWASP:** [OWASP Top 10 A02:2021 - Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-331](https://cwe.mitre.org/data/definitions/331.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: no-predictable-salt. This rule is part of [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto).
 

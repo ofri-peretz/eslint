@@ -1,17 +1,21 @@
 ---
 title: no-this-in-sfc
 description: no-this-in-sfc rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-this-in-sfc
+---
+
+
+<!-- @rule-summary -->
+no-this-in-sfc rule
+<!-- @/rule-summary -->
+
+# no-this-in-sfc
 
 > **Keywords:** React, this, stateless, functional component, hooks, SFC, ESLint rule, LLM-optimized
 
-Disallow `this` from being used in stateless functional components. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Disallow `this` from being used in stateless functional components. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -174,6 +178,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

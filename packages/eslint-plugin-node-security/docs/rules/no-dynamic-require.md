@@ -1,16 +1,20 @@
 ---
 title: no-dynamic-require
-description: no-dynamic-require
+description: Forbid require() calls with non-literal arguments
+tags: ['security', 'node']
 category: security
 severity: medium
-tags: ['security', 'node']
 autofix: false
 ---
 
-
 > **Keywords:** dynamic require, CommonJS, static analysis, bundler, ESLint rule, webpack, LLM-optimized
 
-Forbid `require()` calls with non-literal arguments. This rule is part of [`@eslint/eslint-plugin-architecture`](https://www.npmjs.com/package/@eslint/eslint-plugin-architecture).
+
+<!-- @rule-summary -->
+Forbid require() calls with non-literal arguments
+<!-- @/rule-summary -->
+
+Forbid `require()` calls with non-literal arguments. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security).
 
 ## Quick Summary
 
@@ -125,6 +129,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Apply the same rule to imported modules. Use module boundaries and explicit exports.
-
-
-

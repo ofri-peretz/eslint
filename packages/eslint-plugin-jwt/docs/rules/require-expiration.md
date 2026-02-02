@@ -1,14 +1,19 @@
 ---
 title: require-expiration
-description: require-expiration
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+tags: ['security', 'jwt']
 category: security
 severity: medium
-tags: ['security', 'jwt']
+cwe: CWE-613
 autofix: false
 ---
 
-
 > Require expiration claim (exp) or expiresIn option in JWT signing
+
+
+<!-- @rule-summary -->
+The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
+<!-- @/rule-summary -->
 
 **Severity:** 🟡 Medium  
 **CWE:** [CWE-613](https://cwe.mitre.org/data/definitions/613.html)

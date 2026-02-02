@@ -1,18 +1,19 @@
 ---
 title: error-message
-description: error-message
-category: quality
-severity: medium
+description: Enforce providing a message when creating built-in Error objects for better debugging
 tags: ['quality', 'maintainability']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
 ---
-
 
 > **Keywords:** Error, message, debugging, exception, throw, ESLint rule, error handling, LLM-optimized
 
-Enforce providing a message when creating built-in Error objects for better debugging. This rule is part of [`@eslint/eslint-plugin-quality`](https://www.npmjs.com/package/@eslint/eslint-plugin-quality) and provides LLM-optimized error messages with suggestions.
+
+<!-- @rule-summary -->
+Enforce providing a message when creating built-in Error objects for better debugging
+<!-- @/rule-summary -->
+
+Enforce providing a message when creating built-in Error objects for better debugging. This rule is part of [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability) and provides LLM-optimized error messages with suggestions.
 
 ## Quick Summary
 
@@ -128,7 +129,7 @@ throw new Error(`Invalid configuration: ${JSON.stringify(config)}`);
 ```javascript
 {
   rules: {
-    'quality/error-message': 'error'
+    'maintainability/error-message': 'error'
   }
 }
 ```
@@ -138,7 +139,7 @@ throw new Error(`Invalid configuration: ${JSON.stringify(config)}`);
 ```javascript
 {
   rules: {
-    'quality/error-message': ['error', {
+    'maintainability/error-message': ['error', {
       allowEmptyCatch: true
     }]
   }

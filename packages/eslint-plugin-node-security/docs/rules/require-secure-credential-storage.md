@@ -1,14 +1,19 @@
 ---
 title: require-secure-credential-storage
-description: require-secure-credential-storage
+description: This rule detects when credentials are stored using localStorage.setItem() or fs.writeFile() without encryption
+tags: ['security', 'node']
 category: security
 severity: high
-tags: ['security', 'node']
+cwe: CWE-312
 autofix: false
 ---
 
-
 > Enforces secure storage patterns for credentials
+
+
+<!-- @rule-summary -->
+This rule detects when credentials are stored using localStorage.setItem() or fs.writeFile() without encryption
+<!-- @/rule-summary -->
 
 **Severity:** 🔴 CRITICAL  
 **CWE:** [CWE-312: Cleartext Storage of Sensitive Information](https://cwe.mitre.org/data/definitions/312.html)  

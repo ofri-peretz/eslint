@@ -1,17 +1,21 @@
 ---
 title: no-direct-mutation-state
 description: no-direct-mutation-state rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-direct-mutation-state
+---
+
+
+<!-- @rule-summary -->
+no-direct-mutation-state rule
+<!-- @/rule-summary -->
+
+# no-direct-mutation-state
 
 > **Keywords:** React, state, mutation, setState, ESLint rule, hooks, LLM-optimized
 
-Prevent direct mutation of `this.state` in React class components. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Prevent direct mutation of `this.state` in React class components. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -128,6 +132,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

@@ -1,14 +1,19 @@
 ---
 title: require-tool-schema
 description: Get weather
+tags: ['security', 'ai']
 category: security
 severity: medium
-tags: ['security', 'ai']
+cwe: CWE-20
 autofix: false
 ---
 
-
 > Ensures all AI tools have Zod schema validation for input parameters.
+
+
+<!-- @rule-summary -->
+Get weather
+<!-- @/rule-summary -->
 
 ## 📊 Rule Details
 

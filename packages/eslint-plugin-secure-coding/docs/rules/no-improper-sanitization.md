@@ -1,14 +1,19 @@
 ---
 title: no-improper-sanitization
-description: no-improper-sanitization
+description: Detects improper sanitization of user input
+tags: ['security', 'core']
 category: security
 severity: medium
-tags: ['security', 'core']
+cwe: CWE-116
 autofix: false
 ---
 
-
 > **Keywords:** improper sanitization, CWE-116, CWE-79, XSS, encoding, escaping, security
+
+<!-- @rule-summary -->
+Detects improper sanitization of user input
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-20](https://cwe.mitre.org/data/definitions/20.html)  
 **OWASP Mobile:** [M4: Insufficient Input/Output Validation](https://owasp.org/www-project-mobile-top-10/)
 

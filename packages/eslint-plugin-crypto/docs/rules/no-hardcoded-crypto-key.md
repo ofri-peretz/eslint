@@ -1,15 +1,22 @@
 ---
 title: no-hardcoded-crypto-key
 description: "CWE: [CWE-321](https://cwe.mitre.org/data/definitions/321.html)"
+tags: ['security', 'crypto']
 category: security
 severity: critical
-tags: ['security', 'crypto']
+cwe: CWE-321
+owasp: "A02:2021"
 autofix: false
 ---
 
 > **Keywords:** no-hardcoded-crypto-key, secrets management, KMS, environment variables, security, ESLint rule, CWE-321, key disclosure
 > **CWE:** [CWE-321: Use of Hard-coded Cryptographic Key](https://cwe.mitre.org/data/definitions/321.html)  
 > **OWASP:** [OWASP Top 10 A02:2021 - Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-321](https://cwe.mitre.org/data/definitions/321.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: no-hardcoded-crypto-key. This rule is part of [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto).
 

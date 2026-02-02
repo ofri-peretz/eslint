@@ -1,14 +1,19 @@
 ---
 title: no-insecure-ssl
-description: no-insecure-ssl
+description: Prevents disabling SSL certificate validation in PostgreSQL connections.
+tags: ['security', 'postgres']
 category: security
 severity: medium
-tags: ['security', 'postgres']
+cwe: CWE-295
 autofix: false
 ---
 
-
 > **Keywords:** SSL, TLS, CWE-295, pg, node-postgres, security, certificate validation
+
+<!-- @rule-summary -->
+Prevents disabling SSL certificate validation in PostgreSQL connections.
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
 Prevents disabling SSL certificate validation in PostgreSQL connections.

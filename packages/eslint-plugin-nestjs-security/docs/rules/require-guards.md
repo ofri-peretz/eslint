@@ -1,14 +1,20 @@
 ---
 title: require-guards
-description: require-guards
+description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+tags: ['security', 'nestjs']
 category: security
 severity: medium
-tags: ['security', 'nestjs']
+cwe: CWE-284
+owasp: "A01:2021"
 autofix: false
 ---
 
-
 > Require @UseGuards decorator on controllers or route handlers
+
+
+<!-- @rule-summary -->
+The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:
+<!-- @/rule-summary -->
 
 ## Error Message Format
 

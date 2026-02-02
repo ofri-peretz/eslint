@@ -1,14 +1,19 @@
 ---
 title: no-ldap-injection
-description: no-ldap-injection
+description: Detects LDAP injection vulnerabilities
+tags: ['security', 'core']
 category: security
 severity: critical
-tags: ['security', 'core']
+cwe: CWE-90
 autofix: false
 ---
 
-
 > **Keywords:** LDAP injection, CWE-90, directory service, authentication bypass, security, Active Directory
+
+<!-- @rule-summary -->
+Detects LDAP injection vulnerabilities
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

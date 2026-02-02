@@ -1,14 +1,20 @@
 ---
 title: require-websocket-wss
-description: require-websocket-wss
+description: "This rule enforces the use of wss:// (WebSocket Secure) protocol instead of ws:// (unencrypted WebSocket)"
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-319
+owasp: "A02:2021"
 autofix: false
 ---
 
-
 > 🔒 Require secure WebSocket connections (wss://) instead of unencrypted (ws://)
+
+<!-- @rule-summary -->
+This rule enforces the use of wss:// (WebSocket Secure) protocol instead of ws:// (unencrypted WebSocket)
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-319](https://cwe.mitre.org/data/definitions/319.html)  
 **OWASP Mobile:** [M5: Insecure Communication](https://owasp.org/www-project-mobile-top-10/)
 

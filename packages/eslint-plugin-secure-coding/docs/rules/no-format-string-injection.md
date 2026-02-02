@@ -1,14 +1,19 @@
 ---
 title: no-format-string-injection
-description: no-format-string-injection
+description: Detects format string injection vulnerabilities
+tags: ['security', 'core']
 category: security
 severity: critical
-tags: ['security', 'core']
+cwe: CWE-134
 autofix: false
 ---
 
-
 > **Keywords:** format string injection, CWE-134, printf, util.format, logging, security
+
+<!-- @rule-summary -->
+Detects format string injection vulnerabilities
+<!-- @/rule-summary -->
+
 **CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 

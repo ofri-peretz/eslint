@@ -1,14 +1,20 @@
 ---
 title: no-unsafe-eval-csp
-description: no-unsafe-eval-csp
+description: "Disallow 'unsafe-eval' in Content Security Policy directives."
+tags: ['security', 'browser']
 category: security
 severity: critical
-tags: ['security', 'browser']
+cwe: CWE-95
+owasp: "A03:2021"
 autofix: false
 ---
 
-
 > No Unsafe Eval Csp
+
+
+<!-- @rule-summary -->
+Disallow 'unsafe-eval' in Content Security Policy directives.
+<!-- @/rule-summary -->
 
 Disallow 'unsafe-eval' in Content Security Policy directives.
 

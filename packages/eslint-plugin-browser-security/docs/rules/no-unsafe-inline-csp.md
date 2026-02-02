@@ -1,14 +1,20 @@
 ---
 title: no-unsafe-inline-csp
-description: no-unsafe-inline-csp
+description: "Disallow 'unsafe-inline' in Content Security Policy directives."
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-79
+owasp: "A03:2021"
 autofix: false
 ---
 
-
 > No Unsafe Inline Csp
+
+
+<!-- @rule-summary -->
+Disallow 'unsafe-inline' in Content Security Policy directives.
+<!-- @/rule-summary -->
 
 Disallow 'unsafe-inline' in Content Security Policy directives.
 

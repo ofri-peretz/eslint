@@ -1,17 +1,21 @@
 ---
 title: require-default-props
 description: require-default-props rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# require-default-props
+---
+
+
+<!-- @rule-summary -->
+require-default-props rule
+<!-- @/rule-summary -->
+
+# require-default-props
 
 > **Keywords:** React, defaultProps, optional props, type safety, component API, ESLint rule, LLM-optimized
 
-Require default props for optional props. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Require default props for optional props. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -185,6 +189,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Apply the same rule to imported modules. Use module boundaries and explicit exports.
-
-
-

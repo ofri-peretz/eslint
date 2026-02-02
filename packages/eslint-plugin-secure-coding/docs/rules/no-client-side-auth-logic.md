@@ -1,14 +1,20 @@
 ---
 title: no-client-side-auth-logic
-description: no-client-side-auth-logic
+description: Detects authentication logic in client-side code that can be easily bypassed.
+tags: ['security', 'core']
 category: security
 severity: high
-tags: ['security', 'core']
+cwe: CWE-602
+owasp: "A01:2021"
 autofix: false
 ---
 
-
 > **Keywords:** client-side auth, CWE-602, localStorage auth, security bypass, authentication, JavaScript security
+
+
+<!-- @rule-summary -->
+Detects authentication logic in client-side code that can be easily bypassed.
+<!-- @/rule-summary -->
 
 Detects authentication logic in client-side code that can be easily bypassed.
 

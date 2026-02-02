@@ -1,17 +1,21 @@
 ---
 title: no-object-type-as-default-prop
 description: no-object-type-as-default-prop rule
-category: quality
-severity: low
 tags: ['quality', 'react']
+category: quality
 autofix: suggestions
-affects: ['readability', 'maintainability']
-effort: low
----# no-object-type-as-default-prop
+---
+
+
+<!-- @rule-summary -->
+no-object-type-as-default-prop rule
+<!-- @/rule-summary -->
+
+# no-object-type-as-default-prop
 
 > **Keywords:** React, defaultProps, object, reference equality, re-renders, performance, ESLint rule, LLM-optimized
 
-Prevent object types as default prop values. This rule is part of [`@eslint/eslint-plugin-react-features`](https://www.npmjs.com/package/@eslint/eslint-plugin-react-features).
+Prevent object types as default prop values. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features).
 
 ## Quick Summary
 
@@ -149,6 +153,3 @@ processValue(getValue()); // Cross-file not tracked
 ```
 
 **Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.
-
-
-

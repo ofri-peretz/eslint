@@ -1,14 +1,20 @@
 ---
 title: no-sensitive-sessionstorage
-description: no-sensitive-sessionstorage
+description: Prevent storing sensitive data in sessionStorage.
+tags: ['security', 'browser']
 category: security
 severity: medium
-tags: ['security', 'browser']
+cwe: CWE-922
+owasp: "A02:2021"
 autofix: false
 ---
 
-
 > No Sensitive Sessionstorage
+
+
+<!-- @rule-summary -->
+Prevent storing sensitive data in sessionStorage.
+<!-- @/rule-summary -->
 
 Prevent storing sensitive data in sessionStorage.
 

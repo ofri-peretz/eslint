@@ -1,15 +1,22 @@
 ---
 title: require-sufficient-length
 description: "CWE: [CWE-331](https://cwe.mitre.org/data/definitions/331.html)"
+tags: ['security', 'crypto']
 category: security
 severity: medium
-tags: ['security', 'crypto']
+cwe: CWE-331
+owasp: "A02:2021"
 autofix: false
 ---
 
 > **Keywords:** require-sufficient-length, entropy, token length, random string, security, ESLint rule, CWE-331, brute force
 > **CWE:** [CWE-331: Insufficient Entropy](https://cwe.mitre.org/data/definitions/331.html)  
 > **OWASP:** [OWASP Top 10 A02:2021 - Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+
+
+<!-- @rule-summary -->
+CWE: [CWE-331](https://cwe.mitre.org/data/definitions/331.html)
+<!-- @/rule-summary -->
 
 ESLint Rule: require-sufficient-length. This rule is part of [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto).
 
