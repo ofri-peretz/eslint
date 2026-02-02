@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -83,7 +83,7 @@ jobs:
 
       - name: ⚙️ Setup Node.js
         if: steps.docs_only.outputs.docs_only != 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: "npm"
@@ -98,7 +98,7 @@ jobs:
 
       - name: 🗄️ Restore NX cache
         if: steps.docs_only.outputs.docs_only != 'true'
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .nx/cache
           key: nx-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
