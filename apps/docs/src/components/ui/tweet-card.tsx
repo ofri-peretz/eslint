@@ -237,18 +237,27 @@ export const MagicTweet = ({
   className?: string
 }) => {
   const enrichedTweet = enrichTweet(tweet)
+  const tweetUrl = `https://x.com/${tweet.user.screen_name}/status/${tweet.id_str}`
+  
   return (
-    <div
-      className={cn(
-        "relative flex h-full w-full max-w-lg flex-col gap-4 overflow-hidden rounded-xl border bg-white p-5",
-        className
-      )}
-      {...props}
+    <a
+      href={tweetUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block group"
     >
-      <TweetHeader tweet={enrichedTweet} />
-      <TweetBody tweet={enrichedTweet} />
-      <TweetMedia tweet={enrichedTweet} />
-    </div>
+      <div
+        className={cn(
+          "relative flex h-full w-full max-w-lg flex-col gap-4 overflow-hidden rounded-xl border bg-white p-5 transition-all duration-200 group-hover:border-fd-primary/50 group-hover:shadow-lg",
+          className
+        )}
+        {...props}
+      >
+        <TweetHeader tweet={enrichedTweet} />
+        <TweetBody tweet={enrichedTweet} />
+        <TweetMedia tweet={enrichedTweet} />
+      </div>
+    </a>
   )
 }
 
