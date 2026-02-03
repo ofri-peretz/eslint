@@ -55,8 +55,21 @@ export async function generateMetadata(props: PageProps<'/docs/[[...slug]]'>) {
   const page = source.getPage(params.slug);
   if (!page) notFound();
 
+  const path = params.slug ? params.slug.join('/') : '';
+  const url = `https://eslint.interlace.tools/docs/${path}`;
+
   return {
     title: page.data.title,
     description: page.data.description ?? 'ESLint Interlace documentation',
+    bookmarks: [url],
+    alternates: {
+      canonical: url,
+    },
+    openGraph: {
+      title: page.data.title,
+      description: page.data.description ?? 'ESLint Interlace documentation',
+      // We rely on the root layout for the default image, 
+      // but individual pages could override if they had specific images.
+    },
   };
 }
