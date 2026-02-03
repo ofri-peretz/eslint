@@ -26,8 +26,8 @@ export const metadata: Metadata = {
     'linting',
     'OWASP',
   ],
-  authors: [{ name: 'Interlace' }],
-  creator: 'Interlace',
+  authors: [{ name: 'Ofri Peretz', url: 'https://ofriperetz.dev' }],
+  creator: 'Ofri Peretz',
   metadataBase: new URL('https://eslint.interlace.tools'),
   openGraph: {
     type: 'website',
