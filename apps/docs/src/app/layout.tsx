@@ -33,7 +33,15 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     siteName: 'ESLint Interlace',
-    images: ["/og-image.jpg"],
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Interlace ESLint - Enterprise Node.js Security',
+        type: 'image/jpeg',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
