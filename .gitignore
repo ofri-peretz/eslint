@@ -116,3 +116,7 @@ test-report.junit.xml
 
 **/tmp/**
 .env*.local
+
+# Local Content Staging
+distribution/
+**/articles/

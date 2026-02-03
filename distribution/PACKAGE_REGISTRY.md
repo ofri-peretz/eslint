@@ -1,9 +1,9 @@
 # 📦 Interlace ESLint Ecosystem: Package Registry
 
 > **Purpose**: Single source of truth for all published packages, their versions, rule counts, and complete rule listings.  
-> **Last Updated**: 2025-12-31  
-> **Total Published Packages**: 10  
-> **Total Rules**: 247
+> **Last Updated**: 2026-02-02  
+> **Total Published Packages**: 18  
+> **Total Rules**: 332
 
 ---
 
@@ -11,24 +11,32 @@
 
 | Package                              | Version | Rules | Specialization                                               | npm                                                              |
 | ------------------------------------ | ------- | ----- | ------------------------------------------------------------ | ---------------------------------------------------------------- |
-| **eslint-plugin-secure-coding**      | `3.0.0` | 75    | Core security (OWASP Top 10 2021 + Mobile Top 10 2024)       | [📦](https://npmjs.com/package/eslint-plugin-secure-coding)      |
-| **eslint-plugin-pg**                 | `1.1.3` | 13    | PostgreSQL/node-postgres security & best practices           | [📦](https://npmjs.com/package/eslint-plugin-pg)                 |
-| **eslint-plugin-crypto**             | `2.0.3` | 24    | Cryptographic security (weak algorithms, key handling, CVEs) | [📦](https://npmjs.com/package/eslint-plugin-crypto)             |
-| **eslint-plugin-jwt**                | `2.0.3` | 13    | JWT security (algorithm confusion, CVE-2022-23540)           | [📦](https://npmjs.com/package/eslint-plugin-jwt)                |
-| **eslint-plugin-browser-security**   | `1.0.3` | 21    | Browser/DOM security (XSS, postMessage, storage, CSP)        | [📦](https://npmjs.com/package/eslint-plugin-browser-security)   |
-| **eslint-plugin-vercel-ai-security** | `1.1.3` | 19    | Vercel AI SDK security (OWASP LLM Top 10)                    | [📦](https://npmjs.com/package/eslint-plugin-vercel-ai-security) |
-| **eslint-plugin-express-security**   | `1.0.3` | 9     | Express.js security (cookies, CORS, CSRF, GraphQL)           | [📦](https://npmjs.com/package/eslint-plugin-express-security)   |
-| **eslint-plugin-lambda-security**    | `1.0.3` | 13    | AWS Lambda/Middy security (OWASP Serverless)                 | [📦](https://npmjs.com/package/eslint-plugin-lambda-security)    |
-| **eslint-plugin-nestjs-security**    | `1.0.4` | 5     | NestJS security (guards, validation, throttling)             | [📦](https://npmjs.com/package/eslint-plugin-nestjs-security)    |
-| **eslint-plugin-import-next**        | `2.1.0` | 55    | Import management (100x faster no-cycle, AI-optimized)       | [📦](https://npmjs.com/package/eslint-plugin-import-next)        |
+| **eslint-plugin-browser-security**   | `1.2.0` | 52    | Browser/DOM security (XSS, CSP, postMessage)                 | [📦](https://npmjs.com/package/eslint-plugin-browser-security)   |
+| **eslint-plugin-node-security**      | `4.0.1` | 31    | Node.js security (Crypto, Process, File System)              | [📦](https://npmjs.com/package/eslint-plugin-node-security)      |
+| **eslint-plugin-secure-coding**      | `3.1.0` | 26    | Core security (OWASP Top 10 + Mobile Top 10)                 | [📦](https://npmjs.com/package/eslint-plugin-secure-coding)      |
+| **eslint-plugin-vercel-ai-security** | `1.3.0` | 22    | Vercel AI SDK security (OWASP LLM Top 10)                    | [📦](https://npmjs.com/package/eslint-plugin-vercel-ai-security) |
+| **eslint-plugin-mongodb-security**   | `8.2.0` | 19    | MongoDB & Mongoose security                                  | [📦](https://npmjs.com/package/eslint-plugin-mongodb-security)   |
+| **eslint-plugin-pg**                 | `1.4.0` | 15    | PostgreSQL/node-postgres security                            | [📦](https://npmjs.com/package/eslint-plugin-pg)                 |
+| **eslint-plugin-jwt**                | `2.2.0` | 13    | JWT security (Algorithm confusion, secrets)                  | [📦](https://npmjs.com/package/eslint-plugin-jwt)                |
+| **eslint-plugin-crypto**             | `2.2.0` | 10    | Cryptographic best practices                                 | [📦](https://npmjs.com/package/eslint-plugin-crypto)             |
+| **eslint-plugin-lambda-security**    | `1.2.0` | 16    | AWS Lambda & Middy security                                  | [📦](https://npmjs.com/package/eslint-plugin-lambda-security)    |
+| **eslint-plugin-express-security**   | `1.2.0` | 14    | Express.js security (Cookies, CORS, ReDoS)                   | [📦](https://npmjs.com/package/eslint-plugin-express-security)   |
+| **eslint-plugin-nestjs-security**    | `1.2.0` | 10    | NestJS security (Guards, Validation)                         | [📦](https://npmjs.com/package/eslint-plugin-nestjs-security)    |
+| **eslint-plugin-import-next**        | `2.3.0` | 61    | 100x faster eslint-plugin-import replacement                 | [📦](https://npmjs.com/package/eslint-plugin-import-next)        |
+| **eslint-plugin-conventions**       | `4.0.1` | 9     | Team disciplinary patterns and conventions                   | [📦](https://npmjs.com/package/eslint-plugin-conventions)        |
+| **eslint-plugin-maintainability**   | `3.0.0` | 8     | Reducing cognitive load and reading ease                     | [📦](https://npmjs.com/package/eslint-plugin-maintainability)    |
+| **eslint-plugin-reliability**       | `3.0.1` | 8     | Runtime stability and fault tolerance                        | [📦](https://npmjs.com/package/eslint-plugin-reliability)        |
+| **eslint-plugin-modularity**        | `2.0.1` | 7     | Architecture, DDD, and module isolation                      | [📦](https://npmjs.com/package/eslint-plugin-modularity)         |
+| **eslint-plugin-operability**       | `3.0.2` | 6     | Production behavior and log quality                          | [📦](https://npmjs.com/package/eslint-plugin-operability)        |
+| **eslint-plugin-modernization**     | `2.0.1` | 5     | Modernizing JS to ES2022+ syntax                             | [📦](https://npmjs.com/package/eslint-plugin-modernization)      |
 
 ---
 
 ## 📋 Complete Rule Listings by Package
 
-### eslint-plugin-secure-coding (75 rules)
+### eslint-plugin-secure-coding (26 rules)
 
-> **Version**: 3.0.0 | **OWASP Coverage**: Top 10 2021 + Mobile Top 10 2024
+> **Version**: 3.1.0 | **OWASP Coverage**: Top 10 2021 + Mobile Top 10 2024
 
 #### Injection Prevention
 
