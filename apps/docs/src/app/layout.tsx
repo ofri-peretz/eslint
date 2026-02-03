@@ -43,6 +43,24 @@ export const metadata: Metadata = {
     icon: '/eslint-interlace-logo.svg',
     apple: '/eslint-interlace-logo.svg',
   },
+  applicationName: 'Interlace ESLint',
+  category: 'technology',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'Interlace',
+    statusBarStyle: 'black-translucent',
+  },
 };
 
 export default function Layout({ children }: LayoutProps<'/'>) {
