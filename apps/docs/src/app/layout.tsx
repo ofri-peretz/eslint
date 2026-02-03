@@ -33,11 +33,11 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     siteName: 'ESLint Interlace',
-    images: ["/og-image.png"],
+    images: ["/og-image.jpg"],
   },
   twitter: {
     card: 'summary_large_image',
-    images: ["/og-image.png"],
+    images: ["/og-image.jpg"],
   },
   icons: {
     icon: '/eslint-interlace-logo.svg',
