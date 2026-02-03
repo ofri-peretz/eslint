@@ -33,9 +33,10 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     siteName: 'ESLint Interlace',
+    url: 'https://eslint.interlace.tools',
     images: [
       {
-        url: '/og-image.jpg',
+        url: '/og-image.jpg?v=1.1', // Cache buster to force social platforms to re-fetch
         width: 1200,
         height: 630,
         alt: 'Interlace ESLint - Enterprise Node.js Security',
@@ -45,7 +46,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    images: ["/og-image.jpg"],
+    images: ["/og-image.jpg?v=1.1"],
   },
   icons: {
     icon: [
