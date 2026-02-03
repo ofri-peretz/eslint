@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: 'Interlace' }],
   creator: 'Interlace',
-  metadataBase: new URL('https://eslint.interlace.dev'),
+  metadataBase: new URL('https://eslint.interlace.tools'),
   openGraph: {
     type: 'website',
     locale: 'en_US',
