@@ -40,7 +40,10 @@ export const metadata: Metadata = {
     images: ["/og-image.jpg"],
   },
   icons: {
-    icon: '/eslint-interlace-logo.svg',
+    icon: [
+      { url: '/icon-light.svg', media: '(prefers-color-scheme: light)' },
+      { url: '/icon-dark.svg', media: '(prefers-color-scheme: dark)' },
+    ],
     apple: '/eslint-interlace-logo.svg',
   },
   applicationName: 'Interlace ESLint',
