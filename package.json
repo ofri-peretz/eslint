@@ -156,7 +156,6 @@
   },
   "nx": {},
   "overrides": {
-    "glob": "^11.1.0 || ^13.0.0",
     "html-encoding-sniffer": "^6.0.0"
   },
   "dependencies": {
