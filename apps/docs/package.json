@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "node scripts/sync-plugin-stats.mjs && node scripts/sync-tweet-cache.mjs && next build",
-    "dev": "node scripts/sync-plugin-stats.mjs && next dev",
+    "dev": "node scripts/sync-plugin-stats.mjs && next dev --port 3000",
     "sync-stats": "node scripts/sync-plugin-stats.mjs",
     "sync-tweets": "node scripts/sync-tweet-cache.mjs",
     "sync-devto": "node scripts/sync-devto-cache.mjs",

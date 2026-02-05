@@ -7,8 +7,8 @@ on:
     paths:
       - "packages/**"
   schedule:
-    # Run weekly on Sundays at midnight UTC
-    - cron: "0 0 * * 0"
+    # Run every 4 hours
+    - cron: "0 */4 * * *"
   workflow_dispatch:
     inputs:
       force_rebuild:
@@ -42,6 +42,11 @@ jobs:
       - name: Sync README rules tables
         run: node apps/docs/scripts/sync-readme-rules.mjs
 
+      - name: Sync articles data
+        env:
+          DEV_TO_API_KEY: ${{ secrets.DEV_TO_API_KEY }}
+        run: node apps/docs/scripts/update-articles-data.mjs
+
       - name: Check for changes
         id: changes
         run: |
@@ -53,7 +58,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add apps/docs/src/data/
-          git commit -m "chore(docs): sync plugin stats and rules [automated]"
+          git commit -m "chore(docs): sync plugin stats, rules, and articles [automated]"
           git push
 
       - name: Trigger Vercel rebuild

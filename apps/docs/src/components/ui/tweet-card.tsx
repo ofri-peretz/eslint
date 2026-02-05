@@ -102,7 +102,7 @@ export const TweetHeader = ({ tweet }: { tweet: EnrichedTweet }) => (
         href={tweet.user.url}
         target="_blank"
         rel="noreferrer"
-        className="shrink-0"
+        className="relative z-10 shrink-0"
       >
         <img
           title={`Profile picture of ${tweet.user.name}`}
@@ -118,7 +118,7 @@ export const TweetHeader = ({ tweet }: { tweet: EnrichedTweet }) => (
           href={tweet.user.url}
           target="_blank"
           rel="noreferrer"
-          className="text-foreground flex items-center font-medium whitespace-nowrap transition-opacity hover:opacity-80"
+          className="text-foreground relative z-10 flex items-center font-medium whitespace-nowrap transition-opacity hover:opacity-80"
         >
           {truncate(tweet.user.name, 20)}
           {tweet.user.verified ||
@@ -131,14 +131,14 @@ export const TweetHeader = ({ tweet }: { tweet: EnrichedTweet }) => (
             href={tweet.user.url}
             target="_blank"
             rel="noreferrer"
-            className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+            className="text-muted-foreground hover:text-foreground relative z-10 text-sm transition-colors"
           >
             @{truncate(tweet.user.screen_name, 16)}
           </a>
         </div>
       </div>
     </div>
-    <a href={tweet.url} target="_blank" rel="noreferrer">
+    <a href={tweet.url} target="_blank" rel="noreferrer" className="relative z-10">
       <span className="sr-only">Link to tweet</span>
       <Twitter className="text-muted-foreground hover:text-foreground size-5 items-start transition-all ease-in-out hover:scale-105" />
     </a>
@@ -159,7 +159,7 @@ export const TweetBody = ({ tweet }: { tweet: EnrichedTweet }) => (
               href={entity.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-foreground text-[15px] font-normal transition-colors"
+              className="text-muted-foreground hover:text-foreground relative z-10 text-[15px] font-normal transition-colors"
             >
               <span>{entity.text}</span>
             </a>
@@ -245,12 +245,7 @@ export const MagicTweet = ({
   const tweetUrl = `https://x.com/${tweet.user.screen_name}/status/${tweet.id_str}`
   
   return (
-    <a
-      href={tweetUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="block group"
-    >
+    <div className="block group cursor-pointer">
       <div
         className={cn(
           // Magic UI-inspired styling: larger radii, deeper shadows, more padding
@@ -264,11 +259,20 @@ export const MagicTweet = ({
         )}
         {...props}
       >
+        <a
+          href={tweetUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute inset-0 z-0"
+          aria-label="View Tweet"
+        >
+          <span className="sr-only">View Tweet</span>
+        </a>
         <TweetHeader tweet={enrichedTweet} />
         <TweetBody tweet={enrichedTweet} />
         <TweetMedia tweet={enrichedTweet} />
       </div>
-    </a>
+    </div>
   )
 }
 
