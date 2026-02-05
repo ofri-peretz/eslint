@@ -1,4 +1,4 @@
-## 2.2.1 (2026-02-02)
+## [2.2.1] - 2026-02-02
 
 This was a version bump only for eslint-plugin-jwt to align it with other projects, there were no code changes.
 

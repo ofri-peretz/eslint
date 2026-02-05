@@ -1,4 +1,4 @@
-## 1.2.1 (2026-02-02)
+## [1.2.1] - 2026-02-02
 
 This was a version bump only for eslint-plugin-nestjs-security to align it with other projects, there were no code changes.
 

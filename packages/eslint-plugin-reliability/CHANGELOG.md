@@ -1,4 +1,4 @@
-## 3.0.2 (2026-02-02)
+## [3.0.2] - 2026-02-02
 
 This was a version bump only for eslint-plugin-reliability to align it with other projects, there were no code changes.
 

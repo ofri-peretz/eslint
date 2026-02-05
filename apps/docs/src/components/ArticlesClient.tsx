@@ -80,7 +80,9 @@ function FeaturedArticle({ article }: { article: DevToArticle }) {
       target="_blank"
       rel="noopener noreferrer"
       data-testid="featured-article"
-      className="group relative block rounded-2xl overflow-hidden bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-700 dark:from-purple-800 dark:via-violet-800 dark:to-indigo-900 border-2 border-fd-border h-[420px] md:h-[380px] hover:border-purple-500/50 hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-500 animate-fade-in-up"
+      className="group relative block rounded-2xl overflow-hidden bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-700 dark:from-purple-800 dark:via-violet-800 dark:to-indigo-900 border-2 border-fd-border h-[420px] md:h-[380px] hover:border-purple-500/50 hover:shadow-2xl hover:shadow-purple-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-4 focus-visible:ring-offset-fd-background transition-all duration-500 animate-fade-in-up"
+      aria-label={`Featured Article: ${article.title}`}
+      role="article"
     >
       {/* Background Image - shown as-is without whitening effect */}
       {image && (
@@ -95,8 +97,11 @@ function FeaturedArticle({ article }: { article: DevToArticle }) {
       {/* No overlay - image shown as-is. Text uses shadows for WCAG compliance */}
       
       {/* Featured Badge - CSS animation */}
-      <div className="absolute top-4 left-4 flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-slide-in-left">
-        <Sparkles className="size-3 animate-pulse" />
+      <div 
+        className="absolute top-4 left-4 flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-slide-in-left"
+        aria-label="Must read featured article"
+      >
+        <Sparkles className="size-3 animate-pulse" aria-hidden="true" />
         FEATURED
       </div>
       
@@ -145,14 +150,14 @@ function FeaturedArticle({ article }: { article: DevToArticle }) {
           <span className="hidden sm:inline">•</span>
           <span className="hidden sm:inline">{formatDate(article.published_at)}</span>
           <span className="hidden sm:inline">•</span>
-          <span className="hidden sm:flex items-center gap-1">
-            <Clock className="size-3.5" /> {article.reading_time_minutes} min
+          <span className="hidden sm:flex items-center gap-1" aria-label={`Reading time: ${article.reading_time_minutes} minutes`}>
+            <Clock className="size-3.5" aria-hidden="true" /> {article.reading_time_minutes} min
           </span>
           {article.page_views_count && (
             <>
               <span className="hidden sm:inline">•</span>
-              <span className="hidden sm:flex items-center gap-1 text-amber-300">
-                <Eye className="size-3.5" /> {formatViews(article.page_views_count)} views
+              <span className="hidden sm:flex items-center gap-1 text-amber-300" aria-label={`${formatViews(article.page_views_count)} views`}>
+                <Eye className="size-3.5" aria-hidden="true" /> {formatViews(article.page_views_count)} views
               </span>
             </>
           )}
@@ -176,8 +181,10 @@ function ArticleCard({ article, index }: { article: DevToArticle; index: number 
       target="_blank"
       rel="noopener noreferrer"
       data-testid="article-card"
-      className="group relative flex flex-col rounded-xl overflow-hidden bg-fd-card border border-fd-border hover:border-fd-primary/50 hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 hover:-translate-y-1 animate-fade-in-up"
+      className="group relative flex flex-col rounded-xl overflow-hidden bg-fd-card border border-fd-border/30 hover:border-fd-primary/50 hover:shadow-xl hover:shadow-purple-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fd-primary focus-visible:ring-offset-2 focus-visible:ring-offset-fd-background transition-all duration-300 hover:-translate-y-1 animate-fade-in-up shadow-sm"
       style={{ animationDelay: `${index * 50}ms` }}
+      aria-label={`Read article: ${article.title}`}
+      role="article"
     >
       {/* Cover Image - suppressHydrationWarning handles SSR cache staleness */}
       <div 
@@ -195,16 +202,19 @@ function ArticleCard({ article, index }: { article: DevToArticle; index: number 
           <>
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15),transparent_50%)]" />
             <div className="w-full h-full flex items-center justify-center p-4">
-              <span className="relative text-base font-semibold text-white/90 text-center line-clamp-3 leading-snug px-2 drop-shadow-sm">
+              <span className="relative text-base font-semibold text-white/90 text-center line-clamp-3 leading-snug px-4 drop-shadow-sm">
                 {article.title}
               </span>
             </div>
           </>
         )}
         
-        {/* Reading Time Badge */}
-        <div className="absolute top-3 right-3 bg-fd-background/90 backdrop-blur-sm text-fd-foreground text-xs font-semibold px-2.5 py-1 rounded-md flex items-center gap-1 border border-fd-border">
-          <Clock className="size-3" />
+        {/* Reading Time Badge - Optimized for WCAG Accessibility */}
+        <div 
+          className="absolute top-3 right-3 bg-zinc-900/80 backdrop-blur-md text-zinc-50 text-[11px] font-bold px-2.5 py-1 rounded-md flex items-center gap-1.5 border border-white/10 shadow-lg z-20"
+          aria-label={`Reading time: ${article.reading_time_minutes} minutes`}
+        >
+          <Clock className="size-3 text-zinc-300" aria-hidden="true" />
           {article.reading_time_minutes} min
         </div>
       </div>
@@ -212,7 +222,7 @@ function ArticleCard({ article, index }: { article: DevToArticle; index: number 
       {/* Content */}
       <div className="flex flex-col flex-grow p-4">
         {/* Author & Date */}
-        <div className="flex items-center justify-between text-xs text-fd-muted-foreground mb-2">
+        <div className="flex items-center justify-between text-xs text-fd-muted-foreground/90 font-medium mb-3">
           <div className="flex items-center gap-2">
             <img 
               src={article.user.profile_image} 
@@ -221,19 +231,19 @@ function ArticleCard({ article, index }: { article: DevToArticle; index: number 
               className="size-7 rounded-full border border-fd-border shadow-sm"
               suppressHydrationWarning
             />
-            <span className="font-medium">{article.user.name}</span>
+            <span className="text-fd-foreground/90">{article.user.name}</span>
           </div>
-          <span>{formatDate(article.published_at)}</span>
+          <span className="opacity-90">{formatDate(article.published_at)}</span>
         </div>
         
         {/* Title */}
-        <h3 className="font-semibold text-fd-foreground mb-2 line-clamp-2 group-hover:text-fd-primary transition-colors leading-snug">
+        <h3 className="font-bold text-fd-foreground mb-2 line-clamp-2 group-hover:text-fd-primary transition-colors leading-snug text-[15px]">
           {article.title}
         </h3>
         
         {/* Description */}
         {article.description && (
-          <p className="text-sm text-fd-muted-foreground line-clamp-2 mb-3 flex-grow">
+          <p className="text-sm text-fd-foreground/75 dark:text-fd-muted-foreground line-clamp-2 mb-4 flex-grow leading-relaxed">
             {article.description}
           </p>
         )}
@@ -244,7 +254,7 @@ function ArticleCard({ article, index }: { article: DevToArticle; index: number 
             <Badge 
               key={tag} 
               variant="secondary"
-              className="text-[10px] uppercase tracking-wide"
+              className="text-[10px] uppercase tracking-wide bg-fd-secondary-foreground/5 dark:bg-white/10 text-fd-foreground dark:text-zinc-100 border-none font-bold px-2.5 py-0.5"
             >
               #{tag}
             </Badge>

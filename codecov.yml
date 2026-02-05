@@ -4,7 +4,7 @@
 coverage:
   precision: 2
   round: down
-  range: "70...100"
+  range: '70...100'
   status:
     project:
       default:
@@ -16,7 +16,7 @@ coverage:
         threshold: 5%
 
 comment:
-  layout: "header, diff, flags, components"
+  layout: 'header, diff, flags, components'
   behavior: default
   require_changes: false
 
@@ -37,13 +37,13 @@ component_management:
       - type: project
         target: auto
         branches:
-          - "!main"
+          - '!main'
   individual_components:
     # ─────────────────────────────────────────────────────────────────────────
     # Security Plugins (Primary)
     # ─────────────────────────────────────────────────────────────────────────
-    - component_id: secure_coding
-      name: "eslint-plugin-secure-coding"
+    - component_id: secure-coding
+      name: 'eslint-plugin-secure-coding'
       paths:
         - packages/eslint-plugin-secure-coding/**
       statuses:
@@ -53,7 +53,7 @@ component_management:
           target: 80%
 
     - component_id: crypto
-      name: "eslint-plugin-crypto"
+      name: 'eslint-plugin-crypto'
       paths:
         - packages/eslint-plugin-crypto/**
       statuses:
@@ -63,7 +63,7 @@ component_management:
           target: 80%
 
     - component_id: jwt
-      name: "eslint-plugin-jwt"
+      name: 'eslint-plugin-jwt'
       paths:
         - packages/eslint-plugin-jwt/**
       statuses:
@@ -73,7 +73,7 @@ component_management:
           target: 80%
 
     - component_id: pg
-      name: "eslint-plugin-pg"
+      name: 'eslint-plugin-pg'
       paths:
         - packages/eslint-plugin-pg/**
       statuses:
@@ -82,8 +82,8 @@ component_management:
         - type: patch
           target: 75%
 
-    - component_id: mongodb_security
-      name: "eslint-plugin-mongodb-security"
+    - component_id: mongodb-security
+      name: 'eslint-plugin-mongodb-security'
       paths:
         - packages/eslint-plugin-mongodb-security/**
       statuses:
@@ -92,8 +92,8 @@ component_management:
         - type: patch
           target: 80%
 
-    - component_id: node_security
-      name: "eslint-plugin-node-security"
+    - component_id: node-security
+      name: 'eslint-plugin-node-security'
       paths:
         - packages/eslint-plugin-node-security/**
       statuses:
@@ -105,32 +105,32 @@ component_management:
     # ─────────────────────────────────────────────────────────────────────────
     # Framework Security Plugins
     # ─────────────────────────────────────────────────────────────────────────
-    - component_id: express_security
-      name: "eslint-plugin-express-security"
+    - component_id: express-security
+      name: 'eslint-plugin-express-security'
       paths:
         - packages/eslint-plugin-express-security/**
       statuses:
         - type: project
           target: 80%
 
-    - component_id: nestjs_security
-      name: "eslint-plugin-nestjs-security"
+    - component_id: nestjs-security
+      name: 'eslint-plugin-nestjs-security'
       paths:
         - packages/eslint-plugin-nestjs-security/**
       statuses:
         - type: project
           target: 80%
 
-    - component_id: lambda_security
-      name: "eslint-plugin-lambda-security"
+    - component_id: lambda-security
+      name: 'eslint-plugin-lambda-security'
       paths:
         - packages/eslint-plugin-lambda-security/**
       statuses:
         - type: project
           target: 80%
 
-    - component_id: browser_security
-      name: "eslint-plugin-browser-security"
+    - component_id: browser-security
+      name: 'eslint-plugin-browser-security'
       paths:
         - packages/eslint-plugin-browser-security/**
       statuses:
@@ -140,8 +140,8 @@ component_management:
     # ─────────────────────────────────────────────────────────────────────────
     # AI Security Plugins
     # ─────────────────────────────────────────────────────────────────────────
-    - component_id: vercel_ai_security
-      name: "eslint-plugin-vercel-ai-security"
+    - component_id: vercel-ai-security
+      name: 'eslint-plugin-vercel-ai-security'
       paths:
         - packages/eslint-plugin-vercel-ai-security/**
       statuses:
@@ -152,7 +152,7 @@ component_management:
     # Governance & Quality Plugins
     # ─────────────────────────────────────────────────────────────────────────
     - component_id: conventions
-      name: "eslint-plugin-conventions"
+      name: 'eslint-plugin-conventions'
       paths:
         - packages/eslint-plugin-conventions/**
       statuses:
@@ -160,7 +160,7 @@ component_management:
           target: 80%
 
     - component_id: maintainability
-      name: "eslint-plugin-maintainability"
+      name: 'eslint-plugin-maintainability'
       paths:
         - packages/eslint-plugin-maintainability/**
       statuses:
@@ -168,7 +168,7 @@ component_management:
           target: 80%
 
     - component_id: modernization
-      name: "eslint-plugin-modernization"
+      name: 'eslint-plugin-modernization'
       paths:
         - packages/eslint-plugin-modernization/**
       statuses:
@@ -176,7 +176,7 @@ component_management:
           target: 80%
 
     - component_id: modularity
-      name: "eslint-plugin-modularity"
+      name: 'eslint-plugin-modularity'
       paths:
         - packages/eslint-plugin-modularity/**
       statuses:
@@ -184,7 +184,7 @@ component_management:
           target: 80%
 
     - component_id: operability
-      name: "eslint-plugin-operability"
+      name: 'eslint-plugin-operability'
       paths:
         - packages/eslint-plugin-operability/**
       statuses:
@@ -192,7 +192,7 @@ component_management:
           target: 80%
 
     - component_id: reliability
-      name: "eslint-plugin-reliability"
+      name: 'eslint-plugin-reliability'
       paths:
         - packages/eslint-plugin-reliability/**
       statuses:
@@ -202,8 +202,8 @@ component_management:
     # ─────────────────────────────────────────────────────────────────────────
     # Core Packages
     # ─────────────────────────────────────────────────────────────────────────
-    - component_id: eslint_devkit
-      name: "eslint-devkit"
+    - component_id: eslint-devkit
+      name: 'eslint-devkit'
       paths:
         - packages/eslint-devkit/**
       statuses:
@@ -213,21 +213,21 @@ component_management:
     # ─────────────────────────────────────────────────────────────────────────
     # Utility & Feature Plugins
     # ─────────────────────────────────────────────────────────────────────────
-    - component_id: import_next
-      name: "eslint-plugin-import-next"
+    - component_id: import-next
+      name: 'eslint-plugin-import-next'
       paths:
         - packages/eslint-plugin-import-next/**
       statuses:
         - type: project
           target: 75%
 
-    - component_id: react_features
-      name: "eslint-plugin-react-features"
+    - component_id: react-features
+      name: 'eslint-plugin-react-features'
       paths:
         - packages/eslint-plugin-react-features/**
 
-    - component_id: react_a11y
-      name: "eslint-plugin-react-a11y"
+    - component_id: react-a11y
+      name: 'eslint-plugin-react-a11y'
       paths:
         - packages/eslint-plugin-react-a11y/**
 
@@ -239,19 +239,19 @@ component_management:
 # Files that don't contain runtime logic or lack tests
 
 ignore:
-  - "**/*.test.ts"
-  - "**/*.spec.ts"
-  - "**/node_modules/**"
-  - "**/dist/**"
-  - "**/.nx/**"
-  - "**/types/**"
-  - "**/types/index.ts"
-  - "**/coverage/**"
-  - "**/test-results/**"
-  - "**/*.config.ts"
-  - "**/*.config.mts"
-  - "**/vitest.global-setup.ts"
+  - '**/*.test.ts'
+  - '**/*.spec.ts'
+  - '**/node_modules/**'
+  - '**/dist/**'
+  - '**/.nx/**'
+  - '**/types/**'
+  - '**/types/index.ts'
+  - '**/coverage/**'
+  - '**/test-results/**'
+  - '**/*.config.ts'
+  - '**/*.config.mts'
+  - '**/vitest.global-setup.ts'
   # Infrastructure packages without tests
-  - "packages/cli/**"
+  - 'packages/cli/**'
   # Plugin entry points (configuration code, not tested)
-  - "packages/*/src/index.ts"
+  - 'packages/*/src/index.ts'

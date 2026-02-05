@@ -1,4 +1,4 @@
-## 2.1.1 (2026-02-02)
+## [2.1.1] - 2026-02-02
 
 This was a version bump only for eslint-plugin-react-a11y to align it with other projects, there were no code changes.
 

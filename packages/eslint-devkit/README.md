@@ -4,7 +4,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@interlace/eslint-devkit.svg)](https://www.npmjs.com/package/@interlace/eslint-devkit)
 [![npm downloads](https://img.shields.io/npm/dm/@interlace/eslint-devkit.svg)](https://www.npmjs.com/package/@interlace/eslint-devkit)
-[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint_devkit)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint_devkit)
+[![codecov](https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-devkit)](https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-devkit)
 
 > **Keywords:** ESLint utilities, LLM-optimized, AI assistant, auto-fix, TypeScript ESLint, AST utilities, type checking, rule creation, GitHub Copilot, Cursor AI, Claude AI, structured error messages, deterministic fixes
 
