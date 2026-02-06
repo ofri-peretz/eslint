@@ -1,3 +1,18 @@
+## 4.0.3 (2026-02-06)
+
+### Bug Fixes
+
+- ⚠️  **rules:** reduce false positives across security rules ([af4ca0e7](https://github.com/ofri-peretz/eslint/commit/af4ca0e7))
+- align codecov component names and update docs components ([0a59a86c](https://github.com/ofri-peretz/eslint/commit/0a59a86c))
+
+### ⚠️  Breaking Changes
+
+- **rules:** Some previously flagged patterns are now correctly allowed ([af4ca0e7](https://github.com/ofri-peretz/eslint/commit/af4ca0e7))
+
+### ❤️ Thank You
+
+- Ofri Peretz
+
 ## [4.0.2] - 2026-02-02
 
 This was a version bump only for eslint-plugin-node-security to align it with other projects, there were no code changes.
