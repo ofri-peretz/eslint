@@ -245,12 +245,10 @@ describe('no-zip-slip', () => {
             const zip = new AdmZip(maliciousZip);
             zip.extractAllTo('/tmp/extracted'); // This could overwrite /etc/passwd
           `,
+          // Note: Only unsafeArchiveExtraction - /tmp is considered safe destination
           errors: [
             {
               messageId: 'unsafeArchiveExtraction',
-            },
-            {
-              messageId: 'dangerousArchiveDestination',
             },
           ],
         },

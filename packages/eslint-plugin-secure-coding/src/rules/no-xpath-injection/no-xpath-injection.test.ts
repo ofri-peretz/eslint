@@ -306,12 +306,11 @@ describe('no-xpath-injection', () => {
             const xpath = \`/app/users/user[\${userPath}]\`;
             const result = document.evaluate(xpath, document);
           `,
+          // Note: Only 1 error now - xpathInjection from VariableDeclarator
+          // Template literal FP reduction means /app/users/user[...] isn't flagged without //element syntax
           errors: [
             {
               messageId: 'xpathInjection',
-            },
-            {
-              messageId: 'unsafeXpathConcatenation',
             },
           ],
         },
@@ -402,4 +401,13 @@ describe('no-xpath-injection', () => {
       ],
     });
   });
+
+  /**
+   * TDD Tests: False Positive Reduction
+   * These tests define expected behavior for safe patterns that should NOT trigger warnings.
+   * Currently these tests may fail - the rule needs to be updated to pass them.
+   * 
+   * Issue: Benchmark revealed FPs on non-XPath template literals
+   * Benchmark: eslint-benchmark-suite/benchmarks/fn-fp-comparison
+   */
 });

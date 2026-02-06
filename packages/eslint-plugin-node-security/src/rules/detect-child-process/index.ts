@@ -13,7 +13,7 @@
  * @see https://cwe.mitre.org/data/definitions/78.html
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds =
@@ -343,14 +343,142 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Check if arguments contain only literals (safe)
+     * Check if command and arguments are literals (safe for execFile/spawn patterns)
+     * We only care about the command (arg 0) and args array (arg 1).
+     * The options object (arg 2) is irrelevant for command injection.
      */
     const hasOnlyLiteralArgs = (args: TSESTree.Node[]): boolean => {
-      return args.every(arg =>
-        arg.type === 'Literal' ||
-        (arg.type === 'ArrayExpression' &&
-         arg.elements.every((el: TSESTree.Node | null) => el?.type === 'Literal'))
-      );
+      if (args.length === 0) return false;
+      
+      // First argument must be a literal string (the command)
+      const command = args[0];
+      if (command.type !== 'Literal' || typeof (command as TSESTree.Literal).value !== 'string') {
+        return false;
+      }
+      
+      // Second argument (if present) must be a literal array of literal strings
+      if (args.length >= 2) {
+        const argsArray = args[1];
+        if (argsArray.type === 'ArrayExpression') {
+          const allLiteralElements = argsArray.elements.every((el: TSESTree.Node | null) => 
+            el?.type === 'Literal' && typeof (el as TSESTree.Literal).value === 'string'
+          );
+          if (!allLiteralElements) {
+            return false;
+          }
+        } else if (argsArray.type !== 'Literal') {
+          // If second arg is not array or literal, it's dynamic
+          return false;
+        }
+      }
+      
+      // Options object (arg 2+) is irrelevant for command injection safety
+      // It may contain callbacks, cwd, env, etc. which are not injection vectors
+      return true;
+    };
+
+    /**
+     * Check if spawn/spawnSync has { shell: false } option
+     */
+    const hasShellFalseOption = (node: TSESTree.CallExpression): boolean => {
+      // Options is typically the 3rd argument for spawn(cmd, args, options)
+      const optionsArg = node.arguments[2];
+      if (!optionsArg || optionsArg.type !== AST_NODE_TYPES.ObjectExpression) {
+        // No options = default shell: false for spawn
+        return true;
+      }
+      
+      for (const prop of optionsArg.properties) {
+        if (prop.type === AST_NODE_TYPES.Property &&
+            prop.key.type === AST_NODE_TYPES.Identifier &&
+            prop.key.name === 'shell') {
+          // shell: false is safe
+          if (prop.value.type === AST_NODE_TYPES.Literal && prop.value.value === false) {
+            return true;
+          }
+          // shell: true or shell: someVar is not safe
+          return false;
+        }
+      }
+      
+      // No shell property = default is false = safe
+      return true;
+    };
+
+    /**
+     * Check if a variable is validated against an allowlist before use
+     * Looks for patterns like: if (ALLOWED.includes(arg)) or if (!ALLOWED.includes(arg)) { return/throw }
+     */
+    const hasPrecedingAllowlistValidation = (node: TSESTree.CallExpression): boolean => {
+      // Find the function or block scope containing this call
+      let current: TSESTree.Node | undefined = node.parent;
+      while (current) {
+        // Check if inside an IfStatement with includes() check
+        if (current.type === 'IfStatement') {
+          const test = current.test;
+          
+          // Look for ALLOWED.includes(arg) pattern
+          if (test.type === 'CallExpression' &&
+              test.callee.type === 'MemberExpression' &&
+              test.callee.property.type === 'Identifier' &&
+              test.callee.property.name === 'includes') {
+            // Get the variable name being validated
+            const validatedVarNames = new Set<string>();
+            for (const testArg of test.arguments) {
+              if (testArg.type === 'Identifier') {
+                validatedVarNames.add(testArg.name);
+              }
+            }
+            
+            // Check if any of our call's args (or elements inside array args) are being validated
+            for (const arg of node.arguments) {
+              if (arg.type === AST_NODE_TYPES.Identifier && validatedVarNames.has(arg.name)) {
+                return true;
+              }
+              // Also check inside array expressions for validated variables
+              if (arg.type === AST_NODE_TYPES.ArrayExpression) {
+                for (const el of arg.elements) {
+                  if (el?.type === 'Identifier' && validatedVarNames.has(el.name)) {
+                    return true;
+                  }
+                }
+              }
+            }
+          }
+          
+          // Look for !ALLOWED.includes(arg) { return/throw } pattern (guard clause)
+          if (test.type === AST_NODE_TYPES.UnaryExpression && test.operator === '!' &&
+              test.argument.type === AST_NODE_TYPES.CallExpression &&
+              test.argument.callee.type === AST_NODE_TYPES.MemberExpression &&
+              test.argument.callee.property.type === AST_NODE_TYPES.Identifier &&
+              test.argument.callee.property.name === 'includes') {
+            // Check if the consequent is a return/throw (guard clause)
+            const consequent = current.consequent;
+            const isGuardClause = (
+              consequent.type === AST_NODE_TYPES.ReturnStatement ||
+              consequent.type === AST_NODE_TYPES.ThrowStatement ||
+              (consequent.type === AST_NODE_TYPES.BlockStatement && 
+               consequent.body.length > 0 &&
+               (consequent.body[0].type === AST_NODE_TYPES.ReturnStatement || 
+                consequent.body[0].type === AST_NODE_TYPES.ThrowStatement))
+            );
+            
+            if (isGuardClause) {
+              // Check if any of our call's args are being validated
+              for (const arg of node.arguments) {
+                if (arg.type === AST_NODE_TYPES.Identifier || 
+                    (arg.type === AST_NODE_TYPES.ArrayExpression && arg.elements.some(el => el?.type === 'Identifier'))) {
+                  return true;
+                }
+              }
+            }
+          }
+        }
+        
+        current = current.parent;
+      }
+      
+      return false;
     };
 
     /**
@@ -525,8 +653,30 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      // Allow literal spawn if configured
-      if (allowLiteralSpawn && method === 'spawn' && hasOnlyLiteralArgs(node.arguments)) {
+      // Allow safe methods with literal args if configured
+      // execFile, execFileSync, spawn, spawnSync are inherently safer than exec
+      // when using literal command + literal args array
+      const saferMethods = ['spawn', 'spawnSync', 'execFile', 'execFileSync'];
+      if (allowLiteralSpawn && saferMethods.includes(method) && hasOnlyLiteralArgs(node.arguments)) {
+        return;
+      }
+
+      // ALWAYS allow execFile/execFileSync with fully literal args (no option needed)
+      // These methods don't use shell by default, so literal command + literal args = no injection
+      const inherentlySafeMethods = ['execFile', 'execFileSync'];
+      if (inherentlySafeMethods.includes(method) && hasOnlyLiteralArgs(node.arguments)) {
+        return;
+      }
+
+      // spawn/spawnSync with literal args AND shell: false is also safe
+      if (['spawn', 'spawnSync'].includes(method) && hasOnlyLiteralArgs(node.arguments) && hasShellFalseOption(node)) {
+        return;
+      }
+
+      // Allow safe methods when args are validated against an allowlist
+      // Pattern: if (ALLOWED.includes(arg)) { execFile('cmd', [arg]) }
+      const allSafeMethods = ['execFile', 'execFileSync', 'spawn', 'spawnSync'];
+      if (allSafeMethods.includes(method) && hasPrecedingAllowlistValidation(node)) {
         return;
       }
 

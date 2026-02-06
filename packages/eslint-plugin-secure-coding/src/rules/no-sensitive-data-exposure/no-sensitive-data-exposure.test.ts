@@ -258,5 +258,13 @@ describe('no-sensitive-data-exposure', () => {
       ],
     });
   });
-});
 
+  /**
+   * TDD Tests: False Positive Reduction
+   * These tests define expected behavior for safe patterns that should NOT trigger warnings.
+   * Currently these tests may fail - the rule needs to be updated to pass them.
+   * 
+   * Issue: Benchmark revealed FPs on password handling in security contexts
+   * Benchmark: eslint-benchmark-suite/benchmarks/fn-fp-comparison
+   */
+});

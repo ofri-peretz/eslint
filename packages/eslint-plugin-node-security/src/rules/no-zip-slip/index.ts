@@ -231,17 +231,59 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
 
 
     /**
-     * Check if path has been validated
+     * Check if path has been validated or sanitized
+     * Detects patterns like:
+     * - validatePath(), sanitizePath() custom functions
+     * - path.basename() sanitization
+     * - startsWith() validation in preceding if-block
      */
     const isPathValidated = (pathNode: TSESTree.Node): boolean => {
       let current: TSESTree.Node | undefined = pathNode;
 
       while (current) {
+        // Check for custom validation function wrappers
         if (current.type === 'CallExpression' &&
             current.callee.type === 'Identifier' &&
             pathValidationFunctions.includes(current.callee.name)) {
           return true;
         }
+        
+        // Check for path.basename() sanitization
+        if (current.type === 'CallExpression' &&
+            current.callee.type === 'MemberExpression' &&
+            current.callee.object.type === 'Identifier' &&
+            current.callee.object.name === 'path' &&
+            current.callee.property.type === 'Identifier' &&
+            current.callee.property.name === 'basename') {
+          return true;
+        }
+        
+        // Check for preceding if-block with startsWith validation
+        if (current.type === 'IfStatement') {
+          const test = current.test;
+          // if (path.startsWith(...)) or if (!path.startsWith(...)) { throw/return }
+          if (test.type === 'CallExpression' &&
+              test.callee.type === 'MemberExpression' &&
+              test.callee.property.type === 'Identifier' &&
+              test.callee.property.name === 'startsWith') {
+            return true;
+          }
+          if (test.type === 'UnaryExpression' && test.operator === '!' &&
+              test.argument.type === 'CallExpression' &&
+              test.argument.callee.type === 'MemberExpression' &&
+              test.argument.callee.property.type === 'Identifier' &&
+              test.argument.callee.property.name === 'startsWith') {
+            return true;
+          }
+          // if (path.includes('..')) { throw/return }
+          if (test.type === 'CallExpression' &&
+              test.callee.type === 'MemberExpression' &&
+              test.callee.property.type === 'Identifier' &&
+              test.callee.property.name === 'includes') {
+            return true;
+          }
+        }
+        
         current = current.parent as TSESTree.Node;
       }
 
@@ -250,25 +292,42 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
 
     /**
      * Check if this uses a safe library
+     * Safe libraries have built-in path validation or are known to be secure
      */
     const isSafeLibrary = (node: TSESTree.CallExpression): boolean => {
       const callee = node.callee;
 
+      // Check for method calls on safe library instances (e.g., yauzl.open())
       if (callee.type === 'MemberExpression' &&
           callee.object.type === 'Identifier' &&
           safeLibraries.includes(callee.object.name)) {
         return true;
       }
 
+      // Check for direct calls to safe library functions (e.g., extract(file, opts))
+      // This handles patterns like: const extract = require('extract-zip'); extract(...)
+      if (callee.type === 'Identifier') {
+        const name = callee.name.toLowerCase();
+        if (name === 'extract' || name === 'unzipper' || 
+            safeLibraries.some(lib => name.includes(lib.toLowerCase()))) {
+          return true;
+        }
+      }
+
       return false;
     };
 
     /**
-     * Check if destination is dangerous
+     * Check if destination is dangerous (sensitive system directories)
+     * Note: /tmp is NOT dangerous - it's the standard safe temp location
      */
     const isDangerousDestination = (destText: string): boolean => {
-      return destText.includes('/tmp') ||
-             destText.includes('/var') ||
+      // /tmp is SAFE - it's the standard temp location
+      if (destText.startsWith('/tmp') || destText.includes('os.tmpdir') || destText.includes('TMPDIR')) {
+        return false;
+      }
+      
+      return destText.includes('/var') ||
              destText.includes('/usr') ||
              destText.includes('/etc') ||
              destText.includes('/root') ||

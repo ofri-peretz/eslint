@@ -13,7 +13,7 @@
  * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
 type MessageIds = 'insecureComparison' | 'useStrictEquality' | 'timingUnsafeComparison';
@@ -167,6 +167,18 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       // Timing-safe comparison for secrets even with strict equality
       if ((node.operator === '===' || node.operator === '!==') &&
           (isPotentialSecret(node.left) || isPotentialSecret(node.right))) {
+        
+        // SKIP: Length comparisons are safe - they're actually required before timingSafeEqual
+        const isLengthComparison = (expr: TSESTree.Expression): boolean => {
+          return expr.type === AST_NODE_TYPES.MemberExpression &&
+                 expr.property.type === AST_NODE_TYPES.Identifier &&
+                 expr.property.name === 'length';
+        };
+        
+        if (isLengthComparison(node.left) || isLengthComparison(node.right)) {
+          return; // Length checks are safe and recommended
+        }
+        
         const leftText = sourceCode.getText(node.left);
         const rightText = sourceCode.getText(node.right);
         

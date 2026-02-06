@@ -265,5 +265,103 @@ describe('detect-non-literal-fs-filename', () => {
       invalid: [],
     });
   });
+
+  /**
+   * TDD Tests: False Positive Reduction
+   * These tests define expected behavior for safe patterns that should NOT trigger warnings.
+   * Currently these tests may fail - the rule needs to be updated to pass them.
+   * 
+   * Issue: Benchmark revealed FPs on validated path patterns
+   * Benchmark: eslint-benchmark-suite/benchmarks/fn-fp-comparison
+   */
+  describe('False Positive Reduction (TDD)', () => {
+    ruleTester.run('validated paths with startsWith should not trigger', detectNonLiteralFsFilename, {
+      valid: [
+        // FP Fix #1: Path validated with path.resolve + startsWith check
+        {
+          code: `
+            const fs = require('fs');
+            const path = require('path');
+            
+            const SAFE_DIR = '/var/app/uploads';
+            
+            function readUserFile(filename) {
+              const safePath = path.resolve(SAFE_DIR, path.basename(filename));
+              if (!safePath.startsWith(SAFE_DIR + path.sep)) {
+                throw new Error('Path traversal detected');
+              }
+              return fs.readFileSync(safePath, 'utf8');
+            }
+          `,
+        },
+        // FP Fix #2: Path validated inline before fs call
+        {
+          code: `
+            const userPath = path.resolve(baseDir, userInput);
+            if (userPath.startsWith(baseDir)) {
+              fs.readFile(userPath, callback);
+            }
+          `,
+        },
+        // FP Fix #3: Path validated with realpath (symlink-safe)
+        {
+          code: `
+            const realPath = fs.realpathSync(userPath);
+            if (realPath.startsWith(allowedDir)) {
+              fs.readFile(realPath, callback);
+            }
+          `,
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('path.join with only literals should not trigger', detectNonLiteralFsFilename, {
+      valid: [
+        // FP Fix #4: path.join with all literal segments
+        {
+          code: `
+            fs.readFile(path.join(__dirname, 'data', 'config.json'), callback);
+          `,
+        },
+        // FP Fix #5: path.resolve with literal paths
+        {
+          code: `
+            fs.writeFile(path.resolve('/app', 'logs', 'app.log'), data, callback);
+          `,
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('dangerous patterns should still be flagged', detectNonLiteralFsFilename, {
+      valid: [],
+      invalid: [
+        // No validation - should still be flagged
+        {
+          code: `
+            fs.readFile(userPath, callback);
+          `,
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+        // Validation on wrong path - should still be flagged
+        {
+          code: `
+            if (otherPath.startsWith(baseDir)) {
+              fs.readFile(userPath, callback);
+            }
+          `,
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+        // Dynamic segments in path.join
+        {
+          code: `
+            fs.readFile(path.join(__dirname, userInput, 'file.txt'), callback);
+          `,
+          errors: [{ messageId: 'fsPathTraversal' }],
+        },
+      ],
+    });
+  });
 });
 

@@ -265,12 +265,40 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
 
     /**
      * Check if string contains GraphQL query patterns
+     * Must be precise to avoid flagging console.log, URLs, CSS, etc.
      */
     const containsGraphqlQuery = (text: string): boolean => {
       const lowerText = text.toLowerCase();
-      return /\b(query|mutation|subscription|fragment)\b/.test(lowerText) ||
-             /{\s*\w+/.test(lowerText) || // GraphQL selection sets
-             /\btype\b|\binterface\b|\benum\b|\bscalar\b/.test(lowerText); // Schema definitions
+      
+      // Skip common non-GraphQL patterns
+      // URLs and file paths
+      if (/^[`'"]\s*\//.test(text) || /https?:\/\//.test(text)) {
+        return false;
+      }
+      // Console/logging statements
+      if (/console\.(log|warn|error|info)/.test(lowerText)) {
+        return false;
+      }
+      // CSS-like patterns
+      if (/\bdisplay\s*:|\bcolor\s*:|\bflex\b/.test(lowerText)) {
+        return false;
+      }
+      // JSON-like simple key-value
+      if (/^\s*[`'"]\s*\{\s*"\w+":\s*"/.test(text)) {
+        return false;
+      }
+      
+      // Must have actual GraphQL keywords with proper syntax
+      const hasGraphqlKeyword = /\b(query|mutation|subscription)\s+\w*\s*[({]/.test(lowerText) ||
+                                /\bfragment\s+\w+\s+on\s+/.test(lowerText);
+      
+      // Or schema definitions
+      const hasSchemaDefinition = /\b(type|interface|enum|scalar|input)\s+\w+/.test(lowerText);
+      
+      // Or selection sets with fields (not just { })
+      const hasSelectionSet = /\{\s*\w+(\s*\([^)]*\))?\s*\{/.test(text);
+      
+      return hasGraphqlKeyword || hasSchemaDefinition || hasSelectionSet;
     };
 
     /**

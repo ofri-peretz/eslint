@@ -346,17 +346,22 @@ allowLiterals = false,
       const varName = pathNode.name;
       
       // AST-based validation detection (faster than getText + regex)
-      const isStartsWithOrIncludesCall = (testNode: TSESTree.Node): boolean => {
+      const isValidationCall = (testNode: TSESTree.Node): boolean => {
         // Handle negation: !path.startsWith(...)
+        let _isNegated = false;
         if (testNode.type === AST_NODE_TYPES.UnaryExpression && 
             testNode.operator === '!' &&
             testNode.argument.type === AST_NODE_TYPES.CallExpression) {
           testNode = testNode.argument;
+          _isNegated = true;
         }
         
-        // Pattern: varName.startsWith(...) or varName.includes(...)
-        if (testNode.type === AST_NODE_TYPES.CallExpression &&
-            testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
+        if (testNode.type !== AST_NODE_TYPES.CallExpression) {
+          return false;
+        }
+        
+        // Pattern 1: varName.startsWith(...) or varName.includes(...)
+        if (testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
             testNode.callee.object.type === AST_NODE_TYPES.Identifier &&
             testNode.callee.object.name === varName &&
             testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
@@ -364,6 +369,31 @@ allowLiterals = false,
              testNode.callee.property.name === 'includes')) {
           return true;
         }
+        
+        // Pattern 2: ALLOWED_FILES.includes(varName) - allowlist validation
+        if (testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
+            testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
+            testNode.callee.property.name === 'includes') {
+          // Check if varName is in the arguments
+          for (const arg of testNode.arguments) {
+            if (arg.type === AST_NODE_TYPES.Identifier && arg.name === varName) {
+              return true;
+            }
+          }
+        }
+        
+        // Pattern 3: /regex/.test(varName) - regex validation
+        if (testNode.callee.type === AST_NODE_TYPES.MemberExpression &&
+            testNode.callee.property.type === AST_NODE_TYPES.Identifier &&
+            testNode.callee.property.name === 'test') {
+          // Check if varName is in the arguments
+          for (const arg of testNode.arguments) {
+            if (arg.type === AST_NODE_TYPES.Identifier && arg.name === varName) {
+              return true;
+            }
+          }
+        }
+        
         return false;
       };
 
@@ -385,7 +415,7 @@ allowLiterals = false,
       while (current && !foundFunctionBody) {
         // Check 1: Inside an if-block with validation
         if (current.type === AST_NODE_TYPES.IfStatement) {
-          if (isStartsWithOrIncludesCall(current.test)) {
+          if (isValidationCall(current.test)) {
             return true;
           }
         }
@@ -411,7 +441,7 @@ allowLiterals = false,
           for (let i = 0; i < nodeIndex; i++) {
             const stmt = blockBody[i];
             if (stmt.type === AST_NODE_TYPES.IfStatement &&
-                isStartsWithOrIncludesCall(stmt.test) &&
+                isValidationCall(stmt.test) &&
                 hasEarlyExit(stmt.consequent)) {
               return true;
             }

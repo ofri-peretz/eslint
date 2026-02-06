@@ -453,6 +453,16 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
         return false;
       }
 
+      // SAFE: Common numeric index variable names (i, j, k, index, idx, n)
+      // These are typically loop counters for array access
+      if (propertyNode.type === AST_NODE_TYPES.Identifier) {
+        const name = propertyNode.name;
+        const numericIndexNames = new Set(['i', 'j', 'k', 'index', 'idx', 'n', 'len']);
+        if (numericIndexNames.has(name)) {
+          return false;
+        }
+      }
+
       // Check if it's a literal string first
       if (isLiteralString(propertyNode)) {
         const propName = String((propertyNode as TSESTree.Literal).value);
@@ -481,6 +491,62 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
       // DANGEROUS: Any untyped/dynamic property access (e.g., obj[userInput])
       return true;
+    };
+
+    /**
+     * Check if the object is a prototype-less object (Object.create(null))
+     * or is derived from an array spread/copy pattern
+     */
+    const isPrototypelessObject = (objectNode: TSESTree.Node): boolean => {
+      if (objectNode.type !== AST_NODE_TYPES.Identifier) {
+        return false;
+      }
+      
+      const varName = objectNode.name;
+      
+      // Walk up to find the variable declaration
+      let current: TSESTree.Node | undefined = objectNode;
+      while (current) {
+        if (current.type === AST_NODE_TYPES.BlockStatement || 
+            current.type === AST_NODE_TYPES.Program) {
+          const statements = current.type === AST_NODE_TYPES.BlockStatement 
+            ? current.body 
+            : current.body;
+          
+          for (const stmt of statements) {
+            if (stmt.type === AST_NODE_TYPES.VariableDeclaration) {
+              for (const decl of stmt.declarations) {
+                if (decl.id.type === AST_NODE_TYPES.Identifier && 
+                    decl.id.name === varName && 
+                    decl.init) {
+                  // Check for Object.create(null)
+                  if (decl.init.type === AST_NODE_TYPES.CallExpression &&
+                      decl.init.callee.type === AST_NODE_TYPES.MemberExpression &&
+                      decl.init.callee.object.type === AST_NODE_TYPES.Identifier &&
+                      decl.init.callee.object.name === 'Object' &&
+                      decl.init.callee.property.type === AST_NODE_TYPES.Identifier &&
+                      decl.init.callee.property.name === 'create' &&
+                      decl.init.arguments.length > 0 &&
+                      decl.init.arguments[0].type === AST_NODE_TYPES.Literal &&
+                      decl.init.arguments[0].value === null) {
+                    return true;
+                  }
+                  
+                  // Check for array spread: [...array]
+                  if (decl.init.type === AST_NODE_TYPES.ArrayExpression &&
+                      decl.init.elements.length > 0 &&
+                      decl.init.elements[0]?.type === AST_NODE_TYPES.SpreadElement) {
+                    return true;
+                  }
+                }
+              }
+            }
+          }
+        }
+        current = current.parent;
+      }
+      
+      return false;
     };
 
     /**
@@ -536,6 +602,11 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
       // Only check computed member access (bracket notation)
       // Dot notation (obj.name) is safe
       if (!node.left.computed) {
+        return false;
+      }
+
+      // SAFE: Object.create(null) objects have no prototype to pollute
+      if (isPrototypelessObject(node.left.object)) {
         return false;
       }
 

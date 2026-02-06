@@ -444,8 +444,34 @@ export const noXpathInjection = createRule<RuleOptions, MessageIds>({
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
         const fullText = sourceCode.getText(node);
 
-        // Check if this looks like an XPath expression
-        if (!fullText.includes('/') && !fullText.includes('[') && !fullText.includes('@')) {
+        // Skip common non-XPath patterns
+        // URLs and API endpoints
+        if (/https?:\/\//.test(fullText) || /^[`'"]\s*\/api\//.test(fullText)) {
+          return;
+        }
+        // File paths (start with / or contain common path patterns)
+        if (/^[`'"]\s*\/home\//.test(fullText) || /^[`'"]\s*\/usr\//.test(fullText) || /^[`'"]\s*\/tmp\//.test(fullText)) {
+          return;
+        }
+        // CSS selectors  
+        if (/\[data-[\w-]+/.test(fullText) || /\[class=/.test(fullText) || /\[id=/.test(fullText)) {
+          return;
+        }
+        // Search/query strings
+        if (/\?.*=/.test(fullText) && !/\[@/.test(fullText)) {
+          return;
+        }
+
+        // Check if this looks like an ACTUAL XPath expression
+        // Must have XPath-specific syntax, not just forward slashes
+        const hasXpathSyntax = /\/\/\w+/.test(fullText) ||  // //element
+                              /\[@\w+/.test(fullText) ||   // [@attr
+                              /\[contains\(/.test(fullText) || // [contains(
+                              /\[text\(\)/.test(fullText) ||   // [text()
+                              /\/child::/.test(fullText) ||    // /child::
+                              /\/descendant::/.test(fullText); // /descendant::
+
+        if (!hasXpathSyntax) {
           return;
         }
 

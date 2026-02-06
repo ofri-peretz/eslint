@@ -67,25 +67,25 @@ describe('detect-child-process', () => {
     });
   });
 
-  describe('Invalid Code - execFile/spawn (Rule flags all methods)', () => {
-    ruleTester.run('invalid - execFile and spawn (rule flags all child_process methods)', detectChildProcess, {
-      valid: [],
+  describe('Invalid Code - execFile/spawn (Rule flags dynamic args)', () => {
+    ruleTester.run('invalid - execFile and spawn with dynamic arguments', detectChildProcess, {
+      valid: [
+        // spawn/spawnSync with shell: false AND literal args are now correctly SAFE
+        {
+          code: 'child_process.spawn("node", ["script.js"], { shell: false });',
+        },
+        {
+          code: 'child_process.spawnSync("ls", ["-la"], { shell: false });',
+        },
+      ],
       invalid: [
-        // Note: Rule flags ALL child_process methods, even safe ones like execFile/spawn
+        // execFile with dynamic args is still dangerous
         {
           code: 'child_process.execFile("git", ["clone", repoUrl], { shell: false });',
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
         {
           code: 'child_process.execFileSync("npm", ["install", packageName], { shell: false });',
-          errors: [{ messageId: 'childProcessCommandInjection' }],
-        },
-        {
-          code: 'child_process.spawn("node", ["script.js"], { shell: false });',
-          errors: [{ messageId: 'childProcessCommandInjection' }],
-        },
-        {
-          code: 'child_process.spawnSync("ls", ["-la"], { shell: false });',
           errors: [{ messageId: 'childProcessCommandInjection' }],
         },
       ],
@@ -201,6 +201,83 @@ describe('detect-child-process', () => {
         },
       ],
       invalid: [],
+    });
+  });
+
+  /**
+   * TDD Tests: False Positive Reduction
+   * These tests define expected behavior for safe patterns that should NOT trigger warnings.
+   * Currently these tests may fail - the rule needs to be updated to pass them.
+   * 
+   * Issue: https://github.com/interlace-tools/eslint/issues/XXX
+   * Benchmark: eslint-benchmark-suite/benchmarks/fn-fp-comparison
+   */
+  describe('False Positive Reduction (TDD)', () => {
+    ruleTester.run('safe execFile with literal command and args', detectChildProcess, {
+      valid: [
+        // FP Fix #1: execFile with literal command + literal args array is SAFE
+        // The command is static, args are static - no injection possible
+        {
+          code: `
+            const { execFile } = require('child_process');
+            execFile('git', ['clone', 'https://github.com/user/repo.git'], (err, stdout) => {
+              console.log(stdout);
+            });
+          `,
+        },
+        // FP Fix #2: execFile with literal command, variable args from allowlist
+        {
+          code: `
+            const { execFile } = require('child_process');
+            const ALLOWED_BRANCHES = ['main', 'develop', 'staging'];
+            function checkoutBranch(branch) {
+              if (ALLOWED_BRANCHES.includes(branch)) {
+                execFile('git', ['checkout', branch], (err) => {
+                  if (err) throw err;
+                });
+              }
+            }
+          `,
+        },
+        // FP Fix #3: spawn with shell: false and literal args (inherently safe)
+        {
+          code: `
+            const { spawn } = require('child_process');
+            const ls = spawn('ls', ['-la', '/tmp'], { shell: false });
+          `,
+          options: [{ allowLiteralSpawn: true }],
+        },
+        // FP Fix #4: execFileSync with literal command for build tools
+        {
+          code: `
+            const { execFileSync } = require('child_process');
+            execFileSync('npm', ['run', 'build'], { cwd: process.cwd() });
+          `,
+          options: [{ allowLiteralSpawn: true }],
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('unsafe patterns should still be flagged', detectChildProcess, {
+      valid: [],
+      invalid: [
+        // These should still be flagged - user input flows into command
+        {
+          code: `
+            const { execFile } = require('child_process');
+            execFile(userCommand, ['--version'], callback);
+          `,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+        {
+          code: `
+            const { execFile } = require('child_process');
+            execFile('node', [userScript], callback);
+          `,
+          errors: [{ messageId: 'childProcessCommandInjection' }],
+        },
+      ],
     });
   });
 });
