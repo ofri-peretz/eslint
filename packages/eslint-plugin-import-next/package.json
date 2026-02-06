@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-import-next",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "description": "Drop-in replacement for eslint-plugin-import. 100x faster no-cycle detection, AI-optimized fixes, zero config migration.",
   "type": "commonjs",
   "main": "./src/index.js",
