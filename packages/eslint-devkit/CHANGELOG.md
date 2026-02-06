@@ -1,3 +1,7 @@
+## 1.3.2 (2026-02-06)
+
+This was a version bump only for eslint-devkit to align it with other projects, there were no code changes.
+
 # Changelog
 
 All notable changes to `@interlace/eslint-devkit` are documented here.
