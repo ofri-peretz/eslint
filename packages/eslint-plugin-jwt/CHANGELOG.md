@@ -1,3 +1,13 @@
+## 2.2.2 (2026-02-06)
+
+### Bug Fixes
+
+- align codecov component names and update docs components ([0a59a86c](https://github.com/ofri-peretz/eslint/commit/0a59a86c))
+
+### ❤️ Thank You
+
+- Ofri Peretz
+
 ## [2.2.1] - 2026-02-02
 
 This was a version bump only for eslint-plugin-jwt to align it with other projects, there were no code changes.
