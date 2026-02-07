@@ -44,8 +44,8 @@
         "category": "security"
       },
       {
-        "name": "eslint-plugin-pg",
-        "slug": "pg",
+        "name": "eslint-plugin-lambda-security",
+        "slug": "lambda-security",
         "coverage": 85,
         "status": "production",
         "category": "security"
@@ -58,15 +58,15 @@
         "category": "security"
       },
       {
-        "name": "eslint-plugin-crypto",
-        "slug": "crypto",
+        "name": "eslint-plugin-pg",
+        "slug": "pg",
         "coverage": 85,
         "status": "production",
         "category": "security"
       },
       {
-        "name": "eslint-plugin-lambda-security",
-        "slug": "lambda-security",
+        "name": "eslint-plugin-crypto",
+        "slug": "crypto",
         "coverage": 85,
         "status": "production",
         "category": "security"
@@ -95,15 +95,15 @@
         "category": "quality"
       },
       {
-        "name": "eslint-plugin-conventions",
-        "slug": "conventions",
+        "name": "eslint-plugin-maintainability",
+        "slug": "maintainability",
         "coverage": 80,
         "status": "production",
         "category": "quality"
       },
       {
-        "name": "eslint-plugin-maintainability",
-        "slug": "maintainability",
+        "name": "eslint-plugin-conventions",
+        "slug": "conventions",
         "coverage": 80,
         "status": "production",
         "category": "quality"
@@ -116,15 +116,15 @@
         "category": "quality"
       },
       {
-        "name": "eslint-plugin-modularity",
-        "slug": "modularity",
+        "name": "eslint-plugin-operability",
+        "slug": "operability",
         "coverage": 80,
         "status": "production",
         "category": "quality"
       },
       {
-        "name": "eslint-plugin-operability",
-        "slug": "operability",
+        "name": "eslint-plugin-modularity",
+        "slug": "modularity",
         "coverage": 80,
         "status": "production",
         "category": "quality"
@@ -144,7 +144,7 @@
     "qualityPlugins": 75
   },
   "meta": {
-    "generatedAt": "2026-02-06T07:43:37.316Z",
+    "generatedAt": "2026-02-07T07:28:59.918Z",
     "source": "estimated",
     "ttl": 14400
   }
