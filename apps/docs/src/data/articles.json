@@ -51,13 +51,13 @@
       "slug": "i-let-claude-write-60-functions-65-75-had-security-vulnerabilities-414o",
       "path": "/ofri-peretz/i-let-claude-write-60-functions-65-75-had-security-vulnerabilities-414o",
       "url": "https://dev.to/ofri-peretz/i-let-claude-write-60-functions-65-75-had-security-vulnerabilities-414o",
-      "comments_count": 2,
-      "public_reactions_count": 2,
+      "comments_count": 4,
+      "public_reactions_count": 3,
       "collection_id": null,
       "published_timestamp": "2026-02-06T02:51:25Z",
       "language": "en",
       "subforem_id": 1,
-      "positive_reactions_count": 2,
+      "positive_reactions_count": 3,
       "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fimages.unsplash.com%2Fphoto-1677442136019-21780ecad995%3Fw%3D1200%26h%3D630%26fit%3Dcrop",
       "social_image": "https://media2.dev.to/dynamic/image/width=1000,height=500,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fimages.unsplash.com%2Fphoto-1677442136019-21780ecad995%3Fw%3D1200%26h%3D630%26fit%3Dcrop",
       "canonical_url": "https://ofriperetz.dev/articles/i-let-claude-write-60-functions-65-75-had-security-vulnerabilities",
@@ -65,7 +65,7 @@
       "edited_at": "2026-02-06T06:56:26Z",
       "crossposted_at": null,
       "published_at": "2026-02-06T02:51:25Z",
-      "last_comment_at": "2026-02-06T17:16:26Z",
+      "last_comment_at": "2026-02-07T21:09:07Z",
       "reading_time_minutes": 11,
       "tag_list": [
         "ai",
@@ -1262,6 +1262,6 @@
     }
   ],
   "total": 30,
-  "lastUpdated": "2026-02-07T20:13:40.485Z",
+  "lastUpdated": "2026-02-07T21:59:42.670Z",
   "source": "public"
 }
