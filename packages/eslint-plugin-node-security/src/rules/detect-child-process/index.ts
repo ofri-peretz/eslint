@@ -410,93 +410,108 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
      * Looks for patterns like: if (ALLOWED.includes(arg)) or if (!ALLOWED.includes(arg)) { return/throw }
      */
     const hasPrecedingAllowlistValidation = (node: TSESTree.CallExpression): boolean => {
-      // Find the function or block scope containing this call
-      let current: TSESTree.Node | undefined = node.parent;
-      while (current) {
-        // Check if inside an IfStatement with includes() check
-        if (current.type === 'IfStatement') {
-          const test = current.test;
-          
-          // Look for ALLOWED.includes(arg) pattern
-          if (test.type === 'CallExpression' &&
-              test.callee.type === 'MemberExpression' &&
-              test.callee.property.type === 'Identifier' &&
-              test.callee.property.name === 'includes') {
-            // Get the variable name being validated
-            const validatedVarNames = new Set<string>();
-            for (const testArg of test.arguments) {
-              if (testArg.type === 'Identifier') {
-                validatedVarNames.add(testArg.name);
-              }
-            }
-            
-            // Check if any of our call's args (or nested expressions) are being validated
-            const hasValidatedArg = (argNode: TSESTree.Node): boolean => {
-              if (argNode.type === 'Identifier' && validatedVarNames.has(argNode.name)) return true;
-              if (argNode.type === 'TemplateLiteral') {
-                return argNode.expressions.some(e => e.type === 'Identifier' && validatedVarNames.has(e.name));
-              }
-              if (argNode.type === AST_NODE_TYPES.ArrayExpression) {
-                return argNode.elements.some(el => el != null && hasValidatedArg(el));
-              }
-              return false;
-            };
-            
-            for (const arg of node.arguments) {
-              if (hasValidatedArg(arg)) {
-                return true;
-              }
-            }
+      // Helper: check if an arg node contains a validated variable
+      const makeArgChecker = (validatedVarNames: Set<string>) => {
+        const check = (argNode: TSESTree.Node): boolean => {
+          if (argNode.type === 'Identifier' && validatedVarNames.has(argNode.name)) return true;
+          if (argNode.type === 'TemplateLiteral') {
+            return argNode.expressions.some(e => e.type === 'Identifier' && validatedVarNames.has(e.name));
           }
-          
-          // Look for !ALLOWED.includes(arg) { return/throw } pattern (guard clause)
-          if (test.type === AST_NODE_TYPES.UnaryExpression && test.operator === '!' &&
-              test.argument.type === AST_NODE_TYPES.CallExpression &&
-              test.argument.callee.type === AST_NODE_TYPES.MemberExpression &&
-              test.argument.callee.property.type === AST_NODE_TYPES.Identifier &&
-              test.argument.callee.property.name === 'includes') {
-            // Check if the consequent is a return/throw (guard clause)
-            const consequent = current.consequent;
-            const isGuardClause = (
-              consequent.type === AST_NODE_TYPES.ReturnStatement ||
-              consequent.type === AST_NODE_TYPES.ThrowStatement ||
-              (consequent.type === AST_NODE_TYPES.BlockStatement && 
-               consequent.body.length > 0 &&
-               (consequent.body[0].type === AST_NODE_TYPES.ReturnStatement || 
-                consequent.body[0].type === AST_NODE_TYPES.ThrowStatement))
-            );
-            
-            if (isGuardClause) {
-              // Get validated var names from the includes() call
-              const validatedVarNames2 = new Set<string>();
-              for (const testArg of test.argument.arguments) {
-                if (testArg.type === 'Identifier') {
-                  validatedVarNames2.add(testArg.name);
-                }
-              }
-              
-              // Check if any of our call's args contain validated variables
-              const hasValidatedArg2 = (argNode: TSESTree.Node): boolean => {
-                if (argNode.type === 'Identifier' && (validatedVarNames2.size === 0 || validatedVarNames2.has(argNode.name))) return true;
-                if (argNode.type === 'TemplateLiteral') {
-                  return argNode.expressions.some(e => e.type === 'Identifier' && (validatedVarNames2.size === 0 || validatedVarNames2.has(e.name)));
-                }
-                if (argNode.type === AST_NODE_TYPES.ArrayExpression) {
-                  return argNode.elements.some(el => el != null && hasValidatedArg2(el));
-                }
-                return false;
-              };
-              
+          if (argNode.type === AST_NODE_TYPES.ArrayExpression) {
+            return argNode.elements.some(el => el != null && check(el));
+          }
+          return false;
+        };
+        return check;
+      };
+
+      // Helper: check if a guard clause IfStatement validates any of our call's args
+      const checkGuardClause = (ifNode: TSESTree.IfStatement): boolean => {
+        const test = ifNode.test;
+
+        // Pattern 1: if (ALLOWED.includes(arg)) { ... our call is inside ... }
+        if (test.type === 'CallExpression' &&
+            test.callee.type === 'MemberExpression' &&
+            test.callee.property.type === 'Identifier' &&
+            test.callee.property.name === 'includes') {
+          const validatedVarNames = new Set<string>();
+          for (const testArg of test.arguments) {
+            if (testArg.type === 'Identifier') validatedVarNames.add(testArg.name);
+          }
+          const check = makeArgChecker(validatedVarNames);
+          for (const arg of node.arguments) {
+            if (check(arg)) return true;
+          }
+        }
+
+        // Pattern 2: if (!ALLOWED.includes(arg)) { throw/return } — guard clause
+        if (test.type === AST_NODE_TYPES.UnaryExpression && test.operator === '!' &&
+            test.argument.type === AST_NODE_TYPES.CallExpression &&
+            test.argument.callee.type === AST_NODE_TYPES.MemberExpression &&
+            test.argument.callee.property.type === AST_NODE_TYPES.Identifier &&
+            test.argument.callee.property.name === 'includes') {
+          const consequent = ifNode.consequent;
+          const isGuardBody = (
+            consequent.type === AST_NODE_TYPES.ReturnStatement ||
+            consequent.type === AST_NODE_TYPES.ThrowStatement ||
+            (consequent.type === AST_NODE_TYPES.BlockStatement && 
+             consequent.body.length > 0 &&
+             (consequent.body[0].type === AST_NODE_TYPES.ReturnStatement || 
+              consequent.body[0].type === AST_NODE_TYPES.ThrowStatement))
+          );
+          if (isGuardBody) {
+            const validatedVarNames = new Set<string>();
+            for (const testArg of test.argument.arguments) {
+              if (testArg.type === 'Identifier') validatedVarNames.add(testArg.name);
+            }
+            const check = makeArgChecker(validatedVarNames.size > 0 ? validatedVarNames : new Set(['*']));
+            // If we have specific validated var names, check them; otherwise check any identifier
+            if (validatedVarNames.size > 0) {
               for (const arg of node.arguments) {
-                if (hasValidatedArg2(arg)) {
+                if (check(arg)) return true;
+              }
+            } else {
+              // No specific args in includes() - treat as generic guard
+              for (const arg of node.arguments) {
+                if (arg.type === 'Identifier' || 
+                    (arg.type === AST_NODE_TYPES.ArrayExpression && arg.elements.some(el => el?.type === 'Identifier'))) {
                   return true;
                 }
               }
             }
           }
         }
-        
+        return false;
+      };
+
+      // Pass 1: Walk up parent chain looking for ancestor IfStatements
+      let current: TSESTree.Node | undefined = node.parent;
+      while (current) {
+        if (current.type === 'IfStatement') {
+          if (checkGuardClause(current)) return true;
+        }
         current = current.parent;
+      }
+
+      // Pass 2: Look for guard clause IfStatements as preceding siblings in the same block
+      // This handles: function f(x) { if (!allowed.includes(x)) throw ...; execFile('cmd', [x]); }
+      let stmt: TSESTree.Node | undefined = node.parent;
+      // Walk up to find the statement that contains our call in a block
+      while (stmt && stmt.parent && stmt.parent.type !== AST_NODE_TYPES.BlockStatement) {
+        stmt = stmt.parent;
+      }
+      if (stmt && stmt.parent && stmt.parent.type === AST_NODE_TYPES.BlockStatement) {
+        const block = stmt.parent as TSESTree.BlockStatement;
+        const callIndex = block.body.indexOf(stmt as TSESTree.Statement);
+        if (callIndex > 0) {
+          // Check preceding siblings for guard clause IfStatements
+          for (let i = 0; i < callIndex; i++) {
+            const sibling = block.body[i];
+            if (sibling.type === 'IfStatement') {
+              if (checkGuardClause(sibling)) return true;
+            }
+          }
+        }
       }
       
       return false;

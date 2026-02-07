@@ -438,11 +438,48 @@ describe('detect-object-injection', () => {
   });
 
   /**
-   * TDD Tests: False Positive Reduction
-   * These tests define expected behavior for safe patterns that should NOT trigger warnings.
-   * Currently these tests may fail - the rule needs to be updated to pass them.
-   * 
-   * Issue: Benchmark revealed FPs on Map usage and Object.create(null)
-   * Benchmark: eslint-benchmark-suite/benchmarks/fn-fp-comparison
+   * Benchmark FP Regression Tests
+   * Source: eslint-benchmark-suite/benchmarks/fn-fp-comparison/fixtures/safe/safe-patterns.js
    */
+  describe('Benchmark FP Regression', () => {
+    ruleTester.run('benchmark FP: safe_proto_nullproto', detectObjectInjection, {
+      valid: [
+        // Object.create(null) is immune to prototype pollution
+        // Bracket notation on null-prototype objects is inherently safe
+        {
+          code: `
+            function safeStore(entries) {
+              const obj = Object.create(null);
+              for (const [key, value] of entries) {
+                obj[key] = value;
+              }
+              return obj;
+            }
+          `,
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('benchmark FP: safe_random_shuffle', detectObjectInjection, {
+      valid: [
+        // Fisher-Yates shuffle uses computed index on arrays
+        // Array bracket access with numeric index is not prototype pollution
+        {
+          code: `
+            function shuffle(array) {
+              const shuffled = [...array];
+              for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+              }
+              return shuffled;
+            }
+          `,
+        },
+      ],
+      invalid: [],
+    });
+  });
 });
+

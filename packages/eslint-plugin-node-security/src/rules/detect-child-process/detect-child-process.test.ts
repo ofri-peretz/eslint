@@ -279,6 +279,28 @@ describe('detect-child-process', () => {
         },
       ],
     });
+    /**
+     * Benchmark FP Regression: safe_cmd_validated
+     * execFile with allowlist-validated format inside template literal args
+     * Source: eslint-benchmark-suite/benchmarks/fn-fp-comparison/fixtures/safe/safe-patterns.js
+     */
+    ruleTester.run('benchmark FP: safe_cmd_validated - allowlist guard clause', detectChildProcess, {
+      valid: [
+        {
+          code: `
+            const { execFile } = require('child_process');
+            const ALLOWED_FORMATS = ['png', 'jpg', 'gif'];
+            function convert(format) {
+              if (!ALLOWED_FORMATS.includes(format)) {
+                throw new Error('Invalid format');
+              }
+              return execFile('convert', ['input.img', \`output.\${format}\`]);
+            }
+          `,
+        },
+      ],
+      invalid: [],
+    });
   });
 });
 

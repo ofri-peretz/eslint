@@ -260,11 +260,35 @@ describe('no-sensitive-data-exposure', () => {
   });
 
   /**
-   * TDD Tests: False Positive Reduction
-   * These tests define expected behavior for safe patterns that should NOT trigger warnings.
-   * Currently these tests may fail - the rule needs to be updated to pass them.
-   * 
-   * Issue: Benchmark revealed FPs on password handling in security contexts
-   * Benchmark: eslint-benchmark-suite/benchmarks/fn-fp-comparison
+   * Benchmark FP Regression Tests
+   * Source: eslint-benchmark-suite/benchmarks/fn-fp-comparison/fixtures/safe/safe-patterns.js
    */
+  describe('Benchmark FP Regression', () => {
+    ruleTester.run('benchmark FP: safe_proto_allowlist - Invalid key error', noSensitiveDataExposure, {
+      valid: [
+        // "Invalid key" in error messages is NOT sensitive data exposure
+        // The word "key" here refers to an object property key, not an API key
+        {
+          code: `
+            function validateKey(obj, key, value) {
+              const VALID_KEYS = ['name', 'email', 'age', 'status'];
+              if (!VALID_KEYS.includes(key)) {
+                throw new Error('Invalid key');
+              }
+              obj[key] = value;
+            }
+          `,
+        },
+        // Generic "key" usage in error context should not trigger
+        {
+          code: `throw new Error('Invalid key format');`,
+        },
+        // "key" as a standalone word in non-sensitive context
+        {
+          code: `console.log('Press any key to continue');`,
+        },
+      ],
+      invalid: [],
+    });
+  });
 });

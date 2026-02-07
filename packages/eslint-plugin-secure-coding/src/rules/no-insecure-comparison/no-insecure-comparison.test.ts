@@ -216,11 +216,30 @@ describe('no-insecure-comparison', () => {
   });
 
   /**
-   * TDD Tests: False Positive Reduction
-   * These tests define expected behavior for safe patterns that should NOT trigger warnings.
-   * Currently these tests may fail - the rule needs to be updated to pass them.
-   * 
-   * Issue: Benchmark revealed FPs on idiomatic null/undefined checks
-   * Benchmark: eslint-benchmark-suite/benchmarks/fn-fp-comparison
+   * Benchmark FP Regression Tests
+   * Source: eslint-benchmark-suite/benchmarks/fn-fp-comparison/fixtures/safe/safe-patterns.js
    */
+  describe('Benchmark FP Regression', () => {
+    ruleTester.run('benchmark FP: safe_timing_compare - length check before timingSafeEqual', noInsecureComparison, {
+      valid: [
+        // Length check before timingSafeEqual is a known safe pattern
+        // The .length comparison leaks only length information, which is acceptable
+        {
+          code: `
+            function safeCompare(input, secret) {
+              const crypto = require('crypto');
+              const inputBuffer = Buffer.from(input);
+              const secretBuffer = Buffer.from(secret);
+              if (inputBuffer.length !== secretBuffer.length) {
+                return false;
+              }
+              return crypto.timingSafeEqual(inputBuffer, secretBuffer);
+            }
+          `,
+        },
+      ],
+      invalid: [],
+    });
+  });
 });
+

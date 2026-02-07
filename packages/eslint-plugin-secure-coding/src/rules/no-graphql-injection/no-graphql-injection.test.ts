@@ -362,4 +362,58 @@ describe('no-graphql-injection', () => {
     });
   });
 
+  /**
+   * Benchmark FP Regression Tests
+   * Source: eslint-benchmark-suite/benchmarks/fn-fp-comparison/fixtures/safe/safe-patterns.js
+   */
+  describe('Benchmark FP Regression', () => {
+    ruleTester.run('benchmark FP: safe_template_logging', noGraphqlInjection, {
+      valid: [
+        // Template literals used for logging should NOT trigger GraphQL injection
+        {
+          code: `
+            function logUser(username) {
+              console.log(\`User logged in: \${username}\`);
+              return { message: \`Welcome, \${username}\` };
+            }
+          `,
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('benchmark FP: safe_cmd_validated template', noGraphqlInjection, {
+      valid: [
+        // Template literal in execFile args is not a GraphQL query
+        {
+          code: `
+            const { execFile } = require('child_process');
+            execFile('convert', ['input.img', \`output.\${format}\`]);
+          `,
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('benchmark FP: safe_redirect_sameorigin', noGraphqlInjection, {
+      valid: [
+        // URL constructor with template literal is not GraphQL
+        {
+          code: `
+            function redirect(req, res) {
+              const target = req.query.returnTo;
+              const url = new URL(target, \`https://\${req.headers.host}\`);
+              if (url.host !== req.headers.host) {
+                return res.redirect('/');
+              }
+              res.redirect(url.pathname);
+            }
+          `,
+        },
+      ],
+      invalid: [],
+    });
+  });
+
 });
+

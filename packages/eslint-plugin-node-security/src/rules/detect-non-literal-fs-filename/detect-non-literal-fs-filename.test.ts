@@ -363,5 +363,50 @@ describe('detect-non-literal-fs-filename', () => {
       ],
     });
   });
+
+  /**
+   * Benchmark FP Regression Tests
+   * Source: eslint-benchmark-suite/benchmarks/fn-fp-comparison/fixtures/safe/safe-patterns.js
+   */
+  describe('Benchmark FP Regression', () => {
+    ruleTester.run('benchmark FP: safe_path_allowlist', detectNonLiteralFsFilename, {
+      valid: [
+        // Allowlist validation before file access is SAFE
+        {
+          code: `
+            const fs = require('fs');
+            const path = require('path');
+            const ALLOWED_FILES = ['config.json', 'readme.txt', 'data.csv'];
+            function readConfig(filename) {
+              if (!ALLOWED_FILES.includes(filename)) {
+                throw new Error('File not allowed');
+              }
+              return fs.readFileSync(path.join('./config', filename));
+            }
+          `,
+        },
+      ],
+      invalid: [],
+    });
+
+    ruleTester.run('benchmark FP: safe_path_regex', detectNonLiteralFsFilename, {
+      valid: [
+        // Regex validation of filename characters is SAFE
+        {
+          code: `
+            const fs = require('fs');
+            const path = require('path');
+            function readUpload(filename) {
+              if (!/^[a-zA-Z0-9._-]+$/.test(filename)) {
+                throw new Error('Invalid filename characters');
+              }
+              return fs.readFileSync(path.join('./uploads', filename));
+            }
+          `,
+        },
+      ],
+      invalid: [],
+    });
+  });
 });
 
