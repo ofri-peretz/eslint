@@ -22,7 +22,7 @@
  * - Input validation functions
  */
 import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
-import { createRule } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import {
   createSafetyChecker,
@@ -54,6 +54,14 @@ export interface Options extends SecurityRuleOptions {
 
   /** Functions that validate GraphQL input */
   validationFunctions?: string[];
+
+  /**
+   * Callers where template literals should never be treated as GraphQL.
+   * Format: 'object.method' for member calls (e.g. 'console.log'),
+   * or 'ClassName' for constructors (e.g. 'URL', 'Error').
+   * These are merged with built-in safe callers.
+   */
+  safeTemplateLiteralCallers?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -185,6 +193,12 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
             items: { type: 'string' },
             default: ['validate', 'sanitize', 'isValid', 'assertValid'],
           },
+          safeTemplateLiteralCallers: {
+            type: 'array',
+            items: { type: 'string' },
+            default: [],
+            description: 'Additional callers where template literals are never GraphQL. Format: object.method or ClassName.',
+          },
           trustedSanitizers: {
             type: 'array',
             items: { type: 'string' },
@@ -213,6 +227,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       maxQueryDepth: 10,
       trustedGraphqlLibraries: ['graphql', 'apollo-server', 'graphql-tools', 'graphql-tag'],
       validationFunctions: ['validate', 'sanitize', 'isValid', 'assertValid'],
+      safeTemplateLiteralCallers: [],
       trustedSanitizers: [],
       trustedAnnotations: [],
       strictMode: false,
@@ -225,6 +240,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       maxQueryDepth = 10,
       trustedGraphqlLibraries = ['graphql', 'apollo-server', 'graphql-tools', 'graphql-tag'],
       validationFunctions = ['validate', 'sanitize', 'isValid', 'assertValid'],
+      safeTemplateLiteralCallers = [],
       trustedSanitizers = [],
       trustedAnnotations = [],
       strictMode = false,
@@ -263,78 +279,269 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
       return false;
     };
 
+    // ─── AST-based safe caller detection ───────────────────────────────
+    // Hard-coded safe callers that should NEVER contain GraphQL queries.
+    // Users can extend via safeTemplateLiteralCallers option.
+    const BUILTIN_SAFE_MEMBER_CALLERS = new Set([
+      'console.log', 'console.warn', 'console.error', 'console.info', 'console.debug',
+      'console.trace', 'logger.log', 'logger.info', 'logger.warn', 'logger.error',
+      'logger.debug',
+    ]);
+    const BUILTIN_SAFE_CONSTRUCTORS = new Set(['URL', 'Error', 'TypeError', 'RangeError']);
+
+    // Merge user-provided callers
+    const safeMemberCallers = new Set(BUILTIN_SAFE_MEMBER_CALLERS);
+    const safeConstructors = new Set(BUILTIN_SAFE_CONSTRUCTORS);
+    for (const caller of safeTemplateLiteralCallers) {
+      if (caller.includes('.')) {
+        safeMemberCallers.add(caller);
+      } else {
+        safeConstructors.add(caller);
+      }
+    }
+
     /**
-     * Check if string contains GraphQL query patterns
-     * Must be precise to avoid flagging console.log, URLs, CSS, etc.
+     * AST-based check: is this node inside a call that can't be GraphQL?
+     * Walks up from the TemplateLiteral to its nearest CallExpression/NewExpression parent.
      */
-    const containsGraphqlQuery = (text: string): boolean => {
-      const lowerText = text.toLowerCase();
-      
-      // Skip common non-GraphQL patterns
-      // URLs and file paths
-      if (/^[`'"]\s*\//.test(text) || /https?:\/\//.test(text)) {
-        return false;
+    const isInSafeCallerContext = (node: TSESTree.TemplateLiteral): boolean => {
+      let current: TSESTree.Node | undefined = node.parent;
+
+      while (current) {
+        // Direct arg to a call: console.log(`...`)
+        if (current.type === 'CallExpression') {
+          const callee = current.callee;
+          // object.method() pattern
+          if (callee.type === 'MemberExpression' &&
+              callee.object.type === 'Identifier' &&
+              callee.property.type === 'Identifier') {
+            const key = `${callee.object.name}.${callee.property.name}`;
+            if (safeMemberCallers.has(key)) return true;
+          }
+          // Direct function call
+          if (callee.type === 'Identifier' && safeMemberCallers.has(callee.name)) {
+            return true;
+          }
+          break; // Stop at first enclosing call
+        }
+
+        // new URL(`...`), new Error(`...`)
+        if (current.type === AST_NODE_TYPES.NewExpression) {
+          if (current.callee.type === AST_NODE_TYPES.Identifier &&
+              safeConstructors.has(current.callee.name)) {
+            return true;
+          }
+          break;
+        }
+
+        // Don't walk past function boundaries
+        if (current.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+            current.type === AST_NODE_TYPES.FunctionExpression ||
+            current.type === AST_NODE_TYPES.FunctionDeclaration) {
+          break;
+        }
+
+        current = current.parent;
       }
-      // Console/logging statements
-      if (/console\.(log|warn|error|info)/.test(lowerText)) {
-        return false;
+
+      return false;
+    };
+
+    // ─── AST-based GraphQL detection helpers ──────────────────────────
+    const isWordChar = (ch: string): boolean => {
+      const code = ch.charCodeAt(0);
+      return (code >= 65 && code <= 90) ||   // A-Z
+             (code >= 97 && code <= 122) ||  // a-z
+             (code >= 48 && code <= 57) ||   // 0-9
+             code === 95;                     // _
+    };
+
+    const isWhitespace = (ch: string): boolean =>
+      ch === ' ' || ch === '\n' || ch === '\t' || ch === '\r';
+
+    /** Operation keywords that must be followed by optional name + { or ( */
+    const GRAPHQL_OP_KEYWORDS = ['query', 'mutation', 'subscription'];
+    /** Schema keywords that must be followed by a type name */
+    const GRAPHQL_SCHEMA_KEYWORDS = ['type', 'interface', 'enum', 'scalar', 'input'];
+
+    /**
+     * Find keyword at word boundary in text. Returns index or -1.
+     * Uses simple character checks instead of regex \b.
+     */
+    const findKeywordAtBoundary = (text: string, keyword: string, startFrom = 0): number => {
+      let pos = startFrom;
+      while (pos < text.length) {
+        const idx = text.indexOf(keyword, pos);
+        if (idx === -1) return -1;
+
+        const beforeOk = idx === 0 || !isWordChar(text[idx - 1]);
+        const afterIdx = idx + keyword.length;
+        const afterOk = afterIdx >= text.length || !isWordChar(text[afterIdx]);
+
+        if (beforeOk && afterOk) return idx;
+        pos = idx + 1;
       }
-      // CSS-like patterns
-      if (/\bdisplay\s*:|\bcolor\s*:|\bflex\b/.test(lowerText)) {
-        return false;
-      }
-      // JSON-like simple key-value
-      if (/^\s*[`'"]\s*\{\s*"\w+":\s*"/.test(text)) {
-        return false;
-      }
-      
-      // Must have actual GraphQL keywords with proper syntax
-      const hasGraphqlKeyword = /\b(query|mutation|subscription)\s+\w*\s*[({]/.test(lowerText) ||
-                                /\bfragment\s+\w+\s+on\s+/.test(lowerText);
-      
-      // Or schema definitions
-      const hasSchemaDefinition = /\b(type|interface|enum|scalar|input)\s+\w+/.test(lowerText);
-      
-      // Or selection sets with fields (not just { })
-      const hasSelectionSet = /\{\s*\w+(\s*\([^)]*\))?\s*\{/.test(text);
-      
-      return hasGraphqlKeyword || hasSchemaDefinition || hasSelectionSet;
+      return -1;
     };
 
     /**
-     * Check if string contains dangerous introspection
+     * AST-based: Check if a TemplateLiteral contains GraphQL syntax.
+     * Examines quasis (static template parts) directly — no regex, no sourceCode.getText().
      */
-    const containsIntrospection = (text: string): boolean => {
-      return /__schema|__type/i.test(text);
-    };
+    const isGraphqlTemplate = (node: TSESTree.TemplateLiteral): boolean => {
+      // Build combined static text from quasis for keyword scanning
+      const staticText = node.quasis
+        .map(q => (q.value.cooked ?? q.value.raw).toLowerCase())
+        .join('');
 
-    /**
-     * Calculate query depth (rough estimate)
-     */
-    const calculateQueryDepth = (queryText: string): number => {
-      let depth = 0;
-      let braceCount = 0;
+      // 1. Check for GraphQL operation keywords (query, mutation, subscription)
+      //    Must be followed by optional name then { or (
+      for (const keyword of GRAPHQL_OP_KEYWORDS) {
+        let pos = 0;
+        while (pos < staticText.length) {
+          const idx = findKeywordAtBoundary(staticText, keyword, pos);
+          if (idx === -1) break;
+          pos = idx + 1;
 
-      for (const char of queryText) {
-        if (char === '{') {
-          braceCount++;
-          depth = Math.max(depth, braceCount);
-        } else if (char === '}') {
-          braceCount--;
+          // Scan past keyword, skip whitespace, skip optional name, skip whitespace, expect { or (
+          let scan = idx + keyword.length;
+          while (scan < staticText.length && isWhitespace(staticText[scan])) scan++;
+          while (scan < staticText.length && isWordChar(staticText[scan])) scan++;
+          while (scan < staticText.length && isWhitespace(staticText[scan])) scan++;
+          if (scan < staticText.length && (staticText[scan] === '{' || staticText[scan] === '(')) {
+            return true;
+          }
         }
       }
 
+      // Check for fragment keyword: fragment Name on Type
+      {
+        let pos = 0;
+        while (pos < staticText.length) {
+          const idx = findKeywordAtBoundary(staticText, 'fragment', pos);
+          if (idx === -1) break;
+          pos = idx + 1;
+
+          let scan = idx + 8; // 'fragment'.length
+          while (scan < staticText.length && isWhitespace(staticText[scan])) scan++;
+          const nameStart = scan;
+          while (scan < staticText.length && isWordChar(staticText[scan])) scan++;
+          if (scan === nameStart) continue; // no name
+          while (scan < staticText.length && isWhitespace(staticText[scan])) scan++;
+          if (staticText.slice(scan, scan + 2) === 'on' && (scan + 2 >= staticText.length || !isWordChar(staticText[scan + 2]))) {
+            return true;
+          }
+        }
+      }
+
+      // 2. Check for schema definition keywords (type User, interface Foo, etc.)
+      for (const keyword of GRAPHQL_SCHEMA_KEYWORDS) {
+        let pos = 0;
+        while (pos < staticText.length) {
+          const idx = findKeywordAtBoundary(staticText, keyword, pos);
+          if (idx === -1) break;
+          pos = idx + 1;
+
+          let scan = idx + keyword.length;
+          // Must have whitespace then a word (type name)
+          if (scan >= staticText.length || !isWhitespace(staticText[scan])) continue;
+          while (scan < staticText.length && isWhitespace(staticText[scan])) scan++;
+          if (scan < staticText.length && isWordChar(staticText[scan])) {
+            return true;
+          }
+        }
+      }
+
+      // 3. Check for selection sets (nested braces): { users { name } }
+      let braceDepth = 0;
+      for (let i = 0; i < staticText.length; i++) {
+        if (staticText[i] === '{') {
+          braceDepth++;
+          if (braceDepth >= 2) return true;
+        } else if (staticText[i] === '}') {
+          braceDepth = Math.max(0, braceDepth - 1);
+        }
+      }
+
+      return false;
+    };
+
+    /**
+     * Check if a TemplateLiteral contains introspection patterns.
+     * AST-based: scans quasis directly.
+     */
+    const templateHasIntrospection = (node: TSESTree.TemplateLiteral): boolean => {
+      return node.quasis.some(q => {
+        const text = (q.value.cooked ?? q.value.raw).toLowerCase();
+        return text.includes('__schema') || text.includes('__type');
+      });
+    };
+
+    /**
+     * Calculate query depth from template quasis (brace depth scan).
+     */
+    const templateQueryDepth = (node: TSESTree.TemplateLiteral): number => {
+      let depth = 0;
+      let braceCount = 0;
+      for (const q of node.quasis) {
+        const text = q.value.cooked ?? q.value.raw;
+        for (const char of text) {
+          if (char === '{') { braceCount++; depth = Math.max(depth, braceCount); }
+          else if (char === '}') { braceCount--; }
+        }
+      }
       return depth;
     };
 
     /**
-     * Check if string contains unsafe interpolation
+     * Text-based GraphQL detection for string Literals and BinaryExpressions.
+     * Uses simple string methods — only regex is for fragment pattern.
      */
-    const containsUnsafeInterpolation = (text: string): boolean => {
-      // Check for template literal interpolation
-      return /\$\{[^}]+\}/.test(text) ||
-             // Check for string concatenation patterns
-             /\w+\s*\+\s*[^+]+\s*\+\s*\w+/.test(text);
+    const containsGraphqlText = (text: string): boolean => {
+      const lower = text.toLowerCase();
+
+      // Check operation keywords
+      for (const keyword of GRAPHQL_OP_KEYWORDS) {
+        const idx = findKeywordAtBoundary(lower, keyword);
+        if (idx === -1) continue;
+        let scan = idx + keyword.length;
+        while (scan < lower.length && isWhitespace(lower[scan])) scan++;
+        while (scan < lower.length && isWordChar(lower[scan])) scan++;
+        while (scan < lower.length && isWhitespace(lower[scan])) scan++;
+        if (scan < lower.length && (lower[scan] === '{' || lower[scan] === '(')) return true;
+      }
+
+      // Check fragment
+      const fragIdx = findKeywordAtBoundary(lower, 'fragment');
+      if (fragIdx !== -1) {
+        let scan = fragIdx + 8;
+        while (scan < lower.length && isWhitespace(lower[scan])) scan++;
+        const nameStart = scan;
+        while (scan < lower.length && isWordChar(lower[scan])) scan++;
+        if (scan > nameStart) {
+          while (scan < lower.length && isWhitespace(lower[scan])) scan++;
+          if (lower.slice(scan, scan + 2) === 'on' && (scan + 2 >= lower.length || !isWordChar(lower[scan + 2]))) return true;
+        }
+      }
+
+      // Check schema keywords
+      for (const keyword of GRAPHQL_SCHEMA_KEYWORDS) {
+        const idx = findKeywordAtBoundary(lower, keyword);
+        if (idx === -1) continue;
+        let scan = idx + keyword.length;
+        if (scan >= lower.length || !isWhitespace(lower[scan])) continue;
+        while (scan < lower.length && isWhitespace(lower[scan])) scan++;
+        if (scan < lower.length && isWordChar(lower[scan])) return true;
+      }
+
+      // Check nested braces
+      let braceDepth = 0;
+      for (let i = 0; i < text.length; i++) {
+        if (text[i] === '{') { braceDepth++; if (braceDepth >= 2) return true; }
+        else if (text[i] === '}') { braceDepth = Math.max(0, braceDepth - 1); }
+      }
+
+      return false;
     };
 
     /**
@@ -360,14 +567,18 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
     return {
       // Check template literals for GraphQL queries
       TemplateLiteral(node: TSESTree.TemplateLiteral) {
-        const queryText = sourceCode.getText(node);
-
-        if (!containsGraphqlQuery(queryText)) {
+        // AST-based context check: skip templates inside safe callers
+        if (isInSafeCallerContext(node)) {
           return;
         }
 
-        // Check for introspection queries
-        if (!allowIntrospection && containsIntrospection(queryText)) {
+        // AST-based GraphQL detection: scan quasis, no regex
+        if (!isGraphqlTemplate(node)) {
+          return;
+        }
+
+        // Check for introspection queries (AST-based)
+        if (!allowIntrospection && templateHasIntrospection(node)) {
           // FALSE POSITIVE REDUCTION: Skip if annotated as safe
           if (safetyChecker.isSafe(node, context)) {
             return;
@@ -384,8 +595,8 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        // Check for unsafe interpolation
-        if (containsUnsafeInterpolation(queryText)) {
+        // Check for unsafe interpolation (AST-based: just check expressions array)
+        if (node.expressions.length > 0) {
           // FALSE POSITIVE REDUCTION: Skip if all expressions are validated
           const allExpressionsSafe = node.expressions.every((expr: TSESTree.Expression) =>
             isInputValidated(expr) || safetyChecker.isSafe(expr, context)
@@ -409,8 +620,8 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
           }
         }
 
-        // Check query depth for DoS protection
-        const depth = calculateQueryDepth(queryText);
+        // Check query depth for DoS protection (AST-based)
+        const depth = templateQueryDepth(node);
         if (depth > maxQueryDepth) {
           context.report({
             node,
@@ -437,12 +648,13 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
 
         const queryText = node.value;
 
-        if (!containsGraphqlQuery(queryText)) {
+        if (!containsGraphqlText(queryText)) {
           return;
         }
 
         // Check for introspection queries
-        if (!allowIntrospection && containsIntrospection(queryText)) {
+        const lowerQuery = queryText.toLowerCase();
+        if (!allowIntrospection && (lowerQuery.includes('__schema') || lowerQuery.includes('__type'))) {
           /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
           if (safetyChecker.isSafe(node, context)) {
             return;
@@ -459,8 +671,13 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
           });
         }
 
-        // Check query depth
-        const depth = calculateQueryDepth(queryText);
+        // Check query depth via brace scanner
+        let depth = 0;
+        let bc = 0;
+        for (const ch of queryText) {
+          if (ch === '{') { bc++; depth = Math.max(depth, bc); }
+          else if (ch === '}') { bc--; }
+        }
         if (depth > maxQueryDepth) {
           context.report({
             node,
@@ -481,7 +698,7 @@ export const noGraphqlInjection = createRule<RuleOptions, MessageIds>({
 
         const fullText = sourceCode.getText(node);
 
-        if (!containsGraphqlQuery(fullText)) {
+        if (!containsGraphqlText(fullText)) {
           return;
         }
 

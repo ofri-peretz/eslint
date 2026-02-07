@@ -39,14 +39,27 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
- * Check if string contains sensitive data patterns
+ * Check if string contains sensitive data patterns.
+ * Handles camelCase (secretKey), snake_case (secret_key), and plain text.
  */
 function containsSensitiveData(
   text: string,
   patterns: string[]
-): boolean {
-  const lowerText = text.toLowerCase();
-  return patterns.some(pattern => lowerText.includes(pattern.toLowerCase()));
+): string | null {
+  // Normalize camelCase → space separated for matching (secretKey → secret key)
+  const normalized = text
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .toLowerCase();
+
+  for (const pattern of patterns) {
+    const escaped = pattern.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Allow spaces or underscores as word separators (e.g. 'credit card' matches 'credit_card')
+    const flexPattern = escaped.replace(/[_ ]/g, '[_ ]');
+    if (new RegExp(`\\b${flexPattern}\\b`, 'i').test(normalized)) {
+      return pattern;
+    }
+  }
+  return null;
 }
 
 
@@ -100,7 +113,7 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
           sensitivePatterns: {
             type: 'array',
             items: { type: 'string' },
-            default: ['password', 'secret', 'token', 'key', 'ssn', 'credit', 'card', 'api_key', 'apikey'],
+            default: ['password', 'passwd', 'secret', 'token', 'access_token', 'auth_token', 'ssn', 'credit_card', 'creditcard', 'api_key', 'apikey', 'secret_key', 'private_key', 'encryption_key'],
             description: 'Sensitive data patterns',
           },
           checkConsoleLog: {
@@ -125,7 +138,7 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [
     {
-      sensitivePatterns: ['password', 'secret', 'token', 'key', 'ssn', 'credit', 'card', 'api_key', 'apikey'],
+      sensitivePatterns: ['password', 'passwd', 'secret', 'token', 'access_token', 'auth_token', 'ssn', 'credit_card', 'creditcard', 'api_key', 'apikey', 'secret_key', 'private_key', 'encryption_key'],
       checkConsoleLog: true,
       checkErrorMessages: true,
       checkApiResponses: true,
@@ -133,7 +146,7 @@ export const noSensitiveDataExposure = createRule<RuleOptions, MessageIds>({
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
     const {
-sensitivePatterns = ['password', 'secret', 'token', 'key', 'ssn', 'credit', 'card', 'api_key', 'apikey'],
+sensitivePatterns = ['password', 'passwd', 'secret', 'token', 'access_token', 'auth_token', 'ssn', 'credit_card', 'creditcard', 'api_key', 'apikey', 'secret_key', 'private_key', 'encryption_key'],
       checkConsoleLog = true,
       checkErrorMessages = true,
     
@@ -176,13 +189,14 @@ sensitivePatterns = ['password', 'secret', 'token', 'key', 'ssn', 'credit', 'car
         for (const arg of node.arguments) {
           if (arg.type === 'Literal' && typeof arg.value === 'string') {
             const text = arg.value;
-            if (containsSensitiveData(text, sensitivePatterns)) {
+            const matchedPattern = containsSensitiveData(text, sensitivePatterns);
+            if (matchedPattern) {
               context.report({
                 node: arg,
                 messageId: 'sensitiveDataExposure',
                 data: {
                   context: 'logs',
-                  dataType: 'password',
+                  dataType: matchedPattern,
                 },
                 suggest: [
                   { messageId: 'redactData', fix: () => null },
@@ -193,14 +207,14 @@ sensitivePatterns = ['password', 'secret', 'token', 'key', 'ssn', 'credit', 'car
               return; // Only report once per call
             }
           } else if (arg.type === 'Identifier' && arg.name) {
-            const name = arg.name.toLowerCase();
-            if (containsSensitiveData(name, sensitivePatterns)) {
+            const matchedPattern2 = containsSensitiveData(arg.name, sensitivePatterns);
+            if (matchedPattern2) {
               context.report({
                 node: arg,
                 messageId: 'sensitiveDataExposure',
                 data: {
                   context: 'logs',
-                  dataType: 'password',
+                  dataType: matchedPattern2,
                 },
                 suggest: [
                   { messageId: 'redactData', fix: () => null },
@@ -226,15 +240,16 @@ sensitivePatterns = ['password', 'secret', 'token', 'key', 'ssn', 'credit', 'car
       if (node.callee && node.callee.type === 'Identifier' && node.callee.name === 'Error') {
         // Check all arguments for sensitive data (report only once per error)
         for (const arg of node.arguments) {
-          if (arg.type === 'Literal' && typeof arg.value === 'string') {
+            if (arg.type === 'Literal' && typeof arg.value === 'string') {
             const text = arg.value;
-            if (containsSensitiveData(text, sensitivePatterns)) {
+            const matchedErrPattern = containsSensitiveData(text, sensitivePatterns);
+            if (matchedErrPattern) {
               context.report({
                 node: arg,
                 messageId: 'sensitiveDataExposure',
                 data: {
                   context: 'error messages',
-                  dataType: 'password',
+                  dataType: matchedErrPattern,
                 },
                 suggest: [
                   { messageId: 'redactData', fix: () => null },
@@ -248,13 +263,14 @@ sensitivePatterns = ['password', 'secret', 'token', 'key', 'ssn', 'credit', 'car
             // Check left side if it's a literal
             if (arg.left && arg.left.type === 'Literal' && typeof arg.left.value === 'string') {
               const leftText = arg.left.value;
-              if (containsSensitiveData(leftText, sensitivePatterns)) {
+              const leftMatchedPattern = containsSensitiveData(leftText, sensitivePatterns);
+              if (leftMatchedPattern) {
                 context.report({
                   node: arg.left,
                   messageId: 'sensitiveDataExposure',
                   data: {
                     context: 'error messages',
-                    dataType: 'password',
+                    dataType: leftMatchedPattern,
                   },
                   suggest: [
                     { messageId: 'redactData', fix: () => null },
@@ -267,14 +283,14 @@ sensitivePatterns = ['password', 'secret', 'token', 'key', 'ssn', 'credit', 'car
             }
             // Check right side if it's an identifier
             if (arg.right && arg.right.type === 'Identifier' && arg.right.name) {
-              const rightName = arg.right.name.toLowerCase();
-              if (containsSensitiveData(rightName, sensitivePatterns)) {
+              const rightMatchedPattern = containsSensitiveData(arg.right.name, sensitivePatterns);
+              if (rightMatchedPattern) {
                 context.report({
                   node: arg.right,
                   messageId: 'sensitiveDataExposure',
                   data: {
                     context: 'error messages',
-                    dataType: 'password',
+                    dataType: rightMatchedPattern,
                   },
                   suggest: [
                     { messageId: 'redactData', fix: () => null },

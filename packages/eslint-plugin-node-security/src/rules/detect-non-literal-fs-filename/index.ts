@@ -272,6 +272,25 @@ allowLiterals = false,
         return false;
       }
 
+      // SAFE: path.join("./base", dynamicVar) where dynamicVar has been validated
+      // Extract dynamic identifiers from path.join/resolve calls and check their validation
+      if (pathNode && pathNode.type === AST_NODE_TYPES.CallExpression) {
+        const callee = pathNode.callee;
+        if (callee.type === AST_NODE_TYPES.MemberExpression &&
+            callee.object.type === AST_NODE_TYPES.Identifier &&
+            callee.object.name === 'path' &&
+            callee.property.type === AST_NODE_TYPES.Identifier &&
+            ['join', 'resolve'].includes(callee.property.name)) {
+          // Find any dynamic (non-literal) identifier args and check if they're validated
+          const dynamicArgs = pathNode.arguments.filter((arg: TSESTree.Node) =>
+            arg.type === AST_NODE_TYPES.Identifier && arg.name !== '__dirname'
+          );
+          if (dynamicArgs.length > 0 && dynamicArgs.every((arg: TSESTree.Node) => hasPathValidation(arg))) {
+            return false;
+          }
+        }
+      }
+
       // Any non-literal is dangerous
       return !pathNode || !isLiteralString(pathNode);
     };

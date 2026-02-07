@@ -430,18 +430,21 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
               }
             }
             
-            // Check if any of our call's args (or elements inside array args) are being validated
-            for (const arg of node.arguments) {
-              if (arg.type === AST_NODE_TYPES.Identifier && validatedVarNames.has(arg.name)) {
-                return true;
+            // Check if any of our call's args (or nested expressions) are being validated
+            const hasValidatedArg = (argNode: TSESTree.Node): boolean => {
+              if (argNode.type === 'Identifier' && validatedVarNames.has(argNode.name)) return true;
+              if (argNode.type === 'TemplateLiteral') {
+                return argNode.expressions.some(e => e.type === 'Identifier' && validatedVarNames.has(e.name));
               }
-              // Also check inside array expressions for validated variables
-              if (arg.type === AST_NODE_TYPES.ArrayExpression) {
-                for (const el of arg.elements) {
-                  if (el?.type === 'Identifier' && validatedVarNames.has(el.name)) {
-                    return true;
-                  }
-                }
+              if (argNode.type === AST_NODE_TYPES.ArrayExpression) {
+                return argNode.elements.some(el => el != null && hasValidatedArg(el));
+              }
+              return false;
+            };
+            
+            for (const arg of node.arguments) {
+              if (hasValidatedArg(arg)) {
+                return true;
               }
             }
           }
@@ -464,10 +467,28 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
             );
             
             if (isGuardClause) {
-              // Check if any of our call's args are being validated
+              // Get validated var names from the includes() call
+              const validatedVarNames2 = new Set<string>();
+              for (const testArg of test.argument.arguments) {
+                if (testArg.type === 'Identifier') {
+                  validatedVarNames2.add(testArg.name);
+                }
+              }
+              
+              // Check if any of our call's args contain validated variables
+              const hasValidatedArg2 = (argNode: TSESTree.Node): boolean => {
+                if (argNode.type === 'Identifier' && (validatedVarNames2.size === 0 || validatedVarNames2.has(argNode.name))) return true;
+                if (argNode.type === 'TemplateLiteral') {
+                  return argNode.expressions.some(e => e.type === 'Identifier' && (validatedVarNames2.size === 0 || validatedVarNames2.has(e.name)));
+                }
+                if (argNode.type === AST_NODE_TYPES.ArrayExpression) {
+                  return argNode.elements.some(el => el != null && hasValidatedArg2(el));
+                }
+                return false;
+              };
+              
               for (const arg of node.arguments) {
-                if (arg.type === AST_NODE_TYPES.Identifier || 
-                    (arg.type === AST_NODE_TYPES.ArrayExpression && arg.elements.some(el => el?.type === 'Identifier'))) {
+                if (hasValidatedArg2(arg)) {
                   return true;
                 }
               }
@@ -661,16 +682,14 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         return;
       }
 
-      // ALWAYS allow execFile/execFileSync with fully literal args (no option needed)
-      // These methods don't use shell by default, so literal command + literal args = no injection
-      const inherentlySafeMethods = ['execFile', 'execFileSync'];
-      if (inherentlySafeMethods.includes(method) && hasOnlyLiteralArgs(node.arguments)) {
-        return;
-      }
-
-      // spawn/spawnSync with literal args AND shell: false is also safe
-      if (['spawn', 'spawnSync'].includes(method) && hasOnlyLiteralArgs(node.arguments) && hasShellFalseOption(node)) {
-        return;
+      // ALWAYS safe: literal command + ALL literal args (no dynamic input at all).
+      // For execFile/execFileSync: no shell by default, all-literal = nothing to inject.
+      // For spawn/spawnSync: requires shell:false + all-literal args.
+      if (saferMethods.includes(method) && hasOnlyLiteralArgs(node.arguments)) {
+        const isExecFile = method === 'execFile' || method === 'execFileSync';
+        if (isExecFile || hasShellFalseOption(node)) {
+          return;
+        }
       }
 
       // Allow safe methods when args are validated against an allowlist
