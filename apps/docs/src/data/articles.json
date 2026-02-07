@@ -2,6 +2,90 @@
   "articles": [
     {
       "type_of": "article",
+      "id": 3237157,
+      "title": "eslint-plugin-security Is Unmaintained. Here's What Nobody Tells You.",
+      "description": "eslint-plugin-security has 1.5M weekly downloads but only 13 rules and no meaningful updates since 2020. Learn why it misses 90% of vulnerabilities—including SQL injection, JWT attacks, and AI/LLM security—and what modern ESLint security plugins to use instead.",
+      "readable_publish_date": "Feb 6",
+      "slug": "eslint-plugin-security-is-unmaintained-heres-what-nobody-tells-you-96h",
+      "path": "/ofri-peretz/eslint-plugin-security-is-unmaintained-heres-what-nobody-tells-you-96h",
+      "url": "https://dev.to/ofri-peretz/eslint-plugin-security-is-unmaintained-heres-what-nobody-tells-you-96h",
+      "comments_count": 0,
+      "public_reactions_count": 0,
+      "collection_id": 35517,
+      "published_timestamp": "2026-02-06T06:40:05Z",
+      "language": "en",
+      "subforem_id": 1,
+      "positive_reactions_count": 0,
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fimages.unsplash.com%2Fphoto-1526374965328-7f61d4dc18c5%3Fw%3D1200%26h%3D630%26fit%3Dcrop",
+      "social_image": "https://media2.dev.to/dynamic/image/width=1000,height=500,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fimages.unsplash.com%2Fphoto-1526374965328-7f61d4dc18c5%3Fw%3D1200%26h%3D630%26fit%3Dcrop",
+      "canonical_url": "https://ofriperetz.dev/articles/eslint-plugin-security-abandoned",
+      "created_at": "2026-02-06T06:40:06Z",
+      "edited_at": "2026-02-06T06:54:40Z",
+      "crossposted_at": null,
+      "published_at": "2026-02-06T06:40:05Z",
+      "last_comment_at": "2026-02-06T06:40:05Z",
+      "reading_time_minutes": 8,
+      "tag_list": [
+        "security",
+        "javascript",
+        "node"
+      ],
+      "tags": "security, eslint, javascript, node",
+      "user": {
+        "name": "Ofri Peretz",
+        "username": "ofri-peretz",
+        "twitter_username": "ofriperetzdev",
+        "github_username": "ofri-peretz",
+        "user_id": 3669992,
+        "website_url": "https://ofriperetz.dev?utm_source=devto&utm_medium=profile&utm_campaign=website-field",
+        "profile_image": "https://media2.dev.to/dynamic/image/width=640,height=640,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F3669992%2F50a1f256-472c-48a1-85e8-149459647ea7.png",
+        "profile_image_90": "https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F3669992%2F50a1f256-472c-48a1-85e8-149459647ea7.png"
+      }
+    },
+    {
+      "type_of": "article",
+      "id": 3236684,
+      "title": "I Let Claude Write 60 Functions. 65-75% Had Security Vulnerabilities.",
+      "description": "AI coding assistants are incredible—until they introduce security holes. I ran an experiment asking Claude (Sonnet 4.5, Opus 4.5, Haiku 3.5) to generate 60 common Node.js functions with zero security context using my Claude Pro subscription. 65-75% had vulnerabilities. Then I tested if static analysis could help the models fix their own mistakes.",
+      "readable_publish_date": "Feb 6",
+      "slug": "i-let-claude-write-60-functions-65-75-had-security-vulnerabilities-414o",
+      "path": "/ofri-peretz/i-let-claude-write-60-functions-65-75-had-security-vulnerabilities-414o",
+      "url": "https://dev.to/ofri-peretz/i-let-claude-write-60-functions-65-75-had-security-vulnerabilities-414o",
+      "comments_count": 2,
+      "public_reactions_count": 2,
+      "collection_id": null,
+      "published_timestamp": "2026-02-06T02:51:25Z",
+      "language": "en",
+      "subforem_id": 1,
+      "positive_reactions_count": 2,
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fimages.unsplash.com%2Fphoto-1677442136019-21780ecad995%3Fw%3D1200%26h%3D630%26fit%3Dcrop",
+      "social_image": "https://media2.dev.to/dynamic/image/width=1000,height=500,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fimages.unsplash.com%2Fphoto-1677442136019-21780ecad995%3Fw%3D1200%26h%3D630%26fit%3Dcrop",
+      "canonical_url": "https://ofriperetz.dev/articles/i-let-claude-write-60-functions-65-75-had-security-vulnerabilities",
+      "created_at": "2026-02-06T02:51:25Z",
+      "edited_at": "2026-02-06T06:56:26Z",
+      "crossposted_at": null,
+      "published_at": "2026-02-06T02:51:25Z",
+      "last_comment_at": "2026-02-06T17:16:26Z",
+      "reading_time_minutes": 11,
+      "tag_list": [
+        "ai",
+        "security",
+        "javascript"
+      ],
+      "tags": "ai, security, eslint, javascript",
+      "user": {
+        "name": "Ofri Peretz",
+        "username": "ofri-peretz",
+        "twitter_username": "ofriperetzdev",
+        "github_username": "ofri-peretz",
+        "user_id": 3669992,
+        "website_url": "https://ofriperetz.dev?utm_source=devto&utm_medium=profile&utm_campaign=website-field",
+        "profile_image": "https://media2.dev.to/dynamic/image/width=640,height=640,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F3669992%2F50a1f256-472c-48a1-85e8-149459647ea7.png",
+        "profile_image_90": "https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F3669992%2F50a1f256-472c-48a1-85e8-149459647ea7.png"
+      }
+    },
+    {
+      "type_of": "article",
       "id": 3144148,
       "title": "Exploit Analysis: PostgreSQL COPY FROM Filesystem Access",
       "description": "A deep dive into PostgreSQL filesystem exploits. Learn how to engineer static analysis guards to prevent unauthorized database-level file access.",
@@ -1177,7 +1261,7 @@
       }
     }
   ],
-  "total": 28,
-  "lastUpdated": "2026-02-07T16:15:51.131Z",
+  "total": 30,
+  "lastUpdated": "2026-02-07T20:13:40.485Z",
   "source": "public"
 }
