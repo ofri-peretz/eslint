@@ -101,7 +101,7 @@
       "rules": 10,
       "description": "ESLint rules for team-specific disciplinary patterns and code conventions",
       "category": "quality",
-      "version": "4.0.4",
+      "version": "4.0.5",
       "published": true
     },
     {
@@ -109,7 +109,7 @@
       "rules": 9,
       "description": "ESLint rules for runtime stability, fault tolerance, and type safety",
       "category": "quality",
-      "version": "3.0.4",
+      "version": "3.1.0",
       "published": true
     },
     {
@@ -164,5 +164,5 @@
   "totalRules": 335,
   "totalPlugins": 18,
   "allPluginsCount": 20,
-  "generatedAt": "2026-02-08T01:57:38.983Z"
+  "generatedAt": "2026-02-08T03:40:03.222Z"
 }
