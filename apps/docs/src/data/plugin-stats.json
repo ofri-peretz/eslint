@@ -10,7 +10,7 @@
     },
     {
       "name": "eslint-plugin-node-security",
-      "rules": 31,
+      "rules": 32,
       "description": "Security-focused ESLint plugin for Node",
       "category": "security",
       "version": "4.0.3",
@@ -161,8 +161,8 @@
       "published": false
     }
   ],
-  "totalRules": 332,
+  "totalRules": 333,
   "totalPlugins": 18,
   "allPluginsCount": 20,
-  "generatedAt": "2026-02-08T01:19:27.810Z"
+  "generatedAt": "2026-02-08T01:32:33.185Z"
 }
