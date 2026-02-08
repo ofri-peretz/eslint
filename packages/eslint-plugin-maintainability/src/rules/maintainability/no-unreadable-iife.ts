@@ -128,20 +128,37 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
     }
 
     function calculateDepth(node: TSESTree.Node): number {
-      const sourceCode = context.sourceCode || context.getSourceCode();
-      const text = sourceCode.getText(node);
+      // AST-based nesting depth calculation — no regex needed
+      const CONTROL_FLOW_TYPES = new Set([
+        'IfStatement', 'ForStatement', 'ForInStatement', 'ForOfStatement',
+        'WhileStatement', 'DoWhileStatement', 'SwitchStatement', 'TryStatement',
+      ]);
 
-      // Count nesting depth by tracking opening braces after control flow keywords
-      let maxDepth = 0;
-      let currentDepth = 0;
-      const controlFlowPattern = /\b(if|for|while|do|switch|try)\s*[\s({\n]/g;
-      let _match;
+      // Non-AST keys that should never be traversed
+      const SKIP_KEYS = new Set(['parent', 'loc', 'range', 'tokens', 'comments', 'leadingComments', 'trailingComments']);
 
-      while ((_match = controlFlowPattern.exec(text)) !== null) {
-        currentDepth++;
-        maxDepth = Math.max(maxDepth, currentDepth);
+      function isASTNode(value: unknown): value is TSESTree.Node {
+        return !!value && typeof value === 'object' && 'type' in value && 'loc' in value;
       }
 
+      let maxDepth = 0;
+
+      function walk(current: TSESTree.Node, depth: number) {
+        const isControlFlow = CONTROL_FLOW_TYPES.has(current.type);
+        const newDepth = isControlFlow ? depth + 1 : depth;
+        maxDepth = Math.max(maxDepth, newDepth);
+
+        Object.entries(current).forEach(([key, value]) => {
+          if (SKIP_KEYS.has(key)) return;
+          if (Array.isArray(value)) {
+            value.forEach(item => { if (isASTNode(item)) walk(item, newDepth); });
+          } else if (isASTNode(value)) {
+            walk(value, newDepth);
+          }
+        });
+      }
+
+      walk(node, 0);
       return maxDepth;
     }
 

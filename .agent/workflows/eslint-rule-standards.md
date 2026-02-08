@@ -38,6 +38,61 @@ if (dec.expression.type === 'CallExpression') { ... }  // BAD
 
 ---
 
+## Prefer AST Traversal Over Regex
+
+**CRITICAL**: Always use AST node traversal instead of `getText()` + regex for analyzing code structure. Regex-based analysis is fragile, misses edge cases (comments, string contents, nested structures), and is slower.
+
+### ✅ Correct — AST-based analysis
+
+```typescript
+// Count nesting depth via AST traversal
+function calculateDepth(node: TSESTree.Node): number {
+  const CONTROL_FLOW_TYPES = new Set([
+    'IfStatement',
+    'ForStatement',
+    'ForInStatement',
+    'ForOfStatement',
+    'WhileStatement',
+    'DoWhileStatement',
+    'SwitchStatement',
+    'TryStatement',
+  ]);
+
+  let maxDepth = 0;
+
+  function walk(current: TSESTree.Node, depth: number) {
+    const isControlFlow = CONTROL_FLOW_TYPES.has(current.type);
+    const newDepth = isControlFlow ? depth + 1 : depth;
+    maxDepth = Math.max(maxDepth, newDepth);
+    // ... recurse into children
+  }
+
+  walk(node, 0);
+  return maxDepth;
+}
+```
+
+### ❌ Incorrect — regex on source text
+
+```typescript
+// NEVER do this — fragile, misses comments/strings, wrong depth counting
+const text = sourceCode.getText(node);
+const controlFlowPattern = /\b(if|for|while|do|switch|try)\s*/g;
+while (pattern.exec(text)) {
+  depth++;
+}
+```
+
+### When Regex IS Acceptable
+
+Regex is only acceptable for:
+
+1. **Value pattern matching** — checking if a string literal matches a pattern (e.g., `mongodb://` URI detection)
+2. **Filename checks** — test file detection (`/\.(test|spec)\./`)
+3. **Non-AST text analysis** — checking raw string content that isn't code structure
+
+---
+
 ## Rule Structure Template
 
 ```typescript
