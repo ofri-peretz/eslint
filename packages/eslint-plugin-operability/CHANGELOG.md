@@ -1,3 +1,17 @@
+## 3.0.5 (2026-02-08)
+
+### Bug Fixes
+
+- align codecov component IDs with full package names ([2831b968](https://github.com/ofri-peretz/eslint/commit/2831b968))
+
+### Documentation
+
+- fix changelog header format across all packages ([c3a15082](https://github.com/ofri-peretz/eslint/commit/c3a15082))
+
+### ❤️ Thank You
+
+- Ofri Peretz
+
 ## [3.0.4] - 2026-02-06
 
 ### Bug Fixes
