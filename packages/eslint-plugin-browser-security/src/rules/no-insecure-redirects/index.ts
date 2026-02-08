@@ -33,6 +33,47 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
+ * Resolve an identifier to the text of its initialization expression.
+ * Scans backward through sibling statements in the same block scope.
+ */
+function resolveVariableInit(
+  ident: TSESTree.Identifier,
+  sourceCode: TSESLint.SourceCode
+): string | null {
+  const name = ident.name;
+  let current: TSESTree.Node | undefined = (ident as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+  
+  while (current) {
+    const parent: TSESTree.Node | undefined = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+    if (!parent) break;
+
+    if (parent.type === 'BlockStatement' || parent.type === 'Program') {
+      const body = parent.type === 'BlockStatement' ? parent.body : parent.body;
+      const idx = body.indexOf(current as TSESTree.Statement);
+      
+      for (let i = idx - 1; i >= 0 && i >= idx - 10; i--) {
+        const stmt = body[i];
+        if (stmt.type === 'VariableDeclaration') {
+          for (const decl of stmt.declarations) {
+            if (
+              decl.id.type === 'Identifier' &&
+              decl.id.name === name &&
+              decl.init
+            ) {
+              return sourceCode.getText(decl.init);
+            }
+          }
+        }
+      }
+    }
+    
+    current = parent;
+  }
+  
+  return null;
+}
+
+/**
  * Check if redirect URL is validated
  */
 function isRedirectValidated(
@@ -44,7 +85,22 @@ function isRedirectValidated(
   // Check if URL is from user input (req.query, req.body, req.params)
   const userInputPattern = /\b(req\.(query|body|params)|window\.location|document\.location)\b/;
 
-  if (!userInputPattern.test(callText)) {
+  // Direct check: res.redirect(req.query.returnTo)
+  let hasUserInput = userInputPattern.test(callText);
+
+  // Indirect check: resolve variable references to their init expressions
+  // e.g., const returnUrl = req.query.returnTo; res.redirect(returnUrl);
+  if (!hasUserInput && node.arguments.length > 0) {
+    const arg = node.arguments[0];
+    if (arg.type === 'Identifier') {
+      const resolved = resolveVariableInit(arg, sourceCode);
+      if (resolved && userInputPattern.test(resolved)) {
+        hasUserInput = true;
+      }
+    }
+  }
+
+  if (!hasUserInput) {
     // Not from user input, assume safe
     return true;
   }
@@ -65,9 +121,9 @@ function isRedirectValidated(
   // Check for validation function calls before this redirect
   const validationPatterns = [
     /\b(validateUrl|validateRedirect|isValidUrl|isSafeUrl)\s*\(/,
-    /\b(whitelist|allowedDomains|permittedUrls)\s*\./,
+    /\b(whitelist|allowedDomains|permittedUrls|ALLOWED_\w+)\s*\./,
     /\b(url\.hostname|url\.host)\s*===/,
-    /\ballowedDomains\.includes\s*\(/,
+    /\b\w+\.(includes|has)\s*\(/,  // Generic allowlist check: arr.includes(x) or set.has(x)
     /\bstartsWith\s*\(\s*['"]/,
     /\bendsWith\s*\(\s*['"]/,
     /\bindexOf\s*\(\s*['"]/,
@@ -84,7 +140,7 @@ function isRedirectValidated(
     const parent: TSESTree.Node | undefined = (current as TSESTree.Node & { parent?: TSESTree.Node }).parent;
     if (!parent) break;
 
-    if (parent.type === 'BlockStatement') {
+    if (parent.type === 'BlockStatement' || parent.type === 'Program') {
       const body = parent.body;
       const currentIndex = body.indexOf(current as TSESTree.Statement);
 
@@ -96,6 +152,15 @@ function isRedirectValidated(
         if (validationPatterns.some(pattern => pattern.test(stmtText))) {
           return true; // Found validation
         }
+      }
+    }
+
+    // Check if inside an if-block with validation in the condition
+    // e.g., if (isValidUrl(redirect)) { res.redirect(redirect); }
+    if (parent.type === 'IfStatement' && parent.test) {
+      const testText = sourceCode.getText(parent.test);
+      if (validationPatterns.some(pattern => pattern.test(testText))) {
+        return true; // Validation is the if-condition
       }
     }
 

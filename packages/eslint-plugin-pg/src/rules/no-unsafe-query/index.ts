@@ -7,6 +7,21 @@
 import { TSESLint, AST_NODE_TYPES, TSESTree, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { NoUnsafeQueryOptions } from '../../types';
 
+/**
+ * Check if a node contains unsafe string construction (concatenation or interpolation)
+ */
+function isUnsafeStringConstruction(node: TSESTree.Node): 'concat' | 'template' | false {
+  // Direct concatenation: "SELECT..." + var
+  if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === '+') {
+    return 'concat';
+  }
+  // Template literal with expressions: `SELECT...${var}`
+  if (node.type === AST_NODE_TYPES.TemplateLiteral && node.expressions.length > 0) {
+    return 'template';
+  }
+  return false;
+}
+
 export const noUnsafeQuery: TSESLint.RuleModule<
   'noUnsafeQuery' | 'unsafeTemplateLiteral',
   NoUnsafeQueryOptions
@@ -43,7 +58,39 @@ export const noUnsafeQuery: TSESLint.RuleModule<
   },
   defaultOptions: [],
   create(context) {
+    // Track variables tainted by unsafe string construction
+    const taintedVariables = new Map<string, 'concat' | 'template'>();
+
     return {
+      // Track variable declarations with unsafe init:
+      // const query = "SELECT..." + userId;
+      // const query = `SELECT...${email}`;
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        if (
+          node.id.type === AST_NODE_TYPES.Identifier &&
+          node.init
+        ) {
+          const unsafe = isUnsafeStringConstruction(node.init);
+          if (unsafe) {
+            taintedVariables.set(node.id.name, unsafe);
+          }
+        }
+      },
+
+      // Track augmented assignment: query += " AND ..." + var
+      // or: query += `...${var}`
+      AssignmentExpression(node: TSESTree.AssignmentExpression) {
+        if (
+          node.operator === '+=' &&
+          node.left.type === AST_NODE_TYPES.Identifier
+        ) {
+          const unsafe = isUnsafeStringConstruction(node.right);
+          if (unsafe) {
+            taintedVariables.set(node.left.name, unsafe);
+          }
+        }
+      },
+
       CallExpression(node: TSESTree.CallExpression) {
         // Check if the method being called is 'query'
         if (
@@ -70,10 +117,22 @@ export const noUnsafeQuery: TSESLint.RuleModule<
 
         // 2. Check for Template Literals with Expressions: query(`SELECT * FROM users WHERE id = ${id}`)
         if (queryArg.type === AST_NODE_TYPES.TemplateLiteral && queryArg.expressions.length > 0) {
-           context.report({
+          context.report({
             node: queryArg,
             messageId: 'unsafeTemplateLiteral',
           });
+          return;
+        }
+
+        // 3. Check for tainted variables: const q = "..." + var; db.query(q)
+        if (queryArg.type === AST_NODE_TYPES.Identifier) {
+          const taint = taintedVariables.get(queryArg.name);
+          if (taint) {
+            context.report({
+              node: queryArg,
+              messageId: taint === 'template' ? 'unsafeTemplateLiteral' : 'noUnsafeQuery',
+            });
+          }
         }
       },
     };

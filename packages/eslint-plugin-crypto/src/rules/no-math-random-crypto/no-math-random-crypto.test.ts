@@ -127,4 +127,44 @@ describe('no-math-random-crypto', () => {
       ],
     });
   });
+
+  describe('Benchmark FP/FN Regression', () => {
+    ruleTester.run('benchmark regression', noMathRandomCrypto, {
+      valid: [
+        // safe_random_shuffle — Fisher-Yates shuffle for UI, not crypto
+        {
+          code: `
+            function safe_random_shuffle(array) {
+              const shuffled = [...array];
+              for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+              }
+              return shuffled;
+            }
+          `,
+        },
+      ],
+      invalid: [
+        // vuln_random_token — Math.random() used for token generation
+        {
+          code: `
+            function vuln_random_token() {
+              return Math.random().toString(36).substring(2);
+            }
+          `,
+          errors: [{ messageId: 'mathRandomCrypto' }],
+        },
+        // vuln_random_session — Math.random() used for session ID
+        {
+          code: `
+            function vuln_random_session() {
+              return "session_" + Math.floor(Math.random() * 1000000);
+            }
+          `,
+          errors: [{ messageId: 'mathRandomCrypto' }],
+        },
+      ],
+    });
+  });
 });

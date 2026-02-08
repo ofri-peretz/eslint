@@ -13,6 +13,7 @@ import { noToctouVulnerability } from './rules/no-toctou-vulnerability';
 import { noZipSlip } from './rules/no-zip-slip';
 import { noArbitraryFileAccess } from './rules/no-arbitrary-file-access';
 import { noDataInTempStorage } from './rules/no-data-in-temp-storage';
+import { noSsrf } from './rules/no-ssrf';
 
 // Migrated rules from secure-coding
 import { detectSuspiciousDependencies } from './rules/detect-suspicious-dependencies';
@@ -51,6 +52,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'no-zip-slip': noZipSlip,
   'no-arbitrary-file-access': noArbitraryFileAccess,
   'no-data-in-temp-storage': noDataInTempStorage,
+  'no-ssrf': noSsrf,
 
   // Migrated rules
   'detect-suspicious-dependencies': detectSuspiciousDependencies,
@@ -96,6 +98,7 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'node-security/no-zip-slip': 'error',
   'node-security/no-arbitrary-file-access': 'error',
   'node-security/no-data-in-temp-storage': 'error',
+  'node-security/no-ssrf': 'error',
 
   // Migrated Rules
   'node-security/detect-suspicious-dependencies': 'warn',

@@ -221,6 +221,7 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'browser-security/no-clickjacking': 'error',
   'browser-security/no-credentials-in-query-params': 'error',
   'browser-security/no-http-urls': 'error',
+  'browser-security/no-insecure-redirects': 'error',
   'browser-security/require-https-only': 'error',
   'browser-security/no-insecure-websocket': 'error',
   'browser-security/no-unvalidated-deeplinks': 'error',

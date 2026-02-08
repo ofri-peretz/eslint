@@ -105,4 +105,31 @@ describe('no-insecure-redirects', () => {
       ],
     });
   });
+  describe('Benchmark FP/FN Regression', () => {
+    ruleTester.run('benchmark regression', noInsecureRedirects, {
+      valid: [
+        // safe_redirect_allowlist — redirect guarded by allowlist .includes() check
+        {
+          code: `
+            const ALLOWED_REDIRECTS = ["/dashboard", "/profile", "/settings"];
+            const target = req.query.returnTo;
+            if (!ALLOWED_REDIRECTS.includes(target)) {
+              return res.redirect("/");
+            }
+            res.redirect(target);
+          `,
+        },
+      ],
+      invalid: [
+        // vuln_redirect — open redirect via variable assignment from req.query
+        {
+          code: `
+            const returnUrl = req.query.returnTo;
+            res.redirect(returnUrl);
+          `,
+          errors: [{ messageId: 'insecureRedirect' }],
+        },
+      ],
+    });
+  });
 });

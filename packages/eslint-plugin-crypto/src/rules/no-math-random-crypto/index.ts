@@ -162,7 +162,8 @@ export const noMathRandomCrypto = createRule<RuleOptions, MessageIds>({
               func.id?.name
             ) {
               const funcName = func.id.name;
-              if (CRYPTO_FUNCTION_PATTERNS.some(p => p.test(funcName))) {
+              if (CRYPTO_FUNCTION_PATTERNS.some(p => p.test(funcName)) ||
+                  CRYPTO_VARIABLE_PATTERNS.some(p => p.test(funcName))) {
                 return true;
               }
             }

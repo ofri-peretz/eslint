@@ -21,6 +21,7 @@ describe('eslint-plugin-node-security plugin interface', () => {
       'no-zip-slip',
       'no-arbitrary-file-access',
       'no-data-in-temp-storage',
+      'no-ssrf',
       'detect-suspicious-dependencies',
       'lock-file',
       'no-dynamic-dependency-loading',
