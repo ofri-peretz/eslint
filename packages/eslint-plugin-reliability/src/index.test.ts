@@ -22,6 +22,7 @@ describe('eslint-plugin-reliability plugin interface', () => {
     expect(ruleKeys).toContain('no-unsafe-type-narrowing');
     expect(ruleKeys).toContain('require-network-timeout');
     expect(ruleKeys).toContain('no-await-in-loop');
+    expect(ruleKeys).toContain('no-jsdoc-terminator-in-example');
 
     // Categorized names
     expect(ruleKeys).toContain('error-handling/no-unhandled-promise');
@@ -32,8 +33,9 @@ describe('eslint-plugin-reliability plugin interface', () => {
     expect(ruleKeys).toContain('reliability/no-unsafe-type-narrowing');
     expect(ruleKeys).toContain('reliability/require-network-timeout');
     expect(ruleKeys).toContain('reliability/no-await-in-loop');
+    expect(ruleKeys).toContain('reliability/no-jsdoc-terminator-in-example');
 
-    expect(ruleKeys.length).toBe(16); // 8 flat + 8 categorized
+    expect(ruleKeys.length).toBe(18); // 9 flat + 9 categorized
   });
 
   it('should export rules matching plugin.rules', () => {
@@ -46,11 +48,11 @@ describe('eslint-plugin-reliability plugin interface', () => {
   describe('configurations', () => {
     it('should provide recommended configuration', () => {
       expect(configs['recommended']).toBeDefined();
-      expect(configs['recommended'].plugins?.['@interlace/reliability']).toBeDefined();
+      expect(configs['recommended'].plugins?.['reliability']).toBeDefined();
       
       const recommendedRules = configs['recommended'].rules || {};
       Object.keys(recommendedRules).forEach(ruleName => {
-        expect(ruleName).toMatch(/^@interlace\/reliability\//);
+        expect(ruleName).toMatch(/^reliability\//);
       });
       
       // Verify at least one rule is configured
@@ -62,7 +64,7 @@ describe('eslint-plugin-reliability plugin interface', () => {
       const pluginRules = Object.keys(plugin.rules || {});
       
       recommendedRules.forEach(ruleName => {
-        const shortName = ruleName.replace('@interlace/reliability/', '');
+        const shortName = ruleName.replace('reliability/', '');
         expect(pluginRules).toContain(shortName);
       });
     });

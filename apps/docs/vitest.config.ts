@@ -32,7 +32,7 @@ export default defineConfig({
     passWithNoTests: true,
     globalSetup: ['../../vitest.global-setup.ts'],
     name: 'docs',
-    pool: 'vmThreads',
+    pool: 'forks',
     coverage: {
       provider: 'v8',
       reportOnFailure: true,

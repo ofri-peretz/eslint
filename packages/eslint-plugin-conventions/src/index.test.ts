@@ -9,11 +9,10 @@ describe('eslint-plugin-conventions plugin interface', () => {
     expect(typeof plugin.meta?.version).toBe('string');
   });
 
-  it('should export all conventions rules (both flat and categorized)', () => {
+  it('should export all conventions rules', () => {
     expect(plugin.rules).toBeDefined();
     const ruleKeys = Object.keys(plugin.rules || {});
     
-    // Flat names
     expect(ruleKeys).toContain('no-commented-code');
     expect(ruleKeys).toContain('expiring-todo-comments');
     expect(ruleKeys).toContain('prefer-code-point');
@@ -23,19 +22,9 @@ describe('eslint-plugin-conventions plugin interface', () => {
     expect(ruleKeys).toContain('prefer-dependency-version-strategy');
     expect(ruleKeys).toContain('filename-case');
     expect(ruleKeys).toContain('consistent-existence-index-check');
+    expect(ruleKeys).toContain('no-json-schema-tags');
 
-    // Categorized names
-    expect(ruleKeys).toContain('conventions/no-commented-code');
-    expect(ruleKeys).toContain('conventions/expiring-todo-comments');
-    expect(ruleKeys).toContain('conventions/prefer-code-point');
-    expect(ruleKeys).toContain('conventions/prefer-dom-node-text-content');
-    expect(ruleKeys).toContain('conventions/no-console-spaces');
-    expect(ruleKeys).toContain('deprecation/no-deprecated-api');
-    expect(ruleKeys).toContain('conventions/prefer-dependency-version-strategy');
-    expect(ruleKeys).toContain('conventions/filename-case');
-    expect(ruleKeys).toContain('conventions/consistent-existence-index-check');
-
-    expect(ruleKeys.length).toBe(18); // 9 flat + 9 categorized
+    expect(ruleKeys.length).toBe(10);
   });
 
   it('should export rules matching plugin.rules', () => {
@@ -48,11 +37,11 @@ describe('eslint-plugin-conventions plugin interface', () => {
   describe('configurations', () => {
     it('should provide recommended configuration', () => {
       expect(configs['recommended']).toBeDefined();
-      expect(configs['recommended'].plugins?.['@interlace/conventions']).toBeDefined();
+      expect(configs['recommended'].plugins?.['conventions']).toBeDefined();
       
       const recommendedRules = configs['recommended'].rules || {};
       Object.keys(recommendedRules).forEach(ruleName => {
-        expect(ruleName).toMatch(/^@interlace\/conventions\//);
+        expect(ruleName).toMatch(/^conventions\//);
       });
       
       // Verify at least one rule is configured
@@ -64,7 +53,7 @@ describe('eslint-plugin-conventions plugin interface', () => {
       const pluginRules = Object.keys(plugin.rules || {});
       
       recommendedRules.forEach(ruleName => {
-        const shortName = ruleName.replace('@interlace/conventions/', '');
+        const shortName = ruleName.replace('conventions/', '');
         expect(pluginRules).toContain(shortName);
       });
     });

@@ -16,6 +16,7 @@ import { noDeprecatedApi } from './rules/deprecation/no-deprecated-api';
 import { preferDependencyVersionStrategy } from './rules/conventions/prefer-dependency-version-strategy';
 import { filenameCase } from './rules/conventions/filename-case';
 import { consistentExistenceIndexCheck } from './rules/conventions/consistent-existence-index-check';
+import { noJsonSchemaTags } from './rules/conventions/no-json-schema-tags';
 
 export const rules = {
   'no-commented-code': noCommentedCode,
@@ -27,17 +28,7 @@ export const rules = {
   'prefer-dependency-version-strategy': preferDependencyVersionStrategy,
   'filename-case': filenameCase,
   'consistent-existence-index-check': consistentExistenceIndexCheck,
-
-  // Categorized names
-  'conventions/no-commented-code': noCommentedCode,
-  'conventions/expiring-todo-comments': expiringTodoComments,
-  'conventions/prefer-code-point': preferCodePoint,
-  'conventions/prefer-dom-node-text-content': preferDomNodeTextContent,
-  'conventions/no-console-spaces': noConsoleSpaces,
-  'deprecation/no-deprecated-api': noDeprecatedApi,
-  'conventions/prefer-dependency-version-strategy': preferDependencyVersionStrategy,
-  'conventions/filename-case': filenameCase,
-  'conventions/consistent-existence-index-check': consistentExistenceIndexCheck,
+  'no-json-schema-tags': noJsonSchemaTags,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 export const plugin = {
@@ -51,12 +42,12 @@ export const plugin = {
 export const configs = {
   recommended: {
     plugins: {
-      '@interlace/conventions': plugin,
+      conventions: plugin,
     },
     rules: {
-      '@interlace/conventions/conventions/no-commented-code': 'warn',
-      '@interlace/conventions/conventions/expiring-todo-comments': 'warn',
-      '@interlace/conventions/deprecation/no-deprecated-api': 'warn',
+      'conventions/no-commented-code': 'warn',
+      'conventions/expiring-todo-comments': 'warn',
+      'conventions/no-deprecated-api': 'warn',
     },
   } satisfies TSESLint.FlatConfig.Config,
 } satisfies Record<string, TSESLint.FlatConfig.Config>;

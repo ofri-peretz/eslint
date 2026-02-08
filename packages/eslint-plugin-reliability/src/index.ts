@@ -17,6 +17,7 @@ import { noMissingNullChecks } from './rules/reliability/no-missing-null-checks'
 import { noUnsafeTypeNarrowing } from './rules/reliability/no-unsafe-type-narrowing';
 import { requireNetworkTimeout } from './rules/reliability/require-network-timeout';
 import { noAwaitInLoop } from './rules/reliability/no-await-in-loop';
+import { noJsdocTerminatorInExample } from './rules/reliability/no-jsdoc-terminator-in-example';
 
 export const rules = {
   'no-unhandled-promise': noUnhandledPromise,
@@ -27,6 +28,7 @@ export const rules = {
   'no-unsafe-type-narrowing': noUnsafeTypeNarrowing,
   'require-network-timeout': requireNetworkTimeout,
   'no-await-in-loop': noAwaitInLoop,
+  'no-jsdoc-terminator-in-example': noJsdocTerminatorInExample,
 
   // Categorized names
   'error-handling/no-unhandled-promise': noUnhandledPromise,
@@ -37,6 +39,7 @@ export const rules = {
   'reliability/no-unsafe-type-narrowing': noUnsafeTypeNarrowing,
   'reliability/require-network-timeout': requireNetworkTimeout,
   'reliability/no-await-in-loop': noAwaitInLoop,
+  'reliability/no-jsdoc-terminator-in-example': noJsdocTerminatorInExample,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 export const plugin = {
@@ -50,12 +53,12 @@ export const plugin = {
 export const configs = {
   recommended: {
     plugins: {
-      '@interlace/reliability': plugin,
+      reliability: plugin,
     },
     rules: {
-      '@interlace/reliability/error-handling/no-silent-errors': 'warn',
-      '@interlace/reliability/reliability/no-missing-null-checks': 'warn',
-      '@interlace/reliability/reliability/require-network-timeout': 'error',
+      'reliability/no-silent-errors': 'warn',
+      'reliability/no-missing-null-checks': 'warn',
+      'reliability/require-network-timeout': 'error',
     },
   } satisfies TSESLint.FlatConfig.Config,
 } satisfies Record<string, TSESLint.FlatConfig.Config>;
