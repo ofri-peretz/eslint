@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-nestjs-security",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Security-focused ESLint rules for NestJS applications. Detects missing guards, validation pipes, throttling, exposed sensitive fields, and more.",
   "type": "commonjs",
   "main": "./src/index.js",
