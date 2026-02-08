@@ -1,4 +1,19 @@
-## 8.2.3 (2026-02-08)
+## [8.3.0] - 2026-02-08
+
+### Added
+
+- **no-hardcoded-connection-string**: Detect hardcoded `mongodb://` and `mongodb+srv://` URIs in string and template literals (CWE-798, CVSS 7.5)
+- **no-hardcoded-credentials**: Flag `user`, `username`, `pass`, `password`, `auth` properties with literal string values (CWE-798, CVSS 7.5)
+- **no-debug-mode-production**: Detect `mongoose.set('debug', true)` calls exposing query details (CWE-489, CVSS 3.1)
+- **no-unsafe-where**: Detect `$where` operator in object literals and `.where('$where')` method calls — RCE vector (CWE-943, CVSS 9.0)
+- **no-operator-injection**: Flag dangerous MongoDB operators (`$ne`, `$gt`, `$lt`, etc.) when values reference user input (CWE-943, CVSS 9.1)
+- **no-unbounded-find**: Require `.limit()` on `find()`/`findOne()` queries to prevent resource exhaustion (CWE-400, CVSS 4.3)
+- **require-tls-connection**: Require `tls: true` or `ssl: true` in `connect()`/`createConnection()` options (CWE-295, CVSS 7.4)
+- **no-bypass-middleware**: Flag Mongoose methods that bypass pre/post middleware hooks (`updateOne`, `deleteMany`, `insertMany`, `bulkWrite`, etc.) (CWE-284, CVSS 5.3)
+- Comprehensive test suites for all 8 rules (163 total tests)
+- Test coverage improved from 72.61% to 91.30% lines
+
+## [8.2.3] - 2026-02-08
 
 ### Bug Fixes
 

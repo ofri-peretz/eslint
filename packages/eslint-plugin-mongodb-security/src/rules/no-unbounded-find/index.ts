@@ -9,11 +9,14 @@
  * Requires limit() on find queries
  * CWE-400: Resource Exhaustion
  */
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unboundedFind';
 export interface Options { allowInTests?: boolean; }
 type RuleOptions = [Options?];
+
+const FIND_METHODS = ['find', 'findOne'];
 
 export const noUnboundedFind = createRule<RuleOptions, MessageIds>({
   name: 'no-unbounded-find',
@@ -37,7 +40,70 @@ export const noUnboundedFind = createRule<RuleOptions, MessageIds>({
     schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
   },
   defaultOptions: [{ allowInTests: true }],
-  create() { return {}; },
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    const [options = {}] = context.options;
+    const { allowInTests = true } = options as Options;
+    const filename = context.filename || context.getFilename();
+    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+
+    if (allowInTests && isTestFile) {
+      return {};
+    }
+
+    return {
+      CallExpression(node: TSESTree.CallExpression) {
+        if (node.callee.type !== AST_NODE_TYPES.MemberExpression) {
+          return;
+        }
+
+        const methodName = node.callee.property.type === AST_NODE_TYPES.Identifier
+          ? node.callee.property.name
+          : null;
+
+        if (!methodName || !FIND_METHODS.includes(methodName)) {
+          return;
+        }
+
+        // Check if the call is chained with .limit()
+        const parent = node.parent;
+        if (
+          parent &&
+          parent.type === AST_NODE_TYPES.MemberExpression &&
+          parent.property.type === AST_NODE_TYPES.Identifier &&
+          parent.property.name === 'limit'
+        ) {
+          return;
+        }
+
+        // Check if the parent's parent is .limit() (e.g., find().sort().limit())
+        const grandparent = parent?.parent;
+        if (
+          grandparent &&
+          grandparent.type === AST_NODE_TYPES.MemberExpression &&
+          grandparent.property.type === AST_NODE_TYPES.Identifier &&
+          grandparent.property.name === 'limit'
+        ) {
+          return;
+        }
+
+        // Also check if it's wrapped: await Model.find().limit()
+        if (
+          parent &&
+          parent.type === AST_NODE_TYPES.CallExpression &&
+          parent.callee.type === AST_NODE_TYPES.MemberExpression &&
+          parent.callee.property.type === AST_NODE_TYPES.Identifier &&
+          parent.callee.property.name === 'limit'
+        ) {
+          return;
+        }
+
+        context.report({
+          node,
+          messageId: 'unboundedFind',
+        });
+      },
+    };
+  },
 });
 
 export default noUnboundedFind;

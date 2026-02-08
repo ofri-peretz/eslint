@@ -11,19 +11,14 @@
  *
  * @see https://cwe.mitre.org/data/definitions/943.html
  */
-import {
-  createRule,
-  formatLLMMessage,
-  MessageIcons,
-} from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'operatorInjection';
-
-export interface Options {
-  allowInTests?: boolean;
-}
-
+export interface Options { allowInTests?: boolean; }
 type RuleOptions = [Options?];
+
+const DANGEROUS_OPERATORS = ['$ne', '$gt', '$gte', '$lt', '$lte', '$nin', '$not', '$nor', '$exists'];
 
 export const noOperatorInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-operator-injection',
@@ -46,20 +41,43 @@ export const noOperatorInjection = createRule<RuleOptions, MessageIds>({
         documentationLink: 'https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05.6-Testing_for_NoSQL_Injection',
       }),
     },
-    schema: [
-      {
-        type: 'object',
-        properties: {
-          allowInTests: { type: 'boolean', default: true },
-        },
-        additionalProperties: false,
-      },
-    ],
+    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
   },
   defaultOptions: [{ allowInTests: true }],
-  create() {
-    // TODO: Implement rule logic
-    return {};
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    const [options = {}] = context.options;
+    const { allowInTests = true } = options as Options;
+    const filename = context.filename || context.getFilename();
+    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+
+    if (allowInTests && isTestFile) {
+      return {};
+    }
+
+    return {
+      Property(node: TSESTree.Property) {
+        const keyName = node.key.type === AST_NODE_TYPES.Identifier
+          ? node.key.name
+          : node.key.type === AST_NODE_TYPES.Literal
+            ? String(node.key.value)
+            : null;
+
+        if (!keyName) return;
+
+        if (DANGEROUS_OPERATORS.includes(keyName)) {
+          const sourceCode = context.sourceCode || context.getSourceCode();
+          const valueText = sourceCode.getText(node.value);
+          const userInputPatterns = ['req.body', 'req.query', 'req.params', 'request.body', 'ctx.request'];
+
+          if (userInputPatterns.some(p => valueText.includes(p))) {
+            context.report({
+              node,
+              messageId: 'operatorInjection',
+            });
+          }
+        }
+      },
+    };
   },
 });
 

@@ -9,7 +9,8 @@
  * Prevents Mongoose debug mode in production
  * CWE-489: Active Debug Code
  */
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'debugModeProduction';
 export interface Options { allowInTests?: boolean; }
@@ -37,7 +38,42 @@ export const noDebugModeProduction = createRule<RuleOptions, MessageIds>({
     schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
   },
   defaultOptions: [{ allowInTests: true }],
-  create() { return {}; },
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    const [options = {}] = context.options;
+    const { allowInTests = true } = options as Options;
+    const filename = context.filename || context.getFilename();
+    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+
+    if (allowInTests && isTestFile) {
+      return {};
+    }
+
+    return {
+      CallExpression(node: TSESTree.CallExpression) {
+        if (
+          node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          node.callee.property.type === AST_NODE_TYPES.Identifier &&
+          node.callee.property.name === 'set' &&
+          node.arguments.length >= 2
+        ) {
+          const firstArg = node.arguments[0];
+          const secondArg = node.arguments[1];
+
+          if (
+            firstArg.type === AST_NODE_TYPES.Literal &&
+            firstArg.value === 'debug' &&
+            secondArg.type === AST_NODE_TYPES.Literal &&
+            secondArg.value === true
+          ) {
+            context.report({
+              node,
+              messageId: 'debugModeProduction',
+            });
+          }
+        }
+      },
+    };
+  },
 });
 
 export default noDebugModeProduction;

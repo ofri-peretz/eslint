@@ -9,11 +9,14 @@
  * Detects hardcoded MongoDB connection strings with credentials
  * CWE-798: Hardcoded Credentials
  */
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'hardcodedConnectionString';
 export interface Options { allowInTests?: boolean; }
 type RuleOptions = [Options?];
+
+const MONGODB_URI_PATTERN = /mongodb(\+srv)?:\/\/.+/i;
 
 export const noHardcodedConnectionString = createRule<RuleOptions, MessageIds>({
   name: 'no-hardcoded-connection-string',
@@ -36,7 +39,40 @@ export const noHardcodedConnectionString = createRule<RuleOptions, MessageIds>({
     schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
   },
   defaultOptions: [{ allowInTests: true }],
-  create() { return {}; },
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    const [options = {}] = context.options;
+    const { allowInTests = true } = options as Options;
+    const filename = context.filename || context.getFilename();
+    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+
+    if (allowInTests && isTestFile) {
+      return {};
+    }
+
+    function checkLiteral(node: TSESTree.Literal) {
+      if (typeof node.value === 'string' && MONGODB_URI_PATTERN.test(node.value)) {
+        context.report({
+          node,
+          messageId: 'hardcodedConnectionString',
+        });
+      }
+    }
+
+    return {
+      Literal: checkLiteral,
+      TemplateLiteral(node: TSESTree.TemplateLiteral) {
+        if (node.quasis.length > 0) {
+          const firstQuasi = node.quasis[0].value.raw;
+          if (MONGODB_URI_PATTERN.test(firstQuasi)) {
+            context.report({
+              node,
+              messageId: 'hardcodedConnectionString',
+            });
+          }
+        }
+      },
+    };
+  },
 });
 
 export default noHardcodedConnectionString;

@@ -1,4 +1,4 @@
-## 1.3.3 (2026-02-08)
+## [1.3.3] - 2026-02-08
 
 This was a version bump only for eslint-devkit to align it with other projects, there were no code changes.
 

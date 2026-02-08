@@ -11,18 +11,11 @@
  *
  * @see https://nvd.nist.gov/vuln/detail/CVE-2025-23061
  */
-import {
-  createRule,
-  formatLLMMessage,
-  MessageIcons,
-} from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'unsafeWhere';
-
-export interface Options {
-  allowInTests?: boolean;
-}
-
+export interface Options { allowInTests?: boolean; }
 type RuleOptions = [Options?];
 
 export const noUnsafeWhere = createRule<RuleOptions, MessageIds>({
@@ -46,20 +39,50 @@ export const noUnsafeWhere = createRule<RuleOptions, MessageIds>({
         documentationLink: 'https://nvd.nist.gov/vuln/detail/CVE-2025-23061',
       }),
     },
-    schema: [
-      {
-        type: 'object',
-        properties: {
-          allowInTests: { type: 'boolean', default: true },
-        },
-        additionalProperties: false,
-      },
-    ],
+    schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
   },
   defaultOptions: [{ allowInTests: true }],
-  create() {
-    // TODO: Implement rule logic
-    return {};
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    const [options = {}] = context.options;
+    const { allowInTests = true } = options as Options;
+    const filename = context.filename || context.getFilename();
+    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+
+    if (allowInTests && isTestFile) {
+      return {};
+    }
+
+    return {
+      Property(node: TSESTree.Property) {
+        const keyName = node.key.type === AST_NODE_TYPES.Identifier
+          ? node.key.name
+          : node.key.type === AST_NODE_TYPES.Literal
+            ? String(node.key.value)
+            : null;
+
+        if (keyName === '$where') {
+          context.report({
+            node,
+            messageId: 'unsafeWhere',
+          });
+        }
+      },
+      CallExpression(node: TSESTree.CallExpression) {
+        if (
+          node.callee.type === AST_NODE_TYPES.MemberExpression &&
+          node.callee.property.type === AST_NODE_TYPES.Identifier &&
+          node.callee.property.name === 'where' &&
+          node.arguments.length > 0 &&
+          node.arguments[0].type === AST_NODE_TYPES.Literal &&
+          node.arguments[0].value === '$where'
+        ) {
+          context.report({
+            node,
+            messageId: 'unsafeWhere',
+          });
+        }
+      },
+    };
   },
 });
 

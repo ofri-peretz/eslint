@@ -9,11 +9,19 @@
  * Prevents bypassing Mongoose middleware
  * CWE-284: Improper Access Control
  */
-import { createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
+import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
+import { AST_NODE_TYPES, createRule, formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
 type MessageIds = 'bypassMiddleware';
 export interface Options { allowInTests?: boolean; }
 type RuleOptions = [Options?];
+
+const BYPASS_METHODS = [
+  'updateOne', 'updateMany', 'deleteOne', 'deleteMany',
+  'findOneAndUpdate', 'findOneAndDelete', 'findOneAndReplace',
+  'findByIdAndUpdate', 'findByIdAndDelete',
+  'insertMany', 'bulkWrite',
+];
 
 export const noBypassMiddleware = createRule<RuleOptions, MessageIds>({
   name: 'no-bypass-middleware',
@@ -37,7 +45,35 @@ export const noBypassMiddleware = createRule<RuleOptions, MessageIds>({
     schema: [{ type: 'object', properties: { allowInTests: { type: 'boolean', default: true } }, additionalProperties: false }],
   },
   defaultOptions: [{ allowInTests: true }],
-  create() { return {}; },
+  create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
+    const [options = {}] = context.options;
+    const { allowInTests = true } = options as Options;
+    const filename = context.filename || context.getFilename();
+    const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
+
+    if (allowInTests && isTestFile) {
+      return {};
+    }
+
+    return {
+      CallExpression(node: TSESTree.CallExpression) {
+        if (node.callee.type !== AST_NODE_TYPES.MemberExpression) {
+          return;
+        }
+
+        const methodName = node.callee.property.type === AST_NODE_TYPES.Identifier
+          ? node.callee.property.name
+          : null;
+
+        if (methodName && BYPASS_METHODS.includes(methodName)) {
+          context.report({
+            node,
+            messageId: 'bypassMiddleware',
+          });
+        }
+      },
+    };
+  },
 });
 
 export default noBypassMiddleware;

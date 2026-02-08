@@ -135,9 +135,9 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
       let maxDepth = 0;
       let currentDepth = 0;
       const controlFlowPattern = /\b(if|for|while|do|switch|try)\s*[\s({\n]/g;
-      let match;
+      let _match;
 
-      while ((match = controlFlowPattern.exec(text)) !== null) {
+      while ((_match = controlFlowPattern.exec(text)) !== null) {
         currentDepth++;
         maxDepth = Math.max(maxDepth, currentDepth);
       }
