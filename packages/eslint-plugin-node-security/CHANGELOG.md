@@ -1,3 +1,19 @@
+## 4.0.4 (2026-02-08)
+
+### Bug Fixes
+
+- align codecov component IDs with full package names ([2831b968](https://github.com/ofri-peretz/eslint/commit/2831b968))
+- resolve all benchmark FN/FP across security rules ([45ffb791](https://github.com/ofri-peretz/eslint/commit/45ffb791))
+- **rules:** reduce false positives across security rules ([c192233c](https://github.com/ofri-peretz/eslint/commit/c192233c))
+
+### Documentation
+
+- fix changelog header format across all packages ([c3a15082](https://github.com/ofri-peretz/eslint/commit/c3a15082))
+
+### ❤️ Thank You
+
+- Ofri Peretz
+
 ## [4.0.3] - 2026-02-06
 
 ### Bug Fixes
