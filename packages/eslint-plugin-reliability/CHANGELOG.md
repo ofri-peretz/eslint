@@ -1,3 +1,7 @@
+## 3.1.0 (2026-02-08)
+
+This was a version bump only for eslint-plugin-reliability to align it with other projects, there were no code changes.
+
 ## 3.0.4 (2026-02-08)
 
 ### Bug Fixes
