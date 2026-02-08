@@ -42,7 +42,7 @@ component_management:
     # ─────────────────────────────────────────────────────────────────────────
     # Security Plugins (Primary)
     # ─────────────────────────────────────────────────────────────────────────
-    - component_id: secure-coding
+    - component_id: eslint-plugin-secure-coding
       name: 'eslint-plugin-secure-coding'
       paths:
         - packages/eslint-plugin-secure-coding/**
@@ -52,7 +52,7 @@ component_management:
         - type: patch
           target: 80%
 
-    - component_id: crypto
+    - component_id: eslint-plugin-crypto
       name: 'eslint-plugin-crypto'
       paths:
         - packages/eslint-plugin-crypto/**
@@ -62,7 +62,7 @@ component_management:
         - type: patch
           target: 80%
 
-    - component_id: jwt
+    - component_id: eslint-plugin-jwt
       name: 'eslint-plugin-jwt'
       paths:
         - packages/eslint-plugin-jwt/**
@@ -72,7 +72,7 @@ component_management:
         - type: patch
           target: 80%
 
-    - component_id: pg
+    - component_id: eslint-plugin-pg
       name: 'eslint-plugin-pg'
       paths:
         - packages/eslint-plugin-pg/**
@@ -82,7 +82,7 @@ component_management:
         - type: patch
           target: 75%
 
-    - component_id: mongodb-security
+    - component_id: eslint-plugin-mongodb-security
       name: 'eslint-plugin-mongodb-security'
       paths:
         - packages/eslint-plugin-mongodb-security/**
@@ -92,7 +92,7 @@ component_management:
         - type: patch
           target: 80%
 
-    - component_id: node-security
+    - component_id: eslint-plugin-node-security
       name: 'eslint-plugin-node-security'
       paths:
         - packages/eslint-plugin-node-security/**
@@ -105,7 +105,7 @@ component_management:
     # ─────────────────────────────────────────────────────────────────────────
     # Framework Security Plugins
     # ─────────────────────────────────────────────────────────────────────────
-    - component_id: express-security
+    - component_id: eslint-plugin-express-security
       name: 'eslint-plugin-express-security'
       paths:
         - packages/eslint-plugin-express-security/**
@@ -113,7 +113,7 @@ component_management:
         - type: project
           target: 80%
 
-    - component_id: nestjs-security
+    - component_id: eslint-plugin-nestjs-security
       name: 'eslint-plugin-nestjs-security'
       paths:
         - packages/eslint-plugin-nestjs-security/**
@@ -121,7 +121,7 @@ component_management:
         - type: project
           target: 80%
 
-    - component_id: lambda-security
+    - component_id: eslint-plugin-lambda-security
       name: 'eslint-plugin-lambda-security'
       paths:
         - packages/eslint-plugin-lambda-security/**
@@ -129,7 +129,7 @@ component_management:
         - type: project
           target: 80%
 
-    - component_id: browser-security
+    - component_id: eslint-plugin-browser-security
       name: 'eslint-plugin-browser-security'
       paths:
         - packages/eslint-plugin-browser-security/**
@@ -140,7 +140,7 @@ component_management:
     # ─────────────────────────────────────────────────────────────────────────
     # AI Security Plugins
     # ─────────────────────────────────────────────────────────────────────────
-    - component_id: vercel-ai-security
+    - component_id: eslint-plugin-vercel-ai-security
       name: 'eslint-plugin-vercel-ai-security'
       paths:
         - packages/eslint-plugin-vercel-ai-security/**
@@ -151,7 +151,7 @@ component_management:
     # ─────────────────────────────────────────────────────────────────────────
     # Governance & Quality Plugins
     # ─────────────────────────────────────────────────────────────────────────
-    - component_id: conventions
+    - component_id: eslint-plugin-conventions
       name: 'eslint-plugin-conventions'
       paths:
         - packages/eslint-plugin-conventions/**
@@ -159,7 +159,7 @@ component_management:
         - type: project
           target: 80%
 
-    - component_id: maintainability
+    - component_id: eslint-plugin-maintainability
       name: 'eslint-plugin-maintainability'
       paths:
         - packages/eslint-plugin-maintainability/**
@@ -167,7 +167,7 @@ component_management:
         - type: project
           target: 80%
 
-    - component_id: modernization
+    - component_id: eslint-plugin-modernization
       name: 'eslint-plugin-modernization'
       paths:
         - packages/eslint-plugin-modernization/**
@@ -175,7 +175,7 @@ component_management:
         - type: project
           target: 80%
 
-    - component_id: modularity
+    - component_id: eslint-plugin-modularity
       name: 'eslint-plugin-modularity'
       paths:
         - packages/eslint-plugin-modularity/**
@@ -183,7 +183,7 @@ component_management:
         - type: project
           target: 80%
 
-    - component_id: operability
+    - component_id: eslint-plugin-operability
       name: 'eslint-plugin-operability'
       paths:
         - packages/eslint-plugin-operability/**
@@ -191,7 +191,7 @@ component_management:
         - type: project
           target: 80%
 
-    - component_id: reliability
+    - component_id: eslint-plugin-reliability
       name: 'eslint-plugin-reliability'
       paths:
         - packages/eslint-plugin-reliability/**
@@ -213,7 +213,7 @@ component_management:
     # ─────────────────────────────────────────────────────────────────────────
     # Utility & Feature Plugins
     # ─────────────────────────────────────────────────────────────────────────
-    - component_id: import-next
+    - component_id: eslint-plugin-import-next
       name: 'eslint-plugin-import-next'
       paths:
         - packages/eslint-plugin-import-next/**
@@ -221,12 +221,12 @@ component_management:
         - type: project
           target: 75%
 
-    - component_id: react-features
+    - component_id: eslint-plugin-react-features
       name: 'eslint-plugin-react-features'
       paths:
         - packages/eslint-plugin-react-features/**
 
-    - component_id: react-a11y
+    - component_id: eslint-plugin-react-a11y
       name: 'eslint-plugin-react-a11y'
       paths:
         - packages/eslint-plugin-react-a11y/**
