@@ -69,4 +69,29 @@ describe('prefer-at', () => {
       ],
     });
   });
+
+  describe('negative index pattern', () => {
+    ruleTester.run('prefer .at() for negative index', preferAt, {
+      valid: [
+        // Already using .at()
+        { code: 'const last = array.at(-1);' },
+        // Non-computed access
+        { code: 'const item = array.foo;' },
+      ],
+      invalid: [
+        // array[-1] -> array.at(-1)
+        {
+          code: 'const last = array[-1];',
+          output: 'const last = array.at(-1);',
+          errors: [{ messageId: 'useAtForNegativeIndex' }],
+        },
+        // array[-3] -> array.at(-3)
+        {
+          code: 'const item = array[-3];',
+          output: 'const item = array.at(-3);',
+          errors: [{ messageId: 'useAtForNegativeIndex' }],
+        },
+      ],
+    });
+  });
 });

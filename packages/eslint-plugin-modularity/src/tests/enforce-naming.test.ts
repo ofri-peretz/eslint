@@ -132,4 +132,132 @@ describe('enforce-naming', () => {
       ],
     });
   });
+
+  describe('case preservation', () => {
+    const terms = [
+      {
+        incorrect: 'user',
+        correct: 'customer',
+        context: 'ecommerce domain',
+      },
+    ];
+
+    ruleTester.run('preserve UPPER_CASE', enforceNaming, {
+      valid: [],
+      invalid: [
+        // UPPER_CASE identifier should produce UPPER_CASE replacement
+        {
+          code: 'const USER = {};',
+          options: [{ domain: 'ecommerce', terms }],
+          errors: [{
+            messageId: 'wrongTerminology',
+            suggestions: [{ messageId: 'useDomainTerm', output: 'const CUSTOMER = {};' }],
+          }],
+        },
+      ],
+    });
+  });
+
+  describe('regex terms', () => {
+    const regexTerms = [
+      {
+        incorrect: /^dat[ae]$/i,
+        correct: 'record',
+        context: 'use record instead of data/date',
+      },
+    ];
+
+    ruleTester.run('regex incorrect terms', enforceNaming, {
+      valid: [
+        {
+          code: 'const record = {};',
+          options: [{ domain: 'general', terms: regexTerms }],
+        },
+        // Does not match regex
+        {
+          code: 'const database = {};',
+          options: [{ domain: 'general', terms: regexTerms }],
+        },
+      ],
+      invalid: [
+        {
+          code: 'const data = {};',
+          options: [{ domain: 'general', terms: regexTerms }],
+          errors: [{
+            messageId: 'wrongTerminology',
+            suggestions: [{ messageId: 'useDomainTerm', output: 'const record = {};' }],
+          }],
+        },
+      ],
+    });
+  });
+
+  describe('property and method definitions', () => {
+    const terms = [
+      {
+        incorrect: 'user',
+        correct: 'customer',
+        context: 'domain terminology',
+      },
+    ];
+
+    ruleTester.run('property and method violations', enforceNaming, {
+      valid: [
+        // Property with correct term
+        {
+          code: `
+            class OrderService {
+              customerName = '';
+            }
+          `,
+          options: [{ domain: 'ecommerce', terms }],
+        },
+        // Method with correct term
+        {
+          code: `
+            class OrderService {
+              getCustomer() { return null; }
+            }
+          `,
+          options: [{ domain: 'ecommerce', terms }],
+        },
+      ],
+      invalid: [
+        // PropertyDefinition with incorrect term
+        {
+          code: `
+            class OrderService {
+              userName = '';
+            }
+          `,
+          options: [{ domain: 'ecommerce', terms }],
+          errors: [{
+            messageId: 'wrongTerminology',
+            suggestions: [{ messageId: 'useDomainTerm', output: `
+            class OrderService {
+              customerName = '';
+            }
+          ` }],
+          }],
+        },
+        // MethodDefinition with incorrect term
+        {
+          code: `
+            class OrderService {
+              getUser() { return null; }
+            }
+          `,
+          options: [{ domain: 'ecommerce', terms }],
+          errors: [{
+            messageId: 'wrongTerminology',
+            suggestions: [{ messageId: 'useDomainTerm', output: `
+            class OrderService {
+              getCustomer() { return null; }
+            }
+          ` }],
+          }],
+        },
+      ],
+    });
+  });
 });

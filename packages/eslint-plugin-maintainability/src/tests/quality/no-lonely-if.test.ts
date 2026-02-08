@@ -116,6 +116,27 @@ describe('no-lonely-if', () => {
     });
   });
 
+  describe('allow option', () => {
+    ruleTester.run('allow option suppresses in matching context', noLonelyIf, {
+      valid: [
+        // Lonely if is allowed when code matches allow pattern
+        {
+          code: 'if (condition1) { doSomething(); } else { if (condition2) { doSomethingElse(); } }',
+          options: [{ allow: ['doSomething'] }],
+        },
+      ],
+      invalid: [
+        // Lonely if is NOT allowed when code doesn't match allow pattern
+        {
+          code: 'if (a) { x(); } else { if (b) { y(); } }',
+          options: [{ allow: ['notInCode'] }],
+          errors: [{ messageId: 'noLonelyIf' }],
+        },
+      ],
+    });
+  });
+
+
   // Note: The 'allow' option has a bug in isInAllowedContext where 'context' variable
   // shadows the outer context - not testing this feature
 });

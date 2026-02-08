@@ -127,45 +127,22 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
       return 1; // Single expression
     }
 
-    function calculateDepth(node: TSESTree.Node, currentDepth = 0): number {
-      let maxDepthFound = currentDepth;
+    function calculateDepth(node: TSESTree.Node): number {
+      const sourceCode = context.sourceCode || context.getSourceCode();
+      const text = sourceCode.getText(node);
 
-      // Check for nested constructs that increase complexity
-      if (node.type === 'IfStatement' ||
-          node.type === 'ForStatement' ||
-          node.type === 'WhileStatement' ||
-          node.type === 'DoWhileStatement' ||
-          node.type === 'SwitchStatement' ||
-          node.type === 'TryStatement') {
+      // Count nesting depth by tracking opening braces after control flow keywords
+      let maxDepth = 0;
+      let currentDepth = 0;
+      const controlFlowPattern = /\b(if|for|while|do|switch|try)\s*[\s({\n]/g;
+      let match;
+
+      while ((match = controlFlowPattern.exec(text)) !== null) {
         currentDepth++;
-        maxDepthFound = Math.max(maxDepthFound, currentDepth);
+        maxDepth = Math.max(maxDepth, currentDepth);
       }
 
-      // Properties to skip to avoid circular references
-      const skipProperties = new Set(['parent', 'tokens', 'comments', 'loc', 'range']);
-
-      // Recursively check children
-      for (const key in node) {
-        // Skip properties that cause circular references or aren't AST nodes
-        if (skipProperties.has(key)) {
-          continue;
-        }
-
-        const child = (node as unknown as Record<string, unknown>)[key];
-        if (child && typeof child === 'object') {
-          if (Array.isArray(child)) {
-            for (const item of child) {
-              if (item && typeof item === 'object' && 'type' in item) {
-                maxDepthFound = Math.max(maxDepthFound, calculateDepth(item as TSESTree.Node, currentDepth));
-              }
-            }
-          } else if ('type' in child) {
-            maxDepthFound = Math.max(maxDepthFound, calculateDepth(child as TSESTree.Node, currentDepth));
-          }
-        }
-      }
-
-      return maxDepthFound;
+      return maxDepth;
     }
 
     function hasComplexLogic(body: TSESTree.BlockStatement | TSESTree.Expression): boolean {

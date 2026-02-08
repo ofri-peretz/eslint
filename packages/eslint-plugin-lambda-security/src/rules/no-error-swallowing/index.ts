@@ -96,70 +96,25 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
      * Check if a catch block has any logging
      */
     function hasLogging(block: TSESTree.BlockStatement): boolean {
-      let found = false;
+      const sourceCode = context.sourceCode || context.getSourceCode();
+      const blockText = sourceCode.getText(block);
 
-      function checkNode(node: TSESTree.Node): void {
-        if (node.type === AST_NODE_TYPES.CallExpression) {
-          const callee = node.callee;
-
-          // console.log, console.error, console.warn
-          if (
-            callee.type === AST_NODE_TYPES.MemberExpression &&
-            callee.object.type === AST_NODE_TYPES.Identifier &&
-            callee.object.name === 'console'
-          ) {
-            found = true;
-            return;
-          }
-
-          // logger.error, logger.warn, etc.
-          if (
-            callee.type === AST_NODE_TYPES.MemberExpression &&
-            callee.object.type === AST_NODE_TYPES.Identifier &&
-            ['logger', 'log', 'winston', 'pino', 'bunyan'].includes(
-              callee.object.name,
-            )
-          ) {
-            found = true;
-            return;
-          }
-
-          // Direct function call that includes 'log' or 'error'
-          if (
-            callee.type === AST_NODE_TYPES.Identifier &&
-            /log|error|warn/i.test(callee.name)
-          ) {
-            found = true;
-            return;
-          }
-        }
-
-        // Recursively check child nodes
-        for (const key of Object.keys(node) as (keyof typeof node)[]) {
-          const child = node[key];
-          if (child && typeof child === 'object' && 'type' in child) {
-            checkNode(child as TSESTree.Node);
-          } else if (Array.isArray(child)) {
-            for (const item of child) {
-              // Use Object.prototype.hasOwnProperty to avoid 'in' operator narrowing issues
-              if (
-                item !== null &&
-                item !== undefined &&
-                typeof item === 'object' &&
-                Object.prototype.hasOwnProperty.call(item, 'type')
-              ) {
-                checkNode(item as TSESTree.Node);
-              }
-            }
-          }
-        }
+      // console.log/error/warn/info/debug
+      if (/console\.\s*(log|error|warn|info|debug)\s*\(/.test(blockText)) {
+        return true;
       }
 
-      for (const stmt of block.body) {
-        checkNode(stmt);
+      // logger.error, winston.error, pino.error, bunyan.error, log.error
+      if (/(logger|log|winston|pino|bunyan)\.\s*(error|warn|info|debug|log)\s*\(/.test(blockText)) {
+        return true;
       }
 
-      return found;
+      // Direct function call: logError(), reportError(), warnUser()
+      if (/\b(log|error|warn)\w*\s*\(/.test(blockText)) {
+        return true;
+      }
+
+      return false;
     }
 
     /**
@@ -254,12 +209,6 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
             context.report({
               node,
               messageId: 'emptyCatchBlock',
-              suggest: [
-                {
-                  messageId: 'addErrorLogging',
-                  fix: () => null,
-                },
-              ],
             });
           }
         }

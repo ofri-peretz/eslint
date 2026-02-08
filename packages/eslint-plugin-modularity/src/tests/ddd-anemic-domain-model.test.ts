@@ -140,4 +140,243 @@ describe('ddd-anemic-domain-model', () => {
       ],
     });
   });
+
+  describe('delegation patterns', () => {
+    ruleTester.run('pure delegation is anemic', dddAnemicDomainModel, {
+      valid: [
+        // Method using built-in array methods (business logic, not delegation)
+        {
+          code: `
+            class Order {
+              constructor(items) { this.items = items; }
+              calculateTotal() {
+                return this.items.reduce((sum, i) => sum + i.price, 0);
+              }
+            }
+          `,
+        },
+        // Class with actual business logic mixed with delegation
+        {
+          code: `
+            class OrderProcessor {
+              constructor(repo) { this.repository = repo; this.items = []; }
+              calculateTotal() {
+                return this.items.reduce((sum, i) => sum + i.price, 0);
+              }
+              save() {
+                return this.repository.save(this);
+              }
+            }
+          `,
+        },
+      ],
+      invalid: [
+        // Only delegation to this.repository.method() — anemic
+        {
+          code: `
+            class Order {
+              constructor(repo) { this.repository = repo; }
+              save() {
+                return this.repository.save(this);
+              }
+            }
+          `,
+          errors: [{ messageId: 'anemicDomainModel' }],
+        },
+        // Only delegation to this.service.method() — anemic
+        {
+          code: `
+            class User {
+              constructor(svc) { this.service = svc; }
+              save() {
+                return this.service.save(this);
+              }
+            }
+          `,
+          errors: [{ messageId: 'anemicDomainModel' }],
+        },
+        // Void delegation to this.repository.method() — anemic
+        {
+          code: `
+            class User {
+              constructor(repo) { this.repository = repo; }
+              save() {
+                this.repository.save(this);
+              }
+            }
+          `,
+          errors: [{ messageId: 'anemicDomainModel' }],
+        },
+        // Delegation to external service (Identifier.method) — anemic
+        {
+          code: `
+            class Order {
+              constructor() {}
+              save() {
+                return externalService.save(this);
+              }
+            }
+          `,
+          errors: [{ messageId: 'anemicDomainModel' }],
+        },
+        // Class with only property definitions (no methods)
+        {
+          code: `
+            class Config {
+              name = '';
+              value = 0;
+            }
+          `,
+          errors: [{ messageId: 'anemicDomainModel' }],
+        },
+        // Class with only getters (get keyword)
+        {
+          code: `
+            class Product {
+              constructor(name) { this._name = name; }
+              get name() { return this._name; }
+              set name(v) { this._name = v; }
+            }
+          `,
+          errors: [{ messageId: 'anemicDomainModel' }],
+        },
+      ],
+    });
+  });
+
+  describe('class expressions', () => {
+    ruleTester.run('class expressions', dddAnemicDomainModel, {
+      valid: [
+        // Anonymous class expression — ignored (no name to report)
+        {
+          code: `
+            const x = class {
+              constructor() {}
+            };
+          `,
+        },
+        // Named class expression with business logic
+        {
+          code: `
+            const OrderModel = class Order {
+              constructor(items) { this.items = items; }
+              calculateTotal() {
+                return this.items.reduce((sum, i) => sum + i.price, 0);
+              }
+            };
+          `,
+        },
+      ],
+      invalid: [
+        // Named class expression without business logic
+        {
+          code: `
+            const OrderModel = class Order {
+              constructor() { this.value = null; }
+            };
+          `,
+          errors: [{ messageId: 'anemicDomainModel' }],
+        },
+      ],
+    });
+  });
+
+  describe('delegation to api/client/dao patterns', () => {
+    ruleTester.run('delegation service patterns', dddAnemicDomainModel, {
+      valid: [],
+      invalid: [
+        // Delegation to this.api.method()
+        {
+          code: `
+            class User {
+              constructor(api) { this.api = api; }
+              fetch() {
+                return this.api.fetch(this.id);
+              }
+            }
+          `,
+          errors: [{ messageId: 'anemicDomainModel' }],
+        },
+        // Delegation to this.client.method()
+        {
+          code: `
+            class User {
+              constructor(c) { this.client = c; }
+              fetch() {
+                return this.client.get(this.id);
+              }
+            }
+          `,
+          errors: [{ messageId: 'anemicDomainModel' }],
+        },
+        // Delegation to this.dao.method()
+        {
+          code: `
+            class User {
+              constructor(d) { this.dao = d; }
+              fetch() {
+                return this.dao.findById(this.id);
+              }
+            }
+          `,
+          errors: [{ messageId: 'anemicDomainModel' }],
+        },
+      ],
+    });
+  });
+
+  describe('minBusinessMethods option', () => {
+    ruleTester.run('custom minBusinessMethods', dddAnemicDomainModel, {
+      valid: [
+        // Class with 2 business methods passes when min is 2
+        {
+          code: `
+            class Order {
+              constructor() {}
+              calculateTotal() { return 42; }
+              applyDiscount() { return 40; }
+            }
+          `,
+          options: [{ minBusinessMethods: 2 }],
+        },
+      ],
+      invalid: [
+        // Class with 1 business method fails when min is 2
+        {
+          code: `
+            class Order {
+              constructor() {}
+              calculateTotal() { return 42; }
+            }
+          `,
+          options: [{ minBusinessMethods: 2 }],
+          errors: [{ messageId: 'anemicDomainModel' }],
+        },
+      ],
+    });
+  });
+
+  describe('DTO pattern matching', () => {
+    ruleTester.run('custom dto patterns', dddAnemicDomainModel, {
+      valid: [
+        // Payload class ignored by default
+        {
+          code: `
+            class EventPayload {
+              constructor(data) { this.data = data; }
+            }
+          `,
+        },
+        // Data suffix ignored by default
+        {
+          code: `
+            class UserData {
+              constructor(name) { this.name = name; }
+            }
+          `,
+        },
+      ],
+      invalid: [],
+    });
+  });
 });

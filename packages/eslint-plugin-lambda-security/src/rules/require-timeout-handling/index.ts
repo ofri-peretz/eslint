@@ -185,12 +185,13 @@ export const requireTimeoutHandling = createRule<RuleOptions, MessageIds>({
         enterFunction(node);
       },
 
-      'ArrowFunctionExpression:exit, FunctionExpression:exit, FunctionDeclaration:exit'(
-        node:
-          | TSESTree.ArrowFunctionExpression
-          | TSESTree.FunctionExpression
-          | TSESTree.FunctionDeclaration,
-      ) {
+      'ArrowFunctionExpression:exit'(node: TSESTree.ArrowFunctionExpression) {
+        exitFunction(node);
+      },
+      'FunctionExpression:exit'(node: TSESTree.FunctionExpression) {
+        exitFunction(node);
+      },
+      'FunctionDeclaration:exit'(node: TSESTree.FunctionDeclaration) {
         exitFunction(node);
       },
 

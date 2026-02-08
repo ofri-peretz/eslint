@@ -177,12 +177,13 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
         enterFunction(node);
       },
 
-      'ArrowFunctionExpression:exit, FunctionExpression:exit, FunctionDeclaration:exit'(
-        node:
-          | TSESTree.ArrowFunctionExpression
-          | TSESTree.FunctionExpression
-          | TSESTree.FunctionDeclaration,
-      ) {
+      'ArrowFunctionExpression:exit'(node: TSESTree.ArrowFunctionExpression) {
+        exitFunction(node);
+      },
+      'FunctionExpression:exit'(node: TSESTree.FunctionExpression) {
+        exitFunction(node);
+      },
+      'FunctionDeclaration:exit'(node: TSESTree.FunctionDeclaration) {
         exitFunction(node);
       },
 
@@ -229,6 +230,14 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
           ['slice', 'splice', 'take', 'chunk'].includes(
             node.callee.property.name,
           )
+        ) {
+          hasBatchSizeCheck = true;
+        }
+
+        // Also detect top-level function calls: chunk(arr, n), take(arr, n)
+        if (
+          node.callee.type === AST_NODE_TYPES.Identifier &&
+          ['slice', 'splice', 'take', 'chunk'].includes(node.callee.name)
         ) {
           hasBatchSizeCheck = true;
         }

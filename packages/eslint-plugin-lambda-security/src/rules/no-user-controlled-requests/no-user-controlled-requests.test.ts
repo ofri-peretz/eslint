@@ -113,5 +113,105 @@ ruleTester.run('no-user-controlled-requests', noUserControlledRequests, {
       `,
       errors: [{ messageId: 'ssrfVulnerability' }],
     },
+    // String concatenation with user input (binary expression)
+    {
+      code: `
+        export const handler = async (event) => {
+          const path = event.pathParameters.proxy;
+          await fetch('https://internal.service/' + path);
+        };
+      `,
+      errors: [{ messageId: 'ssrfVulnerability' }],
+    },
+    // Object config with tainted url property
+    {
+      code: `
+        export const handler = async (event) => {
+          const target = event.queryStringParameters.endpoint;
+          await axios({ url: target, method: 'GET' });
+        };
+      `,
+      errors: [{ messageId: 'ssrfVulnerability' }],
+    },
+    // Assignment expression (not just declaration)
+    {
+      code: `
+        export const handler = async (event) => {
+          let endpoint;
+          endpoint = event.body;
+          await fetch(endpoint);
+        };
+      `,
+      errors: [{ messageId: 'ssrfVulnerability' }],
+    },
+    // Direct event.body access as URL (no intermediate variable)
+    {
+      code: `
+        export const handler = async (event) => {
+          await fetch(event.body);
+        };
+      `,
+      errors: [{ messageId: 'ssrfVulnerability' }],
+    },
+    // event.rawPath used as URL
+    {
+      code: `
+        export const handler = async (event) => {
+          const url = event.rawPath;
+          await fetch(url);
+        };
+      `,
+      errors: [{ messageId: 'ssrfVulnerability' }],
+    },
+    // event.rawQueryString used as URL
+    {
+      code: `
+        export const handler = async (event) => {
+          const url = event.rawQueryString;
+          await fetch(url);
+        };
+      `,
+      errors: [{ messageId: 'ssrfVulnerability' }],
+    },
+    // got HTTP client
+    {
+      code: `
+        export const handler = async (event) => {
+          const target = event.queryStringParameters.url;
+          await got(target);
+        };
+      `,
+      errors: [{ messageId: 'ssrfVulnerability' }],
+    },
+    // Chained method call (.post)
+    {
+      code: `
+        export const handler = async (event) => {
+          const url = event.body;
+          await client.post(url, { data: 'test' });
+        };
+      `,
+      errors: [{ messageId: 'ssrfVulnerability' }],
+    },
+    // Headers as source of user input
+    {
+      code: `
+        export const handler = async (event) => {
+          const webhookUrl = event.headers;
+          await fetch(webhookUrl);
+        };
+      `,
+      errors: [{ messageId: 'ssrfVulnerability' }],
+    },
+    // Object config with uri property
+    {
+      code: `
+        export const handler = async (event) => {
+          const target = event.queryStringParameters.callback;
+          await request({ uri: target });
+        };
+      `,
+      errors: [{ messageId: 'ssrfVulnerability' }],
+    },
   ],
 });
