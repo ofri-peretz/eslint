@@ -233,57 +233,58 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
     echo "📝 Bumping version..."
     
     VERSION_FAILED=false
+    VERSION_OUTPUT=""
     if [ -n "$FORCE_VERSION" ]; then
-      npx nx release version "$FORCE_VERSION" --projects="$PACKAGE" || VERSION_FAILED=true
+      VERSION_OUTPUT=$(npx nx release version "$FORCE_VERSION" --projects="$PACKAGE" 2>&1) || VERSION_FAILED=true
+      echo "$VERSION_OUTPUT"
     elif [ "$VERSION_SPEC" != "auto" ]; then
-      npx nx release version "$VERSION_SPEC" --projects="$PACKAGE" || VERSION_FAILED=true
+      VERSION_OUTPUT=$(npx nx release version "$VERSION_SPEC" --projects="$PACKAGE" 2>&1) || VERSION_FAILED=true
+      echo "$VERSION_OUTPUT"
     else
-      OUTPUT=$(npx nx release version --projects="$PACKAGE" 2>&1) || VERSION_FAILED=true
-      echo "$OUTPUT"
+      VERSION_OUTPUT=$(npx nx release version --projects="$PACKAGE" 2>&1) || VERSION_FAILED=true
+      echo "$VERSION_OUTPUT"
       
       # Fallback to patch if no conventional commits or no changes
-      if [ "$VERSION_FAILED" = "true" ] && echo "$OUTPUT" | grep -qiE "(No changes detected|No projects are set to be processed|nothing to commit)"; then
+      if [ "$VERSION_FAILED" = "true" ] && echo "$VERSION_OUTPUT" | grep -qiE "(No changes detected|No projects are set to be processed|nothing to commit)"; then
         echo "ℹ️ No conventional commits detected, falling back to patch..."
-        if ! npx nx release version patch --projects="$PACKAGE"; then
+        VERSION_OUTPUT=$(npx nx release version patch --projects="$PACKAGE" 2>&1) || VERSION_FAILED=true
+        echo "$VERSION_OUTPUT"
+        if [ "$VERSION_FAILED" = "false" ]; then
+          VERSION_FAILED=false
+        else
           echo "❌ FAILED: $PACKAGE"
           echo "   └─ Stage: Version bump (patch fallback)"
           echo "   └─ Action: Check nx release configuration - is $PACKAGE in nx.json release.projects?"
           FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
           continue
         fi
-        VERSION_FAILED=false
       fi
     fi
     
-    if [ "$VERSION_FAILED" = "true" ]; then
-      FAILURE_REASON="Version bump failed - check if package is in nx.json release.projects array"
-      echo "❌ FAILED: $PACKAGE"
-      echo "   └─ Stage: Version bump"
-      echo "   └─ Action: Verify package is in nx.json release.projects, then run 'npx nx release version --projects=$PACKAGE' locally"
-      FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
-      FAILED_DETAILS="${FAILED_DETAILS}$PACKAGE: $FAILURE_REASON\n"
-      continue
-    fi
-    
-    NEW_VERSION=$(node -p "require('./packages/$PACKAGE/package.json').version")
-    echo "✅ Version: $NEW_VERSION"
-    
     # ──────────────────────────────────────────────────────────────
-    # VERSION REGRESSION GUARD
+    # VERSION REGRESSION GUARD (handles both success and failure paths)
     # ──────────────────────────────────────────────────────────────
     # Nx's git-tag resolver can pick a stale tag as the "current" version,
     # causing the bump to produce a version LOWER than what was in package.json.
     # Example: package.json=3.1.0, Nx resolves from tag 3.0.1, bumps to 3.0.2.
-    # Detect this and retry with disk-based resolution.
+    # This causes either:
+    #   a) Nx succeeds but produces a regressed version (caught in success path)
+    #   b) Nx fails with "tag already exists" because the regressed tag exists (caught here)
+    # In both cases, we recover and retry with --current-version-resolver=disk.
     # ──────────────────────────────────────────────────────────────
+    
+    # Read whatever version Nx wrote (even if the command "failed" due to tag collision,
+    # Nx may have already written the regressed version to package.json)
+    BUMPED_VERSION=$(node -p "require('./packages/$PACKAGE/package.json').version" 2>/dev/null || echo "$CURRENT_VERSION")
+    
     IS_REGRESSION=$(node -e "
       const semver = require('semver');
       const pre = '$CURRENT_VERSION';
-      const post = '$NEW_VERSION';
-      // Regression = new version is less than or equal to pre-bump version
+      const post = '$BUMPED_VERSION';
+      // Regression = bumped version is less than or equal to pre-bump version
       // Equal can happen when Nx resolves from tags and re-derives the same version
       // Less-than happens when Nx picks a stale tag as the baseline
-      // Both cases mean the tag already exists and will cause a collision
+      // Both cases mean the version/tag already exists and will cause a collision
       console.log(semver.lte(post, pre) ? 'true' : 'false');
     " 2>/dev/null || echo "false")
     
@@ -291,7 +292,7 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
       echo ""
       echo "⚠️ VERSION REGRESSION DETECTED!"
       echo "   └─ Pre-bump:  $CURRENT_VERSION (from package.json)"
-      echo "   └─ Post-bump: $NEW_VERSION (Nx resolved from stale git tag)"
+      echo "   └─ Post-bump: $BUMPED_VERSION (Nx resolved from stale git tag)"
       echo "   └─ Action: Retrying with --current-version-resolver=disk"
       
       # Restore package.json to pre-bump version
@@ -303,22 +304,35 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
         fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
       "
       
-      # Clean up any tag Nx may have created for the regressed version
-      REGRESSED_TAG="${PACKAGE}@${NEW_VERSION}"
+      # Clean up any tag/commit Nx may have created for the regressed version
+      REGRESSED_TAG="${PACKAGE}@${BUMPED_VERSION}"
       git tag -d "$REGRESSED_TAG" 2>/dev/null || true
       
       # Reset any staged/committed changes from the failed bump
-      git reset --soft HEAD~1 2>/dev/null || true
+      # Check if HEAD commit is a release commit we need to undo
+      LAST_COMMIT_MSG=$(git log -1 --format=%s 2>/dev/null || echo "")
+      if echo "$LAST_COMMIT_MSG" | grep -q "chore(release): ${PACKAGE}@"; then
+        git reset --soft HEAD~1 2>/dev/null || true
+        git checkout -- "packages/$PACKAGE/package.json" 2>/dev/null || true
+        # Re-write the correct version back
+        node -e "
+          const fs = require('fs');
+          const path = './packages/$PACKAGE/package.json';
+          const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
+          pkg.version = '$CURRENT_VERSION';
+          fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
+        "
+      fi
       
-      # Retry with disk-based resolution
+      # Retry with disk-based resolution (reads package.json instead of git tags)
       VERSION_FAILED=false
       if [ -n "$FORCE_VERSION" ]; then
         npx nx release version "$FORCE_VERSION" --projects="$PACKAGE" --current-version-resolver=disk || VERSION_FAILED=true
       elif [ "$VERSION_SPEC" != "auto" ]; then
         npx nx release version "$VERSION_SPEC" --projects="$PACKAGE" --current-version-resolver=disk || VERSION_FAILED=true
       else
-        OUTPUT=$(npx nx release version --projects="$PACKAGE" --current-version-resolver=disk 2>&1) || VERSION_FAILED=true
-        echo "$OUTPUT"
+        VERSION_OUTPUT=$(npx nx release version --projects="$PACKAGE" --current-version-resolver=disk 2>&1) || VERSION_FAILED=true
+        echo "$VERSION_OUTPUT"
         if [ "$VERSION_FAILED" = "true" ]; then
           echo "ℹ️ Retrying with explicit patch..."
           npx nx release version patch --projects="$PACKAGE" --current-version-resolver=disk || VERSION_FAILED=true
@@ -334,10 +348,19 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
         FAILED_DETAILS="${FAILED_DETAILS}$PACKAGE: $FAILURE_REASON\n"
         continue
       fi
-      
-      NEW_VERSION=$(node -p "require('./packages/$PACKAGE/package.json').version")
-      echo "✅ Corrected version: $NEW_VERSION"
+    elif [ "$VERSION_FAILED" = "true" ]; then
+      # Non-regression failure — genuine error
+      FAILURE_REASON="Version bump failed - check if package is in nx.json release.projects array"
+      echo "❌ FAILED: $PACKAGE"
+      echo "   └─ Stage: Version bump"
+      echo "   └─ Action: Verify package is in nx.json release.projects, then run 'npx nx release version --projects=$PACKAGE' locally"
+      FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+      FAILED_DETAILS="${FAILED_DETAILS}$PACKAGE: $FAILURE_REASON\n"
+      continue
     fi
+    
+    NEW_VERSION=$(node -p "require('./packages/$PACKAGE/package.json').version")
+    echo "✅ Version: $NEW_VERSION"
     
     # ──────────────────────────────────────────────────────────────
     # BUILD (test runs automatically as dependency via nx graph)
