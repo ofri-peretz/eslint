@@ -1,3 +1,7 @@
+## 2.1.5 (2026-02-09)
+
+This was a version bump only for eslint-plugin-react-a11y to align it with other projects, there were no code changes.
+
 ## [2.1.3] - 2026-02-08
 
 ### Bug Fixes
