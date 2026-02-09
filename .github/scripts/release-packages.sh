@@ -269,6 +269,77 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
     echo "✅ Version: $NEW_VERSION"
     
     # ──────────────────────────────────────────────────────────────
+    # VERSION REGRESSION GUARD
+    # ──────────────────────────────────────────────────────────────
+    # Nx's git-tag resolver can pick a stale tag as the "current" version,
+    # causing the bump to produce a version LOWER than what was in package.json.
+    # Example: package.json=3.1.0, Nx resolves from tag 3.0.1, bumps to 3.0.2.
+    # Detect this and retry with disk-based resolution.
+    # ──────────────────────────────────────────────────────────────
+    IS_REGRESSION=$(node -e "
+      const semver = require('semver');
+      const pre = '$CURRENT_VERSION';
+      const post = '$NEW_VERSION';
+      // Regression = new version is less than or equal to pre-bump version
+      // Equal can happen when Nx resolves from tags and re-derives the same version
+      // Less-than happens when Nx picks a stale tag as the baseline
+      // Both cases mean the tag already exists and will cause a collision
+      console.log(semver.lte(post, pre) ? 'true' : 'false');
+    " 2>/dev/null || echo "false")
+    
+    if [ "$IS_REGRESSION" = "true" ]; then
+      echo ""
+      echo "⚠️ VERSION REGRESSION DETECTED!"
+      echo "   └─ Pre-bump:  $CURRENT_VERSION (from package.json)"
+      echo "   └─ Post-bump: $NEW_VERSION (Nx resolved from stale git tag)"
+      echo "   └─ Action: Retrying with --current-version-resolver=disk"
+      
+      # Restore package.json to pre-bump version
+      node -e "
+        const fs = require('fs');
+        const path = './packages/$PACKAGE/package.json';
+        const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
+        pkg.version = '$CURRENT_VERSION';
+        fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
+      "
+      
+      # Clean up any tag Nx may have created for the regressed version
+      REGRESSED_TAG="${PACKAGE}@${NEW_VERSION}"
+      git tag -d "$REGRESSED_TAG" 2>/dev/null || true
+      
+      # Reset any staged/committed changes from the failed bump
+      git reset --soft HEAD~1 2>/dev/null || true
+      
+      # Retry with disk-based resolution
+      VERSION_FAILED=false
+      if [ -n "$FORCE_VERSION" ]; then
+        npx nx release version "$FORCE_VERSION" --projects="$PACKAGE" --current-version-resolver=disk || VERSION_FAILED=true
+      elif [ "$VERSION_SPEC" != "auto" ]; then
+        npx nx release version "$VERSION_SPEC" --projects="$PACKAGE" --current-version-resolver=disk || VERSION_FAILED=true
+      else
+        OUTPUT=$(npx nx release version --projects="$PACKAGE" --current-version-resolver=disk 2>&1) || VERSION_FAILED=true
+        echo "$OUTPUT"
+        if [ "$VERSION_FAILED" = "true" ]; then
+          echo "ℹ️ Retrying with explicit patch..."
+          npx nx release version patch --projects="$PACKAGE" --current-version-resolver=disk || VERSION_FAILED=true
+        fi
+      fi
+      
+      if [ "$VERSION_FAILED" = "true" ]; then
+        FAILURE_REASON="Version bump failed even with disk resolver - manual intervention needed"
+        echo "❌ FAILED: $PACKAGE"
+        echo "   └─ Stage: Version bump (disk resolver retry)"
+        echo "   └─ Action: Manually bump version in package.json and push"
+        FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
+        FAILED_DETAILS="${FAILED_DETAILS}$PACKAGE: $FAILURE_REASON\n"
+        continue
+      fi
+      
+      NEW_VERSION=$(node -p "require('./packages/$PACKAGE/package.json').version")
+      echo "✅ Corrected version: $NEW_VERSION"
+    fi
+    
+    # ──────────────────────────────────────────────────────────────
     # BUILD (test runs automatically as dependency via nx graph)
     # ──────────────────────────────────────────────────────────────
     echo "🔨 Building..."
