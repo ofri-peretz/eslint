@@ -323,8 +323,47 @@ describe('anchor-ambiguous-text', () => {
         {
           code: '<a href="#">{`learn ${topic}`}</a>',
         },
+        // Empty expression container
+        {
+          code: '<a href="#">{/* comment */}</a>',
+        },
+        // String literal in expression — non-ambiguous
+        {
+          code: '<a href="#">{"read the documentation"}</a>',
+        },
+        // Binary expression with strings — non-ambiguous
+        {
+          code: '<a href="#">{"read" + " docs"}</a>',
+        },
+        // Complex expression type — falls back to "..." placeholder  
+        {
+          code: '<a href="#">{condition ? "yes" : "no"}</a>',
+        },
       ],
       invalid: [],
+    });
+  });
+
+  describe('Custom words option', () => {
+    ruleTester.run('custom ambiguous words', anchorAmbiguousText, {
+      valid: [
+        // Default ambiguous word becomes valid with custom words
+        {
+          code: '<a href="#">click here</a>',
+          options: [{ words: ['go'] }],
+        },
+      ],
+      invalid: [
+        // Custom word triggers
+        {
+          code: '<a href="#">go</a>',
+          options: [{ words: ['go'] }],
+          errors: [{
+            messageId: 'ambiguousText',
+            data: { text: 'go' },
+          }],
+        },
+      ],
     });
   });
 

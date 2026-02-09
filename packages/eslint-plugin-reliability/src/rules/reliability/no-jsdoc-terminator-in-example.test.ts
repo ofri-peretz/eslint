@@ -1,15 +1,6 @@
 /**
  * Tests for no-jsdoc-terminator-in-example rule
- * Detects dangerous sequences inside JSDoc @example blocks
- *
- * NOTE: Most "invalid" patterns (where `star-slash` actually appears inside
- * a block comment) cannot be tested via RuleTester because the parser itself
- * chokes on the premature comment termination — which is exactly the problem
- * this rule warns about. The rule is designed to catch cases where the
- * source file manages to parse (e.g., because the terminator is escaped
- * or embedded in a string) but would break downstream tooling.
- *
- * For comprehensive integration testing, use real .ts fixture files.
+ * Detects dangerous `* /` sequences inside JSDoc @example blocks
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import { describe, it, afterAll } from 'vitest';
@@ -109,9 +100,31 @@ describe('no-jsdoc-terminator-in-example', () => {
               function divide(a, b) { return a / b; }
             `,
           },
+          // @example that exits scope with another @tag before any terminator
+          {
+            code: `
+              /**
+               * @example
+               * safe code
+               * @returns something
+               */
+              function bar() {}
+            `,
+          },
+          // Block comment without @example containing */ -like text won't trigger
+          {
+            code: `
+              /**
+               * This is a normal comment
+               * Nothing dangerous here
+               */
+              function baz() {}
+            `,
+          },
         ],
         invalid: [],
       },
     );
   });
+
 });

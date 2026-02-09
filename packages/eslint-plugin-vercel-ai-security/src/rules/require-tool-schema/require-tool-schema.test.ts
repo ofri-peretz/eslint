@@ -73,6 +73,58 @@ ruleTester.run('require-tool-schema', requireToolSchema, {
         });
       `,
     },
+    // Test file with allowInTests
+    {
+      code: `
+        await generateText({
+          tools: { weather: { execute: async () => {} } },
+          prompt: 'Hello',
+        });
+      `,
+      filename: 'handler.test.ts',
+      options: [{ allowInTests: true }],
+    },
+    // No arguments — early return
+    {
+      code: `
+        await generateText();
+      `,
+    },
+    // Non-object argument — early return
+    {
+      code: `
+        await generateText(config);
+      `,
+    },
+    // Tool value is a CallExpression (tool() helper), checked separately
+    {
+      code: `
+        await generateText({
+          prompt: 'Hello',
+          tools: {
+            weather: tool({
+              inputSchema: z.object({ location: z.string() }),
+              execute: async () => ({}),
+            }),
+          },
+        });
+      `,
+    },
+    // Spread elements in tools object — gracefully ignored
+    {
+      code: `
+        await generateText({
+          prompt: 'Hello',
+          tools: {
+            ...existingTools,
+            weather: {
+              inputSchema: z.object({ location: z.string() }),
+              execute: async () => ({}),
+            },
+          },
+        });
+      `,
+    },
   ],
 
   invalid: [
@@ -137,5 +189,36 @@ ruleTester.run('require-tool-schema', requireToolSchema, {
       `,
       errors: [{ messageId: 'missingInputSchema' }],
     },
+    // streamObject with tools missing schema
+    {
+      code: `
+        await streamObject({
+          model: openai('gpt-4'),
+          prompt: 'Generate',
+          tools: {
+            helper: {
+              execute: async () => {},
+            },
+          },
+        });
+      `,
+      errors: [{ messageId: 'missingInputSchema' }],
+    },
+    // Tool with spread element in its value — spread is not Property, ignored, but tool itself missing schema
+    {
+      code: `
+        await generateText({
+          prompt: 'Hello',
+          tools: {
+            weather: {
+              ...baseToolDef,
+              execute: async () => ({}),
+            },
+          },
+        });
+      `,
+      errors: [{ messageId: 'missingInputSchema' }],
+    },
   ],
 });
+

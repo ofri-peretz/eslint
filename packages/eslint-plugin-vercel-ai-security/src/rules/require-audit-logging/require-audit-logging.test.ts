@@ -55,6 +55,41 @@ ruleTester.run('require-audit-logging', requireAuditLogging, {
       `,
       options: [{ allowInTests: false }],
     },
+    // Test file with allowInTests (default true)
+    {
+      code: `
+        await generateText({ prompt: 'Hello' });
+      `,
+      filename: 'handler.test.ts',
+    },
+    // Winston logger before AI call
+    {
+      code: `
+        async function handler() {
+          winston.info('Processing');
+          await streamObject({ prompt: 'Hello' });
+        }
+      `,
+      options: [{ allowInTests: false }],
+    },
+    // Pino logger
+    {
+      code: `
+        async function handler() {
+          pino.info('Processing');
+          await generateText({ prompt: 'Hello' });
+        }
+      `,
+      options: [{ allowInTests: false }],
+    },
+    // Top-level logging before AI call
+    {
+      code: `
+        console.log('Starting');
+        generateText({ prompt: 'Hello' });
+      `,
+      options: [{ allowInTests: false }],
+    },
   ],
 
   invalid: [
@@ -87,6 +122,36 @@ ruleTester.run('require-audit-logging', requireAuditLogging, {
           return obj;
         }
       `,
+      options: [{ allowInTests: false }],
+      errors: [{ messageId: 'missingAuditLogging' }],
+    },
+    // No logging before streamObject
+    {
+      code: `
+        async function generate() {
+          const obj = await streamObject({ prompt: 'Create' });
+          return obj;
+        }
+      `,
+      options: [{ allowInTests: false }],
+      errors: [{ messageId: 'missingAuditLogging' }],
+    },
+    // Top-level without any logging
+    {
+      code: `
+        generateText({ prompt: 'Hello' });
+      `,
+      options: [{ allowInTests: false }],
+      errors: [{ messageId: 'missingAuditLogging' }],
+    },
+    // Test file with allowInTests: false
+    {
+      code: `
+        async function handler() {
+          await generateText({ prompt: 'Hello' });
+        }
+      `,
+      filename: 'handler.test.ts',
       options: [{ allowInTests: false }],
       errors: [{ messageId: 'missingAuditLogging' }],
     },

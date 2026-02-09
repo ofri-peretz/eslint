@@ -167,6 +167,65 @@ describe('filename-case', () => {
           filename: '/src/setup_tests.ts',
           options: [{ case: 'kebabCase', allowedSnakeCase: ['setup_tests'] }],
         },
+        // Allow specific files to use camelCase when PascalCase is default
+        {
+          code: 'const x = 1;',
+          filename: '/src/myUtils.ts',
+          options: [{ case: 'pascalCase', allowedCamelCase: ['myUtils'] }],
+        },
+        // Allow specific files to use kebab-case when camelCase is default
+        {
+          code: 'const x = 1;',
+          filename: '/src/my-config.ts',
+          options: [{ case: 'camelCase', allowedKebabCase: ['my-config'] }],
+        },
+      ],
+      invalid: [],
+    });
+  });
+
+  describe('ignore option', () => {
+    ruleTester.run('ignore patterns', filenameCase, {
+      valid: [
+        // Ignore specific filename (string match)
+        {
+          code: 'const x = 1;',
+          filename: '/src/MyComponent.tsx',
+          options: [{ case: 'kebabCase', ignore: ['MyComponent.tsx'] }],
+        },
+        // Ignore via RegExp pattern
+        {
+          code: 'const x = 1;',
+          filename: '/src/MyComponent.tsx',
+          options: [{ case: 'kebabCase', ignore: [/^My/] }],
+        },
+      ],
+      invalid: [],
+    });
+  });
+
+  describe('file extensions and edge cases', () => {
+    ruleTester.run('edge cases', filenameCase, {
+      valid: [
+        // Spec/test file extensions handled correctly
+        {
+          code: 'const x = 1;',
+          filename: '/src/my-component.spec.ts',
+        },
+        {
+          code: 'const x = 1;',
+          filename: '/src/my-component.test.tsx',
+        },
+        // Dotfiles skipped
+        {
+          code: 'const x = 1;',
+          filename: '/src/.hidden-config.ts',
+        },
+        // index files
+        {
+          code: 'const x = 1;',
+          filename: '/src/index.ts',
+        },
       ],
       invalid: [],
     });

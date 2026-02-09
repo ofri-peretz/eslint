@@ -2,6 +2,7 @@
  * Tests for no-absolute-path
  */
 import { RuleTester } from '@typescript-eslint/rule-tester';
+import * as path from 'node:path';
 import { noAbsolutePath } from '../rules/no-absolute-path';
 
 const ruleTester = new RuleTester({
@@ -10,6 +11,20 @@ const ruleTester = new RuleTester({
     sourceType: 'module',
   },
 });
+
+/**
+ * Compute the expected relative path from the RuleTester's default filename
+ * to the given absolute import path. RuleTester defaults to a file in the
+ * current working directory, so we derive the relative path from cwd.
+ */
+function rel(absoluteImport: string): string {
+  const currentDir = process.cwd();
+  let relativePath = path.relative(currentDir, absoluteImport);
+  if (!relativePath.startsWith('.')) {
+    relativePath = './' + relativePath;
+  }
+  return relativePath;
+}
 
 ruleTester.run('no-absolute-path', noAbsolutePath, {
   valid: [
@@ -45,26 +60,26 @@ ruleTester.run('no-absolute-path', noAbsolutePath, {
     {
       code: `import foo from '/absolute/path/to/foo';`,
       errors: [{ messageId: 'absolutePath' }],
-      output: `import foo from '../../../../../absolute/path/to/foo';`,
+      output: `import foo from '${rel('/absolute/path/to/foo')}';`,
     },
     {
       code: `import { bar } from '/usr/local/lib/bar';`,
       errors: [{ messageId: 'absolutePath' }],
-      output: `import { bar } from '../../../../../usr/local/lib/bar';`,
+      output: `import { bar } from '${rel('/usr/local/lib/bar')}';`,
     },
 
     // Dynamic import with absolute path
     {
       code: `const module = await import('/absolute/module');`,
       errors: [{ messageId: 'absolutePath' }],
-      output: `const module = await import('../../../../../absolute/module');`,
+      output: `const module = await import('${rel('/absolute/module')}');`,
     },
 
     // CommonJS require with absolute path
     {
       code: `const foo = require('/absolute/path/to/foo');`,
       errors: [{ messageId: 'absolutePath' }],
-      output: `const foo = require('../../../../../absolute/path/to/foo');`,
+      output: `const foo = require('${rel('/absolute/path/to/foo')}');`,
     },
 
     // AMD when enabled
@@ -72,7 +87,7 @@ ruleTester.run('no-absolute-path', noAbsolutePath, {
       code: `define('/absolute/path', function() {});`,
       options: [{ amd: true }],
       errors: [{ messageId: 'absolutePath' }],
-      output: `define('../../../../../absolute/path', function() {});`,
+      output: `define('${rel('/absolute/path')}', function() {});`,
     },
   ],
 });

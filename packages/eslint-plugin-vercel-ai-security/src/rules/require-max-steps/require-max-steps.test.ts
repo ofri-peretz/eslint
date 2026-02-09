@@ -56,6 +56,46 @@ ruleTester.run('require-max-steps', requireMaxSteps, {
         });
       `,
     },
+    // Not an AI function — should be skipped entirely
+    {
+      code: `
+        await someOtherFunction({
+          tools: { helper: helperTool },
+        });
+      `,
+    },
+    // No arguments at all — early return
+    {
+      code: `
+        await generateText();
+      `,
+    },
+    // Non-object argument — early return
+    {
+      code: `
+        await generateText(someVariable);
+      `,
+    },
+    // tools with max_steps (underscore variant)
+    {
+      code: `
+        await generateText({
+          prompt: 'Hello',
+          tools: { weather: weatherTool },
+          max_steps: 5,
+        });
+      `,
+    },
+    // Tools with spread element properties (spread should be ignored gracefully)
+    {
+      code: `
+        await generateText({
+          ...baseOptions,
+          tools: { helper: helperTool },
+          maxSteps: 3,
+        });
+      `,
+    },
   ],
 
   invalid: [
@@ -86,5 +126,16 @@ ruleTester.run('require-max-steps', requireMaxSteps, {
       `,
       errors: [{ messageId: 'missingMaxSteps' }],
     },
+    // Tools with spread elements but no maxSteps
+    {
+      code: `
+        await generateText({
+          ...baseOptions,
+          tools: { helper: helperTool },
+        });
+      `,
+      errors: [{ messageId: 'missingMaxSteps' }],
+    },
   ],
 });
+

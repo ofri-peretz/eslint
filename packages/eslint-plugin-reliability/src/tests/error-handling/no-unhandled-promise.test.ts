@@ -31,9 +31,13 @@ describe('no-unhandled-promise', () => {
         {
           code: 'promise.catch(error => handleError(error));',
         },
-        // Promise with .then()
+        // Promise with .then() with meaningful callback
         {
           code: 'promise.then(result => console.log(result));',
+        },
+        // Promise with .finally()
+        {
+          code: 'promise.finally(() => cleanup());',
         },
         // Await in async function
         {
@@ -58,6 +62,27 @@ describe('no-unhandled-promise', () => {
           filename: 'test.spec.ts',
           options: [{ ignoreInTests: true }],
         },
+        // Call inside callback of a .then() chain
+        {
+          code: 'promise.then(result => { doSomething(result); });',
+        },
+        // Call inside callback of a .catch() chain
+        {
+          code: 'promise.catch(err => { logError(err); });',
+        },
+        // Void expression with ignoreVoidExpressions
+        {
+          code: 'void fetch(url);',
+          options: [{ ignoreVoidExpressions: true }],
+        },
+        // .then with non-arrow callback (assumed handled)
+        {
+          code: 'promise.then(handler);',
+        },
+        // .catch with non-arrow callback
+        {
+          code: 'promise.catch(handler);',
+        },
       ],
       invalid: [],
     });
@@ -67,20 +92,24 @@ describe('no-unhandled-promise', () => {
     ruleTester.run('invalid - unhandled promises', noUnhandledPromise, {
       valid: [],
       invalid: [
+        // Basic unhandled fetch
         {
           code: 'fetch(url);',
           errors: [{ messageId: 'unhandledPromise' }],
         },
+        // Unhandled axios call
         {
           code: 'axios.get(url);',
           errors: [{ messageId: 'unhandledPromise' }],
         },
+        // Unhandled custom async function
         {
           code: 'myAsyncFunction();',
           errors: [{ messageId: 'unhandledPromise' }],
         },
+        // .then() with empty callback body — still unhandled
         {
-          code: 'promise.then(result => {});', // .then() without .catch() might still be unhandled
+          code: 'promise.then(result => {});',
           errors: [{ messageId: 'unhandledPromise' }],
         },
       ],
