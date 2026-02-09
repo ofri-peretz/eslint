@@ -31,6 +31,16 @@ describe('anchor-is-valid', () => {
         { code: '<a href="mailto:test@example.com">Email</a>' },
         { code: '<a href="tel:+1234567890">Call</a>' },
         { code: '<button onClick={handleClick}>Button</button>' },
+        // specialLink makes anchor valid even without href
+        {
+          code: '<a to="/page">Link</a>',
+          options: [{ specialLink: ['to'] }],
+        },
+        // Custom component with special link prop
+        {
+          code: '<Link to="/page">Link</Link>',
+          options: [{ components: ['Link'], specialLink: ['to'] }],
+        },
       ],
       invalid: [],
     });
@@ -44,6 +54,14 @@ describe('anchor-is-valid', () => {
         { code: '<a href="javascript:void(0)">Link</a>', errors: [{ messageId: 'invalidHref' }] },
         { code: '<a onClick={handleClick}>Link</a>', errors: [{ messageId: 'preferButton' }] },
         { code: '<a href="#" onClick={handleClick}>Link</a>', errors: [{ messageId: 'preferButton' }] },
+        // No href and no onClick = noHref
+        { code: '<a>Link</a>', errors: [{ messageId: 'noHref' }] },
+        // Custom component without href
+        {
+          code: '<Link>No href</Link>',
+          options: [{ components: ['Link'] }],
+          errors: [{ messageId: 'noHref' }],
+        },
       ],
     });
   });

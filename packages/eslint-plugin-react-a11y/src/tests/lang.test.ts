@@ -31,6 +31,12 @@ describe('lang', () => {
         { code: '<html lang="zh-Hans"></html>' },
         { code: '<div lang="es"></div>' },
         { code: '<span lang="de"></span>' },
+        // 3-letter ISO codes are valid
+        { code: '<html lang="yue"></html>' },
+        // Non-lang attribute should be ignored
+        { code: '<html id="main"></html>' },
+        // Expression value should be ignored (not a string literal)
+        { code: '<html lang={locale}></html>' },
       ],
       invalid: [],
     });
@@ -41,6 +47,10 @@ describe('lang', () => {
       valid: [],
       invalid: [
         { code: '<html lang="invalid"></html>', errors: [{ messageId: 'invalidLang' }] },
+        // Single char is invalid
+        { code: '<html lang="e"></html>', errors: [{ messageId: 'invalidLang' }] },
+        // 4+ chars without hyphen is invalid
+        { code: '<html lang="abcd"></html>', errors: [{ messageId: 'invalidLang' }] },
       ],
     });
   });

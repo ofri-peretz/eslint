@@ -59,7 +59,29 @@ describe('no-keyboard-inaccessible-elements', () => {
   describe('Invalid Code - Inaccessible Elements', () => {
     ruleTester.run('invalid - clickable div without keyboard support', noKeyboardInaccessibleElements, {
       valid: [],
-      invalid: [],
+      invalid: [
+        // Div with onClick but no tabIndex or role
+        {
+          code: '<div onClick={handler}>Click</div>',
+          errors: [{ messageId: 'keyboardInaccessible' }],
+        },
+        // Span with onClick but no tabIndex or role
+        {
+          code: '<span onClick={handler}>Click</span>',
+          errors: [{ messageId: 'keyboardInaccessible' }],
+        },
+        // Div with onclick (lowercase)
+        {
+          code: '<div onclick={handler}>Click</div>',
+          errors: [{ messageId: 'keyboardInaccessible' }],
+        },
+        // Div with onClick and tabIndex but no role — has tabIndex so valid actually
+        // Let's just test basic div with onClick
+        {
+          code: '<div onClick={() => doSomething()}>Action</div>',
+          errors: [{ messageId: 'keyboardInaccessible' }],
+        },
+      ],
     });
   });
 

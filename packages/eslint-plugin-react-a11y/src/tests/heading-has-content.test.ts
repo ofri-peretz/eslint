@@ -34,6 +34,19 @@ describe('heading-has-content', () => {
         // Note: This rule doesn't treat aria-label as content for headings
         { code: '<h1><span>Content</span></h1>' },
         { code: '<h1>{title}</h1>' },
+        // dangerouslySetInnerHTML counts as content
+        { code: '<h1 dangerouslySetInnerHTML={{ __html: "Title" }} />' },
+        // children prop counts as content
+        { code: '<h1 children="Title" />' },
+        // title attribute counts as content
+        { code: '<h1 title="Title" />' },
+        // Non-heading JSX elements should be ignored
+        { code: '<div></div>' },
+        // Custom components option
+        {
+          code: '<Heading>Content</Heading>',
+          options: [{ components: ['Heading'] }],
+        },
       ],
       invalid: [],
     });
@@ -46,6 +59,15 @@ describe('heading-has-content', () => {
         { code: '<h1></h1>', errors: [{ messageId: 'missingContent' }] },
         { code: '<h2></h2>', errors: [{ messageId: 'missingContent' }] },
         { code: '<h3 />', errors: [{ messageId: 'missingContent' }] },
+        { code: '<h4></h4>', errors: [{ messageId: 'missingContent' }] },
+        { code: '<h5 />', errors: [{ messageId: 'missingContent' }] },
+        { code: '<h6></h6>', errors: [{ messageId: 'missingContent' }] },
+        // Custom component without content
+        {
+          code: '<Heading />',
+          options: [{ components: ['Heading'] }],
+          errors: [{ messageId: 'missingContent' }],
+        },
       ],
     });
   });
