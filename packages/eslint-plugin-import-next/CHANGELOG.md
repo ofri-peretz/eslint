@@ -1,3 +1,7 @@
+## 2.3.5 (2026-02-09)
+
+This was a version bump only for eslint-plugin-import-next to align it with other projects, there were no code changes.
+
 ## [2.3.3] - 2026-02-08
 
 ### Bug Fixes
