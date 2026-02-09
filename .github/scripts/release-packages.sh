@@ -324,18 +324,18 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
         "
       fi
       
-      # Retry with disk-based resolution (reads package.json instead of git tags)
+      # Retry with --first-release (falls back to disk version instead of git tags)
       VERSION_FAILED=false
       if [ -n "$FORCE_VERSION" ]; then
-        npx nx release version "$FORCE_VERSION" --projects="$PACKAGE" --current-version-resolver=disk || VERSION_FAILED=true
+        npx nx release version "$FORCE_VERSION" --projects="$PACKAGE" --first-release || VERSION_FAILED=true
       elif [ "$VERSION_SPEC" != "auto" ]; then
-        npx nx release version "$VERSION_SPEC" --projects="$PACKAGE" --current-version-resolver=disk || VERSION_FAILED=true
+        npx nx release version "$VERSION_SPEC" --projects="$PACKAGE" --first-release || VERSION_FAILED=true
       else
-        VERSION_OUTPUT=$(npx nx release version --projects="$PACKAGE" --current-version-resolver=disk 2>&1) || VERSION_FAILED=true
+        VERSION_OUTPUT=$(npx nx release version --projects="$PACKAGE" --first-release 2>&1) || VERSION_FAILED=true
         echo "$VERSION_OUTPUT"
         if [ "$VERSION_FAILED" = "true" ]; then
           echo "ℹ️ Retrying with explicit patch..."
-          npx nx release version patch --projects="$PACKAGE" --current-version-resolver=disk || VERSION_FAILED=true
+          npx nx release version patch --projects="$PACKAGE" --first-release || VERSION_FAILED=true
         fi
       fi
       
