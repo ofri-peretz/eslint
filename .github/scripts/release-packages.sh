@@ -293,9 +293,20 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
       echo "⚠️ VERSION REGRESSION DETECTED!"
       echo "   └─ Pre-bump:  $CURRENT_VERSION (from package.json)"
       echo "   └─ Post-bump: $BUMPED_VERSION (Nx resolved from stale git tag)"
-      echo "   └─ Action: Retrying with --current-version-resolver=disk"
+      echo "   └─ Action: Bypassing Nx git-tag resolver, bumping directly from package.json"
       
-      # Restore package.json to pre-bump version
+      # Clean up any tag/commit Nx may have created for the regressed version
+      REGRESSED_TAG="${PACKAGE}@${BUMPED_VERSION}"
+      git tag -d "$REGRESSED_TAG" 2>/dev/null || true
+      
+      # Reset any staged/committed changes from the failed bump
+      LAST_COMMIT_MSG=$(git log -1 --format=%s 2>/dev/null || echo "")
+      if echo "$LAST_COMMIT_MSG" | grep -q "chore(release): ${PACKAGE}@"; then
+        git reset --soft HEAD~1 2>/dev/null || true
+        git checkout -- "packages/$PACKAGE/package.json" 2>/dev/null || true
+      fi
+      
+      # Restore the correct current version in package.json
       node -e "
         const fs = require('fs');
         const path = './packages/$PACKAGE/package.json';
@@ -304,50 +315,57 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
         fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
       "
       
-      # Clean up any tag/commit Nx may have created for the regressed version
-      REGRESSED_TAG="${PACKAGE}@${BUMPED_VERSION}"
-      git tag -d "$REGRESSED_TAG" 2>/dev/null || true
-      
-      # Reset any staged/committed changes from the failed bump
-      # Check if HEAD commit is a release commit we need to undo
-      LAST_COMMIT_MSG=$(git log -1 --format=%s 2>/dev/null || echo "")
-      if echo "$LAST_COMMIT_MSG" | grep -q "chore(release): ${PACKAGE}@"; then
-        git reset --soft HEAD~1 2>/dev/null || true
-        git checkout -- "packages/$PACKAGE/package.json" 2>/dev/null || true
-        # Re-write the correct version back
-        node -e "
-          const fs = require('fs');
-          const path = './packages/$PACKAGE/package.json';
-          const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
-          pkg.version = '$CURRENT_VERSION';
-          fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
-        "
-      fi
-      
-      # Retry with --first-release (falls back to disk version instead of git tags)
-      VERSION_FAILED=false
+      # Compute the correct new version directly using semver
+      CORRECT_BUMP="$VERSION_SPEC"
       if [ -n "$FORCE_VERSION" ]; then
-        npx nx release version "$FORCE_VERSION" --projects="$PACKAGE" --first-release || VERSION_FAILED=true
-      elif [ "$VERSION_SPEC" != "auto" ]; then
-        npx nx release version "$VERSION_SPEC" --projects="$PACKAGE" --first-release || VERSION_FAILED=true
-      else
-        VERSION_OUTPUT=$(npx nx release version --projects="$PACKAGE" --first-release 2>&1) || VERSION_FAILED=true
-        echo "$VERSION_OUTPUT"
-        if [ "$VERSION_FAILED" = "true" ]; then
-          echo "ℹ️ Retrying with explicit patch..."
-          npx nx release version patch --projects="$PACKAGE" --first-release || VERSION_FAILED=true
-        fi
+        CORRECT_BUMP="$FORCE_VERSION"
+      fi
+      # Default to patch if auto (since we can't use conventional commits without Nx)
+      if [ "$CORRECT_BUMP" = "auto" ]; then
+        CORRECT_BUMP="patch"
       fi
       
-      if [ "$VERSION_FAILED" = "true" ]; then
-        FAILURE_REASON="Version bump failed even with disk resolver - manual intervention needed"
+      NEW_VERSION=$(node -e "
+        const semver = require('semver');
+        const current = '$CURRENT_VERSION';
+        const bump = '$CORRECT_BUMP';
+        // If bump is an exact version (x.y.z), use it directly
+        const exact = semver.valid(bump);
+        if (exact) {
+          console.log(exact);
+        } else {
+          // It's a semver keyword (patch, minor, major, etc.)
+          console.log(semver.inc(current, bump));
+        }
+      " 2>/dev/null)
+      
+      if [ -z "$NEW_VERSION" ] || [ "$NEW_VERSION" = "null" ]; then
+        FAILURE_REASON="Failed to compute correct version from $CURRENT_VERSION + $CORRECT_BUMP"
         echo "❌ FAILED: $PACKAGE"
-        echo "   └─ Stage: Version bump (disk resolver retry)"
+        echo "   └─ Stage: Version bump (direct computation)"
         echo "   └─ Action: Manually bump version in package.json and push"
         FAILED_PACKAGES="$FAILED_PACKAGES $PACKAGE"
         FAILED_DETAILS="${FAILED_DETAILS}$PACKAGE: $FAILURE_REASON\n"
         continue
       fi
+      
+      echo "   └─ Computed: $CURRENT_VERSION + $CORRECT_BUMP = $NEW_VERSION"
+      
+      # Write the correct version to package.json
+      node -e "
+        const fs = require('fs');
+        const path = './packages/$PACKAGE/package.json';
+        const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
+        pkg.version = '$NEW_VERSION';
+        fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
+      "
+      
+      # Git commit + tag (matching Nx's patterns from nx.json)
+      git add "packages/$PACKAGE/package.json"
+      git commit --no-verify -m "chore(release): ${PACKAGE}@${NEW_VERSION}"
+      git tag -a "${PACKAGE}@${NEW_VERSION}" -m "chore(release): ${PACKAGE}@${NEW_VERSION}"
+      
+      echo "✅ Version: $NEW_VERSION (direct bump, bypassed Nx git-tag resolver)"
     elif [ "$VERSION_FAILED" = "true" ]; then
       # Non-regression failure — genuine error
       FAILURE_REASON="Version bump failed - check if package is in nx.json release.projects array"
