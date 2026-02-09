@@ -21,7 +21,7 @@
       "rules": 26,
       "description": "Security-focused ESLint plugin with 89 AI-parseable rules for detecting and preventing vulnerabilities",
       "category": "security",
-      "version": "3.1.1",
+      "version": "3.1.3",
       "published": true
     },
     {
@@ -29,7 +29,7 @@
       "rules": 22,
       "description": "Security-focused ESLint plugin for Vercel AI SDK",
       "category": "security",
-      "version": "1.3.3",
+      "version": "1.3.5",
       "published": true
     },
     {
@@ -93,7 +93,7 @@
       "rules": 61,
       "description": "Drop-in replacement for eslint-plugin-import",
       "category": "architecture",
-      "version": "2.3.3",
+      "version": "2.3.5",
       "published": true
     },
     {
@@ -101,7 +101,7 @@
       "rules": 10,
       "description": "ESLint rules for team-specific disciplinary patterns and code conventions",
       "category": "quality",
-      "version": "4.0.5",
+      "version": "4.0.7",
       "published": true
     },
     {
@@ -109,7 +109,7 @@
       "rules": 9,
       "description": "ESLint rules for runtime stability, fault tolerance, and type safety",
       "category": "quality",
-      "version": "3.1.0",
+      "version": "3.1.2",
       "published": true
     },
     {
@@ -157,12 +157,12 @@
       "rules": 39,
       "description": "React accessibility ESLint plugin with 37 LLM-optimized rules for WCAG 2",
       "category": "react",
-      "version": "2.1.3",
+      "version": "2.1.5",
       "published": false
     }
   ],
   "totalRules": 335,
   "totalPlugins": 18,
   "allPluginsCount": 20,
-  "generatedAt": "2026-02-09T07:18:34.566Z"
+  "generatedAt": "2026-02-09T08:36:35.207Z"
 }
