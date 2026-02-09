@@ -262,38 +262,59 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
     fi
     
     # ──────────────────────────────────────────────────────────────
-    # VERSION REGRESSION GUARD (handles both success and failure paths)
+    # VERSION REGRESSION GUARD (3-source ceiling check)
     # ──────────────────────────────────────────────────────────────
     # Nx's git-tag resolver can pick a stale tag as the "current" version,
-    # causing the bump to produce a version LOWER than what was in package.json.
-    # Example: package.json=3.1.0, Nx resolves from tag 3.0.1, bumps to 3.0.2.
-    # This causes either:
-    #   a) Nx succeeds but produces a regressed version (caught in success path)
-    #   b) Nx fails with "tag already exists" because the regressed tag exists (caught here)
-    # In both cases, we recover and retry with --current-version-resolver=disk.
+    # causing the bump to produce a version LOWER than what's already published.
+    #
+    # This guard checks THREE sources to find the TRUE floor:
+    #   1. package.json (pre-bump) — can itself be regressed
+    #   2. npm registry (latest) — the AUTHORITATIVE published version
+    #   3. git tags (highest)    — may contain unreleased versions
+    #
+    # The highest of the three is the true floor. Any bump that produces
+    # a version <= this floor is a regression and will be corrected.
     # ──────────────────────────────────────────────────────────────
     
     # Read whatever version Nx wrote (even if the command "failed" due to tag collision,
     # Nx may have already written the regressed version to package.json)
     BUMPED_VERSION=$(node -p "require('./packages/$PACKAGE/package.json').version" 2>/dev/null || echo "$CURRENT_VERSION")
     
+    # Source 1: package.json (pre-bump) — already in $CURRENT_VERSION
+    # Source 2: npm registry
+    NPM_LATEST=$(npm view "$NPM_NAME" version 2>/dev/null || echo "0.0.0")
+    echo "   📊 Ceiling check: package.json=$CURRENT_VERSION, npm=$NPM_LATEST, bumped=$BUMPED_VERSION"
+    
+    # Source 3: highest git tag for this package
+    GIT_TAG_LATEST=$(git tag --list "${PACKAGE}@*" --sort=-version:refname 2>/dev/null | head -1 | sed "s/^${PACKAGE}@//" || echo "0.0.0")
+    if [ -z "$GIT_TAG_LATEST" ]; then GIT_TAG_LATEST="0.0.0"; fi
+    echo "   📊 Git tag latest: $GIT_TAG_LATEST"
+    
+    # Compute the TRUE floor = max(package.json, npm, git-tag)
+    TRUE_FLOOR=$(node -e "
+      const semver = require('semver');
+      const versions = ['$CURRENT_VERSION', '$NPM_LATEST', '$GIT_TAG_LATEST'].filter(v => semver.valid(v));
+      if (versions.length === 0) { console.log('$CURRENT_VERSION'); process.exit(0); }
+      versions.sort(semver.rcompare);
+      console.log(versions[0]);
+    " 2>/dev/null || echo "$CURRENT_VERSION")
+    
+    echo "   📊 True floor (max of all sources): $TRUE_FLOOR"
+    
     IS_REGRESSION=$(node -e "
       const semver = require('semver');
-      const pre = '$CURRENT_VERSION';
+      const floor = '$TRUE_FLOOR';
       const post = '$BUMPED_VERSION';
-      // Regression = bumped version is less than or equal to pre-bump version
-      // Equal can happen when Nx resolves from tags and re-derives the same version
-      // Less-than happens when Nx picks a stale tag as the baseline
-      // Both cases mean the version/tag already exists and will cause a collision
-      console.log(semver.lte(post, pre) ? 'true' : 'false');
+      // Regression = bumped version is less than or equal to floor
+      console.log(semver.lte(post, floor) ? 'true' : 'false');
     " 2>/dev/null || echo "false")
     
     if [ "$IS_REGRESSION" = "true" ]; then
       echo ""
       echo "⚠️ VERSION REGRESSION DETECTED!"
-      echo "   └─ Pre-bump:  $CURRENT_VERSION (from package.json)"
-      echo "   └─ Post-bump: $BUMPED_VERSION (Nx resolved from stale git tag)"
-      echo "   └─ Action: Bypassing Nx git-tag resolver, bumping directly from package.json"
+      echo "   └─ True floor:  $TRUE_FLOOR (max of: pkg=$CURRENT_VERSION, npm=$NPM_LATEST, tag=$GIT_TAG_LATEST)"
+      echo "   └─ Post-bump:   $BUMPED_VERSION (Nx resolved from stale git tag)"
+      echo "   └─ Action: Bypassing Nx, bumping directly from true floor"
       
       # Clean up any tag/commit Nx may have created for the regressed version
       REGRESSED_TAG="${PACKAGE}@${BUMPED_VERSION}"
@@ -306,12 +327,12 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
         git checkout -- "packages/$PACKAGE/package.json" 2>/dev/null || true
       fi
       
-      # Restore the correct current version in package.json
+      # Restore the true floor version in package.json
       node -e "
-        const fs = require('fs');
+        const fs = require('node:fs');
         const path = './packages/$PACKAGE/package.json';
         const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
-        pkg.version = '$CURRENT_VERSION';
+        pkg.version = '$TRUE_FLOOR';
         fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
       "
       
@@ -327,11 +348,16 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
       
       NEW_VERSION=$(node -e "
         const semver = require('semver');
-        const current = '$CURRENT_VERSION';
+        const current = '$TRUE_FLOOR';
         const bump = '$CORRECT_BUMP';
         // If bump is an exact version (x.y.z), use it directly
         const exact = semver.valid(bump);
         if (exact) {
+          // Even explicit versions must be above the floor
+          if (semver.lte(exact, '$TRUE_FLOOR')) {
+            console.error('ERROR: Explicit version ' + exact + ' is not above floor ' + '$TRUE_FLOOR');
+            process.exit(1);
+          }
           console.log(exact);
         } else {
           // It's a semver keyword (patch, minor, major, etc.)
@@ -340,7 +366,7 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
       " 2>/dev/null)
       
       if [ -z "$NEW_VERSION" ] || [ "$NEW_VERSION" = "null" ]; then
-        FAILURE_REASON="Failed to compute correct version from $CURRENT_VERSION + $CORRECT_BUMP"
+        FAILURE_REASON="Failed to compute correct version from $TRUE_FLOOR + $CORRECT_BUMP"
         echo "❌ FAILED: $PACKAGE"
         echo "   └─ Stage: Version bump (direct computation)"
         echo "   └─ Action: Manually bump version in package.json and push"
@@ -349,11 +375,11 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
         continue
       fi
       
-      echo "   └─ Computed: $CURRENT_VERSION + $CORRECT_BUMP = $NEW_VERSION"
+      echo "   └─ Computed: $TRUE_FLOOR + $CORRECT_BUMP = $NEW_VERSION"
       
       # Write the correct version to package.json
       node -e "
-        const fs = require('fs');
+        const fs = require('node:fs');
         const path = './packages/$PACKAGE/package.json';
         const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
         pkg.version = '$NEW_VERSION';
@@ -365,7 +391,7 @@ for PACKAGE in "${PACKAGE_ARRAY[@]}"; do
       git commit --no-verify -m "chore(release): ${PACKAGE}@${NEW_VERSION}"
       git tag -a "${PACKAGE}@${NEW_VERSION}" -m "chore(release): ${PACKAGE}@${NEW_VERSION}"
       
-      echo "✅ Version: $NEW_VERSION (direct bump, bypassed Nx git-tag resolver)"
+      echo "✅ Version: $NEW_VERSION (direct bump from true floor, bypassed Nx git-tag resolver)"
     elif [ "$VERSION_FAILED" = "true" ]; then
       # Non-regression failure — genuine error
       FAILURE_REASON="Version bump failed - check if package is in nx.json release.projects array"

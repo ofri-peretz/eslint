@@ -419,6 +419,113 @@ jobs:
             done
           fi
 
+      # ──────────────────────────────────────────────────────────────────────
+      # CHANGELOG INTEGRITY VALIDATION
+      # ──────────────────────────────────────────────────────────────────────
+      # Validates that all detected packages have changelogs with versions
+      # in strict descending semver order. Catches Nx regression artifacts
+      # (e.g., a 3.x entry appearing above a 4.x entry) BEFORE any release
+      # work begins.
+      # ──────────────────────────────────────────────────────────────────────
+      - name: 🛡️ Validate changelog integrity
+        if: steps.detect.outputs.package-count != '0'
+        run: |
+          echo "🛡️ Validating changelog semver ordering for all detected packages..."
+          echo ""
+
+          CHANGELOG_ERRORS=""
+          PACKAGES_CHECKED=0
+
+          echo "${{ steps.detect.outputs.packages }}" | tr ',' '\n' | while read pkg; do
+            if [ -z "$pkg" ]; then continue; fi
+            
+            CHANGELOG="./packages/$pkg/CHANGELOG.md"
+            if [ ! -f "$CHANGELOG" ]; then
+              echo "  ⚠️ $pkg: No CHANGELOG.md found (skipping validation)"
+              continue
+            fi
+            
+            PACKAGES_CHECKED=$((PACKAGES_CHECKED + 1))
+            
+            # Extract version headers and validate descending semver order
+            VALIDATION=$(node -e "
+              const fs = require('node:fs');
+              const semver = require('semver');
+              const content = fs.readFileSync('$CHANGELOG', 'utf8');
+              
+              // Match changelog version headers: ## [x.y.z] or ## x.y.z
+              const versionPattern = /^## \[?(\d+\.\d+\.\d+(?:-[a-zA-Z0-9.]+)?)\]?/gm;
+              const versions = [];
+              let match;
+              while ((match = versionPattern.exec(content)) !== null) {
+                versions.push({ version: match[1], line: content.substring(0, match.index).split('\n').length });
+              }
+              
+              if (versions.length < 2) {
+                console.log('OK');
+                process.exit(0);
+              }
+              
+              const errors = [];
+              for (let i = 0; i < versions.length - 1; i++) {
+                const current = versions[i];
+                const next = versions[i + 1];
+                // Each version must be > the one below it (descending order)
+                if (!semver.gt(current.version, next.version)) {
+                  errors.push(
+                    'Line ' + current.line + ': ' + current.version + ' is NOT greater than ' + next.version + ' (line ' + next.line + ')'
+                  );
+                }
+              }
+              
+              if (errors.length > 0) {
+                console.log('FAIL|' + errors.join('|||'));
+              } else {
+                console.log('OK');
+              }
+            " 2>/dev/null || echo "ERROR")
+            
+            if [ "$VALIDATION" = "OK" ]; then
+              echo "  ✅ $pkg: Changelog versions in correct descending order"
+            elif echo "$VALIDATION" | grep -q "^FAIL|"; then
+              ERRORS=$(echo "$VALIDATION" | sed 's/^FAIL|//' | sed 's/|||/\n/g')
+              echo "  ❌ $pkg: CHANGELOG VERSION ORDER VIOLATION"
+              echo "$ERRORS" | while IFS= read -r err; do
+                echo "     └─ $err"
+              done
+              # Write error to a temp file so it persists outside the subshell
+              echo "$pkg" >> /tmp/changelog_errors.txt
+            else
+              echo "  ⚠️ $pkg: Could not validate changelog (parse error)"
+            fi
+          done
+
+          echo ""
+
+          if [ -f /tmp/changelog_errors.txt ]; then
+            FAILED_PKGS=$(cat /tmp/changelog_errors.txt | tr '\n' ', ' | sed 's/,$//')
+            echo "═══════════════════════════════════════════════════════════════"
+            echo "❌ CHANGELOG INTEGRITY CHECK FAILED"
+            echo "═══════════════════════════════════════════════════════════════"
+            echo ""
+            echo "The following packages have changelog versions out of semver order:"
+            echo "  $FAILED_PKGS"
+            echo ""
+            echo "This usually means Nx's git-tag resolver created a version regression."
+            echo ""
+            echo "To fix:"
+            echo "  1. Open the CHANGELOG.md for the affected package(s)"
+            echo "  2. Remove or reorder the out-of-sequence version entries"
+            echo "  3. Commit and push the fix"
+            echo "  4. Re-run this workflow"
+            echo ""
+            echo "═══════════════════════════════════════════════════════════════"
+            rm /tmp/changelog_errors.txt
+            exit 1
+          fi
+
+          echo "✅ All changelogs passed integrity validation"
+
   # ═══════════════════════════════════════════════════════════════════════════════
   # STEP 2: RELEASE PACKAGES (Sequential to respect dependencies)
   # ═══════════════════════════════════════════════════════════════════════════════

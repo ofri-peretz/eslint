@@ -1,11 +1,3 @@
-## 3.1.1 (2026-02-09)
-
-This was a version bump only for eslint-plugin-secure-coding to align it with other projects, there were no code changes.
-
-## 3.0.3 (2026-02-09)
-
-This was a version bump only for eslint-plugin-secure-coding to align it with other projects, there were no code changes.
-
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -13,55 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.0.0] - 2025-12-31
+## [3.1.1] - 2026-02-09
 
-### ⚠️ BREAKING CHANGES
+This was a version bump only for eslint-plugin-secure-coding to align it with other projects, there were no code changes.
 
-Removed 12 rules that now have dedicated, specialized plugins with enhanced functionality.
+## [3.1.0] - 2026-02-09
 
-#### Removed Rules (use dedicated plugins instead)
+This was a version bump only for eslint-plugin-secure-coding to align it with other projects, there were no code changes.
 
-| Removed Rule                             | Replacement Plugin               | Replacement Rule(s)                                 |
-| ---------------------------------------- | -------------------------------- | --------------------------------------------------- |
-| `no-sql-injection`                       | `eslint-plugin-pg`               | `pg/no-unsafe-query`                                |
-| `database-injection`                     | `eslint-plugin-pg`               | `pg/no-unsafe-query`                                |
-| `no-insecure-jwt`                        | `eslint-plugin-jwt`              | 13 dedicated JWT rules                              |
-| `no-weak-crypto`                         | `eslint-plugin-crypto`           | `crypto/no-weak-hash-algorithm`                     |
-| `no-timing-attack`                       | `eslint-plugin-crypto`           | `crypto/no-timing-unsafe-compare`                   |
-| `no-insufficient-random`                 | `eslint-plugin-crypto`           | `crypto/no-math-random-crypto`                      |
-| `no-document-cookie`                     | `eslint-plugin-browser-security` | `browser-security/no-sensitive-cookie-js`           |
-| `no-unsanitized-html`                    | `eslint-plugin-browser-security` | `browser-security/no-innerhtml`                     |
-| `no-postmessage-origin-wildcard`         | `eslint-plugin-browser-security` | `browser-security/no-postmessage-wildcard-origin`   |
-| `no-insecure-cookie-settings`            | `eslint-plugin-browser-security` | `browser-security/require-cookie-secure-attrs`      |
-| `no-insufficient-postmessage-validation` | `eslint-plugin-browser-security` | `browser-security/require-postmessage-origin-check` |
-| `no-unencrypted-local-storage`           | `eslint-plugin-browser-security` | `browser-security/no-sensitive-localstorage`        |
-| `no-credentials-in-storage-api`          | `eslint-plugin-browser-security` | `browser-security/no-sensitive-localstorage`        |
+## [3.0.3] - 2026-02-09
 
-### Migration Guide
-
-Install the specialized plugins for the functionality you need:
-
-```bash
-# For PostgreSQL/SQL security
-npm install --save-dev eslint-plugin-pg
-
-# For JWT security
-npm install --save-dev eslint-plugin-jwt
-
-# For cryptography security
-npm install --save-dev eslint-plugin-crypto
-
-# For browser/client-side security
-npm install --save-dev eslint-plugin-browser-security
-```
-
-### Why This Change?
-
-Specialized plugins provide:
-
-- **More rules**: 13 JWT rules vs 1, 24 crypto rules vs 3
-- **Better detection**: Domain-specific AST patterns
-- **Focused maintenance**: Faster updates for each security domain
+This was a version bump only for eslint-plugin-secure-coding to align it with other projects, there were no code changes.
 
 ## [3.0.2] - 2025-12-20
 
