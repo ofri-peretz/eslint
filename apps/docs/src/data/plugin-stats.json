@@ -21,7 +21,7 @@
       "rules": 26,
       "description": "Security-focused ESLint plugin with 89 AI-parseable rules for detecting and preventing vulnerabilities",
       "category": "security",
-      "version": "3.1.0",
+      "version": "3.1.1",
       "published": true
     },
     {
@@ -164,5 +164,5 @@
   "totalRules": 335,
   "totalPlugins": 18,
   "allPluginsCount": 20,
-  "generatedAt": "2026-02-09T01:37:41.478Z"
+  "generatedAt": "2026-02-09T05:23:25.006Z"
 }
