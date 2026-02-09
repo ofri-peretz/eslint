@@ -1,3 +1,7 @@
+## 3.1.1 (2026-02-09)
+
+This was a version bump only for eslint-plugin-secure-coding to align it with other projects, there were no code changes.
+
 ## 3.0.3 (2026-02-09)
 
 This was a version bump only for eslint-plugin-secure-coding to align it with other projects, there were no code changes.
