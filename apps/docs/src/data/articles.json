@@ -178,12 +178,12 @@
       "path": "/ofri-peretz/i-let-claude-write-60-functions-65-75-had-security-vulnerabilities-414o",
       "url": "https://dev.to/ofri-peretz/i-let-claude-write-60-functions-65-75-had-security-vulnerabilities-414o",
       "comments_count": 4,
-      "public_reactions_count": 3,
+      "public_reactions_count": 4,
       "collection_id": 35564,
       "published_timestamp": "2026-02-06T02:51:25Z",
       "language": "en",
       "subforem_id": 1,
-      "positive_reactions_count": 3,
+      "positive_reactions_count": 4,
       "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Fi-let-claude-write-60-functions-65-75-had-security-vulnerabilities.png",
       "social_image": "https://media2.dev.to/dynamic/image/width=1000,height=500,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Fi-let-claude-write-60-functions-65-75-had-security-vulnerabilities.png",
       "canonical_url": "https://ofriperetz.dev/articles/i-let-claude-write-60-functions-65-75-had-security-vulnerabilities",
@@ -1388,6 +1388,6 @@
     }
   ],
   "total": 33,
-  "lastUpdated": "2026-02-10T16:51:41.516Z",
+  "lastUpdated": "2026-02-10T20:33:46.504Z",
   "source": "public"
 }
