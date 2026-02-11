@@ -597,7 +597,7 @@
       "slug": "eslint-plugin-import-vs-eslint-plugin-import-next-up-to-100x-faster-1afa",
       "path": "/ofri-peretz/eslint-plugin-import-vs-eslint-plugin-import-next-up-to-100x-faster-1afa",
       "url": "https://dev.to/ofri-peretz/eslint-plugin-import-vs-eslint-plugin-import-next-up-to-100x-faster-1afa",
-      "comments_count": 0,
+      "comments_count": 1,
       "public_reactions_count": 0,
       "collection_id": null,
       "published_timestamp": "2026-01-02T14:46:40Z",
@@ -611,7 +611,7 @@
       "edited_at": "2026-02-08T19:22:24Z",
       "crossposted_at": null,
       "published_at": "2026-01-02T14:46:40Z",
-      "last_comment_at": "2026-01-02T14:46:40Z",
+      "last_comment_at": "2026-02-11T05:01:51Z",
       "reading_time_minutes": 4,
       "tag_list": [
         "javascript",
@@ -1388,6 +1388,6 @@
     }
   ],
   "total": 33,
-  "lastUpdated": "2026-02-11T01:11:34.698Z",
+  "lastUpdated": "2026-02-11T05:22:40.611Z",
   "source": "public"
 }
