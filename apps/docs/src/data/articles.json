@@ -2,6 +2,49 @@
   "articles": [
     {
       "type_of": "article",
+      "id": 3248314,
+      "title": "We Ranked 5 AI Models by Security. The Leaderboard Is Wrong.",
+      "description": "Claude Opus generates vulnerable JWT code every single time — 7 out of 7 runs, always leaking...",
+      "readable_publish_date": "Feb 11",
+      "slug": "we-ranked-5-ai-models-by-security-the-leaderboard-is-wrong-5a4o",
+      "path": "/ofri-peretz/we-ranked-5-ai-models-by-security-the-leaderboard-is-wrong-5a4o",
+      "url": "https://dev.to/ofri-peretz/we-ranked-5-ai-models-by-security-the-leaderboard-is-wrong-5a4o",
+      "comments_count": 0,
+      "public_reactions_count": 2,
+      "collection_id": 35564,
+      "published_timestamp": "2026-02-11T08:14:59Z",
+      "language": "en",
+      "subforem_id": 1,
+      "positive_reactions_count": 2,
+      "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2Fgjifodfaukn49e9y18ux.png",
+      "social_image": "https://media2.dev.to/dynamic/image/width=1000,height=500,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2Fgjifodfaukn49e9y18ux.png",
+      "canonical_url": "https://ofriperetz.dev/articles/we-ranked-5-ai-models-by-security-the-leaderboard-is-wrong",
+      "created_at": "2026-02-11T08:14:59Z",
+      "edited_at": "2026-02-11T08:15:58Z",
+      "crossposted_at": null,
+      "published_at": "2026-02-11T08:14:59Z",
+      "last_comment_at": "2026-02-11T08:14:59Z",
+      "reading_time_minutes": 9,
+      "tag_list": [
+        "ai",
+        "security",
+        "googleai",
+        "gemini"
+      ],
+      "tags": "ai, security, googleai, gemini",
+      "user": {
+        "name": "Ofri Peretz",
+        "username": "ofri-peretz",
+        "twitter_username": "ofriperetzdev",
+        "github_username": "ofri-peretz",
+        "user_id": 3669992,
+        "website_url": "https://ofriperetz.dev?utm_source=devto&utm_medium=profile&utm_campaign=website-field",
+        "profile_image": "https://media2.dev.to/dynamic/image/width=640,height=640,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F3669992%2F50a1f256-472c-48a1-85e8-149459647ea7.png",
+        "profile_image_90": "https://media2.dev.to/dynamic/image/width=90,height=90,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Fuser%2Fprofile_image%2F3669992%2F50a1f256-472c-48a1-85e8-149459647ea7.png"
+      }
+    },
+    {
+      "type_of": "article",
       "id": 3241678,
       "title": "The AI Hydra Problem: Fix One AI Bug, Get Two More",
       "description": "When AI models fix security vulnerabilities, they sometimes introduce entirely new ones. I tested this across 3 remediation rounds with Claude Opus 4.6 using two approaches — ESLint-guided feedback vs. prompt engineering alone. The results expose a fundamental limit of 'fix it again' workflows.",
@@ -611,7 +654,7 @@
       "edited_at": "2026-02-08T19:22:24Z",
       "crossposted_at": null,
       "published_at": "2026-01-02T14:46:40Z",
-      "last_comment_at": "2026-02-11T05:01:51Z",
+      "last_comment_at": "2026-02-11T15:15:03Z",
       "reading_time_minutes": 4,
       "tag_list": [
         "javascript",
@@ -1387,7 +1430,7 @@
       }
     }
   ],
-  "total": 33,
-  "lastUpdated": "2026-02-11T12:39:03.722Z",
+  "total": 34,
+  "lastUpdated": "2026-02-11T16:51:37.653Z",
   "source": "public"
 }
