@@ -977,12 +977,12 @@
       "path": "/ofri-peretz/the-30-minute-security-audit-onboarding-a-new-codebase-4f91",
       "url": "https://dev.to/ofri-peretz/the-30-minute-security-audit-onboarding-a-new-codebase-4f91",
       "comments_count": 6,
-      "public_reactions_count": 11,
+      "public_reactions_count": 12,
       "collection_id": null,
       "published_timestamp": "2025-12-31T06:31:46Z",
       "language": "en",
       "subforem_id": 1,
-      "positive_reactions_count": 11,
+      "positive_reactions_count": 12,
       "cover_image": "https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Fthe-30-minute-security-audit-onboarding-a-new-codebase.png",
       "social_image": "https://media2.dev.to/dynamic/image/width=1000,height=500,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fofriperetz.dev%2Fcdn%2Fblog-cover-image%2Fthe-30-minute-security-audit-onboarding-a-new-codebase.png",
       "canonical_url": "https://ofriperetz.dev/articles/the-30-minute-security-audit-onboarding-a-new-codebase",
@@ -1431,6 +1431,6 @@
     }
   ],
   "total": 34,
-  "lastUpdated": "2026-02-20T01:01:19.007Z",
+  "lastUpdated": "2026-02-20T05:12:04.709Z",
   "source": "public"
 }
