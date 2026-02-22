@@ -1,168 +1,168 @@
 {
   "plugins": [
     {
+      "name": "eslint-plugin-import-next",
+      "rules": 56,
+      "description": "Drop-in replacement for eslint-plugin-import. 100x faster no-cycle detection, AI-optimized fixes, zero config migration.",
+      "category": "quality",
+      "version": "2.3.5",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-react-features",
+      "rules": 53,
+      "description": "ESLint React rules for modern react features, hooks, and patterns.",
+      "category": "react",
+      "version": "1.1.3",
+      "published": true
+    },
+    {
       "name": "eslint-plugin-browser-security",
-      "rules": 52,
-      "description": "Security-focused ESLint plugin for browser applications",
+      "rules": 45,
+      "description": "Security-focused ESLint plugin for browser applications. Detects XSS vulnerabilities, postMessage abuse, localStorage/sessionStorage/IndexedDB token exposure, cookie security issues, WebSocket security, Blob URL leaks, Service Worker risks, and CSP misconfigurations.",
       "category": "security",
       "version": "1.2.3",
       "published": true
     },
     {
+      "name": "eslint-plugin-react-a11y",
+      "rules": 37,
+      "description": "React accessibility ESLint plugin with 37 LLM-optimized rules for WCAG 2.1 compliance. Provides structured error messages for AI assistants and auto-fix capabilities.",
+      "category": "react",
+      "version": "2.1.5",
+      "published": true
+    },
+    {
       "name": "eslint-plugin-node-security",
-      "rules": 32,
-      "description": "Security-focused ESLint plugin for Node",
+      "rules": 31,
+      "description": "Security-focused ESLint plugin for Node.js built-in modules (fs, child_process, vm, path, Buffer). Detects command injection, path traversal, code execution vulnerabilities with AI-parseable error messages.",
       "category": "security",
       "version": "4.0.4",
       "published": true
     },
     {
       "name": "eslint-plugin-secure-coding",
-      "rules": 26,
-      "description": "Security-focused ESLint plugin with 89 AI-parseable rules for detecting and preventing vulnerabilities",
+      "rules": 27,
+      "description": "Security-focused ESLint plugin with 89 AI-parseable rules for detecting and preventing vulnerabilities. OWASP Top 10 2021 + Mobile Top 10 2024 coverage, CWE references, and AI-assisted fix guidance.",
       "category": "security",
       "version": "3.1.3",
       "published": true
     },
     {
       "name": "eslint-plugin-vercel-ai-security",
-      "rules": 22,
-      "description": "Security-focused ESLint plugin for Vercel AI SDK",
-      "category": "security",
+      "rules": 19,
+      "description": "Security-focused ESLint plugin for Vercel AI SDK. SDK-aware rules for generateText, streamText, tools, and streaming patterns with full type knowledge.",
+      "category": "framework",
       "version": "1.3.5",
       "published": true
     },
     {
       "name": "eslint-plugin-mongodb-security",
-      "rules": 19,
-      "description": "Security-focused ESLint plugin for MongoDB & Mongoose",
+      "rules": 16,
+      "description": "Security-focused ESLint plugin for MongoDB & Mongoose. Detects NoSQL injection, operator attacks, credential exposure, and ODM-specific vulnerabilities with AI-optimized fix guidance.",
       "category": "security",
       "version": "8.2.3",
       "published": true
     },
     {
-      "name": "eslint-plugin-pg",
-      "rules": 15,
-      "description": "ESLint plugin with security and best practices rules for the pg Node",
-      "category": "security",
-      "version": "1.4.3",
+      "name": "eslint-plugin-lambda-security",
+      "rules": 14,
+      "description": "Security-focused ESLint plugin for AWS Lambda and Middy applications. Detects insecure API Gateway responses, missing security headers, CORS misconfigurations, input validation issues, and more.",
+      "category": "framework",
+      "version": "1.2.3",
       "published": true
     },
     {
       "name": "eslint-plugin-jwt",
       "rules": 13,
-      "description": "Security-focused ESLint plugin for JWT operations",
+      "description": "Security-focused ESLint plugin for JWT operations. Detects algorithm confusion (CVE-2022-23540), weak secrets, missing validation, and library-specific vulnerabilities across jsonwebtoken, jose, express-jwt, @nestjs/jwt, jwks-rsa, and jwt-decode.",
       "category": "security",
       "version": "2.2.3",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-pg",
+      "rules": 13,
+      "description": "ESLint plugin with security and best practices rules for the pg Node.js driver",
+      "category": "security",
+      "version": "1.4.3",
+      "published": true
+    },
+    {
+      "name": "eslint-plugin-maintainability",
+      "rules": 12,
+      "description": "ESLint rules for reducing cognitive load and ensuring code readability.",
+      "category": "quality",
+      "version": "3.0.3",
       "published": true
     },
     {
       "name": "eslint-plugin-crypto",
-      "rules": 10,
-      "description": "Security-focused ESLint plugin with 24 AI-parseable rules for cryptographic best practices",
+      "rules": 11,
+      "description": "Security-focused ESLint plugin with 24 AI-parseable rules for cryptographic best practices. Detects weak algorithms, insecure key handling, CVE-specific vulnerabilities, and deprecated crypto patterns.",
       "category": "security",
       "version": "2.2.3",
       "published": true
     },
     {
-      "name": "eslint-plugin-lambda-security",
-      "rules": 16,
-      "description": "Security-focused ESLint plugin for AWS Lambda and Middy applications",
-      "category": "framework",
-      "version": "1.2.3",
-      "published": true
-    },
-    {
       "name": "eslint-plugin-express-security",
-      "rules": 14,
-      "description": "Security-focused ESLint plugin for Express",
-      "category": "framework",
-      "version": "1.2.3",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-nestjs-security",
       "rules": 10,
-      "description": "Security-focused ESLint rules for NestJS applications",
+      "description": "Security-focused ESLint plugin for Express.js applications. Detects insecure cookies, missing security headers, CORS misconfigurations, CSRF vulnerabilities, GraphQL security issues, and more.",
       "category": "framework",
       "version": "1.2.3",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-import-next",
-      "rules": 61,
-      "description": "Drop-in replacement for eslint-plugin-import",
-      "category": "architecture",
-      "version": "2.3.5",
       "published": true
     },
     {
       "name": "eslint-plugin-conventions",
-      "rules": 10,
-      "description": "ESLint rules for team-specific disciplinary patterns and code conventions",
+      "rules": 9,
+      "description": "ESLint rules for team-specific disciplinary patterns and code conventions.",
       "category": "quality",
       "version": "4.0.7",
       "published": true
     },
     {
       "name": "eslint-plugin-reliability",
-      "rules": 9,
-      "description": "ESLint rules for runtime stability, fault tolerance, and type safety",
+      "rules": 8,
+      "description": "ESLint rules for runtime stability, fault tolerance, and type safety.",
       "category": "quality",
       "version": "3.1.2",
       "published": true
     },
     {
-      "name": "eslint-plugin-maintainability",
-      "rules": 8,
-      "description": "ESLint rules for reducing cognitive load and ensuring code readability",
-      "category": "quality",
-      "version": "3.0.3",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-modularity",
-      "rules": 7,
-      "description": "ESLint rules for architecture, DDD patterns, and module isolation with AI-parseable guidance",
-      "category": "quality",
-      "version": "2.0.4",
+      "name": "eslint-plugin-nestjs-security",
+      "rules": 6,
+      "description": "Security-focused ESLint rules for NestJS applications. Detects missing guards, validation pipes, throttling, exposed sensitive fields, and more.",
+      "category": "framework",
+      "version": "1.2.3",
       "published": true
     },
     {
       "name": "eslint-plugin-operability",
       "rules": 6,
-      "description": "ESLint rules for production behavior, resource hygiene, and log quality",
+      "description": "ESLint rules for production behavior, resource hygiene, and log quality.",
       "category": "quality",
       "version": "3.0.5",
       "published": true
     },
     {
-      "name": "eslint-plugin-modernization",
+      "name": "eslint-plugin-modularity",
       "rules": 5,
-      "description": "ESLint rules for modernizing JavaScript to ES2022+ syntax with AI-parseable guidance",
+      "description": "ESLint rules for architecture, DDD patterns, and module isolation with AI-parseable guidance.",
       "category": "quality",
       "version": "2.0.4",
       "published": true
     },
     {
-      "name": "eslint-plugin-react-features",
-      "rules": 52,
-      "description": "ESLint React rules for modern react features, hooks, and patterns",
-      "category": "react",
-      "version": "1.1.3",
-      "published": false
-    },
-    {
-      "name": "eslint-plugin-react-a11y",
-      "rules": 39,
-      "description": "React accessibility ESLint plugin with 37 LLM-optimized rules for WCAG 2",
-      "category": "react",
-      "version": "2.1.5",
-      "published": false
+      "name": "eslint-plugin-modernization",
+      "rules": 3,
+      "description": "ESLint rules for modernizing JavaScript to ES2022+ syntax with AI-parseable guidance.",
+      "category": "quality",
+      "version": "2.0.4",
+      "published": true
     }
   ],
-  "totalRules": 335,
-  "totalPlugins": 18,
+  "totalRules": 394,
+  "totalPlugins": 20,
   "allPluginsCount": 20,
-  "generatedAt": "2026-02-22T05:12:10.192Z"
+  "generatedAt": "2026-02-22T06:48:20.774Z"
 }
