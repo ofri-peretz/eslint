@@ -21,9 +21,9 @@
 name: "SDK: PostgreSQL Ecosystem (pg)"
 
 on:
-  schedule:
+  # schedule: # DISABLED — quota conservation
     # Every Monday at 6 AM UTC
-    - cron: "0 6 * * 1"
+    # - cron: "0 6 * * 1"
 
   workflow_dispatch:
     inputs:

@@ -18,8 +18,8 @@
 name: "SDK: NestJS Ecosystem"
 
 on:
-  schedule:
-    - cron: "0 6 * * 1"
+  # schedule: # DISABLED — quota conservation
+    # - cron: "0 6 * * 1"
 
   workflow_dispatch:
     inputs:

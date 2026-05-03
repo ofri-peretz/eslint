@@ -6,9 +6,9 @@ on:
       - main
     paths:
       - "packages/**"
-  schedule:
+  # schedule: # DISABLED — quota conservation
     # Run every 4 hours
-    - cron: "0 */4 * * *"
+    # - cron: "0 */4 * * *"
   workflow_dispatch:
     inputs:
       force_rebuild:

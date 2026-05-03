@@ -14,9 +14,9 @@ name: NPM Token Health Check
 # ═══════════════════════════════════════════════════════════════════════════════
 
 on:
-  schedule:
+  # schedule: # DISABLED — quota conservation
     # Every Monday at 9:00 AM UTC
-    - cron: "0 9 * * 1"
+    # - cron: "0 9 * * 1"
   workflow_dispatch:
     inputs:
       create-issue:

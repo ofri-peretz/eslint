@@ -20,9 +20,9 @@ on:
         required: false
         type: string
         default: ""
-  schedule:
+  # schedule: # DISABLED — quota conservation
     # Run weekly on Monday at 6 AM UTC to keep coverage fresh
-    - cron: "0 6 * * 1"
+    # - cron: "0 6 * * 1"
 
 # Prevent concurrent runs
 concurrency:
