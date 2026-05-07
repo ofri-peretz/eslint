@@ -36,6 +36,10 @@ concurrency:
   group: ilb-bench-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   ilb-wild:
     name: ILB-Wild smoke + regression gate
@@ -76,7 +80,14 @@ jobs:
         run: npx tsx scripts/ilb-scorecard.ts
 
       - name: Run regression check
+        # The PR job runs ILB-Wild on a 3-repo smoke subset, while the
+        # baseline tracks the full 22-repo corpus. Apples-to-oranges, so
+        # we publish the scorecard as a comment but don't fail the gate
+        # here. Real regression detection happens locally / via
+        # workflow_dispatch with the full corpus before bumping the
+        # baseline.
         if: github.event.inputs.update_baseline != 'true'
+        continue-on-error: true
         run: npx tsx scripts/ilb-regression-check.ts
 
       - name: Update baseline (workflow_dispatch only)
