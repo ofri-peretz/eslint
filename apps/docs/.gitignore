@@ -28,4 +28,4 @@ _archive/
 .env
 .env*.local
 .vercel
-next-env.d.ts
+next-env.d.tslink-report.json

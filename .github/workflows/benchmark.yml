@@ -17,6 +17,7 @@ on:
       - 'packages/eslint-plugin-*/**'
       - 'packages/eslint-devkit/**'
       - 'scripts/ilb-*.mjs'
+      - 'scripts/ilb-*.ts'
       - 'benchmark-results/baseline.json'
       - '.github/workflows/benchmark.yml'
   workflow_dispatch:
@@ -72,15 +73,15 @@ jobs:
           done
 
       - name: Generate unified scorecard
-        run: node scripts/ilb-scorecard.mjs
+        run: npx tsx scripts/ilb-scorecard.ts
 
       - name: Run regression check
         if: github.event.inputs.update_baseline != 'true'
-        run: node scripts/ilb-regression-check.mjs
+        run: npx tsx scripts/ilb-regression-check.ts
 
       - name: Update baseline (workflow_dispatch only)
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.update_baseline == 'true'
-        run: node scripts/ilb-regression-check.mjs --update-baseline
+        run: npx tsx scripts/ilb-regression-check.ts --update-baseline
 
       - name: Upload scorecard + summary
         if: always()

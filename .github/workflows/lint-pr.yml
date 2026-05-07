@@ -1,4 +1,9 @@
-name: ESLint with Reviewdog
+name: Documentation Governance
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Lint coverage moved to `quality.yml` (oxlint, runs on every PR). This file
+# now only carries the docs-validation job, which has no Nx/Turbo dependency.
+# ─────────────────────────────────────────────────────────────────────────────
 
 on:
   pull_request:
@@ -9,7 +14,6 @@ on:
       - "!README.md"
   workflow_dispatch:
 
-# Prevent concurrent runs on the same branch
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -18,94 +22,6 @@ env:
   NODE_VERSION: "24"
 
 jobs:
-  lint:
-    name: ESLint Review
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      pull-requests: write
-      checks: write
-
-    steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: ⚙️ Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-
-      - name: 📦 Install dependencies
-        run: npm ci
-
-      - name: 🗄️ Restore NX cache
-        uses: actions/cache@v4
-        with:
-          path: .nx/cache
-          key: nx-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
-          restore-keys: |
-            nx-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
-            nx-cache-${{ runner.os }}-
-
-      - name: 🗄️ Restore ESLint cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            **/.eslintcache
-            .eslintcache
-          key: eslint-cache-${{ github.ref }}-${{ github.sha }}
-          restore-keys: |
-            eslint-cache-${{ github.ref }}-
-            eslint-cache-
-
-      - name: 🔍 Derive affected packages
-        uses: nrwl/nx-set-shas@v4
-        with:
-          main-branch-name: main
-
-      - name: 📦 Setup reviewdog
-        uses: reviewdog/action-setup@v1
-        with:
-          reviewdog_version: v0.20.3
-
-      - name: 📝 Run ESLint with Reviewdog
-        env:
-          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NX_SKIP_NX_CLOUD: "true"
-        run: |
-          echo "📝 Running ESLint on affected packages..."
-
-          # Get affected projects
-          AFFECTED=$(npx nx show projects --affected 2>/dev/null | tr '\n' ',' | sed 's/,$//')
-
-          if [ -z "$AFFECTED" ]; then
-            echo "ℹ️ No affected projects detected"
-            exit 0
-          fi
-
-          echo "📦 Affected projects: $AFFECTED"
-
-          # Run ESLint with JSON output and pipe to reviewdog
-          # reviewdog only comments on changed lines (delta), not the entire file
-          npx nx affected -t lint -- --format=json --max-warnings=0 2>/dev/null | \
-            reviewdog -f=eslint -reporter=github-pr-review -filter-mode=added -fail-on-error=true || {
-              echo "⚠️ PR review reporter failed, trying check reporter..."
-              npx nx affected -t lint -- --format=json --max-warnings=0 2>/dev/null | \
-                reviewdog -f=eslint -reporter=github-pr-check -filter-mode=added -fail-on-error=true
-            }
-
-      - name: 📊 Print Summary
-        if: always()
-        run: |
-          echo "## 📝 ESLint Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch:** ${{ github.ref }}" >> $GITHUB_STEP_SUMMARY
-
   validate-docs:
     name: Documentation Governance
     runs-on: ubuntu-latest

@@ -52,9 +52,14 @@ const RULES_TABLE_END = '<!-- AUTO-GENERATED:RULES_TABLE:END -->';
 const MIT_LICENSE_HEADER = 'MIT License';
 const MIT_COPYRIGHT_PATTERN = /Copyright \(c\) \d{4} Ofri Peretz/;
 
-// Mandatory sections (regex patterns)
+// Mandatory sections (regex patterns).
+// Title accepts either a markdown H1 (`# eslint-plugin-…`) or the centered
+// Interlace banner that the new README template opens with.
 const MANDATORY_SECTIONS = [
-  { name: 'Title', pattern: /^#\s+eslint-plugin-/m },
+  {
+    name: 'Title',
+    pattern: /(^#\s+eslint-plugin-|<img\s[^>]*alt="ESLint Interlace Logo")/m,
+  },
   { name: 'Rules Section', pattern: /##\s+.*Rules/i },
   { name: 'License Section', pattern: /##\s+.*License/i },
 ];
@@ -433,7 +438,7 @@ function main(): void {
 
   if (failed > 0) {
     console.log(`\n❌ ${failed} plugin(s) failed validation`);
-    console.log(`   Run 'nx run sync-docs' to fix auto-generated sections.`);
+    console.log(`   Run 'npm run sync-docs-data' (or the relevant sync script) to fix auto-generated sections.`);
     process.exit(1);
   } else {
     console.log('\n✅ All plugins passed validation');

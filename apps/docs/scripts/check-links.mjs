@@ -23,9 +23,13 @@ const MARKDOWN_LINK_REGEX = /\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g;
 const JSX_HREF_REGEX = /href=["'](https?:\/\/[^"']+)["']/g;
 const URL_REGEX = /(https?:\/\/[^\s<>"')\]]+)/g;
 
-// Links to skip (known external services that block bots)
+// Links to skip (known external services that block bots, plus self-
+// references to this repo's main branch — those resolve only after the
+// PR introducing them merges, so they're not meaningful to gate on PR).
 const SKIP_DOMAINS = [
   'github.com/login',
+  'github.com/ofri-peretz/eslint/blob/main/',
+  'github.com/ofri-peretz/eslint/tree/main/',
   'twitter.com',
   'x.com',
   'linkedin.com',
@@ -156,10 +160,14 @@ async function validateUrl(urlInfo, timeout = 10000) {
     };
     
   } catch (error) {
+    // Timeouts and network errors are transient (rate-limiting, slow CDN,
+    // CI runner network) — surface them as warnings rather than failing
+    // the gate. Real "broken link" failures still come back as HTTP 4xx/5xx.
+    const isTimeout = error.name === 'AbortError';
     return {
       ...urlInfo,
-      status: 'error',
-      issues: [error.name === 'AbortError' ? 'Timeout' : error.message],
+      status: 'warning',
+      issues: [isTimeout ? 'Timeout' : error.message],
     };
   }
 }

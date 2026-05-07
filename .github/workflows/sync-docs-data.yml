@@ -10,12 +10,6 @@ on:
     # Run every 4 hours
     # - cron: "0 */4 * * *"
   workflow_dispatch:
-    inputs:
-      force_rebuild:
-        description: "Force Vercel rebuild after sync"
-        required: false
-        default: false
-        type: boolean
 
 permissions:
   contents: write
@@ -61,14 +55,3 @@ jobs:
           git commit -m "chore(docs): sync plugin stats, rules, and articles [automated]"
           git push
 
-      - name: Trigger Vercel rebuild
-        if: steps.changes.outputs.changed == 'true' || github.event.inputs.force_rebuild == 'true'
-        env:
-          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
-        run: |
-          if [ -n "$VERCEL_DEPLOY_HOOK" ]; then
-            curl -X POST "$VERCEL_DEPLOY_HOOK"
-            echo "Triggered Vercel rebuild"
-          else
-            echo "VERCEL_DEPLOY_HOOK not configured, skipping rebuild"
-          fi

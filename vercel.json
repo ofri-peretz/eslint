@@ -5,6 +5,6 @@
     "buildCommand": "cd apps/docs && next build",
     "outputDirectory": "apps/docs/.next",
     "git": {
-        "ignoreCommand": "exit 0"
+        "deploymentEnabled": false
     }
 }
