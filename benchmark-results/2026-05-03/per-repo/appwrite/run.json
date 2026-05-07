@@ -1,0 +1,37 @@
+{
+  "repo": "appwrite",
+  "meta": {
+    "stars": 48000,
+    "commit": "main",
+    "category": "BaaS Platform",
+    "plugins": [
+      "node-security",
+      "secure-coding",
+      "crypto"
+    ],
+    "fpEdge": false,
+    "srcGlob": "public/sdk-console/**/*.ts"
+  },
+  "fileCount": 15,
+  "loc": 4080,
+  "timing": {
+    "runsMs": [
+      1226
+    ],
+    "medianMs": 1226,
+    "meanMs": 1226,
+    "stddevMs": 0,
+    "cv": 0,
+    "msPerFile": 81.73
+  },
+  "peakRssMb": 209,
+  "findings": {
+    "total": 0,
+    "errors": 0,
+    "warnings": 0,
+    "filesWithFindings": 0,
+    "densityPerKloc": 0,
+    "externalDirectives": 0,
+    "parseErrors": 15
+  }
+}

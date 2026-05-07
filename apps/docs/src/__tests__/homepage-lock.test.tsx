@@ -53,8 +53,21 @@ describe('Homepage: Structure Lock', () => {
       expect(homepageSource).toContain("import { Marquee } from '@/components/ui/marquee'");
     });
 
-    it('imports TweetCard component', () => {
-      expect(homepageSource).toContain("import { TweetCard } from '@/components/ui/tweet-card'");
+    it('imports TweetCard from the @interlace/docs-baseline marketing layer', () => {
+      expect(homepageSource).toContain(
+        "import { TweetCard } from '#interlace/components/marketing/tweet-card'",
+      );
+    });
+
+    it('imports DevToCard from the @interlace/docs-baseline marketing layer', () => {
+      expect(homepageSource).toContain(
+        "import { DevToCard } from '#interlace/components/marketing/devto-card'",
+      );
+    });
+
+    it('wires cache-aware fetchers via createTweetFetcher / createDevToFetcher', () => {
+      expect(homepageSource).toContain('createTweetFetcher');
+      expect(homepageSource).toContain('createDevToFetcher');
     });
 
     it('imports stats loader', () => {

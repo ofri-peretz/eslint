@@ -1,3 +1,9 @@
+## 3.2.0 (Unreleased)
+
+### Added
+
+- New `./oxlint` sub-export for use with [oxlint](https://oxc.rs/docs/guide/usage/linter)'s JS plugin API. Wire it via `{ "jsPlugins": ["eslint-plugin-secure-coding/oxlint"] }` in `.oxlintrc.json`. Exposes the same rule set as the main entry; rules degrade gracefully when type information is unavailable (oxlint's JS plugin context does not provide `parserServices`). The default ESLint entry (`./`) is unchanged.
+
 ## 3.1.3 (2026-02-09)
 
 This was a version bump only for eslint-plugin-secure-coding to align it with other projects, there were no code changes.

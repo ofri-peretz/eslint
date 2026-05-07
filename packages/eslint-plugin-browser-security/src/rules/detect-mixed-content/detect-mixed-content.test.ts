@@ -14,6 +14,11 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('detect-mixed-content', detectMixedContent, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
+        'const items = [];',
+        'const obj = {};',
     // HTTPS URLs are safe
     { code: "const url = 'https://example.com/api'" },
     { code: "fetch('https://cdn.example.com/lib.js')" },

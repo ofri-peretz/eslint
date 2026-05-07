@@ -1,0 +1,123 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Quality Gate
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Migrated from Nx to Turborepo (2026-05-04).
+#
+# - Replaces `npx nx run-many -t <task>` with `npx turbo run <task>`.
+# - On `pull_request`, scopes work to *affected* packages via Turbo's
+#   `--filter=...[origin/main]` syntax (only run a task in packages whose
+#   source — or the source of any upstream dep — changed since main).
+# - On `push` to main, runs the full graph (post-merge validation).
+#
+# Turbo's local cache is keyed on inputs declared in turbo.json; CI doesn't
+# share cache state across runs in this workflow, but each individual run
+# parallelizes tasks and short-circuits on cache hits within the run.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # On PRs, scope all `turbo run` commands to packages affected since main.
+  # On main pushes, the variable is empty and Turbo runs across the whole graph.
+  TURBO_FILTER_ARGS: ${{ github.event_name == 'pull_request' && '--filter=...[origin/main]' || '' }}
+  TURBO_TELEMETRY_DISABLED: "1"
+
+jobs:
+  oxlint:
+    name: oxlint (fast pass)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --prefer-offline --no-audit
+      - name: Run oxlint
+        run: npm run oxlint
+
+  test:
+    name: Unit Tests (Turbo)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --prefer-offline --no-audit
+      - name: Run tests via Turbo
+        run: npx turbo run test ${{ env.TURBO_FILTER_ARGS }}
+
+  build:
+    name: Build (Turbo)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --prefer-offline --no-audit
+      - name: Build via Turbo
+        run: npx turbo run build ${{ env.TURBO_FILTER_ARGS }}
+
+  markdown:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --prefer-offline --no-audit
+      - name: Run markdownlint
+        run: npm run lint:md
+
+  changelog:
+    name: CHANGELOG Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --prefer-offline --no-audit
+      - name: Check CHANGELOGs
+        run: npm run audit:changelogs
+
+  portability:
+    name: Portability Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --prefer-offline --no-audit
+      - name: Audit rule portability
+        run: npm run audit:portability

@@ -33,6 +33,78 @@ export interface Options {
 type RuleOptions = [Options?];
 
 /**
+ * Globals and built-ins that are never null/undefined. Property access on
+ * these doesn't need a null check.
+ */
+// Built-in namespaces that are never null AND aren't typically mutated. We
+// deliberately exclude `globalThis`, `window`, `self`, `top`, `parent`, and
+// `document` — those are mutable and `globalThis.appState = ...` is a real
+// "global state mutation" antipattern that other rules want to catch.
+// Read-only namespaces (Math, JSON, …) and library singletons are safe to
+// exempt because their property access is idempotent.
+const NEVER_NULL_GLOBALS = new Set<string>([
+  // Read-only Node/V8 magics
+  'console', 'process', 'Buffer', '__dirname', '__filename', 'module', 'exports', 'require',
+  'navigator', 'location', 'history',
+  // Built-in objects (read-only namespaces)
+  'Math', 'JSON', 'Object', 'Array', 'Number', 'String', 'Boolean', 'Date',
+  'RegExp', 'Promise', 'Symbol', 'Map', 'Set', 'WeakMap', 'WeakSet',
+  'Proxy', 'Reflect', 'Intl', 'BigInt', 'WebAssembly', 'Atomics',
+  'URL', 'URLSearchParams', 'TextEncoder', 'TextDecoder',
+  'AbortController', 'AbortSignal', 'EventTarget', 'Event', 'CustomEvent',
+  'FormData', 'Blob', 'File', 'FileReader', 'Headers', 'Request', 'Response',
+  // Error classes
+  'Error', 'TypeError', 'RangeError', 'SyntaxError', 'URIError',
+  'EvalError', 'ReferenceError', 'AggregateError',
+  // Common library / framework names
+  'fetch', 'crypto', 'performance', 'queueMicrotask',
+  'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval',
+  'setImmediate', 'clearImmediate', 'requestAnimationFrame', 'cancelAnimationFrame',
+  // Common loggers (used as singletons)
+  'logger', 'log', 'winston', 'pino', 'bunyan',
+]);
+
+/**
+ * Returns true if the identifier resolves to:
+ *   - A NEVER_NULL_GLOBALS entry (built-in / known singleton)
+ *   - A catch-clause parameter (`catch (e) { e.message }` — never null)
+ *   - A variable initialized by `new X(...)` (constructor result is never null)
+ *   - A top-level import (`import x from 'y'` — never null)
+ *
+ * For these, the rule should not demand a null check.
+ */
+function isProvablyNonNullableIdentifier(
+  ident: TSESTree.Identifier,
+  scope: TSESLint.Scope.Scope,
+): boolean {
+  if (NEVER_NULL_GLOBALS.has(ident.name)) return true;
+
+  // Walk scope chain to find the resolved variable
+  let s: TSESLint.Scope.Scope | null = scope;
+  while (s) {
+    const variable = s.variables.find((v) => v.name === ident.name);
+    if (variable) {
+      for (const def of variable.defs) {
+        // catch (e) { ... }
+        if (def.type === 'CatchClause') return true;
+        // import x from 'y' / import { x } from 'y'
+        if (def.type === 'ImportBinding') return true;
+        // const x = new Foo(...)
+        if (def.type === 'Variable' && def.node?.type === 'VariableDeclarator') {
+          const init = (def.node as TSESTree.VariableDeclarator).init;
+          if (init?.type === 'NewExpression') return true;
+        }
+        // function f(...) — function declaration name is never null
+        if (def.type === 'FunctionName') return true;
+      }
+      return false;
+    }
+    s = s.upper;
+  }
+  return false;
+}
+
+/**
  * Check if property access has null/undefined check
  */
 function hasNullCheck(
@@ -317,9 +389,27 @@ export const noMissingNullChecks = createRule<RuleOptions, MessageIds>({
       let shouldCheck = false;
 
       if (objectNode.type === 'Identifier') {
+        // Skip identifiers that resolve to globals, catch params, imports,
+        // function declarations, or `new X()` results — these are never null.
+        if (isProvablyNonNullableIdentifier(objectNode as TSESTree.Identifier, sourceCode.getScope(node))) {
+          return;
+        }
         shouldCheck = true;
       } else if (objectNode.type === 'MemberExpression') {
-        // Nested member expressions like value.nested.deep
+        // Nested member expressions like value.nested.deep — only fire on
+        // the deepest, where the leaf identifier matters most. Skip if the
+        // base of the chain is a known-non-null global (`console.log`,
+        // `JSON.stringify`, etc.).
+        let base: TSESTree.Node = objectNode;
+        while (base.type === 'MemberExpression') {
+          base = (base as TSESTree.MemberExpression).object;
+        }
+        if (
+          base.type === 'Identifier' &&
+          isProvablyNonNullableIdentifier(base as TSESTree.Identifier, sourceCode.getScope(node))
+        ) {
+          return;
+        }
         shouldCheck = true;
       }
 
@@ -395,9 +485,21 @@ export const noMissingNullChecks = createRule<RuleOptions, MessageIds>({
         let shouldCheck = false;
 
         if (objectNode.type === 'Identifier') {
+          if (isProvablyNonNullableIdentifier(objectNode as TSESTree.Identifier, sourceCode.getScope(memberExpr))) {
+            return;
+          }
           shouldCheck = true;
         } else if (objectNode.type === 'MemberExpression') {
-          // Nested member expressions
+          let base: TSESTree.Node = objectNode;
+          while (base.type === 'MemberExpression') {
+            base = (base as TSESTree.MemberExpression).object;
+          }
+          if (
+            base.type === 'Identifier' &&
+            isProvablyNonNullableIdentifier(base as TSESTree.Identifier, sourceCode.getScope(memberExpr))
+          ) {
+            return;
+          }
           shouldCheck = true;
         }
 

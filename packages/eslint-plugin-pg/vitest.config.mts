@@ -1,5 +1,4 @@
 import { defineConfig } from 'vitest/config';
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 
 /**
  * Vitest configuration for eslint-plugin-pg package
@@ -12,15 +11,13 @@ import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
  */
 export default defineConfig({
   root: __dirname,
-  plugins: [nxViteTsPaths()],
-  test: {
+    test: {
     globals: true,
     environment: 'node',
     watch: false,
     include: [
       'src/**/*.test.ts',
-      'src/**/*.spec.ts',
-    ],
+      'src/**/*.spec.ts'],
     exclude: [],
     passWithNoTests: true,
     globalSetup: ['../../vitest.global-setup.ts'],

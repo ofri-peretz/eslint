@@ -11,6 +11,8 @@ const ruleTester = new RuleTester();
 
 ruleTester.run('no-exposed-error-details', noExposedErrorDetails, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
     // Generic error message
     {
       code: `

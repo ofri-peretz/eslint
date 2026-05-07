@@ -23,11 +23,20 @@ import { BorderBeam } from '@/components/ui/border-beam';
 import { NumberTicker } from '@/components/ui/number-ticker';
 import { AnimatedGradientText } from '@/components/ui/animated-gradient-text';
 import { Marquee } from '@/components/ui/marquee';
-import { TweetCard } from '@/components/ui/tweet-card';
-import { DevToCard } from '@/components/ui/devto-card';
+import { TweetCard } from '#interlace/components/marketing/tweet-card';
+import { DevToCard } from '#interlace/components/marketing/devto-card';
+import { createTweetFetcher } from '#interlace/lib/tweet-loader';
+import { createDevToFetcher } from '#interlace/lib/devto-loader';
 import { ShimmerButton } from '@/components/ui/shimmer-button';
 import { getDisplayStats } from '@/lib/stats-loader';
 import { HeroSection } from '@/components/home/hero-section';
+import cachedTweets from '@/data/cached-tweets.json';
+import cachedDevToArticles from '@/data/cached-devto-articles.json';
+
+// Cache-aware fetchers — fall back to JSON cache when Twitter / DEV.to API
+// is rate-limited during Vercel builds (preserves the previous behavior).
+const tweetFetcher = createTweetFetcher({ cache: cachedTweets });
+const devtoFetcher = createDevToFetcher({ cache: cachedDevToArticles });
 
 // Security plugins for marquee
 const securityPlugins = [
@@ -165,12 +174,12 @@ export default async function HomePage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto items-stretch">
               {/* Real Tweet from DEV Community */}
               <div className="flex justify-center h-full">
-                <TweetCard id="2006790779537121585" />
+                <TweetCard id="2006790779537121585" fetcher={tweetFetcher} />
               </div>
 
               {/* Dev.to Top 7 Featured Card */}
               <div className="flex justify-center h-full">
-                <DevToCard path="devteam/top-7-featured-dev-posts-of-the-week-2cgm" />
+                <DevToCard path="devteam/top-7-featured-dev-posts-of-the-week-2cgm" fetcher={devtoFetcher} />
               </div>
 
               {/* Developer Testimonial Card - Different topic: plugin discovery */}

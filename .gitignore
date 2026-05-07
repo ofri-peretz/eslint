@@ -65,16 +65,16 @@ Thumbs.db
 *.swo
 *~
 
-# Miscellaneous
+# Turbo
 .turbo
+.turbo/
+
+# Miscellaneous
 .vercel
 .netlify
 *.tsbuildinfo
 .eslintcache
 
-# NX
-.nx/cache
-.nx/workspace-data
 
 # Project Specific
 .cursor/rules/nx-rules.mdc
@@ -120,3 +120,4 @@ test-report.junit.xml
 # Local Content Staging
 distribution/
 **/articles/
+.eslintcache

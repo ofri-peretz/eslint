@@ -23,6 +23,9 @@
       "@/*": [
         "./src/*"
       ],
+      "#interlace/*": [
+        "./.interlace/*"
+      ],
       "fumadocs-mdx:collections/*": [
         ".source/*"
       ]
@@ -37,6 +40,8 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
+    ".interlace/**/*.ts",
+    ".interlace/**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "dist/types/**/*.ts",

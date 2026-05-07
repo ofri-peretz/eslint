@@ -16,6 +16,11 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-password-in-url', noPasswordInUrl, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
+        'const items = [];',
+        'const obj = {};',
     { code: "const url = 'https://example.com/api'" },
     { code: "fetch('https://api.example.com')" }
   ],

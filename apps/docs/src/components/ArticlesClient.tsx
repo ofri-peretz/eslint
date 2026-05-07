@@ -11,7 +11,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '#interlace/components/ui/select';
 import type { DevToArticle, SortField, SortDirection } from '@/lib/articles.types';
 import { 
   Search, 
@@ -456,7 +456,7 @@ export function ArticlesClient({ articles, lastUpdated }: ArticlesClientProps) {
               <SelectTrigger className="w-[150px]" data-testid="sort-select">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent position="popper" sideOffset={8}>
+              <SelectContent sideOffset={8}>
                 {SORT_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     <span className="flex items-center gap-2">

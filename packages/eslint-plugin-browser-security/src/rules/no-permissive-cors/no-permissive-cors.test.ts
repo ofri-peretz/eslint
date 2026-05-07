@@ -16,6 +16,10 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-permissive-cors', noPermissiveCors, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
+        'const items = [];',
     { code: "cors({ origin: 'https://example.com' })" },
     { code: "res.setHeader('Access-Control-Allow-Origin', 'https://mysite.com')" },
     { code: "const origin = 'https://safe.com'" }

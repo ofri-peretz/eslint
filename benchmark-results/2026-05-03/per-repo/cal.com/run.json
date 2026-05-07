@@ -1,0 +1,38 @@
+{
+  "repo": "cal.com",
+  "meta": {
+    "stars": 35000,
+    "commit": "main",
+    "category": "Full-Stack SaaS",
+    "plugins": [
+      "browser-security",
+      "node-security",
+      "secure-coding",
+      "express-security"
+    ],
+    "fpEdge": false,
+    "srcGlob": "apps/web/app/**/*.{ts,tsx}"
+  },
+  "fileCount": 196,
+  "loc": 10235,
+  "timing": {
+    "runsMs": [
+      1454
+    ],
+    "medianMs": 1454,
+    "meanMs": 1454,
+    "stddevMs": 0,
+    "cv": 0,
+    "msPerFile": 7.42
+  },
+  "peakRssMb": 263,
+  "findings": {
+    "total": 15,
+    "errors": 13,
+    "warnings": 2,
+    "filesWithFindings": 13,
+    "densityPerKloc": 1.47,
+    "externalDirectives": 0,
+    "parseErrors": 124
+  }
+}

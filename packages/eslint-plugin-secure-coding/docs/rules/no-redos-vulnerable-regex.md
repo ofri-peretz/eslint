@@ -61,9 +61,9 @@ This rule detects regular expressions that are vulnerable to **Regular Expressio
 
 Catastrophic backtracking happens when a regex contains:
 
-1.  **Nested Quantifiers**: e.g., `(a+)+`
-2.  **Overlapping Disjunctions**: e.g., `(a|a)+`
-3.  **Ambiguous Repetitions**: e.g., `(.*?)*`
+1. **Nested Quantifiers**: e.g., `(a+)+`
+2. **Overlapping Disjunctions**: e.g., `(a|a)+`
+3. **Ambiguous Repetitions**: e.g., `(.*?)*`
 
 When these patterns are applied to a long string that _almost_ matches but fails at the end, the regex engine tries every possible combination of repetitions, leading to $O(2^n)$ runtime.
 

@@ -50,5 +50,11 @@
   "dependencies": {
     "tslib": "^2.3.0",
     "@interlace/eslint-devkit": "*"
+  },
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc -p tsconfig.lib.json --noEmit"
   }
 }

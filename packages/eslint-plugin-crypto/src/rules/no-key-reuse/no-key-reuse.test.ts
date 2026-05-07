@@ -18,6 +18,13 @@ const ruleTester = new RuleTester({
 describe('no-key-reuse', () => {
   ruleTester.run('no-key-reuse', noKeyReuse, {
     valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
+        'const items = [];',
+        'const obj = {};',
+        'class Foo {}',
+        'const sum = (a, b) => a + b;',
       { code: 'crypto.createCipheriv("aes-256-gcm", key1, iv1); crypto.createCipheriv("aes-256-gcm", key2, iv2);' },
     ],
     invalid: [

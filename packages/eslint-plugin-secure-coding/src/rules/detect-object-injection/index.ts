@@ -612,6 +612,12 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
       const { propertyNode } = extractPropertyAccess(node);
 
+      // SAFE: numeric keys can't pollute Object prototypes (typed-array
+      // / numeric-array assignment is structurally safe).
+      if (isNumericKey(propertyNode)) {
+        return false;
+      }
+
       // Skip if the key has been validated (e.g., includes() or hasOwnProperty check)
       if (hasPrecedingValidation(propertyNode, node)) {
         return false;
@@ -632,6 +638,16 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
       const { propertyNode } = extractPropertyAccess(node);
 
+      // Numeric keys cannot pollute Object prototypes — typed-array and
+      // numeric-array access (`arr[0]`, `arr[i]` where i is a for-loop
+      // counter) is structurally safe. This eliminates the bulk of false
+      // positives on numeric/buffer-heavy codebases (Three.js, webpack,
+      // image/audio/geometry libraries) without weakening detection of
+      // string-key prototype pollution.
+      if (isNumericKey(propertyNode)) {
+        return false;
+      }
+
       // Skip if the key has been validated (e.g., includes() or hasOwnProperty check)
       if (hasPrecedingValidation(propertyNode, node)) {
         return false;
@@ -639,6 +655,73 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
 
       // Check for dangerous property access
       return isDangerousPropertyAccess(propertyNode);
+    };
+
+    /**
+     * Returns true if the property expression is provably a numeric key
+     * (and therefore cannot trigger prototype pollution).
+     *
+     * Detected as numeric:
+     *   - Numeric literal:        arr[0], arr[42]
+     *   - Unary plus on number:   arr[+x]
+     *   - Number(...) coercion:   arr[Number(x)]
+     *   - parseInt/parseFloat:    arr[parseInt(x)]
+     *   - Bitwise on identifier:  arr[x | 0], arr[x >>> 0]
+     *   - Identifier whose declaration is the init of a `for` statement
+     *     (the standard `for (let i = 0; i < n; i++)` counter pattern)
+     */
+    const isNumericKey = (node: TSESTree.Node): boolean => {
+      if (node.type === AST_NODE_TYPES.Literal && typeof (node as TSESTree.Literal).value === 'number') {
+        return true;
+      }
+      if (node.type === AST_NODE_TYPES.UnaryExpression && (node as TSESTree.UnaryExpression).operator === '+') {
+        return true;
+      }
+      if (node.type === AST_NODE_TYPES.BinaryExpression) {
+        const op = (node as TSESTree.BinaryExpression).operator;
+        if (op === '|' || op === '&' || op === '^' || op === '<<' || op === '>>' || op === '>>>' || op === '*' || op === '/' || op === '%' || op === '-') {
+          return true;
+        }
+      }
+      if (node.type === AST_NODE_TYPES.CallExpression) {
+        const callee = (node as TSESTree.CallExpression).callee;
+        if (callee.type === AST_NODE_TYPES.Identifier) {
+          const name = (callee as TSESTree.Identifier).name;
+          if (name === 'Number' || name === 'parseInt' || name === 'parseFloat') return true;
+        }
+      }
+      if (node.type === AST_NODE_TYPES.Identifier) {
+        return isLoopCounterIdentifier(node as TSESTree.Identifier);
+      }
+      return false;
+    };
+
+    /**
+     * Returns true if the identifier is the loop variable of an enclosing
+     * `for` statement, e.g. `for (let i = 0; i < n; i++) arr[i]`. The loop
+     * counter is by construction numeric, so the access is safe.
+     */
+    const isLoopCounterIdentifier = (node: TSESTree.Identifier): boolean => {
+      const scope = (context.sourceCode ?? context.getSourceCode()).getScope(node);
+      const variable = scope.references.find((r) => r.identifier === node)?.resolved;
+      if (!variable || variable.defs.length === 0) return false;
+      const def = variable.defs[0];
+      // Look for `for (let i = <numeric init>; ...; ...)` shape.
+      const parent = def.node?.parent as TSESTree.Node | undefined;
+      const grand = parent?.parent as TSESTree.Node | undefined;
+      if (
+        parent?.type === AST_NODE_TYPES.VariableDeclaration &&
+        grand?.type === AST_NODE_TYPES.ForStatement &&
+        grand.init === parent
+      ) {
+        const init = (def.node as TSESTree.VariableDeclarator).init;
+        if (!init) return false;
+        // Initializer must itself be numeric.
+        if (init.type === AST_NODE_TYPES.Literal && typeof (init as TSESTree.Literal).value === 'number') {
+          return true;
+        }
+      }
+      return false;
     };
 
     /**

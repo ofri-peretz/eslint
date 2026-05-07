@@ -22,8 +22,12 @@ const virtualFileOutsideRepo = path.join(path.parse(process.cwd()).root, 'non-ex
 
 ruleTester.run('lock-file', lockFile, {
   valid: [
-    { 
-      code: "const validDefault = 1", 
+    // Note: this rule inspects the file system for a lockfile near the
+    // file under lint, so test cases need a real `filename` — the inert
+    // shallow-test boilerplate cases (`const x = 42;` etc.) don't fit
+    // here and were intentionally omitted.
+    {
+      code: "const validDefault = 1",
       filename: __filename,
     },
     { 

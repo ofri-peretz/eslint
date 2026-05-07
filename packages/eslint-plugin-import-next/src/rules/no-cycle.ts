@@ -39,7 +39,7 @@ import {
   clearCache,
   resolveImportPath,
   hasOnlyTypeImports,
-  findAllCircularDependencies,
+  detectCycleFromImport,
   getMinimalCycle,
   getCycleHash,
 } from '@interlace/eslint-devkit';
@@ -531,69 +531,11 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       }
     }
 
-    // Store found cycles to report on specific imports
-    let detectedCycles: CycleInfo[] = [];
-
     return {
-      Program() {
-        // Clear per-file state
-        detectedCycles = [];
-
-        // Find ALL circular dependencies starting from current file
-        const cycles = findAllCircularDependencies(filename, {
-          maxDepth,
-          reportAllCycles,
-          workspaceRoot,
-          barrelExports,
-          cache: sharedCache,
-          resolverSettings,
-        });
-
-        if (cycles.length > 0) {
-          for (const cycle of cycles) {
-            // Extract the minimal cycle (the actual loop)
-            const minimalCycle = getMinimalCycle(cycle);
-
-            // Only report if current file is part of the minimal cycle
-            // (not just a file that imports into the cycle)
-            if (!minimalCycle.includes(filename)) {
-              continue;
-            }
-
-            const cycleStart = minimalCycle.indexOf(filename);
-            if (cycleStart === -1) continue;
-
-            const relevantCycle = [
-              ...minimalCycle.slice(cycleStart),
-              ...minimalCycle.slice(0, cycleStart),
-            ];
-            const cycleHash = getCycleHash(relevantCycle);
-
-            // Skip if we've already reported this cycle (shared across all files)
-            if (sharedCache.reportedCycles.has(cycleHash)) {
-              continue;
-            }
-            sharedCache.reportedCycles.add(cycleHash);
-
-            // Select the appropriate fix strategy
-            const strategy = selectFixStrategy(relevantCycle, fixStrategy);
-
-            // Find the target of the first import that causes the cycle
-            const cycleTarget = relevantCycle[1] || relevantCycle[0]; // The next file in the cycle
-
-            detectedCycles.push({
-              cycleTarget,
-              strategy,
-              relevantCycle,
-              cycleHash,
-            });
-          }
-        }
-      },
-
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
-        // Check if this import is part of any detected circular dependency
         const importSource = node.source.value;
+
+        // Resolve the import target to an absolute path
         const resolved = resolveImportPath(importSource, {
           fromFile: filename,
           workspaceRoot,
@@ -604,27 +546,80 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
 
         if (!resolved) return;
 
-        for (const cycle of detectedCycles) {
-          if (resolved === cycle.cycleTarget) {
-            // This is an import that causes a circular dependency
-            const sourceImport: ImportInfo = {
-              path: resolved,
-              source: importSource,
-            };
+        // =====================================================================
+        // PER-IMPORT CYCLE DETECTION (Phase 3 optimization)
+        //
+        // Instead of computing all cycles upfront in Program() via full-graph
+        // BFS + Tarjan SCC (which reads ALL ~5K reachable files), we check
+        // each import individually with a targeted DFS.
+        //
+        // Performance advantage:
+        // - Only reads files along the actual DFS path (not all reachable)
+        // - nonCyclicFiles cache provides O(1) rejection after first visit
+        // - getFileImports cache reuses parsed results across files
+        // =====================================================================
 
-            // Generate the appropriate message based on strategy
-            const { messageId, data } = generateMessageData(
-              cycle.relevantCycle,
-              cycle.strategy,
-              sourceImport,
-            );
+        // Fast path: if the target file is known to be non-cyclic, skip
+        if (sharedCache.nonCyclicFiles.has(resolved)) {
+          return;
+        }
 
-            context.report({
-              node,
-              messageId,
-              data,
-            });
+        // Check if following this import leads back to the current file
+        const cycles = detectCycleFromImport(filename, resolved, {
+          maxDepth,
+          reportAllCycles,
+          workspaceRoot,
+          barrelExports,
+          cache: sharedCache,
+          resolverSettings,
+        });
+
+        if (cycles.length === 0) return;
+
+        for (const cycle of cycles) {
+          // Extract the minimal cycle (the actual loop)
+          const minimalCycle = getMinimalCycle(cycle);
+
+          // Only report if current file is part of the minimal cycle
+          if (!minimalCycle.includes(filename)) {
+            continue;
           }
+
+          const cycleStart = minimalCycle.indexOf(filename);
+          if (cycleStart === -1) continue;
+
+          const relevantCycle = [
+            ...minimalCycle.slice(cycleStart),
+            ...minimalCycle.slice(0, cycleStart),
+          ];
+          const cycleHash = getCycleHash(relevantCycle);
+
+          // Skip if we've already reported this cycle (shared across all files)
+          if (sharedCache.reportedCycles.has(cycleHash)) {
+            continue;
+          }
+          sharedCache.reportedCycles.add(cycleHash);
+
+          // Select the appropriate fix strategy
+          const strategy = selectFixStrategy(relevantCycle, fixStrategy);
+
+          // Generate the appropriate message based on strategy
+          const sourceImport: ImportInfo = {
+            path: resolved,
+            source: importSource,
+          };
+
+          const { messageId, data } = generateMessageData(
+            relevantCycle,
+            strategy,
+            sourceImport,
+          );
+
+          context.report({
+            node,
+            messageId,
+            data,
+          });
         }
       },
     };

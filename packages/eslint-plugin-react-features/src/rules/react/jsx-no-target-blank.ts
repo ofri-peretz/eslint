@@ -122,7 +122,7 @@ export const jsxNoTargetBlank = createRule<RuleOptions, MessageIds>({
       if (hrefAttr.value.type === 'Literal' && typeof hrefAttr.value.value === 'string') {
         const href = hrefAttr.value.value;
         // External if starts with http:// or https:// or //
-        return /^(https?:)?\/\//.test(href) || /^\/\//.test(href);
+        return /^(https?:)?\/\//.test(href) || href.startsWith('//');
       }
 
       // Dynamic href - assume external

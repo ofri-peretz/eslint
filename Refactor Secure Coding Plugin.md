@@ -2,7 +2,7 @@
 
 Note: _This is purely the output of the chat conversation and does not contain any raw data, codebase snippets, etc. used to generate the output._
 
-### Planner Response
+## Planner Response
 
 I have completed a comprehensive review of the `eslint-plugin-secure-coding` rule set.
 
@@ -63,9 +63,9 @@ These are specifically related to the Web/DOM or Browser APIs:
 
 If you would like to proceed, I can perform the following:
 
-1.  **Relocate the rule directories** and tests to their new homes.
-2.  **Update the [index.ts](cci:7://file:///Users/ofri/repos/ofriperetz.dev/eslint/packages/eslint-plugin-pg/src/index.ts:0:0-0:0) barrels** for each plugin.
-3.  **Update the interface tests** I just created to reflect the new counts and rule names.
+1. **Relocate the rule directories** and tests to their new homes.
+2. **Update the [index.ts](cci:7://file:///Users/ofri/repos/ofriperetz.dev/eslint/packages/eslint-plugin-pg/src/index.ts:0:0-0:0) barrels** for each plugin.
+3. **Update the interface tests** I just created to reflect the new counts and rule names.
 
 How would you like to handle the **OWASP Mobile** rules? They take up a large portion of `secure-coding` currently. Should we create a dedicated `eslint-plugin-mobile-security` or fold them into `browser-security`?
 
@@ -83,17 +83,17 @@ Here is the breakdown of what remains in the "Pure" category:
 
 These rules focus strictly on language-level logic, AST patterns, and fundamental security flaws that apply whether you are in Node.js, a Browser, or even a Desktop app:
 
-1.  **Fundamental Injection (6 rules)**:
+1. **Fundamental Injection (6 rules)**:
     - `no-graphql-injection`, `no-xxe-injection`, `no-xpath-injection`, `no-ldap-injection`, `no-format-string-injection`, `no-directive-injection`.
-2.  **Regex Safety & Stability (3 rules)**:
+2. **Regex Safety & Stability (3 rules)**:
     - `detect-non-literal-regexp`, `no-redos-vulnerable-regex`, `no-unsafe-regex-construction`.
-3.  **Data & Logic Integrity (5 rules)**:
+3. **Data & Logic Integrity (5 rules)**:
     - `detect-object-injection`, `no-unsafe-deserialization`, `no-insecure-comparison`, `no-improper-sanitization`, `no-improper-type-validation`.
-4.  **Auth/Access Logic (5 rules)**:
+4. **Auth/Access Logic (5 rules)**:
     - `no-missing-authentication`, `no-privilege-escalation`, `no-weak-password-recovery`, `no-client-side-auth-logic`, `require-backend-authorization`.
-5.  **Secrets & Exposure (2 rules)**:
+5. **Secrets & Exposure (2 rules)**:
     - `no-hardcoded-credentials`, `no-sensitive-data-exposure`.
-6.  **Resource Handling (2 rules)**:
+6. **Resource Handling (2 rules)**:
     - `no-unlimited-resource-allocation`, `no-unchecked-loop-condition`.
 
 ---

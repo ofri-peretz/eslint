@@ -23,6 +23,8 @@ const ruleTester = new RuleTester({
 describe('require-sufficient-length', () => {
   ruleTester.run('require-sufficient-length', requireSufficientLength, {
     valid: [
+        'const x = 42;',
+        'const flag = true;',
       // Valid: Not imported from crypto-random-string
       { code: 'someLib({ length: 8 });' },
       // Valid: 32 characters (default minimum)

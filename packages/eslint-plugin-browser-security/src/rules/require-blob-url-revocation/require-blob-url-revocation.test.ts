@@ -19,6 +19,9 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-blob-url-revocation', requireBlobUrlRevocation, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
     // Properly revoked
     {
       code: `

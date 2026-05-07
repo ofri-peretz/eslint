@@ -7,7 +7,7 @@ import { describe, afterAll, vi, beforeAll } from 'vitest';
 // Use vi.hoisted to ensure mocks are available in factory
 const mocks = vi.hoisted(() => {
     return {
-        findAllCircularDependencies: vi.fn(),
+        detectCycleFromImport: vi.fn(),
         resolveImportPath: vi.fn(),
         isBarrelExport: vi.fn().mockReturnValue(false),
     };
@@ -25,11 +25,23 @@ vi.mock('@interlace/eslint-devkit', () => {
     getBasename: (p: string) => p,
     isBarrelExport: mocks.isBarrelExport,
     shouldIgnoreFile: () => false,
-    createFileSystemCache: () => ({ reportedCycles: new Set() }),
+    createFileSystemCache: () => ({
+      reportedCycles: new Set(),
+      nonCyclicFiles: new Set(),
+      dependencies: new Map(),
+      fileExists: new Map(),
+      fileHashes: new Map(),
+      compiledPatterns: new Map(),
+      sccIndex: new Map(),
+      sccs: [],
+      sccComputed: false,
+      graphHash: '',
+      resolvedPaths: new Map(),
+    }),
     clearCache: () => {}, // eslint-disable-line @typescript-eslint/no-empty-function
     resolveImportPath: mocks.resolveImportPath,
     hasOnlyTypeImports: () => false,
-    findAllCircularDependencies: mocks.findAllCircularDependencies,
+    detectCycleFromImport: mocks.detectCycleFromImport,
     getMinimalCycle: (c: any) => c, // eslint-disable-line @typescript-eslint/no-explicit-any
     getCycleHash: (c: any) => JSON.stringify(c), // eslint-disable-line @typescript-eslint/no-explicit-any
   };
@@ -49,16 +61,18 @@ const ruleTester = new RuleTester({
 });
 
 // Access mocks directly via the hoisted object
-const { findAllCircularDependencies, resolveImportPath, isBarrelExport } = mocks;
+const { detectCycleFromImport, resolveImportPath, isBarrelExport } = mocks;
 
 // Set up mocks before all tests run
 beforeAll(() => {
-    findAllCircularDependencies.mockImplementation((filename: string) => {
-        if (!filename) return [];
-        if (filename.includes('cycle-a')) {
+    // detectCycleFromImport is called with (sourceFile, targetFile, options)
+    // It should return cycles that include the sourceFile
+    detectCycleFromImport.mockImplementation((sourceFile: string, targetFile: string) => {
+        if (!sourceFile || !targetFile) return [];
+        if (sourceFile.includes('cycle-a') && targetFile.includes('cycle-b')) {
             return [['/path/to/cycle-a.ts', '/path/to/cycle-b.ts', '/path/to/cycle-a.ts']];
         }
-        if (filename.includes('cycle-complex')) {
+        if (sourceFile.includes('cycle-complex') && targetFile.includes('dep1')) {
              return [
                  ['/path/to/cycle-complex.ts', '/path/to/dep1.ts', '/path/to/cycle-complex.ts'],
              ];

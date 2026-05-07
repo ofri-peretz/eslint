@@ -1,4 +1,4 @@
-   - XML encoding when needed
+- XML encoding when needed
 2. **API Response Security**
    - Validate API responses
    - Implement response schemas

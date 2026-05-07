@@ -14,6 +14,9 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-exposed-debug-endpoints', noExposedDebugEndpoints, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
     // Safe endpoints
     { code: "app.get('/api/users', handler)" },
     { code: "router.post('/login', authenticate)" },

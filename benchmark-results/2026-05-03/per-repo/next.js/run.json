@@ -1,0 +1,37 @@
+{
+  "repo": "next.js",
+  "meta": {
+    "stars": 131000,
+    "commit": "v15.1.0",
+    "category": "Full-Stack Framework",
+    "plugins": [
+      "browser-security",
+      "node-security",
+      "secure-coding"
+    ],
+    "fpEdge": false,
+    "srcGlob": "packages/next/src/**/*.{ts,tsx}"
+  },
+  "fileCount": 918,
+  "loc": 125311,
+  "timing": {
+    "runsMs": [
+      2445
+    ],
+    "medianMs": 2445,
+    "meanMs": 2445,
+    "stddevMs": 0,
+    "cv": 0,
+    "msPerFile": 2.66
+  },
+  "peakRssMb": 305,
+  "findings": {
+    "total": 3,
+    "errors": 3,
+    "warnings": 0,
+    "filesWithFindings": 2,
+    "densityPerKloc": 0.02,
+    "externalDirectives": 3,
+    "parseErrors": 802
+  }
+}

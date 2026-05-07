@@ -1,0 +1,8 @@
+{
+  "cwe": "CWE-079",
+  "name": "Cross-Site Scripting (XSS)",
+  "owasp": "A03:2021",
+  "severity": "HIGH",
+  "expectedPlugins": ["eslint-plugin-browser-security", "eslint-plugin-secure-coding"],
+  "coverageGap": "browser-security has no rule for document.write(dynamic) — secure-coding/no-improper-sanitization currently catches this case. Real fix: add browser-security/no-document-write rule."
+}

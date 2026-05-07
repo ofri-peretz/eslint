@@ -51,5 +51,11 @@
   "homepage": "https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-conventions#readme",
   "bugs": {
     "url": "https://github.com/ofri-peretz/eslint/issues"
+  },
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc -p tsconfig.lib.json --noEmit"
   }
 }

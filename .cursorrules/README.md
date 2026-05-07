@@ -92,7 +92,7 @@ See [`.cursor/commands/README.md`](../.cursor/commands/README.md) for full docum
 - ✅ **Diagnostics** with Nx Cloud status
 - ✅ **Consistency checks** across all workflows
 
-**⚠️ CRITICAL:** 
+**⚠️ CRITICAL:**
 - ALL workflows using Nx commands MUST have Nx Cloud error handling
 - When changing patterns, update ALL 4 workflows:
   - `lint-pr.yml`

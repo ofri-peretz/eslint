@@ -1,0 +1,269 @@
+{
+  "secure-coding/detect-object-injection": {
+    "hits": 42,
+    "avgTimeMs": 1.69,
+    "samples": [
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_mapping.js",
+        "line": 271,
+        "column": 17,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      },
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+        "line": 49,
+        "column": 5,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      },
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+        "line": 49,
+        "column": 22,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      },
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+        "line": 83,
+        "column": 7,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      },
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+        "line": 83,
+        "column": 22,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      }
+    ]
+  },
+  "secure-coding/no-insecure-comparison": {
+    "hits": 16,
+    "avgTimeMs": 0.7,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-insecure-comparison",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_convertBrowser.js",
+        "line": 15,
+        "column": 5,
+        "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (==) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (===) instead: typeof _ === 'function' | https://cwe.mitre.org/data/definitio"
+      },
+      {
+        "ruleId": "secure-coding/no-insecure-comparison",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_convertBrowser.js",
+        "line": 15,
+        "column": 31,
+        "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (==) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (===) instead: typeof _.runInContext === 'function' | https://cwe.mitre.org/d"
+      },
+      {
+        "ruleId": "secure-coding/no-insecure-comparison",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+        "line": 17,
+        "column": 10,
+        "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (==) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (===) instead: n === 2 | https://cwe.mitre.org/data/definitions/697.html"
+      },
+      {
+        "ruleId": "secure-coding/no-insecure-comparison",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+        "line": 32,
+        "column": 10,
+        "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (==) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (===) instead: n === 2 | https://cwe.mitre.org/data/definitions/697.html"
+      },
+      {
+        "ruleId": "secure-coding/no-insecure-comparison",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/lodash/fp/_baseConvert.js",
+        "line": 91,
+        "column": 9,
+        "message": "🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (!=) detected - can lead to type coercion vulnerabilities | HIGH\n   Fix: Use strict equality (!==) instead: start !== lastIndex | https://cwe.mitre.org/data/definitions/6"
+      }
+    ]
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.99,
+    "samples": []
+  },
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 0.63,
+    "samples": []
+  },
+  "node-security/no-zip-slip": {
+    "hits": 0,
+    "avgTimeMs": 0.47,
+    "samples": []
+  },
+  "secure-coding/no-unchecked-loop-condition": {
+    "hits": 0,
+    "avgTimeMs": 0.45,
+    "samples": []
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 0,
+    "avgTimeMs": 0.45,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 0,
+    "avgTimeMs": 0.44,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 0,
+    "avgTimeMs": 0.39,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 0.38,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 0.31,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.28,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.26,
+    "samples": []
+  },
+  "secure-coding/detect-non-literal-regexp": {
+    "hits": 0,
+    "avgTimeMs": 0.26,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 0.25,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 0,
+    "avgTimeMs": 0.25,
+    "samples": []
+  },
+  "node-security/lock-file": {
+    "hits": 0,
+    "avgTimeMs": 0.24,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 0.23,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 0.18,
+    "samples": []
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 0,
+    "avgTimeMs": 0.17,
+    "samples": []
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 0,
+    "avgTimeMs": 0.16,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 0,
+    "avgTimeMs": 0.15,
+    "samples": []
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 0,
+    "avgTimeMs": 0.15,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 0,
+    "avgTimeMs": 0.14,
+    "samples": []
+  },
+  "secure-coding/no-missing-authentication": {
+    "hits": 0,
+    "avgTimeMs": 0.14,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 0.13,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 0.1,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 0.1,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 0,
+    "avgTimeMs": 0.1,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 0.1,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 0.09,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 0.08,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 0,
+    "avgTimeMs": 0.08,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 0.08,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 0.05,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 0.05,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 0.03,
+    "samples": []
+  }
+}

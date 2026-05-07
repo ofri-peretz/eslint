@@ -16,6 +16,11 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-dynamic-dependency-loading', noDynamicDependencyLoading, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
+        'const items = [];',
+        'const obj = {};',
     { code: "import module from './module'" },
     { code: "const lib = require('known-lib')" }
   ],

@@ -26,9 +26,9 @@ Refactor the existing `distribution/articles/crypto/*.md` files to:
 - Update the CTA to point to `eslint-plugin-node-security`.
 
 ### 2. Implementation Steps
-1.  **Rename & Refactor `01-stop-using-md5.md`**: Update rule ref from `no-weak-hash-algorithm` (generic) to `node-security/no-weak-hash-algorithm`.
-2.  **Rename & Refactor `03-timing-attacks.md`**: Update usage to `node-security/no-timing-unsafe-compare`.
-3.  **Create New Drafts**: Generate skeletons for `no-static-iv.md`, `no-ecb-mode.md`, etc. based on the plugin's documentation.
+1. **Rename & Refactor `01-stop-using-md5.md`**: Update rule ref from `no-weak-hash-algorithm` (generic) to `node-security/no-weak-hash-algorithm`.
+2. **Rename & Refactor `03-timing-attacks.md`**: Update usage to `node-security/no-timing-unsafe-compare`.
+3. **Create New Drafts**: Generate skeletons for `no-static-iv.md`, `no-ecb-mode.md`, etc. based on the plugin's documentation.
 
 ## 🖼️ Visual Strategy (OG Image)
 

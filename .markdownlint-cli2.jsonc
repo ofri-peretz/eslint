@@ -1,0 +1,41 @@
+{
+  "config": {
+    "MD013": false,
+    "MD034": false,
+    "MD033": {
+      "allowed_elements": [
+        "p", "a", "img", "br", "b", "i", "em", "strong",
+        "details", "summary", "sub", "sup",
+        "table", "thead", "tbody", "tr", "th", "td",
+        "kbd", "picture", "source"
+      ]
+    },
+    "MD041": false,
+    "MD024": false,
+    "MD051": false,
+    "MD025": false,
+    "MD036": false,
+    "MD046": false,
+    "MD060": false,
+    "MD047": false,
+    "MD012": false,
+    "MD022": false,
+    "MD031": false,
+    "MD032": false,
+    "MD058": false,
+    "MD040": false,
+    "MD029": false,
+    "MD037": false,
+    "MD026": false,
+    "MD049": false
+  },
+  "ignores": [
+    "node_modules",
+    "**/node_modules",
+    "dist",
+    "**/dist",
+    "coverage",
+    "**/CHANGELOG.md",
+    ".gemini"
+  ]
+}

@@ -16,6 +16,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
+      '#interlace': resolve(__dirname, './.interlace'),
     },
   },
   test: {

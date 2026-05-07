@@ -17,6 +17,7 @@ describe('eslint-plugin-node-security plugin interface', () => {
       'detect-non-literal-fs-filename',
       'no-unsafe-dynamic-require',
       'no-buffer-overread',
+      'no-deprecated-buffer',
       'no-toctou-vulnerability',
       'no-zip-slip',
       'no-arbitrary-file-access',

@@ -30,6 +30,6 @@
     "scripts": {
         "sync": "tsx src/lib/cli.ts",
         "stats": "tsx src/lib/cli.ts --stats-only",
-        "test": "vitest"
+        "test": "vitest run"
     }
 }

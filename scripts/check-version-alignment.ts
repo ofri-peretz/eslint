@@ -8,7 +8,7 @@
  *   npx tsx scripts/check-version-alignment.ts
  */
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { execSync } from 'node:child_process';
 
@@ -23,10 +23,18 @@ interface PackageInfo {
 
 const issues: PackageInfo[] = [];
 
-// Get all release projects from nx.json
+// Enumerate every non-private package under `packages/*` (Turborepo workspace).
 function getReleaseProjects(): string[] {
-  const nxConfig = JSON.parse(readFileSync('nx.json', 'utf-8'));
-  return nxConfig.release?.projects || [];
+  const packagesDir = 'packages';
+  if (!existsSync(packagesDir)) return [];
+  return readdirSync(packagesDir)
+    .map((entry) => join(packagesDir, entry))
+    .filter((path) => {
+      const pkgJsonPath = join(path, 'package.json');
+      if (!statSync(path).isDirectory() || !existsSync(pkgJsonPath)) return false;
+      const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'));
+      return pkg.private !== true;
+    });
 }
 
 // Get version from package.json
@@ -175,8 +183,8 @@ function main() {
   console.log('💡 To fix:');
   console.log('   1. Update package.json versions');
   console.log('   2. Run: npm install');
-  console.log('   3. Run: npx tsx scripts/sync-git-tags.ts (if git tags are out of sync)');
-  console.log('   4. Verify: npx nx lint <project>');
+  console.log('   3. Run: npm run sync-tags (if git tags are out of sync)');
+  console.log('   4. Verify: npm run lint');
   
   process.exit(1);
 }

@@ -684,7 +684,18 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
 
       const { method, args, pattern, isDynamic } = extractCommandInfo(node);
 
-      // Allow literal strings if configured
+      // ALWAYS safe: exec/execSync called with a single string literal that
+      // contains no interpolation — there is no user input to inject. The
+      // rule discourages exec() in general (because it's easy to add a
+      // template-literal later), but a fully-literal call is structurally
+      // safe and shouldn't be flagged. Fire-on-stylistic-discouragement is
+      // out of scope for a security rule.
+      if ((method === 'exec' || method === 'execSync') && !isDynamic && hasOnlyLiteralArgs(node.arguments)) {
+        return;
+      }
+
+      // Allow literal strings if configured (legacy option, kept for
+      // backward compat with existing user configs).
       if (allowLiteralStrings && method === 'exec' && !isDynamic) {
         return;
       }

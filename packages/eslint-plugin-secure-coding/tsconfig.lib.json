@@ -3,12 +3,19 @@
   "compilerOptions": {
     "sourceMap": false,
     "composite": true,
-    "outDir": "../../dist/out-tsc",
+    "rootDir": "./src",
+    "outDir": "./dist/src",
+    "tsBuildInfoFile": "./.tsbuildinfo",
     "declaration": true,
     "types": [
       "node"
     ]
   },
+  "references": [
+    {
+      "path": "../eslint-devkit/tsconfig.lib.json"
+    }
+  ],
   "include": [
     "src/**/*.ts"
   ],

@@ -14,6 +14,8 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-mime-type-validation', requireMimeTypeValidation, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
     // Multer with fileFilter
     { code: "multer({ fileFilter: validateMime }).single('file')" },
     { code: "multer({ limits: { fileSize: 1024 } }).single('file')" },

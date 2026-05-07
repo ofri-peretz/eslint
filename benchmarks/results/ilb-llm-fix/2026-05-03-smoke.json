@@ -1,0 +1,185 @@
+{
+  "schemaVersion": 1,
+  "timestamp": "2026-05-03T22:56:39.792Z",
+  "benchmark": "ilb-llm-fix",
+  "benchmarkType": "fix-accuracy",
+  "scoringMode": "macro-pass-rate",
+  "methodologyVersion": "v1.0",
+  "methodology": {
+    "file": "eslint/benchmarks/suites/ilb-llm-fix/methodology.md",
+    "version": "v1.0",
+    "score": "macro-averaged pass rate across (variant, model) cells, %",
+    "verifierShape": "regex-must-match | regex-must-not-match | both"
+  },
+  "versions": {
+    "eslintDevkit": "@interlace/eslint-devkit@1.3.3",
+    "fixtures": "v1.0",
+    "models": "v1.0"
+  },
+  "environment": {
+    "nodeVersion": "v25.9.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "headlineScore": 100,
+  "passRateByVariant": {
+    "v1": 100,
+    "v2-human": 100
+  },
+  "summary": [
+    {
+      "variant": "v1",
+      "model": "haiku",
+      "pass": 5,
+      "errors": 0,
+      "total": 5,
+      "passRate": 1,
+      "meanInputTokens": 16693,
+      "meanOutputTokens": 626.6,
+      "totalCostUsd": 0.043145249999999996
+    },
+    {
+      "variant": "v2-human",
+      "model": "haiku",
+      "pass": 5,
+      "errors": 0,
+      "total": 5,
+      "passRate": 1,
+      "meanInputTokens": 16693,
+      "meanOutputTokens": 393,
+      "totalCostUsd": 0.03765275
+    }
+  ],
+  "results": [
+    {
+      "fixtureId": "sql-injection-pg",
+      "category": "security",
+      "variant": "v1",
+      "model": "haiku",
+      "modelFullName": "claude-haiku-4-5",
+      "pass": true,
+      "reason": "both conditions met",
+      "inputTokens": 16693,
+      "outputTokens": 268,
+      "costUsd": 0.0068357999999999995,
+      "modelResponse": "```javascript\nasync function getUser(userId) {\n  const result = await db.query('SELECT * FROM users WHERE id=$1', [userId]);\n  return result.rows[0];\n}\n```"
+    },
+    {
+      "fixtureId": "sql-injection-pg",
+      "category": "security",
+      "variant": "v2-human",
+      "model": "haiku",
+      "modelFullName": "claude-haiku-4-5",
+      "pass": true,
+      "reason": "both conditions met",
+      "inputTokens": 16693,
+      "outputTokens": 284,
+      "costUsd": 0.0069883,
+      "modelResponse": "```javascript\nasync function getUser(userId) {\n  const result = await db.query('SELECT * FROM users WHERE id=$1', [userId]);\n  return result.rows[0];\n}\n```"
+    },
+    {
+      "fixtureId": "jwt-algorithm-none",
+      "category": "security",
+      "variant": "v1",
+      "model": "haiku",
+      "modelFullName": "claude-haiku-4-5",
+      "pass": true,
+      "reason": "forbidden pattern absent",
+      "inputTokens": 16693,
+      "outputTokens": 607,
+      "costUsd": 0.00853455,
+      "modelResponse": "```javascript\nfunction authMiddleware(req, res, next) {\n  const token = req.headers.authorization?.split(' ')[1];\n  const decoded = jwt.verify(token, secret, { algorithms: ['HS256'] });\n  req.user = decoded;\n  next();\n}\n```"
+    },
+    {
+      "fixtureId": "jwt-algorithm-none",
+      "category": "security",
+      "variant": "v2-human",
+      "model": "haiku",
+      "modelFullName": "claude-haiku-4-5",
+      "pass": true,
+      "reason": "forbidden pattern absent",
+      "inputTokens": 16693,
+      "outputTokens": 349,
+      "costUsd": 0.007320800000000001,
+      "modelResponse": "```javascript\nfunction authMiddleware(req, res, next) {\n  const token = req.headers.authorization?.split(' ')[1];\n  const decoded = jwt.verify(token, secret, { algorithms: ['RS256'] });\n  req.user = decoded;\n  next();\n}\n```"
+    },
+    {
+      "fixtureId": "xss-innerhtml",
+      "category": "security",
+      "variant": "v1",
+      "model": "haiku",
+      "modelFullName": "claude-haiku-4-5",
+      "pass": true,
+      "reason": "forbidden pattern absent",
+      "inputTokens": 16693,
+      "outputTokens": 252,
+      "costUsd": 0.006752050000000001,
+      "modelResponse": "```javascript\nfunction renderComment(commentEl, userInput) {\n  commentEl.textContent = userInput;\n}\n```"
+    },
+    {
+      "fixtureId": "xss-innerhtml",
+      "category": "security",
+      "variant": "v2-human",
+      "model": "haiku",
+      "modelFullName": "claude-haiku-4-5",
+      "pass": true,
+      "reason": "forbidden pattern absent",
+      "inputTokens": 16693,
+      "outputTokens": 248,
+      "costUsd": 0.00678455,
+      "modelResponse": "```javascript\nfunction renderComment(commentEl, userInput) {\n  commentEl.textContent = userInput;\n}\n```"
+    },
+    {
+      "fixtureId": "loop-insert",
+      "category": "performance",
+      "variant": "v1",
+      "model": "haiku",
+      "modelFullName": "claude-haiku-4-5",
+      "pass": true,
+      "reason": "forbidden pattern absent",
+      "inputTokens": 16693,
+      "outputTokens": 610,
+      "costUsd": 0.0085183,
+      "modelResponse": "```javascript\nasync function insertRows(rows) {\n  if (rows.length === 0) return;\n  \n  const params = [];\n  const placeholders = rows.map((row, index) => {\n    params.push(row.a, row.b);\n    return `($${index * 2 + 1}, $${index * 2 + 2})`;\n  }).join(', ');\n  \n  const query = `INSERT INTO t (a, b) VALUES ${placeholders}`;\n  await db.query(query, params);\n}\n```"
+    },
+    {
+      "fixtureId": "loop-insert",
+      "category": "performance",
+      "variant": "v2-human",
+      "model": "haiku",
+      "modelFullName": "claude-haiku-4-5",
+      "pass": true,
+      "reason": "forbidden pattern absent",
+      "inputTokens": 16693,
+      "outputTokens": 590,
+      "costUsd": 0.0085208,
+      "modelResponse": "```javascript\nasync function insertRows(rows) {\n  if (rows.length === 0) return;\n  \n  const values = rows.map((row, i) => {\n    const aIndex = i * 2 + 1;\n    const bIndex = i * 2 + 2;\n    return `($${aIndex}, $${bIndex})`;\n  }).join(',');\n  \n  const params = rows.flatMap(row => [row.a, row.b]);\n  \n  await db.query(\n    `INSERT INTO t (a, b) VALUES ${values}`,\n    params\n  );\n}\n```"
+    },
+    {
+      "fixtureId": "circular-dependency",
+      "category": "quality",
+      "variant": "v1",
+      "model": "haiku",
+      "modelFullName": "claude-haiku-4-5",
+      "pass": true,
+      "reason": "forbidden pattern absent",
+      "inputTokens": 16693,
+      "outputTokens": 1396,
+      "costUsd": 0.01250455,
+      "modelResponse": "```typescript\n// src/types.ts\nexport interface UserA { id: string; }\n\n// src/A.ts\nimport { UserA } from './types';\nimport { helperB } from './B';\nexport { UserA } from './types';\nexport const helperA = (u: UserA) => helperB(u);\n\n// src/B.ts\nimport { UserA } from './types';\nexport const helperB = (u: UserA) => u.id;\n```"
+    },
+    {
+      "fixtureId": "circular-dependency",
+      "category": "quality",
+      "variant": "v2-human",
+      "model": "haiku",
+      "modelFullName": "claude-haiku-4-5",
+      "pass": true,
+      "reason": "forbidden pattern absent",
+      "inputTokens": 16693,
+      "outputTokens": 494,
+      "costUsd": 0.008038300000000002,
+      "modelResponse": "```typescript\n// src/types.ts\nexport interface UserA { id: string; }\n\n// src/A.ts\nimport { UserA } from './types';\nimport { helperB } from './B';\nexport const helperA = (u: UserA) => helperB(u);\n\n// src/B.ts\nimport { UserA } from './types';\nexport const helperB = (u: UserA) => u.id;\n```"
+    }
+  ]
+}

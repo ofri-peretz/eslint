@@ -14,6 +14,8 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-hardcoded-session-tokens', noHardcodedSessionTokens, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
     // Environment variables
     { code: "const token = process.env.JWT_TOKEN" },
     { code: "const session = getSession()" },

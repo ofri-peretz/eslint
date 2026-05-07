@@ -2,7 +2,7 @@
 
 Note: _This is purely the output of the chat conversation and does not contain any raw data, codebase snippets, etc. used to generate the output._
 
-### User Input
+## User Input
 
 You're an NPM expert, specifically around publishing in end-2025 and 2026. for example trusted publishers with github.
 

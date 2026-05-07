@@ -1,0 +1,7 @@
+{
+  "cwe": "CWE-918",
+  "name": "Server-Side Request Forgery (SSRF)",
+  "owasp": "A10:2021",
+  "severity": "HIGH",
+  "expectedPlugins": ["eslint-plugin-node-security"]
+}

@@ -18,6 +18,10 @@ const ruleTester = new RuleTester({
 describe('prefer-native-crypto', () => {
   ruleTester.run('prefer-native-crypto', preferNativeCrypto, {
     valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
+        'const items = [];',
       { code: 'import crypto from "node:crypto";' },
       { code: 'const crypto = require("crypto");' },
     ],

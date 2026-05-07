@@ -9,6 +9,7 @@ import { detectEvalWithExpression } from './rules/detect-eval-with-expression';
 import { detectNonLiteralFsFilename } from './rules/detect-non-literal-fs-filename';
 import { noUnsafeDynamicRequire } from './rules/no-unsafe-dynamic-require';
 import { noBufferOverread } from './rules/no-buffer-overread';
+import { noDeprecatedBuffer } from './rules/no-deprecated-buffer';
 import { noToctouVulnerability } from './rules/no-toctou-vulnerability';
 import { noZipSlip } from './rules/no-zip-slip';
 import { noArbitraryFileAccess } from './rules/no-arbitrary-file-access';
@@ -48,6 +49,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'detect-non-literal-fs-filename': detectNonLiteralFsFilename,
   'no-unsafe-dynamic-require': noUnsafeDynamicRequire,
   'no-buffer-overread': noBufferOverread,
+  'no-deprecated-buffer': noDeprecatedBuffer,
   'no-toctou-vulnerability': noToctouVulnerability,
   'no-zip-slip': noZipSlip,
   'no-arbitrary-file-access': noArbitraryFileAccess,
@@ -83,7 +85,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
 export const plugin: TSESLint.FlatConfig.Plugin = {
   meta: {
     name: 'eslint-plugin-node-security',
-    version: '1.0.0',
+    version: '4.1.0',
   },
   rules,
 };
@@ -94,6 +96,10 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'node-security/detect-non-literal-fs-filename': 'error',
   'node-security/no-unsafe-dynamic-require': 'error',
   'node-security/no-buffer-overread': 'error',
+  // Added in 4.1.0. Set to 'warn' in `recommended` to avoid breaking
+  // adopters who already use the preset and have legacy `Buffer()` calls.
+  // Promote to 'error' on the next major bump.
+  'node-security/no-deprecated-buffer': 'warn',
   'node-security/no-toctou-vulnerability': 'error',
   'node-security/no-zip-slip': 'error',
   'node-security/no-arbitrary-file-access': 'error',

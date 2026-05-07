@@ -195,7 +195,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
       strictMode: false,
     };
 
-    const options: Required<Options> = { ...defaultOptions, ...(context.options[0] || {}) } as Required<Options>;
+    const options: Required<Options> = { ...defaultOptions, ...context.options[0] } as Required<Options>;
     const {
       formatSpecifiers,
       userInputVariables,

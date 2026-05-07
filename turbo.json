@@ -1,0 +1,73 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "globalDependencies": [
+    "tsconfig.base.json",
+    ".oxlintrc.json",
+    ".markdownlint.json"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "src/**",
+        "tsconfig.json",
+        "tsconfig.lib.json",
+        "package.json",
+        "README.md",
+        "CHANGELOG.md",
+        "LICENSE",
+        "AGENTS.md",
+        ".npmignore"
+      ],
+      "outputs": [
+        "dist/**",
+        ".next/**",
+        "!.next/cache/**"
+      ]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "src/**",
+        "tsconfig.json",
+        "tsconfig.lib.json",
+        "tsconfig.spec.json",
+        "vitest.config.mts",
+        "vitest.config.ts",
+        "package.json"
+      ],
+      "outputs": ["coverage/**", "test-report.junit.xml", "test-results/**"]
+    },
+    "test:coverage": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "src/**",
+        "tsconfig.json",
+        "tsconfig.lib.json",
+        "tsconfig.spec.json",
+        "vitest.config.mts",
+        "vitest.config.ts",
+        "package.json"
+      ],
+      "outputs": ["coverage/**"]
+    },
+    "lint": {
+      "inputs": ["src/**", ".oxlintrc.json", ".eslintrc.*", "eslint.config.*", "package.json"],
+      "outputs": []
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "inputs": ["src/**", "tsconfig.json", "tsconfig.lib.json", "package.json"],
+      "outputs": []
+    },
+    "//#oxlint": {
+      "inputs": [".oxlintrc.json", "packages/**/src/**"],
+      "outputs": []
+    },
+    "//#lint:md": {
+      "inputs": [".markdownlint.json", "**/*.md", "!node_modules/**", "!**/dist/**"],
+      "outputs": []
+    }
+  }
+}

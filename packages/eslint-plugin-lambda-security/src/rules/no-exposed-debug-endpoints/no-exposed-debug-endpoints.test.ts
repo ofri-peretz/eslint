@@ -14,6 +14,9 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('no-exposed-debug-endpoints', noExposedDebugEndpoints, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
     {
       code: "if (event.path === '/api/user') {}"
     },

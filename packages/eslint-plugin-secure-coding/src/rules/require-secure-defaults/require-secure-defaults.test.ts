@@ -16,6 +16,12 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-secure-defaults', requireSecureDefaults, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
+        'const items = [];',
+        'const obj = {};',
+        'class Foo {}',
     { code: "const config = { secure: true, httpOnly: true }" },
     { code: "cookie({ secure: true })" }
   ],

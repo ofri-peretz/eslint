@@ -16,7 +16,7 @@
 1. Configure Trusted Publisher on npmjs.com
 2. Done! (workflow already configured)
 
-**Check:** 
+**Check:**
 ```bash
 gh workflow run release.yml
 # Should work immediately

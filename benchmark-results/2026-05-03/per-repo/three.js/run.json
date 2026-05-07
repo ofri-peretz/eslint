@@ -1,0 +1,37 @@
+{
+  "repo": "three.js",
+  "meta": {
+    "stars": 105000,
+    "commit": "r170",
+    "category": "3D Graphics Engine",
+    "plugins": [
+      "browser-security",
+      "secure-coding",
+      "node-security"
+    ],
+    "fpEdge": true,
+    "srcGlob": "src/**/*.{js,ts}"
+  },
+  "fileCount": 727,
+  "loc": 175430,
+  "timing": {
+    "runsMs": [
+      3389
+    ],
+    "medianMs": 3389,
+    "meanMs": 3389,
+    "stddevMs": 0,
+    "cv": 0,
+    "msPerFile": 4.66
+  },
+  "peakRssMb": 670,
+  "findings": {
+    "total": 1932,
+    "errors": 439,
+    "warnings": 1493,
+    "filesWithFindings": 187,
+    "densityPerKloc": 11.01,
+    "externalDirectives": 1,
+    "parseErrors": 0
+  }
+}

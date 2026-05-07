@@ -1,3 +1,10 @@
+## [3.1.3] - 2026-05-03
+
+### Bug Fixes
+
+- `no-missing-null-checks`: exempt provably-non-null identifiers (built-in singletons like `Math`, `JSON`, `console`, error classes; catch-clause params; constructor results; top-level imports) from the null-check requirement. Eliminates a large class of false positives without weakening real coverage.
+- `no-unhandled-promise`: refined detection (see source diff).
+
 ## 3.1.2 (2026-02-09)
 
 This was a version bump only for eslint-plugin-reliability to align it with other projects, there were no code changes.

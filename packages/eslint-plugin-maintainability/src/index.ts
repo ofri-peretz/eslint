@@ -40,7 +40,7 @@ export const rules = {
 export const plugin = {
   meta: {
     name: '@interlace/eslint-plugin-maintainability',
-    version: '1.0.0',
+    version: '3.0.3',
   },
   rules,
 } satisfies TSESLint.FlatConfig.Plugin;

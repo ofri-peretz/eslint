@@ -1,0 +1,155 @@
+/**
+ * AUTO-GENERATED FILE — DO NOT EDIT DIRECTLY.
+ * Source: apps/interlace-docs-baseline/ in the agents repo.
+ * Edit there, then run `npm run sync` to redistribute.
+ * Local edits will be overwritten on next sync (or refused without --force).
+ */
+/* =========================================
+   INTERLACE BRAND TOKENS — single source of truth for the line.
+   =========================================
+ *
+ * Design-system rules this file enforces:
+ *
+ *   1. NO RAW COLORS IN COMPONENTS. Components consume token utilities
+ *      (`text-fd-foreground`, `bg-destructive`, `ring-fd-ring`), never
+ *      `text-black` / `bg-purple-900` / `#3c0366`. Hardcoded colors don't
+ *      respect the theme override and create silent dark/light bugs.
+ *
+ *   2. EVERY TOKEN HAS BOTH MODES. Adding a `--color-*` to `@theme` (light)
+ *      requires the same key in `.dark` below — otherwise dark-mode users
+ *      inherit the light value and the surface looks wrong.
+ *
+ *   3. EVERY FOREGROUND/BACKGROUND PAIR PASSES WCAG AA (4.5:1 normal text,
+ *      3:1 large/UI). Verified two ways:
+ *        a. Token math: `apps/baseline-storybook/src/__tests__/brand-contrast.test.ts`
+ *           parses this file and asserts the ratios in pure Node (~250ms).
+ *        b. Rendered axe: `STORYBOOK_A11Y=error npm test` in baseline-storybook
+ *           runs every story under axe-core in chromium — catches real
+ *           composition (e.g. text on a card, focus ring on a button).
+ *      Bumping a token here without re-running both is a regression.
+ *
+ *   4. NO `!important`. This file is imported AFTER `fumadocs-ui/css/preset.css`
+ *      in every consumer's `global.css`, so natural cascade order wins. If
+ *      you find yourself reaching for `!important`, fix the import order
+ *      instead — it's a sign the CSS layering is off.
+ *
+ *   5. `@theme` REGISTRATIONS ARE LOAD-BEARING. Tailwind v4 only compiles
+ *      `bg-destructive` if `--color-destructive` is registered with `@theme`
+ *      (not just declared on `:root`). The fumadocs preset only registers
+ *      `--color-fd-*`, so we register the unprefixed shadcn names here for
+ *      primitives like `bg-destructive`.
+ */
+@theme {
+  --color-fd-primary: hsl(263, 80%, 45%);
+  --color-fd-primary-foreground: hsl(0, 0%, 100%);
+  --color-fd-foreground: hsl(0, 0%, 3.9%);
+  --color-fd-muted-foreground: hsl(0, 0%, 40%);
+  --color-fd-ring: hsl(263, 70%, 55%);
+
+  /* Destructive — shadcn primitives (`bg-destructive`) read these unprefixed
+   * tokens; mirror under the fumadocs prefix for parity. */
+  --color-destructive: hsl(0, 75%, 38%);
+  --color-destructive-foreground: hsl(0, 0%, 100%);
+  --color-fd-destructive: hsl(0, 75%, 38%);
+  --color-fd-destructive-foreground: hsl(0, 0%, 100%);
+
+  /* Unprefixed shadcn token aliases. The shadcn primitives (button, input,
+   * badge, card, etc.) reference utilities like `ring-ring`, `bg-input`,
+   * `border-border`, `bg-background`, `text-foreground`. Tailwind v4 only
+   * generates these utilities when the matching `--color-*` is registered
+   * with `@theme`. Register here as aliases of the `--color-fd-*` tokens
+   * fumadocs already manages — single source of truth, automatic dark-mode
+   * tracking. Without these, focus rings on form primitives literally don't
+   * render (the utility resolves to `var(--color-ring)` which is undefined). */
+  --color-ring: var(--color-fd-ring);
+  --color-input: var(--color-fd-border);
+  --color-border: var(--color-fd-border);
+  --color-background: var(--color-fd-background);
+  --color-foreground: var(--color-fd-foreground);
+  --color-primary: var(--color-fd-primary);
+  --color-primary-foreground: var(--color-fd-primary-foreground);
+  --color-secondary: var(--color-fd-secondary);
+  --color-secondary-foreground: var(--color-fd-secondary-foreground);
+  --color-accent: var(--color-fd-accent);
+  --color-accent-foreground: var(--color-fd-accent-foreground);
+  --color-muted: var(--color-fd-muted);
+  --color-muted-foreground: var(--color-fd-muted-foreground);
+  --color-popover: var(--color-fd-popover);
+  --color-popover-foreground: var(--color-fd-popover-foreground);
+  --color-card: var(--color-fd-card);
+  --color-card-foreground: var(--color-fd-card-foreground);
+}
+
+/* Dark-mode overrides — runtime cascade, no token registration needed. */
+.dark {
+  --color-fd-primary: hsl(270, 75%, 75%);
+  --color-fd-primary-foreground: hsl(0, 0%, 5%);
+  --color-fd-foreground: hsl(0, 0%, 92%);
+  /* 70% white (#b3b3b3) gives ~6.5:1 against the #1a1a1a base background.
+   * That headroom matters because consumers compose this with semi-transparent
+   * surfaces (`bg-fd-secondary/50`, `bg-fd-card/50`) where the rendered
+   * background is darker — bumping the foreground here keeps every
+   * composite above the 4.5:1 AA floor without forcing every surface to
+   * use full opacity. */
+  --color-fd-muted-foreground: hsl(0, 0%, 70%);
+  --color-fd-ring: hsl(270, 70%, 70%);
+
+  --color-destructive: hsl(0, 65%, 42%);
+  --color-destructive-foreground: hsl(0, 0%, 100%);
+  --color-fd-destructive: hsl(0, 65%, 42%);
+  --color-fd-destructive-foreground: hsl(0, 0%, 100%);
+}
+
+/* =========================================
+   UX BEST PRACTICES — global resets
+   =========================================
+ *
+ * Reduced-motion (WCAG 2.3.3 + media query for vestibular disorders).
+ * Disables non-essential animations for users who request it. Set duration
+ * and iteration to short/zero values rather than `none` so transitions still
+ * fire (some components use the `transitionend` event for state machines).
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Accessible focus-visible default for any element that becomes interactive
+ * via `tabindex` or role swap and doesn't carry its own `focus-visible:*`
+ * utility. Component primitives (button, input, badge) override this with
+ * their own ring; this is the safety net so a custom interactive element
+ * never ships without a visible focus indicator. WCAG 2.4.7. */
+:where(:focus-visible) {
+  outline: 2px solid var(--color-fd-ring);
+  outline-offset: 2px;
+}
+
+/* Skip-link styling — a screen-reader-only "Skip to content" link is the
+ * single biggest keyboard-UX win for any layout. The pattern: render the
+ * link first in the DOM with `.sr-only`, expose it on focus. Layouts opt in
+ * by including `<a href="#main" class="skip-link">Skip to content</a>` near
+ * the top of `<body>`. */
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 0.75rem 1rem;
+  background: var(--color-fd-background);
+  color: var(--color-fd-foreground);
+  font-weight: 600;
+  border: 2px solid var(--color-fd-ring);
+  border-radius: 0.5rem;
+  transform: translateY(-150%);
+  transition: transform 150ms ease-out;
+  z-index: 100;
+}
+.skip-link:focus-visible {
+  transform: translateY(0.5rem);
+  outline: none;
+}

@@ -1,6 +1,8 @@
 # AGENTS.md - AI Assistant Context
 
 > **Purpose**: Context file for LLMs (Claude, GPT, Gemini, etc.) working on this repository.
+>
+> **See also:** [ARCHITECTURE.md](./ARCHITECTURE.md) for this repo's bird's-eye map, and [`../agents/ARCHITECTURE.md`](../agents/ARCHITECTURE.md) for the broader **Interlace** ecosystem (how this repo fits with `agents/` and `serverless/`).
 
 ## Repository Overview
 

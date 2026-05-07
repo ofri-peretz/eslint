@@ -14,6 +14,8 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('detect-weak-password-validation', detectWeakPasswordValidation, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
     // Strong password requirements
     { code: "if (password.length >= 12) { valid() }" },
     { code: "if (pwd.length >= 8) { valid() }" },

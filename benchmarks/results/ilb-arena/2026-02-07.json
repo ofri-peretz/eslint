@@ -1,0 +1,4114 @@
+{
+  "timestamp": "2026-02-07T23:00:55.356Z",
+  "methodology": {
+    "approach": "Static fixture-based comparison",
+    "vulnerablePatterns": 40,
+    "safePatterns": 38,
+    "categories": [
+      "SQL Injection",
+      "Command Injection",
+      "Path Traversal",
+      "Hardcoded Credentials",
+      "JWT Vulnerabilities",
+      "XSS",
+      "Prototype Pollution",
+      "Insecure Randomness",
+      "Weak Cryptography",
+      "Timing Attacks",
+      "NoSQL Injection",
+      "SSRF",
+      "Open Redirect",
+      "ReDoS"
+    ]
+  },
+  "plugins": {
+    "eslint-plugin-security": {
+      "displayName": "eslint-plugin-security",
+      "rules": 13,
+      "lastUpdated": "2023 (maintenance mode)",
+      "weeklyDownloads": "1.5M+",
+      "category": "Security",
+      "vulnerableAnalysis": {
+        "totalViolations": 0,
+        "byFunction": {},
+        "byRule": {}
+      },
+      "safeAnalysis": {
+        "totalViolations": 0,
+        "byFunction": {},
+        "byRule": {}
+      },
+      "metrics": {
+        "TP": 0,
+        "TN": 38,
+        "FP": 0,
+        "FN": 40,
+        "FNR": "100.0%",
+        "FPR": "0.0%",
+        "precision": "100%",
+        "recall": "0.0%",
+        "f1Score": "0.0%",
+        "detectedVulnerabilities": [],
+        "missedVulnerabilities": [
+          "vuln_sql_string_concat",
+          "vuln_sql_template_literal",
+          "vuln_sql_dynamic_column",
+          "vuln_sql_conditional",
+          "vuln_cmd_exec_concat",
+          "vuln_cmd_exec_template",
+          "vuln_cmd_execsync",
+          "vuln_cmd_spawn_shell",
+          "vuln_path_join",
+          "vuln_path_concat",
+          "vuln_path_no_validation",
+          "vuln_path_url_pathname",
+          "vuln_creds_db_password",
+          "vuln_creds_api_key",
+          "vuln_creds_aws",
+          "vuln_creds_jwt_secret",
+          "vuln_jwt_alg_none",
+          "vuln_jwt_no_algorithm",
+          "vuln_jwt_no_expiry",
+          "vuln_xss_innerhtml",
+          "vuln_xss_document_write",
+          "vuln_xss_eval",
+          "vuln_xss_new_function",
+          "vuln_proto_bracket",
+          "vuln_proto_nested",
+          "vuln_proto_assign",
+          "vuln_random_token",
+          "vuln_random_session",
+          "vuln_crypto_md5",
+          "vuln_crypto_sha1",
+          "vuln_crypto_des",
+          "vuln_timing_direct",
+          "vuln_timing_token",
+          "vuln_nosql_mongo",
+          "vuln_nosql_where",
+          "vuln_ssrf_fetch",
+          "vuln_ssrf_axios",
+          "vuln_redirect",
+          "vuln_redos_evil",
+          "vuln_redos_user"
+        ],
+        "falsePositives": []
+      }
+    },
+    "sonarjs": {
+      "displayName": "eslint-plugin-sonarjs (SonarSource)",
+      "rules": 269,
+      "lastUpdated": "2025 (active)",
+      "weeklyDownloads": "3M+",
+      "category": "Security + Quality",
+      "vulnerableAnalysis": {
+        "totalViolations": 15,
+        "byFunction": {
+          "vuln_cmd_exec_concat": [
+            {
+              "ruleId": "sonarjs/os-command",
+              "severity": "error",
+              "message": "Make sure that executing this OS command is safe here.",
+              "line": 64,
+              "column": 3
+            }
+          ],
+          "vuln_cmd_exec_template": [
+            {
+              "ruleId": "sonarjs/os-command",
+              "severity": "error",
+              "message": "Make sure that executing this OS command is safe here.",
+              "line": 73,
+              "column": 3
+            }
+          ],
+          "vuln_cmd_execsync": [
+            {
+              "ruleId": "sonarjs/os-command",
+              "severity": "error",
+              "message": "Make sure that executing this OS command is safe here.",
+              "line": 82,
+              "column": 10
+            }
+          ],
+          "vuln_cmd_spawn_shell": [
+            {
+              "ruleId": "sonarjs/os-command",
+              "severity": "error",
+              "message": "Make sure that executing this OS command is safe here.",
+              "line": 91,
+              "column": 10
+            }
+          ],
+          "vuln_creds_db_password": [
+            {
+              "ruleId": "sonarjs/no-hardcoded-passwords",
+              "severity": "error",
+              "message": "Review this potentially hard-coded password.",
+              "line": 150,
+              "column": 15
+            }
+          ],
+          "vuln_creds_jwt_secret": [
+            {
+              "ruleId": "sonarjs/hardcoded-secret-signatures",
+              "severity": "error",
+              "message": "Revoke and change this password, as it is compromised.",
+              "line": 184,
+              "column": 10
+            }
+          ],
+          "vuln_jwt_alg_none": [
+            {
+              "ruleId": "sonarjs/insecure-jwt-token",
+              "severity": "error",
+              "message": "Use only strong cipher algorithms when verifying the signature of this JWT.",
+              "line": 197,
+              "column": 10
+            },
+            {
+              "ruleId": "sonarjs/hardcoded-secret-signatures",
+              "severity": "error",
+              "message": "Revoke and change this password, as it is compromised.",
+              "line": 197,
+              "column": 10
+            }
+          ],
+          "vuln_xss_eval": [
+            {
+              "ruleId": "sonarjs/code-eval",
+              "severity": "error",
+              "message": "Make sure that this dynamic injection or execution of code is safe.",
+              "line": 243,
+              "column": 10
+            }
+          ],
+          "vuln_xss_new_function": [
+            {
+              "ruleId": "sonarjs/code-eval",
+              "severity": "error",
+              "message": "Make sure that this dynamic injection or execution of code is safe.",
+              "line": 251,
+              "column": 18
+            }
+          ],
+          "vuln_random_token": [
+            {
+              "ruleId": "sonarjs/pseudo-random",
+              "severity": "error",
+              "message": "Make sure that using this pseudorandom number generator is safe here.",
+              "line": 300,
+              "column": 10
+            }
+          ],
+          "vuln_random_session": [
+            {
+              "ruleId": "sonarjs/pseudo-random",
+              "severity": "error",
+              "message": "Make sure that using this pseudorandom number generator is safe here.",
+              "line": 308,
+              "column": 34
+            }
+          ],
+          "vuln_crypto_md5": [
+            {
+              "ruleId": "sonarjs/hashing",
+              "severity": "error",
+              "message": "Make sure this weak hash algorithm is not used in a sensitive context here.",
+              "line": 321,
+              "column": 10
+            }
+          ],
+          "vuln_crypto_sha1": [
+            {
+              "ruleId": "sonarjs/hashing",
+              "severity": "error",
+              "message": "Make sure this weak hash algorithm is not used in a sensitive context here.",
+              "line": 330,
+              "column": 10
+            }
+          ],
+          "vuln_redos_evil": [
+            {
+              "ruleId": "sonarjs/slow-regex",
+              "severity": "error",
+              "message": "Make sure the regex used here, which is vulnerable to super-linear runtime due to backtracking, cannot lead to denial of service.",
+              "line": 432,
+              "column": 21
+            }
+          ]
+        },
+        "byRule": {
+          "sonarjs/os-command": 4,
+          "sonarjs/no-hardcoded-passwords": 1,
+          "sonarjs/hardcoded-secret-signatures": 2,
+          "sonarjs/insecure-jwt-token": 1,
+          "sonarjs/code-eval": 2,
+          "sonarjs/pseudo-random": 2,
+          "sonarjs/hashing": 2,
+          "sonarjs/slow-regex": 1
+        }
+      },
+      "safeAnalysis": {
+        "totalViolations": 5,
+        "byFunction": {
+          "safe_cmd_execfile_literal": [
+            {
+              "ruleId": "sonarjs/no-os-command-from-path",
+              "severity": "error",
+              "message": "Make sure the \"PATH\" variable only contains fixed, unwriteable directories.",
+              "line": 70,
+              "column": 19
+            }
+          ],
+          "safe_cmd_spawn_noshell": [
+            {
+              "ruleId": "sonarjs/no-os-command-from-path",
+              "severity": "error",
+              "message": "Make sure the \"PATH\" variable only contains fixed, unwriteable directories.",
+              "line": 79,
+              "column": 16
+            }
+          ],
+          "safe_cmd_validated": [
+            {
+              "ruleId": "sonarjs/no-os-command-from-path",
+              "severity": "error",
+              "message": "Make sure the \"PATH\" variable only contains fixed, unwriteable directories.",
+              "line": 92,
+              "column": 19
+            }
+          ],
+          "safe_random_shuffle": [
+            {
+              "ruleId": "sonarjs/pseudo-random",
+              "severity": "error",
+              "message": "Make sure that using this pseudorandom number generator is safe here.",
+              "line": 342,
+              "column": 26
+            }
+          ],
+          "safe_regex_simple": [
+            {
+              "ruleId": "sonarjs/slow-regex",
+              "severity": "error",
+              "message": "Make sure the regex used here, which is vulnerable to super-linear runtime due to backtracking, cannot lead to denial of service.",
+              "line": 506,
+              "column": 22
+            }
+          ]
+        },
+        "byRule": {
+          "sonarjs/no-os-command-from-path": 3,
+          "sonarjs/pseudo-random": 1,
+          "sonarjs/slow-regex": 1
+        }
+      },
+      "metrics": {
+        "TP": 14,
+        "TN": 33,
+        "FP": 5,
+        "FN": 26,
+        "FNR": "65.0%",
+        "FPR": "13.2%",
+        "precision": "73.7%",
+        "recall": "35.0%",
+        "f1Score": "47.5%",
+        "detectedVulnerabilities": [
+          "vuln_cmd_exec_concat",
+          "vuln_cmd_exec_template",
+          "vuln_cmd_execsync",
+          "vuln_cmd_spawn_shell",
+          "vuln_creds_db_password",
+          "vuln_creds_jwt_secret",
+          "vuln_jwt_alg_none",
+          "vuln_xss_eval",
+          "vuln_xss_new_function",
+          "vuln_random_token",
+          "vuln_random_session",
+          "vuln_crypto_md5",
+          "vuln_crypto_sha1",
+          "vuln_redos_evil"
+        ],
+        "missedVulnerabilities": [
+          "vuln_sql_string_concat",
+          "vuln_sql_template_literal",
+          "vuln_sql_dynamic_column",
+          "vuln_sql_conditional",
+          "vuln_path_join",
+          "vuln_path_concat",
+          "vuln_path_no_validation",
+          "vuln_path_url_pathname",
+          "vuln_creds_api_key",
+          "vuln_creds_aws",
+          "vuln_jwt_no_algorithm",
+          "vuln_jwt_no_expiry",
+          "vuln_xss_innerhtml",
+          "vuln_xss_document_write",
+          "vuln_proto_bracket",
+          "vuln_proto_nested",
+          "vuln_proto_assign",
+          "vuln_crypto_des",
+          "vuln_timing_direct",
+          "vuln_timing_token",
+          "vuln_nosql_mongo",
+          "vuln_nosql_where",
+          "vuln_ssrf_fetch",
+          "vuln_ssrf_axios",
+          "vuln_redirect",
+          "vuln_redos_user"
+        ],
+        "falsePositives": [
+          "safe_cmd_execfile_literal",
+          "safe_cmd_spawn_noshell",
+          "safe_cmd_validated",
+          "safe_random_shuffle",
+          "safe_regex_simple"
+        ]
+      }
+    },
+    "microsoft-sdl": {
+      "displayName": "@microsoft/eslint-plugin-sdl",
+      "rules": 17,
+      "lastUpdated": "2024 (active)",
+      "weeklyDownloads": "~100K",
+      "category": "Security (SDL)",
+      "vulnerableAnalysis": {
+        "totalViolations": 4,
+        "byFunction": {
+          "vuln_xss_innerhtml": [
+            {
+              "ruleId": "@microsoft/sdl/no-inner-html",
+              "severity": "error",
+              "message": "Do not write to DOM directly using innerHTML/outerHTML property",
+              "line": 227,
+              "column": 3
+            }
+          ],
+          "vuln_xss_document_write": [
+            {
+              "ruleId": "@microsoft/sdl/no-document-write",
+              "severity": "error",
+              "message": "Do not write to DOM directly using document.write or document.writeln methods",
+              "line": 235,
+              "column": 3
+            }
+          ],
+          "vuln_xss_eval": [
+            {
+              "ruleId": "no-eval",
+              "severity": "error",
+              "message": "eval can be harmful.",
+              "line": 243,
+              "column": 10
+            }
+          ],
+          "vuln_xss_new_function": [
+            {
+              "ruleId": "no-new-func",
+              "severity": "error",
+              "message": "The Function constructor is eval.",
+              "line": 251,
+              "column": 14
+            }
+          ]
+        },
+        "byRule": {
+          "@microsoft/sdl/no-inner-html": 1,
+          "@microsoft/sdl/no-document-write": 1,
+          "no-eval": 1,
+          "no-new-func": 1
+        }
+      },
+      "safeAnalysis": {
+        "totalViolations": 1,
+        "byFunction": {
+          "safe_xss_dompurify": [
+            {
+              "ruleId": "@microsoft/sdl/no-inner-html",
+              "severity": "error",
+              "message": "Do not write to DOM directly using innerHTML/outerHTML property",
+              "line": 229,
+              "column": 3
+            }
+          ]
+        },
+        "byRule": {
+          "@microsoft/sdl/no-inner-html": 1
+        }
+      },
+      "metrics": {
+        "TP": 4,
+        "TN": 37,
+        "FP": 1,
+        "FN": 36,
+        "FNR": "90.0%",
+        "FPR": "2.6%",
+        "precision": "80.0%",
+        "recall": "10.0%",
+        "f1Score": "17.8%",
+        "detectedVulnerabilities": [
+          "vuln_xss_innerhtml",
+          "vuln_xss_document_write",
+          "vuln_xss_eval",
+          "vuln_xss_new_function"
+        ],
+        "missedVulnerabilities": [
+          "vuln_sql_string_concat",
+          "vuln_sql_template_literal",
+          "vuln_sql_dynamic_column",
+          "vuln_sql_conditional",
+          "vuln_cmd_exec_concat",
+          "vuln_cmd_exec_template",
+          "vuln_cmd_execsync",
+          "vuln_cmd_spawn_shell",
+          "vuln_path_join",
+          "vuln_path_concat",
+          "vuln_path_no_validation",
+          "vuln_path_url_pathname",
+          "vuln_creds_db_password",
+          "vuln_creds_api_key",
+          "vuln_creds_aws",
+          "vuln_creds_jwt_secret",
+          "vuln_jwt_alg_none",
+          "vuln_jwt_no_algorithm",
+          "vuln_jwt_no_expiry",
+          "vuln_proto_bracket",
+          "vuln_proto_nested",
+          "vuln_proto_assign",
+          "vuln_random_token",
+          "vuln_random_session",
+          "vuln_crypto_md5",
+          "vuln_crypto_sha1",
+          "vuln_crypto_des",
+          "vuln_timing_direct",
+          "vuln_timing_token",
+          "vuln_nosql_mongo",
+          "vuln_nosql_where",
+          "vuln_ssrf_fetch",
+          "vuln_ssrf_axios",
+          "vuln_redirect",
+          "vuln_redos_evil",
+          "vuln_redos_user"
+        ],
+        "falsePositives": [
+          "safe_xss_dompurify"
+        ]
+      }
+    },
+    "no-secrets": {
+      "displayName": "eslint-plugin-no-secrets",
+      "rules": 2,
+      "lastUpdated": "2023",
+      "weeklyDownloads": "~50K",
+      "category": "Secret Detection",
+      "vulnerableAnalysis": {
+        "totalViolations": 3,
+        "byFunction": {
+          "vuln_creds_api_key": [
+            {
+              "ruleId": "no-secrets/no-secrets",
+              "severity": "error",
+              "message": "Found a string with entropy 4.62 : \"sk-prod-abc123def456ghi789jkl012mno345pqr678\"",
+              "line": 160,
+              "column": 18
+            }
+          ],
+          "vuln_creds_aws": [
+            {
+              "ruleId": "no-secrets/no-secrets",
+              "severity": "error",
+              "message": "Found a string that matches \"AWS API Key\" : \"AKIAIOSFODNN7EXAMPLE\"",
+              "line": 173,
+              "column": 18
+            },
+            {
+              "ruleId": "no-secrets/no-secrets",
+              "severity": "error",
+              "message": "Found a string with entropy 4.45 : \"wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\"",
+              "line": 174,
+              "column": 22
+            }
+          ]
+        },
+        "byRule": {
+          "no-secrets/no-secrets": 3
+        }
+      },
+      "safeAnalysis": {
+        "totalViolations": 0,
+        "byFunction": {},
+        "byRule": {}
+      },
+      "metrics": {
+        "TP": 2,
+        "TN": 38,
+        "FP": 0,
+        "FN": 38,
+        "FNR": "95.0%",
+        "FPR": "0.0%",
+        "precision": "100.0%",
+        "recall": "5.0%",
+        "f1Score": "9.5%",
+        "detectedVulnerabilities": [
+          "vuln_creds_api_key",
+          "vuln_creds_aws"
+        ],
+        "missedVulnerabilities": [
+          "vuln_sql_string_concat",
+          "vuln_sql_template_literal",
+          "vuln_sql_dynamic_column",
+          "vuln_sql_conditional",
+          "vuln_cmd_exec_concat",
+          "vuln_cmd_exec_template",
+          "vuln_cmd_execsync",
+          "vuln_cmd_spawn_shell",
+          "vuln_path_join",
+          "vuln_path_concat",
+          "vuln_path_no_validation",
+          "vuln_path_url_pathname",
+          "vuln_creds_db_password",
+          "vuln_creds_jwt_secret",
+          "vuln_jwt_alg_none",
+          "vuln_jwt_no_algorithm",
+          "vuln_jwt_no_expiry",
+          "vuln_xss_innerhtml",
+          "vuln_xss_document_write",
+          "vuln_xss_eval",
+          "vuln_xss_new_function",
+          "vuln_proto_bracket",
+          "vuln_proto_nested",
+          "vuln_proto_assign",
+          "vuln_random_token",
+          "vuln_random_session",
+          "vuln_crypto_md5",
+          "vuln_crypto_sha1",
+          "vuln_crypto_des",
+          "vuln_timing_direct",
+          "vuln_timing_token",
+          "vuln_nosql_mongo",
+          "vuln_nosql_where",
+          "vuln_ssrf_fetch",
+          "vuln_ssrf_axios",
+          "vuln_redirect",
+          "vuln_redos_evil",
+          "vuln_redos_user"
+        ],
+        "falsePositives": []
+      }
+    },
+    "unicorn": {
+      "displayName": "eslint-plugin-unicorn",
+      "rules": 144,
+      "lastUpdated": "2025 (active)",
+      "weeklyDownloads": "5M+",
+      "category": "Best Practices",
+      "vulnerableAnalysis": {
+        "totalViolations": 27,
+        "byFunction": {
+          "vuln_cmd_exec_concat": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:child_process` over `child_process`.",
+              "line": 63,
+              "column": 28
+            }
+          ],
+          "vuln_cmd_exec_template": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:child_process` over `child_process`.",
+              "line": 72,
+              "column": 28
+            }
+          ],
+          "vuln_cmd_execsync": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:child_process` over `child_process`.",
+              "line": 81,
+              "column": 32
+            }
+          ],
+          "vuln_cmd_spawn_shell": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:child_process` over `child_process`.",
+              "line": 90,
+              "column": 29
+            }
+          ],
+          "vuln_path_join": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:path` over `path`.",
+              "line": 103,
+              "column": 24
+            },
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:fs` over `fs`.",
+              "line": 104,
+              "column": 22
+            }
+          ],
+          "vuln_path_concat": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:fs` over `fs`.",
+              "line": 114,
+              "column": 22
+            }
+          ],
+          "vuln_path_no_validation": [
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "Please rename the variable `userDir`. Suggested names are: `userDirection`, `userDirectory`. A more descriptive name will do too.",
+              "line": 122,
+              "column": 47
+            },
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:fs/promises` over `fs/promises`.",
+              "line": 123,
+              "column": 22
+            }
+          ],
+          "vuln_path_url_pathname": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:fs` over `fs`.",
+              "line": 132,
+              "column": 22
+            }
+          ],
+          "vuln_creds_db_password": [
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "The variable `vuln_creds_db_password` should be named `vuln_creds_database_password`. A more descriptive name will do too.",
+              "line": 145,
+              "column": 17
+            }
+          ],
+          "vuln_xss_innerhtml": [
+            {
+              "ruleId": "unicorn/prefer-query-selector",
+              "severity": "error",
+              "message": "Prefer `.querySelector()` over `.getElementById()`.",
+              "line": 227,
+              "column": 12
+            }
+          ],
+          "vuln_xss_new_function": [
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "The variable `fn` should be named `function_`. A more descriptive name will do too.",
+              "line": 251,
+              "column": 9
+            }
+          ],
+          "vuln_proto_bracket": [
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "The variable `obj` should be named `object`. A more descriptive name will do too.",
+              "line": 263,
+              "column": 36
+            }
+          ],
+          "vuln_proto_nested": [
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "The variable `obj` should be named `object`. A more descriptive name will do too.",
+              "line": 272,
+              "column": 35
+            },
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "The variable `i` should be named `index`. A more descriptive name will do too.",
+              "line": 275,
+              "column": 12
+            },
+            {
+              "ruleId": "unicorn/prefer-at",
+              "severity": "error",
+              "message": "Prefer `.at(…)` over `[….length - index]`.",
+              "line": 278,
+              "column": 16
+            }
+          ],
+          "vuln_proto_assign": [
+            {
+              "ruleId": "unicorn/no-immediate-mutation",
+              "severity": "error",
+              "message": "Immediate mutation on object is not allowed.",
+              "line": 287,
+              "column": 3
+            }
+          ],
+          "vuln_random_token": [
+            {
+              "ruleId": "unicorn/prefer-string-slice",
+              "severity": "error",
+              "message": "Prefer `String#slice()` over `String#substring()`.",
+              "line": 300,
+              "column": 10
+            }
+          ],
+          "vuln_random_session": [
+            {
+              "ruleId": "unicorn/numeric-separators-style",
+              "severity": "error",
+              "message": "Invalid group length in numeric value.",
+              "line": 308,
+              "column": 50
+            }
+          ],
+          "vuln_crypto_md5": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:crypto` over `crypto`.",
+              "line": 320,
+              "column": 26
+            }
+          ],
+          "vuln_crypto_sha1": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:crypto` over `crypto`.",
+              "line": 329,
+              "column": 26
+            }
+          ],
+          "vuln_crypto_des": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:crypto` over `crypto`.",
+              "line": 338,
+              "column": 26
+            }
+          ],
+          "vuln_nosql_mongo": [
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "The variable `db` should be named `database`. A more descriptive name will do too.",
+              "line": 375,
+              "column": 9
+            }
+          ],
+          "vuln_nosql_where": [
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "The variable `db` should be named `database`. A more descriptive name will do too.",
+              "line": 384,
+              "column": 9
+            }
+          ],
+          "vuln_redirect": [
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "The variable `req` should be named `request`. A more descriptive name will do too.",
+              "line": 418,
+              "column": 31
+            },
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "Please rename the variable `res`. Suggested names are: `resource`, `response`, `result`. A more descriptive name will do too.",
+              "line": 418,
+              "column": 36
+            }
+          ]
+        },
+        "byRule": {
+          "unicorn/prefer-node-protocol": 12,
+          "unicorn/prevent-abbreviations": 10,
+          "unicorn/prefer-query-selector": 1,
+          "unicorn/prefer-at": 1,
+          "unicorn/no-immediate-mutation": 1,
+          "unicorn/prefer-string-slice": 1,
+          "unicorn/numeric-separators-style": 1
+        }
+      },
+      "safeAnalysis": {
+        "totalViolations": 32,
+        "byFunction": {
+          "safe_sql_named": [
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "The variable `params` should be named `parameters`. A more descriptive name will do too.",
+              "line": 34,
+              "column": 38
+            }
+          ],
+          "safe_cmd_execfile_literal": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:child_process` over `child_process`.",
+              "line": 69,
+              "column": 32
+            }
+          ],
+          "safe_cmd_spawn_noshell": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:child_process` over `child_process`.",
+              "line": 78,
+              "column": 29
+            }
+          ],
+          "safe_cmd_validated": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:child_process` over `child_process`.",
+              "line": 87,
+              "column": 32
+            }
+          ],
+          "safe_path_validated": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:path` over `path`.",
+              "line": 104,
+              "column": 24
+            },
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:fs` over `fs`.",
+              "line": 105,
+              "column": 22
+            },
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "Please rename the variable `baseDir`. Suggested names are: `baseDirection`, `baseDirectory`. A more descriptive name will do too.",
+              "line": 107,
+              "column": 9
+            }
+          ],
+          "safe_path_allowlist": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:fs` over `fs`.",
+              "line": 122,
+              "column": 22
+            },
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:path` over `path`.",
+              "line": 123,
+              "column": 24
+            }
+          ],
+          "safe_path_regex": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:fs` over `fs`.",
+              "line": 138,
+              "column": 22
+            },
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:path` over `path`.",
+              "line": 139,
+              "column": 24
+            }
+          ],
+          "safe_creds_env": [
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "The variable `safe_creds_env` should be named `safe_creds_environment`. A more descriptive name will do too.",
+              "line": 156,
+              "column": 17
+            }
+          ],
+          "safe_xss_dompurify": [
+            {
+              "ruleId": "unicorn/prefer-query-selector",
+              "severity": "error",
+              "message": "Prefer `.querySelector()` over `.getElementById()`.",
+              "line": 229,
+              "column": 12
+            }
+          ],
+          "safe_xss_textcontent": [
+            {
+              "ruleId": "unicorn/prefer-query-selector",
+              "severity": "error",
+              "message": "Prefer `.querySelector()` over `.getElementById()`.",
+              "line": 237,
+              "column": 12
+            }
+          ],
+          "safe_proto_allowlist": [
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "The variable `obj` should be named `object`. A more descriptive name will do too.",
+              "line": 257,
+              "column": 38
+            }
+          ],
+          "safe_proto_hasownproperty": [
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "The variable `obj` should be named `object`. A more descriptive name will do too.",
+              "line": 270,
+              "column": 43
+            },
+            {
+              "ruleId": "unicorn/no-useless-undefined",
+              "severity": "error",
+              "message": "Do not use useless `undefined`.",
+              "line": 274,
+              "column": 10
+            }
+          ],
+          "safe_proto_hasown": [
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "The variable `obj` should be named `object`. A more descriptive name will do too.",
+              "line": 281,
+              "column": 35
+            },
+            {
+              "ruleId": "unicorn/no-useless-undefined",
+              "severity": "error",
+              "message": "Do not use useless `undefined`.",
+              "line": 285,
+              "column": 10
+            }
+          ],
+          "safe_proto_nullproto": [
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "The variable `obj` should be named `object`. A more descriptive name will do too.",
+              "line": 293,
+              "column": 9
+            }
+          ],
+          "safe_random_token": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:crypto` over `crypto`.",
+              "line": 321,
+              "column": 26
+            }
+          ],
+          "safe_random_uuid": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:crypto` over `crypto`.",
+              "line": 330,
+              "column": 26
+            }
+          ],
+          "safe_random_shuffle": [
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "The variable `i` should be named `index`. A more descriptive name will do too.",
+              "line": 341,
+              "column": 12
+            },
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "The variable `j` should be named `index_`. A more descriptive name will do too.",
+              "line": 342,
+              "column": 11
+            }
+          ],
+          "safe_crypto_sha256": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:crypto` over `crypto`.",
+              "line": 357,
+              "column": 26
+            }
+          ],
+          "safe_crypto_aes_gcm": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:crypto` over `crypto`.",
+              "line": 376,
+              "column": 26
+            }
+          ],
+          "safe_timing_compare": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:crypto` over `crypto`.",
+              "line": 393,
+              "column": 26
+            }
+          ],
+          "safe_timing_hmac": [
+            {
+              "ruleId": "unicorn/prefer-node-protocol",
+              "severity": "error",
+              "message": "Prefer `node:crypto` over `crypto`.",
+              "line": 409,
+              "column": 26
+            }
+          ],
+          "safe_redirect_allowlist": [
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "The variable `req` should be named `request`. A more descriptive name will do too.",
+              "line": 424,
+              "column": 41
+            },
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "Please rename the variable `res`. Suggested names are: `resource`, `response`, `result`. A more descriptive name will do too.",
+              "line": 424,
+              "column": 46
+            }
+          ],
+          "safe_redirect_sameorigin": [
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "The variable `req` should be named `request`. A more descriptive name will do too.",
+              "line": 439,
+              "column": 42
+            },
+            {
+              "ruleId": "unicorn/prevent-abbreviations",
+              "severity": "error",
+              "message": "Please rename the variable `res`. Suggested names are: `resource`, `response`, `result`. A more descriptive name will do too.",
+              "line": 439,
+              "column": 47
+            }
+          ]
+        },
+        "byRule": {
+          "unicorn/prevent-abbreviations": 13,
+          "unicorn/prefer-node-protocol": 15,
+          "unicorn/prefer-query-selector": 2,
+          "unicorn/no-useless-undefined": 2
+        }
+      },
+      "metrics": {
+        "TP": 22,
+        "TN": 15,
+        "FP": 23,
+        "FN": 18,
+        "FNR": "45.0%",
+        "FPR": "60.5%",
+        "precision": "48.9%",
+        "recall": "55.0%",
+        "f1Score": "51.8%",
+        "detectedVulnerabilities": [
+          "vuln_cmd_exec_concat",
+          "vuln_cmd_exec_template",
+          "vuln_cmd_execsync",
+          "vuln_cmd_spawn_shell",
+          "vuln_path_join",
+          "vuln_path_concat",
+          "vuln_path_no_validation",
+          "vuln_path_url_pathname",
+          "vuln_creds_db_password",
+          "vuln_xss_innerhtml",
+          "vuln_xss_new_function",
+          "vuln_proto_bracket",
+          "vuln_proto_nested",
+          "vuln_proto_assign",
+          "vuln_random_token",
+          "vuln_random_session",
+          "vuln_crypto_md5",
+          "vuln_crypto_sha1",
+          "vuln_crypto_des",
+          "vuln_nosql_mongo",
+          "vuln_nosql_where",
+          "vuln_redirect"
+        ],
+        "missedVulnerabilities": [
+          "vuln_sql_string_concat",
+          "vuln_sql_template_literal",
+          "vuln_sql_dynamic_column",
+          "vuln_sql_conditional",
+          "vuln_creds_api_key",
+          "vuln_creds_aws",
+          "vuln_creds_jwt_secret",
+          "vuln_jwt_alg_none",
+          "vuln_jwt_no_algorithm",
+          "vuln_jwt_no_expiry",
+          "vuln_xss_document_write",
+          "vuln_xss_eval",
+          "vuln_timing_direct",
+          "vuln_timing_token",
+          "vuln_ssrf_fetch",
+          "vuln_ssrf_axios",
+          "vuln_redos_evil",
+          "vuln_redos_user"
+        ],
+        "falsePositives": [
+          "safe_sql_named",
+          "safe_cmd_execfile_literal",
+          "safe_cmd_spawn_noshell",
+          "safe_cmd_validated",
+          "safe_path_validated",
+          "safe_path_allowlist",
+          "safe_path_regex",
+          "safe_creds_env",
+          "safe_xss_dompurify",
+          "safe_xss_textcontent",
+          "safe_proto_allowlist",
+          "safe_proto_hasownproperty",
+          "safe_proto_hasown",
+          "safe_proto_nullproto",
+          "safe_random_token",
+          "safe_random_uuid",
+          "safe_random_shuffle",
+          "safe_crypto_sha256",
+          "safe_crypto_aes_gcm",
+          "safe_timing_compare",
+          "safe_timing_hmac",
+          "safe_redirect_allowlist",
+          "safe_redirect_sameorigin"
+        ]
+      }
+    },
+    "react": {
+      "displayName": "eslint-plugin-react",
+      "rules": 103,
+      "lastUpdated": "2025 (active)",
+      "weeklyDownloads": "15M+",
+      "category": "React",
+      "vulnerableAnalysis": {
+        "totalViolations": 0,
+        "byFunction": {},
+        "byRule": {}
+      },
+      "safeAnalysis": {
+        "totalViolations": 0,
+        "byFunction": {},
+        "byRule": {}
+      },
+      "metrics": {
+        "TP": 0,
+        "TN": 38,
+        "FP": 0,
+        "FN": 40,
+        "FNR": "100.0%",
+        "FPR": "0.0%",
+        "precision": "100%",
+        "recall": "0.0%",
+        "f1Score": "0.0%",
+        "detectedVulnerabilities": [],
+        "missedVulnerabilities": [
+          "vuln_sql_string_concat",
+          "vuln_sql_template_literal",
+          "vuln_sql_dynamic_column",
+          "vuln_sql_conditional",
+          "vuln_cmd_exec_concat",
+          "vuln_cmd_exec_template",
+          "vuln_cmd_execsync",
+          "vuln_cmd_spawn_shell",
+          "vuln_path_join",
+          "vuln_path_concat",
+          "vuln_path_no_validation",
+          "vuln_path_url_pathname",
+          "vuln_creds_db_password",
+          "vuln_creds_api_key",
+          "vuln_creds_aws",
+          "vuln_creds_jwt_secret",
+          "vuln_jwt_alg_none",
+          "vuln_jwt_no_algorithm",
+          "vuln_jwt_no_expiry",
+          "vuln_xss_innerhtml",
+          "vuln_xss_document_write",
+          "vuln_xss_eval",
+          "vuln_xss_new_function",
+          "vuln_proto_bracket",
+          "vuln_proto_nested",
+          "vuln_proto_assign",
+          "vuln_random_token",
+          "vuln_random_session",
+          "vuln_crypto_md5",
+          "vuln_crypto_sha1",
+          "vuln_crypto_des",
+          "vuln_timing_direct",
+          "vuln_timing_token",
+          "vuln_nosql_mongo",
+          "vuln_nosql_where",
+          "vuln_ssrf_fetch",
+          "vuln_ssrf_axios",
+          "vuln_redirect",
+          "vuln_redos_evil",
+          "vuln_redos_user"
+        ],
+        "falsePositives": []
+      }
+    },
+    "jsx-a11y": {
+      "displayName": "eslint-plugin-jsx-a11y",
+      "rules": 39,
+      "lastUpdated": "2025 (active)",
+      "weeklyDownloads": "12M+",
+      "category": "Accessibility",
+      "vulnerableAnalysis": {
+        "totalViolations": 0,
+        "byFunction": {},
+        "byRule": {}
+      },
+      "safeAnalysis": {
+        "totalViolations": 0,
+        "byFunction": {},
+        "byRule": {}
+      },
+      "metrics": {
+        "TP": 0,
+        "TN": 38,
+        "FP": 0,
+        "FN": 40,
+        "FNR": "100.0%",
+        "FPR": "0.0%",
+        "precision": "100%",
+        "recall": "0.0%",
+        "f1Score": "0.0%",
+        "detectedVulnerabilities": [],
+        "missedVulnerabilities": [
+          "vuln_sql_string_concat",
+          "vuln_sql_template_literal",
+          "vuln_sql_dynamic_column",
+          "vuln_sql_conditional",
+          "vuln_cmd_exec_concat",
+          "vuln_cmd_exec_template",
+          "vuln_cmd_execsync",
+          "vuln_cmd_spawn_shell",
+          "vuln_path_join",
+          "vuln_path_concat",
+          "vuln_path_no_validation",
+          "vuln_path_url_pathname",
+          "vuln_creds_db_password",
+          "vuln_creds_api_key",
+          "vuln_creds_aws",
+          "vuln_creds_jwt_secret",
+          "vuln_jwt_alg_none",
+          "vuln_jwt_no_algorithm",
+          "vuln_jwt_no_expiry",
+          "vuln_xss_innerhtml",
+          "vuln_xss_document_write",
+          "vuln_xss_eval",
+          "vuln_xss_new_function",
+          "vuln_proto_bracket",
+          "vuln_proto_nested",
+          "vuln_proto_assign",
+          "vuln_random_token",
+          "vuln_random_session",
+          "vuln_crypto_md5",
+          "vuln_crypto_sha1",
+          "vuln_crypto_des",
+          "vuln_timing_direct",
+          "vuln_timing_token",
+          "vuln_nosql_mongo",
+          "vuln_nosql_where",
+          "vuln_ssrf_fetch",
+          "vuln_ssrf_axios",
+          "vuln_redirect",
+          "vuln_redos_evil",
+          "vuln_redos_user"
+        ],
+        "falsePositives": []
+      }
+    },
+    "eslint-plugin-n": {
+      "displayName": "eslint-plugin-n",
+      "rules": 41,
+      "lastUpdated": "2025 (active)",
+      "weeklyDownloads": "8M+",
+      "category": "Node.js",
+      "vulnerableAnalysis": {
+        "totalViolations": 2,
+        "byFunction": {
+          "vuln_creds_api_key": [
+            {
+              "ruleId": "n/no-unsupported-features/node-builtins",
+              "severity": "error",
+              "message": "The 'fetch' is still an experimental feature and is not supported until Node.js 21.0.0. The configured version range is '>=16.0.0'.",
+              "line": 161,
+              "column": 10
+            }
+          ],
+          "vuln_ssrf_fetch": [
+            {
+              "ruleId": "n/no-unsupported-features/node-builtins",
+              "severity": "error",
+              "message": "The 'fetch' is still an experimental feature and is not supported until Node.js 21.0.0. The configured version range is '>=16.0.0'.",
+              "line": 397,
+              "column": 26
+            }
+          ]
+        },
+        "byRule": {
+          "n/no-unsupported-features/node-builtins": 2
+        }
+      },
+      "safeAnalysis": {
+        "totalViolations": 4,
+        "byFunction": {
+          "safe_proto_hasown": [
+            {
+              "ruleId": "n/no-unsupported-features/es-builtins",
+              "severity": "error",
+              "message": "The 'Object.hasOwn' is still an experimental feature and is not supported until Node.js 16.9.0. The configured version range is '>=16.0.0'.",
+              "line": 282,
+              "column": 7
+            },
+            {
+              "ruleId": "n/no-unsupported-features/es-syntax",
+              "severity": "error",
+              "message": "'object-hasown' is not supported until Node.js >=16.9.0. The configured version range is '>=16.0.0'.",
+              "line": 282,
+              "column": 7
+            }
+          ],
+          "safe_ssrf_allowlist": [
+            {
+              "ruleId": "n/no-unsupported-features/node-builtins",
+              "severity": "error",
+              "message": "The 'fetch' is still an experimental feature and is not supported until Node.js 21.0.0. The configured version range is '>=16.0.0'.",
+              "line": 469,
+              "column": 10
+            }
+          ],
+          "safe_ssrf_block_internal": [
+            {
+              "ruleId": "n/no-unsupported-features/node-builtins",
+              "severity": "error",
+              "message": "The 'fetch' is still an experimental feature and is not supported until Node.js 21.0.0. The configured version range is '>=16.0.0'.",
+              "line": 494,
+              "column": 10
+            }
+          ]
+        },
+        "byRule": {
+          "n/no-unsupported-features/es-builtins": 1,
+          "n/no-unsupported-features/es-syntax": 1,
+          "n/no-unsupported-features/node-builtins": 2
+        }
+      },
+      "metrics": {
+        "TP": 2,
+        "TN": 35,
+        "FP": 3,
+        "FN": 38,
+        "FNR": "95.0%",
+        "FPR": "7.9%",
+        "precision": "40.0%",
+        "recall": "5.0%",
+        "f1Score": "8.9%",
+        "detectedVulnerabilities": [
+          "vuln_creds_api_key",
+          "vuln_ssrf_fetch"
+        ],
+        "missedVulnerabilities": [
+          "vuln_sql_string_concat",
+          "vuln_sql_template_literal",
+          "vuln_sql_dynamic_column",
+          "vuln_sql_conditional",
+          "vuln_cmd_exec_concat",
+          "vuln_cmd_exec_template",
+          "vuln_cmd_execsync",
+          "vuln_cmd_spawn_shell",
+          "vuln_path_join",
+          "vuln_path_concat",
+          "vuln_path_no_validation",
+          "vuln_path_url_pathname",
+          "vuln_creds_db_password",
+          "vuln_creds_aws",
+          "vuln_creds_jwt_secret",
+          "vuln_jwt_alg_none",
+          "vuln_jwt_no_algorithm",
+          "vuln_jwt_no_expiry",
+          "vuln_xss_innerhtml",
+          "vuln_xss_document_write",
+          "vuln_xss_eval",
+          "vuln_xss_new_function",
+          "vuln_proto_bracket",
+          "vuln_proto_nested",
+          "vuln_proto_assign",
+          "vuln_random_token",
+          "vuln_random_session",
+          "vuln_crypto_md5",
+          "vuln_crypto_sha1",
+          "vuln_crypto_des",
+          "vuln_timing_direct",
+          "vuln_timing_token",
+          "vuln_nosql_mongo",
+          "vuln_nosql_where",
+          "vuln_ssrf_axios",
+          "vuln_redirect",
+          "vuln_redos_evil",
+          "vuln_redos_user"
+        ],
+        "falsePositives": [
+          "safe_proto_hasown",
+          "safe_ssrf_allowlist",
+          "safe_ssrf_block_internal"
+        ]
+      }
+    },
+    "import": {
+      "displayName": "eslint-plugin-import",
+      "rules": 44,
+      "lastUpdated": "2025 (active)",
+      "weeklyDownloads": "40M+",
+      "category": "Module Resolution",
+      "vulnerableAnalysis": {
+        "totalViolations": 0,
+        "byFunction": {},
+        "byRule": {}
+      },
+      "safeAnalysis": {
+        "totalViolations": 0,
+        "byFunction": {},
+        "byRule": {}
+      },
+      "metrics": {
+        "TP": 0,
+        "TN": 38,
+        "FP": 0,
+        "FN": 40,
+        "FNR": "100.0%",
+        "FPR": "0.0%",
+        "precision": "100%",
+        "recall": "0.0%",
+        "f1Score": "0.0%",
+        "detectedVulnerabilities": [],
+        "missedVulnerabilities": [
+          "vuln_sql_string_concat",
+          "vuln_sql_template_literal",
+          "vuln_sql_dynamic_column",
+          "vuln_sql_conditional",
+          "vuln_cmd_exec_concat",
+          "vuln_cmd_exec_template",
+          "vuln_cmd_execsync",
+          "vuln_cmd_spawn_shell",
+          "vuln_path_join",
+          "vuln_path_concat",
+          "vuln_path_no_validation",
+          "vuln_path_url_pathname",
+          "vuln_creds_db_password",
+          "vuln_creds_api_key",
+          "vuln_creds_aws",
+          "vuln_creds_jwt_secret",
+          "vuln_jwt_alg_none",
+          "vuln_jwt_no_algorithm",
+          "vuln_jwt_no_expiry",
+          "vuln_xss_innerhtml",
+          "vuln_xss_document_write",
+          "vuln_xss_eval",
+          "vuln_xss_new_function",
+          "vuln_proto_bracket",
+          "vuln_proto_nested",
+          "vuln_proto_assign",
+          "vuln_random_token",
+          "vuln_random_session",
+          "vuln_crypto_md5",
+          "vuln_crypto_sha1",
+          "vuln_crypto_des",
+          "vuln_timing_direct",
+          "vuln_timing_token",
+          "vuln_nosql_mongo",
+          "vuln_nosql_where",
+          "vuln_ssrf_fetch",
+          "vuln_ssrf_axios",
+          "vuln_redirect",
+          "vuln_redos_evil",
+          "vuln_redos_user"
+        ],
+        "falsePositives": []
+      }
+    },
+    "promise": {
+      "displayName": "eslint-plugin-promise",
+      "rules": 13,
+      "lastUpdated": "2025 (active)",
+      "weeklyDownloads": "10M+",
+      "category": "Promise Practices",
+      "vulnerableAnalysis": {
+        "totalViolations": 0,
+        "byFunction": {},
+        "byRule": {}
+      },
+      "safeAnalysis": {
+        "totalViolations": 0,
+        "byFunction": {},
+        "byRule": {}
+      },
+      "metrics": {
+        "TP": 0,
+        "TN": 38,
+        "FP": 0,
+        "FN": 40,
+        "FNR": "100.0%",
+        "FPR": "0.0%",
+        "precision": "100%",
+        "recall": "0.0%",
+        "f1Score": "0.0%",
+        "detectedVulnerabilities": [],
+        "missedVulnerabilities": [
+          "vuln_sql_string_concat",
+          "vuln_sql_template_literal",
+          "vuln_sql_dynamic_column",
+          "vuln_sql_conditional",
+          "vuln_cmd_exec_concat",
+          "vuln_cmd_exec_template",
+          "vuln_cmd_execsync",
+          "vuln_cmd_spawn_shell",
+          "vuln_path_join",
+          "vuln_path_concat",
+          "vuln_path_no_validation",
+          "vuln_path_url_pathname",
+          "vuln_creds_db_password",
+          "vuln_creds_api_key",
+          "vuln_creds_aws",
+          "vuln_creds_jwt_secret",
+          "vuln_jwt_alg_none",
+          "vuln_jwt_no_algorithm",
+          "vuln_jwt_no_expiry",
+          "vuln_xss_innerhtml",
+          "vuln_xss_document_write",
+          "vuln_xss_eval",
+          "vuln_xss_new_function",
+          "vuln_proto_bracket",
+          "vuln_proto_nested",
+          "vuln_proto_assign",
+          "vuln_random_token",
+          "vuln_random_session",
+          "vuln_crypto_md5",
+          "vuln_crypto_sha1",
+          "vuln_crypto_des",
+          "vuln_timing_direct",
+          "vuln_timing_token",
+          "vuln_nosql_mongo",
+          "vuln_nosql_where",
+          "vuln_ssrf_fetch",
+          "vuln_ssrf_axios",
+          "vuln_redirect",
+          "vuln_redos_evil",
+          "vuln_redos_user"
+        ],
+        "falsePositives": []
+      }
+    },
+    "regexp": {
+      "displayName": "eslint-plugin-regexp",
+      "rules": 78,
+      "lastUpdated": "2025 (active)",
+      "weeklyDownloads": "5M+",
+      "category": "Regex Quality",
+      "vulnerableAnalysis": {
+        "totalViolations": 3,
+        "byFunction": {
+          "vuln_redos_evil": [
+            {
+              "ruleId": "regexp/no-unused-capturing-group",
+              "severity": "error",
+              "message": "Capturing group number 1 is defined but never used.",
+              "line": 432,
+              "column": 23
+            },
+            {
+              "ruleId": "regexp/no-super-linear-backtracking",
+              "severity": "error",
+              "message": "This quantifier can reach itself via the loop '(a+)+'. Using any string accepted by /a+/, this can be exploited to cause at least polynomial backtracking. This is going to cause exponential backtracking resulting in exponential worst-case runtime behavior.",
+              "line": 432,
+              "column": 24
+            },
+            {
+              "ruleId": "regexp/no-misleading-capturing-group",
+              "severity": "error",
+              "message": "The quantifier 'a+' can exchange characters (a) with '(a+)+'. This makes the capturing group misleading, because the quantifier will capture fewer characters than its pattern suggests.",
+              "line": 432,
+              "column": 24
+            }
+          ]
+        },
+        "byRule": {
+          "regexp/no-unused-capturing-group": 1,
+          "regexp/no-super-linear-backtracking": 1,
+          "regexp/no-misleading-capturing-group": 1
+        }
+      },
+      "safeAnalysis": {
+        "totalViolations": 3,
+        "byFunction": {
+          "safe_path_regex": [
+            {
+              "ruleId": "regexp/prefer-w",
+              "severity": "error",
+              "message": "Unexpected character class ranges '[a-zA-Z0-9_]'. Use '\\w' instead.",
+              "line": 141,
+              "column": 10
+            },
+            {
+              "ruleId": "regexp/use-ignore-case",
+              "severity": "error",
+              "message": "The character class(es) '[a-zA-Z0-9._-]' can be simplified using the `i` flag.",
+              "line": 141,
+              "column": 26
+            }
+          ],
+          "safe_regex_simple": [
+            {
+              "ruleId": "regexp/no-super-linear-backtracking",
+              "severity": "error",
+              "message": "The quantifier '[^\\s@]+' can exchange characters with '[^\\s@]+'. Using any string accepted by /\\.+/, this can be exploited to cause at least polynomial backtracking.",
+              "line": 506,
+              "column": 32
+            }
+          ]
+        },
+        "byRule": {
+          "regexp/prefer-w": 1,
+          "regexp/use-ignore-case": 1,
+          "regexp/no-super-linear-backtracking": 1
+        }
+      },
+      "metrics": {
+        "TP": 1,
+        "TN": 36,
+        "FP": 2,
+        "FN": 39,
+        "FNR": "97.5%",
+        "FPR": "5.3%",
+        "precision": "33.3%",
+        "recall": "2.5%",
+        "f1Score": "4.7%",
+        "detectedVulnerabilities": [
+          "vuln_redos_evil"
+        ],
+        "missedVulnerabilities": [
+          "vuln_sql_string_concat",
+          "vuln_sql_template_literal",
+          "vuln_sql_dynamic_column",
+          "vuln_sql_conditional",
+          "vuln_cmd_exec_concat",
+          "vuln_cmd_exec_template",
+          "vuln_cmd_execsync",
+          "vuln_cmd_spawn_shell",
+          "vuln_path_join",
+          "vuln_path_concat",
+          "vuln_path_no_validation",
+          "vuln_path_url_pathname",
+          "vuln_creds_db_password",
+          "vuln_creds_api_key",
+          "vuln_creds_aws",
+          "vuln_creds_jwt_secret",
+          "vuln_jwt_alg_none",
+          "vuln_jwt_no_algorithm",
+          "vuln_jwt_no_expiry",
+          "vuln_xss_innerhtml",
+          "vuln_xss_document_write",
+          "vuln_xss_eval",
+          "vuln_xss_new_function",
+          "vuln_proto_bracket",
+          "vuln_proto_nested",
+          "vuln_proto_assign",
+          "vuln_random_token",
+          "vuln_random_session",
+          "vuln_crypto_md5",
+          "vuln_crypto_sha1",
+          "vuln_crypto_des",
+          "vuln_timing_direct",
+          "vuln_timing_token",
+          "vuln_nosql_mongo",
+          "vuln_nosql_where",
+          "vuln_ssrf_fetch",
+          "vuln_ssrf_axios",
+          "vuln_redirect",
+          "vuln_redos_user"
+        ],
+        "falsePositives": [
+          "safe_path_regex",
+          "safe_regex_simple"
+        ]
+      }
+    },
+    "no-unsanitized": {
+      "displayName": "eslint-plugin-no-unsanitized (Mozilla)",
+      "rules": 2,
+      "lastUpdated": "2023",
+      "weeklyDownloads": "~500K",
+      "category": "DOM XSS",
+      "vulnerableAnalysis": {
+        "totalViolations": 2,
+        "byFunction": {
+          "vuln_xss_innerhtml": [
+            {
+              "ruleId": "no-unsanitized/property",
+              "severity": "error",
+              "message": "Unsafe assignment to innerHTML (Variable 'userContent' declared as function parameter, which is considered unsafe. 'FunctionDeclaration' at 226:7)",
+              "line": 227,
+              "column": 3
+            }
+          ],
+          "vuln_xss_document_write": [
+            {
+              "ruleId": "no-unsanitized/method",
+              "severity": "error",
+              "message": "Unsafe call to document.write for argument 0 (Variable 'userInput' declared as function parameter, which is considered unsafe. 'FunctionDeclaration' at 234:7)",
+              "line": 235,
+              "column": 3
+            }
+          ]
+        },
+        "byRule": {
+          "no-unsanitized/property": 1,
+          "no-unsanitized/method": 1
+        }
+      },
+      "safeAnalysis": {
+        "totalViolations": 1,
+        "byFunction": {
+          "safe_xss_dompurify": [
+            {
+              "ruleId": "no-unsanitized/property",
+              "severity": "error",
+              "message": "Unsafe assignment to innerHTML (Variable 'sanitized' initialized with unsafe value at 228:20)",
+              "line": 229,
+              "column": 3
+            }
+          ]
+        },
+        "byRule": {
+          "no-unsanitized/property": 1
+        }
+      },
+      "metrics": {
+        "TP": 2,
+        "TN": 37,
+        "FP": 1,
+        "FN": 38,
+        "FNR": "95.0%",
+        "FPR": "2.6%",
+        "precision": "66.7%",
+        "recall": "5.0%",
+        "f1Score": "9.3%",
+        "detectedVulnerabilities": [
+          "vuln_xss_innerhtml",
+          "vuln_xss_document_write"
+        ],
+        "missedVulnerabilities": [
+          "vuln_sql_string_concat",
+          "vuln_sql_template_literal",
+          "vuln_sql_dynamic_column",
+          "vuln_sql_conditional",
+          "vuln_cmd_exec_concat",
+          "vuln_cmd_exec_template",
+          "vuln_cmd_execsync",
+          "vuln_cmd_spawn_shell",
+          "vuln_path_join",
+          "vuln_path_concat",
+          "vuln_path_no_validation",
+          "vuln_path_url_pathname",
+          "vuln_creds_db_password",
+          "vuln_creds_api_key",
+          "vuln_creds_aws",
+          "vuln_creds_jwt_secret",
+          "vuln_jwt_alg_none",
+          "vuln_jwt_no_algorithm",
+          "vuln_jwt_no_expiry",
+          "vuln_xss_eval",
+          "vuln_xss_new_function",
+          "vuln_proto_bracket",
+          "vuln_proto_nested",
+          "vuln_proto_assign",
+          "vuln_random_token",
+          "vuln_random_session",
+          "vuln_crypto_md5",
+          "vuln_crypto_sha1",
+          "vuln_crypto_des",
+          "vuln_timing_direct",
+          "vuln_timing_token",
+          "vuln_nosql_mongo",
+          "vuln_nosql_where",
+          "vuln_ssrf_fetch",
+          "vuln_ssrf_axios",
+          "vuln_redirect",
+          "vuln_redos_evil",
+          "vuln_redos_user"
+        ],
+        "falsePositives": [
+          "safe_xss_dompurify"
+        ]
+      }
+    },
+    "jsdoc": {
+      "displayName": "eslint-plugin-jsdoc",
+      "rules": 51,
+      "lastUpdated": "2025 (active)",
+      "weeklyDownloads": "3.8M+",
+      "category": "Documentation",
+      "vulnerableAnalysis": {
+        "totalViolations": 77,
+        "byFunction": {
+          "vuln_sql_string_concat": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"email\" declaration.",
+              "line": 21,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 21,
+              "column": 1
+            }
+          ],
+          "vuln_sql_template_literal": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"sortColumn\" declaration.",
+              "line": 30,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 30,
+              "column": 1
+            }
+          ],
+          "vuln_sql_dynamic_column": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"filters\" declaration.",
+              "line": 39,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 39,
+              "column": 1
+            }
+          ],
+          "vuln_sql_conditional": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"filename\" declaration.",
+              "line": 58,
+              "column": 1
+            }
+          ],
+          "vuln_cmd_exec_concat": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"filename\" declaration.",
+              "line": 67,
+              "column": 1
+            }
+          ],
+          "vuln_cmd_exec_template": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"command\" declaration.",
+              "line": 76,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 76,
+              "column": 1
+            }
+          ],
+          "vuln_cmd_execsync": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"userCommand\" declaration.",
+              "line": 85,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 85,
+              "column": 1
+            }
+          ],
+          "vuln_cmd_spawn_shell": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"filename\" declaration.",
+              "line": 98,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 98,
+              "column": 1
+            }
+          ],
+          "vuln_path_join": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"userId\" declaration.",
+              "line": 109,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 109,
+              "column": 1
+            }
+          ],
+          "vuln_path_concat": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"userDir\" declaration.",
+              "line": 118,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 118,
+              "column": 1
+            }
+          ],
+          "vuln_path_no_validation": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"url\" declaration.",
+              "line": 127,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 127,
+              "column": 1
+            }
+          ],
+          "vuln_path_url_pathname": [
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 141,
+              "column": 1
+            }
+          ],
+          "vuln_creds_db_password": [
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 155,
+              "column": 1
+            }
+          ],
+          "vuln_creds_aws": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"user\" declaration.",
+              "line": 178,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 178,
+              "column": 1
+            }
+          ],
+          "vuln_creds_jwt_secret": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"token\" declaration.",
+              "line": 191,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 191,
+              "column": 1
+            }
+          ],
+          "vuln_jwt_alg_none": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"token\" declaration.",
+              "line": 200,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"secret\" declaration.",
+              "line": 200,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 200,
+              "column": 1
+            }
+          ],
+          "vuln_jwt_no_algorithm": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"user\" declaration.",
+              "line": 209,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 209,
+              "column": 1
+            }
+          ],
+          "vuln_jwt_no_expiry": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"userContent\" declaration.",
+              "line": 222,
+              "column": 1
+            }
+          ],
+          "vuln_xss_innerhtml": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"userInput\" declaration.",
+              "line": 230,
+              "column": 1
+            }
+          ],
+          "vuln_xss_document_write": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"userCode\" declaration.",
+              "line": 238,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 238,
+              "column": 1
+            }
+          ],
+          "vuln_xss_eval": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"userCode\" declaration.",
+              "line": 246,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 246,
+              "column": 1
+            }
+          ],
+          "vuln_xss_new_function": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"obj\" declaration.",
+              "line": 259,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"key\" declaration.",
+              "line": 259,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"value\" declaration.",
+              "line": 259,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 259,
+              "column": 1
+            }
+          ],
+          "vuln_proto_bracket": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"obj\" declaration.",
+              "line": 268,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"path\" declaration.",
+              "line": 268,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"value\" declaration.",
+              "line": 268,
+              "column": 1
+            }
+          ],
+          "vuln_proto_nested": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"userInput\" declaration.",
+              "line": 281,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 281,
+              "column": 1
+            }
+          ],
+          "vuln_proto_assign": [
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 295,
+              "column": 1
+            }
+          ],
+          "vuln_random_token": [
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 303,
+              "column": 1
+            }
+          ],
+          "vuln_random_session": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"password\" declaration.",
+              "line": 315,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 315,
+              "column": 1
+            }
+          ],
+          "vuln_crypto_md5": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"sensitiveData\" declaration.",
+              "line": 324,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 324,
+              "column": 1
+            }
+          ],
+          "vuln_crypto_sha1": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"plaintext\" declaration.",
+              "line": 333,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 333,
+              "column": 1
+            }
+          ],
+          "vuln_crypto_des": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"input\" declaration.",
+              "line": 347,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"secret\" declaration.",
+              "line": 347,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 347,
+              "column": 1
+            }
+          ],
+          "vuln_timing_direct": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"userToken\" declaration.",
+              "line": 355,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"storedToken\" declaration.",
+              "line": 355,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 355,
+              "column": 1
+            }
+          ],
+          "vuln_timing_token": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"username\" declaration.",
+              "line": 370,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 370,
+              "column": 1
+            }
+          ],
+          "vuln_nosql_mongo": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"userInput\" declaration.",
+              "line": 379,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 379,
+              "column": 1
+            }
+          ],
+          "vuln_nosql_where": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"userUrl\" declaration.",
+              "line": 392,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 392,
+              "column": 1
+            }
+          ],
+          "vuln_ssrf_fetch": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"endpoint\" declaration.",
+              "line": 401,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 401,
+              "column": 1
+            }
+          ],
+          "vuln_ssrf_axios": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"req\" declaration.",
+              "line": 414,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"res\" declaration.",
+              "line": 414,
+              "column": 1
+            }
+          ],
+          "vuln_redirect": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"input\" declaration.",
+              "line": 427,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 427,
+              "column": 1
+            }
+          ],
+          "vuln_redos_evil": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"pattern\" declaration.",
+              "line": 436,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"input\" declaration.",
+              "line": 436,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 436,
+              "column": 1
+            }
+          ]
+        },
+        "byRule": {
+          "jsdoc/require-param": 44,
+          "jsdoc/require-returns": 33
+        }
+      },
+      "safeAnalysis": {
+        "totalViolations": 77,
+        "byFunction": {
+          "safe_sql_parameterized": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"email\" declaration.",
+              "line": 21,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"status\" declaration.",
+              "line": 21,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 21,
+              "column": 1
+            }
+          ],
+          "safe_sql_prepared": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"params\" declaration.",
+              "line": 30,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 30,
+              "column": 1
+            }
+          ],
+          "safe_sql_named": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"userId\" declaration.",
+              "line": 39,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 39,
+              "column": 1
+            }
+          ],
+          "safe_sql_prisma": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"email\" declaration.",
+              "line": 49,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 49,
+              "column": 1
+            }
+          ],
+          "safe_sql_typeorm": [
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 64,
+              "column": 1
+            }
+          ],
+          "safe_cmd_execfile_literal": [
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 73,
+              "column": 1
+            }
+          ],
+          "safe_cmd_spawn_noshell": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"format\" declaration.",
+              "line": 82,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 82,
+              "column": 1
+            }
+          ],
+          "safe_cmd_validated": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"filename\" declaration.",
+              "line": 99,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 99,
+              "column": 1
+            }
+          ],
+          "safe_path_validated": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"filename\" declaration.",
+              "line": 117,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 117,
+              "column": 1
+            }
+          ],
+          "safe_path_allowlist": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"filename\" declaration.",
+              "line": 133,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 133,
+              "column": 1
+            }
+          ],
+          "safe_path_regex": [
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 152,
+              "column": 1
+            }
+          ],
+          "safe_creds_env": [
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 166,
+              "column": 1
+            }
+          ],
+          "safe_creds_config": [
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 176,
+              "column": 1
+            }
+          ],
+          "safe_creds_secrets_manager": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"token\" declaration.",
+              "line": 193,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 193,
+              "column": 1
+            }
+          ],
+          "safe_jwt_algorithm": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"user\" declaration.",
+              "line": 206,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 206,
+              "column": 1
+            }
+          ],
+          "safe_jwt_expiry": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"userContent\" declaration.",
+              "line": 222,
+              "column": 1
+            }
+          ],
+          "safe_xss_dompurify": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"userInput\" declaration.",
+              "line": 232,
+              "column": 1
+            }
+          ],
+          "safe_xss_textcontent": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"username\" declaration.",
+              "line": 240,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 240,
+              "column": 1
+            }
+          ],
+          "safe_template_logging": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"obj\" declaration.",
+              "line": 253,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"key\" declaration.",
+              "line": 253,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"value\" declaration.",
+              "line": 253,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 253,
+              "column": 1
+            }
+          ],
+          "safe_proto_allowlist": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"obj\" declaration.",
+              "line": 266,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"key\" declaration.",
+              "line": 266,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 266,
+              "column": 1
+            }
+          ],
+          "safe_proto_hasownproperty": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"obj\" declaration.",
+              "line": 277,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"key\" declaration.",
+              "line": 277,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 277,
+              "column": 1
+            }
+          ],
+          "safe_proto_hasown": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"entries\" declaration.",
+              "line": 288,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 288,
+              "column": 1
+            }
+          ],
+          "safe_proto_nullproto": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"entries\" declaration.",
+              "line": 300,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 300,
+              "column": 1
+            }
+          ],
+          "safe_proto_map": [
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 316,
+              "column": 1
+            }
+          ],
+          "safe_random_token": [
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 325,
+              "column": 1
+            }
+          ],
+          "safe_random_uuid": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"array\" declaration.",
+              "line": 334,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 334,
+              "column": 1
+            }
+          ],
+          "safe_random_shuffle": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"data\" declaration.",
+              "line": 352,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 352,
+              "column": 1
+            }
+          ],
+          "safe_crypto_sha256": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"password\" declaration.",
+              "line": 361,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 361,
+              "column": 1
+            }
+          ],
+          "safe_crypto_bcrypt": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"plaintext\" declaration.",
+              "line": 371,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"key\" declaration.",
+              "line": 371,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 371,
+              "column": 1
+            }
+          ],
+          "safe_crypto_aes_gcm": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"input\" declaration.",
+              "line": 388,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"secret\" declaration.",
+              "line": 388,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 388,
+              "column": 1
+            }
+          ],
+          "safe_timing_compare": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"signature\" declaration.",
+              "line": 404,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"expectedSignature\" declaration.",
+              "line": 404,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 404,
+              "column": 1
+            }
+          ],
+          "safe_timing_hmac": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"req\" declaration.",
+              "line": 420,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"res\" declaration.",
+              "line": 420,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 420,
+              "column": 1
+            }
+          ],
+          "safe_redirect_allowlist": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"req\" declaration.",
+              "line": 435,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"res\" declaration.",
+              "line": 435,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 435,
+              "column": 1
+            }
+          ],
+          "safe_redirect_sameorigin": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"endpoint\" declaration.",
+              "line": 457,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 457,
+              "column": 1
+            }
+          ],
+          "safe_ssrf_allowlist": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"userUrl\" declaration.",
+              "line": 472,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 472,
+              "column": 1
+            }
+          ],
+          "safe_ssrf_block_internal": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"input\" declaration.",
+              "line": 501,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 501,
+              "column": 1
+            }
+          ],
+          "safe_regex_simple": [
+            {
+              "ruleId": "jsdoc/require-param",
+              "severity": "warning",
+              "message": "Missing JSDoc @param \"email\" declaration.",
+              "line": 510,
+              "column": 1
+            },
+            {
+              "ruleId": "jsdoc/require-returns",
+              "severity": "warning",
+              "message": "Missing JSDoc @returns declaration.",
+              "line": 510,
+              "column": 1
+            }
+          ]
+        },
+        "byRule": {
+          "jsdoc/require-param": 41,
+          "jsdoc/require-returns": 36
+        }
+      },
+      "metrics": {
+        "TP": 38,
+        "TN": 1,
+        "FP": 37,
+        "FN": 2,
+        "FNR": "5.0%",
+        "FPR": "97.4%",
+        "precision": "50.7%",
+        "recall": "95.0%",
+        "f1Score": "66.1%",
+        "detectedVulnerabilities": [
+          "vuln_sql_string_concat",
+          "vuln_sql_template_literal",
+          "vuln_sql_dynamic_column",
+          "vuln_sql_conditional",
+          "vuln_cmd_exec_concat",
+          "vuln_cmd_exec_template",
+          "vuln_cmd_execsync",
+          "vuln_cmd_spawn_shell",
+          "vuln_path_join",
+          "vuln_path_concat",
+          "vuln_path_no_validation",
+          "vuln_path_url_pathname",
+          "vuln_creds_db_password",
+          "vuln_creds_aws",
+          "vuln_creds_jwt_secret",
+          "vuln_jwt_alg_none",
+          "vuln_jwt_no_algorithm",
+          "vuln_jwt_no_expiry",
+          "vuln_xss_innerhtml",
+          "vuln_xss_document_write",
+          "vuln_xss_eval",
+          "vuln_xss_new_function",
+          "vuln_proto_bracket",
+          "vuln_proto_nested",
+          "vuln_proto_assign",
+          "vuln_random_token",
+          "vuln_random_session",
+          "vuln_crypto_md5",
+          "vuln_crypto_sha1",
+          "vuln_crypto_des",
+          "vuln_timing_direct",
+          "vuln_timing_token",
+          "vuln_nosql_mongo",
+          "vuln_nosql_where",
+          "vuln_ssrf_fetch",
+          "vuln_ssrf_axios",
+          "vuln_redirect",
+          "vuln_redos_evil"
+        ],
+        "missedVulnerabilities": [
+          "vuln_creds_api_key",
+          "vuln_redos_user"
+        ],
+        "falsePositives": [
+          "safe_sql_parameterized",
+          "safe_sql_prepared",
+          "safe_sql_named",
+          "safe_sql_prisma",
+          "safe_sql_typeorm",
+          "safe_cmd_execfile_literal",
+          "safe_cmd_spawn_noshell",
+          "safe_cmd_validated",
+          "safe_path_validated",
+          "safe_path_allowlist",
+          "safe_path_regex",
+          "safe_creds_env",
+          "safe_creds_config",
+          "safe_creds_secrets_manager",
+          "safe_jwt_algorithm",
+          "safe_jwt_expiry",
+          "safe_xss_dompurify",
+          "safe_xss_textcontent",
+          "safe_template_logging",
+          "safe_proto_allowlist",
+          "safe_proto_hasownproperty",
+          "safe_proto_hasown",
+          "safe_proto_nullproto",
+          "safe_proto_map",
+          "safe_random_token",
+          "safe_random_uuid",
+          "safe_random_shuffle",
+          "safe_crypto_sha256",
+          "safe_crypto_bcrypt",
+          "safe_crypto_aes_gcm",
+          "safe_timing_compare",
+          "safe_timing_hmac",
+          "safe_redirect_allowlist",
+          "safe_redirect_sameorigin",
+          "safe_ssrf_allowlist",
+          "safe_ssrf_block_internal",
+          "safe_regex_simple"
+        ]
+      }
+    },
+    "jest": {
+      "displayName": "eslint-plugin-jest",
+      "rules": 71,
+      "lastUpdated": "2025 (active)",
+      "weeklyDownloads": "14M+",
+      "category": "Testing (Jest)",
+      "vulnerableAnalysis": {
+        "totalViolations": 0,
+        "byFunction": {},
+        "byRule": {}
+      },
+      "safeAnalysis": {
+        "totalViolations": 0,
+        "byFunction": {},
+        "byRule": {}
+      },
+      "metrics": {
+        "TP": 0,
+        "TN": 38,
+        "FP": 0,
+        "FN": 40,
+        "FNR": "100.0%",
+        "FPR": "0.0%",
+        "precision": "100%",
+        "recall": "0.0%",
+        "f1Score": "0.0%",
+        "detectedVulnerabilities": [],
+        "missedVulnerabilities": [
+          "vuln_sql_string_concat",
+          "vuln_sql_template_literal",
+          "vuln_sql_dynamic_column",
+          "vuln_sql_conditional",
+          "vuln_cmd_exec_concat",
+          "vuln_cmd_exec_template",
+          "vuln_cmd_execsync",
+          "vuln_cmd_spawn_shell",
+          "vuln_path_join",
+          "vuln_path_concat",
+          "vuln_path_no_validation",
+          "vuln_path_url_pathname",
+          "vuln_creds_db_password",
+          "vuln_creds_api_key",
+          "vuln_creds_aws",
+          "vuln_creds_jwt_secret",
+          "vuln_jwt_alg_none",
+          "vuln_jwt_no_algorithm",
+          "vuln_jwt_no_expiry",
+          "vuln_xss_innerhtml",
+          "vuln_xss_document_write",
+          "vuln_xss_eval",
+          "vuln_xss_new_function",
+          "vuln_proto_bracket",
+          "vuln_proto_nested",
+          "vuln_proto_assign",
+          "vuln_random_token",
+          "vuln_random_session",
+          "vuln_crypto_md5",
+          "vuln_crypto_sha1",
+          "vuln_crypto_des",
+          "vuln_timing_direct",
+          "vuln_timing_token",
+          "vuln_nosql_mongo",
+          "vuln_nosql_where",
+          "vuln_ssrf_fetch",
+          "vuln_ssrf_axios",
+          "vuln_redirect",
+          "vuln_redos_evil",
+          "vuln_redos_user"
+        ],
+        "falsePositives": []
+      }
+    },
+    "vue": {
+      "displayName": "eslint-plugin-vue",
+      "rules": 250,
+      "lastUpdated": "2025 (active)",
+      "weeklyDownloads": "7M+",
+      "category": "Vue.js",
+      "vulnerableAnalysis": {
+        "totalViolations": 0,
+        "byFunction": {},
+        "byRule": {}
+      },
+      "safeAnalysis": {
+        "totalViolations": 0,
+        "byFunction": {},
+        "byRule": {}
+      },
+      "metrics": {
+        "TP": 0,
+        "TN": 38,
+        "FP": 0,
+        "FN": 40,
+        "FNR": "100.0%",
+        "FPR": "0.0%",
+        "precision": "100%",
+        "recall": "0.0%",
+        "f1Score": "0.0%",
+        "detectedVulnerabilities": [],
+        "missedVulnerabilities": [
+          "vuln_sql_string_concat",
+          "vuln_sql_template_literal",
+          "vuln_sql_dynamic_column",
+          "vuln_sql_conditional",
+          "vuln_cmd_exec_concat",
+          "vuln_cmd_exec_template",
+          "vuln_cmd_execsync",
+          "vuln_cmd_spawn_shell",
+          "vuln_path_join",
+          "vuln_path_concat",
+          "vuln_path_no_validation",
+          "vuln_path_url_pathname",
+          "vuln_creds_db_password",
+          "vuln_creds_api_key",
+          "vuln_creds_aws",
+          "vuln_creds_jwt_secret",
+          "vuln_jwt_alg_none",
+          "vuln_jwt_no_algorithm",
+          "vuln_jwt_no_expiry",
+          "vuln_xss_innerhtml",
+          "vuln_xss_document_write",
+          "vuln_xss_eval",
+          "vuln_xss_new_function",
+          "vuln_proto_bracket",
+          "vuln_proto_nested",
+          "vuln_proto_assign",
+          "vuln_random_token",
+          "vuln_random_session",
+          "vuln_crypto_md5",
+          "vuln_crypto_sha1",
+          "vuln_crypto_des",
+          "vuln_timing_direct",
+          "vuln_timing_token",
+          "vuln_nosql_mongo",
+          "vuln_nosql_where",
+          "vuln_ssrf_fetch",
+          "vuln_ssrf_axios",
+          "vuln_redirect",
+          "vuln_redos_evil",
+          "vuln_redos_user"
+        ],
+        "falsePositives": []
+      }
+    },
+    "angular": {
+      "displayName": "@angular-eslint/eslint-plugin",
+      "rules": 48,
+      "lastUpdated": "2025 (active)",
+      "weeklyDownloads": "2.25M+",
+      "category": "Angular",
+      "vulnerableAnalysis": {
+        "totalViolations": 0,
+        "byFunction": {},
+        "byRule": {}
+      },
+      "safeAnalysis": {
+        "totalViolations": 0,
+        "byFunction": {},
+        "byRule": {}
+      },
+      "metrics": {
+        "TP": 0,
+        "TN": 38,
+        "FP": 0,
+        "FN": 40,
+        "FNR": "100.0%",
+        "FPR": "0.0%",
+        "precision": "100%",
+        "recall": "0.0%",
+        "f1Score": "0.0%",
+        "detectedVulnerabilities": [],
+        "missedVulnerabilities": [
+          "vuln_sql_string_concat",
+          "vuln_sql_template_literal",
+          "vuln_sql_dynamic_column",
+          "vuln_sql_conditional",
+          "vuln_cmd_exec_concat",
+          "vuln_cmd_exec_template",
+          "vuln_cmd_execsync",
+          "vuln_cmd_spawn_shell",
+          "vuln_path_join",
+          "vuln_path_concat",
+          "vuln_path_no_validation",
+          "vuln_path_url_pathname",
+          "vuln_creds_db_password",
+          "vuln_creds_api_key",
+          "vuln_creds_aws",
+          "vuln_creds_jwt_secret",
+          "vuln_jwt_alg_none",
+          "vuln_jwt_no_algorithm",
+          "vuln_jwt_no_expiry",
+          "vuln_xss_innerhtml",
+          "vuln_xss_document_write",
+          "vuln_xss_eval",
+          "vuln_xss_new_function",
+          "vuln_proto_bracket",
+          "vuln_proto_nested",
+          "vuln_proto_assign",
+          "vuln_random_token",
+          "vuln_random_session",
+          "vuln_crypto_md5",
+          "vuln_crypto_sha1",
+          "vuln_crypto_des",
+          "vuln_timing_direct",
+          "vuln_timing_token",
+          "vuln_nosql_mongo",
+          "vuln_nosql_where",
+          "vuln_ssrf_fetch",
+          "vuln_ssrf_axios",
+          "vuln_redirect",
+          "vuln_redos_evil",
+          "vuln_redos_user"
+        ],
+        "falsePositives": []
+      }
+    },
+    "interlace": {
+      "displayName": "Interlace ESLint Ecosystem",
+      "rules": 84,
+      "lastUpdated": "Weekly",
+      "weeklyDownloads": "~5K",
+      "category": "Security (Full Stack)",
+      "vulnerableAnalysis": {
+        "totalViolations": 56,
+        "byFunction": {
+          "vuln_sql_template_literal": [
+            {
+              "ruleId": "secure-coding/no-graphql-injection",
+              "severity": "error",
+              "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | Unsafe interpolation in GraphQL query | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables instead of string interpolation | https://graphql.org/learn/queries/#variables",
+              "line": 26,
+              "column": 17
+            }
+          ],
+          "vuln_sql_dynamic_column": [
+            {
+              "ruleId": "secure-coding/no-graphql-injection",
+              "severity": "error",
+              "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | Unsafe interpolation in GraphQL query | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables instead of string interpolation | https://graphql.org/learn/queries/#variables",
+              "line": 35,
+              "column": 17
+            }
+          ],
+          "vuln_sql_conditional": [
+            {
+              "ruleId": "secure-coding/no-graphql-injection",
+              "severity": "error",
+              "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | Unsafe interpolation in GraphQL query | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables instead of string interpolation | https://graphql.org/learn/queries/#variables",
+              "line": 46,
+              "column": 14
+            },
+            {
+              "ruleId": "secure-coding/no-graphql-injection",
+              "severity": "error",
+              "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | Unsafe interpolation in GraphQL query | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables instead of string interpolation | https://graphql.org/learn/queries/#variables",
+              "line": 49,
+              "column": 14
+            }
+          ],
+          "vuln_cmd_exec_concat": [
+            {
+              "ruleId": "node-security/detect-child-process",
+              "severity": "error",
+              "message": "⚠️ CWE-78 OWASP:A05-Injection CVSS:9.8 | Command injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix: Use execFile/spawn with {shell: false} and array args | https://owasp.org/www-community/attacks/Command_Injection",
+              "line": 64,
+              "column": 3
+            }
+          ],
+          "vuln_cmd_exec_template": [
+            {
+              "ruleId": "node-security/detect-child-process",
+              "severity": "error",
+              "message": "⚠️ CWE-78 OWASP:A05-Injection CVSS:9.8 | Command injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix: Use execFile/spawn with {shell: false} and array args | https://owasp.org/www-community/attacks/Command_Injection",
+              "line": 73,
+              "column": 3
+            },
+            {
+              "ruleId": "secure-coding/no-graphql-injection",
+              "severity": "error",
+              "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | Unsafe interpolation in GraphQL query | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables instead of string interpolation | https://graphql.org/learn/queries/#variables",
+              "line": 73,
+              "column": 8
+            }
+          ],
+          "vuln_cmd_execsync": [
+            {
+              "ruleId": "node-security/detect-child-process",
+              "severity": "error",
+              "message": "⚠️ CWE-78 OWASP:A05-Injection CVSS:9.8 | Command injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix: Use execFile/spawn with {shell: false} and array args | https://owasp.org/www-community/attacks/Command_Injection",
+              "line": 82,
+              "column": 10
+            }
+          ],
+          "vuln_cmd_spawn_shell": [
+            {
+              "ruleId": "node-security/detect-child-process",
+              "severity": "error",
+              "message": "⚠️ CWE-78 OWASP:A05-Injection CVSS:9.8 | Command injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix: Use execFile/spawn with {shell: false} and array args | https://owasp.org/www-community/attacks/Command_Injection",
+              "line": 91,
+              "column": 10
+            }
+          ],
+          "vuln_path_join": [
+            {
+              "ruleId": "node-security/detect-non-literal-fs-filename",
+              "severity": "error",
+              "message": "🔑 CWE-22 OWASP:A01-Broken CVSS:7.5 | Path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use path.resolve() with validation | https://owasp.org/www-community/attacks/Path_Traversal",
+              "line": 106,
+              "column": 10
+            },
+            {
+              "ruleId": "node-security/no-arbitrary-file-access",
+              "severity": "error",
+              "message": "🔒 CWE-22 OWASP:A01-Broken CVSS:7.5 | File path from user input - path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate and sanitize file paths, use allowlists | https://cwe.mitre.org/data/definitions/22.html",
+              "line": 106,
+              "column": 10
+            }
+          ],
+          "vuln_path_concat": [
+            {
+              "ruleId": "node-security/detect-non-literal-fs-filename",
+              "severity": "error",
+              "message": "🔑 CWE-22 OWASP:A01-Broken CVSS:7.5 | Path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use path.resolve() with validation | https://owasp.org/www-community/attacks/Path_Traversal",
+              "line": 115,
+              "column": 10
+            },
+            {
+              "ruleId": "secure-coding/no-unlimited-resource-allocation",
+              "severity": "error",
+              "message": "🔒 CWE-770 | File operations without size limits | MEDIUM\n   Fix: Validate file size before operations | https://nodejs.org/api/fs.html",
+              "line": 115,
+              "column": 26
+            },
+            {
+              "ruleId": "secure-coding/no-xpath-injection",
+              "severity": "error",
+              "message": "🔒 CWE-643 | XPath injection vulnerability detected | HIGH\n   Fix: Use parameterized XPath construction with input validation | https://cwe.mitre.org/data/definitions/643.html",
+              "line": 115,
+              "column": 26
+            }
+          ],
+          "vuln_path_no_validation": [
+            {
+              "ruleId": "node-security/detect-non-literal-fs-filename",
+              "severity": "error",
+              "message": "🔑 CWE-22 OWASP:A01-Broken CVSS:7.5 | Path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Validate directory is within allowed paths | https://owasp.org/www-community/attacks/Path_Traversal",
+              "line": 124,
+              "column": 10
+            },
+            {
+              "ruleId": "secure-coding/no-graphql-injection",
+              "severity": "error",
+              "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | Unsafe interpolation in GraphQL query | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables instead of string interpolation | https://graphql.org/learn/queries/#variables",
+              "line": 124,
+              "column": 21
+            },
+            {
+              "ruleId": "secure-coding/no-xpath-injection",
+              "severity": "error",
+              "message": "🔒 CWE-643 | Unsafe string concatenation in XPath expression | HIGH\n   Fix: Use parameterized XPath or escape user input | https://owasp.org/www-community/attacks/XPATH_Injection",
+              "line": 124,
+              "column": 21
+            }
+          ],
+          "vuln_path_url_pathname": [
+            {
+              "ruleId": "node-security/detect-non-literal-fs-filename",
+              "severity": "error",
+              "message": "🔑 CWE-22 OWASP:A01-Broken CVSS:7.5 | Path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use path.resolve() with validation | https://owasp.org/www-community/attacks/Path_Traversal",
+              "line": 134,
+              "column": 10
+            },
+            {
+              "ruleId": "secure-coding/no-graphql-injection",
+              "severity": "error",
+              "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | Unsafe interpolation in GraphQL query | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables instead of string interpolation | https://graphql.org/learn/queries/#variables",
+              "line": 134,
+              "column": 26
+            }
+          ],
+          "vuln_creds_db_password": [
+            {
+              "ruleId": "secure-coding/no-hardcoded-credentials",
+              "severity": "error",
+              "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Common password detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.USER or secret management service | https://cwe.mitre.org/data/definitions/798.html",
+              "line": 149,
+              "column": 11
+            },
+            {
+              "ruleId": "pg/no-hardcoded-credentials",
+              "severity": "error",
+              "message": "🔒 CWE-798 OWASP:A07-Auth CVSS:9.8 | Hardcoded credentials detected in database connection. | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix: Use environment variables (process.env.DB_PASSWORD) instead of hardcoding secrets. | https://owasp.org/www-community/vulnerabilities/Use_of_hard-coded_password",
+              "line": 150,
+              "column": 15
+            }
+          ],
+          "vuln_creds_api_key": [
+            {
+              "ruleId": "secure-coding/no-hardcoded-credentials",
+              "severity": "error",
+              "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html",
+              "line": 160,
+              "column": 18
+            },
+            {
+              "ruleId": "secure-coding/no-graphql-injection",
+              "severity": "error",
+              "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | Unsafe interpolation in GraphQL query | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables instead of string interpolation | https://graphql.org/learn/queries/#variables",
+              "line": 162,
+              "column": 31
+            }
+          ],
+          "vuln_creds_aws": [
+            {
+              "ruleId": "secure-coding/no-hardcoded-credentials",
+              "severity": "error",
+              "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded AWS access key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.ACCESS_KEY_ID or secret management service | https://cwe.mitre.org/data/definitions/798.html",
+              "line": 173,
+              "column": 18
+            },
+            {
+              "ruleId": "secure-coding/no-hardcoded-credentials",
+              "severity": "error",
+              "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.SECRET_ACCESS_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html",
+              "line": 174,
+              "column": 22
+            }
+          ],
+          "vuln_creds_jwt_secret": [
+            {
+              "ruleId": "jwt/require-expiration",
+              "severity": "warning",
+              "message": "🔒 CWE-613 OWASP:A07-Authentication CVSS:5.4 | JWT without expiration is valid forever, increasing exposure window | MEDIUM\n   Fix: Add expiresIn: \"1h\" or exp claim to payload | https://tools.ietf.org/html/rfc8725",
+              "line": 184,
+              "column": 10
+            },
+            {
+              "ruleId": "jwt/no-weak-secret",
+              "severity": "error",
+              "message": "🔒 CWE-326 OWASP:A04-Cryptographic CVSS:5.9 | JWT secret must be at least 32 characters (256 bits) for HS256 | HIGH\n   Fix: Generate a secret with: crypto.randomBytes(32).toString(\"hex\") | https://tools.ietf.org/html/rfc8725",
+              "line": 184,
+              "column": 25
+            },
+            {
+              "ruleId": "jwt/no-hardcoded-secret",
+              "severity": "error",
+              "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Secret key hardcoded in source code can be extracted from repositories | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use process.env.JWT_SECRET or secure secret management | https://cwe.mitre.org/data/definitions/798.html",
+              "line": 184,
+              "column": 25
+            }
+          ],
+          "vuln_jwt_alg_none": [
+            {
+              "ruleId": "jwt/no-weak-secret",
+              "severity": "error",
+              "message": "🔒 CWE-326 OWASP:A04-Cryptographic CVSS:5.9 | JWT secret is too weak and can be brute-forced | HIGH\n   Fix: Use crypto.randomBytes(32).toString(\"hex\") for secrets | https://tools.ietf.org/html/rfc8725",
+              "line": 197,
+              "column": 28
+            },
+            {
+              "ruleId": "jwt/no-hardcoded-secret",
+              "severity": "error",
+              "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Secret key hardcoded in source code can be extracted from repositories | HIGH [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use process.env.JWT_SECRET or secure secret management | https://cwe.mitre.org/data/definitions/798.html",
+              "line": 197,
+              "column": 28
+            },
+            {
+              "ruleId": "jwt/no-algorithm-none",
+              "severity": "error",
+              "message": "🔒 CWE-347 | Including \"none\" in algorithms array allows unsigned tokens | CRITICAL\n   Fix: Remove \"none\" from the algorithms array | https://nvd.nist.gov/vuln/detail/CVE-2022-23540",
+              "line": 197,
+              "column": 53
+            }
+          ],
+          "vuln_jwt_no_algorithm": [
+            {
+              "ruleId": "jwt/require-algorithm-whitelist",
+              "severity": "warning",
+              "message": "🔒 CWE-757 | JWT verification without explicit algorithms trusts the token header | HIGH\n   Fix: Add algorithms: [\"RS256\"] or algorithms: [\"ES256\"] to options | https://tools.ietf.org/html/rfc8725",
+              "line": 206,
+              "column": 10
+            }
+          ],
+          "vuln_jwt_no_expiry": [
+            {
+              "ruleId": "jwt/require-expiration",
+              "severity": "warning",
+              "message": "🔒 CWE-613 OWASP:A07-Authentication CVSS:5.4 | JWT without expiration is valid forever, increasing exposure window | MEDIUM\n   Fix: Add expiresIn: \"1h\" or exp claim to payload | https://tools.ietf.org/html/rfc8725",
+              "line": 215,
+              "column": 10
+            }
+          ],
+          "vuln_xss_document_write": [
+            {
+              "ruleId": "secure-coding/no-improper-sanitization",
+              "severity": "error",
+              "message": "🔒 CWE-116 | Simple replace() calls are insufficient for sanitization | MEDIUM\n   Fix: Use comprehensive sanitization libraries | https://cwe.mitre.org/data/definitions/116.html",
+              "line": 235,
+              "column": 18
+            },
+            {
+              "ruleId": "secure-coding/no-improper-sanitization",
+              "severity": "error",
+              "message": "🔒 CWE-116 | Simple replace() calls are insufficient for sanitization | MEDIUM\n   Fix: Use comprehensive sanitization libraries | https://cwe.mitre.org/data/definitions/116.html",
+              "line": 235,
+              "column": 40
+            }
+          ],
+          "vuln_xss_eval": [
+            {
+              "ruleId": "secure-coding/no-unsafe-deserialization",
+              "severity": "error",
+              "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | eval() used for deserialization (code execution vulnerability) | CRITICAL\n   Fix: Use JSON.parse() or safe deserialization libraries | https://cwe.mitre.org/data/definitions/502.html",
+              "line": 243,
+              "column": 10
+            },
+            {
+              "ruleId": "node-security/detect-eval-with-expression",
+              "severity": "error",
+              "message": "🔒 CWE-95 OWASP:A05-Injection CVSS:9.8 | eval() can be refactored to safer alternative | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Remove eval entirely | https://owasp.org/www-community/attacks/Code_Injection",
+              "line": 243,
+              "column": 10
+            }
+          ],
+          "vuln_xss_new_function": [
+            {
+              "ruleId": "secure-coding/no-unsafe-deserialization",
+              "severity": "error",
+              "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | Function constructor used with untrusted data | CRITICAL\n   Fix: Avoid Function constructor with user input | https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function",
+              "line": 251,
+              "column": 14
+            },
+            {
+              "ruleId": "node-security/detect-eval-with-expression",
+              "severity": "error",
+              "message": "🔒 CWE-95 OWASP:A05-Injection CVSS:9.8 | eval() can be refactored to safer alternative | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Arrow function or regular function | https://owasp.org/www-community/attacks/Code_Injection",
+              "line": 251,
+              "column": 14
+            }
+          ],
+          "vuln_proto_bracket": [
+            {
+              "ruleId": "secure-coding/detect-object-injection",
+              "severity": "warning",
+              "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution",
+              "line": 264,
+              "column": 3
+            }
+          ],
+          "vuln_proto_nested": [
+            {
+              "ruleId": "secure-coding/detect-object-injection",
+              "severity": "warning",
+              "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution",
+              "line": 276,
+              "column": 15
+            },
+            {
+              "ruleId": "secure-coding/detect-object-injection",
+              "severity": "warning",
+              "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution",
+              "line": 276,
+              "column": 23
+            },
+            {
+              "ruleId": "secure-coding/detect-object-injection",
+              "severity": "warning",
+              "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution",
+              "line": 278,
+              "column": 3
+            },
+            {
+              "ruleId": "secure-coding/detect-object-injection",
+              "severity": "warning",
+              "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution",
+              "line": 278,
+              "column": 11
+            }
+          ],
+          "vuln_proto_assign": [
+            {
+              "ruleId": "secure-coding/no-unsafe-deserialization",
+              "severity": "error",
+              "message": "🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | Deserializing untrusted input (incl. LLM/MCP responses) without validation | HIGH\n   Fix: Schema-validate and size-cap before deserialization; reject unknown fields | https://cwe.mitre.org/data/definitions/502.html",
+              "line": 287,
+              "column": 25
+            },
+            {
+              "ruleId": "secure-coding/no-xxe-injection",
+              "severity": "error",
+              "message": "🔒 CWE-611 OWASP:A05-Injection CVSS:9.1 | XML from untrusted source without validation | HIGH\n   Fix: Validate and sanitize XML input before parsing | https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html",
+              "line": 287,
+              "column": 36
+            }
+          ],
+          "vuln_crypto_md5": [
+            {
+              "ruleId": "node-security/no-weak-hash-algorithm",
+              "severity": "error",
+              "message": "🔒 CWE-327 OWASP:A04-Cryptographic CVSS:7.5 | Use of weak hash algorithm: MD5. MD5 is cryptographically broken and unsuitable for security purposes. | CRITICAL [PCI-DSS,HIPAA,ISO27001,NIST-CSF]\n   Fix: Replace with sha256: crypto.createHash(\"sha256\").update(data) | https://owasp.org/www-community/vulnerabilities/Weak_Cryptography",
+              "line": 321,
+              "column": 28
+            }
+          ],
+          "vuln_crypto_sha1": [
+            {
+              "ruleId": "node-security/no-weak-hash-algorithm",
+              "severity": "error",
+              "message": "🔒 CWE-327 OWASP:A04-Cryptographic CVSS:7.5 | Use of weak hash algorithm: SHA-1. SHA-1 is cryptographically broken and unsuitable for security purposes. | CRITICAL [PCI-DSS,HIPAA,ISO27001,NIST-CSF]\n   Fix: Replace with sha256: crypto.createHash(\"sha256\").update(data) | https://owasp.org/www-community/vulnerabilities/Weak_Cryptography",
+              "line": 330,
+              "column": 28
+            }
+          ],
+          "vuln_crypto_des": [
+            {
+              "ruleId": "node-security/no-weak-cipher-algorithm",
+              "severity": "error",
+              "message": "🔒 CWE-327 OWASP:A04-Cryptographic CVSS:7.5 | Use of weak cipher algorithm: DES. DES has known vulnerabilities and should not be used. | CRITICAL [PCI-DSS,HIPAA,ISO27001,NIST-CSF]\n   Fix: Replace with aes-256-gcm: crypto.createCipheriv(\"aes-256-gcm\", key, iv) | https://owasp.org/www-community/vulnerabilities/Weak_Cryptography",
+              "line": 339,
+              "column": 38
+            },
+            {
+              "ruleId": "secure-coding/no-hardcoded-credentials",
+              "severity": "error",
+              "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Common password detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.html",
+              "line": 339,
+              "column": 45
+            }
+          ],
+          "vuln_timing_direct": [
+            {
+              "ruleId": "secure-coding/no-insecure-comparison",
+              "severity": "warning",
+              "message": "🔒 CWE-208 | Secret comparison with === can leak timing information | HIGH\n   Fix: Use crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) | https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b",
+              "line": 352,
+              "column": 10
+            }
+          ],
+          "vuln_timing_token": [
+            {
+              "ruleId": "secure-coding/no-insecure-comparison",
+              "severity": "warning",
+              "message": "🔒 CWE-208 | Secret comparison with === can leak timing information | HIGH\n   Fix: Use crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) | https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b",
+              "line": 360,
+              "column": 7
+            }
+          ],
+          "vuln_redos_evil": [
+            {
+              "ruleId": "secure-coding/detect-non-literal-regexp",
+              "severity": "warning",
+              "message": "⚠️ CWE-400 OWASP:A06-Insecure CVSS:7.5 | ReDoS vulnerability detected | CRITICAL\n   Fix: Restructure regex to avoid nested quantifiers | https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS",
+              "line": 432,
+              "column": 21
+            },
+            {
+              "ruleId": "secure-coding/no-redos-vulnerable-regex",
+              "severity": "error",
+              "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Nested Quantifiers: Nested quantifiers like (a+)+, (a*)*, (a?)? cause exponential backtracking | CRITICAL\n   Fix: Use atomic groups (?>...) or restructure to avoid nesting | https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS",
+              "line": 432,
+              "column": 21
+            }
+          ],
+          "vuln_redos_user": [
+            {
+              "ruleId": "secure-coding/detect-non-literal-regexp",
+              "severity": "warning",
+              "message": "⚠️ CWE-400 OWASP:A06-Insecure CVSS:7.5 | ReDoS vulnerability detected | HIGH\n   Fix: Pre-defined RegExp constants | https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS",
+              "line": 441,
+              "column": 17
+            },
+            {
+              "ruleId": "secure-coding/no-unsafe-regex-construction",
+              "severity": "warning",
+              "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | User input in regex without escaping: User input in regex pattern can lead to ReDoS or injection attacks | HIGH\n   Fix: Escape special characters before using in regex | https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS",
+              "line": 441,
+              "column": 28
+            }
+          ]
+        },
+        "byRule": {
+          "secure-coding/no-graphql-injection": 8,
+          "node-security/detect-child-process": 4,
+          "node-security/detect-non-literal-fs-filename": 4,
+          "node-security/no-arbitrary-file-access": 1,
+          "secure-coding/no-unlimited-resource-allocation": 1,
+          "secure-coding/no-xpath-injection": 2,
+          "secure-coding/no-hardcoded-credentials": 5,
+          "pg/no-hardcoded-credentials": 1,
+          "jwt/require-expiration": 2,
+          "jwt/no-weak-secret": 2,
+          "jwt/no-hardcoded-secret": 2,
+          "jwt/no-algorithm-none": 1,
+          "jwt/require-algorithm-whitelist": 1,
+          "secure-coding/no-improper-sanitization": 2,
+          "secure-coding/no-unsafe-deserialization": 3,
+          "node-security/detect-eval-with-expression": 2,
+          "secure-coding/detect-object-injection": 5,
+          "secure-coding/no-xxe-injection": 1,
+          "node-security/no-weak-hash-algorithm": 2,
+          "node-security/no-weak-cipher-algorithm": 1,
+          "secure-coding/no-insecure-comparison": 2,
+          "secure-coding/detect-non-literal-regexp": 2,
+          "secure-coding/no-redos-vulnerable-regex": 1,
+          "secure-coding/no-unsafe-regex-construction": 1
+        }
+      },
+      "safeAnalysis": {
+        "totalViolations": 15,
+        "byFunction": {
+          "safe_cmd_validated": [
+            {
+              "ruleId": "node-security/detect-child-process",
+              "severity": "error",
+              "message": "⚠️ CWE-78 OWASP:A05-Injection CVSS:9.8 | Command injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix: Use execFile/spawn with {shell: false} and array args | https://owasp.org/www-community/attacks/Command_Injection",
+              "line": 92,
+              "column": 10
+            },
+            {
+              "ruleId": "secure-coding/no-graphql-injection",
+              "severity": "error",
+              "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | Unsafe interpolation in GraphQL query | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables instead of string interpolation | https://graphql.org/learn/queries/#variables",
+              "line": 92,
+              "column": 44
+            }
+          ],
+          "safe_path_allowlist": [
+            {
+              "ruleId": "node-security/detect-non-literal-fs-filename",
+              "severity": "error",
+              "message": "🔑 CWE-22 OWASP:A01-Broken CVSS:7.5 | Path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use path.resolve() with validation | https://owasp.org/www-community/attacks/Path_Traversal",
+              "line": 130,
+              "column": 10
+            }
+          ],
+          "safe_path_regex": [
+            {
+              "ruleId": "node-security/detect-non-literal-fs-filename",
+              "severity": "error",
+              "message": "🔑 CWE-22 OWASP:A01-Broken CVSS:7.5 | Path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use path.resolve() with validation | https://owasp.org/www-community/attacks/Path_Traversal",
+              "line": 145,
+              "column": 10
+            }
+          ],
+          "safe_template_logging": [
+            {
+              "ruleId": "secure-coding/no-graphql-injection",
+              "severity": "error",
+              "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | Unsafe interpolation in GraphQL query | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables instead of string interpolation | https://graphql.org/learn/queries/#variables",
+              "line": 245,
+              "column": 15
+            },
+            {
+              "ruleId": "secure-coding/no-graphql-injection",
+              "severity": "error",
+              "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | Unsafe interpolation in GraphQL query | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables instead of string interpolation | https://graphql.org/learn/queries/#variables",
+              "line": 246,
+              "column": 21
+            }
+          ],
+          "safe_proto_allowlist": [
+            {
+              "ruleId": "secure-coding/no-sensitive-data-exposure",
+              "severity": "warning",
+              "message": "🔒 CWE-532 OWASP:A09-Logging CVSS:5.3 | Sensitive data detected in error messages: password | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Redact or mask sensitive data before logging/exposing | https://cwe.mitre.org/data/definitions/532.html",
+              "line": 260,
+              "column": 21
+            }
+          ],
+          "safe_proto_nullproto": [
+            {
+              "ruleId": "secure-coding/detect-object-injection",
+              "severity": "warning",
+              "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution",
+              "line": 295,
+              "column": 5
+            }
+          ],
+          "safe_random_shuffle": [
+            {
+              "ruleId": "secure-coding/detect-object-injection",
+              "severity": "warning",
+              "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution",
+              "line": 343,
+              "column": 6
+            },
+            {
+              "ruleId": "secure-coding/detect-object-injection",
+              "severity": "warning",
+              "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution",
+              "line": 343,
+              "column": 19
+            },
+            {
+              "ruleId": "secure-coding/detect-object-injection",
+              "severity": "warning",
+              "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution",
+              "line": 343,
+              "column": 35
+            },
+            {
+              "ruleId": "secure-coding/detect-object-injection",
+              "severity": "warning",
+              "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution",
+              "line": 343,
+              "column": 48
+            }
+          ],
+          "safe_timing_compare": [
+            {
+              "ruleId": "secure-coding/no-insecure-comparison",
+              "severity": "warning",
+              "message": "🔒 CWE-208 | Secret comparison with !== can leak timing information | HIGH\n   Fix: Use crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)) | https://nodejs.org/api/crypto.html#cryptotimingsafeequala-b",
+              "line": 397,
+              "column": 7
+            }
+          ],
+          "safe_redirect_sameorigin": [
+            {
+              "ruleId": "secure-coding/no-graphql-injection",
+              "severity": "error",
+              "message": "🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | Unsafe interpolation in GraphQL query | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use GraphQL variables instead of string interpolation | https://graphql.org/learn/queries/#variables",
+              "line": 443,
+              "column": 33
+            },
+            {
+              "ruleId": "secure-coding/no-xpath-injection",
+              "severity": "error",
+              "message": "🔒 CWE-643 | XPath expression allows dangerous operations | MEDIUM\n   Fix: Restrict XPath to safe patterns and validate expressions | https://cwe.mitre.org/data/definitions/643.html",
+              "line": 443,
+              "column": 33
+            }
+          ]
+        },
+        "byRule": {
+          "node-security/detect-child-process": 1,
+          "secure-coding/no-graphql-injection": 4,
+          "node-security/detect-non-literal-fs-filename": 2,
+          "secure-coding/no-sensitive-data-exposure": 1,
+          "secure-coding/detect-object-injection": 5,
+          "secure-coding/no-insecure-comparison": 1,
+          "secure-coding/no-xpath-injection": 1
+        }
+      },
+      "metrics": {
+        "TP": 31,
+        "TN": 29,
+        "FP": 9,
+        "FN": 9,
+        "FNR": "22.5%",
+        "FPR": "23.7%",
+        "precision": "77.5%",
+        "recall": "77.5%",
+        "f1Score": "77.5%",
+        "detectedVulnerabilities": [
+          "vuln_sql_template_literal",
+          "vuln_sql_dynamic_column",
+          "vuln_sql_conditional",
+          "vuln_cmd_exec_concat",
+          "vuln_cmd_exec_template",
+          "vuln_cmd_execsync",
+          "vuln_cmd_spawn_shell",
+          "vuln_path_join",
+          "vuln_path_concat",
+          "vuln_path_no_validation",
+          "vuln_path_url_pathname",
+          "vuln_creds_db_password",
+          "vuln_creds_api_key",
+          "vuln_creds_aws",
+          "vuln_creds_jwt_secret",
+          "vuln_jwt_alg_none",
+          "vuln_jwt_no_algorithm",
+          "vuln_jwt_no_expiry",
+          "vuln_xss_document_write",
+          "vuln_xss_eval",
+          "vuln_xss_new_function",
+          "vuln_proto_bracket",
+          "vuln_proto_nested",
+          "vuln_proto_assign",
+          "vuln_crypto_md5",
+          "vuln_crypto_sha1",
+          "vuln_crypto_des",
+          "vuln_timing_direct",
+          "vuln_timing_token",
+          "vuln_redos_evil",
+          "vuln_redos_user"
+        ],
+        "missedVulnerabilities": [
+          "vuln_sql_string_concat",
+          "vuln_xss_innerhtml",
+          "vuln_random_token",
+          "vuln_random_session",
+          "vuln_nosql_mongo",
+          "vuln_nosql_where",
+          "vuln_ssrf_fetch",
+          "vuln_ssrf_axios",
+          "vuln_redirect"
+        ],
+        "falsePositives": [
+          "safe_cmd_validated",
+          "safe_path_allowlist",
+          "safe_path_regex",
+          "safe_template_logging",
+          "safe_proto_allowlist",
+          "safe_proto_nullproto",
+          "safe_random_shuffle",
+          "safe_timing_compare",
+          "safe_redirect_sameorigin"
+        ]
+      }
+    }
+  },
+  "summary": {}
+}

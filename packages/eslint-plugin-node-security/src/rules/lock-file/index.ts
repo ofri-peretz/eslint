@@ -52,15 +52,15 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
       },
     ],
   },
-  defaultOptions: [{ packageManager: 'npm' }],
+  defaultOptions: [{}],
   create(context) {
     const fs = require('node:fs');
     const path = require('node:path');
-    
+
     // Check once per file
     let checked = false;
     const options = context.options[0] || {};
-    const packageManager = options.packageManager || 'npm';
+    const userPackageManager = options.packageManager;
 
     const lockFiles: Record<string, string> = {
       npm: 'package-lock.json',
@@ -68,35 +68,47 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
       pnpm: 'pnpm-lock.yaml',
     };
 
-    const targetLockFile = lockFiles[packageManager];
-    
+    // When no packageManager is configured, accept ANY of the three common
+    // lock files. Otherwise look only for the configured one. This avoids
+    // firing on every file in a pnpm/yarn monorepo just because the rule
+    // defaulted to looking for package-lock.json.
+    const targetLockFiles = userPackageManager
+      ? [lockFiles[userPackageManager]]
+      : Object.values(lockFiles);
+    const targetLockFile = userPackageManager
+      ? lockFiles[userPackageManager]
+      : 'package-lock.json | yarn.lock | pnpm-lock.yaml';
+    const reportedManager = userPackageManager ?? 'any';
+
     return {
       Program(node: TSESTree.Program) {
         if (checked) return;
         checked = true;
-        
+
         // Find project root (simplified)
         let dir = path.dirname(context.filename);
         let found = false;
-        
-        // Search up to 10 levels for the lock file
+
+        // Search up to 10 levels for any acceptable lock file
         for (let i = 0; i < 10; i++) {
-          const lockPath = path.join(dir, targetLockFile);
-          if (fs.existsSync(lockPath)) {
-            found = true;
-            break;
+          for (const lf of targetLockFiles) {
+            if (fs.existsSync(path.join(dir, lf))) {
+              found = true;
+              break;
+            }
           }
+          if (found) break;
           const parentDir = path.dirname(dir);
           if (parentDir === dir) break;
           dir = parentDir;
         }
-        
+
         if (!found) {
-          context.report({ 
-            node, 
+          context.report({
+            node,
             messageId: 'violationDetected',
             data: {
-              packageManager,
+              packageManager: reportedManager,
               lockFile: targetLockFile,
             }
           });

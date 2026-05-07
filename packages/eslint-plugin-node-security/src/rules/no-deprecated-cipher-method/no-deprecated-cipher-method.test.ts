@@ -19,6 +19,10 @@ const ruleTester = new RuleTester({
 describe('no-deprecated-cipher-method', () => {
   ruleTester.run('no-deprecated-cipher-method', noDeprecatedCipherMethod, {
     valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
+        'const items = [];',
       { code: 'crypto.createCipheriv("aes-256-gcm", key, iv);' },
       { code: 'crypto.createDecipheriv("aes-256-gcm", key, iv);' },
     ],

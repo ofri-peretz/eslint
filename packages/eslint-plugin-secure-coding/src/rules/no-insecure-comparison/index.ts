@@ -106,6 +106,32 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
     const sourceCode = context.sourceCode || context.sourceCode;
 
+    // Codemods and AST-walker tools legitimately compare AST identifiers
+    // (`node.key === 'foo'`, `node.name === 'bar'`) — those keys aren't
+    // secrets, they're AST property names that happen to share the word
+    // "key". Detect codemod context once per file.
+    const AST_TOOL_PACKAGES = [
+      '@babel/types', '@babel/traverse', '@babel/generator', '@babel/parser',
+      'recast', 'jscodeshift', 'estree-walker', 'unist-util-visit',
+      '@typescript-eslint/utils', '@typescript-eslint/typescript-estree',
+      'typescript', 'ts-morph', 'eslint',
+    ];
+    const isCodemodFile = (() => {
+      if (/\/codemod[s]?\//i.test(filename)) return true;
+      if (/codemod\.[mc]?[jt]sx?$/i.test(filename)) return true;
+      // Look for AST-tool imports at the top of the file
+      const program = sourceCode.ast;
+      for (const stmt of program.body) {
+        if (stmt.type === 'ImportDeclaration') {
+          const source = (stmt.source as TSESTree.Literal).value;
+          if (typeof source === 'string' && AST_TOOL_PACKAGES.some((p) => source === p || source.startsWith(p + '/'))) {
+            return true;
+          }
+        }
+      }
+      return false;
+    })();
+
     /**
      * Check if a string matches any ignore pattern
      */
@@ -126,6 +152,12 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
      */
     function checkBinaryExpression(node: TSESTree.BinaryExpression) {
       if (isTestFile) {
+        return;
+      }
+
+      // Skip codemod / AST-walker contexts — `node.key === '...'` style
+      // comparisons there are AST identifier checks, not secret comparisons.
+      if (isCodemodFile) {
         return;
       }
 

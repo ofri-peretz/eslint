@@ -1,0 +1,136 @@
+{
+  "timestamp": "2026-02-08T19:33:25.634Z",
+  "eslintVersion": "8.57.0",
+  "methodology": "ESLint 8 legacy config for fair comparison",
+  "plugins": {
+    "eslint-plugin-security": {
+      "displayName": "eslint-plugin-security",
+      "rules": 14,
+      "focus": "Node.js security patterns",
+      "weeklyDownloads": "1.5M+",
+      "status": "OK",
+      "vulnerableAnalysis": {
+        "totalViolations": 11,
+        "byRule": {
+          "security/detect-child-process": {
+            "count": 2,
+            "lines": [
+              64,
+              73
+            ]
+          },
+          "security/detect-non-literal-fs-filename": {
+            "count": 4,
+            "lines": [
+              106,
+              115,
+              124,
+              134
+            ]
+          },
+          "security/detect-eval-with-expression": {
+            "count": 1,
+            "lines": [
+              243
+            ]
+          },
+          "security/detect-object-injection": {
+            "count": 2,
+            "lines": [
+              264,
+              276
+            ]
+          },
+          "security/detect-unsafe-regex": {
+            "count": 1,
+            "lines": [
+              432
+            ]
+          },
+          "security/detect-non-literal-regexp": {
+            "count": 1,
+            "lines": [
+              441
+            ]
+          }
+        }
+      },
+      "safeAnalysis": {
+        "totalViolations": 11,
+        "byRule": {
+          "security/detect-non-literal-fs-filename": {
+            "count": 3,
+            "lines": [
+              114,
+              130,
+              145
+            ]
+          },
+          "security/detect-object-injection": {
+            "count": 8,
+            "lines": [
+              262,
+              272,
+              283,
+              295,
+              343,
+              343,
+              343,
+              343
+            ]
+          }
+        }
+      }
+    },
+    "eslint-plugin-no-unsanitized": {
+      "displayName": "eslint-plugin-no-unsanitized (Mozilla)",
+      "rules": 2,
+      "focus": "XSS via innerHTML/insertAdjacentHTML",
+      "weeklyDownloads": "~500K",
+      "status": "OK",
+      "vulnerableAnalysis": {
+        "totalViolations": 2,
+        "byRule": {
+          "no-unsanitized/property": {
+            "count": 1,
+            "lines": [
+              227
+            ]
+          },
+          "no-unsanitized/method": {
+            "count": 1,
+            "lines": [
+              235
+            ]
+          }
+        }
+      },
+      "safeAnalysis": {
+        "totalViolations": 1,
+        "byRule": {
+          "no-unsanitized/property": {
+            "count": 1,
+            "lines": [
+              229
+            ]
+          }
+        }
+      }
+    },
+    "eslint-plugin-import": {
+      "displayName": "eslint-plugin-import",
+      "rules": 17,
+      "focus": "Import/export validation",
+      "weeklyDownloads": "45M+",
+      "status": "OK",
+      "vulnerableAnalysis": {
+        "totalViolations": 0,
+        "byRule": {}
+      },
+      "safeAnalysis": {
+        "totalViolations": 0,
+        "byRule": {}
+      }
+    }
+  }
+}

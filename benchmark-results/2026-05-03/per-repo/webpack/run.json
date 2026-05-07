@@ -1,0 +1,36 @@
+{
+  "repo": "webpack",
+  "meta": {
+    "stars": 65000,
+    "commit": "main",
+    "category": "Build Tool (FP corpus)",
+    "plugins": [
+      "node-security",
+      "secure-coding"
+    ],
+    "fpEdge": true,
+    "srcGlob": "lib/**/*.js"
+  },
+  "fileCount": 581,
+  "loc": 156040,
+  "timing": {
+    "runsMs": [
+      3072
+    ],
+    "medianMs": 3072,
+    "meanMs": 3072,
+    "stddevMs": 0,
+    "cv": 0,
+    "msPerFile": 5.29
+  },
+  "peakRssMb": 669,
+  "findings": {
+    "total": 1847,
+    "errors": 857,
+    "warnings": 990,
+    "filesWithFindings": 298,
+    "densityPerKloc": 11.84,
+    "externalDirectives": 25,
+    "parseErrors": 0
+  }
+}

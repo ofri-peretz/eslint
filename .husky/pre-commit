@@ -1,67 +1,34 @@
 #!/bin/bash
-# Ensure nvm-installed node is in PATH
-export PATH="$HOME/.nvm/versions/node/v20.19.5/bin:$PATH"
-
-# Skip silently if no staged changes in packages (docs, configs don't need checks)
+# Skip silently if no staged changes in packages (docs, configs don't need checks).
 if ! git diff --cached --name-only | grep -q "^packages/"; then
   exit 0
 fi
 
 echo "🚀 Running pre-commit checks..."
 
-# Get affected projects based on staged changes (uncommitted)
-# Using --uncommitted ensures we check what's actually being committed
-# Using --output-style=static prevents VS Code output overload (no dynamic rewrites)
-
-# Run lint first (faster, catches most issues)
-echo "📝 Running lint..."
-LINT_OUTPUT=$(npx nx affected -t lint \
-  --uncommitted \
-  --parallel=4 \
-  --output-style=static 2>&1)
-LINT_EXIT=$?
-
-if [ $LINT_EXIT -ne 0 ]; then
-  echo ""
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo "📋 Affected projects detected:"
-  npx nx show projects --affected --uncommitted 2>/dev/null | head -20
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo ""
-  echo "$LINT_OUTPUT" | tail -50
-  echo "❌ Lint failed"
-  echo ""
-  echo "💡 Tip: Run 'npx nx affected -t lint --uncommitted' to see full output"
+# Lint: oxlint runs across the whole tree in <300ms — fast enough that
+# scoping to affected packages isn't worth the complexity.
+echo "📝 Running oxlint..."
+if ! npm run --silent oxlint; then
+  echo "❌ oxlint failed"
+  echo "💡 Run 'npm run oxlint' to see full output"
   exit 1
 fi
 
-# Show minimal lint summary (last few lines)
-echo "$LINT_OUTPUT" | grep -E "(Successfully|passed|warning|error)" | tail -5
+# Tests: scope to packages affected vs origin/main. Falls back to running
+# the full graph if origin/main isn't available locally.
+echo "🧪 Running tests (affected)..."
+if git rev-parse --verify --quiet origin/main >/dev/null; then
+  TEST_FILTER="--filter=...[origin/main]"
+else
+  TEST_FILTER=""
+fi
 
-# Run tests (only if lint passes)
-echo "🧪 Running tests..."
-TEST_OUTPUT=$(npx nx affected -t test \
-  --uncommitted \
-  --parallel=4 \
-  --output-style=static 2>&1)
-TEST_EXIT=$?
-
-if [ $TEST_EXIT -ne 0 ]; then
-  echo ""
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo "📋 Affected projects detected:"
-  npx nx show projects --affected --uncommitted 2>/dev/null | head -20
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo ""
-  echo "$TEST_OUTPUT" | tail -100
+if ! npx --no turbo run test $TEST_FILTER --output-logs=errors-only; then
   echo "❌ Tests failed"
-  echo ""
-  echo "💡 Tip: Run 'npx nx affected -t test --uncommitted' to see full output"
+  echo "💡 Run 'npx turbo run test $TEST_FILTER' to see full output"
   exit 1
 fi
-
-# Show minimal test summary
-echo "$TEST_OUTPUT" | grep -E "(Test Files|Tests|passed|failed)" | tail -5
 
 echo "✅ All checks passed!"
 exit 0

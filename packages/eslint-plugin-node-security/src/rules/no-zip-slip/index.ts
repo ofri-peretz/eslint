@@ -225,7 +225,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       // Check for ../ sequences
       return /\.\.\//.test(pathText) ||
              /\.\.\\/.test(pathText) || // Windows paths
-             /^\.\./.test(pathText) || // Leading ..
+             pathText.startsWith('..') ||
              /\/\.\./.test(pathText);  // Embedded /..
     };
 
@@ -529,41 +529,12 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
           }
         }
 
-        // Dangerous destinations are handled by the CallExpression handler to avoid duplicates
-        // Only check for dangerous destinations not related to archive extraction
-        if (isDangerousDestination(text) && !containsPathTraversal(text)) {
-          // Check if this is used as an extraction destination
-          let current: TSESTree.Node | undefined = node;
-          let isExtractionDest = false;
-
-          while (current && !isExtractionDest) {
-            if (current.type === 'CallExpression' && isArchiveExtraction(current)) {
-              // Check if this node is a destination argument
-              const args = current.arguments;
-              const callee = current.callee;
-              const isMethodCall = callee.type === 'MemberExpression';
-
-              if ((isMethodCall && args.length >= 1 && args[0] === node) ||
-                  (!isMethodCall && args.length >= 2 && args[1] === node)) {
-                isExtractionDest = true;
-                break;
-              }
-            }
-            current = current.parent as TSESTree.Node;
-          }
-
-          // Only report if not already handled by CallExpression handler
-          if (!isExtractionDest) {
-            context.report({
-              node,
-              messageId: 'dangerousArchiveDestination',
-              data: {
-                filePath: filename,
-                line: String(node.loc?.start.line ?? 0),
-              },
-            });
-          }
-        }
+        // Dangerous-destination check moved to the CallExpression handler
+        // (see lines 407-427). It already fires `dangerousArchiveDestination`
+        // for archive-extraction calls; firing again here would duplicate.
+        // The previous "fire on any /etc or /home literal" logic produced
+        // false positives on unrelated calls (fs.readFileSync, exec, etc.)
+        // and is no longer needed now that the call-site check is precise.
       },
 
       // Check variable assignments

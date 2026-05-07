@@ -14,6 +14,8 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-request-timeout', requireRequestTimeout, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
     // With abortSignal
     {
       code: `

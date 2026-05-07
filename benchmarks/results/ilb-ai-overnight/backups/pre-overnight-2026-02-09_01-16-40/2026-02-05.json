@@ -1,0 +1,117 @@
+{
+    "timestamp": "2026-02-05T19:30:00Z",
+    "methodology": {
+        "isolation": "Zero-context generation via Claude CLI with --no-session-persistence",
+        "promptStyle": "Simple, real-world developer prompts with no security instructions",
+        "prompts": 20,
+        "iterations": 1,
+        "analysisTools": [
+            "eslint-plugin-secure-coding",
+            "eslint-plugin-pg",
+            "eslint-plugin-node-security",
+            "eslint-plugin-jwt"
+        ]
+    },
+    "models": {
+        "sonnet": {
+            "name": "Claude Sonnet",
+            "functionsAnalyzed": 20,
+            "functionsWithVulnerabilities": 13,
+            "vulnerabilityRate": "65%",
+            "totalProblems": 25,
+            "errors": 21,
+            "warnings": 4
+        },
+        "opus": {
+            "name": "Claude Opus",
+            "functionsAnalyzed": 20,
+            "functionsWithVulnerabilities": 14,
+            "vulnerabilityRate": "70%",
+            "totalProblems": 21,
+            "errors": 16,
+            "warnings": 5
+        },
+        "haiku": {
+            "name": "Claude Haiku",
+            "functionsAnalyzed": 20,
+            "functionsWithVulnerabilities": 15,
+            "vulnerabilityRate": "75%",
+            "totalProblems": 35,
+            "errors": 32,
+            "warnings": 3
+        }
+    },
+    "summary": {
+        "totalFunctions": 60,
+        "totalModels": 3,
+        "averageVulnerabilityRate": "70%",
+        "rangeVulnerabilityRate": "65-75%",
+        "keyFinding": "More capable models (Opus) did not produce safer code than less capable ones"
+    },
+    "vulnerabilityClassification": [
+        {
+            "cwe": "CWE-22",
+            "name": "Path Traversal",
+            "cvss": 7.5,
+            "severity": "HIGH",
+            "owasp": "A01:2021-Broken Access Control",
+            "detectedAcrossModels": true,
+            "staticAnalysisDetectionRate": "High"
+        },
+        {
+            "cwe": "CWE-78",
+            "name": "OS Command Injection",
+            "cvss": 9.8,
+            "severity": "CRITICAL",
+            "owasp": "A03:2021-Injection",
+            "detectedAcrossModels": true,
+            "staticAnalysisDetectionRate": "High"
+        },
+        {
+            "cwe": "CWE-89",
+            "name": "SQL/Query Injection Patterns",
+            "cvss": 9.8,
+            "severity": "CRITICAL",
+            "owasp": "A03:2021-Injection",
+            "detectedAcrossModels": true,
+            "staticAnalysisDetectionRate": "High"
+        },
+        {
+            "cwe": "CWE-798",
+            "name": "Hardcoded Credentials",
+            "cvss": 9.8,
+            "severity": "CRITICAL",
+            "owasp": "A07:2021-Identification and Authentication Failures",
+            "detectedAcrossModels": true,
+            "staticAnalysisDetectionRate": "High"
+        },
+        {
+            "cwe": "CWE-757",
+            "name": "JWT Algorithm Confusion",
+            "cvss": 7.5,
+            "severity": "HIGH",
+            "owasp": "A02:2021-Cryptographic Failures",
+            "detectedAcrossModels": true,
+            "staticAnalysisDetectionRate": "High"
+        },
+        {
+            "cwe": "CWE-532",
+            "name": "Sensitive Data in Logs/Errors",
+            "cvss": 5.3,
+            "severity": "MEDIUM",
+            "owasp": "A09:2021-Security Logging and Monitoring Failures",
+            "detectedAcrossModels": true,
+            "staticAnalysisDetectionRate": "Medium"
+        }
+    ],
+    "staticAnalysisEffectiveness": {
+        "overall": "60-70%",
+        "injectionPatterns": "90%+",
+        "accessControl": "40%",
+        "cryptographicFailures": "60%",
+        "securityMisconfiguration": "70%",
+        "vulnerableComponents": "80%",
+        "authenticationFailures": "50%",
+        "note": "Static analysis is highly effective at catching injection and path-based vulnerabilities but less effective at detecting business logic flaws and context-dependent authorization issues"
+    }
+}

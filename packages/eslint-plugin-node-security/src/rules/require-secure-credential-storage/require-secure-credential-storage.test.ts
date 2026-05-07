@@ -16,6 +16,12 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-secure-credential-storage', requireSecureCredentialStorage, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
+        'const items = [];',
+        'const obj = {};',
+        'class Foo {}',
     { code: "await Keychain.setPassword(service, password)" },
     { code: "SecureStore.setItemAsync('key', value)" }
   ],

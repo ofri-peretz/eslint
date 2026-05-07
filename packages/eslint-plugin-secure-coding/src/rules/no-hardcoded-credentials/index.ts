@@ -343,6 +343,85 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
 
 
     /**
+     * Variable / property names that hold UI labels and HTML attribute
+     * values, not secrets. When a literal containing the word "password"
+     * (or other credential-like text) lives in one of these contexts, it's
+     * a label or form-field metadata, not a hardcoded credential.
+     */
+    const LABEL_CONTEXT_NAMES = new Set<string>([
+      // HTML form attributes
+      'type', 'name', 'id', 'placeholder', 'label', 'title', 'role',
+      'autocomplete', 'autoFocus', 'autocapitalize', 'inputmode',
+      // ARIA
+      'aria-label', 'aria-labelledby', 'aria-describedby',
+      // Common semantic UI fields
+      'fieldName', 'fieldType', 'fieldLabel', 'inputType', 'inputName',
+      'displayName', 'columnName', 'paramName',
+      // i18n keys / translation lookup. NOTE: bare `'key'` is intentionally
+      // omitted — `const key = '...'` is the canonical name for actual API
+      // keys (e.g. AWS, Stripe), so exempting it would mask real secrets.
+      // The specific i18n names below cover translation lookups without
+      // that false-negative.
+      'i18nKey', 'translationKey', 'messageKey',
+    ]);
+
+    /**
+     * Returns true if the literal is being used as a UI label or HTML
+     * attribute value rather than as a secret. Examples:
+     *   const label = 'password';                        // variable named `label`
+     *   input.type = 'password';                          // assigning to .type
+     *   input.name = 'userPassword';                      // assigning to .name
+     *   <input type="password" />                         // JSX attribute
+     *   { type: 'password', name: 'pw' }                  // object literal property
+     *   setAttribute('placeholder', 'Enter password')     // setAttribute call
+     */
+    function isLabelContext(node: TSESTree.Literal, parent?: TSESTree.Node): boolean {
+      if (!parent) return false;
+
+      // const label = 'password' / let label = 'password'
+      if (parent.type === 'VariableDeclarator' && parent.id.type === 'Identifier') {
+        const n = (parent.id as TSESTree.Identifier).name.toLowerCase();
+        if (LABEL_CONTEXT_NAMES.has(n) || n.endsWith('label') || n.endsWith('name') || n.endsWith('placeholder')) return true;
+      }
+
+      // input.type = 'password' / input.name = 'userPassword'
+      if (parent.type === 'AssignmentExpression' && (parent as TSESTree.AssignmentExpression).right === node) {
+        const left = (parent as TSESTree.AssignmentExpression).left;
+        if (left.type === 'MemberExpression' && left.property.type === 'Identifier') {
+          if (LABEL_CONTEXT_NAMES.has((left.property as TSESTree.Identifier).name)) return true;
+        }
+      }
+
+      // { type: 'password', name: 'foo' }
+      if (parent.type === 'Property' && (parent as TSESTree.Property).value === node) {
+        const key = (parent as TSESTree.Property).key;
+        if (key.type === 'Identifier' && LABEL_CONTEXT_NAMES.has((key as TSESTree.Identifier).name)) return true;
+        if (key.type === 'Literal' && typeof (key as TSESTree.Literal).value === 'string') {
+          if (LABEL_CONTEXT_NAMES.has((key as TSESTree.Literal).value as string)) return true;
+        }
+      }
+
+      // setAttribute('type', 'password') — second arg is the value
+      if (
+        parent.type === 'CallExpression' &&
+        (parent as TSESTree.CallExpression).callee.type === 'MemberExpression' &&
+        ((parent as TSESTree.CallExpression).callee as TSESTree.MemberExpression).property.type === 'Identifier'
+      ) {
+        const callee = (parent as TSESTree.CallExpression).callee as TSESTree.MemberExpression;
+        const methodName = (callee.property as TSESTree.Identifier).name;
+        if (methodName === 'setAttribute' || methodName === 'getAttribute') {
+          const args = (parent as TSESTree.CallExpression).arguments;
+          if (args[1] === node) return true;
+        }
+      }
+
+      // JSX: <input type="password" />
+      if (parent.type === 'JSXAttribute' as unknown as string) return true;
+
+      return false;
+    }
+
+    /**
      * Check a string literal node
      */
     function checkStringLiteral(node: TSESTree.Literal, parent?: TSESTree.Node): void {
@@ -354,6 +433,12 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
 
       // Skip if in test files and allowed
       if (isTestFile) {
+        return;
+      }
+
+      // Skip if used as a UI label / HTML attribute value (form-field name,
+      // type tag, ARIA label, i18n key) — these aren't credentials.
+      if (isLabelContext(node, parent)) {
         return;
       }
 

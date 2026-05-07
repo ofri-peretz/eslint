@@ -1,0 +1,26 @@
+[
+  {
+    "ruleId": "browser-security/no-clickjacking",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/client/components/react-dev-overlay/internal/styles/CssReset.tsx",
+    "line": 7,
+    "column": 11,
+    "message": "🔒 CWE-1021 | Transparent elements may hide clickjacking attacks | MEDIUM\n   Fix: Use frame-busting or CSP protections | https://cheatsheetseries.owasp.org/cheatsheets/Clickjacking_Defense_Cheat_Sheet.html"
+  },
+  {
+    "ruleId": "browser-security/detect-mixed-content",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/client/components/react-dev-overlay/internal/icons/CloseIcon.tsx",
+    "line": 10,
+    "column": 13,
+    "message": "🔒 CWE-311 OWASP:A04-Cryptographic CVSS:7.5 | Detect HTTP resources in HTTPS pages detected - Literal containing http:// in HTTPS context | MEDIUM\n   Fix: Review and apply secure practices | https://cwe.mitre.org/data/definitions/311.html"
+  },
+  {
+    "ruleId": "browser-security/no-http-urls",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/next.js/packages/next/src/client/components/react-dev-overlay/internal/icons/CloseIcon.tsx",
+    "line": 10,
+    "column": 13,
+    "message": "⚠️ CWE-319 OWASP:A02-Cryptographic CVSS:5.3 | HTTP URL detected: \"http://www.w3.org/2000/svg\" | MEDIUM\n   Fix: Use HTTPS or add to allowedHosts config | https://cwe.mitre.org/data/definitions/319.html"
+  }
+]

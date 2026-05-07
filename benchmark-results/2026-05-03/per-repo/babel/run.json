@@ -1,0 +1,36 @@
+{
+  "repo": "babel",
+  "meta": {
+    "stars": 43000,
+    "commit": "main",
+    "category": "Compiler (FP corpus)",
+    "plugins": [
+      "secure-coding",
+      "node-security"
+    ],
+    "fpEdge": true,
+    "srcGlob": "packages/babel-parser/src/**/*.{js,ts}"
+  },
+  "fileCount": 41,
+  "loc": 24416,
+  "timing": {
+    "runsMs": [
+      1482
+    ],
+    "medianMs": 1482,
+    "meanMs": 1482,
+    "stddevMs": 0,
+    "cv": 0,
+    "msPerFile": 36.15
+  },
+  "peakRssMb": 212,
+  "findings": {
+    "total": 0,
+    "errors": 0,
+    "warnings": 0,
+    "filesWithFindings": 0,
+    "densityPerKloc": 0,
+    "externalDirectives": 0,
+    "parseErrors": 41
+  }
+}

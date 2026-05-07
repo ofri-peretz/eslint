@@ -70,7 +70,7 @@
   - [ ] Entry under `## [Unreleased]` → `### Added`
   - [ ] Brief description of rule purpose
   - [ ] Key features/options mentioned
-  - [ ] Format: `- **New Rule: `rule-name`** - [description]`
+  - [ ] Format: `- **New Rule:`rule-name`** - [description]`
 
 ### 4. Configuration ✅
 

@@ -1,5 +1,6 @@
 import nx from '@nx/eslint-plugin';
 import eslintPluginUnicorn from 'eslint-plugin-unicorn';
+import oxlint from 'eslint-plugin-oxlint';
 import localPlugin from './tools/eslint-rules/index.js';
 
 export default [
@@ -141,4 +142,15 @@ export default [
       'local/changelog-format': 'error',
     },
   },
+
+  // ── oxlint integration ──────────────────────────────────────────────────
+  // Disable ESLint rules that oxlint handles natively in Rust (50-100× faster).
+  // oxlint runs FIRST (via `npm run oxlint`), then ESLint runs only custom rules.
+  // These configs turn OFF the ESLint equivalents to avoid duplicate reports.
+  ...oxlint.configs['flat/recommended'],
+  ...oxlint.configs['flat/correctness'],
+  ...oxlint.configs['flat/suspicious'],
+  ...oxlint.configs['flat/perf'],
+  ...oxlint.configs['flat/unicorn'],
+  ...oxlint.configs['flat/typescript'],
 ];

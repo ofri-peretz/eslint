@@ -16,7 +16,9 @@ describe('Select Component Source File Integrity', () => {
   let selectSource: string;
 
   beforeAll(() => {
-    const selectPath = resolve(__dirname, '../components/ui/select.tsx');
+    // Select now ships from @interlace/docs-baseline (Base UI primitives).
+    // The synced file under .interlace/components/ui/ is what consumers actually render.
+    const selectPath = resolve(__dirname, '../../.interlace/components/ui/select.tsx');
     selectSource = readFileSync(selectPath, 'utf-8');
   });
 
@@ -69,12 +71,12 @@ describe('Select Component Source File Integrity', () => {
   });
 
   describe('SelectItem Styling', () => {
-    it('has focus state with fd-accent color', () => {
-      expect(selectSource).toContain('focus:bg-fd-accent');
-    });
-
-    it('has hover state with fd-accent color', () => {
-      expect(selectSource).toContain('hover:bg-fd-accent');
+    // Base UI exposes focus + hover as a single `[data-highlighted]` selector
+    // (combined keyboard focus and pointer hover) — different from Radix's
+    // separate :focus / :hover but semantically equivalent for users.
+    it('uses fd-accent for the highlighted (focus + hover) state', () => {
+      expect(selectSource).toContain('data-[highlighted]:bg-fd-accent');
+      expect(selectSource).toContain('data-[highlighted]:text-fd-accent-foreground');
     });
 
     it('uses fd-foreground for text color', () => {

@@ -7,9 +7,9 @@ globs: ['apps/docs/**', 'packages/eslint-plugin-secure-coding/**']
 
 When this context is active (either via file path glob or manual @mention), the agent should:
 
-1.  **Prioritize Local Context**: Focus analysis on the relationship between the documentation frontend and the security plugin rules.
-2.  **Reduce Global Scanning**: Avoid re-scanning unrelated packages in the monorepo (e.g., UI libraries or other plugins) unless explicitly requested.
-3.  **Stability First**: If working in this high-churn area, proactively ensure build artifacts are being ignored by the file watcher.
+1. **Prioritize Local Context**: Focus analysis on the relationship between the documentation frontend and the security plugin rules.
+2. **Reduce Global Scanning**: Avoid re-scanning unrelated packages in the monorepo (e.g., UI libraries or other plugins) unless explicitly requested.
+3. **Stability First**: If working in this high-churn area, proactively ensure build artifacts are being ignored by the file watcher.
 
 ## Reference Paths
 

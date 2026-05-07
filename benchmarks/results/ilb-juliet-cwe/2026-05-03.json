@@ -1,0 +1,157 @@
+{
+  "timestamp": "2026-05-03T13:39:12.623Z",
+  "cwes": [
+    {
+      "cwe": "CWE-022",
+      "owasp": "A01:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 1,
+      "fp": 1,
+      "details": {
+        "truePositives": [
+          "path-join-user.js",
+          "readfile-concat.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "dirname-path.js"
+        ],
+        "falsePositives": [
+          "static-path.js"
+        ]
+      },
+      "precision": 0.67,
+      "recall": 1,
+      "f1": 0.8
+    },
+    {
+      "cwe": "CWE-078",
+      "owasp": "A03:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 0,
+      "fp": 2,
+      "details": {
+        "truePositives": [
+          "exec-concat.js",
+          "exec-template.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [],
+        "falsePositives": [
+          "exec-static.js",
+          "execFile-array.js"
+        ]
+      },
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.67
+    },
+    {
+      "cwe": "CWE-079",
+      "owasp": "A03:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 1,
+      "fp": 1,
+      "details": {
+        "truePositives": [
+          "document-write-dynamic.js",
+          "innerhtml-user-input.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "textcontent-safe.js"
+        ],
+        "falsePositives": [
+          "static-innerhtml.js"
+        ]
+      },
+      "precision": 0.67,
+      "recall": 1,
+      "f1": 0.8
+    },
+    {
+      "cwe": "CWE-089",
+      "owasp": "A03:2021",
+      "tp": 3,
+      "fn": 0,
+      "tn": 0,
+      "fp": 3,
+      "details": {
+        "truePositives": [
+          "dynamic-column.js",
+          "string-concat.js",
+          "template-literal.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [],
+        "falsePositives": [
+          "parameterized.js",
+          "prepared-statement.js",
+          "static-query.js"
+        ]
+      },
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.67
+    },
+    {
+      "cwe": "CWE-798",
+      "owasp": "A07:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 1,
+      "fp": 1,
+      "details": {
+        "truePositives": [
+          "api-key-in-source.js",
+          "password-in-config.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "env-credentials.js"
+        ],
+        "falsePositives": [
+          "password-label.js"
+        ]
+      },
+      "precision": 0.67,
+      "recall": 1,
+      "f1": 0.8
+    },
+    {
+      "cwe": "CWE-918",
+      "owasp": "A10:2021",
+      "tp": 2,
+      "fn": 0,
+      "tn": 2,
+      "fp": 0,
+      "details": {
+        "truePositives": [
+          "axios-user-url.js",
+          "fetch-user-url.js"
+        ],
+        "falseNegatives": [],
+        "trueNegatives": [
+          "fetch-static-url.js",
+          "fetch-validated-url.js"
+        ],
+        "falsePositives": []
+      },
+      "precision": 1,
+      "recall": 1,
+      "f1": 1
+    }
+  ],
+  "aggregate": {
+    "tp": 13,
+    "fn": 0,
+    "tn": 5,
+    "fp": 8,
+    "precision": 0.62,
+    "recall": 1,
+    "f1": 0.76
+  }
+}

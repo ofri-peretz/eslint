@@ -16,6 +16,12 @@ const ruleTester = new RuleTester({
 
 ruleTester.run('require-storage-encryption', requireStorageEncryption, {
   valid: [
+        'const x = 42;',
+        'const flag = true;',
+        'function noop() {}',
+        'const items = [];',
+        'const obj = {};',
+        'class Foo {}',
     { code: "await SecureStore.setItemAsync('token', token)" },
     { code: "const encrypted = encrypt(data)" }
   ],

@@ -1,0 +1,1664 @@
+{
+  "bench": "ILB-Juliet",
+  "version": "1.0",
+  "timestamp": "2026-05-03T23:20:41.798Z",
+  "environment": {
+    "nodeVersion": "v24.12.0",
+    "eslintVersion": "9.39.2",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "corpus": [
+    {
+      "cwe": "CWE-022",
+      "name": "Path Traversal",
+      "owasp": "A01:2021",
+      "severity": "HIGH",
+      "expectedPlugins": [
+        "eslint-plugin-node-security"
+      ],
+      "counts": {
+        "vulnerable": 2,
+        "safe": 2
+      }
+    },
+    {
+      "cwe": "CWE-078",
+      "name": "OS Command Injection",
+      "owasp": "A03:2021",
+      "severity": "CRITICAL",
+      "expectedPlugins": [
+        "eslint-plugin-secure-coding",
+        "eslint-plugin-node-security"
+      ],
+      "counts": {
+        "vulnerable": 2,
+        "safe": 2
+      }
+    },
+    {
+      "cwe": "CWE-079",
+      "name": "Cross-Site Scripting (XSS)",
+      "owasp": "A03:2021",
+      "severity": "HIGH",
+      "expectedPlugins": [
+        "eslint-plugin-browser-security"
+      ],
+      "counts": {
+        "vulnerable": 2,
+        "safe": 2
+      }
+    },
+    {
+      "cwe": "CWE-089",
+      "name": "SQL Injection",
+      "owasp": "A03:2021",
+      "severity": "CRITICAL",
+      "expectedPlugins": [
+        "eslint-plugin-secure-coding",
+        "eslint-plugin-pg"
+      ],
+      "counts": {
+        "vulnerable": 3,
+        "safe": 3
+      }
+    },
+    {
+      "cwe": "CWE-798",
+      "name": "Hardcoded Credentials",
+      "owasp": "A07:2021",
+      "severity": "HIGH",
+      "expectedPlugins": [
+        "eslint-plugin-secure-coding",
+        "eslint-plugin-node-security"
+      ],
+      "counts": {
+        "vulnerable": 2,
+        "safe": 2
+      }
+    },
+    {
+      "cwe": "CWE-918",
+      "name": "Server-Side Request Forgery (SSRF)",
+      "owasp": "A10:2021",
+      "severity": "HIGH",
+      "expectedPlugins": [
+        "eslint-plugin-node-security"
+      ],
+      "counts": {
+        "vulnerable": 2,
+        "safe": 2
+      }
+    }
+  ],
+  "plugins": {
+    "interlace": {
+      "displayName": "Interlace ESLint Ecosystem",
+      "perCwe": {
+        "CWE-022": {
+          "name": "Path Traversal",
+          "owasp": "A01:2021",
+          "TP": 2,
+          "FP": 0,
+          "FN": 0,
+          "TN": 2,
+          "precision": 100,
+          "recall": 100,
+          "f1": 100,
+          "bas": 100,
+          "fixtures": [
+            {
+              "file": "path-join-user.js",
+              "expectedVulnerable": true,
+              "findings": 1,
+              "ruleHits": {
+                "node-security/detect-non-literal-fs-filename": 1
+              }
+            },
+            {
+              "file": "readfile-concat.js",
+              "expectedVulnerable": true,
+              "findings": 2,
+              "ruleHits": {
+                "node-security/detect-non-literal-fs-filename": 1,
+                "secure-coding/no-xpath-injection": 1
+              }
+            },
+            {
+              "file": "dirname-path.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "static-path.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-078": {
+          "name": "OS Command Injection",
+          "owasp": "A03:2021",
+          "TP": 2,
+          "FP": 0,
+          "FN": 0,
+          "TN": 2,
+          "precision": 100,
+          "recall": 100,
+          "f1": 100,
+          "bas": 100,
+          "fixtures": [
+            {
+              "file": "exec-concat.js",
+              "expectedVulnerable": true,
+              "findings": 1,
+              "ruleHits": {
+                "node-security/detect-child-process": 1
+              }
+            },
+            {
+              "file": "exec-template.js",
+              "expectedVulnerable": true,
+              "findings": 1,
+              "ruleHits": {
+                "node-security/detect-child-process": 1
+              }
+            },
+            {
+              "file": "exec-static.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "execFile-array.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-079": {
+          "name": "Cross-Site Scripting (XSS)",
+          "owasp": "A03:2021",
+          "TP": 2,
+          "FP": 0,
+          "FN": 0,
+          "TN": 2,
+          "precision": 100,
+          "recall": 100,
+          "f1": 100,
+          "bas": 100,
+          "fixtures": [
+            {
+              "file": "document-write-dynamic.js",
+              "expectedVulnerable": true,
+              "findings": 2,
+              "ruleHits": {
+                "secure-coding/no-improper-sanitization": 2
+              }
+            },
+            {
+              "file": "innerhtml-user-input.js",
+              "expectedVulnerable": true,
+              "findings": 1,
+              "ruleHits": {
+                "browser-security/no-innerhtml": 1
+              }
+            },
+            {
+              "file": "static-innerhtml.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "textcontent-safe.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-089": {
+          "name": "SQL Injection",
+          "owasp": "A03:2021",
+          "TP": 3,
+          "FP": 0,
+          "FN": 0,
+          "TN": 3,
+          "precision": 100,
+          "recall": 100,
+          "f1": 100,
+          "bas": 100,
+          "fixtures": [
+            {
+              "file": "dynamic-column.js",
+              "expectedVulnerable": true,
+              "findings": 2,
+              "ruleHits": {
+                "pg/no-floating-query": 1,
+                "pg/no-unsafe-query": 1
+              }
+            },
+            {
+              "file": "string-concat.js",
+              "expectedVulnerable": true,
+              "findings": 2,
+              "ruleHits": {
+                "pg/no-floating-query": 1,
+                "pg/no-unsafe-query": 1
+              }
+            },
+            {
+              "file": "template-literal.js",
+              "expectedVulnerable": true,
+              "findings": 2,
+              "ruleHits": {
+                "pg/no-floating-query": 1,
+                "pg/no-unsafe-query": 1
+              }
+            },
+            {
+              "file": "parameterized.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "prepared-statement.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "static-query.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-798": {
+          "name": "Hardcoded Credentials",
+          "owasp": "A07:2021",
+          "TP": 2,
+          "FP": 0,
+          "FN": 0,
+          "TN": 2,
+          "precision": 100,
+          "recall": 100,
+          "f1": 100,
+          "bas": 100,
+          "fixtures": [
+            {
+              "file": "api-key-in-source.js",
+              "expectedVulnerable": true,
+              "findings": 1,
+              "ruleHits": {
+                "secure-coding/no-hardcoded-credentials": 1
+              }
+            },
+            {
+              "file": "password-in-config.js",
+              "expectedVulnerable": true,
+              "findings": 5,
+              "ruleHits": {
+                "mongodb-security/no-hardcoded-credentials": 2,
+                "secure-coding/no-hardcoded-credentials": 1,
+                "nestjs-security/no-exposed-debug-endpoints": 1,
+                "lambda-security/no-secrets-in-env": 1
+              }
+            },
+            {
+              "file": "env-credentials.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "password-label.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-918": {
+          "name": "Server-Side Request Forgery (SSRF)",
+          "owasp": "A10:2021",
+          "TP": 2,
+          "FP": 0,
+          "FN": 0,
+          "TN": 2,
+          "precision": 100,
+          "recall": 100,
+          "f1": 100,
+          "bas": 100,
+          "fixtures": [
+            {
+              "file": "axios-user-url.js",
+              "expectedVulnerable": true,
+              "findings": 1,
+              "ruleHits": {
+                "node-security/no-ssrf": 1
+              }
+            },
+            {
+              "file": "fetch-user-url.js",
+              "expectedVulnerable": true,
+              "findings": 1,
+              "ruleHits": {
+                "node-security/no-ssrf": 1
+              }
+            },
+            {
+              "file": "fetch-static-url.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "fetch-validated-url.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        }
+      },
+      "aggregate": {
+        "TP": 13,
+        "FP": 0,
+        "FN": 0,
+        "TN": 13,
+        "precision": 100,
+        "recall": 100,
+        "f1": 100,
+        "bas": 100
+      }
+    },
+    "eslint-plugin-security": {
+      "displayName": "eslint-plugin-security",
+      "perCwe": {
+        "CWE-022": {
+          "name": "Path Traversal",
+          "owasp": "A01:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 2,
+          "TN": 2,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "path-join-user.js",
+              "expectedVulnerable": true,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-022/vulnerable/path-join-user.js:3\nRule: \"security/detect-non-literal-require\""
+            },
+            {
+              "file": "readfile-concat.js",
+              "expectedVulnerable": true,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-022/vulnerable/readfile-concat.js:3\nRule: \"security/detect-non-literal-require\""
+            },
+            {
+              "file": "dirname-path.js",
+              "expectedVulnerable": false,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-022/safe/dirname-path.js:3\nRule: \"security/detect-non-literal-require\""
+            },
+            {
+              "file": "static-path.js",
+              "expectedVulnerable": false,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-022/safe/static-path.js:3\nRule: \"security/detect-non-literal-require\""
+            }
+          ]
+        },
+        "CWE-078": {
+          "name": "OS Command Injection",
+          "owasp": "A03:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 2,
+          "TN": 2,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "exec-concat.js",
+              "expectedVulnerable": true,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-078/vulnerable/exec-concat.js:3\nRule: \"security/detect-non-literal-require\""
+            },
+            {
+              "file": "exec-template.js",
+              "expectedVulnerable": true,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-078/vulnerable/exec-template.js:3\nRule: \"security/detect-non-literal-require\""
+            },
+            {
+              "file": "exec-static.js",
+              "expectedVulnerable": false,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-078/safe/exec-static.js:3\nRule: \"security/detect-non-literal-require\""
+            },
+            {
+              "file": "execFile-array.js",
+              "expectedVulnerable": false,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-078/safe/execFile-array.js:3\nRule: \"security/detect-non-literal-require\""
+            }
+          ]
+        },
+        "CWE-079": {
+          "name": "Cross-Site Scripting (XSS)",
+          "owasp": "A03:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 2,
+          "TN": 2,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "document-write-dynamic.js",
+              "expectedVulnerable": true,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-079/vulnerable/document-write-dynamic.js:3\nRule: \"security/detect-child-process\""
+            },
+            {
+              "file": "innerhtml-user-input.js",
+              "expectedVulnerable": true,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-079/vulnerable/innerhtml-user-input.js:4\nRule: \"security/detect-child-process\""
+            },
+            {
+              "file": "static-innerhtml.js",
+              "expectedVulnerable": false,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-079/safe/static-innerhtml.js:3\nRule: \"security/detect-child-process\""
+            },
+            {
+              "file": "textcontent-safe.js",
+              "expectedVulnerable": false,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-079/safe/textcontent-safe.js:4\nRule: \"security/detect-child-process\""
+            }
+          ]
+        },
+        "CWE-089": {
+          "name": "SQL Injection",
+          "owasp": "A03:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 3,
+          "TN": 3,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "dynamic-column.js",
+              "expectedVulnerable": true,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-089/vulnerable/dynamic-column.js:4\nRule: \"security/detect-child-process\""
+            },
+            {
+              "file": "string-concat.js",
+              "expectedVulnerable": true,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-089/vulnerable/string-concat.js:5\nRule: \"security/detect-child-process\""
+            },
+            {
+              "file": "template-literal.js",
+              "expectedVulnerable": true,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-089/vulnerable/template-literal.js:4\nRule: \"security/detect-child-process\""
+            },
+            {
+              "file": "parameterized.js",
+              "expectedVulnerable": false,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-089/safe/parameterized.js:4\nRule: \"security/detect-child-process\""
+            },
+            {
+              "file": "prepared-statement.js",
+              "expectedVulnerable": false,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-089/safe/prepared-statement.js:5\nRule: \"security/detect-child-process\""
+            },
+            {
+              "file": "static-query.js",
+              "expectedVulnerable": false,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-089/safe/static-query.js:4\nRule: \"security/detect-child-process\""
+            }
+          ]
+        },
+        "CWE-798": {
+          "name": "Hardcoded Credentials",
+          "owasp": "A07:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 2,
+          "TN": 2,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "api-key-in-source.js",
+              "expectedVulnerable": true,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-798/vulnerable/api-key-in-source.js:4\nRule: \"security/detect-child-process\""
+            },
+            {
+              "file": "password-in-config.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "env-credentials.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "password-label.js",
+              "expectedVulnerable": false,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-798/safe/password-label.js:4\nRule: \"security/detect-child-process\""
+            }
+          ]
+        },
+        "CWE-918": {
+          "name": "Server-Side Request Forgery (SSRF)",
+          "owasp": "A10:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 2,
+          "TN": 2,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "axios-user-url.js",
+              "expectedVulnerable": true,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-918/vulnerable/axios-user-url.js:3\nRule: \"security/detect-non-literal-require\""
+            },
+            {
+              "file": "fetch-user-url.js",
+              "expectedVulnerable": true,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-918/vulnerable/fetch-user-url.js:4\nRule: \"security/detect-child-process\""
+            },
+            {
+              "file": "fetch-static-url.js",
+              "expectedVulnerable": false,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-918/safe/fetch-static-url.js:3\nRule: \"security/detect-child-process\""
+            },
+            {
+              "file": "fetch-validated-url.js",
+              "expectedVulnerable": false,
+              "error": "lint: context.getScope is not a function\nOccurred while linting /Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/corpus/CWE-918/safe/fetch-validated-url.js:6\nRule: \"security/detect-child-process\""
+            }
+          ]
+        }
+      },
+      "aggregate": {
+        "TP": 0,
+        "FP": 0,
+        "FN": 13,
+        "TN": 13,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0,
+        "bas": 0
+      }
+    },
+    "security-node": {
+      "displayName": "eslint-plugin-security-node",
+      "perCwe": {
+        "CWE-022": {
+          "name": "Path Traversal",
+          "owasp": "A01:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 2,
+          "TN": 2,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "path-join-user.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "readfile-concat.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "dirname-path.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "static-path.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-078": {
+          "name": "OS Command Injection",
+          "owasp": "A03:2021",
+          "TP": 0,
+          "FP": 1,
+          "FN": 2,
+          "TN": 1,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": -50,
+          "fixtures": [
+            {
+              "file": "exec-concat.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "exec-template.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "exec-static.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "execFile-array.js",
+              "expectedVulnerable": false,
+              "findings": 1,
+              "ruleHits": {
+                "security-node/detect-crlf": 1
+              }
+            }
+          ]
+        },
+        "CWE-079": {
+          "name": "Cross-Site Scripting (XSS)",
+          "owasp": "A03:2021",
+          "TP": 1,
+          "FP": 0,
+          "FN": 1,
+          "TN": 2,
+          "precision": 100,
+          "recall": 50,
+          "f1": 66.7,
+          "bas": 50,
+          "fixtures": [
+            {
+              "file": "document-write-dynamic.js",
+              "expectedVulnerable": true,
+              "findings": 1,
+              "ruleHits": {
+                "security-node/detect-html-injection": 1
+              }
+            },
+            {
+              "file": "innerhtml-user-input.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "static-innerhtml.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "textcontent-safe.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-089": {
+          "name": "SQL Injection",
+          "owasp": "A03:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 3,
+          "TN": 3,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "dynamic-column.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "string-concat.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "template-literal.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "parameterized.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "prepared-statement.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "static-query.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-798": {
+          "name": "Hardcoded Credentials",
+          "owasp": "A07:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 2,
+          "TN": 2,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "api-key-in-source.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "password-in-config.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "env-credentials.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "password-label.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-918": {
+          "name": "Server-Side Request Forgery (SSRF)",
+          "owasp": "A10:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 2,
+          "TN": 2,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "axios-user-url.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "fetch-user-url.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "fetch-static-url.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "fetch-validated-url.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        }
+      },
+      "aggregate": {
+        "TP": 1,
+        "FP": 1,
+        "FN": 12,
+        "TN": 12,
+        "precision": 50,
+        "recall": 7.7,
+        "f1": 13.3,
+        "bas": 0
+      }
+    },
+    "sonarjs": {
+      "displayName": "eslint-plugin-sonarjs",
+      "perCwe": {
+        "CWE-022": {
+          "name": "Path Traversal",
+          "owasp": "A01:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 2,
+          "TN": 2,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "path-join-user.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "readfile-concat.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "dirname-path.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "static-path.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-078": {
+          "name": "OS Command Injection",
+          "owasp": "A03:2021",
+          "TP": 2,
+          "FP": 2,
+          "FN": 0,
+          "TN": 0,
+          "precision": 50,
+          "recall": 100,
+          "f1": 66.7,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "exec-concat.js",
+              "expectedVulnerable": true,
+              "findings": 1,
+              "ruleHits": {
+                "sonarjs/os-command": 1
+              }
+            },
+            {
+              "file": "exec-template.js",
+              "expectedVulnerable": true,
+              "findings": 1,
+              "ruleHits": {
+                "sonarjs/os-command": 1
+              }
+            },
+            {
+              "file": "exec-static.js",
+              "expectedVulnerable": false,
+              "findings": 1,
+              "ruleHits": {
+                "sonarjs/no-os-command-from-path": 1
+              }
+            },
+            {
+              "file": "execFile-array.js",
+              "expectedVulnerable": false,
+              "findings": 1,
+              "ruleHits": {
+                "sonarjs/no-os-command-from-path": 1
+              }
+            }
+          ]
+        },
+        "CWE-079": {
+          "name": "Cross-Site Scripting (XSS)",
+          "owasp": "A03:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 2,
+          "TN": 2,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "document-write-dynamic.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "innerhtml-user-input.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "static-innerhtml.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "textcontent-safe.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-089": {
+          "name": "SQL Injection",
+          "owasp": "A03:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 3,
+          "TN": 3,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "dynamic-column.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "string-concat.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "template-literal.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "parameterized.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "prepared-statement.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "static-query.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-798": {
+          "name": "Hardcoded Credentials",
+          "owasp": "A07:2021",
+          "TP": 2,
+          "FP": 0,
+          "FN": 0,
+          "TN": 2,
+          "precision": 100,
+          "recall": 100,
+          "f1": 100,
+          "bas": 100,
+          "fixtures": [
+            {
+              "file": "api-key-in-source.js",
+              "expectedVulnerable": true,
+              "findings": 1,
+              "ruleHits": {
+                "sonarjs/no-hardcoded-secrets": 1
+              }
+            },
+            {
+              "file": "password-in-config.js",
+              "expectedVulnerable": true,
+              "findings": 1,
+              "ruleHits": {
+                "sonarjs/no-hardcoded-passwords": 1
+              }
+            },
+            {
+              "file": "env-credentials.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "password-label.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-918": {
+          "name": "Server-Side Request Forgery (SSRF)",
+          "owasp": "A10:2021",
+          "TP": 0,
+          "FP": 1,
+          "FN": 2,
+          "TN": 1,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": -50,
+          "fixtures": [
+            {
+              "file": "axios-user-url.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "fetch-user-url.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "fetch-static-url.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "fetch-validated-url.js",
+              "expectedVulnerable": false,
+              "findings": 2,
+              "ruleHits": {
+                "sonarjs/no-unused-vars": 1,
+                "sonarjs/no-dead-store": 1
+              }
+            }
+          ]
+        }
+      },
+      "aggregate": {
+        "TP": 4,
+        "FP": 3,
+        "FN": 9,
+        "TN": 10,
+        "precision": 57.1,
+        "recall": 30.8,
+        "f1": 40,
+        "bas": 7.7
+      }
+    },
+    "microsoft-sdl": {
+      "displayName": "@microsoft/eslint-plugin-sdl",
+      "perCwe": {
+        "CWE-022": {
+          "name": "Path Traversal",
+          "owasp": "A01:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 2,
+          "TN": 2,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "path-join-user.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "readfile-concat.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "dirname-path.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "static-path.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-078": {
+          "name": "OS Command Injection",
+          "owasp": "A03:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 2,
+          "TN": 2,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "exec-concat.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "exec-template.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "exec-static.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "execFile-array.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-079": {
+          "name": "Cross-Site Scripting (XSS)",
+          "owasp": "A03:2021",
+          "TP": 2,
+          "FP": 1,
+          "FN": 0,
+          "TN": 1,
+          "precision": 66.7,
+          "recall": 100,
+          "f1": 80,
+          "bas": 50,
+          "fixtures": [
+            {
+              "file": "document-write-dynamic.js",
+              "expectedVulnerable": true,
+              "findings": 1,
+              "ruleHits": {
+                "@microsoft/sdl/no-document-write": 1
+              }
+            },
+            {
+              "file": "innerhtml-user-input.js",
+              "expectedVulnerable": true,
+              "findings": 1,
+              "ruleHits": {
+                "@microsoft/sdl/no-inner-html": 1
+              }
+            },
+            {
+              "file": "static-innerhtml.js",
+              "expectedVulnerable": false,
+              "findings": 1,
+              "ruleHits": {
+                "@microsoft/sdl/no-inner-html": 1
+              }
+            },
+            {
+              "file": "textcontent-safe.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-089": {
+          "name": "SQL Injection",
+          "owasp": "A03:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 3,
+          "TN": 3,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "dynamic-column.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "string-concat.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "template-literal.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "parameterized.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "prepared-statement.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "static-query.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-798": {
+          "name": "Hardcoded Credentials",
+          "owasp": "A07:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 2,
+          "TN": 2,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "api-key-in-source.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "password-in-config.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "env-credentials.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "password-label.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-918": {
+          "name": "Server-Side Request Forgery (SSRF)",
+          "owasp": "A10:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 2,
+          "TN": 2,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "axios-user-url.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "fetch-user-url.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "fetch-static-url.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "fetch-validated-url.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        }
+      },
+      "aggregate": {
+        "TP": 2,
+        "FP": 1,
+        "FN": 11,
+        "TN": 12,
+        "precision": 66.7,
+        "recall": 15.4,
+        "f1": 25,
+        "bas": 7.7
+      }
+    },
+    "no-unsanitized": {
+      "displayName": "eslint-plugin-no-unsanitized",
+      "perCwe": {
+        "CWE-022": {
+          "name": "Path Traversal",
+          "owasp": "A01:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 2,
+          "TN": 2,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "path-join-user.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "readfile-concat.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "dirname-path.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "static-path.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-078": {
+          "name": "OS Command Injection",
+          "owasp": "A03:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 2,
+          "TN": 2,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "exec-concat.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "exec-template.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "exec-static.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "execFile-array.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-079": {
+          "name": "Cross-Site Scripting (XSS)",
+          "owasp": "A03:2021",
+          "TP": 2,
+          "FP": 0,
+          "FN": 0,
+          "TN": 2,
+          "precision": 100,
+          "recall": 100,
+          "f1": 100,
+          "bas": 100,
+          "fixtures": [
+            {
+              "file": "document-write-dynamic.js",
+              "expectedVulnerable": true,
+              "findings": 1,
+              "ruleHits": {
+                "no-unsanitized/method": 1
+              }
+            },
+            {
+              "file": "innerhtml-user-input.js",
+              "expectedVulnerable": true,
+              "findings": 1,
+              "ruleHits": {
+                "no-unsanitized/property": 1
+              }
+            },
+            {
+              "file": "static-innerhtml.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "textcontent-safe.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-089": {
+          "name": "SQL Injection",
+          "owasp": "A03:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 3,
+          "TN": 3,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "dynamic-column.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "string-concat.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "template-literal.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "parameterized.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "prepared-statement.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "static-query.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-798": {
+          "name": "Hardcoded Credentials",
+          "owasp": "A07:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 2,
+          "TN": 2,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "api-key-in-source.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "password-in-config.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "env-credentials.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "password-label.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        },
+        "CWE-918": {
+          "name": "Server-Side Request Forgery (SSRF)",
+          "owasp": "A10:2021",
+          "TP": 0,
+          "FP": 0,
+          "FN": 2,
+          "TN": 2,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0,
+          "bas": 0,
+          "fixtures": [
+            {
+              "file": "axios-user-url.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "fetch-user-url.js",
+              "expectedVulnerable": true,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "fetch-static-url.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            },
+            {
+              "file": "fetch-validated-url.js",
+              "expectedVulnerable": false,
+              "findings": 0,
+              "ruleHits": {}
+            }
+          ]
+        }
+      },
+      "aggregate": {
+        "TP": 2,
+        "FP": 0,
+        "FN": 11,
+        "TN": 13,
+        "precision": 100,
+        "recall": 15.4,
+        "f1": 26.7,
+        "bas": 15.4
+      }
+    }
+  }
+}

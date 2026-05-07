@@ -1,3 +1,14 @@
+## [4.1.0] - 2026-05-03
+
+### Added
+
+- New rule `no-deprecated-buffer` — flags use of the deprecated `Buffer()` constructor (Node.js security advisory; `Buffer.from`/`Buffer.alloc` should be used instead). Enabled in the `recommended` preset at `warn` to avoid breaking adopters with legacy `Buffer()` calls; will be promoted to `error` in the next major.
+
+### Bug Fixes
+
+- `no-zip-slip`: removed redundant dangerous-destination check from the literal handler. Extraction-call handler already reports `dangerousArchiveDestination`; the literal-side check was producing duplicate errors and (separately) firing on unrelated calls like `fs.readFileSync('/etc/app/config')`.
+- `lock-file`, `detect-child-process`: minor refinements (see source diff).
+
 ## [4.0.4] - 2026-02-08
 
 ### Bug Fixes

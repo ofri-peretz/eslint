@@ -1,0 +1,122 @@
+[
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/version/route.ts",
+    "line": 1,
+    "column": 43,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/79"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/tasks/cron/route.ts",
+    "line": 1,
+    "column": 43,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/79"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/tasks/cleanup/route.ts",
+    "line": 1,
+    "column": 43,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/79"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/me/route.ts",
+    "line": 1,
+    "column": 43,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/79"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/geolocation/route.ts",
+    "line": 1,
+    "column": 43,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/79"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/api/email/route.ts",
+    "line": 1,
+    "column": 43,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/79"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/(use-page-wrapper)/settings/(settings-layout)/security/two-factor-auth/page.tsx",
+    "line": 22,
+    "column": 22,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/(use-page-wrapper)/settings/(settings-layout)/security/password/page.tsx",
+    "line": 10,
+    "column": 14,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Common password detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitio"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/(use-page-wrapper)/settings/(settings-layout)/security/password/page.tsx",
+    "line": 21,
+    "column": 30,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Common password detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitio"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/(use-page-wrapper)/settings/(settings-layout)/developer/webhooks/new/page.tsx",
+    "line": 16,
+    "column": 5,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/79"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/(use-page-wrapper)/settings/(admin-layout)/admin/page.tsx",
+    "line": 5,
+    "column": 14,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Common password detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitio"
+  },
+  {
+    "ruleId": "node-security/lock-file",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/(use-page-wrapper)/settings/(admin-layout)/admin/users/[id]/edit/error.tsx",
+    "line": 1,
+    "column": 1,
+    "message": "🔒 CWE-829 OWASP:A03-Software CVSS:7.5 | Package lock file missing (package-lock.json | yarn.lock | pnpm-lock.yaml) for any. Commit the lock file to ensure supply chain integrity. | HIGH\n   Fix: Generate and commit the package-lock.json | y"
+  },
+  {
+    "ruleId": "secure-coding/no-sensitive-data-exposure",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/(use-page-wrapper)/refer/DubReferralsPage.tsx",
+    "line": 25,
+    "column": 19,
+    "message": "🔒 CWE-532 OWASP:A09-Logging CVSS:5.3 | Sensitive data detected in logs: token | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Redact or mask sensitive data before logging/exposing | https://cwe.mitre.org/data/definitions/532.html"
+  },
+  {
+    "ruleId": "secure-coding/no-sensitive-data-exposure",
+    "severity": "warn",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/(use-page-wrapper)/refer/DubReferralsPage.tsx",
+    "line": 42,
+    "column": 23,
+    "message": "🔒 CWE-532 OWASP:A09-Logging CVSS:5.3 | Sensitive data detected in logs: token | HIGH [GDPR,HIPAA,PCI-DSS,SOC2]\n   Fix: Redact or mask sensitive data before logging/exposing | https://cwe.mitre.org/data/definitions/532.html"
+  },
+  {
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "severity": "error",
+    "file": "/Users/ofri/repos/ofriperetz.dev/oos/cal.com/apps/web/app/(booking-page-wrapper)/booking/dry-run-successful/page.tsx",
+    "line": 8,
+    "column": 14,
+    "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.API_KEY or secret management service | https://cwe.mitre.org/data/definitions/798.h"
+  }
+]

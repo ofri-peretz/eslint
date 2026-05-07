@@ -1,0 +1,49 @@
+{
+    "benchmark": "Import Plugin - no-cycle Rule Only",
+    "timestamp": "2026-01-02T14:22:00.000Z",
+    "iterations": 3,
+    "environment": {
+        "node": "v20.19.5",
+        "platform": "darwin",
+        "arch": "arm64"
+    },
+    "note": "10K benchmark terminated - eslint-plugin-import would take 10+ minutes",
+    "results": [
+        {
+            "size": 1000,
+            "plugins": {
+                "eslint-plugin-import": {
+                    "stats": {
+                        "mean": 27.03,
+                        "stdDev": 1.59
+                    }
+                },
+                "eslint-plugin-import-next": {
+                    "stats": {
+                        "mean": 1.05,
+                        "stdDev": 0.01
+                    }
+                }
+            },
+            "speedup": 25.7
+        },
+        {
+            "size": 5000,
+            "plugins": {
+                "eslint-plugin-import": {
+                    "stats": {
+                        "mean": 148.59,
+                        "stdDev": 31.13
+                    }
+                },
+                "eslint-plugin-import-next": {
+                    "stats": {
+                        "mean": 2.71,
+                        "stdDev": 0.01
+                    }
+                }
+            },
+            "speedup": 54.9
+        }
+    ]
+}

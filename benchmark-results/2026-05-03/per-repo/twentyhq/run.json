@@ -1,0 +1,38 @@
+{
+  "repo": "twentyhq",
+  "meta": {
+    "stars": 30000,
+    "commit": "main",
+    "category": "CRM (NestJS)",
+    "plugins": [
+      "nestjs-security",
+      "node-security",
+      "secure-coding",
+      "pg"
+    ],
+    "fpEdge": false,
+    "srcGlob": "packages/twenty-server/src/**/*.ts"
+  },
+  "fileCount": 4978,
+  "loc": 411003,
+  "timing": {
+    "runsMs": [
+      1825
+    ],
+    "medianMs": 1825,
+    "meanMs": 1825,
+    "stddevMs": 0,
+    "cv": 0,
+    "msPerFile": 0.37
+  },
+  "peakRssMb": 368,
+  "findings": {
+    "total": 29,
+    "errors": 25,
+    "warnings": 4,
+    "filesWithFindings": 11,
+    "densityPerKloc": 0.07,
+    "externalDirectives": 0,
+    "parseErrors": 4787
+  }
+}

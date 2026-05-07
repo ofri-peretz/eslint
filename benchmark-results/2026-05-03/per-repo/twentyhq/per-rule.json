@@ -1,0 +1,383 @@
+{
+  "secure-coding/no-hardcoded-credentials": {
+    "hits": 22,
+    "avgTimeMs": 2.84,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/modules/messaging/message-import-manager/drivers/microsoft/mocks/microsoft-api-examples.ts",
+        "line": 38,
+        "column": 22,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.CHANGE_KEY or secret management service | https://cwe.mitre.org/data/definitions"
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/modules/messaging/message-import-manager/drivers/microsoft/mocks/microsoft-api-examples.ts",
+        "line": 51,
+        "column": 13,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.CONVERSATION_ID or secret management service | https://cwe.mitre.org/data/defini"
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/modules/messaging/message-import-manager/drivers/microsoft/mocks/microsoft-api-examples.ts",
+        "line": 107,
+        "column": 22,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.CHANGE_KEY or secret management service | https://cwe.mitre.org/data/definitions"
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/modules/messaging/message-import-manager/drivers/microsoft/mocks/microsoft-api-examples.ts",
+        "line": 196,
+        "column": 22,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.CHANGE_KEY or secret management service | https://cwe.mitre.org/data/definitions"
+      },
+      {
+        "ruleId": "secure-coding/no-hardcoded-credentials",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/modules/messaging/message-import-manager/drivers/microsoft/mocks/microsoft-api-examples.ts",
+        "line": 209,
+        "column": 13,
+        "message": "🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Secret key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: Use environment variable: process.env.CONVERSATION_ID or secret management service | https://cwe.mitre.org/data/defini"
+      }
+    ]
+  },
+  "nestjs-security/no-exposed-debug-endpoints": {
+    "hits": 2,
+    "avgTimeMs": 0.81,
+    "samples": [
+      {
+        "ruleId": "nestjs-security/no-exposed-debug-endpoints",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/metadata-modules/permissions/constants/admin-role-label.constants.ts",
+        "line": 1,
+        "column": 33,
+        "message": "🔒 CWE-489 | Debug endpoint exposed without authentication | HIGH\n   Fix: Remove debug endpoints from production or add authentication | https://cwe.mitre.org/data/definitions/489.html"
+      },
+      {
+        "ruleId": "nestjs-security/no-exposed-debug-endpoints",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/database/clickHouse/seeds/run-seeds.ts",
+        "line": 12,
+        "column": 34,
+        "message": "🔒 CWE-489 | Debug endpoint exposed without authentication | HIGH\n   Fix: Remove debug endpoints from production or add authentication | https://cwe.mitre.org/data/definitions/489.html"
+      }
+    ]
+  },
+  "secure-coding/detect-non-literal-regexp": {
+    "hits": 1,
+    "avgTimeMs": 1.09,
+    "samples": [
+      {
+        "ruleId": "secure-coding/detect-non-literal-regexp",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/metadata-modules/logic-function/constants/handler.contant.ts",
+        "line": 8,
+        "column": 3,
+        "message": "⚠️ CWE-400 OWASP:A06-Insecure CVSS:7.5 | ReDoS vulnerability detected | CRITICAL\n   Fix: Restructure regex to avoid nested quantifiers | https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS"
+      }
+    ]
+  },
+  "secure-coding/no-redos-vulnerable-regex": {
+    "hits": 1,
+    "avgTimeMs": 0.72,
+    "samples": [
+      {
+        "ruleId": "secure-coding/no-redos-vulnerable-regex",
+        "severity": "error",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/metadata-modules/logic-function/constants/handler.contant.ts",
+        "line": 8,
+        "column": 3,
+        "message": "🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Nested Quantifiers: Nested quantifiers like (a+)+, (a*)*, (a?)? cause exponential backtracking | CRITICAL\n   Fix: Use atomic groups (?>...) or restructure to avoid nesting | https://owasp.org/www-com"
+      }
+    ]
+  },
+  "secure-coding/detect-object-injection": {
+    "hits": 3,
+    "avgTimeMs": 1.57,
+    "samples": [
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/domain/subdomain-manager/utils/generate-random-subdomain.util.ts",
+        "line": 163,
+        "column": 24,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      },
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/domain/subdomain-manager/utils/generate-random-subdomain.util.ts",
+        "line": 164,
+        "column": 24,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      },
+      {
+        "ruleId": "secure-coding/detect-object-injection",
+        "severity": "warn",
+        "file": "/Users/ofri/repos/ofriperetz.dev/oos/twentyhq/packages/twenty-server/src/engine/core-modules/domain/subdomain-manager/utils/generate-random-subdomain.util.ts",
+        "line": 165,
+        "column": 23,
+        "message": "⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | MEDIUM [SOC2,PCI-DSS,ISO27001]\n   Fix: Use Map or property whitelisting | https://portswigger.net/web-security/prototype-pollution"
+      }
+    ]
+  },
+  "node-security/lock-file": {
+    "hits": 0,
+    "avgTimeMs": 12.15,
+    "samples": []
+  },
+  "secure-coding/no-graphql-injection": {
+    "hits": 0,
+    "avgTimeMs": 5.73,
+    "samples": []
+  },
+  "secure-coding/no-unchecked-loop-condition": {
+    "hits": 0,
+    "avgTimeMs": 2.64,
+    "samples": []
+  },
+  "node-security/detect-suspicious-dependencies": {
+    "hits": 0,
+    "avgTimeMs": 2.23,
+    "samples": []
+  },
+  "node-security/no-buffer-overread": {
+    "hits": 0,
+    "avgTimeMs": 2.1,
+    "samples": []
+  },
+  "secure-coding/no-xpath-injection": {
+    "hits": 0,
+    "avgTimeMs": 2.01,
+    "samples": []
+  },
+  "nestjs-security/require-guards": {
+    "hits": 0,
+    "avgTimeMs": 1.75,
+    "samples": []
+  },
+  "node-security/no-zip-slip": {
+    "hits": 0,
+    "avgTimeMs": 1.74,
+    "samples": []
+  },
+  "secure-coding/no-ldap-injection": {
+    "hits": 0,
+    "avgTimeMs": 1.39,
+    "samples": []
+  },
+  "node-security/detect-child-process": {
+    "hits": 0,
+    "avgTimeMs": 1.36,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-deserialization": {
+    "hits": 0,
+    "avgTimeMs": 1.35,
+    "samples": []
+  },
+  "secure-coding/no-improper-sanitization": {
+    "hits": 0,
+    "avgTimeMs": 1.32,
+    "samples": []
+  },
+  "secure-coding/no-weak-password-recovery": {
+    "hits": 0,
+    "avgTimeMs": 1.24,
+    "samples": []
+  },
+  "secure-coding/no-sensitive-data-exposure": {
+    "hits": 0,
+    "avgTimeMs": 1.24,
+    "samples": []
+  },
+  "secure-coding/no-unlimited-resource-allocation": {
+    "hits": 0,
+    "avgTimeMs": 1.24,
+    "samples": []
+  },
+  "secure-coding/no-privilege-escalation": {
+    "hits": 0,
+    "avgTimeMs": 1.14,
+    "samples": []
+  },
+  "secure-coding/no-insecure-comparison": {
+    "hits": 0,
+    "avgTimeMs": 1.04,
+    "samples": []
+  },
+  "secure-coding/no-xxe-injection": {
+    "hits": 0,
+    "avgTimeMs": 1.03,
+    "samples": []
+  },
+  "secure-coding/no-missing-authentication": {
+    "hits": 0,
+    "avgTimeMs": 0.97,
+    "samples": []
+  },
+  "node-security/detect-non-literal-fs-filename": {
+    "hits": 0,
+    "avgTimeMs": 0.85,
+    "samples": []
+  },
+  "nestjs-security/no-exposed-private-fields": {
+    "hits": 0,
+    "avgTimeMs": 0.81,
+    "samples": []
+  },
+  "node-security/detect-eval-with-expression": {
+    "hits": 0,
+    "avgTimeMs": 0.8,
+    "samples": []
+  },
+  "node-security/no-toctou-vulnerability": {
+    "hits": 0,
+    "avgTimeMs": 0.74,
+    "samples": []
+  },
+  "nestjs-security/no-missing-validation-pipe": {
+    "hits": 0,
+    "avgTimeMs": 0.72,
+    "samples": []
+  },
+  "nestjs-security/require-throttler": {
+    "hits": 0,
+    "avgTimeMs": 0.64,
+    "samples": []
+  },
+  "node-security/no-static-iv": {
+    "hits": 0,
+    "avgTimeMs": 0.63,
+    "samples": []
+  },
+  "node-security/require-dependency-integrity": {
+    "hits": 0,
+    "avgTimeMs": 0.6,
+    "samples": []
+  },
+  "node-security/no-data-in-temp-storage": {
+    "hits": 0,
+    "avgTimeMs": 0.58,
+    "samples": []
+  },
+  "node-security/no-weak-hash-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 0.57,
+    "samples": []
+  },
+  "pg/prevent-double-release": {
+    "hits": 0,
+    "avgTimeMs": 0.54,
+    "samples": []
+  },
+  "node-security/no-arbitrary-file-access": {
+    "hits": 0,
+    "avgTimeMs": 0.53,
+    "samples": []
+  },
+  "node-security/no-weak-cipher-algorithm": {
+    "hits": 0,
+    "avgTimeMs": 0.52,
+    "samples": []
+  },
+  "secure-coding/no-unsafe-regex-construction": {
+    "hits": 0,
+    "avgTimeMs": 0.47,
+    "samples": []
+  },
+  "node-security/no-unsafe-dynamic-require": {
+    "hits": 0,
+    "avgTimeMs": 0.47,
+    "samples": []
+  },
+  "nestjs-security/require-class-validator": {
+    "hits": 0,
+    "avgTimeMs": 0.42,
+    "samples": []
+  },
+  "node-security/no-ecb-mode": {
+    "hits": 0,
+    "avgTimeMs": 0.41,
+    "samples": []
+  },
+  "node-security/no-cryptojs": {
+    "hits": 0,
+    "avgTimeMs": 0.39,
+    "samples": []
+  },
+  "node-security/no-ssrf": {
+    "hits": 0,
+    "avgTimeMs": 0.38,
+    "samples": []
+  },
+  "node-security/no-deprecated-buffer": {
+    "hits": 0,
+    "avgTimeMs": 0.35,
+    "samples": []
+  },
+  "pg/no-unsafe-query": {
+    "hits": 0,
+    "avgTimeMs": 0.23,
+    "samples": []
+  },
+  "pg/no-unsafe-copy-from": {
+    "hits": 0,
+    "avgTimeMs": 0.2,
+    "samples": []
+  },
+  "pg/prefer-pool-query": {
+    "hits": 0,
+    "avgTimeMs": 0.16,
+    "samples": []
+  },
+  "pg/no-unsafe-search-path": {
+    "hits": 0,
+    "avgTimeMs": 0.11,
+    "samples": []
+  },
+  "pg/no-hardcoded-credentials": {
+    "hits": 0,
+    "avgTimeMs": 0.1,
+    "samples": []
+  },
+  "pg/no-batch-insert-loop": {
+    "hits": 0,
+    "avgTimeMs": 0.09,
+    "samples": []
+  },
+  "pg/no-missing-client-release": {
+    "hits": 0,
+    "avgTimeMs": 0.09,
+    "samples": []
+  },
+  "pg/no-transaction-on-pool": {
+    "hits": 0,
+    "avgTimeMs": 0.09,
+    "samples": []
+  },
+  "pg/check-query-params": {
+    "hits": 0,
+    "avgTimeMs": 0.08,
+    "samples": []
+  },
+  "pg/no-floating-query": {
+    "hits": 0,
+    "avgTimeMs": 0.08,
+    "samples": []
+  },
+  "pg/no-insecure-ssl": {
+    "hits": 0,
+    "avgTimeMs": 0.08,
+    "samples": []
+  },
+  "pg/no-select-all": {
+    "hits": 0,
+    "avgTimeMs": 0.07,
+    "samples": []
+  }
+}

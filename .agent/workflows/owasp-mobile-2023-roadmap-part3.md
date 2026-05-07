@@ -1,6 +1,6 @@
-   - Review Info.plist configurations
-   - Configure appropriate usage descriptions
-   - Limit keychain sharing
+- Review Info.plist configurations
+- Configure appropriate usage descriptions
+- Limit keychain sharing
 
 #### Phase 3: Data Protection (Week 5-6)
 
