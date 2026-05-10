@@ -36,13 +36,6 @@ By using this plugin, you can proactively identify and mitigate security risks a
 npm install eslint-plugin-jwt --save-dev
 ```
 
-## 💡 What You Get
-- **13 Security Rules** - Algorithm attacks, replay prevention, claim validation
-- **6 JWT Libraries** - jsonwebtoken, jose, express-jwt, @nestjs/jwt, jwks-rsa, jwt-decode
-- **2025 Research** - "Back to the Future" replay attack prevention (LightSEC 2025)
-- **AI-Optimized** - Structured messages for GitHub Copilot, Cursor, Claude assistance
-- **CWE References** - Every rule maps to Common Weakness Enumeration
-
 ## ⚙️ Configuration Presets
 | Preset        | Description                                               |
 | :------------ | :-------------------------------------------------------- |
@@ -71,6 +64,14 @@ By providing this structured context (CWE, OWASP, Fix), we enable AI tools to **
 
 By structuring errors with specific CWE codes, OWASP categories, and direct fix suggestions, this format allows AI coding assistants to autonomously identify, explain, and resolve security vulnerabilities with high confidence.
 
+## 💡 What You Get
+
+- **13 Security Rules** - Algorithm attacks, replay prevention, claim validation
+- **6 JWT Libraries** - jsonwebtoken, jose, express-jwt, @nestjs/jwt, jwks-rsa, jwt-decode
+- **2025 Research** - "Back to the Future" replay attack prevention (LightSEC 2025)
+- **AI-Optimized** - Structured messages for GitHub Copilot, Cursor, Claude assistance
+- **CWE References** - Every rule maps to Common Weakness Enumeration
+
 ## Rules
 
 **Legend**
@@ -82,22 +83,25 @@ By structuring errors with specific CWE codes, OWASP categories, and direct fix 
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
+| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
+| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [no-algorithm-confusion](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-algorithm-confusion) | CWE-347 | A02:2025 | 9.8 | ESLint rule documentation for no-algorithm-confusion | 💼 |  |  | 💡 |  |
-| [no-algorithm-none](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-algorithm-none) | CWE-347 | A02:2025 | 9.8 | ESLint rule documentation for no-algorithm-none | 💼 |  |  | 💡 |  |
-| [no-decode-without-verify](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-decode-without-verify) | CWE-345 | A08:2025 | 7.5 | ESLint rule documentation for no-decode-without-verify | 💼 | ⚠️ |  | 💡 |  |
-| [no-hardcoded-secret](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-hardcoded-secret) | CWE-798 | A05:2025 | 7.9 | ESLint rule documentation for no-hardcoded-secret | 💼 |  |  | 💡 |  |
-| [no-sensitive-payload](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-sensitive-payload) | CWE-359 | A01:2025 | 5.3 | ESLint rule documentation for no-sensitive-payload | 💼 | ⚠️ |  | 💡 |  |
-| [no-timestamp-manipulation](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-timestamp-manipulation) | CWE-294 | A05:2025 | 7.5 | ESLint rule documentation for no-timestamp-manipulation | 💼 |  |  | 💡 |  |
-| [no-weak-secret](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-weak-secret) | CWE-326 | A02:2025 | 7.5 | ESLint rule documentation for no-weak-secret | 💼 |  |  | 💡 |  |
-| [require-algorithm-whitelist](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-algorithm-whitelist) | CWE-757 | A02:2025 | 7.5 | ESLint rule documentation for require-algorithm-whitelist | 💼 | ⚠️ |  | 💡 |  |
-| [require-audience-validation](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-audience-validation) | CWE-287 | A07:2025 | 5.3 | ESLint rule documentation for require-audience-validation |  |  |  | 💡 |  |
-| [require-expiration](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-expiration) | CWE-613 | A04:2025 | 5.3 | ESLint rule documentation for require-expiration | 💼 | ⚠️ |  | 💡 |  |
-| [require-issued-at](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-issued-at) | CWE-294 | A04:2025 | 5.3 | ESLint rule documentation for require-issued-at |  |  |  | 💡 |  |
-| [require-issuer-validation](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-issuer-validation) | CWE-287 | A07:2025 | 5.3 | ESLint rule documentation for require-issuer-validation |  |  |  | 💡 |  |
-| [require-max-age](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-max-age) | CWE-294 | A04:2025 | 5.3 | ESLint rule documentation for require-max-age |  |  |  | 💡 |  |
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [no-algorithm-confusion](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-algorithm-confusion) | CWE-347 | A02:2025 | 9.8 | ESLint rule documentation for no-algorithm-confusion | 🟢 | 💼 |  |  | 💡 |  |
+| [no-algorithm-none](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-algorithm-none) | CWE-347 | A02:2025 | 9.8 | ESLint rule documentation for no-algorithm-none | 🟢 | 💼 |  |  | 💡 |  |
+| [no-decode-without-verify](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-decode-without-verify) | CWE-345 | A08:2025 | 7.5 | ESLint rule documentation for no-decode-without-verify | 🟢 | 💼 | ⚠️ |  | 💡 |  |
+| [no-hardcoded-secret](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-hardcoded-secret) | CWE-798 | A05:2025 | 7.9 | ESLint rule documentation for no-hardcoded-secret | 🟢 | 💼 |  |  | 💡 |  |
+| [no-sensitive-payload](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-sensitive-payload) | CWE-359 | A01:2025 | 5.3 | ESLint rule documentation for no-sensitive-payload | 🟢 | 💼 | ⚠️ |  | 💡 |  |
+| [no-timestamp-manipulation](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-timestamp-manipulation) | CWE-294 | A05:2025 | 7.5 | ESLint rule documentation for no-timestamp-manipulation | 🟢 | 💼 |  |  | 💡 |  |
+| [no-weak-secret](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/no-weak-secret) | CWE-326 | A02:2025 | 7.5 | ESLint rule documentation for no-weak-secret | 🟢 | 💼 |  |  | 💡 |  |
+| [require-algorithm-whitelist](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-algorithm-whitelist) | CWE-757 | A02:2025 | 7.5 | ESLint rule documentation for require-algorithm-whitelist | 🟢 | 💼 | ⚠️ |  | 💡 |  |
+| [require-audience-validation](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-audience-validation) | CWE-287 | A07:2025 | 5.3 | ESLint rule documentation for require-audience-validation | 🟢 |  |  |  | 💡 |  |
+| [require-expiration](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-expiration) | CWE-613 | A04:2025 | 5.3 | ESLint rule documentation for require-expiration | 🟢 | 💼 | ⚠️ |  | 💡 |  |
+| [require-issued-at](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-issued-at) | CWE-294 | A04:2025 | 5.3 | ESLint rule documentation for require-issued-at | 🟢 |  |  |  | 💡 |  |
+| [require-issuer-validation](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-issuer-validation) | CWE-287 | A07:2025 | 5.3 | ESLint rule documentation for require-issuer-validation | 🟢 |  |  |  | 💡 |  |
+| [require-max-age](https://eslint.interlace.tools/docs/security/plugin-jwt/rules/require-max-age) | CWE-294 | A04:2025 | 5.3 | ESLint rule documentation for require-max-age | 🟢 |  |  |  | 💡 |  |
 
 ## 🔗 Related ESLint Plugins
 

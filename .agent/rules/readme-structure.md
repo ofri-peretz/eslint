@@ -1,235 +1,241 @@
 # Package README Structure Standard
 
-This document defines the strict structure and content requirements for all ESLint plugin READMEs in the Interlace ecosystem. All generated READMEs must adhere to this template.
+Single source of truth for the structure of every `packages/eslint-plugin-*/README.md`. The docs site renders these READMEs verbatim through [`<RemoteReadme>`](../../apps/docs/src/components/docs/remote-readme.tsx) — drift from this standard surfaces as broken or empty sections in production docs.
 
-## Structure Overview
-
-1. **Logo & Header** (Centered)
-2. **Introduction** (Short, < 2 sentences, Centered)
-3. **Badges** (Centered, Standard Set)
-4. **Description** (Detailed overview)
-5. **Philosophy** (Standard "Interlace" block)
-6. **Getting Started** (Multi-language links + Installation)
-7. **Custom Sections** (Feature highlights, Examples)
-8. **AI-Optimized Messages** (Message format)
-9. **Rules** (Unified table, Security or Pattern variant)
-10. **Compatibility Matrix** (If applicable, below Rules)
-11. **Configuration Presets** (Optional, concise table)
-12. **Supported Libraries / Framework Context** (Optional)
-13. **Related Plugins** (Ecosystem table with badges)
-14. **License**
-15. **Footer Image** (High-quality OG image, centered, MUST be at the end)
+_Last refreshed: 2026-05-10. Aligned with the actual rendering pipeline + the type-awareness audit._
 
 ---
 
-## Detailed Requirements
+## Canonical section order
 
-### 1. Logo & Header
+```
+PRELUDE  (everything above the first `## ` heading — uses HTML, not markdown)
+  1. Logo (centered <p>, HTML <img>)
+  2. Tagline (centered <p>, plain text, 1–2 sentences)
+  3. Header badges row (centered <p>, HTML <a><img>)
 
-- **Content**: The Interlace logo linked to `https://eslint.interlace.tools`.
-- **Format**:
-  ```markdown
-  <p align="center">
-    <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
-  </p>
-  ```
-- **Constraint**: **Do NOT** include an H1 title (`# Title`). The logo serves as the visual anchor.
+BODY  (markdown, may contain shields.io badges in tables)
+  4.  ## Description
+  5.  ## Philosophy                       (verbatim "Interlace" block)
+  6.  ## Getting Started                  (multilingual links + npm install)
+  7.  ## ⚙️ Configuration Presets
+  8.  ## 📚 Supported Libraries           (lib-specific plugins only)
+  9.  ## 🤖 AI-Optimized Messages         (security plugins only)
+  10. ## Rules                            (legend + unified table with 🧠 column)
+  11. ## 🔗 Related ESLint Plugins
+  12. ## 📦 Compatibility
+  13. ## 📄 License
+  14. Footer image (centered <p>, HTML <a><img>)
+```
 
-### 2. Introduction
+Optional sections (`## 🙋 FAQ`, `## 💡 What You Get`, `## ⚡ Performance`, `## 🏢 Usage Example`, `## Why These Rules?`, `## 📊 Test Coverage`) live **between Configuration Presets (7) and Rules (10)**. Never below Rules. Never between Rules and Related Plugins.
 
-- **Content**: A concise 1-2 sentence summary of what the plugin does.
-- **Constraints**:
-  - Must be wrapped in `<p align="center">`.
-  - No headers.
+---
 
-### 3. Badges
+## Why this order matters — the prelude/body split
 
-- **Content**: Standard set including NPM Version, Downloads, License, Codecov, and Current Date/Release badge.
-- **Constraints**:
-  - All centered in one paragraph.
-  - Consistent style (shields.io).
+[`cleanMarkdown`](../../apps/docs/src/components/docs/remote-readme.tsx#L50) strips badge artefacts from the **prelude** (everything before the first `##` heading) so the centered logo + tagline render cleanly on the docs site. Body sections — Compatibility, Supported Libraries, Related Plugins — are preserved verbatim so their shields.io badge cells render.
+
+Implications for authors:
+
+- **Prelude badges** must use raw HTML (`<a href="..."><img src="..." /></a>`). Markdown linked badges (`[![alt](shield)](url)`) in the prelude get stripped.
+- **Body badges** in table cells should use markdown linked badges (`[![alt](shield)](url)`). They render as live shields and are clickable.
+- Never put a `##` heading inside the prelude. The first `##` heading defines the prelude/body boundary.
+
+---
+
+## Detailed requirements
+
+### 1. Logo
+
+```markdown
+<p align="center">
+  <a href="https://eslint.interlace.tools" target="blank"><img src="https://eslint.interlace.tools/eslint-interlace-logo-light.svg" alt="ESLint Interlace Logo" width="120" /></a>
+</p>
+```
+
+No `# Title` H1 — the logo is the visual anchor.
+
+### 2. Tagline
+
+```markdown
+<p align="center">
+  One- or two-sentence summary of what the plugin does.
+</p>
+```
+
+### 3. Header badges row
+
+Required set: NPM Version, NPM Downloads, License, Codecov, Since-date. All centered in one `<p>`, all HTML (because of the prelude rule above).
+
+```markdown
+<p align="center">
+  <a href="https://www.npmjs.com/package/eslint-plugin-NAME" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-NAME.svg" alt="NPM Version" /></a>
+  <a href="https://www.npmjs.com/package/eslint-plugin-NAME" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-NAME.svg" alt="NPM Downloads" /></a>
+  <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-plugin-NAME" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-plugin-NAME" alt="Codecov" /></a>
+  <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-MMM_YYYY-blue?logo=rocket&logoColor=white" alt="Since MMM YYYY" /></a>
+</p>
+```
 
 ### 4. Description
 
-- **Content**: Detailed explanation of the plugin's purpose and capabilities.
-- **Goal**: Descriptions should include at least 3 sentences and up to 5. They can not include only 1 sentence. Highlight "what's in it for you" (value proposition).
-- **Source**: Preserves manual edits found in existing `## Description` sections. If none, falls back to the short introduction (but should be expanded).
+3–5 sentences. State the value proposition; don't repeat the tagline verbatim.
 
 ### 5. Philosophy
 
-- **Content**: Standard "Interlace" philosophy text emphasizing education over gatekeeping.
-- **Constraint**: Identical across all plugins.
-- **Required Format**:
+Identical across all plugins:
 
-  ```markdown
-  ## Philosophy
+```markdown
+## Philosophy
 
-  **Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
-  ```
+**Interlace** fosters **strength through integration**. Instead of stacking isolated rules, we **interlace** security directly into your workflow to create a resilient fabric of code. We believe tools should **guide rather than gatekeep**, providing educational feedback that strengthens the developer with every interaction.
+```
 
 ### 6. Getting Started
 
-- **Content**:
-  - Links to the official documentation site (`eslint.interlace.tools`) in English, Chinese, Korean, Japanese, Spanish, and Arabic.
-  - A standardized `npm install` command block.
-- **Format**:
+Six multilingual doc links (en, zh, ko, ja, es, ar) + a fenced `npm install` block. Pattern in any existing README is the canonical form — copy from a peer.
 
-  ````markdown
-  ## Getting Started
+### 7. ⚙️ Configuration Presets
 
-  - To check out the [guide](https://eslint.interlace.tools/docs/PLUGIN), visit [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-  - 要查看中文 [指南](https://eslint.interlace.tools/docs/PLUGIN), 请访问 [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-  - [가이드](https://eslint.interlace.tools/docs/PLUGIN) 문서는 [eslint.interlace.tools](https://eslint.interlace.tools)에서 확인하실 수 있습니다. 📚
-  - [ガイド](https://eslint.interlace.tools/docs/PLUGIN)は [eslint.interlace.tools](https://eslint.interlace.tools)でご確認ください。 📚
-  - Para ver la [guía](https://eslint.interlace.tools/docs/PLUGIN), visita [eslint.interlace.tools](https://eslint.interlace.tools). 📚
-  - للاطلاع على [الدليل](https://eslint.interlace.tools/docs/PLUGIN)، قم بزيارة [eslint.interlace.tools](https://eslint.interlace.tools). 📚
+Strict 2-column table: `Preset` | `Description`. Sourced from `src/configs/*` or `src/index.ts`. Validate that the icons in the Rules table (10) match the exported configs — every rule enabled in `recommended` must show 💼; every `warn`-level rule must show ⚠️.
 
-  ```bash
-  npm install eslint-plugin-name --save-dev
-  ```
-  ````
+### 8. 📚 Supported Libraries (conditional)
 
-### 7. Custom Sections (Examples / Highlights)
+Include only when the plugin targets specific npm packages (crypto, express, jwt, lambda, mongodb, nestjs, pg, vercel-ai). Skip for general-purpose plugins (browser-security, secure-coding, react-*, conventions, etc.).
 
-- **Examples**: `## 💡 What You Get`, `## ⚡ Performance`, `## 🧠 How It Works`.
-- **Constraint**: Feature highlights and examples of the plugin's capabilities.
-- **Placement**: Depends on content type (Features = High, FAQ = Low). See 8.5.
+```markdown
+## 📚 Supported Libraries
 
-### 8. AI-Optimized Messages (Message Format)
+| Library | npm | Downloads | Detection |
+| ------- | --- | --------- | --------- |
+| `lib`   | [![npm](https://img.shields.io/npm/v/lib.svg?style=flat-square)](https://www.npmjs.com/package/lib) | [![downloads](https://img.shields.io/npm/dt/lib.svg?style=flat-square)](https://www.npmjs.com/package/lib) | Coverage area |
+```
 
-- **Content**: An example block showing the structured error format (CWE, OWASP, Fix, Link) or Smart Fix suggestions.
-- **Goal**: Demonstrate the value for AI assistants (Copilot, Cursor).
-- **Requirement**: Must include a brief, 1-2 sentence explanation **below** the code block detailing _why_ this format is optimized.
-  - **Key Points to Cover**: Explain that providing structured context (CWE, OWASP, Fix suggestions) allows AI tools to "reason" about the error and suggest the correct fix immediately, rather than hallucinating or guessing.
-- **Placement**: Before Rules.
+### 9. 🤖 AI-Optimized Messages (security plugins only)
 
-### 8.5. Custom Sections (FAQ / Highlights)
+A fenced example of the structured error format (CWE/OWASP/CVSS/Fix/Link) followed by a 1–2 sentence rationale below the block: structured context lets AI assistants reason about the flaw rather than hallucinate.
 
-- **Examples**: `## 🙋 FAQ`, `## 💡 Features`.
-- **Constraint**: Must be placed **BELOW** the Rules table to prioritize core information.
+### 10. Rules
 
-### 9. Rules Table
+**Legend** (required, in this exact form — last 3 rows are mandatory across all plugins):
 
-- **Structure**: Single unified table. **No sub-tables** or splitting by tag.
-- **Constraint**: Rule Name must be a link to official documentation.
-- **Header Artifacts**: Exclude rows that are just category headers.
+```markdown
+**Legend**
 
-**Variant A: Security Plugins (Default)**
+| Icon | Description |
+| :---: | :--- |
+| 💼 | **Recommended**: Included in the recommended preset. |
+| ⚠️ | **Warns**: Set to warn in recommended preset. |
+| 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
+| 💡 | **Suggestions**: Providing code suggestions in IDE. |
+| 🚫 | **Deprecated**: This rule is deprecated. |
+| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
+| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
+```
 
-- **Columns**: `Rule`, `CWE`, `OWASP`, `CVSS`, `Description`, `Configs` (Icons: 💼, ⚠️, 🔧, 💡, 🚫).
+**Table — Variant A (security plugins):**
 
-**Variant B: Architecture / Non-Security Plugins**
+```
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+```
 
-- **Columns**: `Rule`, `Pattern/Concept`, `Description`, `Configs`.
-- **Logic**: Use "Pattern/Concept" instead of security metrics. This maps to the architectural domain or rule category (e.g., "Style Guide", "Module Systems").
+**Table — Variant B (architecture / quality plugins):**
 
-### 10. Compatibility Matrix (Optional)
+```
+| Rule | Pattern/Concept | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+```
 
-- **Content**: If valid, a matrix showing compatibility with replaced plugins (e.g., `eslint-plugin-import`).
-- **Placement**: **Below** the Rules table.
-- **Format**:
+#### The 🧠 type-aware column
 
-  ```markdown
-  ## 📦 Compatibility
+- **Source of truth**: [`.agent/type-awareness-audit.md`](../type-awareness-audit.md). Don't classify by hand.
+- **Default**: 🟢 (type-unaware). 393 of 397 rules ship as 🟢.
+- **Exceptions** (the only 4 type-aware rules in the entire monorepo):
+  - 🟠 `eslint-plugin-import-next/named`
+  - 🟠 `eslint-plugin-import-next/namespace`
+  - 🟠 `eslint-plugin-import-next/default`
+  - 🟡 `eslint-plugin-secure-coding/detect-object-injection`
+- Every rule row must populate this column. An empty 🧠 cell means "audit not performed" — fail validation.
 
-  | Package       | Version                                                                                                             |
-  | :------------ | :------------------------------------------------------------------------------------------------------------------ |
-  | `plugin-name` | [![npm](https://img.shields.io/npm/v/plugin-name.svg?style=flat-square)](https://www.npmjs.com/package/plugin-name) |
-  | `node`        | ^18.18.0                                                                                                            |
-  ```
+#### Other column rules
 
-### 11. Configuration Presets (Optional)
+- Rule name is a markdown link to `https://eslint.interlace.tools/docs/<pillar>/<plugin>/rules/<rule>`.
+- One unified table — no sub-tables, no category-header rows, no rule grouping.
+- Empty cells stay empty (no `—` placeholder).
 
-- **Constraint**: Strict 2-column table: `Preset` and `Description`.
-- **Source**: `src/index.ts` configs export.
-- **Format**:
+### 11. 🔗 Related ESLint Plugins
 
-  ```markdown
-  ## ⚙️ Configuration Presets
+Standard ecosystem table. Columns: `Plugin` | `Downloads` | `Description`. The Plugin cell is a markdown link to the npm page; the Downloads cell is a markdown linked badge `[![downloads](https://img.shields.io/npm/dt/PKG.svg?style=flat-square)](https://www.npmjs.com/package/PKG)`.
 
-  | Preset        | Description                                                 |
-  | :------------ | :---------------------------------------------------------- |
-  | `recommended` | Balanced security profile for most applications.            |
-  | `strict`      | Maximum security settings (may require more configuration). |
-  ```
+### 12. 📦 Compatibility
 
-### 11.5. Config vs. Rules Validation
+Two patterns are valid:
 
-- **Requirement**: You MUST verify that the icons in the `Rules` table (step 9) exactly match the exported configuration.
-  - Open the plugin's config file (e.g., `src/configs/recommended.ts` or `src/index.ts`).
-  - Verify that every rule enabled in `recommended` has the 💼 icon.
-  - Verify that every rule set to "warn" has the ⚠️ icon.
-    This ensures the README is a source of truth.
+**Pattern A — version table with badges** (preferred for plugins with framework peer deps):
 
-  ```
+```markdown
+| Package | Version |
+| :--- | :--- |
+| `framework` | [![npm](https://img.shields.io/npm/v/framework.svg?style=flat-square)](https://www.npmjs.com/package/framework) |
+| ESLint | [![npm](https://img.shields.io/npm/v/eslint.svg?style=flat-square)](https://www.npmjs.com/package/eslint) |
+| Node.js | [![node](https://img.shields.io/badge/node-%5E18.0.0-green?style=flat-square)](https://nodejs.org/) |
+```
 
-  ```
+**Pattern B — semver string table** (when no peer deps):
 
-### 12. Supported Libraries (Optional)
+```markdown
+| Package | Version |
+| :--- | :--- |
+| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0` |
+```
 
-- **Content**: List of supported libraries for framework-specific plugins.
-- **Columns**: `Library`, `npm` (Version Badge), `Downloads` (Badge), `Detection` (What is covered).
-- **Format**:
+Append a single line linking the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md).
 
-  ```markdown
-  ## 📚 Supported Libraries
+### 13. 📄 License
 
-  | Library | npm                | Downloads                | Detection             |
-  | ------- | ------------------ | ------------------------ | --------------------- |
-  | `lib`   | [![npm](...)](...) | [![downloads](...)](...) | Signing, Verification |
-  ```
+```markdown
+## 📄 License
 
-### 13. Related Plugins
+MIT © [Ofri Peretz](https://github.com/ofri-peretz)
+```
 
-- **Content**: Table of other plugins in the ecosystem.
-- **Columns**: `Plugin`, `NPM` (Badge), `Downloads` (Badge), `License` (Badge), `Description`.
+### 14. Footer image
 
-### 14. License
+```markdown
+<p align="center">
+  <a href="https://eslint.interlace.tools/docs/<pillar>/plugin-NAME"><img src="https://eslint.interlace.tools/images/og-NAME.png" alt="ESLint Interlace Plugin" width="100%" /></a>
+</p>
+```
 
-- **Content**: Standard MIT License text.
-
-### 15. Footer Image
-
-- **Content**: High-quality Open Graph image specific to the plugin.
-- **Format**:
-  ```markdown
-  <p align="center">
-    <a href="https://eslint.interlace.tools/docs/PLUGIN"><img src="https://eslint.interlace.tools/images/og-PLUGIN.png" alt="ESLint Interlace Plugin" width="100%" /></a>
-  </p>
-  ```
-- **Constraint**: Width set to `300` (mandatory).
-- **Placement**: MUST be the very last element in the README.
+Must be the very last element. No content below.
 
 ---
 
-## Exclusions (Do NOT Include)
+## Exclusions
 
-- **Security Research Coverage**: Do NOT include dedicated sections for specific CVEs or research papers unless critical. (Dropped 2026-01-11).
-- **References**: Do NOT list raw reference links; these belong in the official documentation site. Users should be directed to the docs for deep dives.
-- **Rule Details**: **No** verbose rule descriptions or code examples in the README. Keep it high-level.
+- No raw reference link dumps — those belong in the docs site.
+- No verbose per-rule descriptions or code examples in the README — keep it high-level.
+- No dedicated CVE / research-paper sections unless materially relevant.
+- No FAQ / Test Coverage / Highlights sections **below** the Rules table.
 
-## Governed Documents
+---
 
-This standard applies to the following 16 plugins:
+## Governed plugins (20)
 
-- `packages/eslint-plugin-architecture/README.md`
-- `packages/eslint-plugin-browser-security/README.md`
-- `packages/eslint-plugin-crypto/README.md`
-- `packages/eslint-plugin-express-security/README.md`
-- `packages/eslint-plugin-import-next/README.md`
-- `packages/eslint-plugin-jwt/README.md`
-- `packages/eslint-plugin-lambda-security/README.md`
-- `packages/eslint-plugin-mongodb-security/README.md`
-- `packages/eslint-plugin-nestjs-security/README.md`
-- `packages/eslint-plugin-pg/README.md`
-- `packages/eslint-plugin-quality/README.md`
-- `packages/eslint-plugin-react-a11y/README.md`
-- `packages/eslint-plugin-react-features/README.md`
-- `packages/eslint-plugin-secure-coding/README.md`
-- `packages/eslint-plugin-vercel-ai-security/README.md`
-- `packages/eslint-devkit/README.md` (Partial applicability)
+Security pillar: `browser-security`, `crypto`, `express-security`, `jwt`, `lambda-security`, `mongodb-security`, `nestjs-security`, `node-security`, `pg`, `secure-coding`, `vercel-ai-security`.
+
+Quality pillar: `conventions`, `maintainability`, `modernization`, `modularity`, `operability`, `reliability`.
+
+Imports: `import-next`.
+
+React: `react-a11y`, `react-features`.
+
+---
 
 ## Maintenance
 
-- This structure is enforced by `tools/scripts/fix-readmes.js`.
-- Always update this document if the standardization script logic changes.
+- Validate against this standard with `tools/scripts/fix-readmes.js` (or update the script when this rule changes).
+- The 🧠 column derives from `.agent/type-awareness-audit.md`. Re-run the audit (`type-awareness-scan.tsv`) before bulk-editing the column.
+- The prelude/body split is enforced by [`cleanMarkdown`](../../apps/docs/src/components/docs/remote-readme.tsx#L50). Keep them in sync.

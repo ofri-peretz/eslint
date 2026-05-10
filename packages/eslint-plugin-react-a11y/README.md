@@ -36,14 +36,6 @@ By using this plugin, you can proactively identify and mitigate security risks a
 npm install eslint-plugin-react-a11y --save-dev
 ```
 
-## Quick Start
-```javascript
-// eslint.config.js
-import reactA11y from 'eslint-plugin-react-a11y';
-
-export default [reactA11y.configs.recommended];
-```
-
 ## ⚙️ Configuration Presets
 | Preset        | Description                                                                   |
 | :------------ | :---------------------------------------------------------------------------- |

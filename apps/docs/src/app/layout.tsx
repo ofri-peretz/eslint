@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
 import { TooltipProvider } from '#interlace/components/ui/tooltip';
 import { CodeBlockLabeller } from '@/components/a11y/code-block-labeller';
+import { SITE_ORIGIN } from '@/lib/site-config';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -30,12 +31,12 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: 'Ofri Peretz', url: 'https://ofriperetz.dev' }],
   creator: 'Ofri Peretz',
-  metadataBase: new URL('https://eslint.interlace.tools'),
+  metadataBase: new URL(SITE_ORIGIN),
   openGraph: {
     type: 'website',
     locale: 'en_US',
     siteName: 'ESLint Interlace',
-    url: 'https://eslint.interlace.tools',
+    url: SITE_ORIGIN,
     images: [
       {
         url: '/og-image.jpg?v=1.1', // Cache buster to force social platforms to re-fetch

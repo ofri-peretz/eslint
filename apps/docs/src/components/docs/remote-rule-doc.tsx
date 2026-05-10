@@ -36,6 +36,7 @@ export async function RemoteRuleDoc({ plugin, rule }: RemoteRuleDocProps) {
       <p className="text-sm text-amber-600 dark:text-amber-400">
         Unable to load rule documentation from GitHub. Please check the{' '}
         <a
+          data-testid="remote-rule-doc-fallback-link"
           href={githubUrl}
           target="_blank"
           rel="noopener noreferrer"

@@ -36,13 +36,6 @@ By using this plugin, you can proactively identify and mitigate security risks a
 npm install eslint-plugin-import-next --save-dev
 ```
 
-## 🔄 Compatibility Matrix
-| Rule      | Original Plugin                                                                                                                                                                                                    | Status       | Notes                    |
-| :-------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------- | :----------------------- |
-| All Rules | [`eslint-plugin-import`](https://www.npmjs.com/package/eslint-plugin-import) [![npm](https://img.shields.io/npm/v/eslint-plugin-import.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import) | ✅ Supported | Full drop-in replacement |
-
----
-
 ## ⚙️ Configuration Presets
 | Preset              | Description                                      |
 | :------------------ | :----------------------------------------------- |
@@ -57,6 +50,12 @@ npm install eslint-plugin-import-next --save-dev
 | `enterprise`        | Team boundaries & legacy import tracking         |
 | `errors`            | Matches eslint-plugin-import errors preset       |
 | `warnings`          | Matches eslint-plugin-import warnings preset     |
+
+## 🔄 Parity with `eslint-plugin-import`
+
+| Rule      | Original Plugin                                                                                                                                                                                                    | Status       | Notes                    |
+| :-------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------- | :----------------------- |
+| All Rules | [`eslint-plugin-import`](https://www.npmjs.com/package/eslint-plugin-import) [![npm](https://img.shields.io/npm/v/eslint-plugin-import.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import) | ✅ Supported | Full drop-in replacement |
 
 ## Rules
 
@@ -148,6 +147,15 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
+
+## 📦 Compatibility
+
+| Package | Version |
+| :--- | :--- |
+| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0` |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) for the full matrix.
 
 ## 📄 License
 

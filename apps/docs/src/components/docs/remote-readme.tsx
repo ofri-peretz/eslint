@@ -48,10 +48,21 @@ function extractWhySection(markdown: string): string {
 }
 
 function cleanMarkdown(markdown: string): string {
-  return markdown
+  // Strip badge-only artefacts from the prelude (above the first `## ` heading)
+  // so the centered logo + tagline render cleanly. Tables in body sections —
+  // Compatibility, Supported Libraries, Related Plugins — legitimately use
+  // shields.io badges in cells and must be preserved.
+  const firstHeadingIdx = markdown.search(/^## /m);
+  const split = firstHeadingIdx === -1 ? markdown.length : firstHeadingIdx;
+  const prelude = markdown.slice(0, split);
+  const body = markdown.slice(split);
+
+  const cleanedPrelude = prelude
     .replace(/<p(\s+align="[^"]*")>([\s\S]*?)<\/p>/gi, '<div$1>$2</div>')
     .replace(/\[!\[.*?\]\(.*?\)\]\(.*?\)/g, '')
-    .replace(/!\[.*?badge.*?\]\(.*?\)/gi, '')
+    .replace(/!\[[^\]]*\]\([^)]*shields\.io[^)]*\)/gi, '');
+
+  return (cleanedPrelude + body)
     .replace(/^\s*\n+/, '')
     .replace(/\n{3,}/g, '\n\n');
 }
@@ -67,6 +78,7 @@ export async function RemoteReadme({
       <p className="text-sm text-amber-600 dark:text-amber-400">
         Unable to load README from GitHub. Please check the{' '}
         <a
+          data-testid="remote-readme-fallback-link"
           href={`https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-${plugin}`}
           target="_blank"
           rel="noopener noreferrer"

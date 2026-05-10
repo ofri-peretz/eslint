@@ -38,16 +38,26 @@ export interface PluginNameDriftOptions {
   /** Absolute path to the content root to scan (recursive). */
   contentRoot: string;
   /**
-   * The canonical set of `eslint-plugin-*` / `eslint-config-*` package names
-   * the consumer ships. Any reference outside this set in MDX content is a
-   * finding (unless allowlisted).
+   * The canonical set of package names the consumer ships. Any reference
+   * outside this set in MDX content is a finding (unless allowlisted).
+   * Names should be in the same form as they appear in MDX content (e.g.
+   * `eslint-plugin-foo` for eslint or `serverless-foo` for serverless —
+   * scope-stripped if the consumer uses `@scope/` prefixes).
    */
   canonicalPackages: readonly string[];
   /**
    * Third-party or community packages legitimately mentioned in docs
-   * (e.g. `eslint-plugin-react`, `eslint-config-prettier`). Not flagged.
+   * (e.g. `eslint-plugin-react`, `serverless-offline`). Not flagged.
    */
   allowedPackages?: readonly string[];
+  /**
+   * Regex used to extract package references from each line. Must use the
+   * `g` flag and capture the package name in group 1. Defaults to a pattern
+   * that matches `eslint-plugin-<slug>` and `eslint-config-<slug>`. Pass a
+   * custom pattern for repos with different naming conventions
+   * (e.g. `/\b(serverless-[a-z0-9][a-z0-9-]*)\b/g`).
+   */
+  packageRegex?: RegExp;
   /**
    * File extensions to scan. Defaults to MDX only — README / changelog .md
    * inside `packages/<plugin>/` is the rule author's domain, not docs drift.
@@ -59,9 +69,11 @@ export interface PluginNameDriftOptions {
 
 const DEFAULT_EXTENSIONS = ['.mdx'] as const;
 
-// Capture `eslint-plugin-<slug>` and `eslint-config-<slug>` occurrences.
-// Slug = lowercase letters, digits, hyphens. Two captures: full match + slug.
-const PLUGIN_REF_REGEX = /\b(eslint-(?:plugin|config)-[a-z0-9][a-z0-9-]*)\b/g;
+// Default: capture `eslint-plugin-<slug>` and `eslint-config-<slug>`
+// occurrences. Slug = lowercase letters, digits, hyphens. Group 1 = full
+// package name. Consumers with different naming conventions pass their own
+// `packageRegex`.
+const DEFAULT_PLUGIN_REF_REGEX = /\b(eslint-(?:plugin|config)-[a-z0-9][a-z0-9-]*)\b/g;
 
 export async function validatePluginNameDrift(
   options: PluginNameDriftOptions,
@@ -71,6 +83,12 @@ export async function validatePluginNameDrift(
   const allowed = new Set(options.allowedPackages ?? []);
   const extensions = options.extensions ?? DEFAULT_EXTENSIONS;
   const ignore = new Set(options.ignore ?? []);
+  const regex = options.packageRegex ?? DEFAULT_PLUGIN_REF_REGEX;
+  if (!regex.global) {
+    throw new Error(
+      'validatePluginNameDrift: `packageRegex` must use the `g` flag.',
+    );
+  }
 
   const files = await walkDirectory(
     options.contentRoot,
@@ -87,8 +105,8 @@ export async function validatePluginNameDrift(
       seenOnLine.clear();
       let match: RegExpExecArray | null;
       // Reset regex state between lines.
-      PLUGIN_REF_REGEX.lastIndex = 0;
-      while ((match = PLUGIN_REF_REGEX.exec(line)) !== null) {
+      regex.lastIndex = 0;
+      while ((match = regex.exec(line)) !== null) {
         const pkg = match[1];
         if (canonical.has(pkg) || allowed.has(pkg)) continue;
         // De-dup multiple hits on the same line into one finding.

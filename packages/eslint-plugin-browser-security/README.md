@@ -36,7 +36,38 @@ By using this plugin, you can proactively identify and mitigate security risks a
 npm install eslint-plugin-browser-security --save-dev
 ```
 
+## ⚙️ Configuration Presets
+| Preset        | Description                                         |
+| :------------ | :-------------------------------------------------- |
+| `recommended` | Recommended security configuration                  |
+| `strict`      | Strict security configuration - all rules as errors |
+
+## 🤖 LLM-Optimized Messages
+All rules include structured remediation guidance designed for AI assistants:
+
+```
+[browser-security/no-innerhtml] XSS vulnerability: Direct HTML assignment detected.
+
+📋 CONTEXT:
+  • Pattern: element.innerHTML = unsanitizedInput
+  • Risk: Any script in unsanitizedInput will execute
+
+🛠️ REMEDIATION:
+  Option A (Preferred): Use textContent for plain text
+    element.textContent = userInput;
+
+  Option B: Sanitize before insertion
+    element.innerHTML = DOMPurify.sanitize(userInput);
+
+📚 References:
+  • CWE-79: https://cwe.mitre.org/data/definitions/79.html
+  • OWASP XSS Prevention: https://owasp.org/...
+```
+
+By providing this structured context (CWE, OWASP, Fix), we enable AI tools to **reason** about the security flaw rather than hallucinating. This allows Copilot/Cursor to suggest the _exact_ correct fix immediately.
+
 ## 💡 What You Get
+
 - **21 security rules** targeting browser-specific vulnerabilities
 - **XSS prevention** via DOM manipulation and dynamic content detection
 - **Storage security** preventing sensitive data exposure in localStorage/sessionStorage/IndexedDB
@@ -45,6 +76,7 @@ npm install eslint-plugin-browser-security --save-dev
 - **OWASP Top 10 coverage** for browser security patterns
 
 ## 🎯 Why This Plugin?
+
 Modern browser applications face unique security challenges across storage APIs, cross-origin communication, and dynamic content rendering. This plugin provides static analysis rules specifically designed for browser security patterns:
 
 - **XSS Prevention**: Detects dangerous DOM manipulation patterns
@@ -54,6 +86,7 @@ Modern browser applications face unique security challenges across storage APIs,
 - **LLM-Optimized**: All rules include AI-friendly remediation guidance
 
 ## 🔍 Detection Examples
+
 ### ❌ Vulnerable Code
 
 ```javascript
@@ -90,36 +123,6 @@ window.addEventListener('message', (event) => {
   processData(event.data);
 });
 ```
-
-## ⚙️ Configuration Presets
-| Preset        | Description                                         |
-| :------------ | :-------------------------------------------------- |
-| `recommended` | Recommended security configuration                  |
-| `strict`      | Strict security configuration - all rules as errors |
-
-## 🤖 LLM-Optimized Messages
-All rules include structured remediation guidance designed for AI assistants:
-
-```
-[browser-security/no-innerhtml] XSS vulnerability: Direct HTML assignment detected.
-
-📋 CONTEXT:
-  • Pattern: element.innerHTML = unsanitizedInput
-  • Risk: Any script in unsanitizedInput will execute
-
-🛠️ REMEDIATION:
-  Option A (Preferred): Use textContent for plain text
-    element.textContent = userInput;
-
-  Option B: Sanitize before insertion
-    element.innerHTML = DOMPurify.sanitize(userInput);
-
-📚 References:
-  • CWE-79: https://cwe.mitre.org/data/definitions/79.html
-  • OWASP XSS Prevention: https://owasp.org/...
-```
-
-By providing this structured context (CWE, OWASP, Fix), we enable AI tools to **reason** about the security flaw rather than hallucinating. This allows Copilot/Cursor to suggest the _exact_ correct fix immediately.
 
 ## Rules
 

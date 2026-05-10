@@ -21,7 +21,7 @@ export const ShimmerButton = React.forwardRef<
       shimmerColor = "#ffffff",
       shimmerSize = "0.05em",
       shimmerDuration = "3s",
-      borderRadius = "100px",
+      borderRadius = "0.5rem",
       background = "rgba(0, 0, 0, 1)",
       className,
       children,
@@ -42,7 +42,13 @@ export const ShimmerButton = React.forwardRef<
           } as CSSProperties
         }
         className={cn(
-          "group relative z-0 flex cursor-pointer items-center justify-center overflow-hidden [border-radius:var(--radius)] border border-white/10 px-6 py-3 whitespace-nowrap text-white [background:var(--bg)]",
+          // Base: shimmer machinery only (animation, layering, background).
+          // Geometry (height/padding/radius) is intentionally NOT baked in
+          // here — pass it via `className` (typically `buttonVariants({ size,
+          // variant })` per CTA_PHILOSOPHY.md #5). The CSS var --radius is
+          // kept in sync with the consumer's `rounded-*` class via the
+          // `borderRadius` prop so the shimmer mask follows the outer shape.
+          "group relative z-0 flex cursor-pointer items-center justify-center overflow-hidden border border-white/10 whitespace-nowrap text-white [background:var(--bg)]",
           "transform-gpu transition-transform duration-300 ease-in-out active:translate-y-px",
           className
         )}

@@ -36,20 +36,6 @@ By using this plugin, you can proactively identify and mitigate security risks a
 npm install eslint-plugin-crypto --save-dev
 ```
 
-## 💡 What You Get
-- **24 security rules** covering cryptographic best practices
-- **CVE detection** for CVE-2023-46809, CVE-2020-36732, CVE-2023-46233
-- **OWASP Top 10 coverage** for cryptographic vulnerabilities
-- **LLM-optimized messages** with CWE references and fix guidance
-- **Package support** for crypto-hash, crypto-random-string, crypto-js
-
-## Features
-- 🔐 **24 Rules** covering crypto best practices
-- 🎯 **CVE Detection** (CVE-2023-46809, CVE-2020-36732, CVE-2023-46233)
-- 🤖 **AI-Optimized** messages with CWE references
-- ⚡ **Auto-Fix** suggestions where safe
-- 📦 **Package Support** for crypto-hash, crypto-random-string, crypto-js
-
 ## ⚙️ Configuration Presets
 | Preset               | Description                                  |
 | :------------------- | :------------------------------------------- |
@@ -65,7 +51,17 @@ npm install eslint-plugin-crypto --save-dev
 | `crypto` (Node.js) | [![node](https://img.shields.io/badge/node-built--in-green?style=flat-square)](https://nodejs.org/api/crypto.html) | -                                                                                                                      | Weak Algo, Key Length, Randomness |
 | `crypto-js`        | [![npm](https://img.shields.io/npm/v/crypto-js.svg?style=flat-square)](https://www.npmjs.com/package/crypto-js)    | [![downloads](https://img.shields.io/npm/dt/crypto-js.svg?style=flat-square)](https://www.npmjs.com/package/crypto-js) | Legacy patterns, Weak PRNG        |
 
-## Examples
+## 💡 What You Get
+
+- **24 security rules** covering cryptographic best practices
+- **CVE detection** for CVE-2023-46809, CVE-2020-36732, CVE-2023-46233
+- **OWASP Top 10 coverage** for cryptographic vulnerabilities
+- **LLM-optimized messages** with CWE references and fix guidance
+- **Package support** for crypto-hash, crypto-random-string, crypto-js
+- **Auto-Fix suggestions** where safe
+
+## 🔍 Examples
+
 ### ❌ Bad
 
 ```javascript
@@ -99,6 +95,7 @@ if (crypto.timingSafeEqual(Buffer.from(userToken), Buffer.from(storedToken))) { 
 ```
 
 ## Peer Dependencies (Optional)
+
 ```json
 {
   "crypto-hash": ">=3.0.0",

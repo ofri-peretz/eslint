@@ -1,0 +1,78 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Lighthouse (Web Vitals Budget)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Enforces the performance, accessibility, and SEO budgets declared by our
+# philosophies — MOTION_PHILOSOPHY.md (CLS = 0), UX_PHILOSOPHY.md #6 (LCP ≤ 1.5s),
+# COLOR_PHILOSOPHY.md (contrast budget), TYPOGRAPHY_PHILOSOPHY.md (AA floor).
+#
+# Without this gate the budgets are aspirational. With it, a regressing PR
+# fails the build.
+#
+# Config: apps/docs/lighthouserc.json
+# Runs on: every PR that touches apps/docs or @interlace/ui.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  pull_request:
+    paths:
+      - "apps/docs/**"
+      - "packages/eslint-devkit/**"
+      - ".github/workflows/lighthouse.yml"
+      - "apps/docs/lighthouserc.json"
+  workflow_dispatch:
+
+concurrency:
+  group: lighthouse-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write # for the result comment
+
+jobs:
+  lighthouse:
+    name: Web Vitals Budget
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "true"
+
+      - name: Build docs site
+        working-directory: apps/docs
+        run: npm run build
+        env:
+          NODE_ENV: production
+          # Disable telemetry during CI builds.
+          NEXT_TELEMETRY_DISABLED: "1"
+
+      - name: Start docs server
+        working-directory: apps/docs
+        run: |
+          npm run start &
+          npx wait-on http://localhost:3000 --timeout 60000
+        env:
+          PORT: "3000"
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.14.x
+
+      - name: Run Lighthouse CI
+        working-directory: apps/docs
+        # Continue-on-error=false: a budget breach fails the build. That's
+        # the entire point of this gate — see MOTION_PHILOSOPHY's CLS=0
+        # contract and the rest of the perf rules in lighthouserc.json.
+        run: lhci autorun --config=./lighthouserc.json
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Upload Lighthouse artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: apps/docs/.lighthouseci/
+          retention-days: 14

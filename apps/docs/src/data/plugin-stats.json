@@ -106,7 +106,7 @@
     },
     {
       "name": "eslint-plugin-conventions",
-      "rules": 10,
+      "rules": 11,
       "description": "ESLint rules for team-specific disciplinary patterns and code conventions",
       "category": "quality",
       "version": "4.0.7",
@@ -161,8 +161,8 @@
       "published": false
     }
   ],
-  "totalRules": 349,
+  "totalRules": 350,
   "totalPlugins": 18,
   "allPluginsCount": 20,
-  "generatedAt": "2026-05-10T19:57:34.591Z"
+  "generatedAt": "2026-05-10T21:57:26.227Z"
 }

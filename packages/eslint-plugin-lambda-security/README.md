@@ -36,13 +36,20 @@ By using this plugin, you can proactively identify and mitigate security risks a
 npm install eslint-plugin-lambda-security --save-dev
 ```
 
-## 💡 What you get
-- **Serverless-focused coverage:** 5 rules targeting Lambda-specific vulnerabilities (credentials, CORS, secrets, logging).
-- **LLM-optimized & MCP-ready:** Structured 2-line messages with CWE + OWASP + CVSS + concrete fixes so humans _and_ AI auto-fixers stay aligned.
-- **Standards aligned:** OWASP Serverless Top 10, CWE tagging, CVSS scoring in every finding for compliance mapping.
-- **Tiered presets:** `recommended`, `strict` for fast policy rollout.
-- **Framework-aware:** Detects Middy middleware, API Gateway response patterns, AWS SDK v3 clients.
-- **Low false positive rate:** Context-aware detection with production heuristics.
+## ⚙️ Configuration Presets
+| Preset        | Description                                                            |
+| :------------ | :--------------------------------------------------------------------- |
+| `recommended` | Balanced security for Lambda projects (critical as error, others warn) |
+| `strict`      | Maximum security enforcement (all rules as errors)                     |
+
+## 📚 Supported Libraries
+| Library                  | npm                                                                                                                                       | Downloads                                                                                                                                        | Detection              |
+| :----------------------- | :---------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------- |
+| `aws-lambda`             | [![npm](https://img.shields.io/npm/v/aws-lambda.svg?style=flat-square)](https://www.npmjs.com/package/aws-lambda)                         | [![downloads](https://img.shields.io/npm/dt/aws-lambda.svg?style=flat-square)](https://www.npmjs.com/package/aws-lambda)                         | IAM, Logging, Timeouts |
+| `@aws-sdk/client-lambda` | [![npm](https://img.shields.io/npm/v/@aws-sdk/client-lambda.svg?style=flat-square)](https://www.npmjs.com/package/@aws-sdk/client-lambda) | [![downloads](https://img.shields.io/npm/dt/@aws-sdk/client-lambda.svg?style=flat-square)](https://www.npmjs.com/package/@aws-sdk/client-lambda) | Credential Safety      |
+| `middy`                  | [![npm](https://img.shields.io/npm/v/@middy/core.svg?style=flat-square)](https://www.npmjs.com/package/@middy/core)                       | [![downloads](https://img.shields.io/npm/dt/@middy/core.svg?style=flat-square)](https://www.npmjs.com/package/@middy/core)                       | Middleware Security    |
+
+## 🤖 AI-Optimized Messages
 
 Every security rule produces a **structured 2-line error message**:
 
@@ -61,22 +68,19 @@ src/handlers/api.ts
 - ✅ **Fix instruction** - exact code to write
 - 📚 **Documentation link** - learn more
 
-## ⚙️ Configuration Presets
-| Preset        | Description                                                            |
-| :------------ | :--------------------------------------------------------------------- |
-| `recommended` | Balanced security for Lambda projects (critical as error, others warn) |
-| `strict`      | Maximum security enforcement (all rules as errors)                     |
+By providing this structured context (CWE, OWASP, Fix), we enable AI tools to **reason** about the security flaw rather than hallucinating. This allows Copilot/Cursor to suggest the _exact_ correct fix immediately.
 
-## 📚 Supported Libraries
-| Library                  | npm                                                                                                                                       | Downloads                                                                                                                                        | Detection              |
-| :----------------------- | :---------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------- |
-| `aws-lambda`             | [![npm](https://img.shields.io/npm/v/aws-lambda.svg?style=flat-square)](https://www.npmjs.com/package/aws-lambda)                         | [![downloads](https://img.shields.io/npm/dt/aws-lambda.svg?style=flat-square)](https://www.npmjs.com/package/aws-lambda)                         | IAM, Logging, Timeouts |
-| `@aws-sdk/client-lambda` | [![npm](https://img.shields.io/npm/v/@aws-sdk/client-lambda.svg?style=flat-square)](https://www.npmjs.com/package/@aws-sdk/client-lambda) | [![downloads](https://img.shields.io/npm/dt/@aws-sdk/client-lambda.svg?style=flat-square)](https://www.npmjs.com/package/@aws-sdk/client-lambda) | Credential Safety      |
-| `middy`                  | [![npm](https://img.shields.io/npm/v/@middy/core.svg?style=flat-square)](https://www.npmjs.com/package/@middy/core)                       | [![downloads](https://img.shields.io/npm/dt/@middy/core.svg?style=flat-square)](https://www.npmjs.com/package/@middy/core)                       | Middleware Security    |
+## 💡 What You Get
 
----
+- **Serverless-focused coverage:** 5 rules targeting Lambda-specific vulnerabilities (credentials, CORS, secrets, logging).
+- **LLM-optimized & MCP-ready:** Structured 2-line messages with CWE + OWASP + CVSS + concrete fixes so humans _and_ AI auto-fixers stay aligned.
+- **Standards aligned:** OWASP Serverless Top 10, CWE tagging, CVSS scoring in every finding for compliance mapping.
+- **Tiered presets:** `recommended`, `strict` for fast policy rollout.
+- **Framework-aware:** Detects Middy middleware, API Gateway response patterns, AWS SDK v3 clients.
+- **Low false positive rate:** Context-aware detection with production heuristics.
 
 ## ⚙️ Configuration Options
+
 All rules accept these common options:
 
 ```javascript
@@ -92,8 +96,6 @@ All rules accept these common options:
   }
 }
 ```
-
----
 
 ## Rules
 

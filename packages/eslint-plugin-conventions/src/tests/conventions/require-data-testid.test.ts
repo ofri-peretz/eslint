@@ -35,6 +35,9 @@ describe('require-data-testid', () => {
       { code: '<a data-testid="docs-link" href="/docs">Docs</a>;' },
       // Custom component with data-testid
       { code: '<Button data-testid="primary-cta">Go</Button>;' },
+      // Custom component WITHOUT event handler — not flagged by default
+      // (componentRequiresHandler=true is the default).
+      { code: '<PresentationalCard>x</PresentationalCard>;' },
       // Spreading all props — assumed to forward data-testid
       { code: 'function F(props) { return <button {...props} />; }' },
       // lowercase, non-interactive HTML elements not flagged
@@ -64,9 +67,16 @@ describe('require-data-testid', () => {
         code: '<a href="/docs">Docs</a>;',
         errors: [{ messageId: 'missingDataTestId' }],
       },
-      // Custom component missing
+      // Custom component WITH event handler (default mode flags only
+      // handler-bearing components — see componentRequiresHandler).
+      {
+        code: '<MyButton onClick={() => {}}>Click</MyButton>;',
+        errors: [{ messageId: 'missingDataTestId' }],
+      },
+      // Custom component flagged in strict mode (handler not required).
       {
         code: '<MyButton>Click</MyButton>;',
+        options: [{ componentRequiresHandler: false }],
         errors: [{ messageId: 'missingDataTestId' }],
       },
       // requireOn extension

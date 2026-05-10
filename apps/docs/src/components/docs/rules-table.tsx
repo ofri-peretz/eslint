@@ -245,7 +245,8 @@ export async function RulesTable({ plugin, limit, compact, showLinks }: RulesTab
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
         <p className="text-sm text-amber-600 dark:text-amber-400">
           Unable to parse rules from README. Please check the{' '}
-          <a 
+          <a
+            data-testid="rules-table-fallback-link"
             href={`https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-${plugin}`}
             target="_blank"
             rel="noopener noreferrer"

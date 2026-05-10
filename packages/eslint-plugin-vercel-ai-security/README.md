@@ -36,38 +36,22 @@ By using this plugin, you can proactively identify and mitigate security risks a
 npm install eslint-plugin-vercel-ai-security --save-dev
 ```
 
-## 🔧 Supported AI SDK Functions
-| Function               | Full Coverage                  |
-| ---------------------- | ------------------------------ |
-| `generateText`         | ✅ All 19 rules                |
-| `streamText`           | ✅ All 19 rules + abort signal |
-| `generateObject`       | ✅ All 19 rules                |
-| `streamObject`         | ✅ All 19 rules + abort signal |
-| `tool()` helper        | ✅ Schema validation           |
-| `embed()` / embeddings | ✅ Embedding validation        |
-
----
-
 ## ⚙️ Configuration Presets
+
 | Preset        | Description                              |
 | :------------ | :--------------------------------------- |
 | `recommended` | Balanced security (7 errors, 7 warnings) |
 | `strict`      | Maximum security (17 errors, 2 warnings) |
 | `minimal`     | Minimal config                           |
 
----
+## 📚 Supported Libraries
 
-## 📊 Test Coverage
-| Metric        | Coverage |
-| ------------- | -------- |
-| **Rules**     | 19       |
-| **Tests**     | 200      |
-| **Lines**     | 98%+     |
-| **Functions** | 100%     |
-
----
+| Library              | npm                                                                                               | Downloads                                                                                                | Detection                      |
+| -------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `ai` (Vercel AI SDK) | [![npm](https://img.shields.io/npm/v/ai.svg?style=flat-square)](https://www.npmjs.com/package/ai) | [![downloads](https://img.shields.io/npm/dt/ai.svg?style=flat-square)](https://www.npmjs.com/package/ai) | Prompt Injection, Data Leakage |
 
 ## 🤖 AI-Agent Optimized Messages
+
 All rule messages follow a structured format optimized for AI coding assistants:
 
 ```
@@ -77,16 +61,28 @@ All rule messages follow a structured format optimized for AI coding assistants:
 
 By providing this structured context (CWE, OWASP, Fix), we enable AI tools to **reason** about the security flaw rather than hallucinating. This allows Copilot/Cursor to suggest the _exact_ correct fix immediately.
 
-## 📦 Compatibility
-| Package              | Version                                                                                                   |
-| -------------------- | --------------------------------------------------------------------------------------------------------- |
-| `ai` (Vercel AI SDK) | [![npm](https://img.shields.io/npm/v/ai.svg?style=flat-square)](https://www.npmjs.com/package/ai)         |
-| ESLint               | [![npm](https://img.shields.io/npm/v/eslint.svg?style=flat-square)](https://www.npmjs.com/package/eslint) |
-| Node.js              | [![node](https://img.shields.io/badge/node-%5E18.0.0-green?style=flat-square)](https://nodejs.org/)       |
+## 🔧 Supported AI SDK Functions
 
----
+| Function               | Full Coverage                  |
+| ---------------------- | ------------------------------ |
+| `generateText`         | ✅ All 19 rules                |
+| `streamText`           | ✅ All 19 rules + abort signal |
+| `generateObject`       | ✅ All 19 rules                |
+| `streamObject`         | ✅ All 19 rules + abort signal |
+| `tool()` helper        | ✅ Schema validation           |
+| `embed()` / embeddings | ✅ Embedding validation        |
+
+## 📊 Test Coverage
+
+| Metric        | Coverage |
+| ------------- | -------- |
+| **Rules**     | 19       |
+| **Tests**     | 200      |
+| **Lines**     | 98%+     |
+| **Functions** | 100%     |
 
 ## 🙋 FAQ
+
 ### What's the difference between this and generic AI security linters?
 
 Generic linters guess at patterns. This plugin knows the **exact** Vercel AI SDK API.
@@ -105,11 +101,6 @@ await generateText({ prompt: internalPrompt });
 ### Why is ASI06 (Memory Corruption) not covered?
 
 TypeScript/JavaScript are memory-safe languages. Memory corruption vulnerabilities (buffer overflows, use-after-free, etc.) are not possible in these environments.
-
-## 📚 Supported Libraries
-| Library              | npm                                                                                               | Downloads                                                                                                | Detection                      |
-| -------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| `ai` (Vercel AI SDK) | [![npm](https://img.shields.io/npm/v/ai.svg?style=flat-square)](https://www.npmjs.com/package/ai) | [![downloads](https://img.shields.io/npm/dt/ai.svg?style=flat-square)](https://www.npmjs.com/package/ai) | Prompt Injection, Data Leakage |
 
 ## Rules
 
@@ -165,6 +156,16 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
+
+## 📦 Compatibility
+
+| Package              | Version                                                                                                   |
+| -------------------- | --------------------------------------------------------------------------------------------------------- |
+| `ai` (Vercel AI SDK) | [![npm](https://img.shields.io/npm/v/ai.svg?style=flat-square)](https://www.npmjs.com/package/ai)         |
+| ESLint               | [![npm](https://img.shields.io/npm/v/eslint.svg?style=flat-square)](https://www.npmjs.com/package/eslint) |
+| Node.js              | [![node](https://img.shields.io/badge/node-%5E18.0.0-green?style=flat-square)](https://nodejs.org/)       |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) for the full matrix.
 
 ## 📄 License
 

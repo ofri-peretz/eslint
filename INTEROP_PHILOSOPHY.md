@@ -111,6 +111,52 @@ historical record of these runs. It is never edited by hand.
 
 ---
 
+## Severity & config interop
+
+The compatibility contract covers diagnostics. This section covers the
+user-facing knobs that decide whether a diagnostic is emitted at all.
+
+### Severity precedence
+
+Each engine reads its own config — flat config for ESLint,
+`oxlint.json` / TOML for oxlint, `biome.json` for Biome. **We do not
+unify the config formats.** Instead:
+
+- A rule's severity in each engine is whatever the user's config for
+  that engine says. We make no attempt to mirror severity across
+  engines at lint time.
+- When a rule is `off` in one engine and `error` in another, both
+  states are valid. The user owns their own configuration drift; we
+  document equivalent stanzas on the rule's docs page so the drift is
+  intentional, not accidental.
+- **Presets are mirrored across engines.** A rule that is
+  `recommended` in our ESLint config is `recommended` in our oxlint
+  config. The severity a preset assigns may differ if the engine's
+  preset taxonomy differs; *presence* in the preset is portable.
+
+### Disable comments
+
+The most-portable thing a user can do — silence a rule on one line —
+must work identically across engines:
+
+- `// eslint-disable-next-line <plugin>/<rule>` is the canonical form.
+  Every runtime that hosts the rule must recognize it.
+- Engine-specific syntaxes (`// oxlint-disable-next-line ...`) are
+  recognized by their native engine. We don't ask users to write them
+  and we don't render them in our docs.
+- A disable directive for a rule that does not exist in one engine is
+  a no-op in that engine, not an error. The user shouldn't be punished
+  for a runtime-coverage gap they didn't create.
+
+### Engine-neutral config format
+
+We do not adopt one. The community is mid-experiment and committing
+today is premature. When a neutral format emerges with three credible
+engine implementations, we adopt it and document migration. Until then,
+the docs page is the bridge.
+
+---
+
 ## Rule metadata schema
 
 Every rule's `meta` block must declare its position in the
@@ -143,6 +189,38 @@ Hard invariants enforced by `rule-doc-conformance`:
 
 ---
 
+## Backfill for existing rules
+
+The schema above is the destination, not the current state. As of this
+document's publication, ~397 rules ship without `meta.interop`. The
+transition is governed, not blanket.
+
+- **Grandfather inference.** A rule without `meta.interop` is treated
+  as `{ tier: 'deep', typeAware: <inferred>, runtimes: ['eslint'] }`.
+  `typeAware` is inferred by scanning the rule's parser-services usage
+  — conservative by design (over-classify rather than under-classify;
+  a wrongly-deep rule is a missed optimization, a wrongly-fast rule
+  is a parity bug).
+- **No campaign PR.** We do not block on a 397-rule backfill. The
+  metadata is added opportunistically: when a rule is edited for any
+  reason, `meta.interop` is populated as part of the same change.
+- **Flagship rules first.** The ten flagship rules
+  (see [flagship_rules.md](/Users/ofri/.claude/projects/-Users-ofri-repos-ofriperetz-dev-eslint/memory/flagship_rules.md)
+  and `.agent/flagship-rules.md`) get their `meta.interop` populated
+  in a single dedicated PR before any opportunistic backfill begins.
+  They are the rules whose interop story we cite externally; they
+  must be exemplars.
+- **Warn-then-fail.** The conformance check warns on missing
+  `meta.interop` until 2026-09. After that, missing metadata is a
+  build error on **touched rules only** — never a retroactive failure.
+- **Promotion-gate immunity during backfill.** The shared-rule count
+  that drives the parity-gate promotion is calculated against
+  *declared* runtimes only. A rule that hasn't yet declared
+  `runtimes: ['eslint', 'oxlint']` is invisible to the count. Backfill
+  velocity cannot accidentally trip the gate flip.
+
+---
+
 ## Runtime support matrix
 
 The current state, declared explicitly. This table is the source of
@@ -161,6 +239,60 @@ A rule's docs page renders the matrix entries it has declared via
 `runtimes` / `runtimesPlanned`. Authors do not write the badges by
 hand; the validator generates them.
 
+### Asymmetry, named
+
+oxlint and Biome are equal as portability targets in this philosophy.
+They are not equal in our infrastructure today: the fixture runner
+ships an oxlint adapter, and the Biome adapter is on the roadmap.
+This is deliberate sequencing, not a preference. When the Biome
+adapter lands, Biome graduates to **automated peer** through the
+same promotion path defined below for oxlint — identical gate,
+identical conditions, identical CI semantics. Until then, Biome
+support on any individual rule is best-effort and lives in
+`runtimesPlanned`, never `runtimes`.
+
+---
+
+## Editor surface
+
+The portability contract is incomplete if it only covers the CLI.
+Users meet our rules in their editor, not in a terminal — through the
+language server. Every entry in the support matrix has an LSP
+component or is folded into one: ESLint's LSP for ESLint, the Oxc
+language server for oxlint, the Biome daemon, the TypeScript language
+server for TSC 7 plugins. **Portability must hold across these
+surfaces too.**
+
+### Per-rule guarantees on every LSP
+
+- **Same diagnostic surface.** A rule that emits a squiggle in
+  ESLint's LSP emits a squiggle in oxlint's LSP. Same range, same
+  severity, same `messageId`.
+- **Same hover content.** The hover points at the canonical docs
+  page — `/docs/<plugin>/<rule-slug>` — not an engine-specific
+  anchor. The URL is the contract; the renderer is not.
+- **Same code action.** A rule that exposes an autofix as a code
+  action in one editor exposes it in the other. Action *title* may
+  differ in wording; action *effect* must not.
+- **No engine-exclusive quick-fixes.** A suggestion that exists only
+  because one engine's plugin API supports something another's
+  doesn't is not shipped. The contract is "what the user sees in any
+  editor," not "what each engine can express."
+
+### What we do not promise
+
+- **Hover render quality.** Editors style hovers differently. We
+  don't control that.
+- **Performance parity in-editor.** The fast tier is faster
+  end-to-end in the editor; that is its point. We promise
+  *correctness* parity, not *speed* parity.
+- **Code-action discoverability.** Editor UIs surface code actions
+  differently (lightbulb, hotkey, palette). We promise the action
+  *exists*, not how the user finds it.
+- **Editor-specific extensions.** If a new editor or LSP host
+  emerges, it inherits the contract by hosting one of the runtimes
+  in the matrix. We do not write editor-specific plugins.
+
 ---
 
 ## When the parity gate becomes blocking
@@ -175,8 +307,13 @@ PR, surfaces drift in the PR comment, and updates
 
 1. **oxlint ships a stable 1.0** (or a public statement of equivalent
    maturity from the Oxc team).
-2. **Our shared-rule count reaches ≥ 20.** Below that, we are
-   spot-testing oxlint; above it, we are co-shipping with oxlint.
+2. **Our shared-rule count reaches ≥ 20.** This is a signal-to-noise
+   call, not a round number. Below 20, a single regression is ≥ 5% of
+   the shared corpus — a population so small that drift is handled
+   case-by-case in PR review. Above 20, drift is a *population*
+   signal worth automating against, and individual regressions stop
+   reading as anomalies. The threshold is revisited (not necessarily
+   moved) when we cross 10.
 
 When both are true, parity drift becomes a **build failure** for any
 rule listed in `runtimes`. The change is announced in the changelog
@@ -282,6 +419,15 @@ Hard bans. CI fails on these.
 - **Engine-specific autofix divergence.** Two engines that both fix
   must produce the same fix. If only one engine can fix, the other
   emits no fix — not a different one.
+- **Engine-exclusive quick-fix or suggestion.** A code action that
+  exists only because one engine's plugin API supports it is not
+  shipped. Drop the action or implement it on the other engine.
+- **Preset asymmetry.** A rule that is `recommended` in one engine's
+  preset config but absent from the equivalent preset in another. The
+  *severity* may differ per engine taxonomy; *presence* must not.
+- **Engine-specific hover or docs link.** Hover content must resolve
+  to the canonical `/docs/<plugin>/<rule-slug>` URL — not to an
+  engine-specific docs anchor, README section, or GitHub link.
 - **Hand-edited parity cache.** The cache is a CI artifact. Hand
   edits fail the conformance check.
 
@@ -306,6 +452,16 @@ The rules above only hold if they're enforced. The repo carries:
   oxlint release feed; when the promotion conditions are met, it
   opens a PR flipping the gate from advisory to blocker. The flip is
   a human-approved change, not an automatic one.
+- **Preset-mirror check.** Diff our `recommended` / `recommended-
+  strict` rule lists across the engine configs we ship. Asymmetry in
+  *presence* (a rule in one preset, absent from the other) fails CI.
+  Asymmetry in *severity* is allowed but reported in the PR comment.
+- **Code-action snapshot tests.** For rules with autofix, the
+  generated edit is snapshotted per engine and diffed. This catches
+  the autofix-divergence forbidden pattern without requiring full LSP
+  emulation. Full LSP behavior (hover, diagnostic ranges) is covered
+  by the parity fixture runner; quick-fix UI surfaces are not in CI
+  scope today and rely on manual spot-checks.
 
 Interop drift is treated the same way URL drift is treated in
 `URL_PHILOSOPHY.md`: a build failure, not a deploy-time warning.
@@ -332,9 +488,44 @@ When authoring or reviewing a rule, walk this checklist:
    flags X" is wrong — the engine is an implementation detail.
 7. **Autofix**: if the rule fixes, the fix is engine-independent. The
    parity fixture exercises the fix.
+8. **Presets**: if the rule belongs in `recommended` for one engine,
+   it belongs in `recommended` for every engine in `runtimes`.
+   Severity can differ; presence cannot.
+9. **Editor surface**: if the rule emits a code action, the action's
+   effect is identical across engines. Hover content links to the
+   canonical docs URL, not an engine-specific anchor.
+10. **Backfill check** (for pre-schema rules): if this rule is being
+    edited and lacks `meta.interop`, this PR populates it. Touched
+    rules are not allowed to leave the conformance check warning.
 
 If any answer is no, the rule is not yet shippable in its declared
 runtime set. Narrow the set, or fix the gap.
+
+---
+
+## Revisit triggers
+
+Every conditional commitment in this document, in one place. When any
+row's trigger fires, the corresponding change is enacted via a PR that
+edits this document first, then changes the implementation. This table
+is the operational summary of the doc — not its source of truth.
+
+| Trigger                                                  | What changes                                                                                                |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Today (2026-05, baseline)                                | Parity check is **advisory**. Backfill conformance check is **warn-only**.                                  |
+| 2026-09                                                  | Backfill warn-window closes. Missing `meta.interop` on a **touched** rule becomes a build error.            |
+| Shared-rule count reaches 10                             | Revisit (not necessarily move) the ≥ 20 promotion threshold; sanity-check the signal-to-noise rationale.    |
+| Shared-rule count reaches 20 **and** oxlint ships 1.0    | Parity gate flips **advisory → blocker** via a human-approved PR opened by the watcher job.                 |
+| Biome fixture adapter ships                              | Biome graduates `reserved peer` → `automated peer`. Same promotion path as oxlint runs from that point.     |
+| TSC 7 ships stable                                       | Re-evaluate the type-awareness policy in `feedback_type_awareness_policy.md`. Type-aware tier rules may re-tier as fast. |
+| End of 2027                                              | Hard re-evaluation of the type-awareness policy regardless of TSC 7 state. Document the decision either way.|
+| A new credible engine emerges                            | Add a matrix row (status: `watching`). Define its promotion conditions in this section before any rule declares support. |
+| oxlint regression on a rule we ship as `runtimes: oxlint`| Narrow `runtimes` on the affected rule; ship a tombstone-style docs note. The gate does not lower.          |
+
+The watcher job that opens the promotion PR reads this table — adding
+or amending a row is the canonical way to change a trigger. Triggers
+in prose elsewhere in the document are mirrors of these rows, not
+independent statements.
 
 ---
 

@@ -27,6 +27,12 @@
   --color-fd-primary: hsl(263, 80%, 30%) !important;
   --color-fd-primary-foreground: hsl(0, 0%, 100%) !important;
 
+  /* shadcn-style primary tokens (used by `bg-primary` / `text-primary-foreground`
+     in @interlace/ui Button + similar). Match fd-primary so the visual
+     identity is consistent and contrast on white is AAA. */
+  --primary: hsl(263, 80%, 30%);
+  --primary-foreground: hsl(0, 0%, 100%);
+
   /* Foreground for body text — 19.6:1 on white (well clear of AAA) */
   --color-fd-foreground: hsl(0, 0%, 3.9%) !important;
 
@@ -38,6 +44,59 @@
 
   /* Ring/focus color — UI element threshold (≥3:1 vs adjacent colors) */
   --color-fd-ring: hsl(263, 70%, 45%) !important;
+
+  /* ─────────────────────────────────────────────────────────────────
+   * shadcn token bridge — @interlace/ui primitives (Card, DropdownMenu,
+   * Popover, etc.) and the auto-generated `.interlace/components/ui/*`
+   * files use bare shadcn tokens (`bg-card`, `bg-popover`, `bg-accent`,
+   * `text-foreground`, `border` w/ --border color, etc.). Fumadocs
+   * ships the `--color-fd-*` family but NOT the unprefixed shadcn
+   * tokens, so without these aliases every shadcn-style class resolves
+   * to an undefined variable and renders unstyled (e.g. dropdown popups
+   * with no background, "transparent dropdowns" reported in QA).
+   *
+   * This bridge maps the shadcn names to our Fumadocs source of truth
+   * so both families render identically. See COLOR_PHILOSOPHY.md.
+   * ──────────────────────────────────────────────────────────────── */
+  --background: var(--color-fd-background);
+  --foreground: var(--color-fd-foreground);
+  --card: var(--color-fd-card);
+  --card-foreground: var(--color-fd-card-foreground);
+  --popover: var(--color-fd-popover);
+  --popover-foreground: var(--color-fd-popover-foreground);
+  --muted: var(--color-fd-muted);
+  --muted-foreground: var(--color-fd-muted-foreground);
+  --accent: var(--color-fd-accent);
+  --accent-foreground: var(--color-fd-accent-foreground);
+  --secondary: var(--color-fd-secondary);
+  --secondary-foreground: var(--color-fd-secondary-foreground);
+  --border: var(--color-fd-border);
+  --input: var(--color-fd-border);
+  --ring: var(--color-fd-ring);
+  --destructive: hsl(0, 72%, 38%);                /* red-700 — AAA on white */
+  --destructive-foreground: hsl(0, 0%, 100%);
+
+  /* Tailwind v4 needs the @theme-side aliases too so utilities like
+   * `bg-card` / `border-border` resolve. Same value as above. */
+  --color-background: var(--color-fd-background);
+  --color-foreground: var(--color-fd-foreground);
+  --color-card: var(--color-fd-card);
+  --color-card-foreground: var(--color-fd-card-foreground);
+  --color-popover: var(--color-fd-popover);
+  --color-popover-foreground: var(--color-fd-popover-foreground);
+  --color-muted: var(--color-fd-muted);
+  --color-muted-foreground: var(--color-fd-muted-foreground);
+  --color-accent: var(--color-fd-accent);
+  --color-accent-foreground: var(--color-fd-accent-foreground);
+  --color-secondary: var(--color-fd-secondary);
+  --color-secondary-foreground: var(--color-fd-secondary-foreground);
+  --color-border: var(--color-fd-border);
+  --color-input: var(--color-fd-border);
+  --color-ring: var(--color-fd-ring);
+  --color-primary: var(--color-fd-primary);
+  --color-primary-foreground: var(--color-fd-primary-foreground);
+  --color-destructive: hsl(0, 72%, 38%);
+  --color-destructive-foreground: hsl(0, 0%, 100%);
 }
 
 /* Dark mode - AAA contrast on near-black */
@@ -45,6 +104,11 @@
   /* Primary purple — 8.5:1 on hsl(0, 0%, 4%) (AAA pass) */
   --color-fd-primary: hsl(270, 80%, 80%) !important;
   --color-fd-primary-foreground: hsl(0, 0%, 5%) !important;
+
+  /* shadcn-style primary tokens — match fd-primary for visual consistency
+     and AAA contrast on near-black bg. */
+  --primary: hsl(270, 80%, 80%);
+  --primary-foreground: hsl(0, 0%, 5%);
 
   /* Foreground — 18:1 on near-black (well past AAA) */
   --color-fd-foreground: hsl(0, 0%, 95%) !important;

@@ -8,13 +8,6 @@ import {
   PaginationContent,
   PaginationItem,
 } from '@interlace/ui/pagination';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@interlace/ui/select';
 import { ArticleCard as ArticleCardBlock } from '@interlace/ui/blocks/article-card';
 import type { DevToArticle, SortField, SortDirection } from '@/lib/articles.types';
 import {
@@ -27,6 +20,7 @@ import { track } from '@/lib/analytics';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -353,7 +347,7 @@ export function ArticlesClient({
       <div className="fixed inset-0 -z-10 h-screen w-screen pointer-events-none">
         <BackgroundBeamsWithCollision
           className="pointer-events-none"
-          containerClassName="!h-screen !min-h-screen !max-h-none !bg-gradient-to-b !from-white !to-neutral-100 dark:!from-purple-950 dark:!via-slate-950 dark:!to-black"
+          containerClassName="!h-screen !min-h-screen !max-h-none !bg-linear-to-b !from-white !to-neutral-100 dark:!from-purple-950 dark:!via-slate-950 dark:!to-black"
           hideCollisionSurface
         >
           <div className="sr-only">Background Effect</div>
@@ -385,56 +379,66 @@ export function ArticlesClient({
                 Follow new articles
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuLabel>Subscribe</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  render={
-                    <a
-                      href="https://dev.to/feed/ofriperetzdev"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      RSS feed
-                    </a>
-                  }
-                  onClick={() => track('articles_subscribe_clicked', { channel: 'rss' })}
-                />
-                <DropdownMenuItem
-                  render={
-                    <a
-                      href="https://dev.to/ofriperetzdev"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Follow on Dev.to
-                    </a>
-                  }
-                  onClick={() => track('articles_subscribe_clicked', { channel: 'devto' })}
-                />
-                <DropdownMenuItem
-                  render={
-                    <a
-                      href="https://x.com/ofriperetzdev"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Follow on X
-                    </a>
-                  }
-                  onClick={() => track('articles_subscribe_clicked', { channel: 'x' })}
-                />
-                <DropdownMenuItem
-                  render={
-                    <a
-                      href="https://github.com/ofri-peretz/eslint"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Star on GitHub
-                    </a>
-                  }
-                  onClick={() => track('articles_subscribe_clicked', { channel: 'github' })}
-                />
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Subscribe</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    data-testid="articles-subscribe-rss"
+                    render={
+                      <a
+                        data-testid="articles-subscribe-rss-link"
+                        href="https://dev.to/feed/ofriperetzdev"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        RSS feed
+                      </a>
+                    }
+                    onClick={() => track('articles_subscribe_clicked', { channel: 'rss' })}
+                  />
+                  <DropdownMenuItem
+                    data-testid="articles-subscribe-devto"
+                    render={
+                      <a
+                        data-testid="articles-subscribe-devto-link"
+                        href="https://dev.to/ofriperetzdev"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Follow on Dev.to
+                      </a>
+                    }
+                    onClick={() => track('articles_subscribe_clicked', { channel: 'devto' })}
+                  />
+                  <DropdownMenuItem
+                    data-testid="articles-subscribe-x"
+                    render={
+                      <a
+                        data-testid="articles-subscribe-x-link"
+                        href="https://x.com/ofriperetzdev"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Follow on X
+                      </a>
+                    }
+                    onClick={() => track('articles_subscribe_clicked', { channel: 'x' })}
+                  />
+                  <DropdownMenuItem
+                    data-testid="articles-subscribe-github"
+                    render={
+                      <a
+                        data-testid="articles-subscribe-github-link"
+                        href="https://github.com/ofri-peretz/eslint"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Star on GitHub
+                      </a>
+                    }
+                    onClick={() => track('articles_subscribe_clicked', { channel: 'github' })}
+                  />
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -469,32 +473,57 @@ export function ArticlesClient({
               )}
             </div>
 
-            <Select value={params.sort} onValueChange={(v) => setSortField(v as SortField)}>
-              <SelectTrigger className="w-[150px]" data-testid="sort-select" aria-label="Sort articles by">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent sideOffset={8}>
-                {SORT_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    <span className="flex items-center gap-2">
-                      {option.icon}
-                      {option.label}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={toggleSortDirection}
-              data-testid="sort-direction"
-              aria-label={`Sort ${params.dir === 'desc' ? 'descending' : 'ascending'}, click to toggle`}
-              title={params.dir === 'desc' ? 'Descending' : 'Ascending'}
+            {/* Sort — segmented control. All 4 options visible, no hidden
+                dropdown state. Active option shows direction chevron and
+                clicking it again toggles asc/desc. Aligns with
+                SEARCH/CODE_EXAMPLE philosophies: surface state, never hide it. */}
+            <div
+              role="group"
+              aria-label="Sort articles"
+              data-testid="sort-select"
+              className="inline-flex items-center rounded-lg border border-fd-border bg-fd-muted/40 p-0.5 gap-0.5"
             >
-              <ArrowUpDown className={cn("size-4 transition-transform duration-200", params.dir === 'asc' && "rotate-180")} aria-hidden />
-            </Button>
+              {SORT_OPTIONS.map((option) => {
+                const isActive = params.sort === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => (isActive ? toggleSortDirection() : setSortField(option.value))}
+                    data-testid={isActive ? 'sort-direction' : `sort-${option.value}`}
+                    aria-pressed={isActive}
+                    aria-label={
+                      isActive
+                        ? `Sort by ${option.label.toLowerCase()} (currently ${params.dir === 'desc' ? 'descending' : 'ascending'}); click to flip direction`
+                        : `Sort by ${option.label.toLowerCase()}`
+                    }
+                    title={
+                      isActive
+                        ? `${option.label} · ${params.dir === 'desc' ? 'descending' : 'ascending'} — click to flip`
+                        : option.label
+                    }
+                    className={cn(
+                      'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fd-primary focus-visible:ring-offset-1',
+                      isActive
+                        ? 'bg-fd-background text-fd-foreground shadow-sm'
+                        : 'text-fd-muted-foreground hover:text-fd-foreground',
+                    )}
+                  >
+                    {option.icon}
+                    <span className="hidden sm:inline">{option.label}</span>
+                    {isActive && (
+                      <ArrowUpDown
+                        className={cn(
+                          'size-3.5 motion-safe:transition-transform duration-200',
+                          params.dir === 'asc' && 'rotate-180',
+                        )}
+                        aria-hidden
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
 
             <Button
               variant="outline"
@@ -542,13 +571,20 @@ export function ArticlesClient({
             </div>
           </div>
 
-          {/* Tag Filters — grid-rows fr-unit collapsible (MOTION_PHILOSOPHY.md). */}
+          {/* Tag Filters — grid-rows fr-unit collapsible (MOTION_PHILOSOPHY.md).
+              Inner content stays in the DOM so the transition is smooth. The
+              parent's `inert` attribute removes the collapsed content from
+              tab order + screen readers without snapping the height. */}
           <div
             data-state={showFilters ? 'open' : 'closed'}
-            className="grid grid-rows-[0fr] data-[state=open]:grid-rows-[1fr] motion-safe:transition-[grid-template-rows] duration-200 ease-out"
+            className="grid grid-rows-[0fr] data-[state=open]:grid-rows-[1fr] motion-safe:transition-[grid-template-rows] duration-300 ease-in-out"
+            // @ts-expect-error — `inert` is a valid HTMLElement boolean attr in React 19;
+            // the type declaration lags in some versions.
+            inert={!showFilters ? '' : undefined}
+            aria-hidden={!showFilters}
           >
             <div className="overflow-hidden">
-              <div className="mt-4 pt-4 border-t border-fd-border" hidden={!showFilters}>
+              <div className="mt-4 pt-4 border-t border-fd-border">
                 <div className="flex items-center gap-2 mb-3 text-xs text-fd-muted-foreground uppercase tracking-wide">
                   <SlidersHorizontal className="size-3" aria-hidden />
                   Filter by Topic
@@ -685,7 +721,7 @@ export function ArticlesClient({
             <Search className="size-12 text-fd-muted-foreground/50 mb-4" aria-hidden />
             <h3 className="text-xl font-semibold text-fd-foreground mb-2">No articles found</h3>
             <p className="text-fd-muted-foreground mb-4">Try adjusting your search or filters</p>
-            <Button onClick={clearFilters}>Clear all filters</Button>
+            <Button data-testid="clear-all-filters" onClick={clearFilters}>Clear all filters</Button>
           </div>
         )}
 

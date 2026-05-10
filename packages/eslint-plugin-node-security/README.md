@@ -36,14 +36,6 @@ By using this plugin, you can proactively identify and mitigate security risks a
 npm install eslint-plugin-node-security --save-dev
 ```
 
-## 💡 What You Get
-- **31 security rules** covering Node.js core module vulnerabilities
-- **Command Injection Detection** for `child_process.exec`, `spawn`, and `execFile`
-- **Path Traversal Prevention** for `fs` module operations
-- **TOCTOU Race Condition Detection** for file system operations
-- **Cryptographic Security** for weak algorithms and key management
-- **LLM-optimized messages** with CWE references and fix guidance
-
 ## ⚙️ Configuration Presets
 | Preset        | Description                                           |
 | :------------ | :---------------------------------------------------- |
@@ -52,7 +44,14 @@ npm install eslint-plugin-node-security --save-dev
 | `fs-security` | Focus on file system vulnerabilities (CWE-22, CWE-73) |
 | `crypto`      | Cryptographic security rules only                     |
 
----
+## 💡 What You Get
+
+- **31 security rules** covering Node.js core module vulnerabilities
+- **Command Injection Detection** for `child_process.exec`, `spawn`, and `execFile`
+- **Path Traversal Prevention** for `fs` module operations
+- **TOCTOU Race Condition Detection** for file system operations
+- **Cryptographic Security** for weak algorithms and key management
+- **LLM-optimized messages** with CWE references and fix guidance
 
 ## Rules
 

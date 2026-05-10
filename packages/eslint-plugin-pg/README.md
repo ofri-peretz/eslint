@@ -36,23 +36,6 @@ By using this plugin, you can proactively identify and mitigate security risks a
 npm install eslint-plugin-pg --save-dev
 ```
 
-## 💡 What You Get
-- **PostgreSQL-specific rules:** Catches pg driver anti-patterns that generic linters miss
-- **LLM-optimized messages:** Structured 2-line errors with CWE + fixes that AI assistants can apply
-- **Connection safety:** Prevents leaks, double releases, and transaction race conditions
-- **SQL security:** SQL injection, search_path hijacking, file access via COPY
-- **Performance patterns:** N+1 queries, SELECT \*, bulk operation suggestions
-
-Every rule produces a **structured error message**:
-
-```bash
-src/db.ts
-  42:15  error  🔒 CWE-89 OWASP:A03-Injection CVSS:9.8 | Unsafe query detected | CRITICAL
-                    Fix: Use parameterized query: client.query('SELECT * FROM users WHERE id = $1', [userId])
-```
-
----
-
 ## ⚙️ Configuration Presets
 | Preset        | Description                                              |
 | :------------ | :------------------------------------------------------- |
@@ -80,7 +63,21 @@ export default [
 ];
 ```
 
----
+## 💡 What You Get
+
+- **PostgreSQL-specific rules:** Catches pg driver anti-patterns that generic linters miss
+- **LLM-optimized messages:** Structured 2-line errors with CWE + fixes that AI assistants can apply
+- **Connection safety:** Prevents leaks, double releases, and transaction race conditions
+- **SQL security:** SQL injection, search_path hijacking, file access via COPY
+- **Performance patterns:** N+1 queries, SELECT \*, bulk operation suggestions
+
+Every rule produces a **structured error message**:
+
+```bash
+src/db.ts
+  42:15  error  🔒 CWE-89 OWASP:A03-Injection CVSS:9.8 | Unsafe query detected | CRITICAL
+                    Fix: Use parameterized query: client.query('SELECT * FROM users WHERE id = $1', [userId])
+```
 
 ## Rules
 

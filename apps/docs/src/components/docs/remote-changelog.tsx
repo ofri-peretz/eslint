@@ -49,6 +49,7 @@ export async function RemoteChangelog({
       <p className="text-sm text-amber-600 dark:text-amber-400">
         Unable to load changelog from GitHub. Please check the{' '}
         <a
+          data-testid="remote-changelog-fallback-link"
           href={`https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-${plugin}/CHANGELOG.md`}
           target="_blank"
           rel="noopener noreferrer"

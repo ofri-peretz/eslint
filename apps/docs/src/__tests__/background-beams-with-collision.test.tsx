@@ -926,8 +926,8 @@ describe('BackgroundBeamsWithCollision: ArticlesClient Integration', () => {
   });
 
   describe('Theme-Aware Background Gradient', () => {
-    it('uses !bg-gradient-to-b for vertical gradient', () => {
-      expect(articlesSource).toContain('!bg-gradient-to-b');
+    it('uses !bg-linear-to-b for vertical gradient (Tailwind v4 canonical)', () => {
+      expect(articlesSource).toContain('!bg-linear-to-b');
     });
 
     it('light mode: from white to neutral-100', () => {

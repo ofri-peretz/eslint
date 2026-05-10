@@ -17,7 +17,7 @@ import { TweetCard } from '#interlace/components/marketing/tweet-card';
 import { DevToCard } from '#interlace/components/marketing/devto-card';
 import { createTweetFetcher } from '#interlace/lib/tweet-loader';
 import { createDevToFetcher } from '#interlace/lib/devto-loader';
-import { buttonVariants } from '@interlace/ui/button';
+import { buttonVariants } from '@interlace/ui/button-variants';
 import { getDisplayStats } from '@/lib/stats-loader';
 import { HeroSection } from '@/components/home/hero-section';
 import cachedTweets from '@/data/cached-tweets.json';
@@ -347,7 +347,7 @@ export default async function HomePage() {
                 size: 'hero',
                 variant: 'default',
                 className:
-                  'mx-auto bg-violet-600 text-white shadow-lg shadow-violet-600/30 hover:bg-violet-700',
+                  'mx-auto bg-violet-700 text-white shadow-lg shadow-violet-700/30 hover:bg-violet-800',
               })}
             >
               Start Building Safer Code
@@ -399,12 +399,12 @@ function CatchCard({
 }) {
   return (
     <div className="rounded-xl border border-fd-border bg-fd-card p-6 hover:border-fd-border/80 hover:shadow-md transition-all">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="rounded bg-orange-500/15 px-2 py-0.5 text-xs font-mono font-medium text-orange-900 dark:text-orange-100">
+      <div className="flex items-center gap-2 mb-3 flex-nowrap min-w-0">
+        <span className="rounded bg-orange-500/15 px-2 py-0.5 text-xs font-mono font-medium text-orange-900 dark:text-orange-100 whitespace-nowrap shrink-0">
           {cwe}
         </span>
-        <span className="text-xs text-fd-muted-foreground">caught by</span>
-        <code className="text-xs font-mono text-fd-foreground">{ruleId}</code>
+        <span className="text-xs text-fd-muted-foreground whitespace-nowrap shrink-0">caught by</span>
+        <code className="text-xs font-mono text-fd-foreground truncate">{ruleId}</code>
       </div>
       <h3 className="text-lg font-semibold mb-3">{title}</h3>
       <pre className="bg-fd-background/80 rounded-md p-3 text-xs font-mono overflow-x-auto border border-fd-border/50">

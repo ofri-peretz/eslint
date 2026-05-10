@@ -173,12 +173,13 @@ describe('ArticlesClient: Component Dependencies', () => {
     expect(articlesSource).toContain('import { Button }');
   });
 
-  it('imports Select components', () => {
-    expect(articlesSource).toContain('Select');
-    expect(articlesSource).toContain('SelectContent');
-    expect(articlesSource).toContain('SelectItem');
-    expect(articlesSource).toContain('SelectTrigger');
-    expect(articlesSource).toContain('SelectValue');
+  it('renders a sort segmented control (state always visible, no hidden Select)', () => {
+    // Lock the post-refactor contract: sort uses a segmented `role="group"`
+    // button bar instead of a hidden Select dropdown — surfaces state, no
+    // extra click to reveal the active sort. See SEARCH_PHILOSOPHY.md.
+    expect(articlesSource).toContain("role=\"group\"");
+    expect(articlesSource).toContain("aria-label=\"Sort articles\"");
+    expect(articlesSource).toContain('SORT_OPTIONS.map');
   });
 
   it('imports motion from motion/react', () => {
@@ -348,11 +349,11 @@ describe('ArticlesClient: CLS & Motion Budget', () => {
 // =========================================
 
 describe('ArticlesClient: Test IDs Lock', () => {
-  const testids = [
+  // testids rendered as static string literals: `data-testid="<id>"`.
+  const staticTestids = [
     'article-count',
     'search-input',
     'sort-select',
-    'sort-direction',
     'filter-toggle',
     'clear-filters',
     'results-count',
@@ -365,11 +366,17 @@ describe('ArticlesClient: Test IDs Lock', () => {
     'no-results',
     'clear-search',
   ];
-  for (const id of testids) {
+  for (const id of staticTestids) {
     it(`has ${id} test id`, () => {
       expect(articlesSource).toContain(`data-testid="${id}"`);
     });
   }
+  // sort-direction is rendered as a JSX expression on the active sort
+  // option (`data-testid={isActive ? 'sort-direction' : ...}`); match
+  // the quoted value so we tolerate either literal or expression form.
+  it('has sort-direction test id (dynamic)', () => {
+    expect(articlesSource).toMatch(/['"]sort-direction['"]/);
+  });
 });
 
 // =========================================

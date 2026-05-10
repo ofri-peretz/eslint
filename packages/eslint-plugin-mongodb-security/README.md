@@ -36,7 +36,21 @@ By using this plugin, you can proactively identify and mitigate security risks a
 npm install eslint-plugin-mongodb-security --save-dev
 ```
 
-## Usage Examples
+## ⚙️ Configuration Presets
+| Preset        | Description                                       |
+| :------------ | :------------------------------------------------ |
+| `recommended` | Critical rules as errors, high as warnings        |
+| `strict`      | All rules as errors                               |
+| `mongoose`    | Specialized rules for Mongoose ODM usage patterns |
+
+## 📚 Supported Libraries
+| Library    | npm                                                                                                           | Downloads                                                                                                            | Detection                    |
+| ---------- | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `mongodb`  | [![npm](https://img.shields.io/npm/v/mongodb.svg?style=flat-square)](https://www.npmjs.com/package/mongodb)   | [![downloads](https://img.shields.io/npm/dt/mongodb.svg?style=flat-square)](https://www.npmjs.com/package/mongodb)   | Injection, Unbounded Queries |
+| `mongoose` | [![npm](https://img.shields.io/npm/v/mongoose.svg?style=flat-square)](https://www.npmjs.com/package/mongoose) | [![downloads](https://img.shields.io/npm/dt/mongoose.svg?style=flat-square)](https://www.npmjs.com/package/mongoose) | Schema Safety, Leans         |
+
+## 🏢 Usage Examples
+
 ### Prevent NoSQL Injection (`no-operator-injection`)
 
 ```javascript
@@ -56,25 +70,6 @@ User.find({ $where: `this.name === '${userInput}'` });
 // ✅ Correct (Standard operators)
 User.find({ name: { $eq: sanitize(userInput) } });
 ```
-
----
-
-## ⚙️ Configuration Presets
-| Preset        | Description                                       |
-| :------------ | :------------------------------------------------ |
-| `recommended` | Critical rules as errors, high as warnings        |
-| `strict`      | All rules as errors                               |
-| `mongoose`    | Specialized rules for Mongoose ODM usage patterns |
-
-## 📚 Supported Libraries
-| Library    | npm                                                                                                           | Downloads                                                                                                            | Detection                    |
-| ---------- | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| `mongodb`  | [![npm](https://img.shields.io/npm/v/mongodb.svg?style=flat-square)](https://www.npmjs.com/package/mongodb)   | [![downloads](https://img.shields.io/npm/dt/mongodb.svg?style=flat-square)](https://www.npmjs.com/package/mongodb)   | Injection, Unbounded Queries |
-| `mongoose` | [![npm](https://img.shields.io/npm/v/mongoose.svg?style=flat-square)](https://www.npmjs.com/package/mongoose) | [![downloads](https://img.shields.io/npm/dt/mongoose.svg?style=flat-square)](https://www.npmjs.com/package/mongoose) | Schema Safety, Leans         |
-
----
-
----
 
 ## Rules
 

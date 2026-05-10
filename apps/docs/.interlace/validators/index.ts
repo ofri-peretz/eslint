@@ -26,4 +26,8 @@ export {
   validatePluginNameDrift,
   type PluginNameDriftOptions,
 } from './plugin-name-drift';
+export {
+  validateInterlaceDomainDrift,
+  type InterlaceDomainDriftOptions,
+} from './interlace-domain-drift';
 export { walkDirectory } from './walk';

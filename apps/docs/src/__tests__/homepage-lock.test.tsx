@@ -274,8 +274,8 @@ describe('HeroSection: Structure Lock', () => {
       expect(matches.length).toBeGreaterThanOrEqual(2);
     });
 
-    it('does NOT import ShimmerButton in the hero (demoted to opt-in in 2026-05 CTA-philosophy revision)', () => {
-      expect(heroSource).not.toContain("import { ShimmerButton }");
+    it('imports ShimmerButton for the hero primary (CTA_PHILOSOPHY.md #8 — animated CTA skin reserved for the hero primary, one per page)', () => {
+      expect(heroSource).toContain("import { ShimmerButton }");
     });
 
     it('does NOT re-import AnimatedGradientText (retired from hero eyebrow in 2026-05 diet)', () => {

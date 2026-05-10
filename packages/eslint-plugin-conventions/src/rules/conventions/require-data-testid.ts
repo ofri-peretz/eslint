@@ -50,6 +50,13 @@ export interface Options {
    * (so they're stable across renders). Default: true.
    */
   enforceStableValues?: boolean;
+  /**
+   * If true, only flag custom components (matching `componentPattern`)
+   * when they accept an event handler prop (onClick / onChange / etc.).
+   * Native interactive elements (`button`, `a`, `input`, …) are always
+   * flagged regardless. Default: true.
+   */
+  componentRequiresHandler?: boolean;
 }
 
 type RuleOptions = [Options?];
@@ -76,6 +83,15 @@ function isInteractiveAnchor(node: TSESTree.JSXOpeningElement): boolean {
     const name =
       attr.name.type === 'JSXIdentifier' ? attr.name.name : undefined;
     return name === 'href' || name === 'onClick';
+  });
+}
+
+function hasEventHandler(node: TSESTree.JSXOpeningElement): boolean {
+  return node.attributes.some((attr) => {
+    if (attr.type !== 'JSXAttribute') return false;
+    if (attr.name.type !== 'JSXIdentifier') return false;
+    // React `on*` handler convention: onClick, onChange, onSubmit, etc.
+    return /^on[A-Z]/.test(attr.name.name);
   });
 }
 
@@ -179,7 +195,12 @@ export const requireDataTestId = createRule<RuleOptions, MessageIds>({
           componentPattern: {
             type: 'string',
             description:
-              'Regex; matched names are treated as custom components.',
+              'Regex; matched names are treated as custom components. Empty disables component checks.',
+          },
+          componentRequiresHandler: {
+            type: 'boolean',
+            description:
+              'When `componentPattern` matches, only flag if the component has an `on*` event handler (default true). Set false to flag every matching component.',
           },
           enforceStableValues: {
             type: 'boolean',
@@ -194,7 +215,11 @@ export const requireDataTestId = createRule<RuleOptions, MessageIds>({
     {
       requireOn: [],
       ignore: [],
+      // Default: only flag PascalCase components when they handle events.
+      // Pure presentational wrappers (e.g. <Body />, <AnchorProvider>) are
+      // not testing targets and would create noise.
       componentPattern: '^[A-Z]',
+      componentRequiresHandler: true,
       enforceStableValues: true,
     },
   ],
@@ -206,7 +231,12 @@ export const requireDataTestId = createRule<RuleOptions, MessageIds>({
     const options = opts ?? {};
     const requireOn = new Set(options.requireOn ?? []);
     const ignore = new Set(options.ignore ?? []);
-    const componentPattern = new RegExp(options.componentPattern ?? '^[A-Z]');
+    const componentPatternStr = options.componentPattern ?? '^[A-Z]';
+    const componentPattern = componentPatternStr
+      ? new RegExp(componentPatternStr)
+      : null;
+    const componentRequiresHandler =
+      options.componentRequiresHandler ?? true;
     const enforceStableValues = options.enforceStableValues ?? true;
 
     return {
@@ -220,8 +250,11 @@ export const requireDataTestId = createRule<RuleOptions, MessageIds>({
 
         if (ALWAYS_INTERACTIVE.has(name)) inScope = true;
         else if (name === 'a' && isInteractiveAnchor(node)) inScope = true;
-        else if (componentPattern.test(name)) inScope = true;
-        else if (requireOn.has(name)) inScope = true;
+        else if (componentPattern && componentPattern.test(name)) {
+          // PascalCase component. Only flag when it has an interactive
+          // event handler, unless `componentRequiresHandler: false` is set.
+          inScope = componentRequiresHandler ? hasEventHandler(node) : true;
+        } else if (requireOn.has(name)) inScope = true;
 
         if (!inScope) return;
 

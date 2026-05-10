@@ -1,0 +1,334 @@
+# Typography & Reading Philosophy
+
+A focused sub-philosophy of [UX_PHILOSOPHY.md](./UX_PHILOSOPHY.md). Type
+is the single most-visible signal of whether a technical site is in the
+top tier or the middle. Stripe Press, Linear, Vercel, the Tailwind blog
+— each is recognizable in one screenshot before any logo loads, and the
+recognition is almost entirely typography. We have not, until now, made
+deliberate type calls; we use Fumadocs defaults and let components drift.
+This document fixes that.
+
+The goal is not "modern and clean." The goal is **content that reads as
+authoritative**, where the reader trusts what they're reading because
+the page treats them like an adult.
+
+---
+
+## The core rule
+
+> **Optimize for the reader who is going to read the whole thing.**
+> Line length, leading, contrast, and rhythm are tuned for *long-form
+> reading*, not for *fitting more content on a screen*.
+
+Three corollaries:
+
+1. **Line length is bounded, not maximized.** ≤ 75 characters of body
+   text per line. Wider columns are unreadable; readers' eyes lose the
+   line return.
+2. **Leading scales with measure.** Longer lines need more leading; the
+   ratio is roughly `font-size × 1.55-1.65` for body, tighter for UI.
+3. **Hierarchy compresses, never expands.** A heading two notches
+   smaller than the next has more contrast than one with the same size
+   in different weight. Use one variable, not two.
+
+---
+
+## The body text contract
+
+The body is the most-touched surface. Get this right and everything
+else follows.
+
+| Property | Value | Rationale |
+| --- | --- | --- |
+| **Font stack** | `'Inter Variable', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif` | Inter is the dev-tool category default; `system-ui` fallback if not loaded |
+| **Size (rem)** | `1rem` (16px) base, `1.0625rem` (17px) for long-form articles | 16px is the floor, 17px is the long-form upgrade |
+| **Leading** | `1.6` for body, `1.5` for UI, `1.7` for long-form articles | Wider leading = slower, more deliberate read |
+| **Measure (max-w)** | `65ch` for body, `75ch` for long-form, `45ch` for sidebar prose | Bounded by character count, not pixels |
+| **Tracking** | `0` (default) for body, `-0.01em` for headings ≥ 32px | Display sizes need tighter tracking |
+| **Weight** | `400` body, `500` UI emphasis, `600` strong, `700` headings | No `900` — it's distracting at any size |
+| **Color** | `text-fd-foreground` (light); for dark mode see COLOR_PHILOSOPHY | Contrast budget is the floor |
+
+The non-negotiable: **measure ≤ 75ch** on every body-text container.
+Anywhere else is an off-by-one bug. CSS:
+
+```css
+/* Tailwind: max-w-[65ch] or max-w-prose */
+.prose-body { max-width: 65ch; }
+.prose-long { max-width: 75ch; }
+```
+
+---
+
+## The heading scale
+
+A modular type scale. Six levels max — anything deeper means the
+content is mis-structured, not that the scale is too small.
+
+| Level | Size (rem) | Weight | Tracking | Use |
+| --- | --- | --- | --- | --- |
+| `h1` | `2.5rem` (40px), fluid up to `3.5rem` (56px) | 700 | `-0.02em` | Page title; one per page |
+| `h2` | `1.875rem` (30px) | 700 | `-0.015em` | Major section |
+| `h3` | `1.5rem` (24px) | 600 | `-0.01em` | Subsection |
+| `h4` | `1.25rem` (20px) | 600 | `0` | Minor heading; rare in docs |
+| `h5` | `1.0625rem` (17px) | 600 | `0` | Avoid — restructure instead |
+| `h6` | `1rem` (16px) | 600 | `0` | Avoid |
+
+The ratio is roughly **1.25 (minor third)** at the small end, opening
+to **1.4 (major third)** at the display end. Fluid type via `clamp()`:
+
+```css
+h1 { font-size: clamp(2.5rem, 4vw + 1rem, 3.5rem); }
+```
+
+Tailwind v4 implementation: define in `@theme` once, never redefine
+per component.
+
+---
+
+## Code typography
+
+Code is its own surface. The contract:
+
+| Property | Value | Rationale |
+| --- | --- | --- |
+| **Font stack** | `'JetBrains Mono Variable', 'JetBrains Mono', 'SF Mono', 'Menlo', 'Consolas', monospace` | JetBrains Mono is the dev-tool standard; fallbacks cover all OSes |
+| **Inline code size** | `0.875em` of body | Slightly smaller so it sits in the line |
+| **Block code size** | `0.875rem` (14px) | Dense by intent — code is read carefully |
+| **Block leading** | `1.6` | Same as body — code blocks are paragraphs |
+| **Tab size** | `2 spaces` | Match repo `.editorconfig` |
+| **Ligatures** | `font-feature-settings: "calt", "liga"` (Inter); `"calt"` only for code fonts | Pretty arrows in code, off in body where they confuse |
+| **Inline-code chrome** | `bg-fd-muted/40 px-1.5 py-0.5 rounded text-[0.875em]` | Visually distinct; never just italic |
+| **Block-code chrome** | See CODE_EXAMPLE_PHILOSOPHY | Block code is a designed surface |
+
+Code must always read as **mechanical** — never confused with prose.
+Italic for emphasis is fine in body, **forbidden in code**: italic
+mono fonts are unreliable across OSes.
+
+---
+
+## Vertical rhythm
+
+The page has a baseline grid even if invisible. Spacing follows it.
+
+- **Base unit:** `0.25rem` (4px). All vertical margins/paddings are
+  multiples: 4, 8, 12, 16, 24, 32, 48, 64. No `7px`, no `13px`.
+- **Paragraph spacing:** `1.25em` (matches body leading). Larger gaps
+  between paragraphs and the next heading.
+- **Heading anchor space:** `2em` above an `h2`, `1.5em` above an `h3`.
+  Headings own the white space *above* them, not below.
+- **List items:** `0.5em` between siblings. Lists are not paragraphs.
+- **Inline elements:** never break baseline — buttons / badges /
+  inline code keep `line-height: 1.5` regardless of their internal
+  size.
+
+---
+
+## Reading mode vs UI mode
+
+Two distinct typographic modes coexist on the same page.
+
+**Reading mode** is for *content* — article body, rule explanation,
+long-form prose. Optimized for sustained reading.
+
+- Larger size (17px), wider leading (1.7), bounded measure (75ch)
+- Slightly muted contrast on dark mode (text/85 of pure white)
+- Font feature `case` enabled for SHOUTING in CAPS
+- `text-rendering: optimizeLegibility`
+
+**UI mode** is for *interaction* — buttons, labels, table cells, form
+fields, navigation. Optimized for scanning and density.
+
+- Smaller size (14-15px), tighter leading (1.4-1.5)
+- Full contrast — UI text is rarely long, contrast is fine
+- Tabular numerals (`tabular-nums`) for any number that the eye scans
+  vertically (counts, IDs, dates, durations)
+- No `text-rendering` override — let the browser do its default
+
+The class names `prose-body`, `prose-long` (reading) and `ui-text`,
+`ui-text-sm` (UI) make the intent explicit at the call site.
+
+---
+
+## Fluid type
+
+Sizes adapt to viewport, but only the display-size end. Body stays
+fixed.
+
+- **Body**: 16px on mobile, 17px on desktop (only for long-form
+  articles). No `clamp()` on body — it confuses readers who expect
+  consistency.
+- **Display headings**: `clamp(min, preferred, max)` so an `h1` is
+  40px on mobile and 56px on a 1440px viewport. Single curve, no
+  steps.
+- **Code blocks**: 14px universally. Don't fluid-scale — the reader's
+  syntax highlighting expectations are sticky.
+
+---
+
+## Long-form mode (`/articles`, `/blog`)
+
+When the page is *the article*, not the surrounding chrome, switch to
+long-form mode:
+
+- Single column, `max-w-[75ch]` on body
+- Body size 17px, leading 1.7
+- Larger inter-paragraph spacing (`1.5em`)
+- Drop caps on first paragraph: forbidden (cute, dates fast)
+- Pull quotes: large (`text-2xl italic font-serif text-fd-muted-foreground border-l-4 pl-6`),
+  but reserved — overuse defeats the effect
+- Footnotes at the end, never in a tooltip — long-form readers print
+- Print stylesheet is part of the deliverable; long-form is read on
+  paper and PDF
+
+---
+
+## Numerals
+
+Three rules:
+
+- **Tabular numerals** for any number column or any number adjacent to
+  another number that changes (counts, prices, dates, latency
+  measurements). Tailwind `tabular-nums`.
+- **Lining figures** by default — old-style figures (descenders below
+  baseline) are pretty in body but break in tables. Inter ships both;
+  use the OpenType feature `lnum` for tables and `onum` (sparingly)
+  for body articles where figures sit *inside* prose.
+- **Localized separators** for numbers > 999. `1,234,567` not
+  `1234567`. Use `Intl.NumberFormat` not string concatenation.
+
+---
+
+## Italics, bold, underlines, ALL CAPS
+
+- **Italics**: emphasis or titles of works. Not for code, not for
+  filenames (those go in `<code>`), not for visual variety.
+- **Bold**: strong emphasis or term-being-defined on first appearance.
+  Never for whole sentences — that's not bold, that's loud.
+- **Underlines**: only on links. Never on body text. The reader has
+  been trained for 30 years that underline = link.
+- **ALL CAPS**: headers smaller than `h6` only. Or labels (e.g.
+  "FEATURED" badge). Letterspacing `+0.05em` always — caps without
+  spacing read as shouting; with spacing they read as architectural.
+  Never for body sentences.
+
+---
+
+## Dark mode adjustments
+
+Dark mode is not "same site dimmer" — it's a different surface
+designed against. Typography adjustments specifically:
+
+- **Reduce contrast 5-10%** on body text (`text-zinc-100` not
+  `text-white` for body). Pure white on near-black causes ghosting
+  for many readers, especially on OLED.
+- **Headings can stay full-contrast** — they're scanned, not read.
+- **Code blocks invert palette, not just dim** — see
+  CODE_EXAMPLE_PHILOSOPHY. Light theme code on dark bg is wrong.
+- **Drop shadows convert to glow** — text-shadow on featured cards
+  changes color, not just opacity.
+
+---
+
+## Accessibility floor
+
+- **Minimum contrast**: 4.5:1 for body, 3:1 for large text (≥ 18px or
+  ≥ 14px bold). AAA targets (7:1 / 4.5:1) on long-form reading
+  surfaces.
+- **No text in images** — all UI text is real text. Cover images
+  excepted (those are decorative).
+- **Resize-friendly** — body text scales correctly to 200% via
+  browser zoom without breaking layout.
+- **`text-rendering: optimizeLegibility`** on long-form content;
+  `auto` everywhere else.
+- **Reading-mode toggle** (future): a single button in the article
+  layout that swaps to high-contrast / serif / wider leading. Belongs
+  on long-form articles, not on UI surfaces.
+
+---
+
+## What's forbidden
+
+Hard bans.
+
+- **Variable display fonts that haven't loaded yet** with no
+  fallback. `font-display: swap` is mandatory; no FOIT.
+- **Comic Sans, Papyrus, etc.** Don't laugh — landing pages have
+  shipped these.
+- **More than 3 typefaces on one page.** Body, code, optional
+  display-only. Anything else is decoration.
+- **Justified body text.** Creates rivers; English doesn't have
+  enough word-break flexibility to justify cleanly. Left-align always.
+- **`line-height: 1`** on body. The browser default (`normal`, ~1.2)
+  is already too tight for body. Always set leading explicitly.
+- **`text-decoration: none` on links by default.** Links are
+  underlined or have an unmistakable color cue. Both is best.
+- **Rebrand-the-quote-marks.** Use real curly quotes (`'`, `'`, `"`,
+  `"`) not straight ASCII (`'`, `"`). MDX lets us; use it.
+- **Capitalization butchery** — never `lowercase the entire heading`
+  or `Capitalize Every Word In A Long Sentence`. Sentence case for
+  headings, title case never.
+
+---
+
+## Implementation in this codebase
+
+Tailwind v4 `@theme` block (in `apps/docs/src/app/global.css` or
+equivalent):
+
+```css
+@theme {
+  --font-body: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', 'SF Mono', monospace;
+
+  --leading-body: 1.6;
+  --leading-long: 1.7;
+  --leading-ui: 1.5;
+
+  --tracking-display: -0.02em;
+  --tracking-heading: -0.01em;
+
+  --text-h1: clamp(2.5rem, 4vw + 1rem, 3.5rem);
+  --text-h2: 1.875rem;
+  --text-h3: 1.5rem;
+  --text-body: 1rem;
+  --text-long: 1.0625rem;
+  --text-code: 0.875rem;
+}
+```
+
+Component classes (in `@layer components`):
+
+- `.prose-body` — body text contract (size, leading, max-w, color)
+- `.prose-long` — long-form reading mode (`/articles`, etc.)
+- `.ui-text` — UI mode (default for chrome, buttons, tables)
+- `.ui-text-sm` — small UI text
+
+Component primitives in `@interlace/ui` apply the right class by
+default; only override when an instance genuinely needs to differ.
+
+---
+
+## How this gets used
+
+When designing or reviewing a typographic surface, ask:
+
+1. **Mode**: reading or UI? Use the class that says so.
+2. **Measure**: ≤ 75ch on body? `tabular-nums` on any scanning
+   numbers?
+3. **Hierarchy**: ≤ 3 heading levels visible? Each level has clear
+   contrast against the next?
+4. **Code**: monospace, distinct chrome, no italic, ligatures only
+   where intentional?
+5. **Contrast**: 4.5:1 body floor; AAA where reading is sustained?
+6. **Dark mode**: reduced contrast on body? Code palette inverted?
+7. **Print**: long-form articles render correctly to PDF?
+
+If any answer is no, the surface is not yet shippable.
+
+---
+
+## Living document
+
+When a new typographic need appears that this document didn't
+anticipate, **edit this document first**, then the component. Type
+drift is the #1 driver of "this site feels amateur" feedback.

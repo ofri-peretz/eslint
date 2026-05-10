@@ -27,6 +27,7 @@
     "coverage",
     "*.test.ts",
     "*.spec.ts",
+    "*.d.ts",
     "benchmarks/suites/**",
     "scripts/**",
     "**/benchmark/test-files/**"
