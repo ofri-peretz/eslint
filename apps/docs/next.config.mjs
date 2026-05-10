@@ -37,7 +37,23 @@ const config = {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
-    minimumCacheTTL: 31536000, 
+    minimumCacheTTL: 31536000,
+    // External hosts we render via next/image: badges in plugin READMEs,
+    // dev.to article covers + author avatars, GitHub raw README assets.
+    remotePatterns: [
+      { protocol: 'https', hostname: 'img.shields.io' },
+      { protocol: 'https', hostname: 'shields.io' },
+      { protocol: 'https', hostname: 'badgen.net' },
+      { protocol: 'https', hostname: 'media.dev.to' },
+      { protocol: 'https', hostname: 'media2.dev.to' },
+      { protocol: 'https', hostname: 'dev-to-uploads.s3.amazonaws.com' },
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
+      { protocol: 'https', hostname: 'avatars.githubusercontent.com' },
+      { protocol: 'https', hostname: 'raw.githubusercontent.com' },
+      { protocol: 'https', hostname: 'github.com' },
+      { protocol: 'https', hostname: 'user-images.githubusercontent.com' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+    ],
   },
 
   experimental: {
