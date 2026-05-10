@@ -19,7 +19,7 @@ const OUTPUT_FILE = join(__dirname, '../src/data/plugin-stats.json');
 /**
  * Count rules by parsing the rules export in index.ts
  */
-export function countRulesInPackage(packagePath) {
+export function countRulesInPackage(packagePath: string) {
   const indexPath = join(packagePath, 'src/index.ts');
   
   if (!existsSync(indexPath)) {
@@ -33,7 +33,7 @@ export function countRulesInPackage(packagePath) {
   return ruleMatches ? ruleMatches.length : 0;
 }
 
-export function getPackageMetadata(packagePath) {
+export function getPackageMetadata(packagePath: string) {
   const pkgJsonPath = join(packagePath, 'package.json');
   
   if (!existsSync(pkgJsonPath)) {
@@ -50,7 +50,7 @@ export function getPackageMetadata(packagePath) {
   };
 }
 
-export function getCategory(packageName) {
+export function getCategory(packageName: string) {
   // Framework plugins - Express, NestJS, Lambda
   if (packageName.includes('express') || 
       packageName.includes('nestjs') || 

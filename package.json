@@ -1,5 +1,5 @@
 {
-  "name": "eslint",
+  "name": "interlace-monorepo",
   "version": "1.0.0",
   "description": "Open-source tools and libraries for JavaScript & TypeScript ecosystems - ESLint plugins with LLM-optimized rules, utilities, and CLI tools in a Turborepo monorepo",
   "private": true,

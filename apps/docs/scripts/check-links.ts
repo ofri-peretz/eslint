@@ -43,7 +43,7 @@ const SKIP_DOMAINS = [
 /**
  * Recursively find all MDX files
  */
-function findMdxFiles(dir, files = []) {
+function findMdxFiles(dir: string, files: string[] = []): string[] {
   const items = readdirSync(dir);
   
   for (const item of items) {
@@ -63,7 +63,7 @@ function findMdxFiles(dir, files = []) {
 /**
  * Extract all external URLs from a file
  */
-function extractUrls(content, filePath) {
+function extractUrls(content: string, filePath: string) {
   const urls = new Map();
   
   // Find markdown links
@@ -89,21 +89,21 @@ function extractUrls(content, filePath) {
   }));
 }
 
-function getLineNumber(content, index) {
+function getLineNumber(content: string, index: number): number {
   return content.substring(0, index).split('\n').length;
 }
 
 /**
  * Check if URL should be skipped
  */
-function shouldSkip(url) {
+function shouldSkip(url: string): boolean {
   return SKIP_DOMAINS.some(domain => url.includes(domain));
 }
 
 /**
  * Validate a single URL
  */
-async function validateUrl(urlInfo, timeout = 10000) {
+async function validateUrl(urlInfo: any, timeout = 10000) {
   const { url, file, line, linkText } = urlInfo;
   
   if (shouldSkip(url)) {
@@ -159,15 +159,16 @@ async function validateUrl(urlInfo, timeout = 10000) {
       issues,
     };
     
-  } catch (error) {
+  } catch (error: unknown) {
     // Timeouts and network errors are transient (rate-limiting, slow CDN,
     // CI runner network) — surface them as warnings rather than failing
     // the gate. Real "broken link" failures still come back as HTTP 4xx/5xx.
-    const isTimeout = error.name === 'AbortError';
+    const err = error instanceof Error ? error : new Error(String(error));
+    const isTimeout = err.name === 'AbortError';
     return {
       ...urlInfo,
       status: 'warning',
-      issues: [isTimeout ? 'Timeout' : error.message],
+      issues: [isTimeout ? 'Timeout' : err.message],
     };
   }
 }

@@ -25,15 +25,15 @@ const ARTICLE_PATHS = [
   'devteam/top-7-featured-dev-posts-of-the-week-e8p',
 ];
 
-async function fetchArticle(path) {
+async function fetchArticle(path: string) {
   try {
     const response = await fetch(`https://dev.to/api/articles/${path}`);
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
     return await response.json();
-  } catch (error) {
-    console.error(`❌ Failed to fetch article ${path}:`, error.message);
+  } catch (error: any) {
+    console.error(`❌ Failed to fetch article ${path}:`, error?.message || error);
     return null;
   }
 }
@@ -48,7 +48,7 @@ async function main() {
   console.log('🔄 Syncing DEV.to article cache...\n');
   
   // Load existing cache
-  let cache = { articles: {}, _lastUpdated: null };
+  let cache: { articles: Record<string, any>; _lastUpdated: string | null; _comment?: string } = { articles: {}, _lastUpdated: null };
   if (existsSync(CACHE_FILE)) {
     try {
       cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
