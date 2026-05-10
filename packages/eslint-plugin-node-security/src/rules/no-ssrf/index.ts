@@ -227,7 +227,7 @@ export const noSsrf = createRule<RuleOptions, MessageIds>({
   ) {
     const { allowInTests = true }: Options = options || {};
 
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile =
       allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
     if (isTestFile) return {};

@@ -65,10 +65,10 @@ function renderMd(diff) {
     lines.push('');
     lines.push('| Tool combination | Locations |');
     lines.push('|---|---:|');
-    const combos = Object.entries(diff.matrix.byCombo).sort((a, b) => b[1] - a[1]);
+    const combos = (Object.entries(diff.matrix.byCombo) as Array<[string, number]>).sort((a, b) => b[1] - a[1]);
     for (const [combo, count] of combos) lines.push(`| ${combo} | ${count} |`);
     lines.push('');
-    const totalLocations = combos.reduce((s, [, n]) => s + n, 0);
+    const totalLocations: number = combos.reduce((s: number, [, n]) => s + n, 0);
     const interlaceOnly = combos.find(([combo]) => combo === 'interlace')?.[1] ?? 0;
     const consensusCombo = combos.find(([combo]) => combo.split('+').length === installed.length);
     lines.push(`**${totalLocations} unique locations** flagged across all tools.`);

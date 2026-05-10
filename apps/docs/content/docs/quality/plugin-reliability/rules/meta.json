@@ -1,5 +1,15 @@
 {
-    "title": "Rules",
-    "icon": "BookOpen",
-    "defaultOpen": false
+  "title": "Rules",
+  "icon": "BookOpen",
+  "defaultOpen": false,
+  "pages": [
+    "error-message",
+    "no-await-in-loop",
+    "no-missing-error-context",
+    "no-missing-null-checks",
+    "no-silent-errors",
+    "no-unhandled-promise",
+    "no-unsafe-type-narrowing",
+    "require-network-timeout"
+  ]
 }

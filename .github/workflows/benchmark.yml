@@ -113,6 +113,28 @@ jobs:
           path: docs/META_HYGIENE.md
           retention-days: 30
 
+  # Typecheck the build/dev scripts and benchmark runners under their
+  # looser tsconfigs. The strict per-package typecheck is in
+  # `npm run typecheck` (turbo) — this gate covers `scripts/*.ts` and
+  # `benchmarks/{score,lib/**,suites/*/run,scorecard,harvest-fixtures}.ts`
+  # which are excluded from the root tsconfig because they're JS-flavored
+  # TS converted from .mjs in the 2026-05-09 batch.
+  typecheck-scripts:
+    name: Typecheck scripts + benchmark runners
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: typecheck:scripts (scripts/tsconfig.json)
+        run: npm run typecheck:scripts
+      - name: typecheck:benchmarks (benchmarks/tsconfig.scripts.json)
+        run: npm run typecheck:benchmarks
+
   ilb-wild:
     name: ILB-Wild smoke + regression gate
     runs-on: ubuntu-latest

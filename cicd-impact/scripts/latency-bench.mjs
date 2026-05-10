@@ -27,6 +27,9 @@ const CORPUS_DIR = process.env.CORPUS
   : join(REPO_ROOT, 'benchmarks/corpus');
 const RUNS = parseInt(process.env.RUNS || '3', 10);
 const FILE_CAP = parseInt(process.env.FILE_CAP || '0', 10); // 0 = no cap
+// CORPUS_FILTER=safe → only files under /safe/ subdirectories.
+// CORPUS_FILTER=vulnerable → only files under /vulnerable/ subdirectories.
+const CORPUS_FILTER = process.env.CORPUS_FILTER || '';
 
 // ----- Corpus discovery (recursive .js files) -------------------------------
 function* walkJs(dir) {
@@ -40,6 +43,10 @@ function* walkJs(dir) {
 }
 
 let files = [...walkJs(CORPUS_DIR)];
+if (CORPUS_FILTER) {
+  files = files.filter((p) => p.includes(`/${CORPUS_FILTER}/`));
+  console.log(`Filtered to ${files.length} files containing /${CORPUS_FILTER}/`);
+}
 if (FILE_CAP > 0 && files.length > FILE_CAP) {
   files = files.slice(0, FILE_CAP);
   console.log(`Capping corpus to first ${FILE_CAP} files (FILE_CAP env)`);

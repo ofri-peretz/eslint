@@ -137,7 +137,7 @@ export const noAlgorithmNone = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] ?? {};
     const { allowInTests = false } = options;
-    const filename = context.filename ?? context.getFilename();
+    const filename = context.filename ?? context.filename;
 
     // Skip test files if configured
     if (allowInTests && isTestFile(filename)) {

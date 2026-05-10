@@ -109,7 +109,7 @@ export const preferDefaultExport = createRule<RuleOptions, MessageIds>({
       allowNamedExports = false,
     } = options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     if (!filename) {
       return {};
     }

@@ -91,7 +91,7 @@ export const noMutableExports = createRule<RuleOptions, MessageIds>({
     const [options] = context.options;
     const { allowInFiles = [], ignoreExports = [] } = options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     if (!filename) {
       return {};
     }

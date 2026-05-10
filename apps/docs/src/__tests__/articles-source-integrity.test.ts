@@ -36,8 +36,8 @@ describe('ArticlesClient Source File Integrity', () => {
       expect(articlesSource).toContain('dark:to-indigo-900');
     });
 
-    it('uses gradient direction bg-gradient-to-br', () => {
-      expect(articlesSource).toContain('bg-gradient-to-br');
+    it('uses gradient direction bg-linear-to-br (Tailwind v4 canonical name)', () => {
+      expect(articlesSource).toContain('bg-linear-to-br');
     });
 
     it('contains h-44 container height for regular cards', () => {
@@ -119,8 +119,10 @@ describe('ArticlesClient Source File Integrity', () => {
       expect(articlesSource).toContain('data-testid="featured-article"');
     });
 
-    it('Featured Article renders conditionally', () => {
-      expect(articlesSource).toContain('featuredArticle &&');
+    it('Featured Article renders conditionally on the resolved server prop', () => {
+      // Server passes a `featured` prop that is null on page 2+ or empty
+      // filtered set; the client gates render on it.
+      expect(articlesSource).toContain('featured && <FeaturedArticle');
     });
   });
 

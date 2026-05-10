@@ -87,7 +87,7 @@ export const requireOutputValidation = createRule<RuleOptions, MessageIds>({
       'validate', 'verify', 'check', 'sanitize',
     ];
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     // AI output property patterns
     const aiOutputPatterns = ['.text', '.content', '.message', '.response', '.output'];

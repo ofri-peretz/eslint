@@ -66,7 +66,29 @@ npm run release:notes <pkg-dir> <ver>  # preview a GH Release body
 
 ---
 
-## Release flow (closed-loop)
+## Docs deploy is **manual only**
+
+`apps/docs` is a Next.js app deployed to Vercel. **It does not auto-deploy.**
+
+- `vercel.json` sets `git.deploymentEnabled: false` — Vercel ignores pushes
+  to this repo entirely (no production deploy, no PR previews).
+- `deploy-docs.yml` is the single deliberate path. Trigger it from the
+  Actions tab or:
+  ```bash
+  gh workflow run deploy-docs.yml -f environment=preview
+  gh workflow run deploy-docs.yml -f environment=production
+  ```
+- Each deploy is gated by GitHub Environments (`docs-preview` /
+  `docs-production`) — add required reviewers in Settings → Environments
+  if you want an approval step before prod.
+
+Required secret: `VERCEL_TOKEN`. Org + project IDs auto-detect from
+`.vercel/project.json` when present, otherwise add `VERCEL_ORG_ID` +
+`VERCEL_PROJECT_ID`.
+
+---
+
+## Release flow (closed-loop) — packages
 
 A user-visible change ships in **four hands-off steps**:
 

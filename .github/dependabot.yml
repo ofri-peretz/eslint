@@ -22,11 +22,11 @@ updates:
       all-packages:
         patterns:
           - "*"
-      # Group all Nx packages together
-      nx-packages:
+      # Group Turborepo updates together
+      turbo-packages:
         patterns:
-          - "@nx/*"
-          - "nx"
+          - "turbo"
+          - "@turbo/*"
       # Group all TypeScript ESLint packages together
       typescript-eslint:
         patterns:

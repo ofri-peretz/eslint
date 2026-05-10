@@ -269,7 +269,7 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
     const { ignoreInTests = true, ignoreVoidExpressions = false }: Options =
       options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isTestFile =
       ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
@@ -277,7 +277,7 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    // const sourceCode = context.sourceCode || context.sourceCode; // Not used
+    // const sourceCode = context.sourceCode; // Not used
 
     /**
      * Check call expressions for unhandled promises

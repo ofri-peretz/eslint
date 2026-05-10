@@ -432,7 +432,7 @@ myLogger.info(...)  // Auto-detected 'myLogger' (contains 'log')
 ### ESLint 9+ (Flat Config)
 
 ```typescript
-import llmOptimized from 'eslint-plugin-operability';
+import operability from 'eslint-plugin-operability';
 import type { NoConsoleLogOptions } from 'eslint-plugin-operability/types';
 
 const config: NoConsoleLogOptions = {
@@ -444,11 +444,9 @@ const config: NoConsoleLogOptions = {
 
 export default [
   {
-    plugins: {
-      'eslint-plugin-llm-optimized': llmOptimized,
-    },
+    plugins: { operability },
     rules: {
-      'eslint-plugin-llm-optimized/development/no-console-log': ['warn', config],
+      'operability/no-console-log': ['warn', config],
     },
   },
 ];
@@ -466,17 +464,14 @@ const config = {
 };
 
 module.exports = {
-  plugins: ['eslint-plugin-operability'],
+  plugins: ['operability'],
   rules: {
-    'eslint-plugin-operability/development/no-console-log': [
-      'warn',
-      config,
-    ],
+    'operability/no-console-log': ['warn', config],
   },
 };
 ```
 
-For more examples and patterns, see [CONFIGURATION_EXAMPLES.md](../../src/types/CONFIGURATION_EXAMPLES.md#no-console-log)
+For more examples and patterns, see the [package README](../../README.md).
 
 ## LLM-Optimized Output
 

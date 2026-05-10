@@ -90,7 +90,7 @@ export const noRelativePackages = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const { allowSamePackage = true } = options;
-    const filename = context.getFilename();
+    const filename = context.filename;
     const currentDir = path.dirname(filename);
     const currentPackageRoot = findPackageJson(currentDir);
 

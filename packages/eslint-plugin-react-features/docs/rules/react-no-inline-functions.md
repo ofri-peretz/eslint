@@ -71,7 +71,7 @@ function MyComponent() { return <div>Hello</div>; }
 ### ESLint 9+ (Flat Config)
 
 ```typescript
-import llmOptimized from 'eslint-plugin-react-features';
+import reactFeatures from 'eslint-plugin-react-features';
 import type { ReactNoInlineFunctionsOptions } from 'eslint-plugin-react-features/types';
 
 const inlineConfig: ReactNoInlineFunctionsOptions = {
@@ -82,13 +82,10 @@ const inlineConfig: ReactNoInlineFunctionsOptions = {
 export default [
   {
     plugins: {
-      'eslint-plugin-llm-optimized': llmOptimized,
+      'react-features': reactFeatures,
     },
     rules: {
-      'eslint-plugin-llm-optimized/performance/react-no-inline-functions': [
-        'warn',
-        inlineConfig,
-      ],
+      'react-features/react-no-inline-functions': ['warn', inlineConfig],
     },
   },
 ];
@@ -104,15 +101,14 @@ const inlineConfig = {
 };
 
 module.exports = {
-  plugins: ['eslint-plugin-react-features'],
+  plugins: ['react-features'],
   rules: {
-    'eslint-plugin-react-features/performance/react-no-inline-functions':
-      ['warn', inlineConfig],
+    'react-features/react-no-inline-functions': ['warn', inlineConfig],
   },
 };
 ```
 
-For more examples and patterns, see [CONFIGURATION_EXAMPLES.md](../../src/types/CONFIGURATION_EXAMPLES.md#react-no-inline-functions)
+For more examples and patterns, see the [package README](../../README.md).
 
 ## Performance Impact
 

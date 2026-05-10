@@ -234,6 +234,21 @@ npm run release:status             # combined view: pending + last 3 tags / pack
 npm run release:notes <pkg> <ver>  # preview the GH Release body for a version
 ```
 
+### Docs deploys (`apps/docs`) — manual only
+
+The Next.js docs site under `apps/docs` is **not** auto-deployed. Vercel's
+git integration is disabled in `vercel.json`. The only path to ship docs is
+the manual workflow:
+
+```bash
+gh workflow run deploy-docs.yml -f environment=preview
+gh workflow run deploy-docs.yml -f environment=production
+```
+
+Or trigger from the Actions tab. Each environment is gated by GitHub
+Environments — add required reviewers to `docs-production` in
+Settings → Environments if you want an approval step before prod.
+
 ### Recovery flows
 
 #### "A publish failed mid-flight"

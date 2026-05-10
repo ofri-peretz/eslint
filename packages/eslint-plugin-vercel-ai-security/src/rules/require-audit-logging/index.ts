@@ -67,8 +67,8 @@ export const requireAuditLogging = createRule<RuleOptions, MessageIds>({
     const [options = {}] = context.options;
     const allowInTests = options.allowInTests ?? true;
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
-    const filename = context.filename || context.getFilename();
+    const sourceCode = context.sourceCode;
+    const filename = context.filename;
 
     // Skip test files if allowed
     if (allowInTests && /\.(test|spec)\.[jt]sx?$/.test(filename)) {

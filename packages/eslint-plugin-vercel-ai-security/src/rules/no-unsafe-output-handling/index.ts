@@ -109,7 +109,7 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
       'aiOutput', 'aiResponse', 'llmOutput', '.text',
     ];
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     // Dangerous execution functions
     const dangerousFunctions = ['eval', 'Function', 'execSync', 'exec', 'spawn', 'execFile'];

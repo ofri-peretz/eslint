@@ -87,7 +87,7 @@ export const requireOutputFiltering = createRule<RuleOptions, MessageIds>({
       'filter', 'sanitize', 'redact', 'mask',
     ];
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     /**
      * Check if expression is a data source call

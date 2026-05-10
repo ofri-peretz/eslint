@@ -126,7 +126,7 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
             messageId: 'suggestSetState',
             fix(fixer: TSESLint.RuleFixer) {
               // Get the source code to determine indentation
-              const sourceCode = context.getSourceCode();
+              const sourceCode = context.sourceCode;
               const start = node.range[0];
               const lineStart = sourceCode.getIndexFromLoc({
                 line: sourceCode.getLocFromIndex(start).line,
@@ -142,7 +142,7 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
             messageId: 'suggestFunctionalUpdate',
             fix(fixer: TSESLint.RuleFixer) {
               // Get the source code to determine indentation
-              const sourceCode = context.getSourceCode();
+              const sourceCode = context.sourceCode;
               const start = node.range[0];
               const lineStart = sourceCode.getIndexFromLoc({
                 line: sourceCode.getLocFromIndex(start).line,

@@ -78,7 +78,7 @@ export const noAmd = createRule<RuleOptions, MessageIds>({
       // suggestES6 = true // Reserved for future use when hasSuggestions is enabled
     } = options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
 
     function shouldAllow(): boolean {
       // Check if the call is in an allowed pattern

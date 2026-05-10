@@ -111,7 +111,7 @@ export const noDefaultExport = createRule<RuleOptions, MessageIds>({
       suggestNamed = true,
     } = options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
 
     function shouldAllow(): boolean {
       if (!filename) {

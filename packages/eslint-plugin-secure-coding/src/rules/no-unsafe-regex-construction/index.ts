@@ -255,7 +255,7 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
       trustedEscapingFunctions = ['escapeRegex', 'escape', 'sanitize'],
     }: Options = options || {};
 
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     /**
      * Check RegExp constructor calls

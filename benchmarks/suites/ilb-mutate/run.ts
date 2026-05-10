@@ -107,7 +107,7 @@ const MUTATORS = {
   },
 };
 
-function lintAsSibling(src, originalPath) {
+function lintAsSibling(src: string, originalPath: string): Set<string> {
   // Write the (mutated) source as a sibling of the original fixture so the
   // ESLint config's globs match. Original is preserved.
   const dir = path.dirname(originalPath);
@@ -125,9 +125,9 @@ function lintAsSibling(src, originalPath) {
   } finally {
     fs.rmSync(file, { force: true });
   }
-  if (!raw) return new Set();
+  if (!raw) return new Set<string>();
   const results = JSON.parse(raw);
-  return new Set(results.flatMap((r) => (r.messages ?? []).filter((m) => m.ruleId).map((m) => m.ruleId)));
+  return new Set<string>(results.flatMap((r: any) => (r.messages ?? []).filter((m: any) => m.ruleId).map((m: any) => m.ruleId as string)));
 }
 
 function listFixtures() {
@@ -157,8 +157,8 @@ async function main() {
   const triples = [];
   let totalChecks = 0;
   let totalSurvived = 0;
-  const perRule = {};
-  const perMutator = {};
+  const perRule: Record<string, any> = {};
+  const perMutator: Record<string, any> = {};
 
   for (const fx of fixtures) {
     const src = fs.readFileSync(fx.file, 'utf8');
@@ -196,7 +196,7 @@ async function main() {
   console.log(`Survival: ${totalSurvived}/${totalChecks} = ${(ruleSurvivalRate * 100).toFixed(1)}%  ${passed ? '✅' : '❌'} (SLO ≥ ${(SLO_SURVIVAL * 100)}%)`);
   console.log('');
   console.log('Per mutator:');
-  for (const [m, d] of Object.entries(perMutator)) console.log(`  ${m.padEnd(22)} ${d.survived}/${d.total} = ${(d.survived / d.total * 100).toFixed(1)}%`);
+  for (const [m, d] of Object.entries(perMutator) as Array<[string, any]>) console.log(`  ${m.padEnd(22)} ${d.survived}/${d.total} = ${(d.survived / d.total * 100).toFixed(1)}%`);
 
   const date = new Date().toISOString().slice(0, 10);
   const envelope = {

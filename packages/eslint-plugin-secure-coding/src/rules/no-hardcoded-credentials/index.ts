@@ -363,7 +363,7 @@ export const noHardcodedCredentials = createRule<RuleOptions, MessageIds>({
       customPatterns = [],
     }: Options = options || {};
 
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = allowInTests && (
       filename.includes('.test.') ||
       filename.includes('.spec.') ||

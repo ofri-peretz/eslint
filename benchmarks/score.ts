@@ -18,6 +18,7 @@
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { weightedF1, bootstrapF1CI } from './lib/stats.ts';
 import { getToolchain } from './lib/toolchain.ts';
 import { capturePreregistration } from './lib/preregister.ts';
@@ -81,7 +82,7 @@ function scoreCWE(cweDir) {
     ? JSON.parse(fs.readFileSync(manifestPath, 'utf-8'))
     : { cwe: cweName };
 
-  const result = {
+  const result: any = {
     cwe: cweName,
     owasp: manifest.owasp || 'unknown',
     tp: 0,  // True Positives: vuln files flagged

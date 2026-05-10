@@ -237,7 +237,7 @@ export const noBarrelFile = createRule<RuleOptions, MessageIds>({
       reexportRatio = 0.8,
     }: NoBarrelFileOptions = options || {};
 
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
 
     // Check if file matches barrel patterns
     if (!matchesPattern(filename, barrelPatterns)) {

@@ -1,5 +1,13 @@
 {
-    "title": "Rules",
-    "icon": "BookOpen",
-    "defaultOpen": false
+  "title": "Rules",
+  "icon": "BookOpen",
+  "defaultOpen": false,
+  "pages": [
+    "no-console-log",
+    "no-debug-code-in-production",
+    "no-process-exit",
+    "no-verbose-error-messages",
+    "require-code-minification",
+    "require-data-minimization"
+  ]
 }

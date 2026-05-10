@@ -22,6 +22,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES_DIR = path.join(ROOT, 'packages');
@@ -203,7 +204,7 @@ console.log(
 
 if (PRINT && drift > 0) {
   console.log('\n--- Drift detail ---');
-  for (const [plugin, info] of Object.entries(report.plugins)) {
+  for (const [plugin, info] of Object.entries(report.plugins) as Array<[string, any]>) {
     const issues = info.missingDoc.length + info.missingTest.length + info.docNoExamples.length + info.missingImpl.length;
     if (issues === 0) continue;
     console.log(`\n${plugin}:`);

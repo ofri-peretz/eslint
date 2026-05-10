@@ -105,9 +105,9 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
       ignorePatterns = [],
     } = options as Options;
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     // Codemods and AST-walker tools legitimately compare AST identifiers
     // (`node.key === 'foo'`, `node.name === 'bar'`) — those keys aren't

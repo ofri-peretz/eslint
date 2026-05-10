@@ -263,7 +263,7 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
     }: Options = options;
 
     const sourceCode = context.sourceCode;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
 
     // Create safety checker for false positive detection
     const safetyChecker = createSafetyChecker({

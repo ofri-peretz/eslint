@@ -40,6 +40,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const RESULTS_DIR = path.join(ROOT, 'benchmark-results');
@@ -101,9 +102,9 @@ for (const repoDir of fs.readdirSync(perRepoDir)) {
   const isEdge = fpEdgeRepos.has(repoDir);
   const f = path.join(perRepoDir, repoDir, 'per-rule.json');
   if (!fs.existsSync(f)) continue;
-  let data = {};
+  let data: Record<string, any> = {};
   try { data = JSON.parse(fs.readFileSync(f, 'utf-8')); } catch { continue; }
-  for (const [rule, entry] of Object.entries(data)) {
+  for (const [rule, entry] of Object.entries(data) as Array<[string, any]>) {
     if (!perRule.has(rule)) {
       perRule.set(rule, { totalHits: 0, errorHits: 0, warnHits: 0, edgeHits: 0, nonEdgeHits: 0, repos: new Set() });
     }

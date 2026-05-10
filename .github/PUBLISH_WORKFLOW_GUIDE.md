@@ -260,7 +260,7 @@ If you encounter issues:
 
 1. Check the **workflow run logs** on GitHub Actions
 2. Review the **step summaries** for each job
-3. Check **Nx documentation** for `nx release` flags
+3. Check **[Changesets docs](https://github.com/changesets/changesets/blob/main/docs/intro-to-using-changesets.md)** and the project release flow in CONTRIBUTING.md
 4. Open an issue with workflow logs attached
 
 ---

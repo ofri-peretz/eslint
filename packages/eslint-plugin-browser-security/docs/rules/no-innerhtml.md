@@ -17,7 +17,7 @@ Detects dangerous innerHTML/outerHTML assignments that can lead to Cross-Site Sc
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
 **OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
 
-Detects dangerous innerHTML/outerHTML assignments that can lead to Cross-Site Scripting (XSS). This rule is part of [`eslint-plugin-frontend-security`](https://www.npmjs.com/package/eslint-plugin-frontend-security).
+Detects dangerous innerHTML/outerHTML assignments that can lead to Cross-Site Scripting (XSS). This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 
 ⚠️ This rule **_errors_** by default in the `recommended` config.
 
@@ -119,7 +119,7 @@ container.appendChild(div);
 ```json
 {
   "rules": {
-    "frontend-security/no-innerhtml": [
+    "browser-security/no-innerhtml": [
       "error",
       {
         "trustedSanitizers": ["DOMPurify.sanitize", "myCustomSanitizer"],

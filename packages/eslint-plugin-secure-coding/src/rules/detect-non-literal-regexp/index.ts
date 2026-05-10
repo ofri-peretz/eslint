@@ -247,7 +247,7 @@ allowLiterals = false,
       isDynamic: boolean;
       length: number;
     } => {
-      const sourceCode = context.sourceCode || context.sourceCode;
+      const sourceCode = context.sourceCode;
 
       // Determine constructor type
       let constructor = 'RegExp';

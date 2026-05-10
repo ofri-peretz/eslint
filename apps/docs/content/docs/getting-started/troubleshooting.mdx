@@ -10,15 +10,15 @@ import { AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 
 <Accordions>
 
-<Accordion title="Error: Cannot find module 'eslint-config-interlace'">
+<Accordion title="Error: Cannot find module 'eslint-plugin-secure-coding'">
 
 **Cause:** Package not installed or incorrect node_modules path.
 
 **Solution:**
 
 ```bash
-# Reinstall the package
-npm install eslint-config-interlace --save-dev
+# Reinstall the plugin
+npm install eslint-plugin-secure-coding --save-dev
 
 # Clear npm cache if needed
 npm cache clean --force
@@ -30,10 +30,10 @@ For monorepos, ensure you're installing in the correct workspace:
 
 ```bash
 # Root installation for sharing
-npm install eslint-config-interlace -w
+npm install eslint-plugin-secure-coding -w
 
 # Or workspace-specific
-npm install eslint-config-interlace -w packages/my-app
+npm install eslint-plugin-secure-coding -w packages/my-app
 ```
 
 </Accordion>
@@ -84,11 +84,11 @@ npm install eslint-config-interlace -w packages/my-app
 2. Check your config exports the rules:
 
    ```js title="eslint.config.js"
-   import interlace from 'eslint-config-interlace';
+   import browserSecurity from 'eslint-plugin-browser-security';
 
-   console.log(interlace.configs.recommended); // Debug: see what's exported
+   console.log(browserSecurity.configs.recommended); // Debug: see what's exported
 
-   export default [...interlace.configs.recommended];
+   export default [browserSecurity.configs.recommended];
    ```
 
 3. Verify files match:
@@ -131,9 +131,9 @@ npm outdated | grep eslint
 
 1. Hover over the error in VS Code — metadata appears in the tooltip
 2. Check ESLint output panel for full diagnostics
-3. Update to the latest Interlace version:
+3. Update to the latest plugin versions:
    ```bash
-   npm update eslint-config-interlace
+   npm update 'eslint-plugin-*'
    ```
 
 For CLI, use the `--format` flag:
@@ -157,11 +157,13 @@ npm install eslint-config-prettier --save-dev
 ```
 
 ```js title="eslint.config.js"
-import interlace from 'eslint-config-interlace';
+import secureCoding from 'eslint-plugin-secure-coding';
+import maintainability from 'eslint-plugin-maintainability';
 import prettier from 'eslint-config-prettier';
 
 export default [
-  ...interlace.configs.recommended,
+  secureCoding.configs.recommended,
+  maintainability.configs.recommended,
   prettier, // Must be last to override formatting rules
 ];
 ```
@@ -222,11 +224,13 @@ Create per-package configs that extend the root:
 
 ```js title="packages/frontend/eslint.config.js"
 import rootConfig from '../../eslint.config.js';
-import react from 'eslint-plugin-react-best-practices';
+import reactFeatures from 'eslint-plugin-react-features';
+import reactA11y from 'eslint-plugin-react-a11y';
 
 export default [
   ...rootConfig,
-  react.configs.recommended,
+  reactFeatures.configs.recommended,
+  reactA11y.configs.recommended,
   {
     files: ['**/*.tsx'],
     rules: {
@@ -316,5 +320,5 @@ If you're still experiencing issues:
 
 ```bash
 # Generate a system report
-npx eslint --version && node --version && npm ls eslint eslint-config-interlace
+npx eslint --version && node --version && npm ls | grep -E '(eslint|eslint-plugin)'
 ```

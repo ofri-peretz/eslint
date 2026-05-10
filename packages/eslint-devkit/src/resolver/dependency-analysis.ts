@@ -126,6 +126,19 @@ const DYNAMIC_IMPORT_REGEX = /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
 const TYPE_IMPORT_REGEX = /import\s+type\s/;
 
 /**
+ * Pre-compiled regex for re-exports (export … from '…').
+ *
+ * Re-exports establish runtime import edges. The cycle in next.js's
+ * `client/router.ts` ↔ `client/with-router.tsx` propagates ENTIRELY through
+ * re-exports — without this regex our DFS doesn't see the edge and misses
+ * the cycle (verified against oxlint native, which catches it).
+ *
+ * Negative lookahead `(?!type[\s{])` excludes `export type ... from` —
+ * those are erased at compile time and don't cause runtime cycles.
+ */
+const EXPORT_FROM_REGEX = /(?:^|[\s;])export\s+(?!type[\s{])[\w*{}\s,]+from\s+['"]([^'"]+)['"]/gm;
+
+/**
  * Default extensions for import resolution.
  * Module-level constant to avoid allocating a new array per resolve call.
  */
@@ -601,26 +614,31 @@ export function getFileImports(
     // Use pre-compiled regex - reset lastIndex for reuse
     IMPORT_REGEX.lastIndex = 0;
     DYNAMIC_IMPORT_REGEX.lastIndex = 0;
+    EXPORT_FROM_REGEX.lastIndex = 0;
 
     let match;
 
-    // Match ES6 static imports using pre-compiled regex
-    while ((match = IMPORT_REGEX.exec(content)) !== null) {
-      const importPath = match[1];
+    // Track resolved paths to dedupe across the three regexes (a single file
+    // may have both `import X from 'y'` and `export { X } from 'y'`).
+    const seen = new Set<string>();
+    const pushImport = (importPath: string, dynamic = false) => {
       const resolved = resolveImportPath(importPath, resolveOpts);
-      if (resolved && fileExists(resolved, cache)) {
-        imports.push({ path: resolved, source: importPath });
+      if (resolved && fileExists(resolved, cache) && !seen.has(resolved)) {
+        seen.add(resolved);
+        imports.push(dynamic ? { path: resolved, source: importPath, dynamic } : { path: resolved, source: importPath });
       }
-    }
+    };
 
-    // Match dynamic imports using pre-compiled regex
-    while ((match = DYNAMIC_IMPORT_REGEX.exec(content)) !== null) {
-      const importPath = match[1];
-      const resolved = resolveImportPath(importPath, resolveOpts);
-      if (resolved && fileExists(resolved, cache)) {
-        imports.push({ path: resolved, source: importPath, dynamic: true });
-      }
-    }
+    // Match ES6 static imports using pre-compiled regex
+    while ((match = IMPORT_REGEX.exec(content)) !== null) pushImport(match[1]);
+
+    // Match re-exports (`export … from '…'`). Without this, cycles routed
+    // through re-export-only files (a common pattern in barrel-heavy
+    // codebases) are invisible.
+    while ((match = EXPORT_FROM_REGEX.exec(content)) !== null) pushImport(match[1]);
+
+    // Match dynamic imports
+    while ((match = DYNAMIC_IMPORT_REGEX.exec(content)) !== null) pushImport(match[1], true);
 
     // Store file hash for cache invalidation + invalidate SCC if graph changed
     const hash = getFileHash(file);

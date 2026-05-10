@@ -1,0 +1,173 @@
+{
+  "name": "@interlace/ui",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Base UI shadcn primitives + decorative components for fumadocs-based docs sites",
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    "./cn": {
+      "types": "./dist/lib/cn.d.ts",
+      "default": "./dist/lib/cn.js"
+    },
+    "./use-reduced-motion": {
+      "types": "./dist/lib/use-reduced-motion.d.ts",
+      "default": "./dist/lib/use-reduced-motion.js"
+    },
+    "./button": {
+      "types": "./dist/primitives/button.d.ts",
+      "default": "./dist/primitives/button.js"
+    },
+    "./badge": {
+      "types": "./dist/primitives/badge.d.ts",
+      "default": "./dist/primitives/badge.js"
+    },
+    "./card": {
+      "types": "./dist/primitives/card.d.ts",
+      "default": "./dist/primitives/card.js"
+    },
+    "./input": {
+      "types": "./dist/primitives/input.d.ts",
+      "default": "./dist/primitives/input.js"
+    },
+    "./tabs": {
+      "types": "./dist/primitives/tabs.d.ts",
+      "default": "./dist/primitives/tabs.js"
+    },
+    "./dialog": {
+      "types": "./dist/primitives/dialog.d.ts",
+      "default": "./dist/primitives/dialog.js"
+    },
+    "./accordion": {
+      "types": "./dist/primitives/accordion.d.ts",
+      "default": "./dist/primitives/accordion.js"
+    },
+    "./tooltip": {
+      "types": "./dist/primitives/tooltip.d.ts",
+      "default": "./dist/primitives/tooltip.js"
+    },
+    "./alert": {
+      "types": "./dist/primitives/alert.d.ts",
+      "default": "./dist/primitives/alert.js"
+    },
+    "./separator": {
+      "types": "./dist/primitives/separator.d.ts",
+      "default": "./dist/primitives/separator.js"
+    },
+    "./dropdown-menu": {
+      "types": "./dist/primitives/dropdown-menu.d.ts",
+      "default": "./dist/primitives/dropdown-menu.js"
+    },
+    "./popover": {
+      "types": "./dist/primitives/popover.d.ts",
+      "default": "./dist/primitives/popover.js"
+    },
+    "./pagination": {
+      "types": "./dist/primitives/pagination.d.ts",
+      "default": "./dist/primitives/pagination.js"
+    },
+    "./avatar": {
+      "types": "./dist/primitives/avatar.d.ts",
+      "default": "./dist/primitives/avatar.js"
+    },
+    "./skeleton": {
+      "types": "./dist/primitives/skeleton.d.ts",
+      "default": "./dist/primitives/skeleton.js"
+    },
+    "./label": {
+      "types": "./dist/primitives/label.d.ts",
+      "default": "./dist/primitives/label.js"
+    },
+    "./switch": {
+      "types": "./dist/primitives/switch.d.ts",
+      "default": "./dist/primitives/switch.js"
+    },
+    "./checkbox": {
+      "types": "./dist/primitives/checkbox.d.ts",
+      "default": "./dist/primitives/checkbox.js"
+    },
+    "./radio-group": {
+      "types": "./dist/primitives/radio-group.d.ts",
+      "default": "./dist/primitives/radio-group.js"
+    },
+    "./sheet": {
+      "types": "./dist/primitives/sheet.d.ts",
+      "default": "./dist/primitives/sheet.js"
+    },
+    "./scroll-area": {
+      "types": "./dist/primitives/scroll-area.d.ts",
+      "default": "./dist/primitives/scroll-area.js"
+    },
+    "./blocks/article-card": {
+      "types": "./dist/blocks/article-card.d.ts",
+      "default": "./dist/blocks/article-card.js"
+    },
+    "./patterns/hero-cosmic": {
+      "types": "./dist/patterns/hero-cosmic.d.ts",
+      "default": "./dist/patterns/hero-cosmic.js"
+    },
+    "./mdx/mermaid": {
+      "types": "./dist/mdx/mermaid.d.ts",
+      "default": "./dist/mdx/mermaid.js"
+    },
+    "./fumadocs/remote-markdown": {
+      "types": "./dist/fumadocs/remote-markdown.d.ts",
+      "default": "./dist/fumadocs/remote-markdown.js"
+    },
+    "./fumadocs/remote-source-callout": {
+      "types": "./dist/fumadocs/remote-source-callout.d.ts",
+      "default": "./dist/fumadocs/remote-source-callout.js"
+    },
+    "./fumadocs/remote-markdown-skeleton": {
+      "types": "./dist/fumadocs/remote-markdown-skeleton.d.ts",
+      "default": "./dist/fumadocs/remote-markdown-skeleton.js"
+    },
+    "./fumadocs/edit-on-github": {
+      "types": "./dist/fumadocs/edit-on-github.d.ts",
+      "default": "./dist/fumadocs/edit-on-github.js"
+    },
+    "./magicui/*": {
+      "types": "./dist/magicui/*.d.ts",
+      "default": "./dist/magicui/*.js"
+    },
+    "./aceternity/*": {
+      "types": "./dist/aceternity/*.d.ts",
+      "default": "./dist/aceternity/*.js"
+    },
+    "./styles/tokens.css": "./styles/tokens.css"
+  },
+  "files": [
+    "dist",
+    "styles"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.lib.json && node scripts/preserve-use-client.mjs",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "@base-ui-components/react": "^1.0.0-beta.6",
+    "fumadocs-core": "^16.0.0",
+    "mermaid": "^11.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "fumadocs-core": { "optional": true },
+    "mermaid": { "optional": true }
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.469.0",
+    "motion": "^12.29.2",
+    "tailwind-merge": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.0"
+  }
+}

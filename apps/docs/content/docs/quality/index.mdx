@@ -124,12 +124,26 @@ npm install eslint-plugin-import-next \
 
 ---
 
-## Unified Config
+## Composing the Quality Plugins
 
-Use `eslint-config-interlace` to bundle all quality rules:
+Each plugin ships its own recommended config — compose the ones you need rather than depending on a meta-package:
 
 ```js title="eslint.config.js"
-import interlaceConfig from 'eslint-config-interlace';
+import importNext from 'eslint-plugin-import-next';
+import maintainability from 'eslint-plugin-maintainability';
+import reliability from 'eslint-plugin-reliability';
+import modularity from 'eslint-plugin-modularity';
+import operability from 'eslint-plugin-operability';
+import conventions from 'eslint-plugin-conventions';
+import modernization from 'eslint-plugin-modernization';
 
-export default [interlaceConfig.configs.quality];
+export default [
+  importNext.configs.recommended,
+  maintainability.configs.recommended,
+  reliability.configs.recommended,
+  modularity.configs.recommended,
+  operability.configs.recommended,
+  conventions.configs.recommended,
+  modernization.configs.recommended,
+];
 ```

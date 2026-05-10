@@ -169,6 +169,121 @@ function cmdMcp(args) {
   child.on('exit', (code) => process.exit(code ?? 0));
 }
 
+// ─── doctor ────────────────────────────────────────────────────────────────
+
+/**
+ * `interlace doctor` — adoption-funnel debugger.
+ * Walks every checkpoint a fresh user trips over (Node version, ESLint config,
+ * installed plugins, MCP servers, telemetry, GitHub Action) and reports:
+ *   ✅ ready        — works as expected
+ *   ⚠ improve      — works but not optimal
+ *   ❌ broken       — fix needed before the next step works
+ *
+ * Each finding ships with a one-line "fix" command the user can copy-paste.
+ */
+function cmdDoctor(_args) {
+  const repoRoot = findRepoRoot(process.cwd());
+  const checks = [];
+
+  // 1. Node version
+  const major = Number.parseInt(process.version.replace(/^v/, '').split('.')[0], 10);
+  checks.push({
+    name: 'Node version',
+    status: major >= 22 ? 'ok' : major >= 18 ? 'warn' : 'fail',
+    detail: `process.version=${process.version}`,
+    fix: major >= 22 ? null : 'Upgrade to Node 22+ (active LTS). nvm install 22 && nvm use 22',
+  });
+
+  // 2. ESLint resolvable
+  const eslintBin = findEslintBin(repoRoot);
+  checks.push({
+    name: 'ESLint installed',
+    status: eslintBin ? 'ok' : 'fail',
+    detail: eslintBin ? `at ${path.relative(repoRoot, eslintBin)}` : 'not found in node_modules',
+    fix: eslintBin ? null : 'npm install --save-dev eslint',
+  });
+
+  // 3. eslint.config.mjs (or .ts / .js fallback) present
+  const cfgCandidates = ['eslint.config.mjs', 'eslint.config.js', 'eslint.config.ts', '.eslintrc.json', '.eslintrc.cjs'];
+  const cfg = cfgCandidates.find((c) => fs.existsSync(path.join(process.cwd(), c)));
+  checks.push({
+    name: 'ESLint config in cwd',
+    status: cfg ? 'ok' : 'warn',
+    detail: cfg ? `using ${cfg}` : 'no eslint.config.* found',
+    fix: cfg ? null : 'interlace init   # writes a starter eslint.config.mjs',
+  });
+
+  // 4. Interlace plugins installed
+  const FLEET = ['secure-coding', 'browser-security', 'node-security', 'crypto', 'jwt',
+                 'express-security', 'lambda-security', 'mongodb-security', 'nestjs-security',
+                 'vercel-ai-security', 'pg'];
+  const installed = FLEET.filter((p) => fs.existsSync(path.join(repoRoot, 'node_modules', '@interlace', `eslint-plugin-${p}`)));
+  checks.push({
+    name: 'Interlace plugins installed',
+    status: installed.length === 0 ? 'warn' : installed.length < 3 ? 'warn' : 'ok',
+    detail: `${installed.length}/${FLEET.length} installed: ${installed.slice(0, 5).join(', ')}${installed.length > 5 ? ' ...' : ''}`,
+    fix: installed.length === 0 ? 'npm install --save-dev @interlace/eslint-plugin-secure-coding @interlace/eslint-plugin-node-security @interlace/eslint-plugin-browser-security' : null,
+  });
+
+  // 5. SARIF formatter installed (optional but recommended)
+  const sarif = fs.existsSync(path.join(repoRoot, 'node_modules', '@interlace', 'eslint-formatter-sarif'));
+  checks.push({
+    name: 'SARIF formatter installed',
+    status: sarif ? 'ok' : 'warn',
+    detail: sarif ? 'available' : 'not installed',
+    fix: sarif ? null : 'npm install --save-dev @interlace/eslint-formatter-sarif',
+  });
+
+  // 6. MCP servers installed (optional)
+  const mcpInstalled = FLEET.filter((p) => fs.existsSync(path.join(repoRoot, 'node_modules', '@interlace', `${p}-mcp`)));
+  checks.push({
+    name: 'MCP servers installed (for agent integration)',
+    status: mcpInstalled.length > 0 ? 'ok' : 'warn',
+    detail: mcpInstalled.length > 0 ? `${mcpInstalled.length} MCP server(s) installed` : 'no MCP servers installed (agents like Claude Code / Cursor cannot call audit_file etc. without these)',
+    fix: mcpInstalled.length === 0 ? 'npm install -g @interlace/secure-coding-mcp   # install one or more' : null,
+  });
+
+  // 7. Telemetry status (informational only)
+  const telemetryEnabled = process.env.INTERLACE_TELEMETRY === '1';
+  const endpoint = process.env.INTERLACE_TELEMETRY_ENDPOINT;
+  checks.push({
+    name: 'Telemetry status (opt-in)',
+    status: 'ok',
+    detail: telemetryEnabled
+      ? `enabled, sending to ${endpoint ?? '<no endpoint set!>'}`
+      : 'OFF (default)',
+    fix: null,
+  });
+
+  // 8. GitHub Action present (optional)
+  const ghDir = path.join(repoRoot, '.github', 'workflows');
+  const hasInterlace = fs.existsSync(ghDir) && fs.readdirSync(ghDir)
+    .filter((f) => /\.ya?ml$/.test(f))
+    .some((f) => fs.readFileSync(path.join(ghDir, f), 'utf8').includes('ofri-peretz/eslint/.github/actions/audit'));
+  checks.push({
+    name: 'GitHub Action wired in CI',
+    status: hasInterlace ? 'ok' : 'warn',
+    detail: hasInterlace ? 'workflow uses the Interlace audit action' : 'no workflow references the Interlace action',
+    fix: hasInterlace ? null : 'Add `uses: ofri-peretz/eslint/.github/actions/audit@main` to a workflow under .github/workflows/',
+  });
+
+  // Render
+  const sym = (s) => s === 'ok' ? '✅' : s === 'warn' ? '⚠ ' : '❌';
+  console.log(`interlace doctor — ${process.cwd()}`);
+  console.log('');
+  let fails = 0;
+  let warns = 0;
+  for (const c of checks) {
+    console.log(`${sym(c.status)} ${c.name.padEnd(50)} ${c.detail}`);
+    if (c.fix) console.log(`     fix:   ${c.fix}`);
+    if (c.status === 'fail') fails++;
+    else if (c.status === 'warn') warns++;
+  }
+  console.log('');
+  console.log(`Summary — ${checks.length - fails - warns}/${checks.length} ready · ${warns} improve · ${fails} broken`);
+  process.exit(fails > 0 ? 1 : 0);
+}
+
 // ─── router ────────────────────────────────────────────────────────────────
 
 function main() {
@@ -178,10 +293,11 @@ function main() {
 
   const [sub, ...rest] = argv;
   switch (sub) {
-    case 'audit': return cmdAudit(rest);
-    case 'init':  return cmdInit(rest);
-    case 'bench': return cmdBench(rest);
-    case 'mcp':   return cmdMcp(rest);
+    case 'audit':  return cmdAudit(rest);
+    case 'init':   return cmdInit(rest);
+    case 'bench':  return cmdBench(rest);
+    case 'mcp':    return cmdMcp(rest);
+    case 'doctor': return cmdDoctor(rest);
     default:
       console.error(`interlace: unknown command "${sub}". Try \`interlace --help\`.`);
       process.exit(2);

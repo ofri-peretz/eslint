@@ -155,7 +155,18 @@ Wire into a new `npm run ilb:flagship` aggregator → writes `results/ilb-flagsh
 
 A regression on any flagship rule is weighted ×10 in `ilb:regression`.
 
-### Latest bench numbers (v2.1, 2026-05-10 — after the 5 fixes)
+### Latest bench numbers (v2.3, 2026-05-10 — after the no-cycle scope/scope/dedup recall fixes)
+
+**v2.3 changes** (closing the oxlint-recall gap on `import-next/no-cycle`):
+
+- The bench config no longer ignores `**/build/**` and `**/dist/**` — those globs false-positive matched real source dirs (next.js's `packages/next/src/build/`, etc.). Anchor ignores to `node_modules`, `.next`, `coverage`, test files only.
+- `no-cycle`'s default `maxDepth` is now `Number.MAX_SAFE_INTEGER` (was 10). Matches `eslint-plugin-import` and oxlint defaults. The `nonCyclicFiles` cache + the depth-truncation fix make unlimited safe.
+- Added `EXPORT_FROM_REGEX` to dependency-analysis — re-exports (`export * from`, `export { X } from`, `export { default as Y } from`) now establish import edges. Type-only re-exports excluded.
+- `reportedCycles` now keys by `(file, cycle-hash)` instead of `cycle-hash` alone. Each file in a cycle gets its own diagnostic, matching oxlint's per-file reporting.
+
+**v2.3 result on `import-next/no-cycle` against next.js**: from **9 / 15 oxlint-flagged files caught (60%)** in v2.2 → **14 / 15 (93%)** in v2.3. The 15th file (`with-router.tsx`) participates in a cycle that we DO report — we just report it on the other end (`router.ts`). oxlint reports both ends; we report each unique cycle on each file in the cycle now too, but a wide-scope ordering quirk silences with-router specifically. Functional parity, presentational gap.
+
+### Earlier bench numbers (v2.2, 2026-05-10 — after the 5 head-to-head fixes + 3 corpus-driven fixes)
 
 Single-shot timings on `~/repos/ofriperetz.dev/oos/`. Full data: [`benchmarks/results/ilb-flagship/2026-05-10.json`](../benchmarks/results/ilb-flagship/2026-05-10.json). What changed vs v2 (2026-05-09):
 
@@ -168,7 +179,7 @@ Single-shot timings on `~/repos/ofriperetz.dev/oos/`. Full data: [`benchmarks/re
 | `mongodb-security/no-unsafe-query` | payload | 233 → 233 (green-field) | — | No change. |
 | `jwt/no-algorithm-none` | supabase | 0 → 0 (no `algorithm: 'none'` literals) | — | No change. |
 | `browser-security/no-postmessage-wildcard-origin` | next.js | 2 → 2 (real CWE-346 in compiled `setimmediate`) | — | No change. Narrow signature, no FP risk. |
-| `react-features/hooks-exhaustive-deps` | next.js | 83 → **105** (overlap 0/79/22 → **22/79/0**) | 44 → 44 | Added non-array-deps reporting + `TSAsExpression` (`as const`) handling. We now catch every finding the competitor caught (the 22 in `compiled/react-dom/cjs/*` we previously missed) AND keep our 79 ours-only wins. **Competitor no longer beats us on any line.** |
+| `react-features/hooks-exhaustive-deps` | next.js | 83 → **102** (overlap 0/79/22 → **22/76/0**) | 44 → 44 | Three changes landed in series: (1) non-array-deps reporting + `TSAsExpression` handling (caught the 22 compiled/react-dom cases competitor was winning on), (2) corpus-driven fix for inner-callback parameters (eliminated FPs on `.then((r) => r.json())` patterns — 3 fewer ours-only findings, all of them spurious). **Competitor no longer beats us on any line.** |
 | `react-a11y/alt-text` | shadcn-ui | 1 (FP) → **0** | 0 → 0 | Added 4-element-type coverage (`<img>`, `<object>`, `<area>`, `<input type="image">`), custom-component support, and `role="presentation"` correct handling. Pre-fix our v2 finding (`alt={alt}` on a forwarded prop) was a false positive — we now correctly stay silent on dynamic alt expressions, matching jsx-a11y semantics. The element-type expansion will surface real findings on next.js / Next.js apps once we run a wider bench with `{ img: ['Image'] }` configured. |
 | `vercel-ai-security/no-unsafe-output-handling` | vercel-ai | 0 → 0 (SDK source clean) | — | No change. |
 
@@ -196,9 +207,31 @@ Three real bugs were found and fixed during corpus seeding:
 - `mongodb-security/no-unsafe-query` — missed `$where: \`...\${userInput}\`` because TemplateLiteral was stringified to `'[expression]'` before pattern matching. Fixed: `containsUserInput` now recurses into TemplateLiteral / BinaryExpression / CallExpression.
 - `vercel-ai-security/no-unsafe-output-handling` — missed the idiomatic `const { text } = await generateText(...)` destructured pattern. Fixed: scope-track local variables bound to known AI SDK calls (`generateText`, `streamText`, `generateObject`, `streamObject`).
 
-**alt-text on next.js with `{ img: ['Image'] }`** (manifest field `ruleOptions`): 3 findings on next.js source itself, all 3 stacks (ours / jsx-a11y / oxlint native) in perfect agreement. The same rule against next.js without the option — invisible. The custom-component config is what takes the rule from "useful in shadcn-only-style projects" to "useful in every Next.js app."
+**alt-text on next.js with `{ img: ['Image'] }`** (manifest field `ruleOptions`): 3 findings on next.js source itself, all 3 stacks (ours / jsx-a11y / oxlint native) in perfect agreement (`both: 3, oursOnly: 0, theirsOnly: 0`). The same rule against next.js without the option — invisible. The custom-component config is what takes the rule from "useful in shadcn-only-style projects" to "useful in every Next.js app."
 
-**Median-of-N timings** (the `--repeat=N` flag): single-shot timings showed visible variance (`jwt/no-algorithm-none` cold ranged 15s → 53s between runs). v2.1 still uses single-shot for full sweeps; for SLO-grade numbers, run `npm run ilb:flagship -- --rule=<id> --repeat=3` and read the `(min…max)` spread next to the median.
+### v2.2 corpus-driven additions (2026-05-10)
+
+After expanding the smoke-gate corpus from 2 → 9 rules, three additional bug-finds + fixes landed:
+
+- **`react-features/hooks-exhaustive-deps`** flagged inner-callback params (`(r) => r.json()`) as missing deps. Fixed by collecting `params` of nested `ArrowFunction`/`FunctionExpression`/`FunctionDeclaration` into the locally-declared set.
+- **`mongodb-security/no-unsafe-query`** missed the `$where:` operator with a template literal carrying user input (e.g., `this.x == '${req.query.y}'` interpolated into a `$where` value). The `containsUserInput` helper now recurses into TemplateLiteral / BinaryExpression / CallExpression instead of stringifying composite expressions.
+- **`vercel-ai-security/no-unsafe-output-handling`** missed the idiomatic `const { text } = await generateText(...)` pattern. Added scope-tracking for variables bound to `generateText` / `streamText` / `generateObject` / `streamObject` calls (including destructured `text`).
+
+All three were caught the moment ground truth landed. None had been surfaced by months of unit tests + competitor benchmarking. Full write-up: [`apps/docs/content/articles/what-ground-truth-caught-that-unit-tests-missed.mdx`](../apps/docs/content/articles/what-ground-truth-caught-that-unit-tests-missed.mdx).
+
+**Median-of-N timings** (the `--repeat=N` flag): single-shot timings showed visible variance (`jwt/no-algorithm-none` cold ranged 15s → 53s between runs). v2.2 still uses single-shot for full sweeps; for SLO-grade numbers, run `npm run ilb:flagship -- --rule=<id> --repeat=3` and read the `(min…max)` spread next to the median.
+
+### Median-of-3 SLO numbers (the variance-prone rules, 2026-05-10)
+
+These are the cold-run numbers worth publishing — median + spread across 3 fresh runs. Single-shot numbers in the table above are noisier (`jwt` swings 15s → 38s); the median-of-3 below is what the SLO commitment is anchored to.
+
+| Rule | Repo | Ours cold (median) | Spread (min…max) | Notes |
+| :--- | :--- | ---: | ---: | :--- |
+| `import-next/no-cycle` | next.js | 19.3 s | 19.0…19.6 s | Tight (~3% spread). Competitor: 25.3 s median (25.1…25.7 s). **24% faster cold** than the competitor. oxlint native: 143 ms (141…160). |
+| `browser-security/no-postmessage-wildcard-origin` | next.js | 19.3 s | 18.8…19.4 s | Tight. |
+| `jwt/no-algorithm-none` | supabase | 18.9 s | **15.9…37.7 s** | Wide variance — first run was a 37s outlier (disk cache cold + TS parser warmup). Median is robust; trust the median in CI gates. |
+
+The wide spread on `jwt` is the clearest case for why you don't publish single-shot numbers: a 2.4× spread between min and max would let any individual run claim either "fast" or "slow" depending on which one made the slide deck. Median-of-3 (and ideally Wilson CI when n ≥ 5) makes the comparison reproducible.
 
 ---
 

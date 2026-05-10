@@ -225,7 +225,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
     }: Options = options;
 
     const sourceCode = context.sourceCode;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
 
     // Create safety checker for false positive detection
     const safetyChecker = createSafetyChecker({
@@ -390,7 +390,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
                node,
                messageId: 'dangerousFunctionConstructor',
                data: {
-                  filePath: context.getFilename(),
+                  filePath: context.filename,
                   line: String(node.loc?.start.line ?? 0),
                   severity: 'HIGH',
                   safeAlternative: 'Avoid dynamic function creation',
@@ -473,7 +473,7 @@ export const noUnsafeDeserialization = createRule<RuleOptions, MessageIds>({
               node,
               messageId: 'untrustedDeserializationInput',
               data: {
-                filePath: context.getFilename(),
+                filePath: context.filename,
                 line: String(node.loc?.start.line ?? 0),
               },
               suggest: [

@@ -176,7 +176,7 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
       xmlValidationFunctions = ['validateXml', 'sanitizeXml', 'cleanXml', 'parseXmlSafe'],
     } = options || {};
 
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
 
 
     /**

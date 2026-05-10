@@ -32,7 +32,7 @@ const VALID_LUCIDE_ICONS = new Set([
   // ========================================
   'Accessibility', 'Activity', 'Bot', 'BookOpen', 'Brain',
   'Cloud', 'Database', 'Download',
-  'FileCode', 'FileText', 'Gauge', 'GitBranch', 'Globe',
+  'FileCode', 'FileText', 'Gauge', 'GitBranch', 'GitFork', 'Globe',
   'History', 'Key', 'Layers', 'Lightbulb', 'Map', 'Monitor',
   'Puzzle', 'RefreshCw', 'Rocket', 'Server', 'Settings',
   'Shield', 'Terminal', 'TreeDeciduous', 'Users', 'Workflow',

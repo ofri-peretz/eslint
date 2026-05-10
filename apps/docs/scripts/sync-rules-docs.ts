@@ -8,26 +8,30 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { PLUGINS, type PluginEntry } from '../src/lib/plugins';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '../../../');
 const packagesDir = path.join(rootDir, 'packages');
 const contentDir = path.resolve(__dirname, '../content/docs');
 
-// Plugin slug to package name mapping
-export const PLUGIN_MAPPINGS = {
-  'browser-security': 'eslint-plugin-browser-security',
-  'crypto': 'eslint-plugin-crypto',
-  'express-security': 'eslint-plugin-express-security',
-  'jwt': 'eslint-plugin-jwt',
-  'lambda-security': 'eslint-plugin-lambda-security',
-  'mongodb-security': 'eslint-plugin-mongodb-security',
-  'nestjs-security': 'eslint-plugin-nestjs-security',
-  'pg': 'eslint-plugin-pg',
-  'secure-coding': 'eslint-plugin-secure-coding',
-  'vercel-ai-security': 'eslint-plugin-vercel-ai-security',
-  'import-next': 'eslint-plugin-import-next',
-};
+// Plugin slug → { package, pillar } mapping. Derived from the canonical
+// registry at `src/lib/plugins.ts` so the script + the API routes + the
+// content can never drift apart. Adding a plugin = appending one row to
+// `src/lib/plugins.ts`; this script picks it up automatically.
+//
+// The pillar field controls write path: rule MDX shells land at
+// `content/docs/<pillar>/plugin-<slug>/rules/`. Earlier versions of this
+// script wrote to `content/docs/<slug>/rules/` (orphan path that the sidebar
+// never references) — fixed 2026-05 alongside the canonical-registry refactor.
+export interface PluginMapping {
+  package: string;
+  pillar: 'security' | 'quality';
+}
+
+export const PLUGIN_MAPPINGS: Record<string, PluginMapping> = Object.fromEntries(
+  PLUGINS.map((p: PluginEntry) => [p.slug, { package: p.package, pillar: p.pillar }]),
+) as Record<string, PluginMapping>;
 
 const MDX_TEMPLATE_IMPORTS = `
 import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
@@ -122,27 +126,32 @@ description: ${JSON.stringify(description)}
 
 export function updateMetaJson(pluginRulesDir, ruleSlugs) {
   const metaPath = path.join(pluginRulesDir, 'meta.json');
-  let meta = { title: "Rules", pages: [] };
-  
+  let meta: { title?: string; icon?: string; defaultOpen?: boolean; pages?: string[]; [k: string]: unknown } = {
+    title: 'Rules',
+    pages: [],
+  };
+
   if (fs.existsSync(metaPath)) {
     try {
       meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
     } catch {}
   }
-  
-  // Merge and sort
-  const combined = Array.from(new Set([...meta.pages, ...ruleSlugs])).sort();
-  meta.pages = combined;
-  
+
+  // Defensive: existing meta.json files may not declare `pages` (the convention
+  // is to omit it when the directory is auto-listed). Merge against [] in that
+  // case rather than crashing on a non-iterable.
+  const existingPages = Array.isArray(meta.pages) ? meta.pages : [];
+  meta.pages = Array.from(new Set([...existingPages, ...ruleSlugs])).sort();
+
   fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
 }
 
 async function main() {
   console.log('Syncing Rule MD to MDX...');
 
-  for (const [pluginSlug, packageName] of Object.entries(PLUGIN_MAPPINGS)) {
+  for (const [pluginSlug, { package: packageName, pillar }] of Object.entries(PLUGIN_MAPPINGS)) {
     const pkgRulesDir = path.join(packagesDir, packageName, 'docs/rules');
-    const docsRulesDir = path.join(contentDir, pluginSlug, 'rules');
+    const docsRulesDir = path.join(contentDir, pillar, `plugin-${pluginSlug}`, 'rules');
 
     if (!fs.existsSync(pkgRulesDir)) {
       console.warn(`Rules dir not found for ${packageName}`);

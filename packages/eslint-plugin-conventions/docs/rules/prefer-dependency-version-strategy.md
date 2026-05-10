@@ -1,19 +1,19 @@
 ---
 title: prefer-dependency-version-strategy
-description: Enforce consistent version strategy (caret ^, tilde ~, exact, range, or any) for package.json dependencies. This rule complements @nx/dependency-checks by ensur
+description: Enforce consistent version strategy (caret ^, tilde ~, exact, range, or any) for package.json dependencies. Pairs with a lockfile-alignment check to give complete dependency validation.
 tags: ['quality', 'conventions', 'style']
 category: quality
 autofix: suggestions
 ---
 
-> **Keywords:** dependency version, package.json, semantic versioning, caret, tilde, exact version, version strategy, ESLint rule, monorepo, dependency management, npm, npm, yarn, auto-fix, LLM-optimized, code quality
+> **Keywords:** dependency version, package.json, semantic versioning, caret, tilde, exact version, version strategy, ESLint rule, monorepo, dependency management, npm, yarn, auto-fix, LLM-optimized, code quality
 
 
 <!-- @rule-summary -->
-Enforce consistent version strategy (caret ^, tilde ~, exact, range, or any) for package.json dependencies. This rule complements @nx/dependency-checks by ensur
+Enforce consistent version strategy (caret ^, tilde ~, exact, range, or any) for package.json dependencies. Pairs with a lockfile-alignment check to give complete dependency validation.
 <!-- @/rule-summary -->
 
-Enforce consistent version strategy (caret `^`, tilde `~`, exact, range, or any) for `package.json` dependencies. This rule complements `@nx/dependency-checks` by ensuring version specifier format consistency across your monorepo.
+Enforce consistent version strategy (caret `^`, tilde `~`, exact, range, or any) for `package.json` dependencies. Pairs with a lockfile-alignment check (e.g. `npm ci`, or this repo's [`scripts/check-version-alignment.ts`](../../../../scripts/check-version-alignment.ts) via `npm run check-versions`) so format consistency *and* lockfile parity are both enforced.
 
 ## Quick Summary
 
@@ -155,16 +155,16 @@ flowchart TD
 
 ```javascript
 // eslint.config.mjs
-import llmOptimized from 'eslint-plugin-conventions';
+import conventions from 'eslint-plugin-conventions';
 
 export default [
   {
     files: ['**/package.json'],
     plugins: {
-      'eslint-plugin-llm-optimized': llmOptimized,
+      conventions,
     },
     rules: {
-      'eslint-plugin-llm-optimized/development/prefer-dependency-version-strategy': [
+      'conventions/prefer-dependency-version-strategy': [
         'warn',
         {
           strategy: 'caret',
@@ -186,7 +186,7 @@ export default [
 ```javascript
 // Enforce exact versions (strict)
 {
-  'eslint-plugin-llm-optimized/development/prefer-dependency-version-strategy': [
+  'conventions/prefer-dependency-version-strategy': [
     'error',
     { strategy: 'exact' }
   ]
@@ -194,7 +194,7 @@ export default [
 
 // Enforce tilde (patch updates only)
 {
-  'eslint-plugin-llm-optimized/development/prefer-dependency-version-strategy': [
+  'conventions/prefer-dependency-version-strategy': [
     'warn',
     { strategy: 'tilde' }
   ]
@@ -209,7 +209,7 @@ Override the default strategy for specific packages. This allows you to have str
 
 ```javascript
 {
-  'eslint-plugin-llm-optimized/development/prefer-dependency-version-strategy': [
+  'conventions/prefer-dependency-version-strategy': [
     'warn',
     {
       strategy: 'caret', // Default: use caret for all packages
@@ -229,7 +229,7 @@ Override the default strategy for specific packages. This allows you to have str
 
 ```javascript
 {
-  'eslint-plugin-llm-optimized/development/prefer-dependency-version-strategy': [
+  'conventions/prefer-dependency-version-strategy': [
     'warn',
     {
       strategy: 'caret',
@@ -263,7 +263,7 @@ Override the default strategy for specific packages. This allows you to have str
 
 ```javascript
 {
-  'eslint-plugin-llm-optimized/development/prefer-dependency-version-strategy': [
+  'conventions/prefer-dependency-version-strategy': [
     'warn',
     {
       strategy: 'caret',
@@ -291,28 +291,16 @@ Override the default strategy for specific packages. This allows you to have str
 - **Most packages**: Use default `caret` strategy
 - **Disable for specific packages**: Use `'any'` to allow any version format
 
-## Integration with @nx/dependency-checks
+## Pairs with a lockfile-alignment check
 
-This rule **complements** `@nx/dependency-checks`:
+This rule enforces **version-specifier format**. It does **not** validate that the version in `package.json` actually matches what's resolved in the lockfile; that's a separate concern. Run a lockfile-alignment check alongside it for full coverage:
 
-| Rule                          | Purpose                                    |
-| ----------------------------- | ------------------------------------------ |
-| `@nx/dependency-checks`       | Validates version alignment with lockfile  |
-| `prefer-dependency-version-strategy` | Enforces version prefix format consistency |
+| Concern | Tool |
+| :--- | :--- |
+| Version-specifier format consistency (caret / tilde / exact) | This rule (`conventions/prefer-dependency-version-strategy`) |
+| `package.json` version actually matches lockfile | `npm ci` (fails on drift), or this monorepo's [`scripts/check-version-alignment.ts`](../../../../scripts/check-version-alignment.ts) (`npm run check-versions`) |
 
-**Use both together:**
-
-```javascript
-{
-  rules: {
-    '@nx/dependency-checks': ['error', { /* ... */ }],
-    'eslint-plugin-llm-optimized/development/prefer-dependency-version-strategy': [
-      'warn',
-      { strategy: 'caret' }
-    ],
-  },
-}
-```
+The rule and the lockfile check are independent and run at different stages: the rule fires inside ESLint at edit/PR time; the alignment check runs in CI before publish.
 
 ## Auto-Fix Examples
 
@@ -532,7 +520,7 @@ This rule **complements** `@nx/dependency-checks`:
 | ✅ Use `caret` (default)   | Allows security patches and minor updates |
 | ✅ Use `overrides` for critical deps | Pin React, TypeScript, etc. to exact versions |
 | ✅ Allow workspace protocols | Essential for monorepo support            |
-| ✅ Combine with @nx/dependency-checks | Complete dependency validation |
+| ✅ Pair with a lockfile-alignment check (`npm ci` or `npm run check-versions`) | Complete dependency validation |
 | ⚠️ Avoid `exact` for all packages | Misses security patches                  |
 | ⚠️ Use `exact` only for critical deps | When version pinning is required |
 | 💡 Use `tilde` for utilities | Patch updates only (lodash, date-fns) |
@@ -559,16 +547,15 @@ This rule **complements** `@nx/dependency-checks`:
 }
 ```
 
-## Related Rules
+## Related
 
-- [`@nx/dependency-checks`](https://nx.dev/packages/quality/documents/dependency-checks) - Validates dependency versions against lockfile
-- [`no-console-log`](./no-console-log.md) - Disallow console.log statements
+- [`scripts/check-version-alignment.ts`](../../../../scripts/check-version-alignment.ts) - repo-internal lockfile-alignment check (`npm run check-versions`)
+- [`no-console-log`](./no-console-log.md) - Disallow `console.log` statements
 
 ## Resources
 
 - [npm Semantic Versioning](https://docs.npmjs.com/cli/v10/configuring-npm/package-json#dependencies)
 - [Semantic Versioning Specification](https://semver.org/)
-- [Nx Dependency Checks](https://nx.dev/packages/quality/documents/dependency-checks)
 
 ## Version History
 

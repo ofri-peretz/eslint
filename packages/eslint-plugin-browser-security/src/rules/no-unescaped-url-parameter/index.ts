@@ -198,9 +198,9 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
       ignorePatterns = [],
     } = options as Options;
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     function checkTemplateLiteral(node: TSESTree.TemplateLiteral) {
       if (isTestFile) {

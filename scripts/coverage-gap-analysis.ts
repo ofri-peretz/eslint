@@ -64,13 +64,13 @@ function runCoverage(pluginName) {
   }
 }
 
-function analyzeFile(filePath, fileCoverage) {
+function analyzeFile(filePath: string, fileCoverage: any) {
   const source = fs.existsSync(filePath)
     ? fs.readFileSync(filePath, 'utf-8').split('\n')
     : [];
 
   const branchMap = fileCoverage.branchMap || {};
-  const branches = fileCoverage.b || {};
+  const branches: Record<string, number[]> = fileCoverage.b || {};
   const statementMap = fileCoverage.statementMap || {};
   const statements = fileCoverage.s || {};
 
@@ -178,7 +178,7 @@ for (const plugin of plugins) {
   let pluginFpRisks = 0;
   let pluginFnRisks = 0;
 
-  for (const [filePath, fileCoverage] of Object.entries(coverage)) {
+  for (const [filePath, fileCoverage] of Object.entries(coverage) as Array<[string, any]>) {
     // Only analyze rule files
     if (!filePath.includes('/rules/') || !filePath.endsWith('index.ts')) continue;
 
@@ -188,7 +188,7 @@ for (const plugin of plugins) {
     const { uncoveredBranches, uncoveredStatements } = analyzeFile(filePath, fileCoverage);
 
     const branchMap = fileCoverage.branchMap || {};
-    const branches = fileCoverage.b || {};
+    const branches: Record<string, number[]> = fileCoverage.b || {};
     let ruleTotalBranches = 0;
     let ruleCoveredBranches = 0;
 
@@ -245,13 +245,13 @@ for (const plugin of plugins) {
     console.log(`  ${icon} ${plugin}: ${pctCoverage}% branches | ${gapCount} rules with gaps | FP_RISK=${pluginFpRisks} FN_RISK=${pluginFnRisks}`);
 
     // Show worst rules
-    const worstRules = Object.entries(pluginResult.rules)
+    const worstRules = (Object.entries(pluginResult.rules) as Array<[string, any]>)
       .sort((a, b) => a[1].branchCoverage - b[1].branchCoverage)
       .slice(0, 3);
 
     for (const [rule, data] of worstRules) {
       console.log(`     └─ ${rule}: ${data.branchCoverage}% (${data.uncoveredBranches} uncovered)`);
-      data.gaps.slice(0, 2).forEach(g => {
+      data.gaps.slice(0, 2).forEach((g: any) => {
         console.log(`        ${g.type === 'FP_RISK' ? '⚠️' : '❌'} L${g.line}: ${g.reason}`);
       });
     }

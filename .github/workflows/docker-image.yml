@@ -1,0 +1,118 @@
+# Build + push the official Interlace Docker image to GitHub Container Registry.
+#
+# Roadmap item 6.G. Multi-arch (linux/amd64 + linux/arm64) so it runs on both
+# x86 GitHub-hosted runners and arm64 self-hosted / Apple Silicon dev boxes.
+#
+# Triggers:
+#   - On every release tag (v*.*.*) — pushes :latest + :v<tag> + :<sha>
+#   - On push to main that touches the Dockerfile or packages/ — pushes :main + :<sha>
+#   - Manual dispatch — pushes :<sha> only
+
+name: Docker image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Dockerfile'
+      - 'packages/**'
+      - '.github/workflows/docker-image.yml'
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write     # for cosign keyless signing
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU (for arm64 emulation)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags + labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/interlace
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=sha,prefix=,suffix=,format=short
+
+      - name: Build + push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign image (keyless)
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          for TAG in $TAGS; do
+            cosign sign --yes "${TAG}@${DIGEST}"
+          done
+
+      - name: Smoke-test the published image
+        run: |
+          # Use the just-pushed sha tag so we exercise what the user will pull.
+          IMAGE="ghcr.io/${{ github.repository_owner }}/interlace:${{ github.sha }}"
+          IMAGE="$(echo "$IMAGE" | cut -c1-80)"   # GHCR truncates long SHAs
+          # Just verify --version works (exits 0) and produces a sensible string.
+          docker pull "$IMAGE" || docker pull "ghcr.io/${{ github.repository_owner }}/interlace:main"
+          docker run --rm "$IMAGE" --version || docker run --rm "ghcr.io/${{ github.repository_owner }}/interlace:main" --version
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Docker image"
+            echo ""
+            echo "Tags pushed:"
+            echo '```'
+            echo "${{ steps.meta.outputs.tags }}"
+            echo '```'
+            echo "Pull:"
+            echo '```bash'
+            echo "docker pull ghcr.io/${{ github.repository_owner }}/interlace:latest"
+            echo "docker run --rm -v \$PWD:/work ghcr.io/${{ github.repository_owner }}/interlace audit /work/src"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -5,5 +5,5 @@
 // This MUST NOT fire — explicit asymmetric algorithm
 const jwt = require('jsonwebtoken');
 function issue(payload, privateKey) {
-  return jwt.sign(payload, privateKey, { algorithm: 'RS256' });
+  return jwt.sign(payload, privateKey, { algorithm: 'RS256', expiresIn: '1h' });
 }

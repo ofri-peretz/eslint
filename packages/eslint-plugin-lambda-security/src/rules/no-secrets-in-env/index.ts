@@ -88,7 +88,7 @@ export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{ allowInTests: true, additionalPatterns: [] }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
     const { allowInTests = true, additionalPatterns = [] } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {

@@ -17,6 +17,7 @@
         "concepts/ast-fundamentals",
         "concepts/security-metadata",
         "concepts/detect-understand-fix",
+        "concepts/compatibility",
         "concepts/coverage",
         "concepts/benchmarks",
         "---Advanced---",

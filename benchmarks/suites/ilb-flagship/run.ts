@@ -35,7 +35,7 @@ mkdirSync(RESULTS_DIR, { recursive: true });
 mkdirSync(CACHE_DIR, { recursive: true });
 mkdirSync(CONFIGS, { recursive: true });
 
-const argv = parseArgs(process.argv.slice(2));
+const argv: any = parseArgs(process.argv.slice(2));
 const manifest = JSON.parse(readFileSync(join(SUITE, 'manifest.json'), 'utf8'));
 
 function parseArgs(args) {
@@ -69,7 +69,11 @@ import tsParser from '@typescript-eslint/parser';
 
 export default [
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/.next/**', '**/coverage/**', '**/*.min.js', '**/test/**', '**/__tests__/**', '**/*.test.*', '**/*.spec.*'],
+    // Do NOT use plain '**/dist/**' or '**/build/**' — those false-positive
+    // match next.js's \`packages/next/src/build/\` source dir (real files,
+    // not build output) and silently ignore the 6 webpack-config cycle
+    // cluster. Anchor the ignores to known build-output paths instead.
+    ignores: ['**/node_modules/**', '**/.next/**', '**/coverage/**', '**/*.min.js', '**/test/**', '**/__tests__/**', '**/*.test.*', '**/*.spec.*'],
   },
   {
     files: ['**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}'],
@@ -313,12 +317,12 @@ function repoHead(repoPath) {
   return (r.stdout || '').trim();
 }
 
-async function runOne(rule) {
+async function runOne(rule: any) {
   const slugId = slug(rule.id);
   const repoPath = join(OOS_DIR, rule.repo);
   if (!existsSync(repoPath)) return { rule: rule.id, skipped: 'repo not cloned', repoPath };
 
-  const result = {
+  const result: any = {
     rule: rule.id, repo: rule.repo, repoHead: repoHead(repoPath),
     starsK: rule.starsK, tier: rule.tier,
     runs: {},

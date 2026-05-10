@@ -23,7 +23,7 @@ const PACKAGES_DIR = path.join(__dirname, '..', 'packages');
 // ── Metadata Extraction ──────────────────────────────────────────────
 
 function extractRuleMetadata(sourceCode, ruleName) {
-  const meta = { ruleName, exportName: null, messageIds: [], hasOptions: false, hasSuggestions: false, hasFixable: false, optionKeys: [] };
+  const meta: any = { ruleName, exportName: null, messageIds: [], hasOptions: false, hasSuggestions: false, hasFixable: false, optionKeys: [] };
 
   // Export name: `export const noUnsafeQuery = createRule` OR `export const noUnsafeQuery: TSESLint.RuleModule`
   const exportMatch = sourceCode.match(/export const (\w+)\s*(?:=\s*createRule|:\s*TSESLint\.RuleModule)/);
@@ -106,7 +106,7 @@ function generateInvalidCases(meta, sourceCode) {
   for (const msgId of meta.messageIds) {
     if (msgId.startsWith('suggestion')) continue; // suggestion messageIds aren't primary errors
 
-    const caseObj = { messageId: msgId };
+    const caseObj: any = { messageId: msgId };
 
     // Rule-specific dangerous patterns
     if (sourceCode.includes('$where')) {

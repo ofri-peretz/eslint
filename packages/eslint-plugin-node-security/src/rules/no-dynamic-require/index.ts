@@ -80,7 +80,7 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
       allowPatterns = [],
     } = options || {};
 
-    const filename = context.getFilename() || '';
+    const filename = context.filename || '';
 
     function isInAllowedContext(): boolean {
       if (allowContexts.includes('test') && (filename.includes('.test.') || filename.includes('.spec.') || filename.includes('/__tests__/'))) {

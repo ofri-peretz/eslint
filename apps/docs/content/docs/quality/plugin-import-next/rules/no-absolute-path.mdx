@@ -1,17 +1,49 @@
 ---
-title: 'no-absolute-path'
-description: ESLint rule documentation for no-absolute-path
+title: "no-absolute-path"
+description: "Forbid import of modules using absolute paths"
 ---
 
-import { RemoteRuleDoc } from '@/components/docs/remote-rule-doc';
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
-<RemoteRuleDoc plugin="import-next" rule="no-absolute-path" />
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
 
-<a
-  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-absolute-path.md"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="inline-flex items-center gap-1 text-sm text-fd-muted-foreground hover:text-fd-foreground mt-6"
->
-  Edit this page on GitHub →
-</a>
+Forbid import of modules using absolute paths
+
+## Rule Details
+
+This rule aims to prevent issues related to absolute-path.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "esmodule": {
+        "type": "boolean",
+        "default": true
+      },
+      "commonjs": {
+        "type": "boolean",
+        "default": true
+      },
+      "amd": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-absolute-path.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-absolute-path.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

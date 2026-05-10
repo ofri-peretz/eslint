@@ -70,7 +70,7 @@ export const noHardcodedApiKeys = createRule<RuleOptions, MessageIds>({
       'apiKey', 'api_key', 'token', 'secret', 'credentials',
     ];
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     // Known model provider functions
     const providerFunctions = [

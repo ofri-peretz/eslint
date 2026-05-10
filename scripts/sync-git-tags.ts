@@ -72,9 +72,10 @@ function getPackageInfo(projectPath: string): PackageInfo | null {
     return null;
   }
 
-  // Convert package name to tag format
-  // eslint-plugin-llm-optimized -> eslint-plugin-llm-optimized
-  // @eslint/cli -> cli
+  // Convert package name to tag format — strip the @scope/ prefix:
+  //   eslint-plugin-pg            -> eslint-plugin-pg            (unchanged)
+  //   @interlace/eslint-devkit    -> eslint-devkit
+  //   @interlace/eslint-formatter -> eslint-formatter
   const tagName = name.replace(/^@[^/]+\//, '');
 
   return {

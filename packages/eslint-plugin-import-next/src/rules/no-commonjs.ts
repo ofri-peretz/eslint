@@ -136,7 +136,7 @@ export const noCommonjs = createRule<RuleOptions, MessageIds>({
       suggestES6 = true,
     } = options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
 
     function shouldAllow(): boolean {
       if (!filename) {

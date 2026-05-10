@@ -9,6 +9,7 @@
         "security-metadata",
         "detect-understand-fix",
         "---Ecosystem---",
+        "compatibility",
         "coverage",
         "benchmarks"
     ]

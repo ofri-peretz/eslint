@@ -129,10 +129,16 @@ Allow warnings but fail on critical security issues:
 Configure different behaviors per severity:
 
 ```js title="eslint.config.js"
-import interlace from 'eslint-config-interlace';
+import secureCoding from 'eslint-plugin-secure-coding';
+import jwt from 'eslint-plugin-jwt';
+import crypto from 'eslint-plugin-crypto';
+import browserSecurity from 'eslint-plugin-browser-security';
 
 export default [
-  ...interlace.configs.recommended,
+  secureCoding.configs.recommended,
+  jwt.configs.recommended,
+  crypto.configs.recommended,
+  browserSecurity.configs.recommended,
   {
     rules: {
       // Critical (CVSS 9+): Always error

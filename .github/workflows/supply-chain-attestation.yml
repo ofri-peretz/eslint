@@ -29,6 +29,12 @@ on:
         description: 'Comma-separated package basenames (e.g. interlace-cli,interlace-telemetry) or "all".'
         default: 'all'
 
+concurrency:
+  # Tag-driven runs are inherently unique per tag; the cancel-in-progress
+  # only matters for re-triggers via workflow_dispatch on the same ref.
+  group: supply-chain-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
   id-token: write           # for sigstore + SLSA OIDC token
@@ -39,6 +45,7 @@ jobs:
   attest:
     name: Attest each package
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,8 +53,9 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version-file: .nvmrc
           registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
 
       - name: Install + build workspaces
         run: |

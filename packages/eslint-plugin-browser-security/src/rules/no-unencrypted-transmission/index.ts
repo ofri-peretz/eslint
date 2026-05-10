@@ -197,9 +197,9 @@ export const noUnencryptedTransmission = createRule<RuleOptions, MessageIds>({
       ? { ...SECURE_ALTERNATIVES, ...secureAlternatives }
       : SECURE_ALTERNATIVES;
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     function checkLiteral(node: TSESTree.Literal) {
       if (typeof node.value !== 'string') {

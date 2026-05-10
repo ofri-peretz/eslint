@@ -1,0 +1,121 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Deploy Docs
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Manual-only deploy of `apps/docs` (Next.js → Vercel).
+#
+# Why manual: vercel.json sets `git.deploymentEnabled: false` so Vercel does
+# NOT auto-deploy on push. This workflow is the single, deliberate path to
+# ship docs to production (or a preview URL).
+#
+# Required secrets (Settings → Secrets):
+#   - VERCEL_TOKEN     personal access token from https://vercel.com/account/tokens
+#                      (scope: full account or limited to this project)
+# Optional (auto-detected from .vercel/project.json if present):
+#   - VERCEL_ORG_ID    fallback if .vercel/project.json is .gitignored
+#   - VERCEL_PROJECT_ID
+# ─────────────────────────────────────────────────────────────────────────────
+
+run-name: >-
+  Deploy Docs · ${{ inputs.environment }} · ${{ github.actor }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment."
+        required: true
+        type: choice
+        options: [preview, production]
+        default: preview
+      ref:
+        description: "Git ref to deploy (default: this workflow's checkout — typically main for production)."
+        required: false
+        default: ""
+
+concurrency:
+  # Don't overlap two prod deploys; preview deploys can coexist (one per ref).
+  group: deploy-docs-${{ inputs.environment }}-${{ inputs.ref || github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  deployments: write   # GitHub Deployments API → record the deploy URL
+
+jobs:
+  deploy:
+    name: Deploy (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      # Maps to GitHub Environments — gate on reviewers if you want a manual
+      # approval step before production deploys (Settings → Environments → production).
+      name: ${{ inputs.environment == 'production' && 'docs-production' || 'docs-preview' }}
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          fetch-depth: 1
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "false"
+
+      - name: Pull Vercel environment metadata
+        run: |
+          set -euo pipefail
+          npx vercel pull \
+            --yes \
+            --environment=${{ inputs.environment }} \
+            --token="$VERCEL_TOKEN"
+
+      - name: Build (${{ inputs.environment }})
+        run: |
+          set -euo pipefail
+          # Production gets `--prod`; preview omits it. Vercel CLI uses the
+          # build settings from vercel.json (cd apps/docs && next build).
+          if [ "${{ inputs.environment }}" = "production" ]; then
+            npx vercel build --prod --token="$VERCEL_TOKEN"
+          else
+            npx vercel build --token="$VERCEL_TOKEN"
+          fi
+
+      - name: Deploy prebuilt artifact
+        id: deploy
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.environment }}" = "production" ]; then
+            url=$(npx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          else
+            url=$(npx vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed to: $url"
+
+      - name: Job summary
+        if: always()
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          set -euo pipefail
+          status="${{ job.status }}"
+          icon="✅"
+          [ "$status" = "failure" ] && icon="❌"
+          [ "$status" = "cancelled" ] && icon="⏹"
+          {
+            echo "# $icon Deploy Docs · ${{ inputs.environment }}"
+            echo ""
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Environment | \`${{ inputs.environment }}\` |"
+            echo "| Ref         | \`${{ inputs.ref || github.ref }}\` |"
+            echo "| Triggered   | @${{ github.actor }} |"
+            echo "| Status      | $status |"
+            if [ -n "${URL:-}" ]; then
+              echo "| URL         | $URL |"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

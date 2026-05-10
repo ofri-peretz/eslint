@@ -252,12 +252,12 @@ async function main() {
   }
 
   // Drift analysis: every version's findings should equal the baseline.
-  const driftPerVersion = {};
-  for (const [ver, data] of Object.entries(perVersion)) {
+  const driftPerVersion: Record<string, any> = {};
+  for (const [ver, data] of Object.entries(perVersion) as Array<[string, any]>) {
     if (!data.findings || ver === baselineVersion) continue;
     driftPerVersion[ver] = diffFindings(baselineFindings, data.findings);
   }
-  const totalDrift = Object.values(driftPerVersion).reduce((s, d) => s + d.onlyInA.length + d.onlyInB.length, 0);
+  const totalDrift: number = (Object.values(driftPerVersion) as any[]).reduce((s: number, d: any) => s + d.onlyInA.length + d.onlyInB.length, 0);
 
   const date = new Date().toISOString().slice(0, 10);
   const result = {
@@ -274,7 +274,7 @@ async function main() {
         : null,
     },
     latency: {
-      meanLatencyMs: Object.values(perVersion).reduce((s, d) => s + (d.meanMs ?? 0), 0) / Math.max(1, Object.keys(perVersion).length),
+      meanLatencyMs: (Object.values(perVersion) as any[]).reduce((s: number, d: any) => s + (d.meanMs ?? 0), 0) / Math.max(1, Object.keys(perVersion).length),
     },
     supportPolicy: SUPPORT_POLICY,
     perVersion,
@@ -292,14 +292,14 @@ async function main() {
     console.log(`✅ ILB-Node-Matrix PASS — zero finding drift across ${Object.keys(perVersion).length} Node version(s) (baseline node@${baselineVersion}, ${baselineFindings?.length ?? 0} findings)`);
   } else if (baselineVersion) {
     console.log(`❌ ILB-Node-Matrix FAIL — ${totalDrift} drift entries across ${Object.keys(driftPerVersion).length} comparator(s)`);
-    for (const [ver, d] of Object.entries(driftPerVersion)) {
+    for (const [ver, d] of Object.entries(driftPerVersion) as Array<[string, any]>) {
       if (d.onlyInA.length || d.onlyInB.length) {
         console.log(`   node@${ver} vs ${baselineVersion}:  +${d.onlyInB.length}  −${d.onlyInA.length}  (shared ${d.shared})`);
       }
     }
   }
   console.log('Latency by version (median ms):');
-  for (const [ver, d] of Object.entries(perVersion)) {
+  for (const [ver, d] of Object.entries(perVersion) as Array<[string, any]>) {
     if (typeof d.medianMs === 'number') {
       console.log(`   node@${ver.padEnd(10)} ${d.medianMs.toFixed(0).padStart(6)}ms  (${d.supportTier})`);
     }

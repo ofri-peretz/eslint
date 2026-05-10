@@ -147,7 +147,7 @@ describe('BackgroundBeamsWithCollision: Aceternity UI Specification Compliance',
 describe('BackgroundBeamsWithCollision: Source File Integrity', () => {
   const componentPath = join(
     process.cwd(),
-    'src/components/ui/background-beams-with-collision.tsx'
+    '../../packages/ui/src/aceternity/background-beams-with-collision.tsx'
   );
 
   it('component file exists', () => {
@@ -299,7 +299,7 @@ describe('BackgroundBeamsWithCollision: Source File Integrity', () => {
 describe('BackgroundBeamsWithCollision: Container Structure', () => {
   const componentPath = join(
     process.cwd(),
-    'src/components/ui/background-beams-with-collision.tsx'
+    '../../packages/ui/src/aceternity/background-beams-with-collision.tsx'
   );
   let componentSource: string;
 
@@ -374,7 +374,7 @@ describe('BackgroundBeamsWithCollision: Container Structure', () => {
 describe('BackgroundBeamsWithCollision: Theme Support', () => {
   const componentPath = join(
     process.cwd(),
-    'src/components/ui/background-beams-with-collision.tsx'
+    '../../packages/ui/src/aceternity/background-beams-with-collision.tsx'
   );
   let componentSource: string;
 
@@ -472,7 +472,7 @@ describe('BackgroundBeamsWithCollision: Theme Support', () => {
 describe('BackgroundBeamsWithCollision: Collision Mechanism', () => {
   const componentPath = join(
     process.cwd(),
-    'src/components/ui/background-beams-with-collision.tsx'
+    '../../packages/ui/src/aceternity/background-beams-with-collision.tsx'
   );
   let componentSource: string;
 
@@ -578,7 +578,7 @@ describe('BackgroundBeamsWithCollision: Collision Mechanism', () => {
 describe('BackgroundBeamsWithCollision: Beam Animation', () => {
   const componentPath = join(
     process.cwd(),
-    'src/components/ui/background-beams-with-collision.tsx'
+    '../../packages/ui/src/aceternity/background-beams-with-collision.tsx'
   );
   let componentSource: string;
 
@@ -687,7 +687,7 @@ describe('BackgroundBeamsWithCollision: Beam Animation', () => {
 describe('BackgroundBeamsWithCollision: Explosion Effect', () => {
   const componentPath = join(
     process.cwd(),
-    'src/components/ui/background-beams-with-collision.tsx'
+    '../../packages/ui/src/aceternity/background-beams-with-collision.tsx'
   );
   let componentSource: string;
 
@@ -818,7 +818,7 @@ describe('BackgroundBeamsWithCollision: Explosion Effect', () => {
 describe('BackgroundBeamsWithCollision: hideCollisionSurface Prop', () => {
   const componentPath = join(
     process.cwd(),
-    'src/components/ui/background-beams-with-collision.tsx'
+    '../../packages/ui/src/aceternity/background-beams-with-collision.tsx'
   );
   let componentSource: string;
 
@@ -878,7 +878,7 @@ describe('BackgroundBeamsWithCollision: ArticlesClient Integration', () => {
     });
 
     it('imports from the correct path', () => {
-      expect(articlesSource).toContain('@/components/ui/background-beams-with-collision');
+      expect(articlesSource).toContain('@interlace/ui/aceternity/background-beams-with-collision');
     });
 
     it('does NOT import StarsBackground or ShootingStars', () => {
@@ -901,9 +901,9 @@ describe('BackgroundBeamsWithCollision: ArticlesClient Integration', () => {
       expect(articlesSource).toContain('pointer-events-none');
     });
 
-    it('sets viewport dimensions via inline style', () => {
-      expect(articlesSource).toContain("height: '100vh'");
-      expect(articlesSource).toContain("width: '100vw'");
+    it('sets viewport dimensions via Tailwind utilities', () => {
+      expect(articlesSource).toContain('h-screen');
+      expect(articlesSource).toContain('w-screen');
     });
   });
 
@@ -947,8 +947,10 @@ describe('BackgroundBeamsWithCollision: ArticlesClient Integration', () => {
       expect(articlesSource).toContain('relative z-10');
     });
 
-    it('background comment indicates full page usage', () => {
-      expect(articlesSource).toContain('Full page background');
+    it('background occupies full viewport (h-screen w-screen)', () => {
+      // The background container reserves the full viewport so the beams
+      // surface never affects content layout (CLS=0 — MOTION_PHILOSOPHY).
+      expect(articlesSource).toMatch(/fixed inset-0[^"]*h-screen[^"]*w-screen/);
     });
   });
 });

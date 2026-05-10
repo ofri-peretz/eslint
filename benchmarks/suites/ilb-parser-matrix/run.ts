@@ -169,12 +169,12 @@ async function main() {
   }
 
   // Drift analysis
-  const driftPerMode = {};
-  for (const [mode, data] of Object.entries(perMode)) {
+  const driftPerMode: Record<string, any> = {};
+  for (const [mode, data] of Object.entries(perMode) as Array<[string, any]>) {
     if (!data.findings || mode === baselineMode) continue;
     driftPerMode[mode] = diffFindings(baselineFindings, data.findings);
   }
-  const totalDrift = Object.values(driftPerMode).reduce((s, d) => s + d.onlyInA.length + d.onlyInB.length, 0);
+  const totalDrift: number = (Object.values(driftPerMode) as any[]).reduce((s: number, d: any) => s + d.onlyInA.length + d.onlyInB.length, 0);
 
   const date = new Date().toISOString().slice(0, 10);
   const result = {
@@ -190,7 +190,7 @@ async function main() {
         : null,
     },
     latency: {
-      meanLatencyMs: Object.values(perMode).reduce((s, d) => s + (d.durationMs ?? 0), 0) / Math.max(1, Object.keys(perMode).length),
+      meanLatencyMs: (Object.values(perMode) as any[]).reduce((s: number, d: any) => s + (d.durationMs ?? 0), 0) / Math.max(1, Object.keys(perMode).length),
     },
     perMode,
     driftPerMode,
@@ -208,7 +208,7 @@ async function main() {
     console.log(`✅ ILB-Parser-Matrix PASS — zero drift across ${Object.keys(perMode).filter((m) => perMode[m].findings).length} parser mode(s)`);
   } else if (baselineMode) {
     console.log(`⚠️  drift across modes: ${totalDrift} entries`);
-    for (const [mode, d] of Object.entries(driftPerMode)) {
+    for (const [mode, d] of Object.entries(driftPerMode) as Array<[string, any]>) {
       if (d.onlyInA.length || d.onlyInB.length) {
         console.log(`   ${baselineMode} vs ${mode}: +${d.onlyInB.length} −${d.onlyInA.length}`);
       }

@@ -30,6 +30,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BENCH_RESULTS = path.join(ROOT, 'benchmarks', 'results');
@@ -66,16 +67,16 @@ function julietAgreement() {
   //   tools = list of plugins in the result
   //   for each fixture (cwe + filename), each tool reports detected? (1/0)
   //   ground truth: expectedVulnerable
-  const cweRows = [];
-  for (const [cwe, info] of Object.entries(juliet.plugins?.interlace?.perCwe ?? {})) {
+  const cweRows: any[] = [];
+  for (const [cwe, info] of Object.entries(juliet.plugins?.interlace?.perCwe ?? {}) as Array<[string, any]>) {
     for (const f of info.fixtures) {
       cweRows.push({ cwe, file: f.file, expectedVulnerable: f.expectedVulnerable, perTool: {} });
     }
   }
   // For each plugin, fill in detected={true|false} on each fixture
-  for (const [pluginName, pluginData] of Object.entries(juliet.plugins ?? {})) {
+  for (const [pluginName, pluginData] of Object.entries(juliet.plugins ?? {}) as Array<[string, any]>) {
     if (!pluginData.perCwe) continue;
-    for (const [cwe, info] of Object.entries(pluginData.perCwe)) {
+    for (const [cwe, info] of Object.entries(pluginData.perCwe) as Array<[string, any]>) {
       for (const f of info.fixtures) {
         const row = cweRows.find((r) => r.cwe === cwe && r.file === f.file);
         if (row) row.perTool[pluginName] = (f.findings ?? 0) > 0;
@@ -148,15 +149,15 @@ function julietAgreement() {
 function arenaAgreement() {
   // Each plugin's metrics include detectedVulnerabilities + falsePositives.
   // Build fixture × tool: did this fixture get detected by the tool?
-  const allFixtures = new Set();
-  for (const p of Object.values(arena.plugins ?? {})) {
+  const allFixtures = new Set<string>();
+  for (const p of Object.values(arena.plugins ?? {}) as any[]) {
     for (const f of p.metrics?.detectedVulnerabilities ?? []) allFixtures.add(['vuln', f].join('::'));
     for (const f of p.metrics?.missedVulnerabilities ?? []) allFixtures.add(['vuln', f].join('::'));
     for (const f of p.metrics?.falsePositives ?? []) allFixtures.add(['safe', f].join('::'));
   }
   const tools = Object.keys(arena.plugins ?? {});
 
-  const rows = [];
+  const rows: any[] = [];
   for (const fxKey of allFixtures) {
     const [kind, name] = fxKey.split('::');
     const expectedVulnerable = kind === 'vuln';

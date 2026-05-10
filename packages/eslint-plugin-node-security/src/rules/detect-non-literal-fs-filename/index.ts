@@ -247,7 +247,7 @@ allowLiterals = false,
 
       // First argument is usually the path
       const pathNode = node.arguments.length > 0 ? node.arguments[0] : null;
-      const sourceCode = context.sourceCode || context.sourceCode;
+      const sourceCode = context.sourceCode;
       const path = pathNode ? sourceCode.getText(pathNode) : '';
 
       return { path, pathNode, method, operation };

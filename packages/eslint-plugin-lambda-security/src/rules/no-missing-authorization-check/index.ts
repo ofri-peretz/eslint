@@ -139,7 +139,7 @@ export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
     [options = {}],
   ) {
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -219,7 +219,7 @@ export const noMissingAuthorizationCheck = createRule<RuleOptions, MessageIds>({
      * Check if a member expression chain indicates auth check
      */
     function isAuthorizationAccess(node: TSESTree.MemberExpression): boolean {
-      const sourceCode = context.sourceCode || context.getSourceCode();
+      const sourceCode = context.sourceCode;
       const text = sourceCode.getText(node);
 
       return AUTHORIZATION_CHECK_PATTERNS.some(

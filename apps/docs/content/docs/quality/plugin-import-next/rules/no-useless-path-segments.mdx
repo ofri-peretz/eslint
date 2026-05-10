@@ -1,17 +1,45 @@
 ---
-title: 'no-useless-path-segments'
-description: ESLint rule documentation for no-useless-path-segments
+title: "no-useless-path-segments"
+description: "Forbid unnecessary path segments in import and require statements"
 ---
 
-import { RemoteRuleDoc } from '@/components/docs/remote-rule-doc';
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
-<RemoteRuleDoc plugin="import-next" rule="no-useless-path-segments" />
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
 
-<a
-  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-useless-path-segments.md"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="inline-flex items-center gap-1 text-sm text-fd-muted-foreground hover:text-fd-foreground mt-6"
->
-  Edit this page on GitHub →
-</a>
+Forbid unnecessary path segments in import and require statements
+
+## Rule Details
+
+This rule aims to prevent issues related to useless-path-segments.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "noUselessIndex": {
+        "type": "boolean",
+        "default": false
+      },
+      "commonjs": {
+        "type": "boolean",
+        "default": true
+      }
+    },
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-useless-path-segments.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-useless-path-segments.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

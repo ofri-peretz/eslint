@@ -60,7 +60,7 @@ function isInRepo() {
  * @param {boolean}  [opts.allowDirty]  allow uncommitted changes to methodology paths (CI: never; local: opt-in)
  * @returns {{ methodologyCommit: string|null, dirtyPaths: string[], capturedAt: string }}
  */
-export function capturePreregistration(opts = {}) {
+export function capturePreregistration(opts: any = {}) {
   const paths = opts.paths ?? DEFAULT_METHODOLOGY_PATHS;
   const allowDirty = opts.allowDirty ?? false;
 

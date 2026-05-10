@@ -203,7 +203,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
       userInputVariables,
       trustedSanitizers,
     } = options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
 
     // Create safety checker for false positive detection (simplified implementation)
     const safetyChecker = {

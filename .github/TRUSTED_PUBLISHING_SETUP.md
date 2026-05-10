@@ -25,10 +25,7 @@ Trusted Publishing requires your packages to be properly configured on npmjs.com
 
 1. Go to https://npmjs.com
 2. Login to your account
-3. Verify you own/maintain these packages:
-   - `eslint-plugin-llm-optimized`
-   - `@interlace/eslint-devkit`
-   - `@eslint/cli`
+3. Verify you own/maintain the published `@interlace/*` scope and the unscoped `eslint-plugin-*` packages — see the full list in [`packages/`](../packages/).
 
 ### Step 2: Configure Trusted Publishing on NPM
 
@@ -209,12 +206,12 @@ No special configuration needed for Trusted Publishing - npm handles OIDC automa
 **Cause:** Trusted Publishing (OIDC) doesn't work for unscoped packages without npm support approval
 
 **Solution:**
-1. **For unscoped packages** (e.g., `eslint-plugin-llm-optimized`, `eslint-plugin-mcp`):
+1. **For unscoped packages** (e.g., `eslint-plugin-pg`, `eslint-plugin-secure-coding`):
    - Contact npm support to enable Trusted Publishing for your specific unscoped packages
    - OR use `NPM_TOKEN` secret as fallback (uncomment in workflow)
-   - OR move packages to a scope (e.g., `eslint-plugin-llm-optimized`)
+   - OR move packages to a scope (e.g., `@interlace/<name>`)
 
-2. **For scoped packages** (`eslint-plugin/*`):
+2. **For scoped packages** (`@interlace/*`):
    - Trusted Publishing works automatically if configured in npm organization settings
    - Verify GitHub repository is added as trusted publisher in npm organization settings
 

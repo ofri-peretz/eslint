@@ -89,7 +89,7 @@ export const dynamicImportChunkname = createRule<RuleOptions, MessageIds>({
     const { allowEmpty = false, webpackChunknameFormat = '[a-zA-Z0-9-_/.]+' } =
       options;
     const chunkNamePattern = new RegExp(`^${webpackChunknameFormat}$`);
-    const sourceCode = context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     function checkChunkName(node: TSESTree.ImportExpression) {
       // Get leading comments

@@ -76,7 +76,7 @@ export const noSystemPromptLeak = createRule<RuleOptions, MessageIds>({
       'systemMessage', 'instructions', 'agentPrompt',
     ];
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     /**
      * Check if identifier matches system prompt pattern

@@ -16,4 +16,14 @@ export {
   type PluginTemplateConformanceOptions,
   type RequiredPage,
 } from './plugin-template-conformance';
+export {
+  validateRuleDocConformance,
+  DEFAULT_REQUIRED_SECTIONS,
+  type RuleDocConformanceOptions,
+  type RequiredSection,
+} from './rule-doc-conformance';
+export {
+  validatePluginNameDrift,
+  type PluginNameDriftOptions,
+} from './plugin-name-drift';
 export { walkDirectory } from './walk';

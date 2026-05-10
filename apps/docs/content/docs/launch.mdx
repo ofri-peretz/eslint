@@ -5,6 +5,8 @@ description: 'The first JavaScript / TypeScript ESLint ecosystem designed for bo
 
 # Interlace — Static Analysis for Humans + AI Agents
 
+> **Install today, npm soon.** Recipes below use `npx @interlace/*` and GitHub Actions that run as soon as the `publish-packages.yml` workflow completes a non-dry-run. Until then, every command works from a `git clone https://github.com/ofri-peretz/eslint && npm install` — invoke via `node packages/interlace-cli/src/index.mjs <subcommand>`.
+
 > **The thesis.** Static-analysis tools for JavaScript / TypeScript have spent 20 years optimizing for the human reviewer (IDE squiggles, PR comments, severity buckets). The agent-as-consumer angle is barely staked. **Interlace owns it** — every rule emits CWE-tagged findings consumable by AI agents (Claude Code, Cursor, Copilot) via MCP, plus humans via VS Code / GHAS / SARIF / your CI.
 
 ## The 30-second pitch
@@ -130,7 +132,7 @@ For the agent-onboarding prelude (single-read context for any AI working on the 
 | MITRE CWE Compatibility | ⏳ 8/8 criteria met; form submission pending |
 | OWASP Benchmark for JavaScript | ⏳ pitch packet ready; outreach pending |
 | External replication | ⏳ kit ready; reviewer engagement pending |
-| Hosted leaderboard UI at `bench.interlace.dev` | ⏳ Markdown leaderboard live; UI deployment pending |
+| Hosted leaderboard UI | ⏳ Markdown leaderboard live; deployment pending |
 
 ## Acknowledgements
 

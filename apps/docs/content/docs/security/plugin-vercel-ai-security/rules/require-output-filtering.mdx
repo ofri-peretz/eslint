@@ -1,9 +1,180 @@
 ---
-title: require-output-filtering
-description: ESLint rule documentation for require-output-filtering
-icon: FileCode
+title: "require-output-filtering"
+description: "title: require-output-filtering"
 ---
 
-import { RemoteRuleDoc } from '@/components/docs/remote-rule-doc';
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
-<RemoteRuleDoc plugin="vercel-ai-security" rule="require-output-filtering" />
+---
+title: require-output-filtering
+description: This rule identifies tool execute functions that return raw data from data sources (databases, APIs, file systems) wi...
+tags: ['security', 'ai']
+category: security
+severity: medium
+cwe: CWE-200
+autofix: false
+---
+
+> Requires filtering of sensitive data returned by AI tools.
+
+This rule identifies tool execute functions that return raw data from data sources (databases, APIs, file systems) wi...
+
+## 📊 Rule Details
+
+| Property           | Value                                                                            |
+| ------------------ | -------------------------------------------------------------------------------- |
+| **Type**           | suggestion                                                                       |
+| **Severity**       | 🟡 HIGH                                                                          |
+| **OWASP Agentic**  | [ASI04: Data Exfiltration](https://owasp.org)                                    |
+| **CWE**            | [CWE-200: Information Exposure](https://cwe.mitre.org/data/definitions/200.html) |
+| **CVSS**           | 6.5                                                                              |
+| **Config Default** | `warn` (recommended), `error` (strict)                                           |
+
+## 🔍 What This Rule Detects
+
+This rule identifies tool execute functions that return raw data from data sources (databases, APIs, file systems) without filtering potentially sensitive information.
+
+## ❌ Incorrect Code
+
+```typescript
+// Direct database query return
+const tools = {
+  search: {
+    execute: async ({ sql }) => db.query(sql),
+  },
+};
+
+// Direct find operation
+const tools = {
+  getUser: {
+    execute: async ({ id }) => users.findById(id),
+  },
+};
+
+// Raw fetch result
+const tools = {
+  loadData: {
+    execute: async ({ url }) => fetchData(url),
+  },
+};
+```
+
+## ✅ Correct Code
+
+```typescript
+// Filtered database results
+const tools = {
+  search: {
+    execute: async ({ sql }) => filterSensitive(db.query(sql)),
+  },
+};
+
+// Sanitized user data
+const tools = {
+  getUser: {
+    execute: async ({ id }) => sanitizeUserData(users.findById(id)),
+  },
+};
+
+// Filtered fetch result
+const tools = {
+  loadData: {
+    execute: async ({ url }) => {
+      const data = await fetchData(url);
+      return removePII(data);
+    },
+  },
+};
+```
+
+## ⚙️ Options
+
+| Option               | Type       | Default                                                       | Description                       |
+| -------------------- | ---------- | ------------------------------------------------------------- | --------------------------------- |
+| `dataSourcePatterns` | `string[]` | `['query', 'find', 'select', 'fetch', 'get', 'read', 'load']` | Patterns suggesting data sources  |
+| `filterFunctions`    | `string[]` | `['filter', 'sanitize', 'redact', 'mask', 'clean']`           | Functions considered safe filters |
+
+## 🛡️ Why This Matters
+
+Unfiltered tool output can expose:
+
+- **PII** - Names, emails, addresses, SSNs
+- **Credentials** - Passwords, tokens, API keys
+- **Internal data** - Database IDs, internal URLs
+- **Business data** - Financial records, contracts
+
+## 🔗 Related Rules
+
+- [`no-sensitive-in-prompt`](./no-sensitive-in-prompt.md) - Prevent sensitive input
+- [`require-tool-schema`](./require-tool-schema.md) - Validate tool inputs
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Filtering in Separate Function
+
+**Why**: Filtering in called functions is not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Filtering in getData
+const tools = {
+  getUser: {
+    execute: async ({ id }) => getUserSafe(id), // Filters internally
+  },
+};
+```
+
+**Mitigation**: Document filtering. Apply rule to data access functions.
+
+### Custom Data Source Methods
+
+**Why**: Non-standard data methods may not be detected.
+
+```typescript
+// ❌ NOT DETECTED - Custom method name
+const tools = {
+  data: {
+    execute: async () => myCustomDb.retrieve(id), // Not in patterns
+  },
+};
+```
+
+**Mitigation**: Configure `dataSourcePatterns` with custom method names.
+
+### Chained Method Filtering
+
+**Why**: Method chaining may hide filtering status.
+
+```typescript
+// ❌ NOT DETECTED - Filter in chain
+const tools = {
+  search: {
+    execute: async () => db.query(sql).sanitize().toJSON(),
+  },
+};
+```
+
+**Mitigation**: Use explicit filter function calls.
+
+### Dynamic Tool Execution
+
+**Why**: Dynamic execute functions are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic execute
+const tools = {
+  [name]: { execute: handlers[name] }, // Handler may not filter
+};
+```
+
+**Mitigation**: Review all dynamic handlers for filtering.
+
+## 📚 References
+
+- [OWASP ASI04: Data Exfiltration](https://owasp.org)
+- [CWE-200: Information Exposure](https://cwe.mitre.org/data/definitions/200.html)

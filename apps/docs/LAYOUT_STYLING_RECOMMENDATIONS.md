@@ -1,10 +1,12 @@
 # Interlace Docs App: Layout & Styling Architecture Recommendations
 
+> ✅ **STATUS (2026-05-10): The recommendations in this doc have been adopted.** `LayoutFix.tsx` is gone, `global.css` shrank from 1,947 → 247 lines, `!important` count fell from 500+ → 26, and Fumadocs owns layout behavior. This document is preserved as the canonical record of *why* the architecture exists and what anti-patterns to avoid re-introducing. See [`LAYOUT_AUDIT_REPORT.md`](./LAYOUT_AUDIT_REPORT.md) for the verified resolution.
+>
 > **Document Purpose**: This document provides a comprehensive analysis of the current layout/styling issues in the Interlace ESLint documentation app and prescribes a scalable, maintainable architecture for state-of-the-art UI/UX.
 >
-> **Tech Stack**: Next.js 15 + Fumadocs UI + Tailwind CSS + React 19
+> **Tech Stack**: Next.js 16 + Fumadocs UI 16 + Tailwind CSS v4 + React 19
 >
-> **Date**: January 30, 2026
+> **Date**: January 30, 2026 (resolution verified 2026-05-10)
 
 ---
 

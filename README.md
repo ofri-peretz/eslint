@@ -117,6 +117,18 @@ ESLint is the backbone for keeping large codebases healthy. These packages targe
 
 All published packages declare `"eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"` as a peer dependency.
 
+### Node.js compatibility
+
+| Node.js | Status | Notes |
+| :--- | :--- | :--- |
+| **24.x** | ✅ Active development | Repo's `engines.node` pin; what CI runs against |
+| **22.x LTS** | ✅ Supported | Recommended for production users |
+| **20.x LTS** | ✅ Supported | Long-term-stable baseline |
+| **18.x** | ✅ Supported (minimum) | Lowest declared `engines.node` across published packages |
+| ≤ 17 | ❌ Unsupported | EOL upstream |
+
+The 18.x floor is set by every package's `engines.node: ">=18.0.0"`. Bumping the floor follows the same gate logic as ESLint majors — a deliberate decision tracked in [docs/ESLINT_VERSION_SUPPORT.md](./docs/ESLINT_VERSION_SUPPORT.md).
+
 ### Our baseline for supporting a major version
 
 A major is **supported** when either:
@@ -127,6 +139,59 @@ A major is **supported** when either:
 A supported major is in our `peerDependencies`, our benchmark matrix, and our CI matrix. Versions are dropped only after two consecutive refreshes below the gate AND a successor that is itself supported.
 
 The data above can be re-fetched at any time via `npm run stats:eslint-versions` ([script](./scripts/fetch-eslint-version-stats.ts)). Full policy: [docs/ESLINT_VERSION_SUPPORT.md](./docs/ESLINT_VERSION_SUPPORT.md).
+
+---
+
+## 🎯 How We Measure Quality (FP / FN / TP / TN)
+
+Every ESLint finding is one of four things — and we track all four, per rule, per CWE, per OSS repo:
+
+| | **Code IS vulnerable / problematic** | **Code is safe / clean** |
+| :--- | :--- | :--- |
+| **Rule fires** | **TP** — true positive (signal) | **FP** — false positive (noise) |
+| **Rule silent** | **FN** — false negative (miss) | **TN** — true negative (correct quiet) |
+
+Three rates fall out of those counts:
+
+- **Precision** = TP / (TP + FP) — of the things we flag, what fraction are real?
+- **Recall** = TP / (TP + FN) — of the things we should flag, what fraction did we catch?
+- **F1** = harmonic mean of precision and recall — one number that punishes either being bad.
+
+**Recall first, precision second.** A missed CWE is worse than a noisy rule, and we don't regress recall to chase FPs. Today's headline: **100% recall on Arena and Juliet** with **97.6% precision** ([CLAIMS.md](./CLAIMS.md) holds every claim with its evidence file).
+
+The full philosophy — synthetic vs. wild corpora, severity-classification policy, multi-rater agreement (Cohen's κ), and the ten principles — lives in [`benchmarks/README.md`](./benchmarks/README.md).
+
+---
+
+## ⚡ Performance — Cold cache vs. Warm cache
+
+Latency is measured for every supported rule on real OSS repos (next.js, supabase, lodash, vercel-ai, payload, shadcn-ui, three.js…) with both **cold** (`--no-cache`) and **warm** (`--cache --cache-location <stable>`, second consecutive run) profiles. From the [latest flagship scorecard](./benchmark-results/ilb-flagship-scorecard.md) (ESLint 9.39.4 + oxlint 1.63.0 + Node 24.13.0):
+
+| Stack | Median cold | Median warm | Δ | Cache benefit |
+| :--- | ---: | ---: | ---: | ---: |
+| **Ours (ESLint)** | 10,095 ms | 443 ms | 9,652 ms | **96%** |
+| Competitor (ESLint) | 4,697 ms | 500 ms | 4,197 ms | 89% |
+| oxlint native | 168 ms | 83 ms | 85 ms | 51% |
+
+**The actionable takeaway:** ESLint cache cuts ~96% of our run time on the second pass. If you haven't enabled it, you're paying 22× more per lint run than necessary:
+
+```bash
+eslint --cache --cache-location node_modules/.cache/eslint .
+```
+
+### How we benchmark our benchmarks
+
+The benchmark itself is versioned and reproducible — measuring the right thing matters as much as measuring it well:
+
+- **Cold definition**: `eslint --no-cache` (full AST parse, full rule pass, full resolver work)
+- **Warm definition**: `eslint --cache --cache-location <stable>` after a prior cold run (cache present, mtime+size hash determines reuse)
+- **Cache-hit verification**: `oxlint` caches implicitly via file-mtime + content hash; the warm column is its second consecutive run
+- **Single-shot per row**; median-of-N tracked in the corpus but not yet headlined (TODO: `--repeat=N`)
+- **Frozen corpus per bench version** ([`npm run ilb:corpus-integrity`](./scripts/ilb-corpus-integrity.ts) is a CI gate — silent commit drift in the corpus invalidates prior numbers)
+- **Append-only history** in [`benchmark-results/history.ndjson`](./benchmark-results/history.ndjson) so any number can be plotted across time
+- **Cross-version matrix** runs the suite against ESLint v8/v9/v10 on every PR ([`eslint-version-matrix.yml`](./.github/workflows/eslint-version-matrix.yml))
+
+Run locally: `npm run ilb:scorecard`. Result schema, vocabulary contract (cost / effectiveness / latency), and the full ten principles are in [`benchmarks/README.md`](./benchmarks/README.md).
 
 ---
 

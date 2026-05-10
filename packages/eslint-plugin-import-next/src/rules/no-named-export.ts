@@ -109,7 +109,7 @@ export const noNamedExport = createRule<RuleOptions, MessageIds>({
       // suggestDefault // unused option
     } = options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
 
     function shouldAllow(specifier?: TSESTree.ExportSpecifier): boolean {
       if (!filename) {

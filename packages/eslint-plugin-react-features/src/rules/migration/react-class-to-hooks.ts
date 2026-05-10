@@ -93,7 +93,7 @@ export const reactClassToHooks = createRule<RuleOptions, MessageIds>({
 allowComplexLifecycle = false 
 }: Options = options || {};
 
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     /**
      * Check if class extends React.Component

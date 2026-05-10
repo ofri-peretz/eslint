@@ -186,7 +186,7 @@ export const noUnnecessaryRerenders = createRule<RuleOptions, MessageIds>({
 ignoreInTests = true, minSize = 5 
 }: Options = options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     // Only skip if ignoreInTests is true AND filename matches test pattern
     // If ignoreInTests is explicitly false, always run the rule
     const isTestFile = ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
@@ -195,7 +195,7 @@ ignoreInTests = true, minSize = 5
       return {};
     }
 
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     /**
      * Check JSX attributes for unnecessary re-renders

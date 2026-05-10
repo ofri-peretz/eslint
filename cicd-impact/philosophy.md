@@ -422,12 +422,45 @@ An org in the *healthy* column for all rows is paying the minimum CI tax achieva
 
 The actionable interpretation: **the organisation's job is not to drive `T_pipeline` to zero**. It is to keep all three axes in the healthy column simultaneously, which is a different and harder optimisation. A 4-minute pipeline at 95% utilisation with 50% failure rate is more expensive than a 12-minute pipeline at 50% utilisation with 20% failure rate, even though the former looks faster on paper.
 
+## Empirical validation status (as of 2026-05-09)
+
+The philosophy has been making claims throughout this document. After running the framework's own benchmarks against itself, several claims now have direct empirical support; others remain analytical models. This section is the scorecard of the philosophy's own predictions, mapped to the measurement that tested each.
+
+| # | Claim made in this doc | Empirical status | Where measured |
+| :- | :--- | :--- | :--- |
+| **1** | "Catching a bug at lint costs ~1 unit; at production ~1,000+; at customer disclosure 10,000+ (long-tailed)" — the cost-ratio framework | **Anchored** to Boehm 1981, IBM SSI, NIST 2002, Capers Jones, IBM Cost of a Data Breach. Empirical literature, not original measurement. | [§deliverability-axis](#deliverability-axis--quality-risk-and-ma-diligence) |
+| **2** | "Inner-loop latency dominates because demoting an analyzer to a slower loop costs 100×–1,000× leverage" | **Validated**: Interlace at 0.94 ms/file (1,046-file lodash) stays in the editor loop; competitors at 1.9–8.2 ms/file also fit; non-ESLint-class analyzers (SonarQube full-server, CodeQL) do not — confirming the framework's worry was directionally right but for a different competitor class | [v0-competitor-scorecard.md Levels B–E](v0-competitor-scorecard.md) |
+| **3** | "Quality (precision) matters more than recall because alert fatigue trains developers to suppress all warnings, collapsing effective recall to zero" | **Validated**: eslint-plugin-sonarjs fires on **75% of safe files**; Interlace fires on 21%; signal-to-noise ratios 1.4 : 1 vs 8.2 : 1. The directly-measurable form of the alert-fatigue argument. | [v0-competitor-scorecard.md Level D](v0-competitor-scorecard.md#level-d--precisionrecall-on-the-matched-ilb-safevulnerable-corpus-24--24-files) |
+| **4** | "Adoption is not evidence of efficacy" | **Validated decisively**: `eslint-plugin-security@4.0.0` has 2.1M weekly downloads, 0% recall on ILB-Arena, 0 findings on lodash, **and crashes on the recommended ruleset on ESLint 9**. Three independent failure modes; one heavily-adopted plugin. | [v0-competitor-scorecard.md Findings 1, 5](v0-competitor-scorecard.md) |
+| **5** | "Architecture matters more than rule count" | **Validated**: Interlace's 11-plugin / 207-rule fleet at 0.94 ms/file is **2.0× faster** than `eslint-plugin-sonarjs`'s single plugin at 1.90 ms/file. The intuitive expectation ("more rules must be slower") is empirically false at this scale. | [v0-competitor-scorecard.md Level C](v0-competitor-scorecard.md#level-c--large-corpus-real-world-measurement-1046-file-lodash-50k-loc) |
+| **6** | "The latency advantage generalises across code shapes" | **Validated**: 2.0× — 3.1× speedup vs sonarjs across lodash, axios, jsdom, date-fns. **Recall advantage does NOT generalise**: 11.2× more findings on jsdom but **0.5× (sonarjs ahead) on date-fns** — pure-functional code has fewer security patterns. Honest loss preserved. | [v0-competitor-scorecard.md Level E](v0-competitor-scorecard.md) |
+| **7** | "The compounding feedback loop (slow CI → larger batches → higher CFR) is real" | **Bradford Hill 7-of-9 criteria met**, controlled-experiment criterion explicitly open and tracked as Prediction 4 (2030 horizon). Analytical model corroborated by all available observational evidence; no controlled-trial proof yet. | [value-philosophy.md §6.5 Attack 4](value-philosophy.md#attack-4--the-cfr-feedback-loop-is-intuitive-but-you-havent-proved-causation) |
+| **8** | "Niche-budget multipliers (1.5–4% of payroll) are auditable" | **Anchored**: four-factor formula plugged with primary-source per-niche data; three worked derivations (fintech, B2C, cybersecurity) match published table within ±0.3pp. Per-niche primary research not yet published; Prediction 5 (2031 horizon). | [§how-the-niche-budget-recommendations-were-derived](#how-the-niche-budget-recommendations-were-derived-auditable-methodology) |
+| **9** | "Customer-disclosure cost is long-tailed at 10,000+×" for healthtech and fintech | **Anchored** (IBM Cost of a Data Breach annual; Verizon DBIR). Tracked as Prediction 7 — direct annual-report evidence for 5 years (2026–2030). | [Prediction 7](value-philosophy.md#p7--healthtech-and-fintech-disclosure-cost-remains-long-tail-outlier-through-2030) |
+| **10** | "Engineering CI tax is typically 3–8% of payroll, healthy; > 12% is a tech-DD red flag" | **Partial**: dog-food case study measures one repo at 0.94% (small repo, lower bound). Worked example (Acme Pay) lands at 0.94% (synthesised but plausible). Multi-org cohort study still open (Prediction 5). | [worked-example.md Step 6](worked-example.md), [dogfood-case-study.md](dogfood-case-study.md) |
+
+**Overall verdict:** of 10 substantial empirical claims in this philosophy, **5 are now directly validated** by measurement, **3 are anchored** to peer-reviewed primary sources, and **2 await structural-empirical evidence** (controlled experiments, multi-org cohort studies) tracked as falsifiable predictions with stated horizons. The philosophy is not free-floating; every load-bearing claim either has a measurement, a citation, or a labeled open prediction.
+
+## The framework caught us first
+
+The most credibility-building moment in the v0 measurement work was not finding fault in competitors — it was finding it in ourselves.
+
+When we ran [`scripts/eslint10-compat-test.mjs`](scripts/eslint10-compat-test.mjs) against Interlace, the tooling surfaced a defect we had not previously caught: **140 of 217 Interlace rules (64.5%) use `context.getFilename()`, `context.getSourceCode()`, or `context.getCwd()` — APIs removed in ESLint 10**. The same class of break we publicly cite as disqualifying for `eslint-plugin-security@4.0.0`. The CLAIMS.md row "Supports ESLint 8, 9, and 10" was structurally false in practice for the majority of rules.
+
+Two things follow from this:
+
+1. **The framework worked as designed.** The cross-version benchmark exists exactly to catch this kind of silent claim drift. It caught it. Open Item #6 in [`value-philosophy.md`](value-philosophy.md) §6.5 is now the highest-priority remediation in the philosophy.
+
+2. **The honest-losses discipline is testable.** A philosophy that recommends discipline without demonstrating it on its own work is rhetoric. The CLAIMS.md row was caveated; the open item was logged with High priority; the specific failing rules were enumerated. The same framework that publicly criticises competitors for adoption-without-efficacy publicly admits its own claim-without-currency. **The claim "we operate under measurement discipline, including against ourselves" now has an act behind it, not just a sentence.**
+
+This generalises to a broader point. Every recommendation in the niche table, every claim in CLAIMS.md, every prediction in §6.6 is exposed to this kind of measurement. Future readers should expect more findings of this shape — not fewer. The discipline asks us to disclose them when they appear.
+
 ## How to use this document
 
 - **Engineers** — read this when proposing any CI investment. The unit cost is the unit you should justify the investment in.
 - **Eng managers** — read this when budgeting. The annualised number is the line item finance will challenge; the three-axis decomposition is the answer to that challenge.
-- **Executives / finance** — read the [Three axes](#the-three-axes) and [Vision](#vision--what-a-healthy-ci-looks-like) sections. Skim [What this model deliberately excludes](#what-this-model-deliberately-excludes) — that's where the rigour lives.
-- **Skeptics** — go straight to [`methodology.md`](methodology.md) and the "How to falsify this number" section. Every parameter has an attack and a defense; the model is designed to survive both.
+- **Executives / finance** — read the [Three axes](#the-three-axes) and the healthy/at-risk/crisis bands at the end of the [niche table](#investor-expectations-and-recommended-static-analysis-investment-by-software-niche). Skim [What this model deliberately excludes](#what-this-model-deliberately-excludes) — that's where the rigour lives.
+- **Skeptics** — go straight to [`methodology.md`](methodology.md) and the "How to falsify this number" section. Then [`value-philosophy.md`](value-philosophy.md) §6.5 (hostile-review survival, including Bradford Hill assessment) and §6.6 (falsifiable predictions). Every parameter has an attack and a defense; every claim is exposed to a labeled empirical horizon. Then this document's own [Empirical validation status](#empirical-validation-status-as-of-2026-05-09) and [The framework caught us first](#the-framework-caught-us-first) sections — these are the philosophy turning the discipline on itself.
 
 ## Source list
 

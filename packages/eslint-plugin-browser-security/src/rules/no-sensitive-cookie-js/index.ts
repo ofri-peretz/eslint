@@ -142,7 +142,7 @@ export const noSensitiveCookieJs = createRule<RuleOptions, MessageIds>({
       sensitivePatterns = DEFAULT_SENSITIVE_PATTERNS,
     } = options as Options;
 
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {

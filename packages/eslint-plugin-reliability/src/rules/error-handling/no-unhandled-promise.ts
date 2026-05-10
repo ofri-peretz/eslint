@@ -61,7 +61,27 @@ const NEVER_RETURNS_PROMISE_METHODS = new Set<string>([
   'parse', 'stringify',
   // AbortController/AbortSignal
   'abort', 'addEventListener', 'removeEventListener', 'dispatchEvent',
+  // Date / Buffer / Number / Array static helpers (sync)
+  'now', 'parse', 'UTC', 'from', 'of', 'isArray', 'isBuffer',
+  'isInteger', 'isFinite', 'isNaN', 'isSafeInteger',
+  'fromCharCode', 'fromCodePoint', 'raw',
+  // Object helpers (sync)
+  'assign', 'freeze', 'isFrozen', 'create', 'defineProperty', 'defineProperties',
+  'getOwnPropertyDescriptor', 'getOwnPropertyNames', 'getPrototypeOf', 'setPrototypeOf',
+  'preventExtensions', 'isExtensible', 'seal', 'isSealed', 'fromEntries',
   // Promise constructors that are themselves a promise but the callee is OK
+]);
+
+/**
+ * Globals whose methods are conventionally synchronous (no method on these
+ * namespaces returns a Promise in the standard library). Used in addition
+ * to `NEVER_RETURNS_PROMISE_METHODS` because matching by method name alone
+ * is too coarse: `from` is sync on `Array`/`Buffer`/`Date` but could be
+ * async on a user-defined object.
+ */
+const SYNC_NAMESPACE_OBJECTS = new Set<string>([
+  'Math', 'JSON', 'Date', 'Buffer', 'Array', 'Object', 'Number', 'String',
+  'Boolean', 'Symbol', 'BigInt', 'Reflect', 'console', 'process',
 ]);
 
 /**
@@ -90,10 +110,34 @@ function isLikelyPromiseExpression(node: TSESTree.Node): boolean {
     if (prop.type === 'Identifier') {
       if (NEVER_RETURNS_PROMISE_METHODS.has((prop as TSESTree.Identifier).name)) return false;
     }
+    // Static helpers on known sync namespaces — `Buffer.from`, `Date.now`,
+    // `Array.isArray`, `Object.keys`, etc. The standard library never
+    // returns a Promise from any method on these globals.
+    const obj = (callee as TSESTree.MemberExpression).object;
+    if (obj.type === 'Identifier' && SYNC_NAMESPACE_OBJECTS.has((obj as TSESTree.Identifier).name)) {
+      return false;
+    }
     return true;
   }
 
   return true;
+}
+
+/**
+ * Returns true when the call's parent indicates the promise is delegated
+ * to a caller and therefore not "unhandled" at this site. This covers:
+ *   - `return fn()` — the enclosing function returns the promise; its
+ *     caller takes responsibility.
+ *   - `() => fn()` — concise-body arrow returns the promise.
+ *   - `.then(() => fn())` — already inside a promise chain (handled by
+ *     `isInsidePromiseCallback`, but the arrow-body case is the same).
+ */
+function isPromiseDelegatedToCaller(node: TSESTree.CallExpression): boolean {
+  const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+  if (!parent) return false;
+  if (parent.type === 'ReturnStatement') return true;
+  if (parent.type === 'ArrowFunctionExpression' && (parent as TSESTree.ArrowFunctionExpression).body === node) return true;
+  return false;
 }
 
 /**
@@ -317,7 +361,7 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
     const { ignoreInTests = true, ignoreVoidExpressions = false }: Options =
       options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isTestFile =
       ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
@@ -325,7 +369,7 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    // const sourceCode = context.sourceCode || context.sourceCode; // Not used
+    // const sourceCode = context.sourceCode; // Not used
 
     /**
      * Check call expressions for unhandled promises
@@ -333,6 +377,13 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
     function checkCallExpression(node: TSESTree.CallExpression) {
       // Skip CallExpressions that are inside promise chain callbacks
       if (isInsidePromiseCallback(node)) {
+        return;
+      }
+
+      // `return fn()` / `() => fn()` — the promise is delegated to the
+      // caller. Flagging here would force `await` everywhere a promise
+      // is forwarded, which is wrong: forwarding IS handling.
+      if (isPromiseDelegatedToCaller(node)) {
         return;
       }
 

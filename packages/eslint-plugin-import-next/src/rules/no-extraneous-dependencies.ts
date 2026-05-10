@@ -201,7 +201,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
       allowPatterns = [],
     } = options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     if (!filename) {
       return {};
     }

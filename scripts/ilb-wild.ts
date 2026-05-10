@@ -39,6 +39,7 @@ import { execSync, spawnSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { globSync } from 'glob';
 
 // ── Paths & Config ──────────────────────────────────────────────────
@@ -943,15 +944,15 @@ function writePerRepoArtifacts(outDir, repo, result) {
   fs.writeFileSync(path.join(dir, 'report.md'), renderPerRepoMd(repo, result));
 }
 
-function renderPerRepoMd(repo, r) {
-  const topRulesByHits = Object.entries(r.perRule)
+function renderPerRepoMd(repo: any, r: any) {
+  const topRulesByHits = (Object.entries(r.perRule) as Array<[string, any]>)
     .sort((a, b) => b[1].hits - a[1].hits)
     .slice(0, 10);
-  const topRulesByTime = Object.entries(r.perRule)
+  const topRulesByTime = (Object.entries(r.perRule) as Array<[string, any]>)
     .sort((a, b) => b[1].avgTimeMs - a[1].avgTimeMs)
     .slice(0, 10);
 
-  const cov = Object.entries(r.pluginCoverage)
+  const cov = (Object.entries(r.pluginCoverage) as Array<[string, any]>)
     .map(([p, c]) => `| ${p} | ${c.fired} / ${c.total} | ${c.activationRate}% |`)
     .join('\n');
 

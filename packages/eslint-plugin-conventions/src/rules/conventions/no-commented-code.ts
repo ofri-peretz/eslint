@@ -183,7 +183,7 @@ export const noCommentedCode = createRule<RuleOptions, MessageIds>({
       minLines = 1,
     }: Options = options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isTestFile =
       ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
@@ -191,7 +191,7 @@ export const noCommentedCode = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     /**
      * Check comment nodes

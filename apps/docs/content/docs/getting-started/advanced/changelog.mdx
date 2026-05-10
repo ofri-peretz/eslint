@@ -36,44 +36,41 @@ Each plugin maintains its own `CHANGELOG.md` in its package directory. This page
 
 ## Plugin Changelogs
 
-### Core Config
-
-<a
-  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-config-interlace/CHANGELOG.md"
-  target="_blank"
-  rel="noopener noreferrer"
->
-  **eslint-config-interlace** — View on GitHub →
-</a>
-
-The unified config package that bundles all plugins.
+Each plugin has its own changelog page in this docs site (rendered live from GitHub via `<RemoteChangelog>`) plus a `CHANGELOG.md` file in its package directory.
 
 ---
 
 ### Security Plugins
 
-| Plugin               | Description           | Changelog                                                                                                      |
-| -------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `browser-security`   | XSS, DOM security     | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/CHANGELOG.md)   |
-| `crypto`             | Weak algorithms, PRNG | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-crypto/CHANGELOG.md)             |
-| `jwt`                | Token security        | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/CHANGELOG.md)                |
-| `secure-coding`      | Injection prevention  | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/CHANGELOG.md)      |
-| `secrets`            | Hardcoded credentials | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secrets/CHANGELOG.md)            |
-| `node-security`      | Server-side patterns  | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/CHANGELOG.md)      |
-| `pg`                 | PostgreSQL security   | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/CHANGELOG.md)                 |
-| `mongodb-security`   | MongoDB injection     | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/CHANGELOG.md)   |
-| `vercel-ai-security` | AI SDK security       | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/CHANGELOG.md) |
+| Plugin               | Description                         | In-site changelog                                              | Source `CHANGELOG.md`                                                                                          |
+| :------------------- | :---------------------------------- | :------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
+| `browser-security`   | XSS, DOM security                   | [View](/docs/security/plugin-browser-security/changelog)       | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/CHANGELOG.md)   |
+| `crypto`             | Weak algorithms, PRNG               | [View](/docs/security/plugin-crypto/changelog)                 | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-crypto/CHANGELOG.md)             |
+| `express-security`   | Express middleware hardening        | [View](/docs/security/plugin-express-security/changelog)       | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/CHANGELOG.md)   |
+| `jwt`                | Token security                      | [View](/docs/security/plugin-jwt/changelog)                    | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/CHANGELOG.md)                |
+| `lambda-security`    | AWS Lambda hardening                | [View](/docs/security/plugin-lambda-security/changelog)        | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/CHANGELOG.md)    |
+| `mongodb-security`   | MongoDB injection                   | [View](/docs/security/plugin-mongodb-security/changelog)       | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/CHANGELOG.md)   |
+| `nestjs-security`    | NestJS framework hardening          | [View](/docs/security/plugin-nestjs-security/changelog)        | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/CHANGELOG.md)    |
+| `node-security`      | Server-side patterns                | [View](/docs/security/plugin-node-security/changelog)          | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/CHANGELOG.md)      |
+| `pg`                 | PostgreSQL security                 | [View](/docs/security/plugin-pg/changelog)                     | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/CHANGELOG.md)                 |
+| `secure-coding`      | Injection prevention                | [View](/docs/security/plugin-secure-coding/changelog)          | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/CHANGELOG.md)      |
+| `vercel-ai-security` | AI SDK security                     | [View](/docs/security/plugin-vercel-ai-security/changelog)     | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/CHANGELOG.md) |
 
 ---
 
 ### Quality Plugins
 
-| Plugin                       | Description          | Changelog                                                                                                              |
-| ---------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `react-best-practices`       | Component patterns   | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-best-practices/CHANGELOG.md)       |
-| `react-hooks-best-practices` | Hook rules           | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-hooks-best-practices/CHANGELOG.md) |
-| `documentation`              | JSDoc enforcement    | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-documentation/CHANGELOG.md)              |
-| `import-next`                | Fast cycle detection | [View](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/CHANGELOG.md)                |
+| Plugin            | Description                              | In-site changelog                                          | Source `CHANGELOG.md`                                                                                       |
+| :---------------- | :--------------------------------------- | :--------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------- |
+| `conventions`     | Team-specific habits and styles          | [View](/docs/quality/plugin-conventions/changelog)         | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/CHANGELOG.md)     |
+| `import-next`     | Fast cycle + import-graph analysis       | [View](/docs/quality/plugin-import-next/changelog)         | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/CHANGELOG.md)     |
+| `maintainability` | Cognitive load and clean-code patterns   | [View](/docs/quality/plugin-maintainability/changelog)     | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/CHANGELOG.md) |
+| `modernization`   | ESNext migration + syntax evolution      | [View](/docs/quality/plugin-modernization/changelog)       | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modernization/CHANGELOG.md)   |
+| `modularity`      | Structural integrity and DDD patterns    | [View](/docs/quality/plugin-modularity/changelog)          | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modularity/CHANGELOG.md)      |
+| `operability`     | Production readiness and resource health | [View](/docs/quality/plugin-operability/changelog)         | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-operability/CHANGELOG.md)     |
+| `react-a11y`      | React accessibility / WCAG               | [View](/docs/quality/plugin-react-a11y/changelog)          | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/CHANGELOG.md)      |
+| `react-features`  | React best practices and optimization    | [View](/docs/quality/plugin-react-features/changelog)      | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/CHANGELOG.md)  |
+| `reliability`     | Runtime stability and error safety       | [View](/docs/quality/plugin-reliability/changelog)         | [GitHub](https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-reliability/CHANGELOG.md)     |
 
 ---
 
@@ -83,13 +80,13 @@ You can programmatically access changelog data via our API:
 
 ```bash
 # Get all changelogs (parsed)
-curl https://interlace.dev/api/changelog
+curl https://eslint.interlace.tools/api/changelog
 
 # Get specific plugin changelog
-curl https://interlace.dev/api/changelog?plugin=jwt
+curl https://eslint.interlace.tools/api/changelog?plugin=jwt
 
 # Get raw markdown
-curl https://interlace.dev/api/changelog?plugin=jwt&raw=true
+curl https://eslint.interlace.tools/api/changelog?plugin=jwt&raw=true
 ```
 
 ### Response Format

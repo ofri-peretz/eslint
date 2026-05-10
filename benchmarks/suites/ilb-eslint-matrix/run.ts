@@ -154,12 +154,12 @@ async function main() {
     }
   }
 
-  const driftPerMajor = {};
-  for (const [major, data] of Object.entries(perMajor)) {
+  const driftPerMajor: Record<string, any> = {};
+  for (const [major, data] of Object.entries(perMajor) as Array<[string, any]>) {
     if (!data.findings || major === baselineMajor) continue;
     driftPerMajor[major] = diffFindings(baselineFindings, data.findings);
   }
-  const totalDrift = Object.values(driftPerMajor).reduce((s, d) => s + d.onlyInA.length + d.onlyInB.length, 0);
+  const totalDrift: number = (Object.values(driftPerMajor) as any[]).reduce((s: number, d: any) => s + d.onlyInA.length + d.onlyInB.length, 0);
 
   const date = new Date().toISOString().slice(0, 10);
   const result = {
@@ -175,7 +175,7 @@ async function main() {
         : null,
     },
     latency: {
-      meanLatencyMs: Object.values(perMajor).reduce((s, d) => s + (d.meanMs ?? 0), 0) / Math.max(1, Object.keys(perMajor).length),
+      meanLatencyMs: (Object.values(perMajor) as any[]).reduce((s: number, d: any) => s + (d.meanMs ?? 0), 0) / Math.max(1, Object.keys(perMajor).length),
     },
     supportPolicy: SUPPORT_POLICY,
     perMajor,

@@ -232,10 +232,10 @@ export const noMissingAuthentication = createRule<RuleOptions, MessageIds>({
       ignorePatterns = [],
     } = options as Options;
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const testFileRegex = new RegExp(testFilePattern);
     const isTestFile = allowInTests && testFileRegex.test(filename);
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     /**
      * Find variable declaration for an identifier

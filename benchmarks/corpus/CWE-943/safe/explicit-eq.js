@@ -7,6 +7,6 @@ async function login(req, res) {
   const user = await db.collection('users').findOne({
     username: { $eq: String(req.body.username) },
     password: { $eq: String(req.body.password) },
-  });
+  }, { projection: { _id: 1, username: 1, role: 1 } });
   return user;
 }

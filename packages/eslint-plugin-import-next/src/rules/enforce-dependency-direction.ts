@@ -173,7 +173,7 @@ export const enforceDependencyDirection = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
-    const filename = context.getFilename();
+    const filename = context.filename;
 
     const {
       layers: providedLayers,

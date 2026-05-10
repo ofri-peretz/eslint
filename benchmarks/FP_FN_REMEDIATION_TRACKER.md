@@ -94,6 +94,46 @@ Ordered by impact-per-effort. Each item names the rule and the concrete conditio
 
 Every audit P0 item landed in iterations 1–3.
 
+### Closed 2026-05-10 (FP precision pass on Quality fleet)
+
+ILB-Arena-Quality `cleanAnalysis` showed `reliability/no-missing-null-checks` (53 FPs) and `reliability/no-unhandled-promise` (12 FPs) as the dominant FP sources. Both rules had over-aggressive defaults: any property access on an unrecognized identifier was treated as null-deref-risk, and any unawaited call was treated as unhandled-promise.
+
+| Item | Result | How |
+| :--- | :--- | :--- |
+| `reliability/no-missing-null-checks` | **53 FPs → 13 FPs** (75% reduction); recall preserved (29 TPs on problematic fixture) | Three additions to `isProvablyNonNullableIdentifier`: (a) array/object/template-literal/class-expression/primitive-literal initializers, plus `await fetch(...)` and `Object/Array/JSON.method(...)` results; (b) function parameters — without type info, the contract belongs to the caller; (c) `this` and `this.#field` chains — private class fields are always defined inside their owner class. |
+| `reliability/no-unhandled-promise` | **12 FPs → 0 FPs** (clean fixture); 39/39 tests still pass | Two additions: (a) `isPromiseDelegatedToCaller()` — `return fn()` and `() => fn()` forward the promise to the caller, which IS handling; (b) `SYNC_NAMESPACE_OBJECTS` — methods on `Date`, `Buffer`, `Array`, `Object`, `JSON`, `Math`, etc. are sync by definition (`Buffer.from`, `Date.now`, `Array.isArray`). Expanded `NEVER_RETURNS_PROMISE_METHODS` with `now`, `from`, `of`, `isArray`, `isInteger`, `assign`, `freeze`, `fromEntries`, etc. |
+| `cicd-impact/eslint10-migration-runbook.md:172` markdown table column-count error | fixed | Escaped literal `\|` in `string \| undefined` cell to prevent the markdown parser from splitting it into a 4th column. |
+
+**Combined precision impact (clean fixture):** total Interlace-Quality FPs **84 → 32** on this clean fixture (62% reduction across all rules). Recall on the problematic fixture remains strong (29 + 22 hits on the two rules above; total fleet hits 75 → 100 because removing FPs reveals true positives that were previously double-flagged).
+
+### Closed 2026-05-10 (post-context-rollover pass) — gate plumbing + 2 mongodb FPs
+
+After the prior session's auto-mode work hit context-summary, two scripts were left broken by the Nx → Turborepo migration's `.mjs` → `.ts` rename, and 2 mongodb-security rule FPs were uncovered by `ilb:validate-fixtures:strict`:
+
+| Item | Result | How |
+| :--- | :--- | :--- |
+| `scripts/ilb-corpus-integrity.ts` ReferenceError on `fileURLToPath` + ENOENT on stale `ilb-wild.mjs` path | fixed | Added `import { fileURLToPath } from 'node:url'`; updated `WILD_SOURCE` and error-message string from `ilb-wild.mjs` to `ilb-wild.ts`. 22/22 repos resolve, 0 drift. |
+| `secure-coding/no-unlimited-resource-allocation` oxlint `no-shadow` error | fixed | Removed two inner `const calleeText = sourceCode.getText(callee)` shadows of the outer `calleeText` declared in the same `CallExpression` visitor (lines 614 and 748). |
+| `apps/docs/scripts/sync-rules-docs.ts` 22 `no-misleading-character-class` errors on emoji regex | fixed | Added `u` flag to `/^([💼💡🔧🚨⚠️✅📊🔍🔧📝⏱️🔗].*$\n?)/gm` → `gmu`. |
+| `mongodb-security/no-select-sensitive-fields` FP on native-driver projection | **closed** | Added `projectionIsSafe()` helper that recognizes `find(filter, { projection: { _id: 1, … } })` — the MongoDB native driver's projection form. Inclusion projections that don't name any sensitive field are now treated as safe. |
+| `mongodb-security/no-unbounded-find` FP on `findOne` + long chains + driver-options | **closed** | Three fixes: (a) dropped `findOne` from `FIND_METHODS` — bounded by definition (returns at most one document); (b) replaced parent/grandparent-only check with full chain walk so `find(...).select(...).limit(100).toArray()` is recognized; (c) added 2nd-arg `{ limit: N }` option detection for the native driver. Tests grew 6 → 11 valid cases. |
+| `ilb:validate-fixtures:strict` corpus drift | **closed** | After both rule fixes, all 44 fixtures lint consistently with their labels. 0 drift / 0 metadata gaps. |
+| 3 result files missing schema fields (`ilb-flagship/2026-05-10`, `ilb-oxlint-parity/.parity.oxlintrc`, `ilb-oxlint-parity/2026-05-10`) | fixed | Re-ran `scripts/ilb-result-schema-backfill.ts --apply`; 67/67 files pass strict. |
+
+**Final state of every gate (2026-05-10):**
+
+| Gate | State |
+| :--- | :--- |
+| `npm run quality` (oxlint + portability + shims + tests + lint:md + lint:fixtures + validate-results + flagship:smoke + audit:changelogs) | **exit 0** |
+| `npm run ilb:stress-test` | **51/51 matched** |
+| `npm run ilb:stress-test-docs` | **547/547 matched** |
+| `npm run ilb:validate-results:strict` | **67/67 pass** |
+| `npm run ilb:validate-fixtures:strict` | **0 drift, 0 metadata gaps** |
+| `npm run ilb:corpus-integrity` | **22/22 stable, 0 drift** |
+| `npm run oxlint` | **0 errors** (8 warnings — informational) |
+| `npm run lint:md` | **0 errors** |
+| `npm run ilb:flagship:smoke` | **9/9 rules at SLO (F1=1.00)** |
+
 ### Closed 2026-05-09 (final pass) — full repo green
 
 **Final-pass landing block — every gate now passes cleanly:**

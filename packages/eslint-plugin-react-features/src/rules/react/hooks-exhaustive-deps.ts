@@ -355,7 +355,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
           element.object.type === 'Identifier'
         ) {
           // For props.foo, we track the full path
-          const sourceCode = context.sourceCode || context.getSourceCode();
+          const sourceCode = context.sourceCode;
           deps.add(sourceCode.getText(element));
         }
       }

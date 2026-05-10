@@ -122,7 +122,7 @@ export const noJsdocTerminatorInExample = createRule<RuleOptions, MessageIds>({
   },
   defaultOptions: [],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     return {
       Program() {

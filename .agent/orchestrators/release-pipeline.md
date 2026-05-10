@@ -51,10 +51,10 @@ After version bump:
 ### Step 4: Publish to npm
 
 ```bash
-nx release publish <package>
+gh workflow run release.yml --ref main
 ```
 
-**Expected**: User provides 2FA OTP when prompted
+**Expected**: GitHub Actions runs the release; for unscoped packages the `NPM_TOKEN` secret is used, for `@interlace/*` Trusted Publishing handles auth (no token / no 2FA prompt)
 
 ### Step 5: Push to GitHub
 

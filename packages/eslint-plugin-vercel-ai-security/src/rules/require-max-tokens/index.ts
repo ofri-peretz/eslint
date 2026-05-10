@@ -80,7 +80,7 @@ export const requireMaxTokens = createRule<RuleOptions, MessageIds>({
       'generateText', 'streamText', 'generateObject', 'streamObject',
     ];
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     return {
       CallExpression(node: TSESTree.CallExpression) {

@@ -1,9 +1,175 @@
 ---
-title: require-tool-confirmation
-description: ESLint rule documentation for require-tool-confirmation
-icon: FileCode
+title: "require-tool-confirmation"
+description: "title: require-tool-confirmation"
 ---
 
-import { RemoteRuleDoc } from '@/components/docs/remote-rule-doc';
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
-<RemoteRuleDoc plugin="vercel-ai-security" rule="require-tool-confirmation" />
+---
+title: require-tool-confirmation
+description: "This rule identifies destructive tools (delete, transfer, execute, etc.) that don't require human confirmation before..."
+tags: ['security', 'ai']
+category: security
+severity: medium
+cwe: CWE-862
+autofix: false
+---
+
+> Requires human confirmation for destructive tool operations.
+
+This rule identifies destructive tools (delete, transfer, execute, etc.) that don't require human confirmation before...
+
+## 📊 Rule Details
+
+| Property           | Value                                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------------------------ |
+| **Type**           | suggestion                                                                                             |
+| **Severity**       | 🟡 HIGH                                                                                                |
+| **OWASP LLM**      | [LLM06: Excessive Agency](https://owasp.org/www-project-top-10-for-large-language-model-applications/) |
+| **OWASP Agentic**  | [ASI09: Human-Agent Trust Exploitation](https://owasp.org)                                             |
+| **CWE**            | [CWE-862: Missing Authorization](https://cwe.mitre.org/data/definitions/862.html)                      |
+| **CVSS**           | 7.5                                                                                                    |
+| **Config Default** | `warn` (recommended), `error` (strict)                                                                 |
+
+## 🔍 What This Rule Detects
+
+This rule identifies destructive tools (delete, transfer, execute, etc.) that don't require human confirmation before execution.
+
+## ❌ Incorrect Code
+
+> _Awaiting a tested example. The previous snippet was removed because the rule does not behave as the doc claimed; track the regression in [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../../../benchmarks/FP_FN_REMEDIATION_TRACKER.md)._
+
+## ✅ Correct Code
+
+```typescript
+// Delete with confirmation
+const tools = {
+  deleteFile: {
+    requiresConfirmation: true,
+    execute: async ({ path }) => fs.unlinkSync(path),
+  },
+};
+
+// Transfer with approval
+const tools = {
+  transferFunds: {
+    requiresApproval: true,
+    execute: async ({ amount, to }) => bank.transfer(amount, to),
+  },
+};
+
+// Execute with confirmation
+const tools = {
+  executeCommand: {
+    confirm: true,
+    execute: async ({ cmd }) => exec(cmd),
+  },
+};
+```
+
+## ⚙️ Options
+
+| Option                | Type       | Default                                                                                            | Description                               |
+| --------------------- | ---------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------- | --------------------------- | ---------- | --------------------------------------------------------------------- | ----------------------------------- |
+| `destructivePatterns` | `string[]` | `['delete', 'remove', 'drop', 'transfer', 'send', 'execute', 'run', 'update', 'modify', 'create']` | Tool name patterns requiring confirmation | // `confirmationProperties` | `string[]` | `['requiresConfirmation', 'requiresApproval', 'confirm', 'approval']` | Properties that enable confirmation |
+
+## 🛡️ Why This Matters
+
+Unconfirmed destructive operations can cause:
+
+- **Data loss** - Files or records deleted without consent
+- **Financial loss** - Unauthorized transfers
+- **Security breach** - Malicious commands executed
+- **Compliance violations** - Actions without audit trail
+
+## 🔗 Related Rules
+
+- [`require-tool-schema`](./require-tool-schema.md) - Validate tool inputs
+- [`require-audit-logging`](./require-audit-logging.md) - Log AI operations
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Dynamic Tool Names
+
+**Why**: Dynamically named tools are not checked.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic tool name
+const tools = {
+  [actionName]: { execute: async (args) => dangerousOperation() },
+};
+```
+
+**Mitigation**: Use explicit tool names. Configure patterns for custom names.
+
+### Tool Definition from Variable
+
+**Why**: Tool definitions from variables are not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Tool from variable
+const deleteTool = { execute: async () => deleteData() };
+const tools = { deleteFile: deleteTool };
+```
+
+**Mitigation**: Define tools inline. Add confirmation properties.
+
+### Confirmation in Execute Logic
+
+**Why**: Confirmation logic inside execute is not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Manual confirmation check
+const tools = {
+  deleteFile: {
+    execute: async ({ path, confirmed }) => {
+      if (!confirmed) throw new Error('Not confirmed');
+      return fs.unlinkSync(path);
+    },
+  },
+};
+```
+
+**Mitigation**: Use declarative confirmation properties.
+
+### Tool Wrappers
+
+**Why**: Wrapper functions that add confirmation are not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper adds confirmation
+const tools = createConfirmableTools({ deleteFile: deleteFn });
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
+## 📚 References
+
+- [OWASP LLM06: Excessive Agency](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
+- [OWASP ASI09: Human-Agent Trust Exploitation](https://owasp.org)
+- [CWE-862: Missing Authorization](https://cwe.mitre.org/data/definitions/862.html)
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-862 OWASP:A01 CVSS:8.1 | Missing Authorization detected | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A01_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-862](https://cwe.mitre.org/data/definitions/862.html) [OWASP:A01](https://owasp.org/Top10/A01_2021-Injection/) [CVSS:8.1](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description** | Specific vulnerability | `Missing Authorization detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A01_2021-Injection/) |

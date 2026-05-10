@@ -251,9 +251,9 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
     // tree traversal, not user-input indexing. The same helper landed
     // for `no-insecure-comparison` in audit iter-2; this is the port to
     // `detect-object-injection`. See benchmarks/AUDIT_PATTERNS.md §2.1.
-    const sourceCode = context.getSourceCode();
+    const sourceCode = context.sourceCode;
     const isInCodemodContext = (() => {
-      const filename = context.filename || context.getFilename();
+      const filename = context.filename;
       if (/\/codemod[s]?\//i.test(filename)) return true;
       if (/codemod\.[mc]?[jt]sx?$/i.test(filename)) return true;
       const imports = sourceCode.ast.body.filter(
@@ -737,7 +737,7 @@ export const detectObjectInjection = createRule<RuleOptions, MessageIds>({
      * counter is by construction numeric, so the access is safe.
      */
     const isLoopCounterIdentifier = (node: TSESTree.Identifier): boolean => {
-      const scope = (context.sourceCode ?? context.getSourceCode()).getScope(node);
+      const scope = (context.sourceCode ?? context.sourceCode).getScope(node);
       const variable = scope.references.find((r) => r.identifier === node)?.resolved;
       if (!variable || variable.defs.length === 0) return false;
       const def = variable.defs[0];

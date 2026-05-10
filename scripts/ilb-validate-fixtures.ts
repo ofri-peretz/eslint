@@ -201,6 +201,7 @@ async function main() {
             file: path.basename(file),
             problem: verdict.problem,
             expectedPrefixes: prefixes,
+            hits: verdict.hits,
             stray: verdict.stray.map((s) => `${s.ruleId} @${s.line}: ${s.message}`),
           });
         }
@@ -223,9 +224,13 @@ async function main() {
       console.log(`  ${i.cwe} / ${i.kind}/${i.file}`);
       console.log(`     problem: ${i.problem}`);
       console.log(`     expected one of: ${i.expectedPrefixes.join(', ') || '(no expectedPlugins in manifest)'}`);
-      if (i.stray.length) {
+      if (i.stray && i.stray.length) {
         console.log(`     stray rules fired: ${i.stray.length}`);
         for (const s of i.stray.slice(0, 3)) console.log(`       - ${s}`);
+      }
+      if (i.hits && i.hits.length && i.kind === 'safe') {
+        console.log(`     expected-domain rules that fired incorrectly:`);
+        for (const h of i.hits.slice(0, 3)) console.log(`       - ${h.ruleId} @${h.line}: ${h.message}`);
       }
     }
   }

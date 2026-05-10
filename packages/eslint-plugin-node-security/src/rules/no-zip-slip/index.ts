@@ -226,7 +226,7 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       safeLibraries = ['yauzl', 'safe-archive-extract', 'tar-stream', 'unzipper'],
     }: Options = options;
 
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
 
     // Safety checks are implemented directly in the handlers
 

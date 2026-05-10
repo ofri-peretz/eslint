@@ -67,7 +67,7 @@ export const noDynamicSystemPrompt = createRule<RuleOptions, MessageIds>({
     const [options = {}] = context.options;
     const allowStaticTemplates = options.allowStaticTemplates ?? true;
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     // Vercel AI SDK functions
     const aiSDKFunctions = ['generateText', 'streamText', 'generateObject', 'streamObject'];

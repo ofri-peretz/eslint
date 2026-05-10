@@ -244,10 +244,10 @@ export const noPrivilegeEscalation = createRule<RuleOptions, MessageIds>({
       ignorePatterns = [],
     } = options as Options;
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const testFileRegex = new RegExp(testFilePattern);
     const isTestFile = allowInTests && testFileRegex.test(filename);
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     // Combine default and additional user input patterns
     const userInputPatterns = [

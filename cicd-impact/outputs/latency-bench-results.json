@@ -1,102 +1,90 @@
 {
-  "timestamp": "2026-05-10T00:22:06.435Z",
+  "timestamp": "2026-05-10T01:56:23.840Z",
   "methodology": {
     "runs": 3,
-    "files": 1046,
-    "corpus": "/Users/ofri/repos/ofriperetz.dev/eslint/node_modules/lodash"
+    "files": 500,
+    "corpus": "/Users/ofri/repos/ofriperetz.dev/eslint/node_modules/date-fns"
   },
   "results": [
     {
       "name": "baseline (Linter, no rules)",
-      "median": 234.86404199999993,
-      "perFile": 0.224535413001912,
+      "median": 175.23291699999993,
+      "perFile": 0.35046583399999987,
       "issues": 0,
-      "parseErrors": 0,
+      "parseErrors": 498,
       "samples": [
-        233.623333,
-        234.86404199999993,
-        237.79954099999998
+        173.17104099999995,
+        175.23291699999993,
+        196.84779200000003
       ],
-      "heapDeltaMB": 109.93782043457031
+      "heapDeltaMB": 274.92137908935547
     },
     {
       "name": "Interlace (full security fleet)",
-      "median": 984.280917,
-      "perFile": 0.9409951405353729,
-      "issues": 1351,
-      "parseErrors": 0,
+      "median": 424.03237500000023,
+      "perFile": 0.8480647500000005,
+      "issues": 220,
+      "parseErrors": 498,
       "samples": [
-        978.6015419999994,
-        984.280917,
-        999.837959
+        406.69216700000015,
+        424.03237500000023,
+        424.3530000000003
       ],
-      "heapDeltaMB": 370.469970703125
+      "heapDeltaMB": 405.80833435058594
     },
     {
       "name": "eslint-plugin-sonarjs",
-      "median": 1992.498790999999,
-      "perFile": 1.9048745611854676,
-      "issues": 267,
-      "parseErrors": 0,
+      "median": 1200.4547090000005,
+      "perFile": 2.4009094180000012,
+      "issues": 416,
+      "parseErrors": 498,
       "samples": [
-        1885.2408749999995,
-        1992.498790999999,
-        2012.8742500000008
+        1159.1115829999999,
+        1200.4547090000005,
+        1274.9097500000007
       ],
-      "heapDeltaMB": 250.2695770263672
+      "heapDeltaMB": 290.3362808227539
     },
     {
       "name": "eslint-plugin-no-secrets",
-      "median": 678.8117500000008,
-      "perFile": 0.6489596080305935,
-      "issues": 0,
-      "parseErrors": 0,
+      "median": 216.20800000000054,
+      "perFile": 0.4324160000000011,
+      "issues": 16,
+      "parseErrors": 498,
       "samples": [
-        667.4492499999997,
-        678.8117500000008,
-        682.3477080000011
+        208.62312500000007,
+        216.20800000000054,
+        234.35133300000052
       ],
-      "heapDeltaMB": 376.9537048339844
+      "heapDeltaMB": 214.27500915527344
     },
     {
       "name": "eslint-plugin-no-unsanitized",
-      "median": 279.43566700000156,
-      "perFile": 0.26714690917782175,
+      "median": 181.1729170000017,
+      "perFile": 0.36234583400000336,
       "issues": 0,
-      "parseErrors": 0,
+      "parseErrors": 498,
       "samples": [
-        274.1212919999998,
-        279.43566700000156,
-        279.8105829999986
+        180.77649999999994,
+        181.1729170000017,
+        182.08529200000157
       ],
-      "heapDeltaMB": 270.67362213134766
+      "heapDeltaMB": 434.26124572753906
     },
     {
       "name": "eslint-plugin-security-node",
-      "median": 320.80975000000035,
-      "perFile": 0.3067014818355644,
-      "issues": 5,
-      "parseErrors": 0,
+      "median": 204.6307909999996,
+      "perFile": 0.4092615819999992,
+      "issues": 38,
+      "parseErrors": 498,
       "samples": [
-        320.0489579999994,
-        320.80975000000035,
-        335.7730410000004
+        202.0765420000007,
+        204.6307909999996,
+        205.4187920000004
       ],
-      "heapDeltaMB": 460.90452575683594
+      "heapDeltaMB": 403.23741149902344
     },
     null,
-    {
-      "name": "eslint-plugin-security (broken on ESLint 9)",
-      "median": 271.7525830000013,
-      "perFile": 0.2598017045889114,
-      "issues": 0,
-      "parseErrors": 0,
-      "samples": [
-        271.0230420000007,
-        271.7525830000013,
-        306.0621250000004
-      ],
-      "heapDeltaMB": 322.9670944213867
-    }
+    null
   ]
 }

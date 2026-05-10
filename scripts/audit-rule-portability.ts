@@ -155,7 +155,7 @@ function scanRule(sourceCode, ruleName) {
 
   // Portability blockers — any blocker means the rule cannot run on the runtime.
   for (const [runtime, patterns] of Object.entries(PORTABILITY_BLOCKERS)) {
-    for (const { pattern, label, ignoreIf } of patterns) {
+    for (const { pattern, label, ignoreIf } of patterns as Array<{ pattern: RegExp; label: string; ignoreIf?: RegExp }>) {
       if (!pattern.test(sourceCode)) continue;
       if (ignoreIf && ignoreIf.test(sourceCode)) {
         // Pattern present but guarded — track as a degradation note rather
@@ -413,7 +413,7 @@ async function runCi(allPlugins) {
   }
 
   // Per-plugin: no plugin may regress in absolute oxlint-ready count.
-  for (const [pkg, before] of Object.entries(baseline.perPlugin || {})) {
+  for (const [pkg, before] of Object.entries(baseline.perPlugin || {}) as Array<[string, any]>) {
     const after = current.perPlugin[pkg];
     if (!after) continue;
     if (after.ready < before.ready) {

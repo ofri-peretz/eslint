@@ -2,6 +2,8 @@ import { RootProvider } from 'fumadocs-ui/provider/next';
 import './global.css';
 import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
+import { TooltipProvider } from '#interlace/components/ui/tooltip';
+import { CodeBlockLabeller } from '@/components/a11y/code-block-labeller';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -86,7 +88,10 @@ export default function Layout({ children }: LayoutProps<'/'>) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className="flex flex-col min-h-screen">
-        <RootProvider>{children}</RootProvider>
+        <RootProvider>
+          <TooltipProvider delayDuration={250}>{children}</TooltipProvider>
+          <CodeBlockLabeller />
+        </RootProvider>
       </body>
     </html>
   );

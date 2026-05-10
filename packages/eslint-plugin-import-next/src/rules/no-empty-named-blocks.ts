@@ -62,7 +62,7 @@ export const noEmptyNamedBlocks = createRule<RuleOptions, MessageIds>({
         );
 
         // Get the source code
-        const sourceCode = context.getSourceCode();
+        const sourceCode = context.sourceCode;
         const importText = sourceCode.getText(node);
 
         // Check for empty braces pattern: {}

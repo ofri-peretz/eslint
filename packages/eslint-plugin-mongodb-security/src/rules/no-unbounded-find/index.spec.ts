@@ -16,6 +16,12 @@ ruleTester.run('no-unbounded-find', noUnboundedFind, {
       code: `User.find({});`,
       filename: 'query.test.ts',
     },
+    // findOne is bounded by definition (returns at most one document) — never fire
+    `User.findOne({ email: 'test@test.com' });`,
+    // Long chain ending in .limit() — accept .limit() at any depth
+    `db.collection('u').find({ a: 1 }, { projection: { _id: 1 } }).select('-password').limit(100).toArray();`,
+    // Native driver: limit option in 2nd arg
+    `db.collection('u').find({ a: 1 }, { limit: 50 });`,
   ],
 
   invalid: [
@@ -27,11 +33,6 @@ ruleTester.run('no-unbounded-find', noUnboundedFind, {
     // find without any chaining
     {
       code: `const users = User.find({ active: true });`,
-      errors: [{ messageId: 'unboundedFind' }],
-    },
-    // findOne without limit
-    {
-      code: `User.findOne({ email: 'test@test.com' });`,
       errors: [{ messageId: 'unboundedFind' }],
     },
     // find with sort but no limit

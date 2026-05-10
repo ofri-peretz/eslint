@@ -263,7 +263,7 @@ async function main() {
 
   console.log('');
   console.log('Agreement matrix (count of findings present in each combo):');
-  for (const [combo, count] of Object.entries(matrix.byCombo).sort((a, b) => b[1] - a[1])) {
+  for (const [combo, count] of (Object.entries(matrix.byCombo) as Array<[string, number]>).sort((a, b) => b[1] - a[1])) {
     console.log(`  ${combo.padEnd(40)} ${count}`);
   }
   console.log('');

@@ -241,7 +241,7 @@ export const filenameCase = createRule<RuleOptions, MessageIds>({
     return {
       Program(node: TSESTree.Program) {
         // Get filename from context
-        const filename = context.getFilename();
+        const filename = context.filename;
         if (!filename) {
           return;
         }

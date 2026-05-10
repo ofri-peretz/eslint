@@ -1,0 +1,65 @@
+name: Storybook a11y gate
+
+# Hard a11y gate. Builds the Storybook static site, serves it, and runs
+# axe-core (via @storybook/test-runner + axe-playwright) against every
+# story for wcag2a / wcag2aa / wcag21aa / best-practice. Any violation
+# fails the PR.
+#
+# Triggers on changes that can plausibly regress a11y: the design system
+# itself, the storybook workspace, the docs app (which composes the
+# primitives), or this workflow.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/storybook/**'
+      - 'packages/ui/**'
+      - 'apps/docs/src/**'
+      - '.github/workflows/storybook-a11y.yml'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+concurrency:
+  group: storybook-a11y-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  storybook-a11y:
+    name: axe a11y check (every story)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build @interlace/ui (consumed by stories)
+        run: npm run build --workspace=@interlace/ui
+
+      - name: Install Playwright browsers (chromium only)
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/storybook
+
+      - name: Build Storybook
+        run: npm run build-storybook --workspace=@interlace/storybook
+
+      - name: Run axe against every story
+        run: npm run test-storybook:ci --workspace=@interlace/storybook
+
+      - name: Upload Storybook static (on failure, for triage)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: storybook-static-${{ github.run_number }}
+          path: apps/storybook/storybook-static
+          retention-days: 7

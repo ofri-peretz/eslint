@@ -71,7 +71,7 @@ function pickNumeric(obj) {
  * @param {string} [opts.historyPath]   override target NDJSON path (CI / tests)
  * @returns {string}                    the historyPath that was written
  */
-export function appendHistory(result, resultPath, opts = {}) {
+export function appendHistory(result: any, resultPath: string, opts: any = {}) {
   const historyPath = opts.historyPath ?? DEFAULT_HISTORY_PATH;
   ensureDir(historyPath);
 

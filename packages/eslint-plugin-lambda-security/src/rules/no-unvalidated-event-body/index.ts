@@ -126,7 +126,7 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
     [options = {}],
   ) {
     const { allowInTests = true, additionalProperties = [] } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -220,7 +220,7 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
     // `(request, response)`) were misclassified as Lambda. The previous
     // allowlist of `['event', 'evt', 'e', 'request', 'req']` was too
     // loose — see benchmarks/AUDIT_PATTERNS.md §2.4.
-    const sourceCode = context.getSourceCode();
+    const sourceCode = context.sourceCode;
     const fileImportsLambda = sourceCode.ast.body.some((n) => {
       if (n.type !== AST_NODE_TYPES.ImportDeclaration) return false;
       const src = String((n as TSESTree.ImportDeclaration).source.value);

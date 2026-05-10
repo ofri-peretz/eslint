@@ -27,7 +27,7 @@ function isImportingSelf(
   node: TSESTree.Node,
   importPath: string,
 ): boolean {
-  const filename = context.getFilename();
+  const filename = context.filename;
 
   // If the input is from stdin, this test can't fail
   if (filename === '<text>') {

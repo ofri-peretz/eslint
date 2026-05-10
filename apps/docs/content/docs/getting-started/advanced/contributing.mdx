@@ -52,7 +52,7 @@ Rules live in `packages/eslint-plugin-{name}/src/rules/`:
 import { ESLintUtils } from '@typescript-eslint/utils';
 
 const createRule = ESLintUtils.RuleCreator(
-  (name) => `https://interlace.dev/docs/rules/${name}`,
+  (name) => `https://eslint.interlace.tools/docs/rules/${name}`,
 );
 
 export const noExampleVuln = createRule({

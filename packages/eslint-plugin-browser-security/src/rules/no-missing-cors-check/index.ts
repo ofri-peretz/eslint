@@ -130,9 +130,9 @@ export const noMissingCorsCheck = createRule<RuleOptions, MessageIds>({
     
     const trustedLibraries = corsTrustedLibraries;
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isTestFile = allowInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     function checkLiteral(node: TSESTree.Literal) {
       if (isTestFile) {

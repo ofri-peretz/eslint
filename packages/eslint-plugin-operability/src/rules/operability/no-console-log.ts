@@ -221,7 +221,7 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
     /** Merge user's severityMap with defaults to determine method mappings */
     const effectiveSeverityMap = { ...DEFAULT_SEVERITY_MAP, ...severityMap };
 
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     // oxlint-disable-next-line no-shadow
     const sourceCode = context.sourceCode;
     const occurrences: number[] = [];

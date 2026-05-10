@@ -247,9 +247,9 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
         properties: {
           maxDepth: {
             type: 'number',
-            default: 5,
+            default: Number.MAX_SAFE_INTEGER,
             description:
-              'Maximum depth to traverse when detecting cycles (performance optimization)',
+              'Maximum depth to traverse when detecting cycles. Default: unlimited (matches eslint-plugin-import and oxlint). Lower values are a performance escape hatch — but with our nonCyclicFiles cache, traversal cost is amortized, and a low cap silently misses cycles deeper than the limit. Set to a finite number only on huge graphs where the bench latency hurts you.',
           },
           ignorePatterns: {
             type: 'array',
@@ -318,7 +318,12 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
 
   defaultOptions: [
     {
-      maxDepth: 10,
+      // Unlimited: matches eslint-plugin-import (Infinity) and oxlint
+      // (u32::MAX). The earlier default of 10 silently missed any cycle
+      // deeper than 10 hops — verified on next.js's webpack-config.ts
+      // (~12 hops). The nonCyclicFiles cache + the depth-limit-truncation
+      // fix in eslint-devkit's dependency-analysis make unlimited safe.
+      maxDepth: Number.MAX_SAFE_INTEGER,
       ignorePatterns: [],
       barrelExports: ['index.ts', 'index.tsx', 'index.js', 'index.jsx'],
       reportAllCycles: true,
@@ -331,7 +336,7 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
 
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
-    const maxDepth = options.maxDepth ?? 10;
+    const maxDepth = options.maxDepth ?? Number.MAX_SAFE_INTEGER;
     const ignorePatterns = options.ignorePatterns ?? [
       '**/*.test.ts',
       '**/*.test.tsx',
@@ -353,15 +358,17 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
     const coreModuleSuffix = options.coreModuleSuffix ?? 'core';
     const extendedModuleSuffix = options.extendedModuleSuffix ?? 'extended';
 
-    const filename = context.getFilename();
-    const workspaceRoot = context.getCwd();
+    const filename = context.filename;
+    const workspaceRoot = context.cwd;
 
     // Get resolver settings from ESLint settings (compatible with eslint-plugin-import)
-    // eslint-plugin-import uses settings['import/resolver']
+    // eslint-plugin-import uses settings['import/resolver']; allow either the
+    // upstream key or our drop-in `import-next/resolver` form for users
+    // migrating off eslint-plugin-import.
     const settings = context.settings as Record<string, unknown>;
     const resolverSettings: ResolverSetting | undefined =
       (settings?.['import/resolver'] as ResolverSetting) ||
-      (settings?.['eslint-plugin-llm-optimized/resolver'] as ResolverSetting);
+      (settings?.['import-next/resolver'] as ResolverSetting);
 
     // Skip ignored files early
     if (
@@ -435,10 +442,10 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
       cycle: string[],
       sourceImport: ImportInfo,
     ): Record<string, string> {
-      const currentFile = getBasename(context.getFilename());
+      const currentFile = getBasename(context.filename);
       const targetFile = cycle[1];
       const relativeImport = getRelativeImportPath(
-        context.getFilename(),
+        context.filename,
         targetFile,
       );
 
@@ -596,9 +603,16 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
             ...minimalCycle.slice(cycleStart),
             ...minimalCycle.slice(0, cycleStart),
           ];
-          const cycleHash = getCycleHash(relevantCycle);
+          // Dedupe by (file, cycle) instead of cycle alone. Without the
+          // file in the key, the cycle [A, B] reports only on whichever
+          // of A or B is linted first; the other gets silently skipped.
+          // Per-file keying matches oxlint's behavior — every file in a
+          // cycle gets its own diagnostic. The user can navigate from any
+          // entry point in the cycle and see the report there.
+          const cycleHash = `${filename}::${getCycleHash(relevantCycle)}`;
 
-          // Skip if we've already reported this cycle (shared across all files)
+          // Skip only if THIS file already reported THIS cycle (e.g. the
+          // same import statement appearing twice in the same file).
           if (sharedCache.reportedCycles.has(cycleHash)) {
             continue;
           }

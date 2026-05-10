@@ -70,7 +70,7 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
 
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const style = context.options[0] || 'prefer-inline';
-    const sourceCode = context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     /**
      * Get the text for a specifier, handling aliasing

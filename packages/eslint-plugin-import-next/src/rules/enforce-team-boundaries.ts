@@ -227,7 +227,7 @@ export const enforceTeamBoundaries = createRule<RuleOptions, MessageIds>({
     const { teams, sharedPaths = [], allowExternalPackages = true } = options;
 
     // Get the file's team ownership
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const sourceTeam = getFileTeam(filename, teams);
 
     // If file doesn't belong to any team, skip checking

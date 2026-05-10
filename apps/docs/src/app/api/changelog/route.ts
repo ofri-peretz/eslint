@@ -7,6 +7,7 @@
 
 import { NextResponse } from 'next/server';
 import { fetchCachedJSON } from '@/lib/json-cache';
+import { PLUGINS } from '@/lib/plugins';
 
 // GitHub configuration
 const GITHUB_OWNER = process.env.GITHUB_OWNER || 'ofri-peretz';
@@ -16,23 +17,12 @@ const GITHUB_BRANCH = process.env.GITHUB_BRANCH || 'main';
 // Cache TTL: 2 hours (matches changelog*.json pattern in json-cache.ts)
 const CHANGELOG_TTL = 7200;
 
-// Plugin paths in the monorepo
-const PLUGIN_PATHS: Record<string, string> = {
-  'eslint-config-interlace': 'packages/eslint-config-interlace',
-  'browser-security': 'packages/eslint-plugin-browser-security',
-  'crypto': 'packages/eslint-plugin-crypto',
-  'jwt': 'packages/eslint-plugin-jwt',
-  'secure-coding': 'packages/eslint-plugin-secure-coding',
-  'secrets': 'packages/eslint-plugin-secrets',
-  'node-security': 'packages/eslint-plugin-node-security',
-  'pg': 'packages/eslint-plugin-pg',
-  'mongodb-security': 'packages/eslint-plugin-mongodb-security',
-  'vercel-ai-security': 'packages/eslint-plugin-vercel-ai-security',
-  'react-best-practices': 'packages/eslint-plugin-react-best-practices',
-  'react-hooks-best-practices': 'packages/eslint-plugin-react-hooks-best-practices',
-  'documentation': 'packages/eslint-plugin-documentation',
-  'import-next': 'packages/eslint-plugin-import-next',
-};
+// Plugin paths in the monorepo. Derived from the canonical registry at
+// `src/lib/plugins.ts` so this map can never drift from the actual packages
+// shipped under `packages/`. Adding a plugin = appending to the registry.
+const PLUGIN_PATHS: Record<string, string> = Object.fromEntries(
+  PLUGINS.map((p) => [p.slug, `packages/${p.package}`]),
+);
 
 interface ChangelogEntry {
   version: string;

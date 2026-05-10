@@ -168,7 +168,7 @@ export const noJsonSchemaTags = createRule<RuleOptions, MessageIds>({
       forbiddenTags.add(tag);
     }
 
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     return {
       Program() {

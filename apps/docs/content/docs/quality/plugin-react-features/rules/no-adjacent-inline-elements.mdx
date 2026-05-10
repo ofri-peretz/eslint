@@ -1,0 +1,248 @@
+---
+title: "no-adjacent-inline-elements"
+description: "title: no-adjacent-inline-elements"
+---
+
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
+
+---
+title: no-adjacent-inline-elements
+description: no-adjacent-inline-elements rule
+tags: ['quality', 'react']
+category: quality
+autofix: suggestions
+---
+
+no-adjacent-inline-elements rule
+
+> **Keywords:** React, JSX, inline elements, layout, accessibility, spacing, ESLint rule, LLM-optimized
+
+Prevents adjacent inline elements without proper spacing or wrapping. This rule is part of [`eslint-plugin-react-features`](https://www.npmjs.com/package/eslint-plugin-react-features) and provides LLM-optimized error messages.
+
+## Quick Summary
+
+| Aspect         | Details                                                              |
+| -------------- | -------------------------------------------------------------------- |
+| **Severity**   | Warning (layout best practice)                                       |
+| **Auto-Fix**   | ❌ No (requires layout refactoring)                                  |
+| **Category**   | React                                                                |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration                              |
+| **Best For**   | Proper spacing, accessible layouts                                   |
+
+## Rule Details
+
+```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#f8fafc',
+    'primaryTextColor': '#1e293b',
+    'primaryBorderColor': '#334155',
+    'lineColor': '#475569'
+  }
+}}%%
+flowchart TD
+    A["🔍 Check JSX children"] --> B{"Adjacent inline elements?"}
+    B -->|❌ No| C["✅ Pass"]
+    B -->|✅ Yes| D["⚠️ Report: Wrap in block container"]
+    
+    classDef startNode fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#1f2937
+    classDef errorNode fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#1f2937
+    classDef processNode fill:#eff6ff,stroke:#2563eb,stroke-width:2px,color:#1f2937
+    
+    class A startNode
+    class D errorNode
+    class C processNode
+
+```
+
+
+### Inline Elements Detected
+
+| Element  | Type         |
+| -------- | ------------ |
+| `<span>` | Inline       |
+| `<a>`    | Inline       |
+| `<strong>`, `<em>`, `<b>`, `<i>` | Inline |
+| `<code>`, `<kbd>`, `<samp>` | Inline |
+| `<abbr>`, `<cite>`, `<q>` | Inline |
+| `<time>`, `<mark>` | Inline |
+| `<sub>`, `<sup>` | Inline |
+| `<small>`, `<del>`, `<ins>` | Inline |
+
+### Why This Matters
+
+| Issue                   | Impact                          | Solution                       |
+| ----------------------- | ------------------------------- | ------------------------------ |
+| 📐 **Layout Issues**    | Elements may touch              | Add spacing or wrapper         |
+| ♿ **Accessibility**    | Screen readers may run together | Proper semantic structure      |
+| 🎨 **Styling**          | Hard to apply consistent styles | Use flex/grid containers       |
+| 📱 **Responsiveness**   | Unpredictable line breaks       | Control with block containers  |
+
+## Examples
+
+### ❌ Incorrect
+
+```jsx
+<div><em>Hello</em><b>World</b></div>
+```
+
+### ✅ Correct
+
+```jsx
+// Separated by text
+function Tags() {
+  return (
+    <div>
+      <span>Tag1</span> | <span>Tag2</span> | <span>Tag3</span>
+    </div>
+  );
+}
+
+// Wrapped in list
+function Links() {
+  return (
+    <nav>
+      <ul>
+        <li><a href="/home">Home</a></li>
+        <li><a href="/about">About</a></li>
+      </ul>
+    </nav>
+  );
+}
+
+// With proper spacing
+function Text() {
+  return (
+    <p>
+      <strong>Bold</strong> <em>Italic</em>
+    </p>
+  );
+}
+
+// Using flex container
+function TagList() {
+  return (
+    <div style={{ display: 'flex', gap: '8px' }}>
+      <span>Tag1</span>
+      <span>Tag2</span>
+      <span>Tag3</span>
+    </div>
+  );
+}
+```
+
+## Configuration
+
+```javascript
+{
+  rules: {
+    'react-features/no-adjacent-inline-elements': 'warn'
+  }
+}
+```
+
+## Proper Patterns
+
+| Problem                  | Solution                              |
+| ------------------------ | ------------------------------------- |
+| Adjacent `<span>`s       | Flexbox with gap                      |
+| Adjacent `<a>`s          | List structure `<ul><li>`             |
+| Adjacent formatting      | Add space between: `text {" "} text`  |
+| Adjacent badges          | Use CSS gap or margin                 |
+
+### Using CSS Gap
+
+```jsx
+// Correct with CSS
+const styles = {
+  container: {
+    display: 'flex',
+    gap: '8px'
+  }
+};
+
+function TagList({ tags }) {
+  return (
+    <div style={styles.container}>
+      {tags.map(tag => (
+        <span key={tag}>{tag}</span>
+      ))}
+    </div>
+  );
+}
+```
+
+### Using JSX Spacing
+
+```jsx
+// Explicit space between elements
+function Breadcrumbs({ items }) {
+  return (
+    <nav>
+      {items.map((item, index) => (
+        <React.Fragment key={item.path}>
+          {index > 0 && ' / '}
+          <a href={item.path}>{item.label}</a>
+        </React.Fragment>
+      ))}
+    </nav>
+  );
+}
+```
+
+## Related Rules
+
+- [`jsx-max-depth`](./jsx-max-depth.md) - Limit JSX nesting
+- [`no-children-prop`](./no-children-prop.md) - Proper children handling
+
+## Further Reading
+
+- **[Inline Elements](https://developer.mozilla.org/en-US/docs/Web/HTML/Inline_elements)** - MDN reference
+- **[CSS Flexbox](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Flexible_Box_Layout)** - Layout guide
+- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration
+<WhenNotToUse />
+
+<FalseNegativeCTA />
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Dynamic Variable References
+
+**Why**: Static analysis cannot trace values stored in variables or passed through function parameters.
+
+```typescript
+// ❌ NOT DETECTED - Prop from variable
+const propValue = computedValue;
+<Component prop={propValue} /> // Computation not analyzed
+```
+
+**Mitigation**: Implement runtime validation and review code manually. Consider using TypeScript branded types for validated inputs.
+
+### Wrapped or Aliased Functions
+
+**Why**: Custom wrapper functions or aliased methods are not recognized by the rule.
+
+```typescript
+// ❌ NOT DETECTED - Custom wrapper
+function myWrapper(data) {
+  return internalApi(data); // Wrapper not analyzed
+}
+myWrapper(unsafeInput);
+```
+
+**Mitigation**: Apply this rule's principles to wrapper function implementations. Avoid aliasing security-sensitive functions.
+
+### Imported Values
+
+**Why**: When values come from imports, the rule cannot analyze their origin or construction.
+
+```typescript
+// ❌ NOT DETECTED - Value from import
+import { getValue } from './helpers';
+processValue(getValue()); // Cross-file not tracked
+```
+
+**Mitigation**: Ensure imported values follow the same constraints. Use TypeScript for type safety.

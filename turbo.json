@@ -68,6 +68,28 @@
     "//#lint:md": {
       "inputs": [".markdownlint.json", "**/*.md", "!node_modules/**", "!**/dist/**"],
       "outputs": []
+    },
+    "storybook": {
+      "cache": false,
+      "persistent": true
+    },
+    "build-storybook": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        ".storybook/**",
+        "src/**",
+        "test-runner.ts",
+        "vite.config.ts",
+        "tsconfig.json",
+        "postcss.config.mjs",
+        "package.json"
+      ],
+      "outputs": ["storybook-static/**"]
+    },
+    "test-storybook": {
+      "dependsOn": ["build-storybook"],
+      "inputs": [".storybook/**", "src/**", "test-runner.ts", "package.json"],
+      "outputs": []
     }
   }
 }

@@ -15,7 +15,7 @@ const ruleTester = new RuleTester({
 
 const createSuggestion = (codeLine: string) => ({
     messageId: 'addIgnoreComment',
-    output: `// eslint-disable-next-line eslint-plugin-llm-optimized/no-unresolved\n${codeLine}`
+    output: `// eslint-disable-next-line import-next/no-unresolved\n${codeLine}`
 });
 
 ruleTester.run('no-unresolved', noUnresolved, {

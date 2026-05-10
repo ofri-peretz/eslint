@@ -1,9 +1,177 @@
 ---
-title: no-system-prompt-leak
-description: ESLint rule documentation for no-system-prompt-leak
-icon: FileCode
+title: "no-system-prompt-leak"
+description: "title: no-system-prompt-leak"
 ---
 
-import { RemoteRuleDoc } from '@/components/docs/remote-rule-doc';
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
-<RemoteRuleDoc plugin="vercel-ai-security" rule="no-system-prompt-leak" />
+---
+title: no-system-prompt-leak
+description: This rule identifies code patterns where system prompts or AI instructions are returned in API responses, logged, or ...
+tags: ['security', 'ai']
+category: security
+severity: medium
+cwe: CWE-200
+autofix: false
+---
+
+> Prevents system prompts from being exposed in API responses or client code.
+
+This rule identifies code patterns where system prompts or AI instructions are returned in API responses, logged, or ...
+
+## 📊 Rule Details
+
+| Property           | Value                                                                                                       |
+| ------------------ | ----------------------------------------------------------------------------------------------------------- |
+| **Type**           | problem                                                                                                     |
+| **Severity**       | 🔴 HIGH                                                                                                     |
+| **OWASP LLM**      | [LLM07: System Prompt Leakage](https://owasp.org/www-project-top-10-for-large-language-model-applications/) |
+| **CWE**            | [CWE-200: Information Exposure](https://cwe.mitre.org/data/definitions/200.html)                            |
+| **CVSS**           | 7.5                                                                                                         |
+| **Config Default** | `error` (recommended, strict)                                                                               |
+
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE / OWASP-LLM** | [CWE-200](https://cwe.mitre.org/data/definitions/200.html) — Information Exposure · [OWASP LLM07: System Prompt Leakage](https://owasp.org/www-project-top-10-for-large-language-model-applications/) |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · 10,000+× cheaper than customer disclosure ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** AI/ML platforms (system prompts encode the product moat) · **High:** B2B SaaS shipping AI features, infra/devtools (AI-tooling category) · **Medium:** B2C, fintech (AI risk-modeling), healthtech (clinical-AI guardrails) |
+| **Investor-frame impact** | System-prompt leakage → loss of competitive moat (the prompt *is* the product for many AI startups) + indirect IP/data exposure. AI-niche-specific rule class with no equivalent in pre-LLM analyzers; lint-time prevention is the cheapest defense for an attack class that didn't exist three years ago. |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
+## 🔍 What This Rule Detects
+
+This rule identifies code patterns where system prompts or AI instructions are returned in API responses, logged, or otherwise exposed to clients. System prompts often contain sensitive business logic and instructions that should remain server-side only.
+
+## ❌ Incorrect Code
+
+```typescript
+// System prompt in API response
+return Response.json({
+  systemPrompt: SYSTEM_PROMPT,
+  response: result.text,
+});
+
+// System prompt returned directly
+export function getConfig() {
+  return systemPrompt;
+}
+
+// System message exposed
+res.json({
+  systemMessage: config.systemMessage,
+  data: result,
+});
+
+// Instructions exposed
+return {
+  instructions: AI_INSTRUCTIONS,
+  output: response,
+};
+```
+
+## ✅ Correct Code
+
+```typescript
+// Only response returned
+return Response.json({
+  response: result.text,
+});
+
+// No system prompt in public API
+export function getResponse() {
+  return { data: result.text };
+}
+
+// System prompt kept server-side
+const systemPrompt = getSystemPrompt(); // Used internally
+return res.json({ output: await generateWithPrompt(systemPrompt) });
+```
+
+## ⚙️ Options
+
+| Option                 | Type       | Default                                                                                              | Description                                 |
+| ---------------------- | ---------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `systemPromptPatterns` | `string[]` | `['systemPrompt', 'system_prompt', 'SYSTEM_PROMPT', 'systemMessage', 'instructions', 'agentPrompt']` | Variable patterns suggesting system prompts |
+
+## 🛡️ Why This Matters
+
+Exposing system prompts allows attackers to:
+
+- **Understand AI behavior** - Learn how to manipulate responses
+- **Craft targeted attacks** - Design prompts that bypass safety measures
+- **Extract business logic** - Understand proprietary AI configurations
+- **Find vulnerabilities** - Identify weaknesses in prompt engineering
+
+## 🔗 Related Rules
+
+- [`no-dynamic-system-prompt`](./no-dynamic-system-prompt.md) - Prevent dynamic system prompts
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Custom Field Names
+
+**Why**: Only configured pattern names are checked.
+
+```typescript
+// ❌ NOT DETECTED - Custom field name
+return Response.json({
+  aiConfig: SYSTEM_PROMPT, // Not in default patterns
+  response: result.text,
+});
+```
+
+**Mitigation**: Configure `systemPromptPatterns` with custom field names.
+
+### Nested Object Access
+
+**Why**: Deep property access may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - Nested exposure
+return Response.json({
+  config: { prompt: systemPrompt }, // Nested
+});
+```
+
+**Mitigation**: Review response structure. Avoid nesting sensitive data.
+
+### Spread Operator
+
+**Why**: Spread may include system prompt unknowingly.
+
+```typescript
+// ❌ NOT DETECTED - System prompt in spread
+const config = { systemPrompt: '...', other: 'data' };
+return Response.json({ ...config }); // Exposes systemPrompt!
+```
+
+**Mitigation**: Never spread objects containing system prompts.
+
+### Serialized/Transformed Data
+
+**Why**: Transformed data is not traced.
+
+```typescript
+// ❌ NOT DETECTED - Serialized before return
+const data = JSON.stringify({ systemPrompt, result });
+return Response.json({ payload: data });
+```
+
+**Mitigation**: Never serialize system prompts.
+
+## 📚 References
+
+- [OWASP LLM07: System Prompt Leakage](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
+- [CWE-200: Information Exposure](https://cwe.mitre.org/data/definitions/200.html)

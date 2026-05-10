@@ -8,6 +8,7 @@
     "sync-stats": "tsx scripts/sync-plugin-stats.ts",
     "sync-tweets": "tsx scripts/sync-tweet-cache.ts",
     "sync-devto": "tsx scripts/sync-devto-cache.ts",
+    "sync:agents": "tsx ../../scripts/sync-agents.ts",
     "start": "next start",
     "types:check": "fumadocs-mdx && next typegen && tsc --noEmit",
     "postinstall": "fumadocs-mdx",
@@ -17,12 +18,14 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:update": "playwright test --update-snapshots",
-    "test:css": "vitest run src/__tests__/tailwind-classes.test.ts"
+    "test:css": "vitest run src/__tests__/tailwind-classes.test.ts",
+    "test:a11y": "playwright test e2e/a11y.spec.ts --project=chromium --reporter=list",
+    "a11y:report": "tsx scripts/a11y-summary.ts"
   },
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-beta.6",
     "@fumadocs/mdx-remote": "^1.4.4",
-    "@radix-ui/react-slot": "^1.2.4",
+    "@interlace/ui": "*",
     "@tailwindcss/postcss": "^4.1.18",
     "clsx": "^2.1.1",
     "fumadocs-core": "^16.5.0",
@@ -30,17 +33,20 @@
     "fumadocs-ui": "^16.5.0",
     "mermaid": "^11.12.2",
     "motion": "^12.29.2",
+    "next": "^16.1.6",
+    "radix-ui": "^1.4.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-tweet": "^3.3.0",
     "tailwind-merge": "^3.4.0",
-    "next": "^16.1.6",
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.3",
     "@playwright/test": "^1.49.0",
     "@types/mdx": "^2.0.13",
     "@types/node": "^22.0.0",
+    "axe-core": "^4.11.4",
     "vitest": "^2.1.0"
   }
 }

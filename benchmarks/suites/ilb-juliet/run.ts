@@ -130,7 +130,7 @@ function discoverCorpus() {
     .map((cwe) => {
       const dir = path.join(CORPUS_DIR, cwe);
       const manifestPath = path.join(dir, "manifest.json");
-      let manifest = {};
+      let manifest: any = {};
       if (fs.existsSync(manifestPath)) {
         try {
           manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
@@ -304,7 +304,7 @@ async function main() {
     console.log("");
     console.log("| Plugin | TP | FP | FN | Precision | Recall | F1 | BAS |");
     console.log("|---|---|---|---|---|---|---|---|");
-    const sorted = Object.entries(data.plugins).sort(
+    const sorted = (Object.entries(data.plugins) as Array<[string, any]>).sort(
       (a, b) => b[1].aggregate.f1 - a[1].aggregate.f1,
     );
     for (const [, p] of sorted) {

@@ -1,0 +1,33 @@
+@import 'tailwindcss';
+@import '@interlace/ui/styles/tokens.css';
+
+@source "../../../../packages/ui/src";
+@source "../src";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Storybook canvas tweaks: respect reduced motion + give cards breathing room. */
+html {
+  font-family: 'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont,
+    sans-serif;
+}
+
+body {
+  background: hsl(var(--background, 0 0% 100%));
+  color: hsl(var(--foreground, 0 0% 9%));
+}
+
+.sb-show-main {
+  padding: 1.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

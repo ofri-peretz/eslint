@@ -258,7 +258,7 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
       trustedAnnotations = [],
       strictMode = false,
     }: Options = options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
 
     // Create safety checker for false positive detection
     const safetyChecker = createSafetyChecker({

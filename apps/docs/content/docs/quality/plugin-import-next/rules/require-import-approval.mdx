@@ -1,17 +1,90 @@
 ---
-title: 'require-import-approval'
-description: ESLint rule documentation for require-import-approval
+title: "require-import-approval"
+description: "Enforce explicit approval for high-risk package imports"
 ---
 
-import { RemoteRuleDoc } from '@/components/docs/remote-rule-doc';
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
-<RemoteRuleDoc plugin="import-next" rule="require-import-approval" />
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
 
-<a
-  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/require-import-approval.md"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="inline-flex items-center gap-1 text-sm text-fd-muted-foreground hover:text-fd-foreground mt-6"
->
-  Edit this page on GitHub →
-</a>
+Enforce explicit approval for high-risk package imports
+
+## Rule Details
+
+This rule aims to prevent issues related to require-import-approval.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "packages": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "package": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "approved",
+                "pending",
+                "blocked"
+              ]
+            },
+            "reason": {
+              "type": "string"
+            },
+            "alternative": {
+              "type": "string"
+            },
+            "approvedBy": {
+              "type": "string"
+            },
+            "approvedDate": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "package",
+            "status"
+          ]
+        }
+      },
+      "defaultPolicy": {
+        "type": "string",
+        "enum": [
+          "allow",
+          "deny"
+        ],
+        "default": "allow"
+      },
+      "ignorePatterns": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": []
+      }
+    },
+    "required": [
+      "packages"
+    ],
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/require-import-approval.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/require-import-approval.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

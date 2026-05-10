@@ -91,7 +91,7 @@ export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
     [options = {}],
   ) {
     const { allowInTests = true, allowLocalhost = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -155,7 +155,7 @@ export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
             return;
           }
 
-          const sourceCode = context.sourceCode || context.getSourceCode();
+          const sourceCode = context.sourceCode;
           const originalText = sourceCode.getText(urlArg);
           const fixedText = originalText.replace('ws://', 'wss://');
 

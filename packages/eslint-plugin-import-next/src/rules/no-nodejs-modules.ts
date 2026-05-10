@@ -240,7 +240,7 @@ export const noNodejsModules = createRule<RuleOptions, MessageIds>({
         data: {
           moduleName,
           builtinName,
-          currentFile: context.getFilename(),
+          currentFile: context.filename,
           alternative,
           suggestion: fixSuggestion,
         },

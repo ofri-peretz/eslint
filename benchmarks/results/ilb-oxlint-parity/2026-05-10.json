@@ -1,7 +1,7 @@
 {
   "suite": "ilb-oxlint-parity",
   "version": "1.0",
-  "runAt": "2026-05-10T00:22:30.965Z",
+  "runAt": "2026-05-10T19:14:45.578Z",
   "corpus": "benchmarks/corpus/CWE-089",
   "eslintFindings": 6,
   "oxlintFindings": 6,

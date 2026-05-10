@@ -1,8 +1,100 @@
 ---
-title: 'require-network-timeout'
-description: ESLint rule documentation for require-network-timeout
+title: "require-network-timeout"
+description: "title: require-network-timeout"
 ---
 
-import { RemoteRuleDoc } from '@/components/docs/remote-rule-doc';
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
-<RemoteRuleDoc plugin="reliability" rule="require-network-timeout" />
+---
+title: require-network-timeout
+description: Require timeout configuration for network requests. This rule is part of eslint-plugin-reliability and provides LLM-optimized error messages.
+tags: ['quality', 'reliability']
+category: quality
+autofix: suggestions
+---
+
+> **Keywords:** network, timeout, fetch, http, ESLint rule, reliability, performance, LLM-optimized
+
+Require timeout configuration for network requests. This rule is part of eslint-plugin-reliability and provides LLM-optimized error messages.
+
+Require timeout configuration for network requests. This rule is part of [`eslint-plugin-reliability`](https://www.npmjs.com/package/eslint-plugin-reliability) and provides LLM-optimized error messages with suggestions.
+
+## Quick Summary
+
+| Aspect         | Details                                 |
+| -------------- | --------------------------------------- |
+| **Severity**   | Warning (reliability)                   |
+| **Auto-Fix**   | 💡 Suggests fixes                       |
+| **Category**   | Reliability                             |
+| **ESLint MCP** | ✅ Optimized for ESLint MCP integration |
+| **Best For**   | Applications making HTTP requests       |
+
+## Rule Details
+
+This rule ensures that all network requests include timeout configuration to prevent hanging connections and improve application reliability.
+
+### Why This Matters
+
+| Issue                   | Impact                        | Solution               |
+| ----------------------- | ----------------------------- | ---------------------- |
+| ⏱️ **Hanging Requests** | App freezes waiting forever   | Set explicit timeouts  |
+| 🔄 **Resource Leaks**   | Connections never released    | Abort after timeout    |
+| 👤 **User Experience**  | Users wait indefinitely       | Fail fast with timeout |
+| 📊 **Monitoring**       | Hard to detect slow endpoints | Timeout helps identify |
+
+## Examples
+
+### ❌ Incorrect
+
+```typescript
+// fetch without timeout
+const response = await fetch('/api/data');
+
+// axios without timeout
+const result = await axios.get('/api/users');
+
+// HTTP client without timeout config
+const data = await httpClient.request({ url: '/api' });
+```
+
+### ✅ Correct
+
+```typescript
+fetch(url, { timeout: 5000 })
+```
+
+## Configuration Examples
+
+### Basic Usage
+
+```javascript
+{
+  rules: {
+    'reliability/require-network-timeout': 'warn'
+  }
+}
+```
+
+### Custom Timeout Threshold
+
+```javascript
+{
+  rules: {
+    'reliability/require-network-timeout': ['warn', {
+      minTimeout: 3000,
+      maxTimeout: 30000
+    }]
+  }
+}
+```
+
+## Related Rules
+
+- [`no-await-in-loop`](./no-await-in-loop.mdx) - Optimize async loops
+- [`no-unhandled-promise`](../maintainability/rules/no-unhandled-promise.mdx) - Handle async errors
+
+## Further Reading
+
+- **[AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController)** - MDN documentation
+- **[Axios Timeout](https://axios-http.com/docs/req_config)** - Axios configuration
+- **[ESLint MCP Setup](https://eslint.org/docs/latest/use/mcp)** - Enable AI assistant integration

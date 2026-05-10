@@ -21,6 +21,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -40,7 +41,7 @@ const SECURITY_PLUGINS = [
 
 // ── Static Analysis Engine ───────────────────────────────────────────
 
-function auditRule(pluginName, ruleName) {
+function auditRule(pluginName: string, ruleName: string): any {
   const ruleDir = path.join(ROOT, 'packages', `eslint-plugin-${pluginName}`, 'src', 'rules', ruleName);
   const ruleFile = path.join(ruleDir, 'index.ts');
   const testFileCandidates = [
@@ -506,9 +507,9 @@ if (!jsonOutput && (fleetMode || allMode)) {
     if (r.score >= 70) byPlugin[plugin].passing++;
   }
 
-  for (const [plugin, stats] of Object.entries(byPlugin).sort((a, b) => {
-    const avgA = a[1].scores.reduce((s, v) => s + v, 0) / a[1].scores.length;
-    const avgB = b[1].scores.reduce((s, v) => s + v, 0) / b[1].scores.length;
+  for (const [plugin, stats] of (Object.entries(byPlugin) as Array<[string, any]>).sort((a, b) => {
+    const avgA = a[1].scores.reduce((s: number, v: number) => s + v, 0) / a[1].scores.length;
+    const avgB = b[1].scores.reduce((s: number, v: number) => s + v, 0) / b[1].scores.length;
     return avgA - avgB;
   })) {
     const avg = Math.round(stats.scores.reduce((s, v) => s + v, 0) / stats.scores.length);

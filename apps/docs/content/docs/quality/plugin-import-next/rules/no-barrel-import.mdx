@@ -1,17 +1,58 @@
 ---
-title: 'no-barrel-import'
-description: ESLint rule documentation for no-barrel-import
+title: "no-barrel-import"
+description: "Disallow imports from barrel files to improve build performance and tree-shaking"
 ---
 
-import { RemoteRuleDoc } from '@/components/docs/remote-rule-doc';
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
-<RemoteRuleDoc plugin="import-next" rule="no-barrel-import" />
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
 
-<a
-  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-barrel-import.md"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="inline-flex items-center gap-1 text-sm text-fd-muted-foreground hover:text-fd-foreground mt-6"
->
-  Edit this page on GitHub →
-</a>
+Disallow imports from barrel files to improve build performance and tree-shaking
+
+## Rule Details
+
+This rule aims to prevent issues related to barrel-import.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "knownBarrels": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": [],
+        "description": "Regex patterns for paths known to be barrels"
+      },
+      "ignoreNodeModules": {
+        "type": "boolean",
+        "default": true,
+        "description": "Ignore imports from node_modules"
+      },
+      "ignoredPackages": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": [],
+        "description": "Packages to ignore (good tree-shaking support)"
+      }
+    },
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/no-barrel-import.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/no-barrel-import.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

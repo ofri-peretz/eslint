@@ -354,7 +354,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
      * Extract expression text for pattern analysis
      */
     const extractExpression = (node: TSESTree.CallExpression): string => {
-      const sourceCode = context.sourceCode || context.sourceCode;
+      const sourceCode = context.sourceCode;
 
       // Try to get the argument text
       if (node.arguments.length > 0) {
@@ -448,7 +448,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
     const checkNewExpression = (node: TSESTree.NewExpression) => {
       // Check for new Function() usage
       if (node.callee.type === 'Identifier' && node.callee.name === 'Function') {
-        const sourceCode = context.sourceCode || context.sourceCode;
+        const sourceCode = context.sourceCode;
         const expression = node.arguments.map((arg: TSESTree.Node) => sourceCode.getText(arg)).join(', ');
         const pattern = detectPattern(expression);
         const strategyMessageId = selectStrategyMessage(pattern);

@@ -1,17 +1,197 @@
 ---
-title: 'no-unsafe-deserialization'
-description: ESLint security rule documentation for no-unsafe-deserialization
+title: "no-unsafe-deserialization"
+description: "title: no-unsafe-deserialization"
 ---
 
-import { RemoteRuleDoc } from '@/components/docs/remote-rule-doc';
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
-<RemoteRuleDoc plugin="secure-coding" rule="no-unsafe-deserialization" />
+---
+title: no-unsafe-deserialization
+description: Detects unsafe deserialization of untrusted data
+tags: ['security', 'core']
+category: security
+severity: medium
+cwe: CWE-502
+autofix: false
+---
 
-<a
-  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-unsafe-deserialization.md"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="inline-flex items-center gap-1 text-sm text-fd-muted-foreground hover:text-fd-foreground mt-6"
->
-  Edit this page on GitHub →
-</a>
+> **Keywords:** unsafe deserialization, CWE-502, RCE, code execution, YAML, pickle, security
+
+Detects unsafe deserialization of untrusted data
+
+**CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
+
+Detects unsafe deserialization of untrusted data. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
+
+💼 This rule is set to **error** in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                             |
+| ----------------- | ----------------------------------------------------------------------------------- |
+| **CWE Reference** | [CWE-502](https://cwe.mitre.org/data/definitions/502.html) (Unsafe Deserialization) |
+| **Severity**      | Critical (CVSS 9.8)                                                                 |
+| **Auto-Fix**      | 💡 Suggestions available                                                            |
+| **Category**   | Security |
+
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE** | [CWE-502](https://cwe.mitre.org/data/definitions/502.html) — Deserialization of Untrusted Data (CVSS 9.8 — Critical) |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · **10,000+× cheaper than disclosure** — RCE-class vulnerability sits at the highest tier of the cost-ratio table ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** fintech, cybersecurity, infra/devtools (downstream RCE blast radius) · **High:** B2B SaaS, healthtech · **Medium:** B2C, marketplaces |
+| **Investor-frame impact** | Insecure deserialization → Remote Code Execution (CVSS 9.8). One incident = full system compromise → mandatory disclosure → audit cycle restart → customer trust event. The single highest-leverage rule by counterfactual-value math: the catch costs ~$0; the unprevented bug costs the company. |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
+## Vulnerability and Risk
+
+**Vulnerability:** Unsafe deserialization happens when an application accepts serialized objects from untrusted sources and deserializes them without validation.
+
+**Risk:** Serialized data can contain malicious payloads that, upon deserialization, execute arbitrary code (Remote Code Execution - RCE), modify application logic, or cause Denial of Service (DoS). This is often considered one of the most critical security risks.
+
+## Rule Details
+
+Unsafe deserialization occurs when untrusted data is deserialized in a way that allows attackers to execute arbitrary code or manipulate application logic. This includes:
+
+- Using `eval()` or `Function()` on untrusted data
+- YAML parsers that execute code
+- JSON with prototype pollution
+- Insecure serialization libraries
+
+### Why This Matters
+
+| Issue                      | Impact                 | Solution                       |
+| -------------------------- | ---------------------- | ------------------------------ |
+| 💻 **RCE**                 | Full system compromise | Use safe deserializers         |
+| 🎭 **Object Manipulation** | Logic bypass           | Validate before deserializing  |
+| 🔓 **Auth Bypass**         | Unauthorized access    | Use JSON.parse() for JSON data |
+
+## Examples
+
+### ❌ Incorrect
+
+```typescript
+const func = new Function(req.body.input);
+```
+
+### ✅ Correct
+
+```typescript
+// Use JSON.parse() for JSON data
+const data = JSON.parse(userInput);
+
+// YAML with safeLoad
+import yaml from 'js-yaml';
+const config = yaml.safeLoad(userYaml);
+// Or with explicit safe schema
+const config = yaml.load(userYaml, { schema: yaml.SAFE_SCHEMA });
+
+// Validate before deserialization
+if (isValidJson(userInput)) {
+  const data = JSON.parse(userInput);
+}
+
+// Use safe serialization libraries
+import { safeDeserialize } from 'safe-serialize';
+const obj = safeDeserialize(userInput);
+```
+
+## Configuration
+
+```javascript
+{
+  rules: {
+    'secure-coding/no-unsafe-deserialization': ['error', {
+      dangerousFunctions: ['eval', 'Function', 'serialize.unserialize'],
+      safeLibraries: ['safe-serialize', 'json5'],
+      validationFunctions: ['isValidJson', 'validateInput']
+    }]
+  }
+}
+```
+
+## Options
+
+| Option                | Type       | Default                               | Description                         |
+| --------------------- | ---------- | ------------------------------------- | ----------------------------------- |
+| `dangerousFunctions`  | `string[]` | `['eval', 'Function', 'unserialize']` | Dangerous deserialization functions |
+| `safeLibraries`       | `string[]` | `['safe-serialize']`                  | Safe deserialization libraries      |
+| `validationFunctions` | `string[]` | `['isValidJson', 'validateInput']`    | Input validation functions          |
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-502 OWASP:A08 CVSS:9.8 | Deserialization of Untrusted Data detected | CRITICAL
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A08_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-502](https://cwe.mitre.org/data/definitions/502.html) [OWASP:A08](https://owasp.org/Top10/A08_2021-Injection/) [CVSS:9.8](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description** | Specific vulnerability | `Deserialization of Untrusted Data detected` |
+| **Severity & Compliance** | Impact assessment | `CRITICAL` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A08_2021-Injection/) |
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Values from Variables
+
+**Why**: Values stored in variables are not traced.
+
+```typescript
+// ❌ NOT DETECTED - Value from variable
+const value = userInput;
+dangerousOperation(value);
+```
+
+**Mitigation**: Validate all user inputs.
+
+### Wrapper Functions
+
+**Why**: Custom wrappers not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Wrapper
+myWrapper(userInput); // Uses dangerous API internally
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
+### Dynamic Invocation
+
+**Why**: Dynamic calls not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Dynamic
+obj[method](userInput);
+```
+
+**Mitigation**: Avoid dynamic method invocation.
+
+## Further Reading
+
+- **[OWASP Deserialization](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/16-Testing_for_Insecure_Deserialization)** - Testing guide
+- **[CWE-502](https://cwe.mitre.org/data/definitions/502.html)** - Official CWE entry
+- **[js-yaml Security](https://www.npmjs.com/package/js-yaml#security)** - YAML security
+
+## Related Rules
+
+- [`detect-eval-with-expression`](./detect-eval-with-expression.md) - eval() injection
+- [`detect-object-injection`](./detect-object-injection.md) - Prototype pollution

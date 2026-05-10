@@ -1,17 +1,197 @@
 ---
-title: 'no-graphql-injection'
-description: ESLint security rule documentation for no-graphql-injection
+title: "no-graphql-injection"
+description: "title: no-graphql-injection"
 ---
 
-import { RemoteRuleDoc } from '@/components/docs/remote-rule-doc';
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
-<RemoteRuleDoc plugin="secure-coding" rule="no-graphql-injection" />
+---
+title: no-graphql-injection
+description: Detects GraphQL injection vulnerabilities and DoS attacks
+tags: ['security', 'core']
+category: security
+severity: critical
+cwe: CWE-943
+autofix: false
+---
 
-<a
-  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-graphql-injection.md"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="inline-flex items-center gap-1 text-sm text-fd-muted-foreground hover:text-fd-foreground mt-6"
->
-  Edit this page on GitHub →
-</a>
+> **Keywords:** GraphQL injection, CWE-943, CWE-400, security, DoS, introspection, query complexity, LLM-optimized
+
+Detects GraphQL injection vulnerabilities and DoS attacks
+
+**CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  
+**OWASP Mobile:** [OWASP Mobile Top 10](https://owasp.org/www-project-mobile-top-10/)
+
+Detects GraphQL injection vulnerabilities and DoS attacks. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding) and provides LLM-optimized error messages.
+
+💼 This rule is set to **error** in the `recommended` config.
+
+## Quick Summary
+
+| Aspect            | Details                                                                                                                                          |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **CWE Reference** | [CWE-943](https://cwe.mitre.org/data/definitions/943.html) (GraphQL Injection), [CWE-400](https://cwe.mitre.org/data/definitions/400.html) (DoS) |
+| **Severity**      | Critical                                                                                                                                         |
+| **Auto-Fix**      | 💡 Suggestions available                                                                                                                         |
+| **Category**   | Security |
+
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE** | [CWE-943](https://cwe.mitre.org/data/definitions/943.html) — Improper Neutralization in Data Query Logic + [CWE-400](https://cwe.mitre.org/data/definitions/400.html) (DoS) |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · 10,000+× cheaper than customer disclosure ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** B2B SaaS (GraphQL-heavy modern API surface), fintech · **High:** marketplaces, infra/devtools, healthtech · **Medium:** B2C |
+| **Investor-frame impact** | GraphQL injection → unauthorized data access across multiple tenants in a B2B SaaS = single-incident multi-customer disclosure cycle. Catch at lint-time prevents the breach class entirely. |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
+## Vulnerability and Risk
+
+**Vulnerability:** GraphQL injection arises when backend queries are constructed dynamically using user inputs via string concatenation or interpolation, instead of using standard GraphQL variables.
+
+**Risk:** Attackers can manipulate the query structure to bypass permissions, access unauthorized data fields, perform Denial of Service (DoS) via nested queries, or execute batching attacks to overload the server.
+
+## Rule Details
+
+GraphQL injection occurs when user input is improperly inserted into GraphQL queries, allowing attackers to:
+
+- Read or modify unauthorized data
+- Perform DoS attacks with complex/nested queries
+- Extract schema information via introspection
+
+### Why This Matters
+
+| Issue            | Impact                   | Solution                            |
+| ---------------- | ------------------------ | ----------------------------------- |
+| 🔒 **Injection** | Unauthorized data access | Use GraphQL variables               |
+| 🔥 **DoS**       | Service unavailability   | Limit query depth/complexity        |
+| 🔍 **Info Leak** | Schema exposure          | Disable introspection in production |
+
+## Examples
+
+### ❌ Incorrect
+
+```typescript
+// String interpolation in GraphQL query
+const query = `
+  query {
+    user(id: "${userId}") {
+      name
+      email
+    }
+  }
+`;
+
+// Introspection query in production
+const introspect = `{ __schema { types { name } } }`;
+
+// String concatenation
+const searchQuery = 'query { users(name: "' + userInput + '") { id } }';
+```
+
+### ✅ Correct
+
+```typescript
+// Use GraphQL variables
+const query = gql`
+  query GetUser($userId: ID!) {
+    user(id: $userId) {
+      name
+      email
+    }
+  }
+`;
+await client.query({ query, variables: { userId } });
+
+// Use query builders
+import { buildQuery } from 'graphql-tools';
+const safeQuery = buildQuery({ user: { id: userId } });
+```
+
+## Configuration
+
+```javascript
+{
+  rules: {
+    'secure-coding/no-graphql-injection': ['error', {
+      allowIntrospection: false,       // Disable introspection detection
+      maxQueryDepth: 10,               // Maximum query nesting depth
+      trustedGraphqlLibraries: ['graphql', 'apollo-server', 'graphql-tools'],
+      validationFunctions: ['validate', 'sanitize']
+    }]
+  }
+}
+```
+
+## Options
+
+| Option                    | Type       | Default                        | Description                 |
+| ------------------------- | ---------- | ------------------------------ | --------------------------- |
+| `allowIntrospection`      | `boolean`  | `false`                        | Allow introspection queries |
+| `maxQueryDepth`           | `number`   | `10`                           | Maximum allowed query depth |
+| `trustedGraphqlLibraries` | `string[]` | `['graphql', 'apollo-server']` | Safe GraphQL libraries      |
+| `validationFunctions`     | `string[]` | `['validate', 'sanitize']`     | Input validation functions  |
+
+## Error Message Format
+
+```
+🔒 CWE-943 OWASP:A03-Injection CVSS:8.6 | GraphQL Injection detected | CRITICAL [SOC2,PCI-DSS]
+   Fix: Use GraphQL variables instead of string interpolation | https://owasp.org/...
+```
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Query from Variable
+
+**Why**: Query strings from variables not traced.
+
+```typescript
+// ❌ NOT DETECTED - Query from variable
+const query = `SELECT * FROM users WHERE id = ${userId}`;
+db.execute(query);
+```
+
+**Mitigation**: Always use parameterized queries.
+
+### Custom Query Builders
+
+**Why**: Custom ORM/query builders not recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom builder
+customQuery.where(userInput).execute();
+```
+
+**Mitigation**: Review all query builder patterns.
+
+### Template Engines
+
+**Why**: Template-based queries not analyzed.
+
+```typescript
+// ❌ NOT DETECTED - Template
+executeTemplate('query.sql', { userId });
+```
+
+**Mitigation**: Validate all template variables.
+
+## Further Reading
+
+- **[GraphQL Security](https://graphql.org/learn/authorization/)** - Official security guide
+- **[Apollo Security Checklist](https://www.apollographql.com/docs/apollo-server/security/)** - Production security
+- **[CWE-943](https://cwe.mitre.org/data/definitions/943.html)** - GraphQL injection documentation
+
+## Related Rules
+
+- [`no-sql-injection`](./no-sql-injection.md) - SQL injection prevention
+- [`detect-eval-with-expression`](./detect-eval-with-expression.md) - Code injection prevention

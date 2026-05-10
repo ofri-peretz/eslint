@@ -294,7 +294,7 @@ function verifyExpectation(ruleObject, pluginShort, ruleName, code, expected /* 
   ];
   for (const t of tries) {
     try {
-      const langOpts = {
+      const langOpts: any = {
         ecmaVersion: 'latest',
         sourceType: 'module',
         parserOptions: { ecmaFeatures: { jsx: t.jsx } },

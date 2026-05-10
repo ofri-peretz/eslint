@@ -201,7 +201,7 @@ export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
     [options = {}]
   ) {
     const { allowInTests = true, additionalMethods = [] } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -256,7 +256,7 @@ export const noUnsafeQuery = createRule<RuleOptions, MessageIds>({
                   {
                     messageId: 'suggestionUseEq',
                     fix(fixer: TSESLint.RuleFixer) {
-                      const sourceCode = context.sourceCode || context.getSourceCode();
+                      const sourceCode = context.sourceCode;
                       const valueText = sourceCode.getText(value);
                       return fixer.replaceText(value, `{ $eq: ${valueText} }`);
                     },

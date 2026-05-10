@@ -124,7 +124,7 @@ function cvssToWeight(cvss) {
  * @param {number} [opts.seed=42]
  * @returns {{ f1: number, low: number, high: number, resamples: number, ci: number, seed: number }}
  */
-export function bootstrapF1CI(observations, opts = {}) {
+export function bootstrapF1CI(observations: any[], opts: any = {}) {
   const resamples = opts.resamples ?? 1000;
   const ci = opts.ci ?? 0.95;
   const seed = opts.seed ?? 42;

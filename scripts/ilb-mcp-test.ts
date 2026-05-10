@@ -46,7 +46,7 @@ let totalFailures = 0;
 const perServer = [];
 
 async function testServer(plugin) {
-  const result = { plugin, ok: false, assertions: [] };
+  const result: any = { plugin, ok: false, assertions: [] };
   const serverPath = path.join(REPO_ROOT, 'packages', `${plugin}-mcp`, 'src', 'index.mjs');
   const child = spawn('node', [serverPath], { stdio: ['pipe', 'pipe', 'pipe'], cwd: REPO_ROOT });
 
@@ -54,9 +54,9 @@ async function testServer(plugin) {
   let pending = new Map();
   let nextId = 1;
 
-  function send(method, params) {
+  function send(method: string, params: any): Promise<any> {
     const id = nextId++;
-    return new Promise((resolve, reject) => {
+    return new Promise<any>((resolve, reject) => {
       const timeout = setTimeout(() => { pending.delete(id); reject(new Error(`timeout waiting for ${method}`)); }, 8000);
       pending.set(id, { resolve, reject, timeout });
       child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n');

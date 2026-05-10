@@ -1,9 +1,148 @@
 ---
-title: require-embedding-validation
-description: ESLint rule documentation for require-embedding-validation
-icon: FileCode
+title: "require-embedding-validation"
+description: "title: require-embedding-validation"
 ---
 
-import { RemoteRuleDoc } from '@/components/docs/remote-rule-doc';
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
-<RemoteRuleDoc plugin="vercel-ai-security" rule="require-embedding-validation" />
+---
+title: require-embedding-validation
+description: This rule identifies code patterns where embeddings are stored in vector databases without validation.
+tags: ['security', 'ai']
+category: security
+severity: medium
+cwe: CWE-20
+autofix: false
+---
+
+> Requires validation of embeddings before storage or similarity search.
+
+This rule identifies code patterns where embeddings are stored in vector databases without validation.
+
+## 📊 Rule Details
+
+| Property           | Value                                                                                                               |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| **Type**           | suggestion                                                                                                          |
+| **Severity**       | 🟡 MEDIUM                                                                                                           |
+| **OWASP LLM**      | [LLM08: Vector & Embedding Weaknesses](https://owasp.org/www-project-top-10-for-large-language-model-applications/) |
+| **CWE**            | [CWE-20: Improper Input Validation](https://cwe.mitre.org/data/definitions/20.html)                                 |
+| **CVSS**           | 5.5                                                                                                                 |
+| **Config Default** | `off` (recommended), `error` (strict)                                                                               |
+
+## 🔍 What This Rule Detects
+
+This rule identifies code patterns where embeddings are stored in vector databases without validation.
+
+## ❌ Incorrect Code
+
+```typescript
+// Direct embedding without validation
+await vectorStore.upsert({
+  id: docId,
+  embedding: await embed(text),
+});
+
+// Unvalidated createEmbedding
+await index.insert({
+  vector: await createEmbedding(input),
+});
+```
+
+## ✅ Correct Code
+
+```typescript
+// Validated embedding
+await vectorStore.upsert({
+  id: docId,
+  embedding: validateEmbedding(await embed(text)),
+});
+
+// Normalized vector
+await index.add({
+  vector: normalize(embedding),
+});
+```
+
+## ⚙️ Options
+
+| Option               | Type       | Default                                      | Description                         |
+| -------------------- | ---------- | -------------------------------------------- | ----------------------------------- |
+| `embeddingPatterns`  | `string[]` | `['embed', 'embedding', 'vector', 'encode']` | Patterns suggesting embedding calls |
+| `validatorFunctions` | `string[]` | `['validate', 'verify', 'normalize']`        | Functions that validate embeddings  |
+
+## 🛡️ Why This Matters
+
+Unvalidated embeddings can:
+
+- **Poison vector stores** - Malicious embeddings return incorrect results
+- **Cause DoS** - Invalid dimensions crash indexing
+- **Enable jailbreaks** - Crafted embeddings bypass safety
+- **Leak information** - Embedding inversion attacks
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Validation in Embedding Function
+
+**Why**: Validation inside called functions is not visible.
+
+```typescript
+// ❌ NOT DETECTED - Validation in embed function
+await vectorStore.upsert({
+  embedding: await safeEmbed(text), // Validates internally
+});
+```
+
+**Mitigation**: Document validation. Apply rule to embedding functions.
+
+### Custom Vector Store Methods
+
+**Why**: Non-standard methods may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom store method
+await myVectorDb.add(embedding); // Not in default patterns
+```
+
+**Mitigation**: Configure `embeddingPatterns` with custom method names.
+
+### Batch Embedding Operations
+
+**Why**: Batch operations may obscure individual validations.
+
+```typescript
+// ❌ NOT DETECTED - Batch operation
+await vectorStore.batchUpsert(embeddings); // Are all validated?
+```
+
+**Mitigation**: Validate before batching. Review batch implementations.
+
+## 📚 References
+
+- [OWASP LLM08: Vector & Embedding Weaknesses](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
+- [CWE-20: Improper Input Validation](https://cwe.mitre.org/data/definitions/20.html)
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+🔒 CWE-20 OWASP:A06 CVSS:7.5 | Improper Input Validation detected | HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A06_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-20](https://cwe.mitre.org/data/definitions/20.html) [OWASP:A06](https://owasp.org/Top10/A06_2021-Injection/) [CVSS:7.5](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description** | Specific vulnerability | `Improper Input Validation detected` |
+| **Severity & Compliance** | Impact assessment | `HIGH [SOC2,PCI-DSS,HIPAA,GDPR,ISO27001]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A06_2021-Injection/) |

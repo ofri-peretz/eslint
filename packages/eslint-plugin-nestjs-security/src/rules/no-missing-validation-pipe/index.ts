@@ -92,7 +92,7 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {

@@ -49,7 +49,12 @@ export default function Layout({ children }: LayoutProps<'/docs'>) {
         defaultOpenLevel: 1,
       }}
     >
-      {children}
+      {/* fumadocs DocsLayout / DocsPage render `<article>` for the page body
+          but no `<main>` landmark — wrap children so axe `landmark-one-main`
+          and `region` checks pass. */}
+      <main id="main-content" className="contents">
+        {children}
+      </main>
     </DocsLayout>
   );
 }

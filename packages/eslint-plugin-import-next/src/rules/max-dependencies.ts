@@ -118,7 +118,7 @@ export const maxDependencies = createRule<RuleOptions, MessageIds>({
       ignoreFiles = [],
     } = options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     if (!filename) {
       return {};
     }

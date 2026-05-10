@@ -160,7 +160,7 @@ export const nestedComplexityHotspots = createRule<RuleOptions, MessageIds>({
       countLoops = true,
     }: Options = options || {};
 
-    // const sourceCode = context.sourceCode || context.sourceCode; // Not used
+    // const sourceCode = context.sourceCode; // Not used
 
     /**
      * Check control structures

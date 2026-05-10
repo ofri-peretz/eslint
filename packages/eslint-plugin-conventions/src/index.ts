@@ -17,6 +17,7 @@ import { preferDependencyVersionStrategy } from './rules/conventions/prefer-depe
 import { filenameCase } from './rules/conventions/filename-case';
 import { consistentExistenceIndexCheck } from './rules/conventions/consistent-existence-index-check';
 import { noJsonSchemaTags } from './rules/conventions/no-json-schema-tags';
+import { requireDataTestId } from './rules/conventions/require-data-testid';
 
 export const rules = {
   'no-commented-code': noCommentedCode,
@@ -29,6 +30,7 @@ export const rules = {
   'filename-case': filenameCase,
   'consistent-existence-index-check': consistentExistenceIndexCheck,
   'no-json-schema-tags': noJsonSchemaTags,
+  'require-data-testid': requireDataTestId,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 export const plugin = {

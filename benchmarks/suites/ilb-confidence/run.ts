@@ -99,7 +99,7 @@ function indexPrecision(arena) {
   const sources = [arena.perRule, arena.rules, arena.summary?.perRule, arena.summary?.rules];
   for (const src of sources) {
     if (!src || typeof src !== 'object') continue;
-    for (const [ruleId, payload] of Object.entries(src)) {
+    for (const [ruleId, payload] of Object.entries(src) as Array<[string, any]>) {
       const p = typeof payload === 'object' ? payload?.precision : null;
       if (typeof p === 'number') idx.set(ruleId, p);
     }
@@ -169,7 +169,7 @@ async function main() {
   console.log('');
 
   console.log('Reliability diagram:');
-  for (const [bucket, data] of Object.entries(calibration.perBucket)) {
+  for (const [bucket, data] of Object.entries(calibration.perBucket) as Array<[string, any]>) {
     if (data.empiricalPrecision === null) {
       console.log(`  ${bucket.padEnd(8)} N=${data.count.toString().padStart(3)}   (no precision data)`);
       continue;

@@ -68,7 +68,7 @@ export const requireAbortSignal = createRule<RuleOptions, MessageIds>({
     const [options = {}] = context.options;
     const targetFunctions = options.targetFunctions ?? ['streamText', 'streamObject'];
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     return {
       CallExpression(node: TSESTree.CallExpression) {

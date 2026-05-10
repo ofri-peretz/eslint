@@ -60,7 +60,16 @@ function tokenize(text) {
 }
 
 class BM25 {
-  constructor(documents, { k1 = 1.5, b = 0.75 } = {}) {
+  k1: number;
+  b: number;
+  documents: any[];
+  docCount: number;
+  docFreq: Map<string, number>;
+  docTokens: string[][];
+  docLens: number[];
+  avgDocLen: number;
+  idf: Map<string, number>;
+  constructor(documents: any[], { k1 = 1.5, b = 0.75 } = {}) {
     this.k1 = k1;
     this.b = b;
     this.documents = documents;
@@ -168,7 +177,7 @@ function expandQuery(query) {
 
   // Phrase → rule-keyword mapping — high-signal lookup that turns colloquial
   // problem descriptions into the exact tokens rule names use.
-  const phraseMap = [
+  const phraseMap: Array<[RegExp, string]> = [
     [/shell|exec|spawn|child[\s_]?process/, 'shell injection child process'],
     [/sql|query|database/,                  'sql query unsafe'],
     [/dom|innerhtml|html|render/,           'innerhtml dom xss'],

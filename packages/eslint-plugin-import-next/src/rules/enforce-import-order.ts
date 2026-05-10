@@ -154,7 +154,7 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
       },
     };
 
-    const sourceCode = context.getSourceCode();
+    const sourceCode = context.sourceCode;
     const imports: TSESTree.ImportDeclaration[] = [];
 
     function getImportType(node: TSESTree.ImportDeclaration): string {

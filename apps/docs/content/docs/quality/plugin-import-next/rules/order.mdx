@@ -1,17 +1,85 @@
 ---
-title: 'order'
-description: ESLint rule documentation for order
+title: "order"
+description: "Enforces a specific order for import statements"
 ---
 
-import { RemoteRuleDoc } from '@/components/docs/remote-rule-doc';
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
-<RemoteRuleDoc plugin="import-next" rule="order" />
+💼 This rule is enabled in the following configs: `recommended`, `typescript`.
+💡 This rule is automatically fixable by the `--fix` CLI option.
 
-<a
-  href="https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/order.md"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="inline-flex items-center gap-1 text-sm text-fd-muted-foreground hover:text-fd-foreground mt-6"
->
-  Edit this page on GitHub →
-</a>
+Enforces a specific order for import statements
+
+## Rule Details
+
+This rule aims to prevent issues related to order.
+
+## Options
+
+```json
+[
+  {
+    "type": "object",
+    "properties": {
+      "groups": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "builtin",
+            "external",
+            "internal",
+            "parent",
+            "sibling",
+            "index",
+            "object",
+            "type",
+            "side-effect"
+          ]
+        }
+      },
+      "internalPatterns": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "alphabetize": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc",
+              "ignore"
+            ]
+          },
+          "caseInsensitive": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "newlinesBetween": {
+        "type": "string",
+        "enum": [
+          "always",
+          "never",
+          "ignore"
+        ]
+      }
+    },
+    "additionalProperties": false
+  }
+]
+```
+
+## Implementation
+
+- [Source Code](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/rules/order.ts)
+- [Test Cases](https://github.com/import-js/eslint-plugin-import-next/blob/main/src/tests/order.test.ts)
+
+## OWASP Foundation
+
+- **Category**: A00:2021 - General Security

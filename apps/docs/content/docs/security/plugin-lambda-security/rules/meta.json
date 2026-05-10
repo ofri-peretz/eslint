@@ -1,4 +1,20 @@
 {
-    "title": "Rules",
-    "defaultOpen": false
+  "title": "Rules",
+  "defaultOpen": false,
+  "pages": [
+    "no-env-logging",
+    "no-error-swallowing",
+    "no-exposed-debug-endpoints",
+    "no-exposed-error-details",
+    "no-hardcoded-credentials-sdk",
+    "no-missing-authorization-check",
+    "no-overly-permissive-iam-policy",
+    "no-permissive-cors-middy",
+    "no-permissive-cors-response",
+    "no-secrets-in-env",
+    "no-unbounded-batch-processing",
+    "no-unvalidated-event-body",
+    "no-user-controlled-requests",
+    "require-timeout-handling"
+  ]
 }

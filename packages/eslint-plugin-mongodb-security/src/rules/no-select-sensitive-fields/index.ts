@@ -49,11 +49,54 @@ export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const [options = {}] = context.options;
     const { allowInTests = true, sensitiveFields = DEFAULT_SENSITIVE_FIELDS } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
       return {};
+    }
+
+    /**
+     * Native MongoDB driver accepts projection as the 2nd argument:
+     *   collection.find(filter, { projection: { _id: 1, name: 1 } })
+     * If the projection is an explicit inclusion list (1-valued keys) and
+     * does not name any sensitive field, the query is safe.
+     */
+    function projectionIsSafe(node: TSESTree.CallExpression): boolean {
+      const arg = node.arguments[1];
+      if (!arg || arg.type !== AST_NODE_TYPES.ObjectExpression) return false;
+      const projProp = arg.properties.find(
+        (p): p is TSESTree.Property =>
+          p.type === AST_NODE_TYPES.Property &&
+          p.key.type === AST_NODE_TYPES.Identifier &&
+          p.key.name === 'projection',
+      );
+      if (!projProp || projProp.value.type !== AST_NODE_TYPES.ObjectExpression) return false;
+      const proj = projProp.value;
+      const fields = (sensitiveFields ?? DEFAULT_SENSITIVE_FIELDS);
+      let hasInclusion = false;
+      for (const p of proj.properties) {
+        if (p.type !== AST_NODE_TYPES.Property) continue;
+        const keyName =
+          p.key.type === AST_NODE_TYPES.Identifier ? p.key.name :
+          p.key.type === AST_NODE_TYPES.Literal && typeof p.key.value === 'string' ? p.key.value :
+          null;
+        if (!keyName) continue;
+        if (fields.includes(keyName)) {
+          // Sensitive field is named — only safe if explicitly excluded (value 0 / false)
+          if (
+            p.value.type === AST_NODE_TYPES.Literal &&
+            (p.value.value === 0 || p.value.value === false)
+          ) continue;
+          return false;
+        }
+        if (
+          p.value.type === AST_NODE_TYPES.Literal &&
+          (p.value.value === 1 || p.value.value === true)
+        ) hasInclusion = true;
+      }
+      // Inclusion projection that doesn't name sensitive fields → safe.
+      return hasInclusion;
     }
 
     return {
@@ -69,6 +112,9 @@ export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
         if (!methodName || !QUERY_METHODS.has(methodName)) {
           return;
         }
+
+        // Native MongoDB driver: { projection: { ... } } as 2nd arg.
+        if (projectionIsSafe(node)) return;
 
         // Check if the query chain includes .select()
         const parent = node.parent;

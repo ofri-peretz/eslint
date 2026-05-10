@@ -31,10 +31,13 @@ This folder is **org-agnostic**. The framework — formulas, scripts, narratives
 ### Discipline
 
 10. [`predictions-registry.md`](predictions-registry.md) — **pre-registration of the seven §6.6 predictions** with horizons, falsification signals, and the philosophy section at stake for each. Git-tag-ready (`predictions-v1-2026-05-09`); external archive (Wayback / OSF) is a manual post-commit step.
+11. [`eslint10-migration-runbook.md`](eslint10-migration-runbook.md) — **pre-staged remediation for Open Item #6** (the cross-version benchmark finding that 140 of 217 Interlace rules use removed-in-ESLint-10 context APIs). Two-phase sed migration + 5-step verification + rollback plan. Status: ⏸️ awaiting maintainer authorisation. Runbook is the structural answer to "we found a defect; here's exactly what fixes it" — not "we found a defect, sometime someone will fix it".
 
 ### Implementation
 
-8. The scripts in [`scripts/`](scripts/) — fetch GitHub Actions data, derive measured metrics, compute the unit cost, render the report, build the executive XLSX.
+8. The scripts in [`scripts/`](scripts/):
+   - **CI/CD calculator pipeline** — [`01-fetch-actions-data.sh`](scripts/01-fetch-actions-data.sh), [`02-compute-baseline.cjs`](scripts/02-compute-baseline.cjs), [`03-compute-unit-cost.cjs`](scripts/03-compute-unit-cost.cjs), [`04-render-report.cjs`](scripts/04-render-report.cjs), [`05-build-xlsx.py`](scripts/05-build-xlsx.py).
+   - **Analyzer benchmark suite** — [`latency-bench.mjs`](scripts/latency-bench.mjs) (programmatic ESLint Linter API; supports `CORPUS=`, `FILE_CAP=`, `CORPUS_FILTER=safe|vulnerable`), [`per-rule-timing.mjs`](scripts/per-rule-timing.mjs) (per-rule attribution within Interlace), [`eslint10-compat-test.mjs`](scripts/eslint10-compat-test.mjs) (cross-version compatibility check). Plus the resolution shims [`cjs-resolve-shim.cjs`](scripts/cjs-resolve-shim.cjs) and [`loader-hook.mjs`](scripts/loader-hook.mjs) that redirect `@interlace/eslint-devkit` imports to built `dist/src/index.js` paths (workaround for the post-Turborepo workspace state).
 9. The research in [`research/`](research/) — primary sources and peer benchmarks for sanity-checking the headline.
 
 ## TL;DR
@@ -59,6 +62,7 @@ cicd-impact/
 ├── v0-competitor-scorecard.md      ← scorecard run against 7 competitors with honest losses preserved
 ├── workflow-cohort-case-study.md   ← four workflows in one repo, four unit costs (corrects dog-food lower-bound)
 ├── predictions-registry.md         ← pre-registration of §6.6 predictions (git-tag-ready)
+├── eslint10-migration-runbook.md   ← pre-staged Open Item #6 remediation (awaiting authorisation)
 ├── inputs.template.yml             ← shareable template — copy to inputs.yml
 ├── inputs.yml                      ← LOCAL ONLY — your wage / policy choices
 ├── .gitignore                      ← splits sensitive vs shareable

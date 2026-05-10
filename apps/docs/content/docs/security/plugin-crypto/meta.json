@@ -1,0 +1,10 @@
+{
+    "title": "Plugin: crypto",
+    "icon": "Lock",
+    "defaultOpen": false,
+    "pages": [
+        "index",
+        "changelog",
+        "rules"
+    ]
+}

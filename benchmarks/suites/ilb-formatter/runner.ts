@@ -808,12 +808,13 @@ function headlineScore(measurements: Measurement[]): HeadlineScore {
   }
   const out: HeadlineScore = {};
   for (const [format, ds] of Object.entries(deltas) as [FormatId, number[]][]) {
+    const key = format as Exclude<FormatId, typeof BASELINE_FORMAT>;
     if (ds.length === 0) {
-      out[format as Exclude<FormatId, typeof BASELINE_FORMAT>] = null;
+      (out as Record<string, number | null>)[key] = null;
       continue;
     }
     const mean = ds.reduce((s, d) => s + d, 0) / ds.length;
-    out[format as Exclude<FormatId, typeof BASELINE_FORMAT>] = round1(mean * 100);
+    (out as Record<string, number | null>)[key] = round1(mean * 100);
   }
   return out;
 }

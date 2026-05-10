@@ -1,5 +1,33 @@
 {
-    "title": "Rules",
-    "icon": "BookOpen",
-    "defaultOpen": false
+  "title": "Rules",
+  "icon": "BookOpen",
+  "defaultOpen": false,
+  "pages": [
+    "detect-non-literal-regexp",
+    "detect-object-injection",
+    "detect-weak-password-validation",
+    "no-directive-injection",
+    "no-electron-security-issues",
+    "no-format-string-injection",
+    "no-graphql-injection",
+    "no-hardcoded-credentials",
+    "no-hardcoded-session-tokens",
+    "no-improper-sanitization",
+    "no-improper-type-validation",
+    "no-insecure-comparison",
+    "no-ldap-injection",
+    "no-missing-authentication",
+    "no-privilege-escalation",
+    "no-redos-vulnerable-regex",
+    "no-sensitive-data-exposure",
+    "no-unchecked-loop-condition",
+    "no-unlimited-resource-allocation",
+    "no-unsafe-deserialization",
+    "no-unsafe-regex-construction",
+    "no-weak-password-recovery",
+    "no-xpath-injection",
+    "no-xxe-injection",
+    "require-backend-authorization",
+    "require-secure-defaults"
+  ]
 }

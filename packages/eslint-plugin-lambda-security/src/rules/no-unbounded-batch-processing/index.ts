@@ -100,7 +100,7 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
     [options = {}],
   ) {
     const { allowInTests = true } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
@@ -251,7 +251,7 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
         if (!currentHandlerNode) return;
 
         if (['<', '<=', '>', '>='].includes(node.operator)) {
-          const sourceCode = context.sourceCode || context.getSourceCode();
+          const sourceCode = context.sourceCode;
           const text = sourceCode.getText(node);
 
           if (/\.length|Records|records/.test(text)) {

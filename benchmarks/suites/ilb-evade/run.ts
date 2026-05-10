@@ -160,13 +160,15 @@ async function main() {
       const mutated = mutator(src);
       if (mutated === src) continue; // mutation didn't change anything
       const mutatedRules = new Set(lintTempFile(mutated, fx.ext));
+      let lastSurvived = false;
       for (const rule of baselineRules) {
         const survived = mutatedRules.has(rule);
+        lastSurvived = survived;
         triples.push({ rule, fixture: path.relative(REPO_ROOT, fx.file), mutation: mutationName, survived });
         totalChecks++;
         if (survived) totalSurvived++;
       }
-      process.stdout.write(survived ? '✓' : '×');
+      process.stdout.write(lastSurvived ? '✓' : '×');
     }
     console.log('');
   }
@@ -178,7 +180,7 @@ async function main() {
   console.log(`Rule survival: ${totalSurvived}/${totalChecks} = ${(ruleSurvivalRate * 100).toFixed(1)}%  ${passedSlo ? '✅' : '❌'} (SLO ≥ 90%)`);
 
   // Per-mutation rollup
-  const byMutation = {};
+  const byMutation: Record<string, any> = {};
   for (const t of triples) {
     const m = t.mutation;
     if (!byMutation[m]) byMutation[m] = { total: 0, survived: 0 };
@@ -187,7 +189,7 @@ async function main() {
   }
   console.log('');
   console.log('Per-mutation:');
-  for (const [m, d] of Object.entries(byMutation)) {
+  for (const [m, d] of Object.entries(byMutation) as Array<[string, any]>) {
     console.log(`  ${m.padEnd(12)} ${d.survived}/${d.total} = ${(d.survived / d.total * 100).toFixed(1)}%`);
   }
 

@@ -87,7 +87,7 @@ export const requireEmbeddingValidation = createRule<RuleOptions, MessageIds>({
       'validate', 'verify', 'check', 'sanitize',
     ];
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     // Vector store operations
     const vectorStoreOps = ['upsert', 'insert', 'add', 'store', 'index', 'save'];

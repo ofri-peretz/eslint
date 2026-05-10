@@ -1,9 +1,158 @@
 ---
-title: require-audit-logging
-description: ESLint rule documentation for require-audit-logging
-icon: FileCode
+title: "require-audit-logging"
+description: "title: require-audit-logging"
 ---
 
-import { RemoteRuleDoc } from '@/components/docs/remote-rule-doc';
+import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
 
-<RemoteRuleDoc plugin="vercel-ai-security" rule="require-audit-logging" />
+---
+title: require-audit-logging
+description: "This rule identifies AI SDK calls that aren't preceded by logging statements"
+tags: ['security', 'ai']
+category: security
+severity: medium
+cwe: CWE-778
+autofix: false
+---
+
+> Suggests audit logging for AI SDK operations.
+
+This rule identifies AI SDK calls that aren't preceded by logging statements
+
+## 📊 Rule Details
+
+| Property           | Value                                                                            |
+| ------------------ | -------------------------------------------------------------------------------- |
+| **Type**           | suggestion                                                                       |
+| **Severity**       | ⚪ LOW                                                                           |
+| **OWASP Agentic**  | [ASI10: Logging & Monitoring](https://owasp.org)                                 |
+| **CWE**            | [CWE-778: Insufficient Logging](https://cwe.mitre.org/data/definitions/778.html) |
+| **CVSS**           | 4.0                                                                              |
+| **Config Default** | `off` (recommended, strict)                                                      |
+
+## 🔍 What This Rule Detects
+
+This rule identifies AI SDK calls that aren't preceded by logging statements. Audit logging is important for security monitoring and debugging.
+
+## ❌ Incorrect Code
+
+```typescript
+// No logging
+async function handler() {
+  const result = await generateText({
+    prompt: userInput,
+  });
+  return result.text;
+}
+
+// Missing audit trail
+export async function processRequest(req) {
+  await streamText({
+    prompt: req.body.message,
+  });
+}
+```
+
+## ✅ Correct Code
+
+```typescript
+Hello
+```
+
+## ⚙️ Options
+
+| Option         | Type      | Default | Description             |
+| -------------- | --------- | ------- | ----------------------- |
+| `allowInTests` | `boolean` | `true`  | Skip rule in test files |
+
+## 🛡️ Why This Matters
+
+Insufficient logging makes it impossible to:
+
+- **Detect abuse** - Identify malicious usage patterns
+- **Debug issues** - Trace problems in production
+- **Audit compliance** - Prove regulatory compliance
+- **Monitor costs** - Track API usage
+
+## 🔗 Related Rules
+
+- [`require-error-handling`](./require-error-handling.md) - Handle errors
+- [`require-tool-confirmation`](./require-tool-confirmation.md) - Log destructive operations
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
+
+## Known False Negatives
+
+The following patterns are **not detected** due to static analysis limitations:
+
+### Logging in Wrapper Function
+
+**Why**: Logging in called functions is not visible.
+
+```typescript
+// ❌ NOT DETECTED - Logging in wrapper
+await myGenerateText(prompt); // Wrapper has logging
+```
+
+**Mitigation**: Apply rule to wrapper implementations.
+
+### Custom Logger Methods
+
+**Why**: Non-standard logger methods may not be recognized.
+
+```typescript
+// ❌ NOT DETECTED - Custom logger
+myLogger.audit('AI call', { prompt }); // Not in default patterns
+await generateText({ prompt });
+```
+
+**Mitigation**: Configure rule for custom logger method names.
+
+### Centralized Logging Middleware
+
+**Why**: Framework-level logging is not linked.
+
+```typescript
+// ❌ NOT DETECTED (correctly) - Middleware logs all AI calls
+app.use(aiAuditMiddleware);
+```
+
+**Mitigation**: Document centralized logging. Consider rule exception.
+
+### Async Logging
+
+**Why**: Logging scheduled for later may not be detected.
+
+```typescript
+// ❌ NOT DETECTED - Deferred logging
+const result = await generateText({ prompt });
+queueAuditLog({ prompt, result }); // Async logging
+```
+
+**Mitigation**: Use synchronous logging before AI calls.
+
+## 📚 References
+
+- [OWASP ASI10: Logging & Monitoring](https://owasp.org)
+- [CWE-778: Insufficient Logging](https://cwe.mitre.org/data/definitions/778.html)
+
+## Error Message Format
+
+The rule provides **LLM-optimized error messages** (Compact 2-line format) with actionable security guidance:
+
+```text
+⚠️ CWE-778 OWASP:A09 CVSS:5.3 | Insufficient Logging detected | MEDIUM [SOC2,ISO27001,PCI-DSS,NIST-CSF]
+   Fix: Review and apply the recommended fix | https://owasp.org/Top10/A09_2021/
+```
+
+### Message Components
+
+| Component | Purpose | Example |
+| :--- | :--- | :--- |
+| **Risk Standards** | Security benchmarks | [CWE-778](https://cwe.mitre.org/data/definitions/778.html) [OWASP:A09](https://owasp.org/Top10/A09_2021-Injection/) [CVSS:5.3](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator?vector=AV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH) |
+| **Issue Description** | Specific vulnerability | `Insufficient Logging detected` |
+| **Severity & Compliance** | Impact assessment | `MEDIUM [SOC2,ISO27001,PCI-DSS,NIST-CSF]` |
+| **Fix Instruction** | Actionable remediation | `Follow the remediation steps below` |
+| **Technical Truth** | Official reference | [OWASP Top 10](https://owasp.org/Top10/A09_2021-Injection/) |

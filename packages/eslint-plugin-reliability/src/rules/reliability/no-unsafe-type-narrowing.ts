@@ -176,7 +176,7 @@ export const noUnsafeTypeNarrowing = createRule<RuleOptions, MessageIds>({
     const { ignoreInTests = true, allowWithComment = false }: Options =
       options || {};
 
-    const filename = context.getFilename();
+    const filename = context.filename;
     const isTestFile =
       ignoreInTests && /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
@@ -184,7 +184,7 @@ export const noUnsafeTypeNarrowing = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
 
     /**
      * Check type assertions

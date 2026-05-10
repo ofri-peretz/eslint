@@ -179,18 +179,16 @@ export function migrateFromEslintImport(oldConfig: Record<string, unknown>): {
     Object.entries(oldRules as Record<string, unknown>).forEach(
       ([ruleName, ruleConfig]) => {
         if (ruleName.startsWith('import/')) {
-          // Rule mapping
+          // Migrate from upstream `eslint-plugin-import` rule names to the
+          // drop-in `eslint-plugin-import-next` equivalents (see the package
+          // for the full rule inventory).
           const ruleMappings: Record<string, string> = {
-            'import/no-unresolved': 'eslint-plugin-llm-optimized/no-unresolved',
-            'import/no-cycle':
-              'eslint-plugin-llm-optimized/no-circular-dependencies',
-            'import/no-self-import': 'eslint-plugin-llm-optimized/no-self-import',
-            'import/no-absolute-path':
-              'eslint-plugin-llm-optimized/no-absolute-path',
-            'import/no-dynamic-require':
-              'eslint-plugin-llm-optimized/no-dynamic-require',
-            'import/no-webpack-loader-syntax':
-              'eslint-plugin-llm-optimized/no-webpack-loader-syntax',
+            'import/no-unresolved': 'import-next/no-unresolved',
+            'import/no-cycle': 'import-next/no-cycle',
+            'import/no-self-import': 'import-next/no-self-import',
+            'import/no-absolute-path': 'import-next/no-absolute-path',
+            'import/no-dynamic-require': 'import-next/no-dynamic-require',
+            'import/no-webpack-loader-syntax': 'import-next/no-webpack-loader-syntax',
           };
 
           if (ruleMappings[ruleName]) {

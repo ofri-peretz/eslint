@@ -143,8 +143,8 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
       ignoreTestFiles = true,
     }: Options = options || {};
 
-    const sourceCode = context.sourceCode || context.sourceCode;
-    const filename = context.filename || context.getFilename();
+    const sourceCode = context.sourceCode;
+    const filename = context.filename;
 
     // Skip test files if configured
     if (ignoreTestFiles && /\.(test|spec)\.[jt]sx?$/.test(filename)) {

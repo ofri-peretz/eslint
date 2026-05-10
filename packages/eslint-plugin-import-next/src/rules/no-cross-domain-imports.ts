@@ -303,7 +303,7 @@ export const noCrossDomainImports = createRule<RuleOptions, MessageIds>({
     context: TSESLint.RuleContext<MessageIds, RuleOptions>,
     [options = {}],
   ) {
-    const filename = context.getFilename();
+    const filename = context.filename;
 
     /**
      * Check import declarations

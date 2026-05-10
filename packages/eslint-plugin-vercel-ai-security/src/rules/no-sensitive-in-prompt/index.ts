@@ -77,7 +77,7 @@ export const noSensitiveInPrompt = createRule<RuleOptions, MessageIds>({
       'ssn', 'creditCard', 'privateKey', 'accessToken',
     ];
 
-    const sourceCode = context.sourceCode || context.getSourceCode();
+    const sourceCode = context.sourceCode;
 
     // Vercel AI SDK functions
     const aiSDKFunctions = ['generateText', 'streamText', 'generateObject', 'streamObject'];

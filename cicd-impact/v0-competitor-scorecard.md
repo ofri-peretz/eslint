@@ -197,6 +197,121 @@ CORPUS=node_modules/lodash node --expose-gc \
 
 **This closes the v0 first-cut's "small-corpus jitter" caveat decisively.** The 1,046-file run has run-to-run variance of ~2-3% (vs ~30-50% on the 40-file run), making sub-1 ms/file differences cleanly separable.
 
+#### Level D — precision/recall on the matched ILB safe/vulnerable corpus (24 + 24 files)
+
+The ILB corpus is symmetrically organised: every CWE / CVE / WCAG / OWASP-LLM class has a `/safe/` directory (clean code that should produce zero findings) and a `/vulnerable/` directory (intentionally-flawed code that should produce findings). Running each analyzer separately on each subset gives a direct, fixture-anchored precision/recall measurement.
+
+**Methodology:** same programmatic harness, with `CORPUS_FILTER=safe` or `CORPUS_FILTER=vulnerable` env to select the subset. Median of 3 runs.
+
+| Analyzer | Findings on /safe/ (24 files) | "Hits per safe file" (FP density) | Findings on /vulnerable/ (24 files) | "Hits per vulnerable file" | **Signal-to-noise** (vuln / safe) |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| **Interlace ESLint Ecosystem (full fleet)** | **5** | **21%** | **41** | **171%** | **8.2 : 1** |
+| eslint-plugin-sonarjs | **18** | **75% — alert-fatigue territory** | 26 | 108% | 1.4 : 1 |
+| eslint-plugin-security-node | 1 | 4% | 2 | 8% | 2.0 : 1 |
+| eslint-plugin-no-unsanitized | 0 | 0% | 2 | 8% | ∞ (clean precision but trivial recall) |
+| eslint-plugin-no-secrets | 0 | 0% | 1 | 4% | ∞ (clean precision but trivial recall) |
+| eslint-plugin-security@4.0.0 | 0 | 0% | **0** | 0% | n/a (zero positives in either direction) |
+
+**The headline finding:** **Interlace's signal-to-noise ratio (8.2 : 1) is ~6× sonarjs's (1.4 : 1)** on the matched ILB corpus. This is the directly-measurable form of the alert-fatigue concern from [`philosophy.md`](philosophy.md)'s feedback-loop hierarchy: a plugin firing on three out of four safe files is the canonical pattern that trains developers to suppress all warnings, collapsing effective recall to zero regardless of on-paper recall.
+
+**Per-analyzer interpretation:**
+
+- **`eslint-plugin-sonarjs` 18 fires on 24 safe files = 75% FP density.** This is the most striking single finding of the v0 scorecard. Sonarjs has 47.5% F1 on ILB-Arena (rank 4), but on this matched corpus its alert noise is high enough that any production deployment would produce significant developer fatigue.
+- **The "small clean precision" plugins (no-secrets, no-unsanitized) have 0% FP density** — but only because they fire on almost nothing. Their recall on the matched vulnerable corpus is 4% and 8% respectively. They are technically high-precision but have such limited scope they are not standalone defensive layers.
+- **`eslint-plugin-security@4.0.0` produces 0 findings on either subset** — confirming the 0% F1 from ILB-Arena on a different (matched) corpus. The plugin is functionally silent on the security patterns it claims to address.
+- **Interlace's 5 fires on safe code are real false positives** that the [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../benchmarks/FP_FN_REMEDIATION_TRACKER.md) captures and works to reduce. **The 21% FP density is honest disclosure** — we are not at zero, we are at one in five — and the comparison to sonarjs's 75% is the relevant frame, not a claim of perfection.
+
+**Why this corpus is fair to all contenders:** the corpus is organised by published vulnerability class (CWE, CVE, OWASP-LLM, WCAG), not by Interlace-specific rule scope. Each class has both safe and vulnerable representatives. Plugins that don't claim to cover a class will neither flag nor miss it — they'll be silent on both sides. Plugins that do cover a class are evaluated on whether they flag the vulnerable side and stay silent on the safe side. This is the structural definition of precision and recall.
+
+**What this closes:**
+
+| Open concern before Level D | Closed status |
+| :--- | :--- |
+| Alert-fatigue argument is theoretical | **Closed** — sonarjs at 75% FP density on safe files demonstrates it concretely |
+| Interlace's 100% precision on ILB-Arena might not generalise | Refined — at 21% FP density on the broader fixture corpus, Interlace is genuinely tighter than sonarjs but not perfect; numbers are honestly disclosed |
+| The "high-end analyzer" criterion (precision ≥ 95%) was abstract | Operational — Interlace's 41-fire vs 5-fire ratio gives a concrete signal-to-noise number a buyer can compare across analyzers |
+
+#### Level E — multi-corpus generalisation (axios, jsdom, date-fns + lodash)
+
+The Level C lodash result raised an obvious question: does Interlace's 2× latency advantage hold across different code shapes? Re-run on three more real-world corpora to test.
+
+**Methodology:** identical to Level C. Same harness, 3 timed runs after warmup, programmatic API, FILE_CAP=500 for date-fns and jsdom (which exceed it).
+
+| Corpus | Files | Interlace (ms/file, findings) | sonarjs (ms/file, findings) | Latency speedup | Recall ratio |
+| :--- | ---: | :--- | :--- | :---: | :---: |
+| **lodash** | 1,046 | 0.94 ms · **1,351** | 1.90 ms · 267 | **2.0×** | **5.1×** |
+| **axios** | 65 | 1.50 ms · **234** | 4.60 ms · 139 | **3.1×** | **1.7×** |
+| **jsdom** | 500 | 3.05 ms · **5,534** | 8.23 ms · 494 | **2.7×** | **11.2×** |
+| **date-fns** | 500 | 0.85 ms · 220 | 2.40 ms · **416** | **2.8×** | **0.5× (sonarjs ahead)** |
+
+**Two findings, one of them honest-loss:**
+
+1. **Latency speedup is consistent across all four corpora (2.0× — 3.1×).** The architectural advantage generalises; it's not a single-corpus artifact.
+2. **Recall ratio is highly corpus-dependent.** On security-heavy code (jsdom: DOM emulation, lots of XSS-adjacent surface), Interlace catches **11.2× more** issues than sonarjs. On pure-functional date math (date-fns), **sonarjs catches more issues than Interlace** (416 vs 220). This is the framework's predicted outcome: Interlace is security-focused, so on codebases without security-relevant patterns, generic code-quality plugins find more. **Honest loss preserved.**
+
+#### Level F — per-rule TIMING attribution within Interlace
+
+The 0.94 ms/file figure for Interlace's full 11-plugin fleet on lodash hides which rules contribute most. Wrap each rule's `create` with `performance.now()` instrumentation; attribute total time per rule.
+
+**Methodology:** custom instrumentation in [`scripts/per-rule-timing.mjs`](scripts/per-rule-timing.mjs); enables every rule with severity `error`; runs once on lodash; reports total ms and listener-call counts per rule.
+
+**Results (1 pass on 1,046-file lodash, all 207 rules enabled):**
+
+| Rank | Rule | Total ms | Listener calls | % of total rule-time |
+| :--- | :--- | ---: | ---: | ---: |
+| 1 | `secure-coding/no-improper-type-validation` | 140.8 | 15,559 | **26.5%** |
+| 2 | `secure-coding/no-unchecked-loop-condition` | 55.0 | 12,059 | 10.3% |
+| 3 | `secure-coding/detect-object-injection` | 17.9 | 15,285 | 3.4% |
+| 4 | `secure-coding/no-graphql-injection` | 16.1 | 18,149 | 3.0% |
+| 5 | `secure-coding/no-insecure-comparison` | 10.8 | 2,488 | 2.0% |
+| 6–20 | (15 more rules, each ≤ 2.0%) | … | … | 18.0% combined |
+| 21+ | (180 more rules, fired but each <1%) | … | … | 36.8% combined |
+| Rules that didn't fire on lodash | 7 | — | — | 0% |
+
+**The top 5 rules account for ~45% of all Interlace rule-time on lodash.** Optimising the first rule alone (`no-improper-type-validation`) by 50% would cut Interlace's per-file lint time by ~13%; optimising the top 5 by 50% would cut ~22%. Concrete optimisation roadmap — published openly so anyone can verify the math.
+
+**Total rule-time is 30% of total lint time.** The other 70% is parsing + AST traversal + Linter overhead (i.e. cost any analyzer pays, not Interlace-specific).
+
+#### Level G — cross-ESLint-version compatibility (a real honest-loss)
+
+The CLAIMS.md row "Supports ESLint 8, 9, and 10" rests on the package.json `peerDependencies.eslint: ^8.0.0 || ^9.0.0 || ^10.0.0` declaration. That's a *manifest assertion*, not a *measured behaviour*. Cross-version benchmarking puts the assertion to the test.
+
+**Methodology:** load Interlace plugins under ESLint 10.3.0 (installed in `benchmarks/suites/ilb-arena/eslint10-compat/node_modules/eslint`), attempt to lint the lodash corpus. ESLint 8 was *not* run in this v0 (its compat-dir node_modules is not materialised; would require `npm install` and was skipped to keep blast radius small — the [`.github/workflows/eslint-version-matrix.yml`](../.github/workflows/eslint-version-matrix.yml) CI workflow is the canonical proof for that axis).
+
+**Result:**
+
+```text
+Loaded 11 plugins (207 rules); 166 in recommended config
+RUNTIME-FAILED on warmup:
+  Error while loading rule 'secure-coding/detect-object-injection':
+  context.getSourceCode is not a function
+```
+
+After disabling that rule, the next failure surfaced:
+
+```text
+RUNTIME-FAILED on warmup:
+  Error while loading rule 'secure-coding/no-insecure-comparison':
+  context.getFilename is not a function
+```
+
+**Static analysis of the source confirms the scope:**
+
+| Removed-in-ESLint-10 API | Number of Interlace rule files using it |
+| :--- | ---: |
+| `context.getFilename()` (replaced by `context.filename`) | **125** |
+| `context.getSourceCode()` (replaced by `context.sourceCode`) | **36** |
+| `context.getCwd()` (replaced by `context.cwd`) | 1 |
+| **Total Interlace rules using removed APIs** | **140 of 217 (64.5%)** |
+
+**Honest assessment.** Interlace has the **same class of break** as `eslint-plugin-security@4.0.0` — using ESLint context APIs that were deprecated in v8.40 and removed (or scheduled to be removed) in v10. **The "Supports ESLint 10" claim is structurally false in practice for the majority of rules.**
+
+This is the kind of finding the framework specifically rewards publishing. We were about to highlight `eslint-plugin-security`'s identical break — and turn out we have it ourselves at the same scope. **The credibility move is to disclose, not hide.** The CLAIMS.md row for ESLint 10 support is being caveated to reflect the measured reality, and an open item is added to the value-philosophy.md hostile-review section.
+
+**Remediation:** the fix is mechanical (`context.getFilename()` → `context.filename`, `context.getSourceCode()` → `context.sourceCode`). It is a multi-PR cleanup, not an architectural rewrite. Tracked as Open Item #6 in [`value-philosophy.md`](value-philosophy.md) §6.5. Until then, **Interlace's `peerDependencies.eslint: ^10.0.0` declaration is overly optimistic** — most rules will fail at lint time on ESLint 10.
+
+This is the most important honest-loss in the v0 scorecard. It would not have surfaced without the cross-version benchmark.
+
 ### Dimension 4 — Ecosystem coverage
 
 All measured contenders pass: each handles TypeScript + JavaScript + ESLint v8/v9. Coverage of frameworks (React, Express, NestJS, Lambda, etc.) varies by plugin. Interlace explicitly handles the framework matrix per its [`compatibility-matrix.md`](../.agent/compatibility-matrix.md); competitor coverage is generally narrower per their READMEs.

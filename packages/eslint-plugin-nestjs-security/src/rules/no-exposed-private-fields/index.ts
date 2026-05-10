@@ -100,7 +100,7 @@ export const noExposedPrivateFields = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{ allowInTests: true, sensitivePatterns: [] }],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {}]) {
     const { allowInTests = true, sensitivePatterns = [] } = options as Options;
-    const filename = context.filename || context.getFilename();
+    const filename = context.filename;
     const isTestFile = /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename);
 
     if (allowInTests && isTestFile) {
