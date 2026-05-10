@@ -193,6 +193,7 @@
     "@commitlint/cli": "^20.4.0",
     "@commitlint/config-conventional": "^20.4.0",
     "@eslint/js": "^9.39.2",
+    "@evilmartians/lefthook": "^2.1.6",
     "@middy/core": "^6.4.5",
     "@middy/http-cors": "^6.4.5",
     "@middy/http-security-headers": "^6.4.5",
