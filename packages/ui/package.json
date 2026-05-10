@@ -20,6 +20,10 @@
       "types": "./dist/primitives/button.d.ts",
       "default": "./dist/primitives/button.js"
     },
+    "./button-variants": {
+      "types": "./dist/primitives/button-variants.d.ts",
+      "default": "./dist/primitives/button-variants.js"
+    },
     "./badge": {
       "types": "./dist/primitives/badge.d.ts",
       "default": "./dist/primitives/badge.js"
@@ -96,6 +100,10 @@
       "types": "./dist/primitives/sheet.d.ts",
       "default": "./dist/primitives/sheet.js"
     },
+    "./select": {
+      "types": "./dist/primitives/select.d.ts",
+      "default": "./dist/primitives/select.js"
+    },
     "./scroll-area": {
       "types": "./dist/primitives/scroll-area.d.ts",
       "default": "./dist/primitives/scroll-area.js"
@@ -145,7 +153,9 @@
   "scripts": {
     "build": "tsc -b tsconfig.lib.json && node scripts/preserve-use-client.mjs",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "storybook": "storybook dev -p 6006",
+    "storybook:build": "storybook build"
   },
   "peerDependencies": {
     "@base-ui-components/react": "^1.0.0-beta.6",
@@ -155,8 +165,12 @@
     "react-dom": "^19.0.0"
   },
   "peerDependenciesMeta": {
-    "fumadocs-core": { "optional": true },
-    "mermaid": { "optional": true }
+    "fumadocs-core": {
+      "optional": true
+    },
+    "mermaid": {
+      "optional": true
+    }
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
@@ -166,8 +180,14 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
+    "@storybook/addon-a11y": "^10.3.6",
+    "@storybook/addon-essentials": "^8.6.14",
+    "@storybook/react-vite": "^10.3.6",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "typescript": "^5.7.0"
+    "@vitejs/plugin-react": "^6.0.1",
+    "storybook": "^10.3.6",
+    "typescript": "^5.7.0",
+    "vite": "^8.0.11"
   }
 }

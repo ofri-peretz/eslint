@@ -40,14 +40,13 @@ describe('ArticlesClient Source File Integrity', () => {
       expect(articlesSource).toContain('bg-linear-to-br');
     });
 
-    it('contains h-44 container height for regular cards', () => {
-      expect(articlesSource).toContain('h-44');
-    });
+    // Card placeholder height was h-44 when ArticlesClient owned the inline
+    // <ArticleCard>. Since the migration to the @interlace/ui ArticleCard
+    // block, the cover dimensions are owned by the block (currently h-48).
+    // This contract moves to the storybook a11y/visual gate against the block.
+    it.skip('contains h-44 container height for regular cards (moved to block)', () => {});
 
-    it('contains light overlay effect for depth', () => {
-      expect(articlesSource).toContain('radial-gradient');
-      expect(articlesSource).toContain('rgba(255,255,255,0.15)');
-    });
+    it.skip('contains light overlay effect for depth (moved to block)', () => {});
   });
 
   describe('Article Title in Placeholder - Required Patterns', () => {
@@ -59,17 +58,14 @@ describe('ArticlesClient Source File Integrity', () => {
       expect(articlesSource).toContain('text-center');
     });
 
-    it('uses line-clamp-3 for title truncation', () => {
-      expect(articlesSource).toContain('line-clamp-3');
-    });
+    // The grid card's placeholder typography is owned by the
+    // @interlace/ui ArticleCard block — see Storybook
+    // "Blocks/ArticleCard/WithoutImage" for the visual contract.
+    it.skip('uses line-clamp-3 for title truncation (moved to block)', () => {});
 
-    it('uses drop-shadow for readability', () => {
-      expect(articlesSource).toContain('drop-shadow-sm');
-    });
+    it.skip('uses drop-shadow for readability (moved to block)', () => {});
 
-    it('uses flexbox centering for placeholder container', () => {
-      expect(articlesSource).toContain('flex items-center justify-center');
-    });
+    it.skip('uses flexbox centering for placeholder container (moved to block)', () => {});
   });
 
   describe('Hydration Safety', () => {
@@ -82,12 +78,7 @@ describe('ArticlesClient Source File Integrity', () => {
     // The ArticleCard placeholder must use vibrant gradient, NOT faded
     // However, FeaturedArticle uses subtle gradient intentionally - that's allowed
     
-    it('card placeholder gradient is vibrant (from-purple-600), not old faded style (from-purple-500/10 to-fd-muted)', () => {
-      // The h-44 container (card placeholder) must use the vibrant gradient
-      // This pattern matches the exact line in ArticleCard
-      const cardPlaceholderPattern = /h-44.*from-purple-600.*via-violet-600.*to-indigo-700/;
-      expect(articlesSource).toMatch(cardPlaceholderPattern);
-    });
+    it.skip('card placeholder gradient is vibrant (moved to @interlace/ui block)', () => {});
 
     it('card placeholder does NOT use faded gradient combo (from-purple-500/10 to-fd-muted/30)', () => {
       // This old pattern should NOT appear in h-44 containers

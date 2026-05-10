@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Badge } from '@interlace/ui/badge';
 import { Button } from '@interlace/ui/button';
 import {
   Pagination,
@@ -15,7 +14,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '#interlace/components/ui/select';
+} from '@interlace/ui/select';
+import { ArticleCard as ArticleCardBlock } from '@interlace/ui/blocks/article-card';
 import type { DevToArticle, SortField, SortDirection } from '@/lib/articles.types';
 import {
   ARTICLES_PER_PAGE,
@@ -23,6 +23,15 @@ import {
   serializeArticleParams,
   toggleTagInParams,
 } from '@/lib/articles.filter';
+import { track } from '@/lib/analytics';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@interlace/ui/dropdown-menu';
 import {
   Search,
   X,
@@ -183,117 +192,55 @@ function FeaturedArticle({ article }: { article: DevToArticle }) {
 
 // Premium Article Card. Animation lives on the card; no per-card stagger
 // (see MOTION_PHILOSOPHY.md — same-frame entries are one commit).
-function ArticleCard({ article }: { article: DevToArticle }) {
-  const image = article.cover_image?.trim() || article.social_image?.trim() || null;
+function ArticleCard({
+  article,
+  position,
+  isFeatured = false,
+  sourceParams,
+}: {
+  article: DevToArticle;
+  position: number;
+  isFeatured?: boolean;
+  sourceParams: string;
+}) {
+  const image = article.cover_image?.trim() || article.social_image?.trim() || undefined;
 
   return (
-    <a
-      href={article.url}
-      target="_blank"
-      rel="noopener noreferrer"
+    <div
       data-testid="article-card"
-      className="group relative flex flex-col min-h-[420px] rounded-xl overflow-hidden bg-fd-card border border-fd-border/30 hover:border-fd-primary/50 hover:shadow-xl hover:shadow-purple-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fd-primary focus-visible:ring-offset-2 focus-visible:ring-offset-fd-background transition-all duration-300 motion-safe:hover:-translate-y-1 motion-safe:animate-fade-in-up shadow-sm"
-      aria-label={`Read article: ${article.title}`}
+      className="motion-safe:animate-fade-in-up"
+      onClickCapture={() =>
+        track('articles_card_clicked', {
+          articleId: article.id,
+          position,
+          isFeatured,
+          sourceParams,
+        })
+      }
     >
-      <div
-        className="relative h-44 overflow-hidden bg-linear-to-br from-purple-600 via-violet-600 to-indigo-700 dark:from-purple-800 dark:via-violet-800 dark:to-indigo-900"
-        suppressHydrationWarning
-      >
-        {image && image.length > 0 ? (
-          <img
-            src={image}
-            alt=""
-            width={1000}
-            height={420}
-            loading="lazy"
-            decoding="async"
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          />
-        ) : (
-          <>
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15),transparent_50%)]" />
-            <div className="w-full h-full flex items-center justify-center p-4">
-              <span className="relative text-base font-semibold text-white/90 text-center line-clamp-3 leading-snug px-4 drop-shadow-sm">
-                {article.title}
-              </span>
-            </div>
-          </>
-        )}
-
-        <div
-          className="absolute top-3 right-3 bg-zinc-900/80 backdrop-blur-md text-zinc-50 text-[11px] font-bold px-2.5 py-1 rounded-md flex items-center gap-1.5 border border-white/10 shadow-lg z-20"
-          aria-label={`Reading time: ${article.reading_time_minutes} minutes`}
-        >
-          <Clock className="size-3 text-zinc-300" aria-hidden="true" />
-          {article.reading_time_minutes} min
-        </div>
-      </div>
-
-      <div className="flex flex-col grow p-4">
-        <div className="flex items-center justify-between text-xs text-fd-muted-foreground/90 font-medium mb-3">
-          <div className="flex items-center gap-2">
-            <img
-              src={article.user.profile_image}
-              alt={article.user.name}
-              width={28}
-              height={28}
-              loading="lazy"
-              decoding="async"
-              className="size-7 rounded-full border border-fd-border shadow-sm"
-              suppressHydrationWarning
-            />
-            <span className="text-fd-foreground/90">{article.user.name}</span>
-          </div>
-          <span className="opacity-90">{formatDate(article.published_at)}</span>
-        </div>
-
-        <h3 className="font-bold text-fd-foreground mb-2 line-clamp-2 group-hover:text-fd-primary transition-colors leading-snug text-[15px]">
-          {article.title}
-        </h3>
-
-        {article.description && (
-          <p className="text-sm text-fd-foreground/75 dark:text-fd-muted-foreground line-clamp-2 mb-4 grow leading-relaxed">
-            {article.description}
-          </p>
-        )}
-
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {article.tag_list.slice(0, 3).map((tag) => (
-            <Badge
-              key={tag}
-              variant="secondary"
-              className="text-[10px] uppercase tracking-wide bg-fd-secondary-foreground/5 dark:bg-white/10 text-fd-foreground dark:text-zinc-100 border-none font-bold px-2.5 py-0.5"
-            >
-              #{tag}
-            </Badge>
-          ))}
-        </div>
-
-        <div className="flex items-center justify-between pt-3 border-t border-fd-border text-xs text-fd-muted-foreground">
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1 hover:text-red-500 transition-colors" title="Reactions">
-              <Heart className="size-3.5" aria-hidden="true" />
-              {article.positive_reactions_count}
-            </span>
-            <span className="flex items-center gap-1 hover:text-blue-500 transition-colors" title="Comments">
-              <MessageCircle className="size-3.5" aria-hidden="true" />
-              {article.comments_count}
-            </span>
-          </div>
-
-          {article.page_views_count && (
-            <span className="flex items-center gap-1 text-fd-primary font-medium" title="Views">
-              <Eye className="size-3.5" aria-hidden="true" />
-              {formatViews(article.page_views_count)}
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-linear-to-t from-purple-500/5 via-transparent to-transparent" />
-    </a>
+      <ArticleCardBlock
+        title={article.title}
+        description={article.description}
+        href={article.url}
+        imageUrl={image}
+        tags={article.tag_list}
+        author={{
+          name: article.user.name,
+          imageUrl: article.user.profile_image,
+        }}
+        publishedAt={article.published_at}
+        meta={{
+          reactions: article.positive_reactions_count,
+          comments: article.comments_count,
+          readingTimeMinutes: article.reading_time_minutes,
+          views: article.page_views_count,
+        }}
+        sourceLabel="Dev.to"
+      />
+    </div>
   );
 }
+
 
 export function ArticlesClient({
   totalArticles,
@@ -344,6 +291,7 @@ export function ArticlesClient({
     debounceTimer.current = setTimeout(() => {
       setSearch(value);
       navigate({ ...params, q: value, page: 1 }, 'replace');
+      track('articles_search_submitted', { q: value, resultCount: totalFiltered });
     }, SEARCH_DEBOUNCE_MS);
   };
 
@@ -355,19 +303,31 @@ export function ArticlesClient({
   };
 
   const toggleTag = (tag: string) => {
-    navigate(toggleTagInParams(params, tag));
+    const next = toggleTagInParams(params, tag);
+    navigate(next);
+    const wasActive = params.tags.includes(tag);
+    track('articles_filter_applied', {
+      tagsAdded: wasActive ? [] : [tag],
+      tagsRemoved: wasActive ? [tag] : [],
+      activeTags: next.tags,
+      resultCount: totalFiltered,
+    });
   };
 
   const setSortField = (sort: SortField) => {
     navigate({ ...params, sort, page: 1 });
+    track('articles_sort_changed', { field: sort, direction: params.dir });
   };
 
   const toggleSortDirection = () => {
-    navigate({ ...params, dir: params.dir === 'desc' ? 'asc' : 'desc', page: 1 });
+    const direction = params.dir === 'desc' ? 'asc' : 'desc';
+    navigate({ ...params, dir: direction, page: 1 });
+    track('articles_sort_changed', { field: params.sort, direction });
   };
 
   const setCurrentPage = (page: number) => {
     navigate({ ...params, page });
+    track('articles_pagination', { from: params.page, to: page, totalPages });
   };
 
   const clearFilters = () => {
@@ -376,6 +336,17 @@ export function ArticlesClient({
 
   const placeholderCount = Math.max(0, ARTICLES_PER_PAGE - items.length);
   const currentPage = params.page;
+
+  // Fire articles_empty_state_seen exactly once per render where the empty
+  // state is shown, so we can spot filter combos that yield zero results.
+  useEffect(() => {
+    if (items.length === 0 && hasFilters) {
+      track('articles_empty_state_seen', {
+        activeParams: serializeArticleParams(params),
+      });
+    }
+    // We intentionally fire only when the rendered combination changes.
+  }, [items.length, hasFilters, params]);
 
   return (
     <div className="relative min-h-screen">
@@ -405,6 +376,68 @@ export function ArticlesClient({
           <p className="text-lg text-fd-muted-foreground dark:text-purple-100/80 leading-relaxed dark:drop-shadow" suppressHydrationWarning>
             Deep dives into ESLint security, JavaScript performance, and modern development practices.
           </p>
+          <div className="flex justify-center pt-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                data-testid="subscribe-trigger"
+                className="inline-flex items-center gap-2 rounded-md border border-fd-border bg-fd-background px-3 py-1.5 text-sm font-medium text-fd-foreground transition-colors hover:bg-fd-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fd-primary focus-visible:ring-offset-2"
+              >
+                Follow new articles
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuLabel>Subscribe</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  render={
+                    <a
+                      href="https://dev.to/feed/ofriperetzdev"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      RSS feed
+                    </a>
+                  }
+                  onClick={() => track('articles_subscribe_clicked', { channel: 'rss' })}
+                />
+                <DropdownMenuItem
+                  render={
+                    <a
+                      href="https://dev.to/ofriperetzdev"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Follow on Dev.to
+                    </a>
+                  }
+                  onClick={() => track('articles_subscribe_clicked', { channel: 'devto' })}
+                />
+                <DropdownMenuItem
+                  render={
+                    <a
+                      href="https://x.com/ofriperetzdev"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Follow on X
+                    </a>
+                  }
+                  onClick={() => track('articles_subscribe_clicked', { channel: 'x' })}
+                />
+                <DropdownMenuItem
+                  render={
+                    <a
+                      href="https://github.com/ofri-peretz/eslint"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Star on GitHub
+                    </a>
+                  }
+                  onClick={() => track('articles_subscribe_clicked', { channel: 'github' })}
+                />
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         {/* Search & Filters Bar */}
@@ -563,8 +596,13 @@ export function ArticlesClient({
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 motion-safe:animate-fade-in"
               data-testid="articles-grid"
             >
-              {items.map((article) => (
-                <ArticleCard key={article.id} article={article} />
+              {items.map((article, idx) => (
+                <ArticleCard
+                  key={article.id}
+                  article={article}
+                  position={idx}
+                  sourceParams={serializeArticleParams(params)}
+                />
               ))}
               {Array.from({ length: placeholderCount }).map((_, i) => (
                 <div

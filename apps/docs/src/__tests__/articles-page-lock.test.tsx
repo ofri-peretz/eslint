@@ -162,8 +162,11 @@ describe('ArticlesClient: Background Beams Integration', () => {
 // =========================================
 
 describe('ArticlesClient: Component Dependencies', () => {
-  it('imports Badge component', () => {
-    expect(articlesSource).toContain('import { Badge }');
+  it('imports the ArticleCard block from @interlace/ui (no inline card)', () => {
+    expect(articlesSource).toContain(
+      "from '@interlace/ui/blocks/article-card'",
+    );
+    expect(articlesSource).toContain('ArticleCard as ArticleCardBlock');
   });
 
   it('imports Button component', () => {
@@ -287,12 +290,15 @@ describe('ArticlesClient: Article Cards Lock', () => {
     expect(articlesSource).toContain('article.tag_list');
   });
 
-  it('all <img> tags carry explicit width/height (CLS budget)', () => {
-    // Featured cover, card cover, both author avatars — four total.
+  it('inline <img> tags (FeaturedArticle) carry explicit width/height (CLS budget)', () => {
+    // The grid card's <img> is now owned by the @interlace/ui ArticleCard
+    // block — its CLS budget is enforced in the storybook a11y gate. The
+    // featured article remains inline; assert its cover + author avatar
+    // both ship width/height attributes.
     const widthMatches = articlesSource.match(/<img[\s\S]*?width=\{/g) ?? [];
     const heightMatches = articlesSource.match(/<img[\s\S]*?height=\{/g) ?? [];
-    expect(widthMatches.length).toBeGreaterThanOrEqual(4);
-    expect(heightMatches.length).toBeGreaterThanOrEqual(4);
+    expect(widthMatches.length).toBeGreaterThanOrEqual(2);
+    expect(heightMatches.length).toBeGreaterThanOrEqual(2);
   });
 });
 

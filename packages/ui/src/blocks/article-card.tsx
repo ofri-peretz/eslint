@@ -1,7 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import { Heart, MessageCircle, Clock, ExternalLink } from 'lucide-react';
+import { Heart, MessageCircle, Clock, ExternalLink, Eye } from 'lucide-react';
+
+function formatViews(count: number): string {
+  if (count >= 1000) return `${(count / 1000).toFixed(1)}k`;
+  return String(count);
+}
 
 import { cn } from '../lib/cn.js';
 import {
@@ -26,6 +31,8 @@ export interface ArticleCardMeta {
   comments?: number;
   /** Reading time in minutes. */
   readingTimeMinutes?: number;
+  /** Page-view count. Rendered abbreviated (e.g., `1.2k`) when ≥ 1000. */
+  views?: number;
 }
 
 export interface ArticleCardProps {
@@ -204,6 +211,15 @@ export function ArticleCard({
               >
                 <Clock className="h-3.5 w-3.5" />
                 {meta.readingTimeMinutes} min
+              </span>
+            ) : null}
+            {meta.views !== undefined ? (
+              <span
+                className="text-primary flex items-center gap-1.5 text-xs font-medium"
+                title="Views"
+              >
+                <Eye className="h-3.5 w-3.5" />
+                {formatViews(meta.views)}
               </span>
             ) : null}
             <span className="ml-auto opacity-0 transition-opacity group-hover:opacity-100">
