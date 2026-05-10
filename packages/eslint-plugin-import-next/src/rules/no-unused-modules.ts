@@ -26,6 +26,7 @@ export const noUnusedModules = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-unused-modules.md',
       description: 'Forbid modules without exports',
     },
     hasSuggestions: false,

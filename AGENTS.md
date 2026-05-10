@@ -24,6 +24,7 @@ This is a **monorepo** containing ESLint plugins for security-focused static ana
 
 - **[docs/QUALITY_STANDARDS.md](./docs/QUALITY_STANDARDS.md)** - Production-ready checklist for ESLint rules
 - **[docs/CICD.md](./docs/CICD.md)** - CI/CD workflow documentation with state diagrams
+- **[docs/ESLINT_VERSION_SUPPORT.md](./docs/ESLINT_VERSION_SUPPORT.md)** - Which ESLint majors we support and why; refresh via `npm run stats:eslint-versions`
 
 ### For Contributing
 
@@ -37,22 +38,74 @@ This is a **monorepo** containing ESLint plugins for security-focused static ana
 
 ## Quick Commands
 
+This repo uses **npm + Turborepo + Changesets**. There is **no** Nx, no pnpm.
+The Quality Gate (`.github/workflows/quality.yml`) is the single required
+status check on `main` — see its `needs:` list for what runs on every PR.
+
 ```bash
-# Run all tests
-pnpm nx run-many -t test --all
+# Tests / build / typecheck — affected only on PRs, full graph on push to main.
+npx turbo run test --filter=...[origin/main]
+npx turbo run build --filter=...[origin/main]
+npx turbo run typecheck --filter=...[origin/main]
 
-# Run tests with coverage for a specific plugin
-pnpm nx test eslint-plugin-secure-coding --coverage
+# Lint — oxlint is the fast pass; ESLint flat config covers the long tail.
+npm run oxlint
+npx eslint .
 
-# Build all packages
-pnpm nx run-many -t build --all
+# Workflow conventions linter (annotates the YAML inline in PR review).
+npm run lint:workflows
 
-# Lint all packages
-pnpm nx run-many -t lint --all
-
-# Preview a release (dry-run, safe)
-pnpm nx release version --dry-run --projects=eslint-plugin-secure-coding
+# Release lifecycle — see CONTRIBUTING.md "Versioning & Releases (Changesets)".
+npm run changeset                      # add a changeset to a PR
+npm run release:status                 # what's queued + last 3 tags / package
+npm run release:reconcile              # diff git tags / npm / GH Releases
+npm run release:reconcile:backfill     # create missing tags
+npm run release:reconcile:releases     # create missing GH Releases
+npm run release:notes <pkg-dir> <ver>  # preview a GH Release body
 ```
+
+---
+
+## Release flow (closed-loop)
+
+A user-visible change ships in **four hands-off steps**:
+
+1. **Feature PR** — contributor commits a `.changeset/*.md` (the
+   `Changesets` PR-time check warns if missing). PR merges normally
+   when the Quality Gate is green.
+2. **Version PR** — `changesets-pr.yml` opens / refreshes a "Version
+   Packages" PR on every push to main. It bumps every affected
+   `package.json`, regenerates each `CHANGELOG.md`, and deletes the
+   consumed changeset files. **Auto-merge is enabled on this PR**, so
+   it merges itself when the Quality Gate is green (provided
+   `RELEASE_BOT_PAT` is set, or you've approved the bot PR once).
+3. **Publish** — `release.yml` fires on the resulting push to main,
+   detects which packages have a version diff vs npm, and fans out a
+   matrix job per package: `npm publish --provenance` + git tag + GitHub
+   Release with notes from `CHANGELOG.md`.
+4. **Drift watch** — `release-hygiene.yml` runs weekly, compares git
+   tags ↔ npm versions ↔ GitHub Releases, and opens a tracking issue if
+   anything diverges. Auto-closes the issue when drift clears.
+
+Every step is **idempotent** — re-running after a partial failure is
+always safe. Recovery flows are documented in `CONTRIBUTING.md`.
+
+---
+
+## Reports / where to look
+
+When CI runs, look at these step summaries (each workflow's "Summary"
+panel on its run page):
+
+- **Quality Gate** — 9-row pass/fail table per gate.
+- **Release** — per-package row with npm + GH Release links + collapsible release notes.
+- **Changesets** — push side: link to Version PR; PR side: changeset present / not-needed / missing.
+- **Release Hygiene** — drift table with recovery commands.
+- **SDK Compatibility** — matrix-wide rollup ("X/N SDKs compatible").
+
+Workflow filenames map 1:1 to job names in the Actions list. Dynamic
+`run-name:` titles surface the PR number / commit message / mode at a
+glance.
 
 ---
 
@@ -78,6 +131,7 @@ Before approving any new ESLint rule:
 3. **Performance**: O(n) complexity, single AST pass
 4. **Documentation**: Rule docs with OWASP mapping
 5. **Messages**: Clear, actionable error messages
+6. **ESLint Peer Dep**: Package declares `"eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"` — see [docs/ESLINT_VERSION_SUPPORT.md](./docs/ESLINT_VERSION_SUPPORT.md)
 
 See **[docs/QUALITY_STANDARDS.md](./docs/QUALITY_STANDARDS.md)** for the full checklist.
 
@@ -98,15 +152,28 @@ Each plugin's README contains an OWASP coverage matrix.
 
 ## Branch Protection
 
-- `main` is protected - no direct pushes
-- All changes require PR with passing CI and ESLint checks
-- Releases are manual via GitHub Actions
+- `main` is protected — no direct pushes; auto-managed via
+  `scripts/setup-branch-protection.sh`.
+- Single required check: **Quality Gate** (the aggregate job from
+  `quality.yml`). New gates added under `quality.yml` auto-propagate via
+  the aggregate's `needs:` — branch protection updates automatically.
+- 1 PR review required, with CODEOWNERS + stale-review dismissal.
+- Linear history enforced (squash/rebase only) — keeps changesets-driven
+  CHANGELOGs clean.
 
 ---
 
-## Secrets Required
+## Secrets / variables
 
-| Secret          | Purpose           |
-| --------------- | ----------------- |
-| `NPM_TOKEN`     | Publishing to npm |
-| `CODECOV_TOKEN` | Coverage uploads  |
+| Name | Type | Purpose | Required? |
+|------|------|---------|-----------|
+| `NPM_TOKEN`         | secret | First-publish fallback (existing packages use OIDC Trusted Publishers) | optional |
+| `CODECOV_TOKEN`     | secret | Coverage uploads (`codecov.yml`)                                       | optional |
+| `NVD_API_KEY`       | secret | CWE/CVE data sync (`cve-sync.yml`)                                     | optional |
+| `DEV_TO_API_KEY`    | secret | dev.to article sync (`docs-data.yml`)                                  | optional |
+| `RELEASE_BOT_PAT`   | secret | Self-approve Version PR so auto-merge can land it without manual click | optional |
+| `SCORECARD_REPO_TOKEN` | secret | Branch-protection check in OSSF Scorecard                           | optional |
+| `TURBO_TOKEN`       | secret | Vercel Remote Cache token (free for OSS) — 50–80% CI build speedup     | optional |
+| `TURBO_TEAM`        | var    | Vercel team slug, paired with `TURBO_TOKEN`                            | optional |
+
+All are optional — workflows fall back gracefully when unset.

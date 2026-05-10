@@ -25,6 +25,7 @@ export const noMultiComp = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-multi-comp.md',
       description: 'Prevent multiple components per file',
     },
     schema: [
@@ -94,6 +95,7 @@ export const noMultiComp = createRule<RuleOptions, MessageIds>({
       },
     };
 
+    // oxlint-disable-next-line consistent-function-scoping
     function getComponentFromDeclaration(node: TSESTree.VariableDeclarator | TSESTree.FunctionDeclaration): TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression | TSESTree.FunctionDeclaration | null {
       if (node.type === 'FunctionDeclaration') {
         return node;
@@ -151,6 +153,7 @@ export const noMultiComp = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
       if (!node.superClass) return false;
 
@@ -175,6 +178,7 @@ export const noMultiComp = createRule<RuleOptions, MessageIds>({
       return !isReactComponent(node as TSESTree.ClassDeclaration);
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function getComponentNameNode(node: TSESTree.Node): TSESTree.Node {
       if (node.type === 'ClassDeclaration') {
         return node.id || node;

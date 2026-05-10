@@ -24,6 +24,7 @@ export const checkedRequiresOnchangeOrReadonly = createRule<RuleOptions, Message
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/checked-requires-onchange-or-readonly.md',
       description: 'Ensure controlled inputs have onChange or readOnly',
     },
     schema: [],

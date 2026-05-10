@@ -1,0 +1,154 @@
+---
+title: 'Use Interlace with Claude Code'
+description: 'Wire any of the 11 Interlace plugin MCP servers into Claude Code. 3 minutes from zero to "Claude can lint your code".'
+---
+
+# Use Interlace with Claude Code
+
+> **Time to set up:** ~3 minutes.
+> **Result:** Claude Code can call `audit_file`, `find_rule_violations`, `suggest_fix`, and `list_rules` against any of the 11 Interlace security plugins as typed MCP tools.
+
+## What you'll have at the end
+
+A Claude Code session where you can say:
+
+> *"Audit src/api/auth.ts for security issues. Apply the auto-fixes for any high-confidence findings; for medium / low, summarize them so I can decide."*
+
+…and Claude calls `audit_file` → reads the SARIF-style finding list → calls `suggest_fix` per finding → applies the patches via its existing Edit tool → re-audits to verify. Fully autonomous static-analysis loop.
+
+## Step 1 — install the Interlace CLI + the MCP server you want
+
+```bash
+npm install -g @interlace/cli
+# Then pick one or more MCP servers (any of the 11):
+npm install -g @interlace/secure-coding-mcp
+npm install -g @interlace/browser-security-mcp
+npm install -g @interlace/node-security-mcp
+# … or install them on demand via npx — see the next step
+```
+
+If you'd rather not install globally, every MCP server is npx-runnable: `npx @interlace/secure-coding-mcp`. Skip ahead to step 2.
+
+## Step 2 — register the servers with Claude Code
+
+Open `~/.claude/mcp.json` (or `<project>/.mcp.json` for project-scoped servers). Add one entry per plugin you want exposed:
+
+```json
+{
+  "mcpServers": {
+    "secure-coding": {
+      "command": "npx",
+      "args": ["--yes", "@interlace/secure-coding-mcp"]
+    },
+    "node-security": {
+      "command": "npx",
+      "args": ["--yes", "@interlace/node-security-mcp"]
+    },
+    "browser-security": {
+      "command": "npx",
+      "args": ["--yes", "@interlace/browser-security-mcp"]
+    }
+  }
+}
+```
+
+The full list of 11 servers (each is `@interlace/<plugin>-mcp`):
+
+`secure-coding` · `browser-security` · `node-security` · `crypto` · `jwt` · `express-security` · `lambda-security` · `mongodb-security` · `nestjs-security` · `vercel-ai-security` · `pg`
+
+## Step 3 — restart Claude Code and verify
+
+In a new Claude Code session:
+
+```
+> /mcp
+```
+
+You should see the registered servers, each exposing four tools: `list_rules`, `audit_file`, `find_rule_violations`, `suggest_fix`.
+
+Quick smoke test:
+
+```
+> Use list_rules on secure-coding to show me what's available.
+```
+
+Claude calls the tool; you see the rule catalog.
+
+## Step 4 — use it
+
+Concrete prompts that work well:
+
+| Prompt | What Claude does |
+| :--- | :--- |
+| *"Audit src/auth.ts for security issues."* | Calls `audit_file` once, summarizes findings by severity |
+| *"Show me every hardcoded credential in src/."* | Calls `find_rule_violations` with `secure-coding/no-hardcoded-credentials` |
+| *"Apply the auto-fix for the finding on line 42."* | Calls `suggest_fix` then uses the Edit tool to apply |
+| *"Audit the whole repo, then propose a 3-priority remediation plan."* | Calls `audit_file` per file, ranks findings by CVSS + Interlace severity |
+
+## What each tool returns
+
+### `list_rules`
+
+```json
+{
+  "rules": [
+    { "ruleId": "secure-coding/no-hardcoded-credentials", "description": "...", "cwe": "CWE-798", "fixable": true },
+    ...
+  ],
+  "totalCount": 28
+}
+```
+
+### `audit_file`
+
+```json
+{
+  "findings": [
+    { "ruleId": "secure-coding/no-hardcoded-credentials", "severity": "error", "line": 12, "column": 18,
+      "message": "[CWE-798] Hardcoded credential detected", "fixable": true,
+      "fix": { "range": [340, 358], "text": "process.env.PASSWORD" } }
+  ]
+}
+```
+
+### `find_rule_violations`
+
+Same shape as `audit_file`, narrowed to one rule.
+
+### `suggest_fix`
+
+```json
+{
+  "fix": {
+    "range": [340, 358],
+    "replacement": "process.env.PASSWORD",
+    "confidence": "high",
+    "ruleId": "secure-coding/no-hardcoded-credentials",
+    "message": "..."
+  }
+}
+```
+
+When the rule isn't auto-fixable, `fix: null` with a `reason` explaining manual remediation.
+
+## Why this is more useful than just running ESLint via Bash
+
+1. **Typed schema** — Claude knows what each tool returns + how to call it without parsing CLI output.
+2. **Surgical scope** — `find_rule_violations` returns only the rule the agent cares about, much cheaper than `audit_file` on a large directory.
+3. **Auto-fix routing** — `suggest_fix` returns a structured patch the agent can apply via its Edit tool deterministically.
+4. **Confidence-aware** — every fix carries a `confidence` field (high / medium / low). Agents can route automatically: high → apply, medium → propose, low → escalate.
+5. **No format-parsing fragility** — no "did Claude correctly parse `2 errors, 3 warnings` from stylish output?" The tool returns JSON, period.
+
+## Troubleshooting
+
+**Claude can't see the servers.** Restart Claude Code after editing `mcp.json`. Run `/mcp` again to verify.
+
+**`npx` is slow first time.** First invocation downloads + installs the package. Subsequent runs hit the cache. To pre-warm: `npx @interlace/secure-coding-mcp --version`.
+
+**Server starts but tools don't appear.** Check the server's stderr for errors — Claude Code surfaces these in the `/mcp` panel. Common cause: the workspace doesn't have a `node_modules/eslint` (Interlace MCP servers shell to ESLint internally). Install ESLint in the workspace, or set `INTERLACE_USE_GLOBAL_ESLINT=1` in the env to use a globally-installed one.
+
+## See also
+
+- **Cursor**: [Use Interlace with Cursor](./cursor) — same tools, slightly different setup
+- **VS Code**: [Interlace VS Code extension](https://github.com/ofri-peretz/eslint/tree/main/packages/interlace-vscode) — bundles the CLI + a one-click MCP server launcher
+- **The MCP base package**: [@interlace/eslint-mcp-base](https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-mcp-base) — for building your own plugin's MCP server

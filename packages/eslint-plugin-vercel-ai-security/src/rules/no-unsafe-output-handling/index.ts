@@ -27,7 +27,11 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/no-unsafe-output-handling.md',
       description: 'Prevent using AI output directly in dangerous operations (eval, SQL, HTML)',
+      cwe: 'CWE-94',
+      cvss: 9.8,
+      confidence: 'medium',
     },
     messages: {
       unsafeOutputExecution: formatLLMMessage({
@@ -114,14 +118,63 @@ export const noUnsafeOutputHandling = createRule<RuleOptions, MessageIds>({
     const sqlPatterns = ['query', 'execute', 'run', 'raw'];
     
     /**
+     * Names of variables locally bound to the result of a known AI SDK call.
+     * Tracks the idiomatic `const { text } = await generateText(...)` and
+     * `const result = await streamText(...)` patterns. Without this, the
+     * heuristic pattern match (`result.text`, `aiOutput`, …) missed every
+     * destructured-`text` case (real FN found by the OWASP-LLM02 corpus).
+     */
+    const aiBoundNames = new Set<string>();
+
+    const AI_SDK_CALLS = new Set(['generateText', 'streamText', 'generateObject', 'streamObject']);
+
+    function isAISDKCall(node: TSESTree.Expression): boolean {
+      // generateText(...) | ai.generateText(...) | sdk.generateText(...)
+      let target: TSESTree.Expression = node;
+      if (target.type === 'AwaitExpression') target = target.argument as TSESTree.Expression;
+      if (target.type !== 'CallExpression') return false;
+      const callee = target.callee;
+      if (callee.type === 'Identifier' && AI_SDK_CALLS.has(callee.name)) return true;
+      if (callee.type === 'MemberExpression' && callee.property.type === 'Identifier' &&
+          AI_SDK_CALLS.has(callee.property.name)) return true;
+      return false;
+    }
+
+    /**
      * Check if a node likely contains AI output
      */
     function isLikelyAIOutput(node: TSESTree.Node): boolean {
+      // Direct member access into a tracked variable: `result.text`, `out.text`
+      if (node.type === 'MemberExpression' && node.object.type === 'Identifier' &&
+          aiBoundNames.has(node.object.name)) {
+        return true;
+      }
+      // Bare reference to a tracked variable (covers destructured `text` from
+      // `const { text } = await generateText(...)`).
+      if (node.type === 'Identifier' && aiBoundNames.has(node.name)) {
+        return true;
+      }
+      // Original heuristic — still useful for `result.text`-shaped source even
+      // when scope tracking missed the binding.
       const text = sourceCode.getText(node);
       return aiOutputPatterns.some((pattern: string) => text.includes(pattern));
     }
 
     return {
+      // Track `const r = await generateText(...)` / `const { text } = ...` shapes
+      VariableDeclarator(node: TSESTree.VariableDeclarator) {
+        if (!node.init || !isAISDKCall(node.init)) return;
+        if (node.id.type === 'Identifier') {
+          aiBoundNames.add(node.id.name);
+        } else if (node.id.type === 'ObjectPattern') {
+          for (const prop of node.id.properties) {
+            if (prop.type === 'Property' && prop.value.type === 'Identifier') {
+              aiBoundNames.add(prop.value.name);
+            }
+          }
+        }
+      },
+
       // Check for eval() and similar with AI output
       CallExpression(node: TSESTree.CallExpression) {
         const callee = sourceCode.getText(node.callee);

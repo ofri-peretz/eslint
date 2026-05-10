@@ -23,6 +23,7 @@ export const scope = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/scope.md',
       description: 'Enforce that scope prop is only used on th elements',
     },
     messages: {

@@ -26,7 +26,10 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-unsafe-dynamic-require.md',
       description: 'Prevent unsafe dynamic require() calls that could enable code injection',
+      cwe: 'CWE-95',
+      cvss: 9.5,
     },
     fixable: 'code',
     hasSuggestions: false,
@@ -84,6 +87,7 @@ export const noUnsafeDynamicRequire = createRule<RuleOptions, MessageIds>({
     /**
      * Check if argument is dynamic (not a literal)
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const isDynamicArgument = (arg: TSESTree.Expression | TSESTree.SpreadElement): boolean => {
       if (arg.type === 'Literal') return false;
       if (arg.type === 'TemplateLiteral' && arg.expressions.length === 0) return false;

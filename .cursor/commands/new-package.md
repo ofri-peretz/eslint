@@ -1,197 +1,90 @@
 # 📦 Adding a New Package Checklist
 
-> **Purpose:** Ensure all new packages are properly integrated, configured, and released following project standards.
+> **Purpose:** Ensure new packages are properly integrated, configured, and released following project standards.
 
-**⚠️ CRITICAL:** When adding a new package to the eslint monorepo, you MUST complete ALL items in this checklist. Missing any item will cause issues in the release process.
+**⚠️ CRITICAL:** When adding a new package to the eslint monorepo, you MUST complete ALL items below. Missing any item will cause issues at build, test, or release time.
 
-When adding a new package to this monorepo, **ALWAYS** follow this checklist:
+> **Authoritative references:** [`ARCHITECTURE.md`](../../ARCHITECTURE.md), [`docs/QUALITY_STANDARDS.md`](../../docs/QUALITY_STANDARDS.md), [`docs/ESLINT_VERSION_SUPPORT.md`](../../docs/ESLINT_VERSION_SUPPORT.md). If anything in this checklist conflicts with those, those win — update the checklist.
 
-## 1. Package Structure Setup
+## 1. Package Structure
 
-- [ ] Create package directory: `packages/<package-name>/`
-- [ ] Create `package.json` with correct `name` field
-- [ ] Create `project.json` for Nx configuration
-- [ ] Create `tsconfig.json` (or copy from similar package)
-- [ ] Create `README.md` with package documentation
-- [ ] Create `CHANGELOG.md` (if package will be published)
-- [ ] Add `LICENSE` file (copy from root or another package)
+- [ ] Create `packages/<package-name>/` directory (must match the `apps/* | packages/* | tools/* | benchmarks` workspace globs in root `package.json`)
+- [ ] Create `package.json` — see §3 below for required fields
+- [ ] Create `tsconfig.json` and `tsconfig.lib.json` (copy from a similar package — `eslint-plugin-pg` is a good template)
+- [ ] Create `turbo.json` if the package needs custom build/test config (otherwise root `turbo.json` defaults apply)
+- [ ] Create `README.md` following [`docs/QUALITY_STANDARDS.md`](../../docs/QUALITY_STANDARDS.md) §4 (Documentation)
+- [ ] Create `CHANGELOG.md` (required for published packages)
+- [ ] Add `LICENSE` file (copy from another package)
 
-## 2. Nx Configuration
+## 2. Plugin Scope Decision
 
-- [ ] Add package to `nx.json` → `release.projects` array:
-  ```json
-  "release": {
-    "projects": [
-      "packages/<package-name>",
-      // ... existing packages
-    ]
-  }
-  ```
-- [ ] Verify `project.json` has correct `name` field matching directory name
-- [ ] Configure build/test targets in `project.json` if needed
+Apply [`ARCHITECTURE.md` § "Plugin organization"](../../ARCHITECTURE.md#plugin-organization-the-rule-that-decides-where-new-code-goes) — does the rule belong in an existing plugin? If yes, **stop here and add it there.** Only create a new package when no existing plugin fits.
 
-## 3. Release Workflow Configuration ⚠️ **CRITICAL**
+## 3. `package.json` Required Fields
 
-**Determine if package is SCOPED or UNscoped:**
-
-### For SCOPED Packages (`eslint-plugin/*`):
-
-- [ ] Add to `.github/workflows/release.yml`:
-  - Find `SCOPED_PROJECTS` variable (appears in multiple places)
-  - Add project name to the list: `SCOPED_PROJECTS="eslint-plugin,eslint-plugin-utils,cli,<new-package>"`
-  - Update in ALL locations:
-    - Version preparation step (around line 250)
-    - Publish step (around line 573)
-    - Dry-run step (around line 675)
-  - Update workflow documentation at top of file (around line 8) listing the new package
-- [ ] Verify `scope: "eslint-plugin"` is set in `setup-node@v6` step (around line 153)
-- [ ] Package will use **Trusted Publishing (OIDC)**
-
-### For UNscoped Packages (`eslint-plugin-*` or similar):
-
-- [ ] Add to `.github/workflows/release-unscoped.yml`:
-  - Find `UNSCOPED_PROJECTS` variable (appears in multiple places)
-  - Add project name to the list: `UNSCOPED_PROJECTS="eslint-plugin-llm,eslint-plugin-mcp,eslint-plugin-llm-optimized,eslint-plugin-mcp-optimized,<new-package>"`
-  - Update in ALL locations:
-    - Version preparation step (around line 114)
-    - Publish step (around line 137)
-    - Dry-run step (around line 159)
-  - Update workflow documentation at top of file (around line 8) listing the new package
-- [ ] Verify NO scope is set in `setup-node@v6` step (around line 63)
-- [ ] Package will use **NPM_TOKEN (Granular Access Token)**
-
-## 4. Package.json Configuration
-
-- [ ] Set correct `name` field:
-  - Scoped: `"eslint-plugin/<package-name>"`
-  - Unscoped: `"<package-name>"`
-- [ ] Set `version` to `"0.0.0"` (or appropriate starting version)
-- [ ] Add `publishConfig` if publishing:
-  ```json
-  "publishConfig": {
-    "access": "public"
-  }
-  ```
-- [ ] Add repository links:
-  ```json
+```jsonc
+{
+  "name": "<package-name>",                          // see §4 for naming rules
+  "version": "0.0.0",
+  "description": "...",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "publishConfig": { "access": "public" },
+  "files": ["src/", "dist/", "README.md", "LICENSE", "CHANGELOG.md"],
+  "engines": { "node": ">=18.0.0" },
+  "peerDependencies": {
+    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"        // REQUIRED — see ESLINT_VERSION_SUPPORT.md
+  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ofri-peretz/eslint.git",
+    "url": "https://github.com/ofri-peretz/eslint",
     "directory": "packages/<package-name>"
-  }
-  ```
-- [ ] Add `homepage` and `bugs` URLs
-- [ ] Configure `files` array for published files
-- [ ] Set `engines.node` if needed
-
-## 5. TypeScript Configuration
-
-- [ ] Create `tsconfig.json` (copy from similar package)
-- [ ] Update `tsconfig.base.json` paths if needed
-- [ ] Verify TypeScript compilation works: `npx nx build <package-name>`
-
-## 6. Testing Setup
-
-- [ ] Create test files (`.test.ts` or `.spec.ts`)
-- [ ] Configure test target in `project.json`
-- [ ] Add `vitest.config.mts` if needed
-- [ ] Verify tests run: `npx nx test <package-name>`
-
-## 7. Build Configuration
-
-- [ ] Configure build target in `project.json`
-- [ ] Set correct `outputs` in `project.json`
-- [ ] Verify build works: `npx nx build <package-name>`
-- [ ] Check build output in `dist/packages/<package-name>/`
-
-## 8. Documentation
-
-- [ ] Update root `README.md` with new package entry
-- [ ] Create package-specific `README.md` with:
-  - Installation instructions
-  - Usage examples
-  - API documentation
-  - Configuration options
-- [ ] Add package to appropriate section (Scoped vs Unscoped) in root README
-
-## 9. CI/CD Integration
-
-- [ ] Verify package is included in `nx.json` → `release.projects`
-- [ ] Test workflow manually:
-
-  ```bash
-  # For scoped packages
-  gh workflow run release.yml -f dry-run=true
-
-  # For unscoped packages
-  gh workflow run release-unscoped.yml -f dry-run=true
-  ```
-
-- [ ] Verify package appears in workflow logs
-
-## 10. NPM Publishing Setup
-
-### For Scoped Packages (`eslint-plugin/*`):
-
-- [ ] Verify Trusted Publishing is configured at: https://www.npmjs.com/org/eslint/settings/publishing
-- [ ] Ensure GitHub repository is listed as Trusted Publisher
-- [ ] No NPM_TOKEN needed (uses OIDC)
-
-### For Unscoped Packages:
-
-- [ ] Verify `NPM_TOKEN` secret exists in GitHub repository
-- [ ] Token must be Granular Access Token (NOT classic - deprecated)
-- [ ] Token must have "Publish packages" permission
-
-## 11. Verification Steps
-
-- [ ] Run: `npx nx graph` - verify package appears in dependency graph
-- [ ] Run: `npx nx run-many -t build --all` - verify package builds
-- [ ] Run: `npx nx run-many -t test --all` - verify package tests pass
-- [ ] Run: `npx nx run-many -t lint --all` - verify package lints
-- [ ] Check: `npx nx release --dry-run` - verify package is detected
-
-## 12. First Release
-
-- [ ] Create initial commit with package
-- [ ] Use conventional commit: `feat: add <package-name> package`
-- [ ] Run release workflow (dry-run first):
-
-  ```bash
-  # Scoped
-  gh workflow run release.yml -f dry-run=true
-
-  # Unscoped
-  gh workflow run release-unscoped.yml -f dry-run=true
-  ```
-
-- [ ] Verify package appears in release preview
-- [ ] Run actual release when ready
-
-## 🎯 Package Type Decision Tree
-
-```
-Is package name prefixed with eslint-plugin/?
-│
-├─ YES → SCOPED Package
-│   ├─ Use: release.yml workflow
-│   ├─ Add to: SCOPED_PROJECTS variable
-│   ├─ Auth: Trusted Publishing (OIDC)
-│   └─ Scope: eslint-plugin (set in setup-node@v6)
-│
-└─ NO → UNscoped Package
-    ├─ Use: release-unscoped.yml workflow
-    ├─ Add to: UNSCOPED_PROJECTS variable
-    ├─ Auth: NPM_TOKEN (Granular Access Token)
-    └─ Scope: NONE (not set in setup-node@v6)
+  },
+  "homepage": "https://github.com/ofri-peretz/eslint/tree/main/packages/<package-name>#readme",
+  "bugs": { "url": "https://github.com/ofri-peretz/eslint/issues" }
+}
 ```
 
-## ⚠️ Common Mistakes to Avoid
+## 4. Package Naming & Publishing
 
-- ❌ **Forgetting to add package to release workflow** - Package won't be published!
-- ❌ **Adding scoped package to unscoped workflow** - Will fail with 404
-- ❌ **Adding unscoped package to scoped workflow** - Will fail with 404
-- ❌ **Not updating SCOPED_PROJECTS/UNSCOPED_PROJECTS in all locations** - Some steps will fail
-- ❌ **Missing package in nx.json → release.projects** - Nx won't detect it
-- ❌ **Wrong package name format** - Scoped vs unscoped mismatch
+| Naming | Example | Auth at release time |
+| :--- | :--- | :--- |
+| **Scoped** (`@interlace/<name>`) | `@interlace/eslint-devkit`, `@interlace/eslint-formatter` | Trusted Publishing (OIDC) — no token needed |
+| **Unscoped** (`<name>`) | `eslint-plugin-pg`, `eslint-plugin-secure-coding` | `NPM_TOKEN` (Granular Access Token) |
 
+The release workflow detects which path applies based on the package name and publishes accordingly. There is no separate scoped/unscoped workflow file — `release.yml` handles both.
+
+## 5. Build & Test Verification
+
+- [ ] `npx turbo run build --filter=<package-name>` succeeds
+- [ ] `npx turbo run test --filter=<package-name>` passes
+- [ ] `npx turbo run lint --filter=<package-name>` passes
+- [ ] `npx turbo run typecheck --filter=<package-name>` passes (if defined)
+- [ ] Coverage ≥ 90% per [`docs/QUALITY_STANDARDS.md`](../../docs/QUALITY_STANDARDS.md) §2
+
+## 6. Repo-Wide Integration
+
+- [ ] Root [`README.md`](../../README.md) Available Packages table includes the new package in the right section (Security / Code Quality / Supporting)
+- [ ] [`ARCHITECTURE.md`](../../ARCHITECTURE.md) "Bird's-eye" tree mentions the new package if it's load-bearing
+- [ ] [`AGENTS.md`](../../AGENTS.md) Repository Overview table updated if the new package fits the headline plugins
+
+## 7. Pre-Release Verification
+
+- [ ] All checks above pass locally
+- [ ] `npm run release:dry-run` (`gh workflow run release.yml --ref main -f dry-run=true`) shows the new package detected
+- [ ] First commit follows conventional-commits: `feat: add <package-name> package`
+
+## 8. First Release
+
+- [ ] Verify dry-run output looks correct
+- [ ] Trigger real release: `npm run release` (`gh workflow run release.yml --ref main`)
+- [ ] Confirm package appears on npm at the expected name
+- [ ] Add the npm download badge to the package's README
+
+## ⚠️ Common Mistakes
+
+- ❌ Missing `peerDependencies.eslint: "^8.0.0 || ^9.0.0 || ^10.0.0"` — the policy gate ([`docs/ESLINT_VERSION_SUPPORT.md`](../../docs/ESLINT_VERSION_SUPPORT.md))
+- ❌ Wrong scope or name — pick @interlace/* for shared infra, unscoped for plugins, then verify it matches the npm registry expectation
+- ❌ Skipping the [`ARCHITECTURE.md` plugin-organization rule](../../ARCHITECTURE.md#plugin-organization-the-rule-that-decides-where-new-code-goes) and creating a new plugin when an existing one already owns the concern
+- ❌ Forgetting to add the new package to the root README's package table — viewers can't find it
+- ❌ Pushing the first release before the dry-run is clean

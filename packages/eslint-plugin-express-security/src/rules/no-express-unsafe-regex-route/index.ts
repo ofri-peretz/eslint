@@ -34,7 +34,7 @@ type RuleOptions = [Options?];
 /**
  * HTTP method names used for routing
  */
-const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete', 'all', 'use'];
+const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'all', 'use']);
 
 /**
  * Patterns that indicate potential ReDoS vulnerability
@@ -79,8 +79,11 @@ export const noExpressUnsafeRegexRoute = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-express-unsafe-regex-route.md',
       description:
         'Disallow ReDoS-vulnerable regular expressions in Express.js route patterns',
+      cwe: 'CWE-1333',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
@@ -156,7 +159,7 @@ export const noExpressUnsafeRegexRoute = createRule<RuleOptions, MessageIds>({
           return;
         }
 
-        if (!HTTP_METHODS.includes(property.name)) {
+        if (!HTTP_METHODS.has(property.name)) {
           return;
         }
 

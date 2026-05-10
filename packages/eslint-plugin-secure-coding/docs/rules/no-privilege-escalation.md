@@ -107,32 +107,7 @@ app.post('/api/grant', (req, res) => {
 ### ✅ Correct
 
 ```typescript
-// Role assignment with validation
-app.put('/api/users/:id', (req, res) => {
-  if (!hasRole(currentUser, 'admin')) {
-    // ✅ Role check
-    throw new Error('Unauthorized');
-  }
-  user.role = req.body.role; // ✅ Safe after validation
-});
-
-// Permission assignment with authorization
-app.post('/api/permissions', (req, res) => {
-  if (!isAuthorized(currentUser, 'grant_permissions')) {
-    // ✅ Authorization check
-    throw new Error('Unauthorized');
-  }
-  user.permission = req.query.permission; // ✅ Safe after check
-});
-
-// Privilege operation with role validation
-app.post('/api/grant', (req, res) => {
-  if (!checkRole(currentUser, requiredRole)) {
-    // ✅ Role validation
-    throw new Error('Unauthorized');
-  }
-  grant(user, req.body.permission); // ✅ Safe after validation
-});
+if (hasRole(user, "admin")) { user.role = req.body.role; }
 ```
 
 ## Configuration

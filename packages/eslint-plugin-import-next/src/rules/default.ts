@@ -23,6 +23,7 @@ export const defaultRule = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/default.md',
       description: 'Ensure a default export is present, given a default import',
     },
     messages: {

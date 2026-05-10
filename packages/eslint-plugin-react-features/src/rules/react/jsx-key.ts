@@ -26,6 +26,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/jsx-key.md',
       description:
         'Detect missing or problematic React keys that could break reconciliation',
     },
@@ -101,7 +102,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
     /**
      * Array iterator methods that produce lists requiring keys
      */
-    const ITERATOR_METHODS = ['map', 'forEach', 'flatMap'];
+    const ITERATOR_METHODS = new Set(['map', 'forEach', 'flatMap']);
 
     /**
      * Check if a CallExpression is an iterator call that produces a list
@@ -122,7 +123,7 @@ export const jsxKey = createRule<RuleOptions, MessageIds>({
       if (
         callee.type === 'MemberExpression' &&
         callee.property.type === 'Identifier' &&
-        ITERATOR_METHODS.includes(callee.property.name)
+        ITERATOR_METHODS.has(callee.property.name)
       ) {
         return true;
       }

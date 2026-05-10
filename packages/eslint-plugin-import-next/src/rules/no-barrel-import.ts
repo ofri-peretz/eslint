@@ -95,6 +95,7 @@ export const noBarrelImport = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-barrel-import.md',
       description:
         'Disallow imports from barrel files to improve build performance and tree-shaking',
     },

@@ -11,6 +11,7 @@
       "require": "./src/index.js",
       "import": "./src/index.js"
     },
+    "./schema.json": "./schema.json",
     "./package.json": "./package.json"
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
@@ -30,6 +31,7 @@
   "files": [
     "src/",
     "dist/",
+    "schema.json",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"
@@ -50,7 +52,7 @@
     "node": ">=18.0.0"
   },
   "peerDependencies": {
-    "eslint": "^8.0.0 || ^9.0.0"
+    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"
   },
   "devDependencies": {
     "eslint": "^8.57.1"

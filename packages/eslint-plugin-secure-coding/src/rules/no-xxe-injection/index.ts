@@ -42,6 +42,60 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
+/**
+ * Check if this is an XML parsing operation
+ */
+const isXmlParsingCall = (node: TSESTree.CallExpression): boolean => {
+  const callee = node.callee;
+
+  // Check for XML library method calls
+  if (callee.type === 'MemberExpression' &&
+      callee.property.type === 'Identifier' &&
+      ['parse', 'parseFromString', 'parseString', 'parseXmlString', 'parseXML'].includes(callee.property.name)) {
+    return true;
+  }
+
+  // Check for constructor calls
+  if (callee.type === 'Identifier' &&
+      ['DOMParser', 'XMLHttpRequest', 'ActiveXObject'].includes(callee.name)) {
+    return true;
+  }
+
+  return false;
+};
+
+/**
+ * Check if parser options enable dangerous features
+ */
+const hasDangerousParserOptions = (optionsNode: TSESTree.Node): boolean => {
+  if (optionsNode.type !== 'ObjectExpression') {
+    return false;
+  }
+
+  // Check for dangerous options
+  for (const prop of optionsNode.properties) {
+    if (prop.type === 'Property' &&
+        prop.key.type === 'Identifier' &&
+        ['resolveExternals', 'expandEntityReferences', 'noent'].includes(prop.key.name)) {
+
+      // Check if the value enables dangerous features
+      if (prop.value.type === 'Literal' && prop.value.value === true) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
+
+/**
+ * Check if XML contains dangerous entity declarations
+ */
+const containsDangerousEntities = (xmlText: string): boolean => {
+  return /<!ENTITY/i.test(xmlText) &&
+         /SYSTEM\s+["']/i.test(xmlText);
+};
+
 export const noXxeInjection = createRule<RuleOptions, MessageIds>({
   name: 'no-xxe-injection',
   meta: {
@@ -49,6 +103,8 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
     docs: {
       description: 'Detect XML External Entity (XXE) injection vulnerabilities',
       url: 'https://cwe.mitre.org/data/definitions/611.html',
+      cwe: 'CWE-611',
+      cvss: 9.5,
     },
     messages: {
       xxeInjection: formatLLMMessage({
@@ -122,27 +178,6 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
 
     const filename = context.filename || context.getFilename();
 
-    /**
-     * Check if this is an XML parsing operation
-     */
-    const isXmlParsingCall = (node: TSESTree.CallExpression): boolean => {
-      const callee = node.callee;
-
-      // Check for XML library method calls
-      if (callee.type === 'MemberExpression' &&
-          callee.property.type === 'Identifier' &&
-          ['parse', 'parseFromString', 'parseString', 'parseXmlString', 'parseXML'].includes(callee.property.name)) {
-        return true;
-      }
-
-      // Check for constructor calls
-      if (callee.type === 'Identifier' &&
-          ['DOMParser', 'XMLHttpRequest', 'ActiveXObject'].includes(callee.name)) {
-        return true;
-      }
-
-      return false;
-    };
 
     /**
      * Check if parser options are secure
@@ -172,30 +207,6 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
     };
 
     /**
-     * Check if parser options enable dangerous features
-     */
-    const hasDangerousParserOptions = (optionsNode: TSESTree.Node): boolean => {
-      if (optionsNode.type !== 'ObjectExpression') {
-        return false;
-      }
-
-      // Check for dangerous options
-      for (const prop of optionsNode.properties) {
-        if (prop.type === 'Property' &&
-            prop.key.type === 'Identifier' &&
-            ['resolveExternals', 'expandEntityReferences', 'noent'].includes(prop.key.name)) {
-
-          // Check if the value enables dangerous features
-          if (prop.value.type === 'Literal' && prop.value.value === true) {
-            return true;
-          }
-        }
-      }
-
-      return false;
-    };
-
-    /**
      * Check if input has been validated
      */
     const isXmlInputValidated = (xmlSource: TSESTree.Node): boolean => {
@@ -212,14 +223,6 @@ export const noXxeInjection = createRule<RuleOptions, MessageIds>({
       }
 
       return false;
-    };
-
-    /**
-     * Check if XML contains dangerous entity declarations
-     */
-    const containsDangerousEntities = (xmlText: string): boolean => {
-      return /<!ENTITY/i.test(xmlText) &&
-             /SYSTEM\s+["']/i.test(xmlText);
     };
 
     /**

@@ -387,11 +387,182 @@ function readLlmFix(): BenchScore {
 }
 
 // ---------------------------------------------------------------------------
+// COVERAGE / TRUST SIGNALS (Cohen's κ + over-fit detector + corpus breadth)
+// ---------------------------------------------------------------------------
+
+interface CoverageSignal {
+  totalFixtures: number;
+  tools: string[];
+  fixtures3PlusAgree: number;
+  fixturesAllAgree: number;
+  pctFixtures3PlusAgree: number;
+  pctFixturesAllAgree: number;
+  kappas: Record<string, number | null>;
+  onlyInterlace: Array<{ cwe?: string; file?: string } | string>;
+}
+interface CoverageSummary {
+  generatedAt: string;
+  juliet: CoverageSignal;
+  arena: CoverageSignal;
+  coverageBreadth: {
+    cwes: Array<{ cwe: string; vulnerable: number; safe: number }>;
+    gaps: Array<{ cwe: string; vulnerable: number; safe: number }>;
+  };
+}
+
+function readCoverageSignals(): CoverageSummary | null {
+  const p = path.join(WILD_RESULTS, 'coverage.json');
+  if (!fs.existsSync(p)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(p, 'utf-8')) as CoverageSummary;
+  } catch {
+    return null;
+  }
+}
+
+function interpretKappa(k: number | null): string {
+  if (k == null) return '—';
+  if (k < 0) return 'worse than chance';
+  if (k < 0.2) return 'slight';
+  if (k < 0.4) return 'fair';
+  if (k < 0.6) return 'moderate';
+  if (k < 0.8) return 'substantial';
+  if (k < 1) return 'almost perfect';
+  return 'perfect';
+}
+
+// ---------------------------------------------------------------------------
+// PER-RULE OBSERVABILITY (Gap G + Gap L)
+// ---------------------------------------------------------------------------
+
+interface PerRuleAgg {
+  rule: string;
+  totalHits: number;
+  weightedAvgMs: number;
+  reposExercising: number;
+  errorHits: number;
+  warnHits: number;
+  measuredInArena: boolean;
+  measuredInJuliet: boolean;
+}
+
+function aggregatePerRule(): PerRuleAgg[] {
+  const wild = latestWildSummary();
+  if (!wild?.data) return [];
+  const dateDir = path.dirname(wild.path);
+  const perRepoDir = path.join(dateDir, 'per-repo');
+  if (!fs.existsSync(perRepoDir)) return [];
+
+  type Sample = { ruleId: string; severity: string };
+  type RuleEntry = { hits: number; avgTimeMs?: number; samples?: Sample[] };
+
+  const acc = new Map<string, { hits: number; msTimesHits: number; repos: Set<string>; error: number; warn: number }>();
+
+  for (const repoDir of fs.readdirSync(perRepoDir)) {
+    const f = path.join(perRepoDir, repoDir, 'per-rule.json');
+    if (!fs.existsSync(f)) continue;
+    const data = readJson<Record<string, RuleEntry>>(f);
+    if (!data) continue;
+    for (const [rule, entry] of Object.entries(data)) {
+      if (!acc.has(rule)) acc.set(rule, { hits: 0, msTimesHits: 0, repos: new Set(), error: 0, warn: 0 });
+      const a = acc.get(rule)!;
+      a.hits += entry.hits;
+      a.msTimesHits += (entry.avgTimeMs ?? 0) * entry.hits;
+      a.repos.add(repoDir);
+      for (const s of entry.samples ?? []) {
+        if (s.severity === 'error') a.error++;
+        else if (s.severity === 'warn' || s.severity === 'warning') a.warn++;
+      }
+    }
+  }
+
+  const measuredArena = readMeasuredRuleSet(path.join(BENCH_RESULTS, 'ilb-arena'));
+  const measuredJuliet = readMeasuredRuleSet(path.join(BENCH_RESULTS, 'ilb-juliet'));
+
+  return [...acc.entries()]
+    .map(([rule, a]) => ({
+      rule,
+      totalHits: a.hits,
+      weightedAvgMs: a.hits ? +(a.msTimesHits / a.hits).toFixed(2) : 0,
+      reposExercising: a.repos.size,
+      errorHits: a.error,
+      warnHits: a.warn,
+      measuredInArena: measuredArena.has(rule),
+      measuredInJuliet: measuredJuliet.has(rule),
+    }))
+    .sort((x, y) => y.totalHits - x.totalHits);
+}
+
+function readMeasuredRuleSet(dir: string): Set<string> {
+  const f = latestFile(dir);
+  if (!f) return new Set();
+  const raw = fs.readFileSync(f, 'utf-8');
+  const matches = raw.match(/"(?:[a-z][a-z0-9-]*\/)?(?:@[a-z0-9-]+\/)?[a-z][a-z0-9-]*\/[a-z][a-z0-9-/]*"/gi) ?? [];
+  const set = new Set<string>();
+  for (const m of matches) {
+    const name = m.slice(1, -1);
+    if (name.includes('/') && !name.startsWith('http')) set.add(name);
+  }
+  return set;
+}
+
+// ---------------------------------------------------------------------------
+// HISTORY (Gap K — append per-bench scores to NDJSON for time-decay tracking)
+// ---------------------------------------------------------------------------
+
+function appendHistory(rows: BenchRow[]) {
+  const today = new Date().toISOString().split('T')[0];
+  const historyPath = path.join(WILD_RESULTS, 'history.ndjson');
+  const lines = rows.map((b) =>
+    JSON.stringify({ date: today, bench: b.name, score: b.score, asOf: b.date }),
+  );
+  fs.mkdirSync(WILD_RESULTS, { recursive: true });
+  // Append-only; idempotent per date+bench (skip if same date already recorded)
+  let existing = '';
+  try { existing = fs.readFileSync(historyPath, 'utf-8'); } catch { /* first run */ }
+  const existingKeys = new Set(
+    existing.trim().split('\n').filter(Boolean).map((line) => {
+      try {
+        const o = JSON.parse(line) as { date: string; bench: string };
+        return `${o.date}|${o.bench}`;
+      } catch { return ''; }
+    }),
+  );
+  const fresh = lines.filter((l) => {
+    try {
+      const o = JSON.parse(l) as { date: string; bench: string };
+      return !existingKeys.has(`${o.date}|${o.bench}`);
+    } catch { return false; }
+  });
+  if (fresh.length === 0) return;
+  fs.appendFileSync(historyPath, fresh.join('\n') + '\n');
+}
+
+function readHistory(): Array<{ date: string; bench: string; score: string; asOf: string | null }> {
+  const p = path.join(WILD_RESULTS, 'history.ndjson');
+  if (!fs.existsSync(p)) return [];
+  return fs.readFileSync(p, 'utf-8').trim().split('\n').filter(Boolean).map((line) => JSON.parse(line));
+}
+
+function sparkline(scores: Array<number | null>): string {
+  if (scores.length === 0) return '—';
+  const valid = scores.filter((n): n is number => n != null);
+  if (valid.length === 0) return '—';
+  const min = Math.min(...valid);
+  const max = Math.max(...valid);
+  const blocks = '▁▂▃▄▅▆▇█';
+  const range = max - min || 1;
+  return scores.map((n) => (n == null ? ' ' : blocks[Math.min(7, Math.floor(((n - min) / range) * 7))])).join('');
+}
+
+// ---------------------------------------------------------------------------
 // BUILD SCORECARD
 // ---------------------------------------------------------------------------
 
 const wild = readWild();
 const wildData = (wild.raw ?? null) as WildSummary | null;
+const coverage = readCoverageSignals();
+const perRuleAgg = aggregatePerRule();
 
 const benches: BenchRow[] = [
   { name: 'ILB-Juliet', dimension: 'Synthetic CWE accuracy', industry: 'NIST Juliet / OWASP Bench', target: 'F1 ≥ 80%', ...readJuliet() },
@@ -417,6 +588,9 @@ if (EMIT_JSON) {
   process.exit(0);
 }
 
+// Append today's scores to history NDJSON (Gap K — time-decay tracking).
+appendHistory(benches);
+
 const md = renderMd(benches);
 fs.mkdirSync(WILD_RESULTS, { recursive: true });
 fs.writeFileSync(path.join(WILD_RESULTS, 'scorecard.md'), md);
@@ -431,10 +605,27 @@ if (PRINT) {
 
 function renderMd(benches: BenchRow[]): string {
   const today = new Date().toISOString().split('T')[0];
+  const history = readHistory();
+
+  const numericScore = (s: string | undefined | null): number | null => {
+    if (!s) return null;
+    const m = s.match(/-?\d+(?:\.\d+)?/);
+    return m ? parseFloat(m[0]) : null;
+  };
+
+  const trendFor = (benchName: string): string => {
+    const rows = history
+      .filter((h) => h.bench === benchName && h.date)
+      .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''))
+      .slice(-12);
+    if (rows.length < 2) return '—';
+    return sparkline(rows.map((r) => numericScore(r.score)));
+  };
+
   const rows = benches
     .map(
       (b) =>
-        `| **${b.name}** | ${b.dimension} | **${b.score}** | ${b.detail} | ${b.target} | ${b.date ?? '—'} |`,
+        `| **${b.name}** | ${b.dimension} | **${b.score}** | \`${trendFor(b.name)}\` | ${b.detail} | ${b.target} | ${b.date ?? '—'} |`,
     )
     .join('\n');
 
@@ -474,15 +665,139 @@ ${pluginRows}
 `;
   }
 
+  let trustSection = '';
+  if (coverage) {
+    const renderKappas = (kappas: Record<string, number | null>) =>
+      Object.entries(kappas)
+        .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
+        .map(([k, v]) => `| ${k} | ${v == null ? '—' : v} | ${interpretKappa(v)} |`)
+        .join('\n');
+
+    const breadthRows = coverage.coverageBreadth.cwes
+      .map(
+        (c) =>
+          `| ${c.cwe} | ${c.vulnerable} | ${c.safe} | ${c.vulnerable < 2 || c.safe < 2 ? '⚠️ thin' : '✓'} |`,
+      )
+      .join('\n');
+
+    const onlyJuliet =
+      coverage.juliet.onlyInterlace
+        .map((x) => (typeof x === 'string' ? `- ${x}` : `- ${x.cwe} / ${x.file}`))
+        .join('\n') || '_(none — every Interlace TP also caught by ≥1 competitor)_';
+    const onlyArena =
+      coverage.arena.onlyInterlace
+        .map((x) => (typeof x === 'string' ? `- ${x}` : `- ${x.cwe} / ${x.file}`))
+        .join('\n') || '_(none)_';
+
+    trustSection = `
+
+## Trust signals — inter-rater agreement, over-fit, corpus breadth
+
+> Generated by \`npm run ilb:coverage\` (reads \`benchmark-results/coverage.json\`).
+> Closes the OWASP-Benchmark-style trust gap: three orthogonal validation signals that don't depend on labels alone.
+
+### Inter-rater agreement (OWASP-style)
+
+For each fixture, count how many tools' verdicts match the label.
+
+**ILB-Juliet** — ${coverage.juliet.tools.length} tools rated · ${coverage.juliet.totalFixtures} fixtures · **${coverage.juliet.fixtures3PlusAgree} (${coverage.juliet.pctFixtures3PlusAgree}%)** with ≥ 3 tools agreeing · ${coverage.juliet.fixturesAllAgree} (${coverage.juliet.pctFixturesAllAgree}%) with all agreeing.
+
+Cohen's κ — Interlace vs each competitor (Juliet) · *< 0.2 slight · 0.2–0.4 fair · 0.4–0.6 moderate · 0.6–0.8 substantial · 0.8–1.0 almost perfect*:
+
+| Competitor | κ | Interpretation |
+|---|---|---|
+${renderKappas(coverage.juliet.kappas)}
+
+**ILB-Arena** — ${coverage.arena.tools.length} tools rated · ${coverage.arena.totalFixtures} fixtures · **${coverage.arena.fixtures3PlusAgree} (${coverage.arena.pctFixtures3PlusAgree}%)** with ≥ 3 tools agreeing · ${coverage.arena.fixturesAllAgree} (${coverage.arena.pctFixturesAllAgree}%) with all agreeing.
+
+Cohen's κ — Interlace vs each competitor (Arena):
+
+| Competitor | κ | Interpretation |
+|---|---|---|
+${renderKappas(coverage.arena.kappas)}
+
+### Over-fit detector — fixtures only Interlace catches
+
+Vulnerable fixtures only Interlace caught are either a real coverage advantage *or* a fixture written to match our rule. Triage manually.
+
+**Juliet:**
+
+${onlyJuliet}
+
+**Arena:**
+
+${onlyArena.length < 4000 ? onlyArena : onlyArena.slice(0, 3500) + '\n…(truncated)'}
+
+### Coverage breadth — corpus depth per CWE
+
+A CWE with fewer than 2 vulnerable + 2 safe fixtures is too thin for its F1 to be meaningful (CI too wide).
+
+| CWE | Vulnerable | Safe | Status |
+|---|---|---|---|
+${breadthRows}
+
+${coverage.coverageBreadth.gaps.length === 0 ? '✅ Every CWE meets the ≥ 2 fixture threshold.' : `⚠️ ${coverage.coverageBreadth.gaps.length} CWE(s) below threshold.`}
+
+**How to read:** high κ vs sonarjs / microsoft-sdl = our verdicts agree with credible commercial tools · high "≥ 3 tools agree" % = clear ground truth · empty over-fit list = TPs corroborated by competitors · no coverage gaps = every CWE has enough fixtures.
+`;
+  }
+
+  let perRuleSection = '';
+  if (perRuleAgg.length > 0) {
+    const top = perRuleAgg.slice(0, 15);
+    const topRows = top
+      .map((r) => {
+        const measured = r.measuredInArena || r.measuredInJuliet
+          ? `${r.measuredInArena ? 'A' : ' '}${r.measuredInJuliet ? 'J' : ' '}`.trim()
+          : '⚠️ none';
+        const sevMix = r.errorHits + r.warnHits === 0 ? '—' : `${r.errorHits}E / ${r.warnHits}W`;
+        return `| \`${r.rule}\` | ${r.totalHits.toLocaleString()} | ${r.weightedAvgMs} | ${r.reposExercising} | ${sevMix} | ${measured} |`;
+      })
+      .join('\n');
+
+    const unmeasured = perRuleAgg
+      .filter((r) => r.totalHits >= 50 && !r.measuredInArena && !r.measuredInJuliet)
+      .slice(0, 20);
+    const unmeasuredRows = unmeasured
+      .map(
+        (r) =>
+          `| \`${r.rule}\` | ${r.totalHits.toLocaleString()} | ${r.reposExercising} | ${r.weightedAvgMs} ms |`,
+      )
+      .join('\n');
+
+    perRuleSection = `
+
+## Per-rule observability (Gap G + Gap L)
+
+> Aggregated from \`benchmark-results/<latest>/per-repo/*/per-rule.json\`. The **Measured** column shows where this rule has fixture coverage: \`A\` = appears in ILB-Arena results, \`J\` = appears in ILB-Juliet results, \`⚠️ none\` = the rule fires on real OSS but has no synthetic-bench coverage (we have no precision/recall data for it).
+
+### Top 15 most-firing rules across the Wild corpus
+
+| Rule | Wild hits | Avg ms / hit | Repos | Severity (E/W) | Measured |
+|---|---:|---:|---:|---|---|
+${topRows}
+
+### Unmeasured rules — fire on Wild but no fixture coverage (≥ 50 hits)
+
+${unmeasured.length === 0 ? '✅ Every rule that fires ≥ 50 times on Wild has fixture coverage in Arena or Juliet.' : `⚠️ ${unmeasured.length} rule(s) firing on real OSS without synthetic-bench coverage. Add fixtures to bring these under measurement.
+
+| Rule | Wild hits | Repos | Avg ms / hit |
+|---|---:|---:|---:|
+${unmeasuredRows}`}
+`;
+  }
+
   return `# Interlace Bench Scorecard
 
-> Generated: ${today} · Methodology: [\`benchmarks/ILB_NAMING.md\`](benchmarks/ILB_NAMING.md)
+> Generated: ${today} · Methodology: [\`benchmarks/README.md\`](benchmarks/README.md)
 
 ## Top-line scorecard
 
-| Bench | Dimension | Score | Detail | SLO | As of |
-|---|---|---|---|---|---|
+| Bench | Dimension | Score | Trend | Detail | SLO | As of |
+|---|---|---|---|---|---|---|
 ${rows}
+
+The **Trend** column shows the last ≤ 12 recorded scores per bench (one per recording day). \`▁\` = lowest in window, \`█\` = highest. Source: [\`benchmark-results/history.ndjson\`](history.ndjson).
 
 ## How to read this
 
@@ -504,7 +819,7 @@ ${rows}
 | ILB-AI | HumanEval / SWE-Bench (task design); WMDP (security framing) |
 | ILB-LLM-Tokens | (we define this — \`tiktoken\` reproducibility benchmarks closest) |
 | ILB-LLM-Fix | HumanEval / SWE-Bench (task design only) |
-${wildSection}
+${wildSection}${perRuleSection}${trustSection}
 
 ## How to refresh
 
@@ -515,7 +830,8 @@ npm run ilb:juliet            # ILB-Juliet (synthetic CWE)
 npm run ilb:ai                # ILB-AI
 npm run ilb:llm:tokens        # ILB-LLM-Tokens (no API calls)
 npm run ilb:llm:fix           # ILB-LLM-Fix (calls Claude CLI; opt-in)
-npm run ilb:scorecard         # regenerate this page
+npm run ilb:coverage          # regenerate inter-rater κ + over-fit + breadth (writes coverage.json)
+npm run ilb:scorecard         # regenerate this page (reads coverage.json if present)
 npm run ilb:regression        # gate against benchmark-results/baseline.json
 \`\`\`
 

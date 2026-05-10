@@ -57,8 +57,11 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/cognitive-complexity.md',
       description:
         'Enforces a maximum cognitive complexity threshold with refactoring guidance',
+      cwe: 'CWE-1104',
+      cvss: 7.5,
     },
     messages: {
       // 🎯 Token optimization: 40% reduction (60→36 tokens) - keeps complexity metrics inline
@@ -387,6 +390,7 @@ export const cognitiveComplexity = createRule<RuleOptions, MessageIds>({
     /**
      * Suggest architectural patterns
      */
+    // oxlint-disable-next-line consistent-function-scoping
     function suggestPattern(breakdown: ComplexityBreakdown): string {
       if (breakdown.switches >= 2) return 'Strategy Pattern';
       if (breakdown.conditionals >= 5) return 'Guard Clauses + Early Return';

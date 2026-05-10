@@ -19,6 +19,7 @@ export const noObjectTypeAsDefaultProp = createRule<[], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-object-type-as-default-prop.md',
       description: 'Prevent object types as default props',
     },
     messages: {

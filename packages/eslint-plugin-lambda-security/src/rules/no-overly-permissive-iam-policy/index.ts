@@ -30,18 +30,21 @@ export interface Options {
 type RuleOptions = [Options?];
 
 // IAM policy property names
-const POLICY_PROPERTIES = ['Resource', 'Action', 'Principal'];
+const POLICY_PROPERTIES = new Set(['Resource', 'Action', 'Principal']);
 
 // Wildcards that indicate overly permissive
-const DANGEROUS_WILDCARDS = ['*', 'arn:aws:*', 'arn:*:*:*:*:*'];
+const DANGEROUS_WILDCARDS = new Set(['*', 'arn:aws:*', 'arn:*:*:*:*:*']);
 
 export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
   name: 'no-overly-permissive-iam-policy',
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-overly-permissive-iam-policy.md',
       description:
         'Detects IAM policies with overly broad permissions (wildcards)',
+      cwe: 'CWE-732',
+      cvss: 6.5,
     },
     hasSuggestions: true,
     messages: {
@@ -98,7 +101,7 @@ export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
      */
     function isDangerousWildcard(value: string): boolean {
       return (
-        DANGEROUS_WILDCARDS.includes(value) ||
+        DANGEROUS_WILDCARDS.has(value) ||
         (value.endsWith('*') && value.includes(':*:'))
       );
     }
@@ -165,7 +168,7 @@ export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
         // Check for IAM policy properties
         if (node.key.type === AST_NODE_TYPES.Identifier) {
           const keyName = node.key.name;
-          if (POLICY_PROPERTIES.includes(keyName)) {
+          if (POLICY_PROPERTIES.has(keyName)) {
             checkPolicyProperty(node, keyName);
           }
         }
@@ -176,7 +179,7 @@ export const noOverlyPermissiveIamPolicy = createRule<RuleOptions, MessageIds>({
           typeof node.key.value === 'string'
         ) {
           const keyName = node.key.value;
-          if (POLICY_PROPERTIES.includes(keyName)) {
+          if (POLICY_PROPERTIES.has(keyName)) {
             checkPolicyProperty(node, keyName);
           }
         }

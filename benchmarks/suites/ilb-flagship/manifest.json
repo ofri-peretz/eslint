@@ -1,0 +1,109 @@
+{
+  "version": "v1.0",
+  "description": "Per-rule head-to-head bench for the 10 flagship rules, each on a 45K+ baseline repo (or T2 niche flagship), with cached + uncached timings, ESLint + oxlint where applicable.",
+  "lastRefreshed": "2026-05-09",
+  "rules": [
+    {
+      "id": "import-next/no-cycle",
+      "ours": { "plugin": "eslint-plugin-import-next", "rule": "no-cycle" },
+      "competitor": { "plugin": "eslint-plugin-import", "rule": "no-cycle" },
+      "oxlintNative": "import/no-cycle",
+      "repo": "next.js",
+      "starsK": 131,
+      "tier": "T1",
+      "notes": "Cross-file dep graph. Our impl uses oxc-resolver."
+    },
+    {
+      "id": "pg/no-unsafe-query",
+      "ours": { "plugin": "eslint-plugin-pg", "rule": "no-unsafe-query" },
+      "competitor": null,
+      "oxlintNative": null,
+      "repo": "supabase",
+      "starsK": 78,
+      "tier": "T1",
+      "notes": "Green-field — perf-only baseline."
+    },
+    {
+      "id": "secure-coding/no-hardcoded-credentials",
+      "ours": { "plugin": "eslint-plugin-secure-coding", "rule": "no-hardcoded-credentials" },
+      "competitor": { "plugin": "eslint-plugin-no-secrets", "rule": "no-secrets" },
+      "oxlintNative": null,
+      "repo": "vercel-ai",
+      "starsK": 15,
+      "tier": "T2",
+      "notes": "Entropy-gated credential detection. Repo: vercel-ai (T2 niche flagship for AI SDK)."
+    },
+    {
+      "id": "secure-coding/no-redos-vulnerable-regex",
+      "ours": { "plugin": "eslint-plugin-secure-coding", "rule": "no-redos-vulnerable-regex" },
+      "competitor": { "plugin": "eslint-plugin-regexp", "rule": "no-super-linear-backtracking" },
+      "oxlintNative": null,
+      "repo": "lodash",
+      "starsK": 60,
+      "tier": "T1",
+      "notes": "Catastrophic-backtracking detection. Lodash chosen for regex-density. oxlint has no native ReDoS-complexity rule."
+    },
+    {
+      "id": "mongodb-security/no-unsafe-query",
+      "ours": { "plugin": "eslint-plugin-mongodb-security", "rule": "no-unsafe-query" },
+      "competitor": null,
+      "oxlintNative": null,
+      "repo": "payload",
+      "starsK": 35,
+      "tier": "T2",
+      "notes": "Green-field. Payload is the niche flagship for TS-first MongoDB."
+    },
+    {
+      "id": "jwt/no-algorithm-none",
+      "ours": { "plugin": "eslint-plugin-jwt", "rule": "no-algorithm-none" },
+      "competitor": null,
+      "oxlintNative": null,
+      "repo": "supabase",
+      "starsK": 78,
+      "tier": "T1",
+      "notes": "Green-field. Supabase has heavy JWT usage."
+    },
+    {
+      "id": "browser-security/no-postmessage-wildcard-origin",
+      "ours": { "plugin": "eslint-plugin-browser-security", "rule": "no-postmessage-wildcard-origin" },
+      "competitor": null,
+      "oxlintNative": null,
+      "repo": "next.js",
+      "starsK": 131,
+      "tier": "T1",
+      "notes": "Green-field — narrow signature, no competitor."
+    },
+    {
+      "id": "react-features/hooks-exhaustive-deps",
+      "ours": { "plugin": "eslint-plugin-react-features", "rule": "hooks-exhaustive-deps" },
+      "competitor": { "plugin": "eslint-plugin-react-hooks", "rule": "exhaustive-deps" },
+      "oxlintNative": "react/exhaustive-deps",
+      "repo": "next.js",
+      "starsK": 131,
+      "tier": "T1",
+      "notes": "Head-to-head vs the React team's official rule."
+    },
+    {
+      "id": "react-a11y/alt-text",
+      "ours": { "plugin": "eslint-plugin-react-a11y", "rule": "alt-text" },
+      "competitor": { "plugin": "eslint-plugin-jsx-a11y", "rule": "alt-text" },
+      "oxlintNative": "jsx-a11y/alt-text",
+      "repo": "shadcn-ui",
+      "starsK": 100,
+      "tier": "T1",
+      "ruleOptions": [{ "img": ["Image"] }],
+      "competitorRuleOptions": [{ "components": ["Image"] }],
+      "notes": "Head-to-head vs jsx-a11y. Custom-component config (`img: ['Image']` for ours, `components: ['Image']` for jsx-a11y) makes both rules see the next/image and shadcn `<Image>` components — without it both rules are invisible to most React projects."
+    },
+    {
+      "id": "vercel-ai-security/no-unsafe-output-handling",
+      "ours": { "plugin": "eslint-plugin-vercel-ai-security", "rule": "no-unsafe-output-handling" },
+      "competitor": null,
+      "oxlintNative": null,
+      "repo": "vercel-ai",
+      "starsK": 15,
+      "tier": "T2",
+      "notes": "Green-field. OWASP LLM02. Repo: the SDK we lint against."
+    }
+  ]
+}

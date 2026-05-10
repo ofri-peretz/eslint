@@ -1,0 +1,137 @@
+---
+title: 'Interlace — Static Analysis for Humans + AI Agents'
+description: 'The first JavaScript / TypeScript ESLint ecosystem designed for both human reviewers and AI coding agents as primary consumers. CWE-Compatible, MCP-native, federally-mappable.'
+---
+
+# Interlace — Static Analysis for Humans + AI Agents
+
+> **The thesis.** Static-analysis tools for JavaScript / TypeScript have spent 20 years optimizing for the human reviewer (IDE squiggles, PR comments, severity buckets). The agent-as-consumer angle is barely staked. **Interlace owns it** — every rule emits CWE-tagged findings consumable by AI agents (Claude Code, Cursor, Copilot) via MCP, plus humans via VS Code / GHAS / SARIF / your CI.
+
+## The 30-second pitch
+
+```bash
+# In your project:
+npx @interlace/cli init       # writes a starter eslint.config.mjs
+npx @interlace/cli audit      # lint everything with the security suite
+
+# In CI (GitHub Actions):
+- uses: ofri-peretz/eslint/.github/actions/audit@main
+  with:
+    plugins: all
+    fail-on: error            # SARIF auto-uploaded to Code Scanning Alerts
+
+# For your AI agent (Claude Code, Cursor):
+{
+  "mcpServers": {
+    "secure-coding": { "command": "npx", "args": ["@interlace/secure-coding-mcp"] }
+  }
+}
+```
+
+That's the whole product surface.
+
+## Headline numbers
+
+> *Live numbers regenerate from `benchmark-results/`. If a number here disagrees with the JSON, the JSON wins.*
+
+| Bench | Interlace | Strongest competitor | Read |
+| :--- | :--- | :--- | :--- |
+| **ILB-Arena** (security head-to-head, 18 plugins) | **F1 98.8%** · rank 1/18 | sonarjs F1 47.5% | We detect 40/40 vulnerable patterns; closest credible competitor catches 14 |
+| **ILB-Juliet** (synthetic CWE corpus) | **F1 76.5% · 100% recall** | sonarjs F1 40% | 13/13 vulnerable patterns across 6 CWEs |
+| **ILB-Arena-Quality** (8 plugins) | **F1 64.8%** · rank 2/8 | unicorn F1 50.8% | Beaten only by jsdoc which over-fires |
+| **ILB-Wild** (real OSS, 22 repos, 1.7M LoC) | 7,058 findings · 4.14/kLoC | n/a | Cross-repo coverage |
+| **ILB-Determinism** | 100% rule-survival across 4 Node majors × 2 TS compilers × cache states | n/a | Zero finding drift across the matrix |
+
+## What makes this different
+
+Three legs the static-analysis field has not integrated:
+
+### 1. The agent-axis benches
+
+| Bench | What it answers | Why it's new |
+| :--- | :--- | :--- |
+| **ILB-Determinism** | Same input → same output across N runs and M plugin versions? | Agents loop on findings; non-determinism = infinite-fix cycles. Nobody else benches this. |
+| **ILB-Autofix** | What % of rules have a deterministic auto-fix? | Agents need *one* correct fix; ambiguity = hallucination. |
+| **ILB-Confidence** | Are stated confidence labels calibrated to empirical precision? | Agents need a routing signal: high-conf → auto-apply, low-conf → escalate. |
+| **ILB-Discover** | Given an NL description, can an agent find the right rule? | Agents arrive cold; can't be expected to memorize the catalog. |
+| **ILB-Evade** | Do rules survive an LLM rewriting code into a semantic equivalent? | Required for the AI-generated-code era. |
+| **ILB-LLM-Tokens** | Are per-finding diagnostics cheap to feed back to an LLM? | Token economy matters at scale. |
+
+### 2. The toolchain-matrix coverage
+
+We bench across 5 dimensions independently:
+
+- **Node versions** — 18 / 20 / 22 / 24
+- **TypeScript compilers** — `tsc-classic` (5.x) and `tsc-go` (6.x — Project Corsa)
+- **ESLint majors** — 8 / 9 / 10
+- **Parser modes** — js / js+jsx / ts / ts+jsx
+- **Cache state** — cold / warm
+
+**Zero finding drift across the entire matrix.** Every cell verified by `npm run ilb:*-matrix`.
+
+### 3. The credibility seals + open governance
+
+- **MITRE CWE Compatibility** — 8/8 criteria met (submission packet ready)
+- **NIST SP 800-218 SSDF** mapped per-rule (`npm run ilb:mappings:report`)
+- **OWASP ASVS L1/L2/L3** mapped per-rule
+- **MITRE ATT&CK / CAPEC** mapped per-rule
+- **ISO/IEC 25010:2023** mapped for quality plugins
+- **Pre-registered** — every result envelope carries the methodology commit SHA
+- **Externally-governed corpus** (3-steward voting model, non-Interlace majority — plan ready, repo creation pending)
+- **Public submission protocol** — any tool can submit a SARIF run; leaderboard auto-rebuilds
+
+## How to consume Interlace
+
+| You are a… | Use this | Get |
+| :--- | :--- | :--- |
+| **Developer adding lint to a project** | `npx @interlace/cli init && npx @interlace/cli audit` | One-command setup + audit |
+| **CI engineer** | The [GitHub Action](https://github.com/ofri-peretz/eslint/tree/main/.github/actions/audit) | One-line workflow integration + SARIF → Code Scanning Alerts |
+| **AI agent (Claude Code, Cursor, custom)** | `@interlace/<plugin>-mcp` packages | Typed agent-callable tools (`list_rules`, `audit_file`, `find_rule_violations`, `suggest_fix`) over MCP stdio |
+| **Security auditor / RFP responder** | `npm run ilb:mappings:report` | Per-rule crosswalk against SSDF / ASVS / CAPEC / ISO 25010 + CVE provenance |
+| **SAST tool author** | The [submission protocol](https://github.com/ofri-peretz/eslint/blob/main/benchmarks/audits/2026-05-09-ilb-submission-protocol.md) | Public benchmark slot with bootstrap CI + agreement matrix |
+| **Researcher** | The [external replication kit](https://github.com/ofri-peretz/eslint/blob/main/benchmarks/audits/2026-05-09-external-replication-kit.md) | Reproducibility recipe + Cohen's κ comparison tooling |
+
+## Installation matrix
+
+| Want | Install | Then |
+| :--- | :--- | :--- |
+| Just the CLI | `npm i -g @interlace/cli` | `interlace audit` |
+| One plugin | `npm i -D @interlace/eslint-plugin-secure-coding` | Wire into your `eslint.config.mjs` |
+| The full security fleet | `npm i -D @interlace/eslint-plugin-{secure-coding,browser-security,node-security,crypto,jwt,express-security,lambda-security,mongodb-security,nestjs-security,vercel-ai-security,pg}` | Same |
+| MCP server for one plugin | `npx @interlace/secure-coding-mcp` | Wire into Claude Code / Cursor `.mcp.json` |
+| SARIF emission | `npm i -D @interlace/eslint-formatter-sarif` | `eslint -f @interlace/eslint-formatter-sarif src/` |
+| Opt-in telemetry | `npm i @interlace/telemetry` + set env vars | See [TELEMETRY.md](https://github.com/ofri-peretz/eslint/blob/main/packages/interlace-telemetry/TELEMETRY.md) |
+
+## Try it now (no install)
+
+```bash
+git clone https://github.com/ofri-peretz/eslint
+cd eslint && npm install
+npx @interlace/cli audit examples/vulnerable-app/src
+```
+
+The `examples/vulnerable-app/` directory has one file per flagship rule. You'll see ~10-15 findings, each tagged with its CWE.
+
+## Bench reference
+
+For the full bench catalog (26 benches + 8 reporters + 4 quality gates), see [benchmarks/README.md](https://github.com/ofri-peretz/eslint/blob/main/benchmarks/README.md).
+
+For the agent-onboarding prelude (single-read context for any AI working on the bench), see [.agent/rules/bench-context.md](https://github.com/ofri-peretz/eslint/blob/main/.agent/rules/bench-context.md).
+
+## Status
+
+| Area | State |
+| :--- | :--- |
+| Bench infrastructure | ✅ shipped (5 phases, 42+ items) |
+| 11 security plugins + 6 quality plugins + react / import / infra | ✅ shipped |
+| GitHub Action | ✅ shipped, usable today |
+| MCP servers (11 plugins) | ✅ shipped, MCP-protocol verified |
+| npm publish | ⏳ workflow ready; one `gh workflow run` away |
+| MITRE CWE Compatibility | ⏳ 8/8 criteria met; form submission pending |
+| OWASP Benchmark for JavaScript | ⏳ pitch packet ready; outreach pending |
+| External replication | ⏳ kit ready; reviewer engagement pending |
+| Hosted leaderboard UI at `bench.interlace.dev` | ⏳ Markdown leaderboard live; UI deployment pending |
+
+## Acknowledgements
+
+Built on the shoulders of every prior open-source SAST effort — OWASP Benchmark Project (Java), NIST SARD/Juliet, MITRE CWE/CAPEC. Where a methodology existed, we mirrored it; where none did for JavaScript, we say so explicitly.

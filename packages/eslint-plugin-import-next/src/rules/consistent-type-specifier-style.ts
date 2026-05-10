@@ -29,8 +29,11 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/consistent-type-specifier-style.md',
       description:
         'Enforce or ban the use of inline type-only markers for named imports',
+      cwe: 'CWE-1078',
+      cvss: 2.5,
     },
     fixable: 'code',
     messages: {
@@ -72,6 +75,7 @@ export const consistentTypeSpecifierStyle = createRule<RuleOptions, MessageIds>(
     /**
      * Get the text for a specifier, handling aliasing
      */
+    // oxlint-disable-next-line consistent-function-scoping
     function getSpecifierText(spec: TSESTree.ImportSpecifier): string {
       const imported =
         spec.imported.type === 'Identifier'

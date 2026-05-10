@@ -78,6 +78,7 @@ const EVAL_PATTERNS: EvalPattern[] = [
     safeAlternative: 'Template literals or template engine',
     example: {
       bad: 'eval(\'Hello \' + userName + \'!\')',
+      // oxlint-disable-next-line no-template-curly-in-string
       good: 'const template = `Hello ${userName}!`;'
     },
     effort: '3 minutes'
@@ -99,7 +100,11 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/detect-eval-with-expression.md',
       description: 'Detects eval(variable) which can allow an attacker to run arbitrary code',
+      cwe: 'CWE-95',
+      cvss: 9.5,
+      confidence: 'high',
     },
     messages: {
       // 🎯 Token optimization: 38% reduction (47→29 tokens) - compact format saves LLM processing
@@ -135,7 +140,9 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
         issueName: 'Unsafe eval() for string interpolation',
         cwe: 'CWE-95',
         description: 'Use template literals instead of eval() for string interpolation',
+        // oxlint-disable-next-line no-template-curly-in-string
         severity: 'HIGH',
+        // oxlint-disable-next-line no-template-curly-in-string
         fix: 'Replace eval() with template literals: `Hello ${name}`',
         documentationLink: 'https://owasp.org/www-community/attacks/Code_Injection',
       }),
@@ -230,15 +237,16 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
      * All functions that can execute arbitrary code
      * NOTE: setTimeout/setInterval are NOT eval-like - they don't execute code strings
      */
-    const evalFunctions = [
+    const evalFunctions = new Set([
       'eval',
       'Function',
       ...additionalEvalFunctions
-    ];
+    ]);
 
     /**
      * Check if a node is a literal string (safe)
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const isLiteralString = (node: TSESTree.Node): boolean => {
       return node.type === 'Literal' && typeof node.value === 'string';
     };
@@ -285,6 +293,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
     /**
      * Generate refactoring steps based on pattern
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const generateRefactoringSteps = (pattern: EvalPattern | null): string => {
       if (!pattern) {
         return [
@@ -313,8 +322,10 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
             '   4. Consider using a math expression parser library'
           ].join('\n');
 
+        // oxlint-disable-next-line no-template-curly-in-string
         case 'template':
           return [
+            // oxlint-disable-next-line no-template-curly-in-string
             '   1. Use template literals: `Hello ${name}`',
             '   2. Sanitize variables before interpolation',
             '   3. Use a template engine like Handlebars if complex',
@@ -359,7 +370,7 @@ export const detectEvalWithExpression = createRule<RuleOptions, MessageIds>({
     const checkCallExpression = (node: TSESTree.CallExpression) => {
       // Check if it's a call to an eval-like function
       if (node.callee.type === 'Identifier' &&
-          evalFunctions.includes(node.callee.name)) {
+          evalFunctions.has(node.callee.name)) {
 
         // Skip if it's a literal string and literals are allowed
         if (allowLiteralStrings &&

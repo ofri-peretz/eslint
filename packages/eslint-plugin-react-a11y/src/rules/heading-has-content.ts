@@ -42,7 +42,10 @@ export const headingHasContent = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/heading-has-content.md',
       description: 'Enforce that headings have content',
+      cwe: 'CWE-252',
+      cvss: 7.5,
     },
     messages: {
       missingContent: formatLLMMessage({
@@ -68,12 +71,12 @@ export const headingHasContent = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{}],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
     const { components = [] } = options ?? {} as Options;
-    const headings = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', ...components];
+    const headings = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', ...components]);
 
     return {
       JSXElement(node: TSESTree.JSXElement) {
         const openingElement = node.openingElement;
-        if (openingElement.name.type !== 'JSXIdentifier' || !headings.includes(openingElement.name.name)) {
+        if (openingElement.name.type !== 'JSXIdentifier' || !headings.has(openingElement.name.name)) {
           return;
         }
 

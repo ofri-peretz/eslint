@@ -49,7 +49,10 @@ export const noSecretsInEnv = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-secrets-in-env.md',
       description: 'Detects secrets directly assigned to environment variables',
+      cwe: 'CWE-798',
+      cvss: 9.5,
     },
     hasSuggestions: true,
     messages: {

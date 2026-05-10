@@ -452,21 +452,29 @@ describe('no-hardcoded-credentials', () => {
             },
           ],
         },
+        // Note: bare `const key = "..."` was deliberately removed from
+        // the rule's credential-name allowlist 2026-05-09 — see the
+        // CREDENTIAL_VARIABLE_NAMES comment in the rule source. `key`
+        // alone is the canonical name for non-credential dynamic keys
+        // (Map keys, AST node keys, dynamic property names, …) and was
+        // a major FP source on vercel/ai. Tests using `apiKey`,
+        // `secretKey`, `secret` etc. continue to fire correctly via the
+        // structural / context-positive paths.
         {
-          code: 'const key = "abcdef1234567890abcdef1234567890abcdef12";',
+          code: 'const apiKey = "abcdef1234567890abcdef1234567890abcdef12";',
           errors: [
             {
               messageId: 'useEnvironmentVariable',
               suggestions: [
                 {
                   messageId: 'useEnvironmentVariable',
-                  data: { envVarName: 'KEY', credentialType: 'Secret key' },
-                  output: 'const key = process.env.KEY || \'abcdef1234567890abcdef1234567890abcdef12\';',
+                  data: { envVarName: 'API_KEY', credentialType: 'Secret key' },
+                  output: 'const apiKey = process.env.API_KEY || \'abcdef1234567890abcdef1234567890abcdef12\';',
                 },
                 {
                   messageId: 'useSecretManager',
                   data: { credentialType: 'Secret key' },
-                  output: 'const key = await getSecret(\'key\');',
+                  output: 'const apiKey = await getSecret(\'api_key\');',
                 },
               ],
             },

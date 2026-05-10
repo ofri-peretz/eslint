@@ -30,6 +30,7 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/no-unreadable-iife.md',
       description:
         'Prevent unreadable Immediately Invoked Function Expressions that harm code clarity',
     },
@@ -101,6 +102,7 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
       allowReturningIIFE = true
     } = options || {};
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isIIFE(node: TSESTree.CallExpression): boolean {
       // Check if this is a call expression with a function expression or arrow function
       // Note: In typescript-eslint AST, parentheses don't create a separate node type,
@@ -120,6 +122,7 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function countStatements(body: TSESTree.BlockStatement | TSESTree.Expression): number {
       if (body.type === 'BlockStatement') {
         return body.body.length;
@@ -137,16 +140,17 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
       // Non-AST keys that should never be traversed
       const SKIP_KEYS = new Set(['parent', 'loc', 'range', 'tokens', 'comments', 'leadingComments', 'trailingComments']);
 
+      // oxlint-disable-next-line consistent-function-scoping
       function isASTNode(value: unknown): value is TSESTree.Node {
         return !!value && typeof value === 'object' && 'type' in value && 'loc' in value;
       }
 
-      let maxDepth = 0;
+      let maxNestingDepth = 0;
 
       function walk(current: TSESTree.Node, depth: number) {
         const isControlFlow = CONTROL_FLOW_TYPES.has(current.type);
         const newDepth = isControlFlow ? depth + 1 : depth;
-        maxDepth = Math.max(maxDepth, newDepth);
+        maxNestingDepth = Math.max(maxNestingDepth, newDepth);
 
         Object.entries(current).forEach(([key, value]) => {
           if (SKIP_KEYS.has(key)) return;
@@ -159,7 +163,7 @@ export const noUnreadableIife = createRule<RuleOptions, MessageIds>({
       }
 
       walk(node, 0);
-      return maxDepth;
+      return maxNestingDepth;
     }
 
     function hasComplexLogic(body: TSESTree.BlockStatement | TSESTree.Expression): boolean {

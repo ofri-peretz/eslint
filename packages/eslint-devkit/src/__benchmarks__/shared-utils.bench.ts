@@ -114,7 +114,7 @@ describe('isParameterizedQuery', () => {
   });
 
   bench('concatenated (unsafe)', () => {
-    isParameterizedQuery("SELECT * FROM users WHERE id = '" + "test" + "'");
+    isParameterizedQuery("SELECT * FROM users WHERE id = 'test'");
   });
 
   bench('empty query', () => {

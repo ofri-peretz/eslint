@@ -1,1 +1,0 @@
-// Invalid example for dynamic-import-chunkname\n// TODO: Add failing code\nexport const invalid = true;\n

@@ -26,7 +26,10 @@ export const requireAuditLogging = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-audit-logging.md',
       description: 'Suggest audit logging for AI SDK operations',
+      cwe: 'CWE-778',
+      cvss: 4,
     },
     messages: {
       missingAuditLogging: formatLLMMessage({

@@ -1,0 +1,40 @@
+{
+  "//": "Looser tsconfig for build/dev scripts converted from .mjs in 2026-05-09. The strict-mode root tsconfig at ../tsconfig.json is the production-code contract; scripts here are JS-flavored TS run via tsx and tolerate implicit any until each is incrementally typed. Bumping these flags to the root settings is the natural ratchet.",
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": false,
+    // Loose — ratchet up per-file as scripts get types.
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "strictFunctionTypes": false,
+    "strictBindCallApply": false,
+    "strictPropertyInitialization": false,
+    "noImplicitThis": false,
+    "alwaysStrict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": false,
+    "noFallthroughCasesInSwitch": false,
+    "noUncheckedIndexedAccess": false,
+    "noImplicitOverride": false,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": ["**/*.ts"],
+  "exclude": [
+    "../node_modules",
+    "../tmp",
+    "../dist",
+    "../coverage"
+  ]
+}

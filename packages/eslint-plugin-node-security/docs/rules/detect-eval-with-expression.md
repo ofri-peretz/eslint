@@ -33,6 +33,20 @@ Detects `eval(variable)` which can allow an attacker to run arbitrary code insid
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                   |
 | **Best For**      | All applications, especially those handling user input                    |
 
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE** | [CWE-95](https://cwe.mitre.org/data/definitions/95.html) — Improper Neutralization of Directives in Dynamically Evaluated Code (eval injection) |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · **10,000+× cheaper than disclosure** — `eval`-injection is a Remote Code Execution class ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** infra/devtools (downstream consumers of compromised tooling), fintech, cybersecurity · **High:** B2B SaaS, healthtech · **Medium:** B2C, marketplaces |
+| **Investor-frame impact** | Dynamic `eval` of user input → RCE. Single bug class that gives an attacker full process control. The single highest-payoff rule for any codebase parsing untrusted text; lint-time catch is the cheapest possible defense against the highest-cost defect class. |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
 ## Vulnerability and Risk
 
 **Vulnerability:** The use of `eval()` or similar functions (like `setTimeout`, `setInterval`, `new Function`) with dynamic arguments allows for the execution of arbitrary code derived from strings.

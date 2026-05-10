@@ -1,4 +1,18 @@
 {
+  "bench": "ILB-Perf",
+  "benchVersion": "v0.0",
+  "toolchain": {
+    "node": "unknown",
+    "npm": "unknown",
+    "eslint": "unknown",
+    "os": "unknown",
+    "backfilled": true,
+    "backfilledAt": "2026-05-10T00:06:45.723Z",
+    "backfilledBy": "scripts/ilb-result-schema-backfill.ts",
+    "typescript": "unknown",
+    "tsCompiler": "unknown",
+    "platform": "unknown"
+  },
   "schemaVersion": 1,
   "timestamp": "2026-05-03T20:00:00.000Z",
   "benchmark": "ilb-perf-import-no-cycle",
@@ -13,7 +27,9 @@
     "linesOfCode": 455828,
     "diskSize": "38 MB",
     "framework": "React 19 + Vite + TypeScript",
-    "tsconfigAliases": ["@app/* → src/*"]
+    "tsconfigAliases": [
+      "@app/* → src/*"
+    ]
   },
   "environment": {
     "nodeVersion": "v24.12.0",
@@ -151,21 +167,45 @@
         "ruleTimeMs": 3853,
         "peakRssMb": 4111
       },
-      "composite": 1.0,
+      "composite": 1,
       "note": "Faster in pure rule time but 100% inlined — no plugin abstraction; not a publishable comparison, included as the structural floor"
     }
   },
   "summary": {
     "winner": "interlace-import-next",
     "rankBy": "composite",
-    "ranked": ["interlace-import-next", "official-import", "custom-naive-dfs"],
+    "ranked": [
+      "interlace-import-next",
+      "official-import",
+      "custom-naive-dfs"
+    ],
     "headline": "import-next 3.1x faster end-to-end and 8x faster in pure rule execution vs official eslint-plugin-import on a 5,483-file React codebase (Phase 6 final)",
     "regressionToWinNarrative": "Started Phase 0 at 1.47x slower than official → ended Phase 6 at 3.1x faster. Net swing: ~4.6x throughput improvement over 6 phases."
   },
   "kpiStatus": {
-    "vsOfficial": { "target": "≤ 0.5x", "phase0": "1.47x slower", "phase6": "0.32x (3.1x faster e2e)", "achieved": true },
-    "vsNaiveDFS": { "target": "≤ 0.3x", "phase0": "3.13x slower", "phase6": "3.6x slower", "achieved": false, "note": "Naive inline DFS has zero abstraction overhead; this is structural floor. Roadmap: Phase 7 (--concurrency=auto) + Phase 8 (structural inlining beyond current)." },
-    "peakRss": { "target": "≤ +50 MB", "phase6": "~0 MB", "achieved": true },
-    "detectionParity": { "target": "100%", "phase6": "100%", "achieved": true, "note": "Custom rule finds 3 additional barrel-export-specific cycles; not a parity break for the standard import/no-cycle definition." }
+    "vsOfficial": {
+      "target": "≤ 0.5x",
+      "phase0": "1.47x slower",
+      "phase6": "0.32x (3.1x faster e2e)",
+      "achieved": true
+    },
+    "vsNaiveDFS": {
+      "target": "≤ 0.3x",
+      "phase0": "3.13x slower",
+      "phase6": "3.6x slower",
+      "achieved": false,
+      "note": "Naive inline DFS has zero abstraction overhead; this is structural floor. Roadmap: Phase 7 (--concurrency=auto) + Phase 8 (structural inlining beyond current)."
+    },
+    "peakRss": {
+      "target": "≤ +50 MB",
+      "phase6": "~0 MB",
+      "achieved": true
+    },
+    "detectionParity": {
+      "target": "100%",
+      "phase6": "100%",
+      "achieved": true,
+      "note": "Custom rule finds 3 additional barrel-export-specific cycles; not a parity break for the standard import/no-cycle definition."
+    }
   }
 }

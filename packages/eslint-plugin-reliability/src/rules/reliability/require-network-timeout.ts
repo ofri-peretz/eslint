@@ -30,7 +30,10 @@ export const requireNetworkTimeout = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-reliability/docs/rules/require-network-timeout.md',
       description: 'Require timeout limits for network requests',
+      cwe: 'CWE-400',
+      cvss: 5,
     },
     messages: {
       violationDetected: formatLLMMessage({

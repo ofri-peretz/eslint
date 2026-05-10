@@ -89,57 +89,7 @@ class UserProfile extends React.Component {
 
 ### ✅ Correct
 
-```tsx
-class UserProfile extends React.Component {
-  // 1. Static properties
-  static propTypes = {
-    userId: PropTypes.string.isRequired
-  };
-  
-  static defaultProps = {
-    userId: ''
-  };
-  
-  // 2. Instance properties
-  state = { name: '', loading: true };
-  
-  // 3. Lifecycle methods (in React lifecycle order)
-  constructor(props) {
-    super(props);
-    this.handleSubmit = this.handleSubmit.bind(this);
-  }
-  
-  componentDidMount() {
-    this.fetchUser();
-  }
-  
-  componentDidUpdate(prevProps) {
-    if (prevProps.userId !== this.props.userId) {
-      this.fetchUser();
-    }
-  }
-  
-  componentWillUnmount() {
-    this.abortController.abort();
-  }
-  
-  // 4. Custom methods
-  fetchUser = async () => {
-    const user = await api.getUser(this.props.userId);
-    this.setState({ name: user.name, loading: false });
-  };
-  
-  handleSubmit = () => {
-    // ...
-  };
-  
-  // 5. Render (always last)
-  render() {
-    if (this.state.loading) return <Spinner />;
-    return <div>{this.state.name}</div>;
-  }
-}
-```
+> _Awaiting a tested example. The previous snippet was removed because the rule does not behave as the doc claimed; track the regression in [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../../../benchmarks/FP_FN_REMEDIATION_TRACKER.md)._
 
 ## Options
 

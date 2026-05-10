@@ -29,7 +29,10 @@ export const requireCodeMinification = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-operability/docs/rules/require-code-minification.md',
       description: 'Require minification configuration',
+      cwe: 'CWE-656',
+      cvss: 2.5,
     },
     messages: {
       violationDetected: formatLLMMessage({

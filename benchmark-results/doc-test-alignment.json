@@ -1,0 +1,5331 @@
+{
+  "generatedAt": "2026-05-09T22:36:42.342Z",
+  "plugins": {
+    "eslint-plugin-browser-security": {
+      "rules": {
+        "detect-mixed-content": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/detect-mixed-content/detect-mixed-content.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-allow-arbitrary-loads": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-allow-arbitrary-loads/no-allow-arbitrary-loads.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-clickjacking": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-clickjacking/no-clickjacking.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-client-side-auth-logic": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-client-side-auth-logic/no-client-side-auth-logic.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-cookie-auth-tokens": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-cookie-auth-tokens/no-cookie-auth-tokens.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "no-credentials-in-query-params": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-credentials-in-query-params/no-credentials-in-query-params.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-disabled-certificate-validation": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-disabled-certificate-validation/no-disabled-certificate-validation.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-dynamic-service-worker-url": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-dynamic-service-worker-url/no-dynamic-service-worker-url.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "no-eval": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-eval/no-eval.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-filereader-innerhtml": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-filereader-innerhtml/no-filereader-innerhtml.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-http-urls": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-http-urls/no-http-urls.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-innerhtml": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-innerhtml/no-innerhtml.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-insecure-redirects": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-insecure-redirects/no-insecure-redirects.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-insecure-websocket": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-insecure-websocket/no-insecure-websocket.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-jwt-in-storage": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-jwt-in-storage/no-jwt-in-storage.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-missing-cors-check": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-missing-cors-check/no-missing-cors-check.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-missing-csrf-protection": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-missing-csrf-protection/no-missing-csrf-protection.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-missing-security-headers": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-missing-security-headers/no-missing-security-headers.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-password-in-url": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-password-in-url/no-password-in-url.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "no-permissive-cors": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-permissive-cors/no-permissive-cors.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-postmessage-innerhtml": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-postmessage-innerhtml/no-postmessage-innerhtml.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-postmessage-wildcard-origin": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-postmessage-wildcard-origin/no-postmessage-wildcard-origin.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-sensitive-cookie-js": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-sensitive-cookie-js/no-sensitive-cookie-js.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-sensitive-data-in-analytics": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-sensitive-data-in-analytics/no-sensitive-data-in-analytics.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "no-sensitive-data-in-cache": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-sensitive-data-in-cache/no-sensitive-data-in-cache.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-sensitive-indexeddb": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-sensitive-indexeddb/no-sensitive-indexeddb.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "no-sensitive-localstorage": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-sensitive-localstorage/no-sensitive-localstorage.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-sensitive-sessionstorage": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-sensitive-sessionstorage/no-sensitive-sessionstorage.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "no-tracking-without-consent": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-tracking-without-consent/no-tracking-without-consent.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unencrypted-transmission": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-unencrypted-transmission/no-unencrypted-transmission.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unescaped-url-parameter": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-unescaped-url-parameter/no-unescaped-url-parameter.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unsafe-eval-csp": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-unsafe-eval-csp/no-unsafe-eval-csp.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "no-unsafe-inline-csp": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-unsafe-inline-csp/no-unsafe-inline-csp.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "no-unvalidated-deeplinks": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-unvalidated-deeplinks/no-unvalidated-deeplinks.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "no-websocket-eval": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-websocket-eval/no-websocket-eval.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-websocket-innerhtml": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-websocket-innerhtml/no-websocket-innerhtml.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-worker-message-innerhtml": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/no-worker-message-innerhtml/no-worker-message-innerhtml.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "require-blob-url-revocation": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/require-blob-url-revocation/require-blob-url-revocation.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "require-cookie-secure-attrs": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/require-cookie-secure-attrs/require-cookie-secure-attrs.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "require-csp-headers": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/require-csp-headers/require-csp-headers.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-https-only": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/require-https-only/require-https-only.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "require-mime-type-validation": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/require-mime-type-validation/require-mime-type-validation.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-postmessage-origin-check": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/require-postmessage-origin-check/require-postmessage-origin-check.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-url-validation": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/require-url-validation/require-url-validation.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-websocket-wss": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-browser-security/src/rules/require-websocket-wss/require-websocket-wss.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        }
+      },
+      "missingDoc": [],
+      "missingTest": [],
+      "docNoExamples": [
+        "detect-mixed-content",
+        "no-allow-arbitrary-loads",
+        "no-clickjacking",
+        "no-client-side-auth-logic",
+        "no-credentials-in-query-params",
+        "no-disabled-certificate-validation",
+        "no-eval",
+        "no-filereader-innerhtml",
+        "no-http-urls",
+        "no-innerhtml",
+        "no-insecure-redirects",
+        "no-insecure-websocket",
+        "no-jwt-in-storage",
+        "no-missing-cors-check",
+        "no-missing-csrf-protection",
+        "no-missing-security-headers",
+        "no-permissive-cors",
+        "no-postmessage-innerhtml",
+        "no-postmessage-wildcard-origin",
+        "no-sensitive-cookie-js",
+        "no-sensitive-data-in-cache",
+        "no-sensitive-localstorage",
+        "no-tracking-without-consent",
+        "no-unencrypted-transmission",
+        "no-unescaped-url-parameter",
+        "no-websocket-eval",
+        "no-websocket-innerhtml",
+        "require-csp-headers",
+        "require-mime-type-validation",
+        "require-postmessage-origin-check",
+        "require-url-validation",
+        "require-websocket-wss"
+      ],
+      "missingImpl": []
+    },
+    "eslint-plugin-conventions": {
+      "rules": {
+        "consistent-existence-index-check": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "expiring-todo-comments": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "filename-case": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-commented-code": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-console-spaces": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-deprecated-api": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-json-schema-tags": {
+          "status": "missing-doc",
+          "hasImpl": true,
+          "hasDoc": false,
+          "testPath": null,
+          "doc": {
+            "exists": false,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "prefer-code-point": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "prefer-dependency-version-strategy": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "prefer-dom-node-text-content": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        }
+      },
+      "missingDoc": [
+        "no-json-schema-tags"
+      ],
+      "missingTest": [
+        "consistent-existence-index-check",
+        "expiring-todo-comments",
+        "filename-case",
+        "no-commented-code",
+        "no-console-spaces",
+        "no-deprecated-api",
+        "prefer-code-point",
+        "prefer-dependency-version-strategy",
+        "prefer-dom-node-text-content"
+      ],
+      "docNoExamples": [],
+      "missingImpl": []
+    },
+    "eslint-plugin-crypto": {
+      "rules": {
+        "no-hardcoded-crypto-key": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-crypto/src/rules/no-hardcoded-crypto-key/no-hardcoded-crypto-key.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-key-reuse": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-crypto/src/rules/no-key-reuse/no-key-reuse.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-math-random-crypto": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-crypto/src/rules/no-math-random-crypto/no-math-random-crypto.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-numeric-only-tokens": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-crypto/src/rules/no-numeric-only-tokens/no-numeric-only-tokens.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-predictable-salt": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-crypto/src/rules/no-predictable-salt/no-predictable-salt.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-web-crypto-export": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-crypto/src/rules/no-web-crypto-export/no-web-crypto-export.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-authenticated-encryption": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-crypto/src/rules/require-authenticated-encryption/require-authenticated-encryption.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-key-length": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-crypto/src/rules/require-key-length/require-key-length.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-random-iv": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-crypto/src/rules/require-random-iv/require-random-iv.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-secure-pbkdf2-digest": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-crypto/src/rules/require-secure-pbkdf2-digest/require-secure-pbkdf2-digest.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-sufficient-length": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-crypto/src/rules/require-sufficient-length/require-sufficient-length.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        }
+      },
+      "missingDoc": [],
+      "missingTest": [],
+      "docNoExamples": [
+        "no-hardcoded-crypto-key",
+        "no-key-reuse",
+        "no-math-random-crypto",
+        "no-numeric-only-tokens",
+        "no-predictable-salt",
+        "no-web-crypto-export",
+        "require-authenticated-encryption",
+        "require-key-length",
+        "require-random-iv",
+        "require-secure-pbkdf2-digest",
+        "require-sufficient-length"
+      ],
+      "missingImpl": []
+    },
+    "eslint-plugin-express-security": {
+      "rules": {
+        "no-cors-credentials-wildcard": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-express-security/src/rules/no-cors-credentials-wildcard/no-cors-credentials-wildcard.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-exposed-debug-endpoints": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-express-security/src/rules/no-exposed-debug-endpoints/no-exposed-debug-endpoints.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-express-unsafe-regex-route": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-express-security/src/rules/no-express-unsafe-regex-route/no-express-unsafe-regex-route.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-graphql-introspection-production": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-express-security/src/rules/no-graphql-introspection-production/no-graphql-introspection-production.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-insecure-cookie-options": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-express-security/src/rules/no-insecure-cookie-options/no-insecure-cookie-options.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-permissive-cors": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-express-security/src/rules/no-permissive-cors/no-permissive-cors.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-csrf-protection": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-express-security/src/rules/require-csrf-protection/require-csrf-protection.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-express-body-parser-limits": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-express-security/src/rules/require-express-body-parser-limits/require-express-body-parser-limits.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-helmet": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-express-security/src/rules/require-helmet/require-helmet.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-rate-limiting": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-express-security/src/rules/require-rate-limiting/require-rate-limiting.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        }
+      },
+      "missingDoc": [],
+      "missingTest": [],
+      "docNoExamples": [
+        "no-cors-credentials-wildcard",
+        "no-exposed-debug-endpoints",
+        "no-express-unsafe-regex-route",
+        "no-graphql-introspection-production",
+        "no-insecure-cookie-options",
+        "no-permissive-cors",
+        "require-csrf-protection",
+        "require-express-body-parser-limits",
+        "require-helmet",
+        "require-rate-limiting"
+      ],
+      "missingImpl": []
+    },
+    "eslint-plugin-import-next": {
+      "rules": {
+        "consistent-type-specifier-style": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "default": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "dynamic-import-chunkname": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "enforce-dependency-direction": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "enforce-import-order": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "enforce-team-boundaries": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "export": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "exports-last": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "extensions": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "first": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "group-exports": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "max-dependencies": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "named": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "namespace": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "newline-after-import": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-absolute-path": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-amd": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-anonymous-default-export": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-barrel-file": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-barrel-import": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-commonjs": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-cross-domain-imports": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-cycle": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-default-export": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-deprecated": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-duplicates": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-dynamic-require": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-empty-named-blocks": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-extraneous-dependencies": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-full-package-import": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-import-module-exports": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-internal-modules": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-legacy-imports": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-mutable-exports": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-named-as-default": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-named-as-default-member": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-named-default": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-named-export": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-namespace": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-nodejs-modules": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-relative-packages": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-relative-parent-imports": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-restricted-paths": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-self-import": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unassigned-import": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unresolved": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unused-modules": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-useless-path-segments": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "order": {
+          "status": "missing-impl",
+          "hasImpl": false,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "prefer-default-export": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "prefer-direct-import": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "prefer-modern-api": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "prefer-node-protocol": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "prefer-tree-shakeable-imports": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-import-approval": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "unambiguous": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        }
+      },
+      "missingDoc": [],
+      "missingTest": [
+        "consistent-type-specifier-style",
+        "default",
+        "dynamic-import-chunkname",
+        "enforce-dependency-direction",
+        "enforce-import-order",
+        "enforce-team-boundaries",
+        "export",
+        "exports-last",
+        "extensions",
+        "first",
+        "group-exports",
+        "max-dependencies",
+        "named",
+        "namespace",
+        "newline-after-import",
+        "no-absolute-path",
+        "no-amd",
+        "no-anonymous-default-export",
+        "no-barrel-file",
+        "no-barrel-import",
+        "no-commonjs",
+        "no-cross-domain-imports",
+        "no-cycle",
+        "no-default-export",
+        "no-deprecated",
+        "no-duplicates",
+        "no-dynamic-require",
+        "no-empty-named-blocks",
+        "no-extraneous-dependencies",
+        "no-full-package-import",
+        "no-import-module-exports",
+        "no-internal-modules",
+        "no-legacy-imports",
+        "no-mutable-exports",
+        "no-named-as-default",
+        "no-named-as-default-member",
+        "no-named-default",
+        "no-named-export",
+        "no-namespace",
+        "no-nodejs-modules",
+        "no-relative-packages",
+        "no-relative-parent-imports",
+        "no-restricted-paths",
+        "no-self-import",
+        "no-unassigned-import",
+        "no-unresolved",
+        "no-unused-modules",
+        "no-useless-path-segments",
+        "prefer-default-export",
+        "prefer-direct-import",
+        "prefer-modern-api",
+        "prefer-node-protocol",
+        "prefer-tree-shakeable-imports",
+        "require-import-approval",
+        "unambiguous"
+      ],
+      "docNoExamples": [],
+      "missingImpl": [
+        "order"
+      ]
+    },
+    "eslint-plugin-jwt": {
+      "rules": {
+        "no-algorithm-confusion": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-jwt/src/rules/no-algorithm-confusion/no-algorithm-confusion.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-algorithm-none": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-jwt/src/rules/no-algorithm-none/no-algorithm-none.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-decode-without-verify": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-jwt/src/rules/no-decode-without-verify/no-decode-without-verify.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-hardcoded-secret": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-jwt/src/rules/no-hardcoded-secret/no-hardcoded-secret.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-sensitive-payload": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-jwt/src/rules/no-sensitive-payload/no-sensitive-payload.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-timestamp-manipulation": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-jwt/src/rules/no-timestamp-manipulation/no-timestamp-manipulation.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-weak-secret": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-jwt/src/rules/no-weak-secret/no-weak-secret.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-algorithm-whitelist": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-jwt/src/rules/require-algorithm-whitelist/require-algorithm-whitelist.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-audience-validation": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-jwt/src/rules/require-audience-validation/require-audience-validation.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-expiration": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-jwt/src/rules/require-expiration/require-expiration.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-issued-at": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-jwt/src/rules/require-issued-at/require-issued-at.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-issuer-validation": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-jwt/src/rules/require-issuer-validation/require-issuer-validation.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-max-age": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-jwt/src/rules/require-max-age/require-max-age.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        }
+      },
+      "missingDoc": [],
+      "missingTest": [],
+      "docNoExamples": [
+        "no-algorithm-confusion",
+        "no-algorithm-none",
+        "no-decode-without-verify",
+        "no-hardcoded-secret",
+        "no-sensitive-payload",
+        "no-timestamp-manipulation",
+        "no-weak-secret",
+        "require-algorithm-whitelist",
+        "require-audience-validation",
+        "require-expiration",
+        "require-issued-at",
+        "require-issuer-validation",
+        "require-max-age"
+      ],
+      "missingImpl": []
+    },
+    "eslint-plugin-lambda-security": {
+      "rules": {
+        "no-env-logging": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-lambda-security/src/rules/no-env-logging/no-env-logging.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-error-swallowing": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-lambda-security/src/rules/no-error-swallowing/no-error-swallowing.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-exposed-debug-endpoints": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-lambda-security/src/rules/no-exposed-debug-endpoints/no-exposed-debug-endpoints.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-exposed-error-details": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-lambda-security/src/rules/no-exposed-error-details/no-exposed-error-details.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-hardcoded-credentials-sdk": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-lambda-security/src/rules/no-hardcoded-credentials-sdk/no-hardcoded-credentials-sdk.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-missing-authorization-check": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-lambda-security/src/rules/no-missing-authorization-check/no-missing-authorization-check.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-overly-permissive-iam-policy": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-lambda-security/src/rules/no-overly-permissive-iam-policy/no-overly-permissive-iam-policy.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-permissive-cors-middy": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-lambda-security/src/rules/no-permissive-cors-middy/no-permissive-cors-middy.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-permissive-cors-response": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-lambda-security/src/rules/no-permissive-cors-response/no-permissive-cors-response.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-secrets-in-env": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-lambda-security/src/rules/no-secrets-in-env/no-secrets-in-env.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unbounded-batch-processing": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-lambda-security/src/rules/no-unbounded-batch-processing/no-unbounded-batch-processing.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unvalidated-event-body": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-lambda-security/src/rules/no-unvalidated-event-body/no-unvalidated-event-body.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-user-controlled-requests": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-lambda-security/src/rules/no-user-controlled-requests/no-user-controlled-requests.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-timeout-handling": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-lambda-security/src/rules/require-timeout-handling/require-timeout-handling.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        }
+      },
+      "missingDoc": [],
+      "missingTest": [],
+      "docNoExamples": [
+        "no-env-logging",
+        "no-error-swallowing",
+        "no-exposed-debug-endpoints",
+        "no-exposed-error-details",
+        "no-hardcoded-credentials-sdk",
+        "no-missing-authorization-check",
+        "no-overly-permissive-iam-policy",
+        "no-permissive-cors-middy",
+        "no-permissive-cors-response",
+        "no-secrets-in-env",
+        "no-unbounded-batch-processing",
+        "no-unvalidated-event-body",
+        "no-user-controlled-requests",
+        "require-timeout-handling"
+      ],
+      "missingImpl": []
+    },
+    "eslint-plugin-maintainability": {
+      "rules": {
+        "cognitive-complexity": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "consistent-function-scoping": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "error-message": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "identical-functions": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "max-parameters": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "nested-complexity-hotspots": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-lonely-if": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-missing-error-context": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-nested-ternary": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-silent-errors": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unhandled-promise": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unreadable-iife": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        }
+      },
+      "missingDoc": [],
+      "missingTest": [
+        "cognitive-complexity",
+        "consistent-function-scoping",
+        "error-message",
+        "identical-functions",
+        "max-parameters",
+        "nested-complexity-hotspots",
+        "no-lonely-if",
+        "no-missing-error-context",
+        "no-nested-ternary",
+        "no-silent-errors",
+        "no-unhandled-promise",
+        "no-unreadable-iife"
+      ],
+      "docNoExamples": [],
+      "missingImpl": []
+    },
+    "eslint-plugin-modernization": {
+      "rules": {
+        "no-instanceof-array": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "prefer-at": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "prefer-event-target": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        }
+      },
+      "missingDoc": [],
+      "missingTest": [
+        "no-instanceof-array",
+        "prefer-at",
+        "prefer-event-target"
+      ],
+      "docNoExamples": [],
+      "missingImpl": []
+    },
+    "eslint-plugin-modularity": {
+      "rules": {
+        "ddd-anemic-domain-model": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "ddd-value-object-immutability": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "enforce-naming": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": true,
+            "incorrectBlocks": 0
+          }
+        },
+        "enforce-rest-conventions": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-external-api-calls-in-utils": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        }
+      },
+      "missingDoc": [],
+      "missingTest": [
+        "ddd-anemic-domain-model",
+        "ddd-value-object-immutability",
+        "enforce-naming",
+        "enforce-rest-conventions",
+        "no-external-api-calls-in-utils"
+      ],
+      "docNoExamples": [],
+      "missingImpl": []
+    },
+    "eslint-plugin-mongodb-security": {
+      "rules": {
+        "no-bypass-middleware": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-mongodb-security/src/rules/no-bypass-middleware/no-bypass-middleware.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-debug-mode-production": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-mongodb-security/src/rules/no-debug-mode-production/no-debug-mode-production.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-hardcoded-connection-string": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-mongodb-security/src/rules/no-hardcoded-connection-string/no-hardcoded-connection-string.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-hardcoded-credentials": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-mongodb-security/src/rules/no-hardcoded-credentials/no-hardcoded-credentials.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-operator-injection": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-mongodb-security/src/rules/no-operator-injection/no-operator-injection.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-select-sensitive-fields": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-mongodb-security/src/rules/no-select-sensitive-fields/no-select-sensitive-fields.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unbounded-find": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-mongodb-security/src/rules/no-unbounded-find/no-unbounded-find.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unsafe-populate": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-mongodb-security/src/rules/no-unsafe-populate/no-unsafe-populate.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unsafe-query": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-mongodb-security/src/rules/no-unsafe-query/no-unsafe-query.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unsafe-regex-query": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-mongodb-security/src/rules/no-unsafe-regex-query/no-unsafe-regex-query.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unsafe-where": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-mongodb-security/src/rules/no-unsafe-where/no-unsafe-where.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-auth-mechanism": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-mongodb-security/src/rules/require-auth-mechanism/require-auth-mechanism.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-lean-queries": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-mongodb-security/src/rules/require-lean-queries/require-lean-queries.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-projection": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-mongodb-security/src/rules/require-projection/require-projection.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-schema-validation": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-mongodb-security/src/rules/require-schema-validation/require-schema-validation.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-tls-connection": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-mongodb-security/src/rules/require-tls-connection/require-tls-connection.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        }
+      },
+      "missingDoc": [],
+      "missingTest": [],
+      "docNoExamples": [
+        "no-bypass-middleware",
+        "no-debug-mode-production",
+        "no-hardcoded-connection-string",
+        "no-hardcoded-credentials",
+        "no-operator-injection",
+        "no-select-sensitive-fields",
+        "no-unbounded-find",
+        "no-unsafe-populate",
+        "no-unsafe-query",
+        "no-unsafe-regex-query",
+        "no-unsafe-where",
+        "require-auth-mechanism",
+        "require-lean-queries",
+        "require-projection",
+        "require-schema-validation",
+        "require-tls-connection"
+      ],
+      "missingImpl": []
+    },
+    "eslint-plugin-nestjs-security": {
+      "rules": {
+        "no-exposed-debug-endpoints": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-nestjs-security/src/rules/no-exposed-debug-endpoints/no-exposed-debug-endpoints.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "no-exposed-private-fields": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-nestjs-security/src/rules/no-exposed-private-fields/no-exposed-private-fields.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "no-missing-validation-pipe": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-nestjs-security/src/rules/no-missing-validation-pipe/no-missing-validation-pipe.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "require-class-validator": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-nestjs-security/src/rules/require-class-validator/require-class-validator.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "require-guards": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-nestjs-security/src/rules/require-guards/require-guards.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "require-throttler": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-nestjs-security/src/rules/require-throttler/require-throttler.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        }
+      },
+      "missingDoc": [],
+      "missingTest": [],
+      "docNoExamples": [],
+      "missingImpl": []
+    },
+    "eslint-plugin-node-security": {
+      "rules": {
+        "detect-child-process": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/detect-child-process/detect-child-process.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "detect-eval-with-expression": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/detect-eval-with-expression/detect-eval-with-expression.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": true,
+            "incorrectBlocks": 0
+          }
+        },
+        "detect-non-literal-fs-filename": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/detect-non-literal-fs-filename/detect-non-literal-fs-filename.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "detect-suspicious-dependencies": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/detect-suspicious-dependencies/detect-suspicious-dependencies.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "lock-file": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/lock-file/lock-file.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-arbitrary-file-access": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-arbitrary-file-access/no-arbitrary-file-access.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-buffer-overread": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-buffer-overread/no-buffer-overread.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-cryptojs": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-cryptojs/no-cryptojs.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-cryptojs-weak-random": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-cryptojs-weak-random/no-cryptojs-weak-random.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-data-in-temp-storage": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-data-in-temp-storage/no-data-in-temp-storage.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "no-deprecated-buffer": {
+          "status": "missing-doc",
+          "hasImpl": true,
+          "hasDoc": false,
+          "testPath": null,
+          "doc": {
+            "exists": false,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-deprecated-cipher-method": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-deprecated-cipher-method/no-deprecated-cipher-method.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-dynamic-dependency-loading": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-dynamic-dependency-loading/no-dynamic-dependency-loading.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "no-dynamic-require": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-dynamic-require/no-dynamic-require.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-ecb-mode": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-ecb-mode/no-ecb-mode.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-insecure-key-derivation": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-insecure-key-derivation/no-insecure-key-derivation.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-insecure-rsa-padding": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-insecure-rsa-padding/no-insecure-rsa-padding.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-pii-in-logs": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-pii-in-logs/no-pii-in-logs.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-self-signed-certs": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-self-signed-certs/no-self-signed-certs.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-sha1-hash": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-sha1-hash/no-sha1-hash.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-ssrf": {
+          "status": "missing-doc",
+          "hasImpl": true,
+          "hasDoc": false,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-ssrf/no-ssrf.test.ts",
+          "doc": {
+            "exists": false,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-static-iv": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-static-iv/no-static-iv.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-timing-unsafe-compare": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-timing-unsafe-compare/no-timing-unsafe-compare.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-toctou-vulnerability": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-toctou-vulnerability/no-toctou-vulnerability.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unsafe-dynamic-require": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-unsafe-dynamic-require/no-unsafe-dynamic-require.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-weak-cipher-algorithm": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-weak-cipher-algorithm/no-weak-cipher-algorithm.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-weak-hash-algorithm": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-weak-hash-algorithm/no-weak-hash-algorithm.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-zip-slip": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/no-zip-slip/no-zip-slip.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "prefer-native-crypto": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/prefer-native-crypto/prefer-native-crypto.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-dependency-integrity": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/require-dependency-integrity/require-dependency-integrity.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-secure-credential-storage": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/require-secure-credential-storage/require-secure-credential-storage.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "require-secure-deletion": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/require-secure-deletion/require-secure-deletion.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-storage-encryption": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-node-security/src/rules/require-storage-encryption/require-storage-encryption.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        }
+      },
+      "missingDoc": [
+        "no-deprecated-buffer",
+        "no-ssrf"
+      ],
+      "missingTest": [],
+      "docNoExamples": [
+        "detect-child-process",
+        "detect-eval-with-expression",
+        "detect-non-literal-fs-filename",
+        "detect-suspicious-dependencies",
+        "lock-file",
+        "no-arbitrary-file-access",
+        "no-buffer-overread",
+        "no-cryptojs",
+        "no-cryptojs-weak-random",
+        "no-deprecated-cipher-method",
+        "no-dynamic-require",
+        "no-ecb-mode",
+        "no-insecure-key-derivation",
+        "no-insecure-rsa-padding",
+        "no-pii-in-logs",
+        "no-self-signed-certs",
+        "no-sha1-hash",
+        "no-static-iv",
+        "no-timing-unsafe-compare",
+        "no-toctou-vulnerability",
+        "no-unsafe-dynamic-require",
+        "no-weak-cipher-algorithm",
+        "no-weak-hash-algorithm",
+        "no-zip-slip",
+        "prefer-native-crypto",
+        "require-dependency-integrity",
+        "require-secure-deletion",
+        "require-storage-encryption"
+      ],
+      "missingImpl": []
+    },
+    "eslint-plugin-operability": {
+      "rules": {
+        "no-console-log": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-debug-code-in-production": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-process-exit": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-verbose-error-messages": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-code-minification": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-data-minimization": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        }
+      },
+      "missingDoc": [],
+      "missingTest": [
+        "no-console-log",
+        "no-debug-code-in-production",
+        "no-process-exit",
+        "no-verbose-error-messages",
+        "require-code-minification",
+        "require-data-minimization"
+      ],
+      "docNoExamples": [],
+      "missingImpl": []
+    },
+    "eslint-plugin-pg": {
+      "rules": {
+        "check-query-params": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-pg/src/rules/check-query-params/check-query-params.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-batch-insert-loop": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-pg/src/rules/no-batch-insert-loop/no-batch-insert-loop.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-floating-query": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-pg/src/rules/no-floating-query/no-floating-query.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-hardcoded-credentials": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-pg/src/rules/no-hardcoded-credentials/no-hardcoded-credentials.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-insecure-ssl": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-pg/src/rules/no-insecure-ssl/no-insecure-ssl.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-missing-client-release": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-pg/src/rules/no-missing-client-release/no-missing-client-release.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-select-all": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-pg/src/rules/no-select-all/no-select-all.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-transaction-on-pool": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-pg/src/rules/no-transaction-on-pool/no-transaction-on-pool.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unsafe-copy-from": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-pg/src/rules/no-unsafe-copy-from/no-unsafe-copy-from.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unsafe-query": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-pg/src/rules/no-unsafe-query/no-unsafe-query.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unsafe-search-path": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-pg/src/rules/no-unsafe-search-path/no-unsafe-search-path.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "prefer-pool-query": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-pg/src/rules/prefer-pool-query/prefer-pool-query.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "prevent-double-release": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-pg/src/rules/prevent-double-release/prevent-double-release.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        }
+      },
+      "missingDoc": [],
+      "missingTest": [],
+      "docNoExamples": [
+        "check-query-params",
+        "no-batch-insert-loop",
+        "no-floating-query",
+        "no-hardcoded-credentials",
+        "no-insecure-ssl",
+        "no-missing-client-release",
+        "no-select-all",
+        "no-transaction-on-pool",
+        "no-unsafe-copy-from",
+        "no-unsafe-query",
+        "no-unsafe-search-path",
+        "prefer-pool-query",
+        "prevent-double-release"
+      ],
+      "missingImpl": []
+    },
+    "eslint-plugin-react-a11y": {
+      "rules": {
+        "alt-text": {
+          "status": "missing-doc",
+          "hasImpl": true,
+          "hasDoc": false,
+          "testPath": null,
+          "doc": {
+            "exists": false,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "anchor-ambiguous-text": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "anchor-has-content": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "anchor-is-valid": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "aria-activedescendant-has-tabindex": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "aria-props": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "aria-role": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "aria-unsupported-elements": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "autocomplete-valid": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "click-events-have-key-events": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "control-has-associated-label": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "heading-has-content": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "html-has-lang": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "iframe-has-title": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "img-redundant-alt": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "interactive-supports-focus": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "label-has-associated-control": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "lang": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "media-has-caption": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "mouse-events-have-key-events": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-access-key": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-aria-hidden-on-focusable": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-autofocus": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-distracting-elements": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-interactive-element-to-noninteractive-role": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-keyboard-inaccessible-elements": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-missing-aria-labels": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-noninteractive-element-interactions": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-noninteractive-element-to-interactive-role": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-noninteractive-tabindex": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-redundant-roles": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-static-element-interactions": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "prefer-tag-over-role": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "role-has-required-aria-props": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "role-supports-aria-props": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "scope": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "tabindex-no-positive": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        }
+      },
+      "missingDoc": [
+        "alt-text"
+      ],
+      "missingTest": [
+        "anchor-ambiguous-text",
+        "anchor-has-content",
+        "anchor-is-valid",
+        "aria-activedescendant-has-tabindex",
+        "aria-props",
+        "aria-role",
+        "aria-unsupported-elements",
+        "autocomplete-valid",
+        "click-events-have-key-events",
+        "control-has-associated-label",
+        "heading-has-content",
+        "html-has-lang",
+        "iframe-has-title",
+        "img-redundant-alt",
+        "interactive-supports-focus",
+        "label-has-associated-control",
+        "lang",
+        "media-has-caption",
+        "mouse-events-have-key-events",
+        "no-access-key",
+        "no-aria-hidden-on-focusable",
+        "no-autofocus",
+        "no-distracting-elements",
+        "no-interactive-element-to-noninteractive-role",
+        "no-keyboard-inaccessible-elements",
+        "no-missing-aria-labels",
+        "no-noninteractive-element-interactions",
+        "no-noninteractive-element-to-interactive-role",
+        "no-noninteractive-tabindex",
+        "no-redundant-roles",
+        "no-static-element-interactions",
+        "prefer-tag-over-role",
+        "role-has-required-aria-props",
+        "role-supports-aria-props",
+        "scope",
+        "tabindex-no-positive"
+      ],
+      "docNoExamples": [],
+      "missingImpl": []
+    },
+    "eslint-plugin-react-features": {
+      "rules": {
+        "checked-requires-onchange-or-readonly": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "default-props-match-prop-types": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "display-name": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "hooks-exhaustive-deps": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "jsx-handler-names": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "jsx-key": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "jsx-max-depth": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "jsx-no-bind": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "jsx-no-duplicate-props": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "jsx-no-literals": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "jsx-no-script-url": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "jsx-no-target-blank": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-access-state-in-setstate": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-adjacent-inline-elements": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-arrow-function-lifecycle": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-children-prop": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-danger": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-danger-with-children": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-deprecated": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-did-mount-set-state": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-did-update-set-state": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-direct-mutation-state": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-find-dom-node": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-invalid-html-attribute": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-is-mounted": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-multi-comp": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-namespace": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-object-type-as-default-prop": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-redundant-should-component-update": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-render-return-value": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-set-state": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-string-refs": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-this-in-sfc": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-typos": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unescaped-entities": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unknown-property": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unnecessary-rerenders": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unsafe": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "prefer-es6-class": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "prefer-stateless-function": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "prop-types": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "react-class-to-hooks": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "react-in-jsx-scope": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "react-no-inline-functions": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "react-render-optimization": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-default-props": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-optimization": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-render-return": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "required-attributes": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "sort-comp": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "state-in-constructor": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "static-property-placement": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "void-dom-elements-no-children": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        }
+      },
+      "missingDoc": [],
+      "missingTest": [
+        "checked-requires-onchange-or-readonly",
+        "default-props-match-prop-types",
+        "display-name",
+        "hooks-exhaustive-deps",
+        "jsx-handler-names",
+        "jsx-key",
+        "jsx-max-depth",
+        "jsx-no-bind",
+        "jsx-no-duplicate-props",
+        "jsx-no-literals",
+        "jsx-no-script-url",
+        "jsx-no-target-blank",
+        "no-access-state-in-setstate",
+        "no-adjacent-inline-elements",
+        "no-arrow-function-lifecycle",
+        "no-children-prop",
+        "no-danger",
+        "no-danger-with-children",
+        "no-deprecated",
+        "no-did-mount-set-state",
+        "no-did-update-set-state",
+        "no-direct-mutation-state",
+        "no-find-dom-node",
+        "no-invalid-html-attribute",
+        "no-is-mounted",
+        "no-multi-comp",
+        "no-namespace",
+        "no-object-type-as-default-prop",
+        "no-redundant-should-component-update",
+        "no-render-return-value",
+        "no-set-state",
+        "no-string-refs",
+        "no-this-in-sfc",
+        "no-typos",
+        "no-unescaped-entities",
+        "no-unknown-property",
+        "no-unnecessary-rerenders",
+        "no-unsafe",
+        "prefer-es6-class",
+        "prefer-stateless-function",
+        "prop-types",
+        "react-class-to-hooks",
+        "react-in-jsx-scope",
+        "react-no-inline-functions",
+        "react-render-optimization",
+        "require-default-props",
+        "require-optimization",
+        "require-render-return",
+        "required-attributes",
+        "sort-comp",
+        "state-in-constructor",
+        "static-property-placement",
+        "void-dom-elements-no-children"
+      ],
+      "docNoExamples": [],
+      "missingImpl": []
+    },
+    "eslint-plugin-reliability": {
+      "rules": {
+        "error-message": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-await-in-loop": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-jsdoc-terminator-in-example": {
+          "status": "missing-doc",
+          "hasImpl": true,
+          "hasDoc": false,
+          "testPath": null,
+          "doc": {
+            "exists": false,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-missing-error-context": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-missing-null-checks": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-silent-errors": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unhandled-promise": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unsafe-type-narrowing": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-network-timeout": {
+          "status": "missing-test",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": null,
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        }
+      },
+      "missingDoc": [
+        "no-jsdoc-terminator-in-example"
+      ],
+      "missingTest": [
+        "error-message",
+        "no-await-in-loop",
+        "no-missing-error-context",
+        "no-missing-null-checks",
+        "no-silent-errors",
+        "no-unhandled-promise",
+        "no-unsafe-type-narrowing",
+        "require-network-timeout"
+      ],
+      "docNoExamples": [],
+      "missingImpl": []
+    },
+    "eslint-plugin-secure-coding": {
+      "rules": {
+        "detect-non-literal-regexp": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/detect-non-literal-regexp/detect-non-literal-regexp.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "detect-object-injection": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/detect-object-injection/detect-object-injection.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "detect-weak-password-validation": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/detect-weak-password-validation/detect-weak-password-validation.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-directive-injection": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-directive-injection/no-directive-injection.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-electron-security-issues": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-electron-security-issues/no-electron-security-issues.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-format-string-injection": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-format-string-injection/no-format-string-injection.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-graphql-injection": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-graphql-injection/no-graphql-injection.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-hardcoded-credentials": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-hardcoded-credentials/no-hardcoded-credentials.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-hardcoded-session-tokens": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-hardcoded-session-tokens/no-hardcoded-session-tokens.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "no-improper-sanitization": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-improper-sanitization/no-improper-sanitization.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-improper-type-validation": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-improper-type-validation/no-improper-type-validation.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-insecure-comparison": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-insecure-comparison/no-insecure-comparison.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-ldap-injection": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-ldap-injection/no-ldap-injection.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-missing-authentication": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-missing-authentication/no-missing-authentication.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-pii-in-logs": {
+          "status": "missing-doc",
+          "hasImpl": true,
+          "hasDoc": false,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-pii-in-logs/no-pii-in-logs.test.ts",
+          "doc": {
+            "exists": false,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-privilege-escalation": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-privilege-escalation/no-privilege-escalation.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-redos-vulnerable-regex": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-redos-vulnerable-regex/no-redos-vulnerable-regex.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-sensitive-data-exposure": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-sensitive-data-exposure/no-sensitive-data-exposure.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unchecked-loop-condition": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-unchecked-loop-condition/no-unchecked-loop-condition.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unlimited-resource-allocation": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-unlimited-resource-allocation/no-unlimited-resource-allocation.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unsafe-deserialization": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-deserialization/no-unsafe-deserialization.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-unsafe-regex-construction": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-regex-construction/no-unsafe-regex-construction.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-weak-password-recovery": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-weak-password-recovery/no-weak-password-recovery.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-xpath-injection": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-xpath-injection/no-xpath-injection.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "no-xxe-injection": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/no-xxe-injection/no-xxe-injection.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-backend-authorization": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/require-backend-authorization/require-backend-authorization.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-secure-defaults": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-secure-coding/src/rules/require-secure-defaults/require-secure-defaults.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": false,
+            "hasCorrect": false,
+            "incorrectBlocks": 0
+          }
+        }
+      },
+      "missingDoc": [
+        "no-pii-in-logs"
+      ],
+      "missingTest": [],
+      "docNoExamples": [
+        "detect-non-literal-regexp",
+        "detect-object-injection",
+        "detect-weak-password-validation",
+        "no-directive-injection",
+        "no-electron-security-issues",
+        "no-format-string-injection",
+        "no-graphql-injection",
+        "no-hardcoded-credentials",
+        "no-improper-sanitization",
+        "no-improper-type-validation",
+        "no-insecure-comparison",
+        "no-ldap-injection",
+        "no-missing-authentication",
+        "no-privilege-escalation",
+        "no-redos-vulnerable-regex",
+        "no-sensitive-data-exposure",
+        "no-unchecked-loop-condition",
+        "no-unlimited-resource-allocation",
+        "no-unsafe-deserialization",
+        "no-unsafe-regex-construction",
+        "no-weak-password-recovery",
+        "no-xpath-injection",
+        "no-xxe-injection",
+        "require-backend-authorization",
+        "require-secure-defaults"
+      ],
+      "missingImpl": []
+    },
+    "eslint-plugin-vercel-ai-security": {
+      "rules": {
+        "no-dynamic-system-prompt": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-vercel-ai-security/src/rules/no-dynamic-system-prompt/no-dynamic-system-prompt.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "no-hardcoded-api-keys": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-vercel-ai-security/src/rules/no-hardcoded-api-keys/no-hardcoded-api-keys.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "no-sensitive-in-prompt": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-vercel-ai-security/src/rules/no-sensitive-in-prompt/no-sensitive-in-prompt.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "no-system-prompt-leak": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-vercel-ai-security/src/rules/no-system-prompt-leak/no-system-prompt-leak.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "no-training-data-exposure": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-vercel-ai-security/src/rules/no-training-data-exposure/no-training-data-exposure.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "no-unsafe-output-handling": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-vercel-ai-security/src/rules/no-unsafe-output-handling/no-unsafe-output-handling.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "require-abort-signal": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-vercel-ai-security/src/rules/require-abort-signal/require-abort-signal.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "require-audit-logging": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-vercel-ai-security/src/rules/require-audit-logging/require-audit-logging.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "require-embedding-validation": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-vercel-ai-security/src/rules/require-embedding-validation/require-embedding-validation.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "require-error-handling": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-vercel-ai-security/src/rules/require-error-handling/require-error-handling.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "require-max-steps": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-vercel-ai-security/src/rules/require-max-steps/require-max-steps.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "require-max-tokens": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-vercel-ai-security/src/rules/require-max-tokens/require-max-tokens.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "require-output-filtering": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-vercel-ai-security/src/rules/require-output-filtering/require-output-filtering.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "require-output-validation": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-vercel-ai-security/src/rules/require-output-validation/require-output-validation.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "require-rag-content-validation": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-vercel-ai-security/src/rules/require-rag-content-validation/require-rag-content-validation.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "require-request-timeout": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-vercel-ai-security/src/rules/require-request-timeout/require-request-timeout.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "require-tool-confirmation": {
+          "status": "doc-no-examples",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-vercel-ai-security/src/rules/require-tool-confirmation/require-tool-confirmation.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 0
+          }
+        },
+        "require-tool-schema": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-vercel-ai-security/src/rules/require-tool-schema/require-tool-schema.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        },
+        "require-validated-prompt": {
+          "status": "ok",
+          "hasImpl": true,
+          "hasDoc": true,
+          "testPath": "packages/eslint-plugin-vercel-ai-security/src/rules/require-validated-prompt/require-validated-prompt.test.ts",
+          "doc": {
+            "exists": true,
+            "hasIncorrect": true,
+            "hasCorrect": true,
+            "incorrectBlocks": 1
+          }
+        }
+      },
+      "missingDoc": [],
+      "missingTest": [],
+      "docNoExamples": [
+        "require-tool-confirmation"
+      ],
+      "missingImpl": []
+    }
+  },
+  "totals": {
+    "rules": 398,
+    "missingDoc": 6,
+    "missingTest": 187,
+    "docNoExamples": 163,
+    "missingImpl": 1,
+    "ok": 41
+  }
+}

@@ -25,7 +25,10 @@ export const requireSecureCredentialStorage = createRule<RuleOptions, MessageIds
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/require-secure-credential-storage.md',
       description: 'Enforce secure storage patterns for credentials',
+      cwe: 'CWE-312',
+      cvss: 7.5,
     },
     messages: {
       violationDetected: formatLLMMessage({

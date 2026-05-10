@@ -132,6 +132,57 @@ function loadLatestWildSummary(): { path: string; data: WildSummary } | null {
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// PER-RULE BACKFIRE DETECTION (Gap H)
+// ---------------------------------------------------------------------------
+// Aggregate per-rule Wild hit counts from per-repo/<repo>/per-rule.json files.
+// On --update-baseline this is recorded into baseline.json. On every other
+// run we diff against it to surface "this PR shifted N hits on rule X" so
+// reviewers can spot cross-bench tradeoffs (e.g. fewer Edge hits but more
+// Juliet recall drops) that the per-bench gates don't catch individually.
+
+function aggregatePerRuleHits(dateDir: string): Record<string, number> {
+  const perRepoDir = path.join(dateDir, 'per-repo');
+  if (!fs.existsSync(perRepoDir)) return {};
+  const out: Record<string, number> = {};
+  for (const repoDir of fs.readdirSync(perRepoDir)) {
+    const f = path.join(perRepoDir, repoDir, 'per-rule.json');
+    if (!fs.existsSync(f)) continue;
+    let data: Record<string, { hits?: number }> = {};
+    try {
+      data = JSON.parse(fs.readFileSync(f, 'utf-8'));
+    } catch {
+      continue;
+    }
+    for (const [rule, entry] of Object.entries(data)) {
+      out[rule] = (out[rule] ?? 0) + (entry?.hits ?? 0);
+    }
+  }
+  return out;
+}
+
+interface RuleDelta {
+  rule: string;
+  baseline: number;
+  current: number;
+  delta: number;
+}
+
+function computeRuleDeltas(
+  baselineHits: Record<string, number>,
+  currentHits: Record<string, number>,
+): RuleDelta[] {
+  const all = new Set([...Object.keys(baselineHits), ...Object.keys(currentHits)]);
+  const deltas: RuleDelta[] = [];
+  for (const rule of all) {
+    const b = baselineHits[rule] ?? 0;
+    const c = currentHits[rule] ?? 0;
+    if (b === c) continue;
+    deltas.push({ rule, baseline: b, current: c, delta: c - b });
+  }
+  return deltas.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+}
+
 function loadJson<T>(p: string): T | null {
   if (!fs.existsSync(p)) return null;
   try {
@@ -161,9 +212,13 @@ const currentLlmFix = loadJson<LlmFixResult>(
 // ---------------------------------------------------------------------------
 
 if (UPDATE_BASELINE) {
-  fs.writeFileSync(baselinePath, JSON.stringify(current.data, null, 2));
+  // Add per-rule snapshot for backfire detection (Gap H).
+  const dataWithPerRule = current.data as WildSummary & { perRuleWildHits?: Record<string, number> };
+  dataWithPerRule.perRuleWildHits = aggregatePerRuleHits(path.dirname(current.path));
+  fs.writeFileSync(baselinePath, JSON.stringify(dataWithPerRule, null, 2));
   console.log(`✅ Wild baseline updated: ${path.relative(ROOT, baselinePath)}`);
   console.log(`   Source: ${path.relative(ROOT, current.path)}`);
+  console.log(`   Per-rule snapshot: ${Object.keys(dataWithPerRule.perRuleWildHits).length} rules`);
 
   // Also baseline the LLM benches if their results exist.
   const llmBaseline: LlmBaseline = {};
@@ -348,6 +403,74 @@ if (llmBaseline?.llmFix && currentLlmFix) {
 }
 
 // ---------------------------------------------------------------------------
+// PER-RULE BACKFIRE DETECTION REPORT (Gap H)
+// ---------------------------------------------------------------------------
+
+const baselineRulesSnapshot =
+  (baseline as WildSummary & { perRuleWildHits?: Record<string, number> }).perRuleWildHits;
+const currentRulesSnapshot = aggregatePerRuleHits(path.dirname(current.path));
+let ruleDeltaSection = '';
+if (baselineRulesSnapshot && Object.keys(baselineRulesSnapshot).length > 0) {
+  const deltas = computeRuleDeltas(baselineRulesSnapshot, currentRulesSnapshot);
+  const significant = deltas.filter((d) => Math.abs(d.delta) >= 25);
+
+  if (significant.length === 0) {
+    ruleDeltaSection = '\n🔄 Per-rule deltas: no rule shifted by ≥ 25 hits since baseline.\n';
+  } else {
+    const risers = significant.filter((d) => d.delta > 0).slice(0, 5);
+    const fallers = significant.filter((d) => d.delta < 0).slice(0, 5);
+    ruleDeltaSection = '\n🔄 Per-rule deltas (Wild corpus, ≥ 25 hits change):\n';
+    if (fallers.length) {
+      ruleDeltaSection += '   Rules firing LESS than baseline (FP fixes? recall drift?):\n';
+      for (const d of fallers) {
+        ruleDeltaSection += `     ${d.rule.padEnd(60)} ${d.baseline} → ${d.current} (${d.delta > 0 ? '+' : ''}${d.delta})\n`;
+      }
+    }
+    if (risers.length) {
+      ruleDeltaSection += '   Rules firing MORE than baseline (regression? new coverage?):\n';
+      for (const d of risers) {
+        ruleDeltaSection += `     ${d.rule.padEnd(60)} ${d.baseline} → ${d.current} (+${d.delta})\n`;
+      }
+    }
+    ruleDeltaSection +=
+      '\n   ℹ️  These are info-level. Cross-reference with Arena/Juliet F1 deltas to spot backfires:\n' +
+      '      "Edge hits dropped 200 + Juliet F1 dropped 2pp" = the FP fix may have cost recall.\n';
+
+    // Hard-fail backfire heuristic: a rule that gained ≥ 100 hits on Wild
+    // AND has zero synthetic-bench coverage is shipping unmeasured noise.
+    const arenaPath = latestFileInDir(path.join(BENCH_RESULTS, 'ilb-arena'));
+    const julietPath = latestFileInDir(path.join(BENCH_RESULTS, 'ilb-juliet'));
+    const measured = new Set<string>();
+    for (const p of [arenaPath, julietPath]) {
+      if (!p) continue;
+      const raw = fs.readFileSync(p, 'utf-8');
+      const m = raw.match(/"[a-z][a-z0-9-]*\/[a-z][a-z0-9-/]*"/gi) ?? [];
+      for (const x of m) measured.add(x.slice(1, -1));
+    }
+    const unmeasuredRisers = significant.filter(
+      (d) => d.delta >= 100 && !measured.has(d.rule),
+    );
+    if (unmeasuredRisers.length > 0) {
+      for (const d of unmeasuredRisers) {
+        warns.push(
+          `Rule \`${d.rule}\` gained ${d.delta} Wild hits but has no Arena/Juliet fixture — unmeasured FP risk`,
+        );
+      }
+    }
+  }
+}
+
+function latestFileInDir(dir: string): string | null {
+  if (!fs.existsSync(dir)) return null;
+  const entries = fs
+    .readdirSync(dir)
+    .filter((e) => /^\d{4}-\d{2}-\d{2}\.json$/.test(e))
+    .sort()
+    .reverse();
+  return entries[0] ? path.join(dir, entries[0]) : null;
+}
+
+// ---------------------------------------------------------------------------
 // REPORT
 // ---------------------------------------------------------------------------
 
@@ -367,6 +490,8 @@ if (fails.length) {
   console.log('\n❌ Failures:');
   for (const m of fails) console.log(`   ${m}`);
 }
+
+if (ruleDeltaSection) console.log(ruleDeltaSection);
 
 const hardFail = fails.length > 0;
 const softFail = STRICT && warns.length > 0;

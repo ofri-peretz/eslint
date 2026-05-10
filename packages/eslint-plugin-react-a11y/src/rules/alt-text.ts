@@ -13,14 +13,39 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 
-type MessageIds = 'missingAlt' | 'emptyAlt' | 'addDescriptiveAlt' | 'useEmptyAlt';
+type MessageIds =
+  | 'missingAlt'
+  | 'emptyAlt'
+  | 'addDescriptiveAlt'
+  | 'useEmptyAlt'
+  | 'preferEmptyAltOverPresentation'
+  | 'objectMissingAlternative'
+  | 'areaMissingAlternative'
+  | 'inputImageMissingAlternative';
 
 export interface Options {
   /** Allow aria-label as alternative to alt text. Default: false */
   allowAriaLabel?: boolean;
-  
+
   /** Allow aria-labelledby as alternative to alt text. Default: false */
   allowAriaLabelledby?: boolean;
+
+  /**
+   * Custom component names that should be checked as `<img>` (next/image,
+   * Chakra Image, MUI Avatar, framework-specific components). Without this
+   * the rule misses every React project that wraps native img — which is
+   * most of them. Mirrors the `img: [...]` option in eslint-plugin-jsx-a11y.
+   */
+  img?: string[];
+
+  /** Custom components checked as `<object>`. */
+  object?: string[];
+
+  /** Custom components checked as `<area>`. */
+  area?: string[];
+
+  /** Custom components checked as `<input type="image">`. */
+  inputImage?: string[];
 }
 
 type RuleOptions = [Options?];
@@ -30,7 +55,11 @@ export const altText = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/alt-text.md',
       description: 'Enforce alt text on images with accessibility impact context',
+      cwe: 'CWE-252',
+      cvss: 9.5,
+      confidence: 'high',
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -69,19 +98,52 @@ export const altText = createRule<RuleOptions, MessageIds>({
         fix: 'alt="" (for decorative images only)',
         documentationLink: 'https://www.w3.org/WAI/tutorials/images/decorative/',
       }),
+      preferEmptyAltOverPresentation: formatLLMMessage({
+        icon: MessageIcons.ACCESSIBILITY,
+        issueName: 'Prefer alt="" over role="presentation"',
+        description: 'Image with role="presentation" should use alt="" instead. First rule of ARIA: do not use ARIA when native HTML can express the same intent.',
+        severity: 'MEDIUM',
+        fix: 'Replace role="presentation" with alt="" — the empty alt already marks the image as decorative.',
+        documentationLink: 'https://www.w3.org/WAI/ARIA/apg/practices/read-me-first/#1stnotuseit',
+      }),
+      objectMissingAlternative: formatLLMMessage({
+        icon: MessageIcons.ACCESSIBILITY,
+        issueName: 'Embedded object missing text alternative',
+        cwe: 'CWE-252',
+        description: 'Embedded <object> elements must have alternative text via inner text, aria-label, aria-labelledby, or title.',
+        severity: 'CRITICAL',
+        fix: 'Add aria-label="..." or inner text describing the object content.',
+        documentationLink: 'https://www.w3.org/WAI/WCAG21/Techniques/general/G94',
+      }),
+      areaMissingAlternative: formatLLMMessage({
+        icon: MessageIcons.ACCESSIBILITY,
+        issueName: 'Image-map <area> missing text alternative',
+        cwe: 'CWE-252',
+        description: 'Each <area> in an image map must have a text alternative via alt, aria-label, or aria-labelledby.',
+        severity: 'CRITICAL',
+        fix: 'Add alt="region description" so screen-reader users can navigate the map.',
+        documentationLink: 'https://www.w3.org/WAI/WCAG21/Techniques/html/H24',
+      }),
+      inputImageMissingAlternative: formatLLMMessage({
+        icon: MessageIcons.ACCESSIBILITY,
+        issueName: '<input type="image"> missing text alternative',
+        cwe: 'CWE-252',
+        description: '<input type="image"> elements must have a text alternative via alt, aria-label, or aria-labelledby — they act as buttons but render an image.',
+        severity: 'CRITICAL',
+        fix: 'Add alt="action description" (what does clicking this submit?).',
+        documentationLink: 'https://www.w3.org/WAI/WCAG21/Techniques/html/H36',
+      }),
     },
     schema: [
       {
         type: 'object',
         properties: {
-          allowAriaLabel: {
-            type: 'boolean',
-            default: false,
-          },
-          allowAriaLabelledby: {
-            type: 'boolean',
-            default: false,
-          },
+          allowAriaLabel: { type: 'boolean', default: false },
+          allowAriaLabelledby: { type: 'boolean', default: false },
+          img: { type: 'array', items: { type: 'string' }, default: [] },
+          object: { type: 'array', items: { type: 'string' }, default: [] },
+          area: { type: 'array', items: { type: 'string' }, default: [] },
+          inputImage: { type: 'array', items: { type: 'string' }, default: [] },
         },
         additionalProperties: false,
       },
@@ -91,162 +153,195 @@ export const altText = createRule<RuleOptions, MessageIds>({
     {
       allowAriaLabel: false,
       allowAriaLabelledby: false,
+      img: [],
+      object: [],
+      area: [],
+      inputImage: [],
     },
   ],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
     const options = context.options[0] || {};
     const {
-allowAriaLabel = false, allowAriaLabelledby = false 
-}: Options = options || {};
+      allowAriaLabel = false,
+      allowAriaLabelledby = false,
+      img: imgComponents = [],
+      object: objectComponents = [],
+      area: areaComponents = [],
+      inputImage: inputImageComponents = [],
+    }: Options = options;
+
+    type Kind = 'img' | 'object' | 'area' | 'inputImage';
 
     /**
-     * Check if element has alt attribute
+     * Map a JSX element name to a logical kind based on its tag and the
+     * user's custom-component configuration. Mirrors jsx-a11y's element
+     * classification — without this we miss every framework-specific image
+     * component (next/image's <Image>, Chakra <Image>, MUI <Avatar>, etc.).
      */
-    const hasAltAttribute = (node: TSESTree.JSXOpeningElement): boolean => {
-      return node.attributes.some(
-        (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) => attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier' && attr.name.name === 'alt'
-      );
-    };
-
-    /**
-     * Get alt attribute value
-     */
-    const getAltValue = (node: TSESTree.JSXOpeningElement): string | null => {
-      const altAttr = node.attributes.find(
-        (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier' && attr.name.name === 'alt'
-      );
-
-      if (!altAttr || altAttr.type !== 'JSXAttribute') return null;
-
-      if (!altAttr.value) return '';
-      
-      if (altAttr.value.type === 'Literal' && typeof altAttr.value.value === 'string') {
-        return altAttr.value.value;
+    const classify = (node: TSESTree.JSXOpeningElement): Kind | null => {
+      if (node.name.type !== 'JSXIdentifier') return null;
+      const name = node.name.name;
+      if (name === 'img' || imgComponents.includes(name)) return 'img';
+      if (name === 'object' || objectComponents.includes(name)) return 'object';
+      if (name === 'area' || areaComponents.includes(name)) return 'area';
+      // <input type="image"> needs the type attribute check
+      if (name === 'input' || inputImageComponents.includes(name)) {
+        const typeAttr = getAttr(node, 'type');
+        const typeVal = typeAttr ? getStringValue(typeAttr) : null;
+        if (typeVal === 'image') return 'inputImage';
       }
+      return null;
+    };
 
-      return null; // Dynamic value
+    const getAttr = (node: TSESTree.JSXOpeningElement, name: string) =>
+      node.attributes.find(
+        (a): a is TSESTree.JSXAttribute =>
+          a.type === 'JSXAttribute' && a.name.type === 'JSXIdentifier' && a.name.name === name
+      );
+
+    /** Returns the literal string value of an attribute, or null if dynamic / not a string. */
+    // oxlint-disable-next-line consistent-function-scoping
+    const getStringValue = (attr: TSESTree.JSXAttribute): string | null => {
+      if (!attr.value) return ''; // <img alt /> — boolean-shorthand attribute
+      if (attr.value.type === 'Literal' && typeof attr.value.value === 'string') {
+        return attr.value.value;
+      }
+      return null;
+    };
+
+    const hasNonEmptyAttr = (node: TSESTree.JSXOpeningElement, name: string): boolean => {
+      const attr = getAttr(node, name);
+      if (!attr) return false;
+      const v = getStringValue(attr);
+      // Non-string (dynamic expression like aria-label={x}) is "has a value" —
+      // we can't statically verify but it's user intent. Match jsx-a11y here.
+      if (v === null) return true;
+      return v.length > 0;
+    };
+
+    /** True when the element has role="presentation" or role="none". */
+    const hasPresentationRole = (node: TSESTree.JSXOpeningElement): boolean => {
+      const attr = getAttr(node, 'role');
+      if (!attr) return false;
+      const v = getStringValue(attr);
+      return v === 'presentation' || v === 'none';
     };
 
     /**
-     * Check for aria-label or aria-labelledby
+     * <object>foo</object> is OK because the inner text serves as the text
+     * alternative. Walks the parent JSXElement's children for text or
+     * non-empty JSX children.
      */
-    const hasAriaLabel = (node: TSESTree.JSXOpeningElement): boolean => {
-      if (!allowAriaLabel && !allowAriaLabelledby) return false;
-
-      return node.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) => {
-        if (attr.type !== 'JSXAttribute' || attr.name.type !== 'JSXIdentifier') return false;
-        
-        return (
-          (allowAriaLabel && attr.name.name === 'aria-label') ||
-          (allowAriaLabelledby && attr.name.name === 'aria-labelledby')
-        );
+    // oxlint-disable-next-line consistent-function-scoping
+    const hasAccessibleChild = (
+      node: TSESTree.JSXOpeningElement
+    ): boolean => {
+      const parent = node.parent;
+      if (!parent || parent.type !== 'JSXElement') return false;
+      return (parent.children || []).some((child) => {
+        if (child.type === 'JSXText' && child.value.trim().length > 0) return true;
+        if (child.type === 'JSXExpressionContainer' && child.expression?.type !== 'JSXEmptyExpression') return true;
+        if (child.type === 'JSXElement') return true; // nested element is some content
+        return false;
       });
     };
 
-    /**
-     * Extract context about the image
-     */
-    const getImageContext = (node: TSESTree.JSXOpeningElement): {
-      src?: string;
-      usage: string;
-      surroundingText: string;
-    } => {
-      const srcAttr = node.attributes.find(
-        (attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier' && attr.name.name === 'src'
-      );
-
-      let src: string | undefined;
-      if (srcAttr && srcAttr.type === 'JSXAttribute' && srcAttr.value?.type === 'Literal') {
-        src = String(srcAttr.value.value);
-      }
-
-      return {
-        src,
-        usage: 'Content image', // Could be enhanced to detect context
-        surroundingText: 'Unknown context',
-      };
+    /** Aria-label/-labelledby gate (used as fallback for img when allowed,
+     * and for object/area/input-image which always accept aria as alternatives). */
+    const hasAria = (node: TSESTree.JSXOpeningElement, requireOptIn: boolean): boolean => {
+      if (requireOptIn && !allowAriaLabel && !allowAriaLabelledby) return false;
+      const labelledOK = !requireOptIn || allowAriaLabel;
+      const byOK = !requireOptIn || allowAriaLabelledby;
+      return (labelledOK && hasNonEmptyAttr(node, 'aria-label')) ||
+             (byOK && hasNonEmptyAttr(node, 'aria-labelledby'));
     };
 
-    /**
-     * Suggest alt text based on context
-     */
-    const suggestAltText = (imageContext: ReturnType<typeof getImageContext>): string[] => {
-      const suggestions: string[] = [];
+    const checkImg = (node: TSESTree.JSXOpeningElement) => {
+      const altAttr = getAttr(node, 'alt');
+      const altVal = altAttr ? getStringValue(altAttr) : undefined;
 
-      if (imageContext.src) {
-        // Extract filename-based suggestion
-        const filename = imageContext.src.split('/').pop()?.replace(/\.[^.]+$/, '');
-        if (filename) {
-          suggestions.push(filename.replace(/-|_/g, ' '));
-        }
+      if (altAttr) {
+        // alt present. Empty string = decorative (OK). Null = dynamic
+        // (user knows what they're doing — match jsx-a11y semantics). Non-empty = OK.
+        if (altVal === null || altVal === '' || (altVal && altVal.length > 0)) return;
       }
 
-      suggestions.push('Descriptive text about the image');
-      suggestions.push('Product image showing [description]');
+      // No alt. role="presentation" means decorative — but the right answer is alt="".
+      if (hasPresentationRole(node)) {
+        context.report({
+          node,
+          messageId: 'preferEmptyAltOverPresentation',
+          fix: (fixer) => {
+            const lastAttr = node.attributes[node.attributes.length - 1];
+            const insertAfter = lastAttr || node.name;
+            return fixer.insertTextAfter(insertAfter, ' alt=""');
+          },
+        });
+        return;
+      }
 
-      return suggestions;
+      // aria-label / aria-labelledby fallback (opt-in via options)
+      if (hasAria(node, /* requireOptIn */ true)) return;
+
+      // Truly missing
+      context.report({
+        node,
+        messageId: 'missingAlt',
+        suggest: [
+          {
+            messageId: 'addDescriptiveAlt',
+            fix: (fixer) => {
+              const lastAttr = node.attributes[node.attributes.length - 1];
+              const insertAfter = lastAttr || node.name;
+              return fixer.insertTextAfter(insertAfter, ' alt="TODO: Add descriptive text"');
+            },
+          },
+          {
+            messageId: 'useEmptyAlt',
+            fix: (fixer) => {
+              const lastAttr = node.attributes[node.attributes.length - 1];
+              const insertAfter = lastAttr || node.name;
+              return fixer.insertTextAfter(insertAfter, ' alt=""');
+            },
+          },
+        ],
+      });
+    };
+
+    const checkObject = (node: TSESTree.JSXOpeningElement) => {
+      // <object> is OK with any of: aria-label, aria-labelledby, title, accessible child
+      if (hasAria(node, /* requireOptIn */ false)) return;
+      if (hasNonEmptyAttr(node, 'title')) return;
+      if (hasAccessibleChild(node)) return;
+      context.report({ node, messageId: 'objectMissingAlternative' });
+    };
+
+    const checkArea = (node: TSESTree.JSXOpeningElement) => {
+      if (hasAria(node, /* requireOptIn */ false)) return;
+      const altAttr = getAttr(node, 'alt');
+      const altVal = altAttr ? getStringValue(altAttr) : undefined;
+      if (altAttr && (altVal === '' || (altVal && altVal.length > 0) || altVal === null)) return;
+      context.report({ node, messageId: 'areaMissingAlternative' });
+    };
+
+    const checkInputImage = (node: TSESTree.JSXOpeningElement) => {
+      if (hasAria(node, /* requireOptIn */ false)) return;
+      const altAttr = getAttr(node, 'alt');
+      const altVal = altAttr ? getStringValue(altAttr) : undefined;
+      if (altAttr && (altVal === '' || (altVal && altVal.length > 0) || altVal === null)) return;
+      context.report({ node, messageId: 'inputImageMissingAlternative' });
     };
 
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
-        // Check if this is an img element
-        if (node.name.type !== 'JSXIdentifier' || node.name.name !== 'img') {
-          return;
+        const kind = classify(node);
+        if (!kind) return;
+        switch (kind) {
+          case 'img':        return checkImg(node);
+          case 'object':     return checkObject(node);
+          case 'area':       return checkArea(node);
+          case 'inputImage': return checkInputImage(node);
         }
-        // Check if has alt or aria-label
-        if (hasAltAttribute(node)) {
-          const altValue = getAltValue(node);
-          
-          // If alt value is null, it means alt={undefined} or alt={variable} - still missing
-          if (altValue === null) {
-            // alt attribute exists but value is dynamic/undefined - treat as missing
-          } else if (altValue === '') {
-            // Empty alt is valid for decorative images, but we can suggest verification
-            return;
-          } else {
-            // Has valid alt text
-            return;
-          }
-        }
-
-        if (hasAriaLabel(node)) {
-          return; // Has aria-label as alternative
-        }
-
-        // Missing alt text
-        const imageContext = getImageContext(node);
-        const suggestions = suggestAltText(imageContext);
-
-        context.report({
-          node,
-          messageId: 'missingAlt',
-          data: {
-            affectedUsers: '8% of users',
-            wcagLevel: 'A',
-            suggestion: suggestions[0] || 'Descriptive text',
-          },
-          suggest: [
-            {
-              messageId: 'addDescriptiveAlt',
-              fix: (fixer: TSESLint.RuleFixer) => {
-                // Add alt with placeholder
-                const lastAttr = node.attributes[node.attributes.length - 1];
-                const insertAfter = lastAttr || node.name;
-                
-                return fixer.insertTextAfter(insertAfter, ' alt="TODO: Add descriptive text"');
-              },
-            },
-            {
-              messageId: 'useEmptyAlt',
-              fix: (fixer: TSESLint.RuleFixer) => {
-                const lastAttr = node.attributes[node.attributes.length - 1];
-                const insertAfter = lastAttr || node.name;
-                
-                return fixer.insertTextAfter(insertAfter, ' alt=""');
-              },
-            },
-          ],
-        });
       },
     };
   },

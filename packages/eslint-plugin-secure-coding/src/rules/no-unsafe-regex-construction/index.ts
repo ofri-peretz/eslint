@@ -165,7 +165,10 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-unsafe-regex-construction.md',
       description: 'Detects unsafe regex construction patterns (user input without escaping, dynamic flags)',
+      cwe: 'CWE-400',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
@@ -183,6 +186,7 @@ export const noUnsafeRegexConstruction = createRule<RuleOptions, MessageIds>({
         issueName: 'Escape User Input',
         description: 'Escape user input for regex',
         severity: 'LOW',
+        // oxlint-disable-next-line no-template-curly-in-string
         fix: 'input.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#escaping',
       }),

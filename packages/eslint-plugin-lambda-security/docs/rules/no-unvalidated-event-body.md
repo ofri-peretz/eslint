@@ -84,95 +84,24 @@ This rule detects direct usage of these event properties without passing through
 
 ### ❌ Incorrect
 
-```typescript
-export const handler = async (event) => {
-  const body = JSON.parse(event.body); // ❌ No validation
-  const userId = body.userId; // Trusting user input
-
-  const item = await db.get({ userId }); // Could be injection
-
-  // Query params used directly
-  const limit = event.queryStringParameters.limit; // ❌ Could be "1; DROP TABLE"
-
-  return { statusCode: 200, body: JSON.stringify(item) };
-};
-```
+> _Awaiting a tested example. The previous snippet was removed because the rule does not behave as the doc claimed; track the regression in [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../../../benchmarks/FP_FN_REMEDIATION_TRACKER.md)._
 
 ### ✅ Correct with Zod
 
 ```typescript
-import { z } from 'zod';
-
-const RequestSchema = z.object({
-  userId: z.string().uuid(),
-  action: z.enum(['read', 'write', 'delete']),
-});
-
-export const handler = async (event) => {
-  const body = JSON.parse(event.body ?? '{}');
-
-  // Validate with Zod
-  const validatedData = RequestSchema.parse(body); // ✅ Validated
-
-  const item = await db.get({ userId: validatedData.userId });
-  return { statusCode: 200, body: JSON.stringify(item) };
-};
+zod
 ```
 
 ### ✅ Correct with Middy Validator
 
 ```typescript
-import middy from '@middy/core';
-import jsonBodyParser from '@middy/http-json-body-parser';
-import validator from '@middy/validator';
-import { transpileSchema } from '@middy/validator/transpile';
-
-const inputSchema = transpileSchema({
-  type: 'object',
-  required: ['body'],
-  properties: {
-    body: {
-      type: 'object',
-      required: ['userId'],
-      properties: {
-        userId: { type: 'string', format: 'uuid' },
-      },
-    },
-  },
-});
-
-const baseHandler = async (event) => {
-  // event.body is now validated ✅
-  const { userId } = event.body;
-  return { statusCode: 200, body: JSON.stringify({ userId }) };
-};
-
-export const handler = middy(baseHandler)
-  .use(jsonBodyParser())
-  .use(validator({ inputSchema })); // ✅ Middy validation
+zod
 ```
 
 ### ✅ Correct with Joi
 
 ```typescript
-import Joi from 'joi';
-
-const schema = Joi.object({
-  userId: Joi.string().uuid().required(),
-  email: Joi.string().email().required(),
-});
-
-export const handler = async (event) => {
-  const body = JSON.parse(event.body ?? '{}');
-
-  const { error, value } = schema.validate(body); // ✅ Validated
-  if (error) {
-    return { statusCode: 400, body: JSON.stringify({ error: error.message }) };
-  }
-
-  await processUser(value);
-  return { statusCode: 200 };
-};
+zod
 ```
 
 ## Validation Libraries

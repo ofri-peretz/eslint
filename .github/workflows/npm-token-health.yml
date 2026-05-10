@@ -25,10 +25,17 @@ on:
         type: boolean
         default: true
 
+permissions:
+  contents: read
+
 jobs:
   check-npm-token:
     name: 🔍 NPM Token Health Check
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write   # creates / comments on the failure issue
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
@@ -36,7 +43,7 @@ jobs:
       - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version-file: .nvmrc
           registry-url: "https://registry.npmjs.org/"
           cache: "npm"
 

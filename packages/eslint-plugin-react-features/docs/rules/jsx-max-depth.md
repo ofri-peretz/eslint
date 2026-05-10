@@ -73,20 +73,7 @@ flowchart TD
 
 ### ❌ Incorrect (with max: 3)
 
-```jsx
-// Depth of 4 - exceeds limit
-function DeepComponent() {
-  return (
-    <div>                    {/* depth 1 */}
-      <section>              {/* depth 2 */}
-        <article>            {/* depth 3 */}
-          <p>Too deep!</p>   {/* depth 4 - violation */}
-        </article>
-      </section>
-    </div>
-  );
-}
-```
+> _Awaiting a tested example. The previous snippet was removed because the rule does not behave as the doc claimed; track the regression in [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../../../benchmarks/FP_FN_REMEDIATION_TRACKER.md)._
 
 ### ✅ Correct (with max: 3)
 

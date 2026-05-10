@@ -28,8 +28,11 @@ export const noTimestampManipulation = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/no-timestamp-manipulation.md',
       description:
         'Prevent disabling automatic timestamp generation which enables replay attacks',
+      cwe: 'CWE-294',
+      cvss: 7.5,
     },
     fixable: undefined,
     hasSuggestions: false,

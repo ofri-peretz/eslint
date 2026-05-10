@@ -14,6 +14,7 @@ import { noToctouVulnerability } from './rules/no-toctou-vulnerability';
 import { noZipSlip } from './rules/no-zip-slip';
 import { noArbitraryFileAccess } from './rules/no-arbitrary-file-access';
 import { noDataInTempStorage } from './rules/no-data-in-temp-storage';
+import { noPiiInLogs } from './rules/no-pii-in-logs';
 import { noSsrf } from './rules/no-ssrf';
 
 // Migrated rules from secure-coding
@@ -54,6 +55,7 @@ export const rules: Record<string, TSESLint.RuleModule<string, readonly unknown[
   'no-zip-slip': noZipSlip,
   'no-arbitrary-file-access': noArbitraryFileAccess,
   'no-data-in-temp-storage': noDataInTempStorage,
+  'no-pii-in-logs': noPiiInLogs,
   'no-ssrf': noSsrf,
 
   // Migrated rules
@@ -95,7 +97,13 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
   'node-security/detect-eval-with-expression': 'error',
   'node-security/detect-non-literal-fs-filename': 'error',
   'node-security/no-unsafe-dynamic-require': 'error',
-  'node-security/no-buffer-overread': 'error',
+  // no-buffer-overread demoted 2026-05-09 — 95% of Wild hits on adversarial
+  // Edge corpus + insufficient fixture coverage for the README §1 promotion
+  // gate. Per `npm run ilb:severity-audit` it's both edge-error AND
+  // volume-error risk. Promote back to 'error' once Edge ratio drops to
+  // ≤ 50% (see `benchmarks/AUDIT_PATTERNS.md` §3.6 — needs typed-array
+  // detection like `detect-object-injection` got in audit iter-1).
+  'node-security/no-buffer-overread': 'warn',
   // Added in 4.1.0. Set to 'warn' in `recommended` to avoid breaking
   // adopters who already use the preset and have legacy `Buffer()` calls.
   // Promote to 'error' on the next major bump.

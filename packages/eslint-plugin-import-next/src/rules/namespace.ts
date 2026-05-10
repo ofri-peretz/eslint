@@ -26,6 +26,7 @@ export const namespace = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/namespace.md',
       description:
         'Ensure imported namespaces contain dereferenced properties as they are dereferenced',
     },

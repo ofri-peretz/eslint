@@ -247,7 +247,10 @@ export const noMissingNullChecks = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-reliability/docs/rules/no-missing-null-checks.md',
       description: 'Detects potential null pointer dereferences',
+      cwe: 'CWE-476',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

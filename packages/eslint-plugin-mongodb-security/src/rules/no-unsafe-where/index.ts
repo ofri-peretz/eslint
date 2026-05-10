@@ -23,7 +23,10 @@ export const noUnsafeWhere = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-unsafe-where.md',
       description: 'Prevent $where operator RCE attacks (CVE-2025-23061)',
+      cwe: 'CWE-943',
+      cvss: 9,
     },
     hasSuggestions: true,
     messages: {

@@ -1,0 +1,26 @@
+{
+  "82373a8a5452e87dad9b9536974ea5e7d69239ec825debabcee4705fa0e02600": {
+    "status": "pass",
+    "at": "2026-05-10",
+    "shared": 6,
+    "eslintOnly": 0,
+    "oxlintOnly": 0,
+    "parityRate": 1
+  },
+  "b3a22f4f258f62e4b84d3a94eee0b326834730981d976008a0b72a23ada7314e": {
+    "status": "pass",
+    "at": "2026-05-10",
+    "shared": 6,
+    "eslintOnly": 0,
+    "oxlintOnly": 0,
+    "parityRate": 1
+  },
+  "328b5458bae943b48746afd300b9b2eed367fca3de71c821fc8215d7e45db879": {
+    "status": "pass",
+    "at": "2026-05-10",
+    "shared": 6,
+    "eslintOnly": 0,
+    "oxlintOnly": 0,
+    "parityRate": 1
+  }
+}

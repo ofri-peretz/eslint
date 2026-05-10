@@ -51,7 +51,7 @@ const DEFAULT_EXCESSIVE_LIMITS = [
 /**
  * Body parser function names to check
  */
-const BODY_PARSER_METHODS = ['json', 'urlencoded', 'raw', 'text'];
+const BODY_PARSER_METHODS = new Set(['json', 'urlencoded', 'raw', 'text']);
 
 /**
  * Check if a property has a limit option
@@ -91,8 +91,11 @@ export const requireExpressBodyParserLimits = createRule<RuleOptions, MessageIds
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/require-express-body-parser-limits.md',
       description:
         'Require size limits on Express.js body parsers to prevent DoS attacks',
+      cwe: 'CWE-400',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
@@ -199,7 +202,7 @@ export const requireExpressBodyParserLimits = createRule<RuleOptions, MessageIds
           return;
         }
 
-        if (!BODY_PARSER_METHODS.includes(property.name)) {
+        if (!BODY_PARSER_METHODS.has(property.name)) {
           return;
         }
 

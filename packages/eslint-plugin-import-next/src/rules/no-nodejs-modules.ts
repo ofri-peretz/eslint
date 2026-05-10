@@ -86,6 +86,7 @@ export const noNodejsModules = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-nodejs-modules.md',
       description: 'Prevents Node.js builtin imports',
     },
     messages: {
@@ -184,6 +185,7 @@ export const noNodejsModules = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function getBuiltinName(moduleName: string): string {
       if (moduleName.startsWith('node:')) {
         return moduleName.slice(5);

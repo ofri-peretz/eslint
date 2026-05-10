@@ -26,6 +26,7 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/consistent-function-scoping.md',
       description: 'Move function definitions to the highest possible scope to improve readability and performance',
     },
     hasSuggestions: true,
@@ -105,21 +106,21 @@ export const consistentFunctionScoping = createRule<RuleOptions, MessageIds>({
       // Get all variables referenced in the function body
       const referencedVars = new Set<string>();
 
-      function collectReferences(node: TSESTree.Node, depth = 0, visited = new Set<TSESTree.Node>()) {
+      function collectReferences(astNode: TSESTree.Node, depth = 0, visited = new Set<TSESTree.Node>()) {
         // Prevent infinite recursion
-        if (depth > 10 || visited.has(node)) {
+        if (depth > 10 || visited.has(astNode)) {
           return;
         }
-        visited.add(node);
+        visited.add(astNode);
 
-        if (node.type === 'Identifier') {
-          referencedVars.add(node.name);
+        if (astNode.type === 'Identifier') {
+          referencedVars.add(astNode.name);
         }
 
         // Recursively check all child nodes with depth limit
         if (depth < 10) {
-          for (const key in node) {
-            const child = (node as unknown as Record<string, unknown>)[key];
+          for (const key in astNode) {
+            const child = (astNode as unknown as Record<string, unknown>)[key];
             if (child && typeof child === 'object') {
               if (Array.isArray(child)) {
                 child.forEach(item => {

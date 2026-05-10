@@ -29,6 +29,20 @@ Detects overly permissive CORS configurations in Express.js applications. This r
 | **Category**   | Security |
 | **Best For**      | Express.js APIs, REST services, web applications |
 
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE** | [CWE-942](https://cwe.mitre.org/data/definitions/942.html) — Permissive Cross-domain Policy with Untrusted Domains |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · 10,000+× cheaper than customer disclosure ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** B2B SaaS (multi-tenant API surface), fintech (regulatory cross-origin restrictions) · **High:** B2C, marketplaces, healthtech · **Medium:** infra/devtools, gaming |
+| **Investor-frame impact** | `Access-Control-Allow-Origin: *` with credentials → CSRF + cross-tenant data leakage. For B2B SaaS this is a single-incident multi-customer disclosure; for fintech, often a regulatory violation. Catch at lint-time prevents the misconfiguration entirely. |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
 ## Vulnerability and Risk
 
 **Vulnerability:** Misconfigured CORS policies using wildcard `*` origin or reflecting the `Origin` header without validation allow any website to access your API.

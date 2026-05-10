@@ -68,28 +68,7 @@ export default UserCard;
 ### ✅ Correct
 
 ```tsx
-// UserAvatar.tsx
-export function UserAvatar({ src, alt }) {
-  return <img src={src} alt={alt} className="avatar" />;
-}
-
-// UserName.tsx
-export function UserName({ name }) {
-  return <span className="username">{name}</span>;
-}
-
-// UserCard.tsx
-import { UserAvatar } from './UserAvatar';
-import { UserName } from './UserName';
-
-export function UserCard({ user }) {
-  return (
-    <div className="user-card">
-      <UserAvatar src={user.avatar} alt={user.name} />
-      <UserName name={user.name} />
-    </div>
-  );
-}
+hello
 ```
 
 ## Options

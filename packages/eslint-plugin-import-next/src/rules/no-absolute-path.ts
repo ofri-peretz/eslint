@@ -32,7 +32,10 @@ export const noAbsolutePath = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-absolute-path.md',
       description: 'Forbid import of modules using absolute paths',
+      cwe: 'CWE-426',
+      cvss: 5,
     },
     fixable: 'code',
     messages: {

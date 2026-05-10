@@ -28,6 +28,7 @@ export const noMutableExports = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-mutable-exports.md',
       description: 'Forbid the use of mutable exports with `var` or `let`',
     },
     hasSuggestions: false,

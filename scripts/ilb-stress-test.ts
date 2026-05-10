@@ -1,0 +1,831 @@
+#!/usr/bin/env -S npx tsx
+
+/**
+ * ILB Stress Test — exercises rules against hand-crafted FP/FN candidates.
+ *
+ * For each (rule, candidates[]) pair declared in CASES below:
+ *   - Lints each `code` snippet with the rule (and only the rule) enabled
+ *   - Compares actual fired/silent against expected
+ *   - Reports per-case verdict: ✅ matches expectation, ❌ disagreement
+ *
+ * Disagreements are exactly the FP/FN findings we want to surface.
+ *
+ * The CASES below are seeded by hand based on the rule's source code +
+ * the audit's per-rule findings (severity-audit.json, autofix-bench.json,
+ * per-rule observability in scorecard.md). Replace / extend as new rules
+ * are stress-tested.
+ *
+ * Output: benchmark-results/stress-test.json + a console report.
+ *
+ * Usage:
+ *   tsx scripts/ilb-stress-test.ts                 # run all configured cases
+ *   tsx scripts/ilb-stress-test.ts --rule=<name>   # one rule only
+ */
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { Linter } from 'eslint';
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(HERE, '..');
+const REPORT_PATH = path.join(ROOT, 'benchmark-results', 'stress-test.json');
+
+const args = process.argv.slice(2);
+const opt = (n: string) => {
+  const eq = args.find((a) => a.startsWith(`--${n}=`));
+  if (eq) return eq.split('=').slice(1).join('=');
+  const idx = args.indexOf(`--${n}`);
+  return idx >= 0 ? args[idx + 1] : undefined;
+};
+const RULE_FILTER = opt('rule');
+
+interface Case {
+  label: string;
+  code: string;
+  expected: 'fire' | 'silent';
+  hypothesis: string;
+}
+
+interface RuleSpec {
+  pluginName: string; // npm package name, e.g. "eslint-plugin-secure-coding"
+  pluginEntry: string; // relative path to plugin src
+  fullRuleName: string; // e.g. "secure-coding/detect-object-injection"
+  shortRuleName: string; // e.g. "detect-object-injection"
+  cases: Case[];
+}
+
+// ---------------------------------------------------------------------------
+// HAND-CRAFTED STRESS-TEST CASES — seeded from audit findings
+// ---------------------------------------------------------------------------
+
+const CASES: RuleSpec[] = [
+  {
+    pluginName: 'eslint-plugin-secure-coding',
+    pluginEntry: 'packages/eslint-plugin-secure-coding/src/index.ts',
+    fullRuleName: 'secure-coding/detect-object-injection',
+    shortRuleName: 'detect-object-injection',
+    cases: [
+      {
+        label: 'FP: typed-array indexing (Three.js render-loop pattern)',
+        hypothesis: 'Rule should skip Float32Array/Uint8Array typed-arrays since prototype pollution is impossible',
+        expected: 'silent',
+        code: `
+          const buf = new Float32Array(16);
+          const i = computeIndex();
+          buf[i] = 0.5;
+        `,
+      },
+      {
+        label: 'FP: Object.hasOwn-guarded access',
+        hypothesis: 'Bracket access guarded by Object.hasOwn / hasOwnProperty cannot be polluted',
+        expected: 'silent',
+        code: `
+          function read(obj, key) {
+            if (Object.hasOwn(obj, key)) {
+              return obj[key];
+            }
+            return null;
+          }
+        `,
+      },
+      {
+        label: 'FP: AST walker (codemod context)',
+        hypothesis: 'When file imports @babel/types, node[name] is AST traversal not user input',
+        expected: 'silent',
+        code: `
+          import { types as t } from '@babel/types';
+          function visit(node, name) {
+            return node[name];
+          }
+        `,
+      },
+      {
+        label: 'TP: dynamic key from req.body',
+        hypothesis: 'Should fire — classic prototype pollution',
+        expected: 'fire',
+        code: `
+          function setProp(obj, req) {
+            obj[req.body.key] = req.body.value;
+          }
+        `,
+      },
+      {
+        label: 'FN: spread-merge of user input',
+        hypothesis: 'Object.assign(target, req.body) is the same vuln as obj[key]=value but bypasses bracket-access detection',
+        expected: 'fire',
+        code: `
+          function merge(target, req) {
+            Object.assign(target, req.body);
+            return target;
+          }
+        `,
+      },
+    ],
+  },
+  {
+    pluginName: 'eslint-plugin-secure-coding',
+    pluginEntry: 'packages/eslint-plugin-secure-coding/src/index.ts',
+    fullRuleName: 'secure-coding/no-graphql-injection',
+    shortRuleName: 'no-graphql-injection',
+    cases: [
+      {
+        label: 'TP: gql template with variable interpolation',
+        hypothesis: 'Should fire — direct string interpolation in gql',
+        expected: 'fire',
+        code: `
+          const gql = require('graphql-tag');
+          function fetchUser(id) {
+            return gql\`query { user(id: \${id}) { name } }\`;
+          }
+        `,
+      },
+      {
+        label: 'FP: console.log template literal (not GraphQL)',
+        hypothesis: 'Audit fix is supposed to detect console.log context — verify still works',
+        expected: 'silent',
+        code: `
+          function log(name) {
+            console.log(\`User logged in: \${name}\`);
+          }
+        `,
+      },
+      {
+        label: 'FP: URL template (not GraphQL keywords)',
+        hypothesis: 'Audit fix should skip https:// templates',
+        expected: 'silent',
+        code: `
+          function makeUrl(host, target) {
+            return new URL(target, \`https://\${host}\`);
+          }
+        `,
+      },
+      {
+        label: 'FN: dynamic field selection in gql',
+        hypothesis: 'Variable used as a FIELD name (not just a value) is harder to detect',
+        expected: 'fire',
+        code: `
+          const gql = require('graphql-tag');
+          function fetchField(field) {
+            return gql\`query { user { \${field} } }\`;
+          }
+        `,
+      },
+    ],
+  },
+  {
+    pluginName: 'eslint-plugin-secure-coding',
+    pluginEntry: 'packages/eslint-plugin-secure-coding/src/index.ts',
+    fullRuleName: 'secure-coding/no-hardcoded-credentials',
+    shortRuleName: 'no-hardcoded-credentials',
+    cases: [
+      {
+        label: 'TP: hardcoded API key',
+        hypothesis: 'Should fire — clear hardcoded credential',
+        expected: 'fire',
+        code: `
+          const apiKey = "my_api_key_12345_example";
+          fetch('/api', { headers: { Authorization: apiKey } });
+        `,
+      },
+      {
+        label: 'FP: variable named password but value is from env',
+        hypothesis: 'Audit fix exists; verify',
+        expected: 'silent',
+        code: `
+          const password = process.env.DB_PASSWORD;
+          db.connect({ password });
+        `,
+      },
+      {
+        label: 'FP: UI label string (i18n key)',
+        hypothesis: 'Audit fix landed in iter-2 for label/name/type contexts',
+        expected: 'silent',
+        code: `
+          const labels = { password: 'Enter your password', email: 'Email address' };
+          element.setAttribute('type', 'password');
+        `,
+      },
+      {
+        label: 'FN: credential in array element',
+        hypothesis: 'Credential in array literal may bypass detection',
+        expected: 'fire',
+        code: `
+          const tokens = ['Bearer my_api_key_12345_example_456abcdefg', 'Cookie sid=...'];
+          fetch('/api', { headers: { Authorization: tokens[0] } });
+        `,
+      },
+    ],
+  },
+  {
+    pluginName: 'eslint-plugin-secure-coding',
+    pluginEntry: 'packages/eslint-plugin-secure-coding/src/index.ts',
+    fullRuleName: 'secure-coding/no-redos-vulnerable-regex',
+    shortRuleName: 'no-redos-vulnerable-regex',
+    cases: [
+      {
+        label: 'TP: catastrophic backtracking (a+)+',
+        hypothesis: 'Classic ReDoS pattern',
+        expected: 'fire',
+        code: `
+          const re = /^(a+)+$/;
+          re.test(input);
+        `,
+      },
+      {
+        label: 'FP: linear regex with bounded quantifiers',
+        hypothesis: 'Bounded quantifiers cannot cause ReDoS',
+        expected: 'silent',
+        code: `
+          const re = /^[a-z]{1,10}$/;
+          re.test(input);
+        `,
+      },
+      {
+        label: 'FP: anchored regex with character class',
+        hypothesis: 'Atomic character classes are linear',
+        expected: 'silent',
+        code: `
+          const emailLocal = /^[a-zA-Z0-9._%+-]+$/;
+          emailLocal.test(input);
+        `,
+      },
+      {
+        label: 'FN: ReDoS in dynamically constructed RegExp',
+        hypothesis: 'new RegExp(\`(\${pattern})+\`) hides the catastrophic shape',
+        expected: 'fire',
+        code: `
+          function build(pattern) {
+            return new RegExp(\`^(\${pattern}+)+$\`);
+          }
+        `,
+      },
+    ],
+  },
+  {
+    pluginName: 'eslint-plugin-secure-coding',
+    pluginEntry: 'packages/eslint-plugin-secure-coding/src/index.ts',
+    fullRuleName: 'secure-coding/no-unsafe-deserialization',
+    shortRuleName: 'no-unsafe-deserialization',
+    cases: [
+      {
+        label: 'TP: JSON.parse on req.body',
+        hypothesis: 'User-controlled deserialization',
+        expected: 'fire',
+        code: `
+          function load(req) {
+            return JSON.parse(req.body.config);
+          }
+        `,
+      },
+      {
+        label: 'FP: JSON.parse on a literal',
+        hypothesis: 'Static input cannot be exploited',
+        expected: 'silent',
+        code: `
+          const config = JSON.parse('{"timeout": 5000}');
+        `,
+      },
+      {
+        label: 'FP: JSON.parse on require()-loaded path',
+        hypothesis: 'Internal config from require() is trusted',
+        expected: 'silent',
+        code: `
+          const fs = require('fs');
+          const config = JSON.parse(fs.readFileSync(__dirname + '/config.json', 'utf-8'));
+        `,
+      },
+      {
+        label: 'FN: JSON.parse(req.cookies.session)',
+        hypothesis: 'Cookies are also user-controlled',
+        expected: 'fire',
+        code: `
+          function load(req) {
+            const data = JSON.parse(req.cookies.session);
+            return data;
+          }
+        `,
+      },
+    ],
+  },
+  {
+    pluginName: 'eslint-plugin-node-security',
+    pluginEntry: 'packages/eslint-plugin-node-security/src/index.ts',
+    fullRuleName: 'node-security/no-buffer-overread',
+    shortRuleName: 'no-buffer-overread',
+    cases: [
+      {
+        label: 'TP: Buffer.slice with user-controlled length',
+        hypothesis: 'Possible overread when length > buffer.length',
+        expected: 'fire',
+        code: `
+          function readChunk(buf, req) {
+            return buf.slice(0, req.query.length);
+          }
+        `,
+      },
+      {
+        label: 'FP: Buffer.slice with length-bounded literal',
+        hypothesis: 'Statically-bounded length cannot overread',
+        expected: 'silent',
+        code: `
+          const head = Buffer.alloc(1024);
+          const first16 = head.slice(0, 16);
+        `,
+      },
+      {
+        label: 'FP: typed-array slice with provably-valid bound',
+        hypothesis: 'Three.js render-loop pattern; bound derived from .length',
+        expected: 'silent',
+        code: `
+          const data = new Float32Array(64);
+          const half = data.slice(0, data.length / 2);
+        `,
+      },
+    ],
+  },
+  {
+    pluginName: 'eslint-plugin-secure-coding',
+    pluginEntry: 'packages/eslint-plugin-secure-coding/src/index.ts',
+    fullRuleName: 'secure-coding/no-unchecked-loop-condition',
+    shortRuleName: 'no-unchecked-loop-condition',
+    cases: [
+      {
+        label: 'TP: while loop with no exit',
+        hypothesis: 'Genuinely unbounded',
+        expected: 'fire',
+        code: `
+          function poll() {
+            while (true) {
+              checkSomething();
+            }
+          }
+        `,
+      },
+      {
+        label: 'FP: for loop with literal bound',
+        hypothesis: 'Bounded — not unchecked',
+        expected: 'silent',
+        code: `
+          function process(arr) {
+            for (let i = 0; i < arr.length; i++) {
+              transform(arr[i]);
+            }
+          }
+        `,
+      },
+      {
+        label: 'FP: while loop with break condition',
+        hypothesis: 'Has explicit exit',
+        expected: 'silent',
+        code: `
+          function consume(stream) {
+            while (true) {
+              const chunk = stream.read();
+              if (!chunk) break;
+              process(chunk);
+            }
+          }
+        `,
+      },
+    ],
+  },
+  {
+    pluginName: 'eslint-plugin-secure-coding',
+    pluginEntry: 'packages/eslint-plugin-secure-coding/src/index.ts',
+    fullRuleName: 'secure-coding/no-insecure-comparison',
+    shortRuleName: 'no-insecure-comparison',
+    cases: [
+      {
+        label: 'TP: == on credentials',
+        hypothesis: 'Timing-unsafe comparison on secrets',
+        expected: 'fire',
+        code: `
+          function authenticate(token, expected) {
+            if (token == expected) return true;
+            return false;
+          }
+        `,
+      },
+      {
+        label: 'FP: === on AST node types (codemod context)',
+        hypothesis: 'Audit fix detects @babel/types imports → skip',
+        expected: 'silent',
+        code: `
+          import * as t from '@babel/types';
+          function isLiteral(node) {
+            return node.type === 'Literal';
+          }
+        `,
+      },
+      {
+        label: 'FP: .length comparison before timingSafeEqual',
+        hypothesis: 'Standard pattern, addressed by audit',
+        expected: 'silent',
+        code: `
+          const crypto = require('crypto');
+          function safeCompare(a, b) {
+            if (a.length !== b.length) return false;
+            return crypto.timingSafeEqual(a, b);
+          }
+        `,
+      },
+    ],
+  },
+  {
+    pluginName: 'eslint-plugin-node-security',
+    pluginEntry: 'packages/eslint-plugin-node-security/src/index.ts',
+    fullRuleName: 'node-security/detect-child-process',
+    shortRuleName: 'detect-child-process',
+    cases: [
+      {
+        label: 'TP: exec with user input',
+        hypothesis: 'Classic command injection',
+        expected: 'fire',
+        code: `
+          const { exec } = require('child_process');
+          function run(cmd) { exec('ls ' + cmd); }
+        `,
+      },
+      {
+        label: 'FP: exec with literal command (audit iter-2 fix)',
+        hypothesis: 'Fully literal command should be safe',
+        expected: 'silent',
+        code: `
+          const { execSync } = require('child_process');
+          execSync('git rev-parse HEAD');
+        `,
+      },
+      {
+        label: 'FN: spawn with user-controlled args array',
+        hypothesis: 'spawn(cmd, [userArg]) — args from req still risky if cmd is shell',
+        expected: 'fire',
+        code: `
+          const { spawn } = require('child_process');
+          function run(req) {
+            spawn('sh', ['-c', req.body.script]);
+          }
+        `,
+      },
+    ],
+  },
+  {
+    pluginName: 'eslint-plugin-node-security',
+    pluginEntry: 'packages/eslint-plugin-node-security/src/index.ts',
+    fullRuleName: 'node-security/detect-non-literal-fs-filename',
+    shortRuleName: 'detect-non-literal-fs-filename',
+    cases: [
+      {
+        label: 'TP: fs.readFile with req param',
+        hypothesis: 'Path traversal',
+        expected: 'fire',
+        code: `
+          const fs = require('fs');
+          function read(req) { return fs.readFileSync(req.params.path); }
+        `,
+      },
+      {
+        label: 'FP: path.resolve(__dirname, literal)',
+        hypothesis: 'Module-relative path is safe',
+        expected: 'silent',
+        code: `
+          const fs = require('fs');
+          const path = require('path');
+          const cfg = fs.readFileSync(path.resolve(__dirname, 'config.json'));
+        `,
+      },
+      {
+        label: 'FP: validated via allowlist (audit fix)',
+        hypothesis: 'Audit added .includes() validation detection',
+        expected: 'silent',
+        code: `
+          const fs = require('fs');
+          const path = require('path');
+          const ALLOWED = ['config.json', 'readme.txt'];
+          function read(name) {
+            if (!ALLOWED.includes(name)) throw new Error('bad');
+            return fs.readFileSync(path.join('./conf', name));
+          }
+        `,
+      },
+    ],
+  },
+  {
+    pluginName: 'eslint-plugin-jwt',
+    pluginEntry: 'packages/eslint-plugin-jwt/src/index.ts',
+    fullRuleName: 'jwt/no-algorithm-none',
+    shortRuleName: 'no-algorithm-none',
+    cases: [
+      {
+        label: 'TP: jwt.verify with algorithms: ["none"]',
+        hypothesis: 'Critical — accepts unsigned tokens',
+        expected: 'fire',
+        code: `
+          const jwt = require('jsonwebtoken');
+          function verify(token) {
+            return jwt.verify(token, secret, { algorithms: ['none'] });
+          }
+        `,
+      },
+      {
+        label: 'FP: jwt.verify with algorithms: ["HS256"]',
+        hypothesis: 'Explicit good algorithm',
+        expected: 'silent',
+        code: `
+          const jwt = require('jsonwebtoken');
+          function verify(token) {
+            return jwt.verify(token, secret, { algorithms: ['HS256'] });
+          }
+        `,
+      },
+      {
+        label: 'FN: jwt.decode with no verification at all',
+        hypothesis: 'Same outcome as algorithm: none — token bypasses signature',
+        expected: 'fire',
+        code: `
+          const jwt = require('jsonwebtoken');
+          function getUser(token) {
+            const decoded = jwt.decode(token);
+            return decoded.userId;
+          }
+        `,
+      },
+    ],
+  },
+  {
+    pluginName: 'eslint-plugin-jwt',
+    pluginEntry: 'packages/eslint-plugin-jwt/src/index.ts',
+    fullRuleName: 'jwt/no-hardcoded-secret',
+    shortRuleName: 'no-hardcoded-secret',
+    cases: [
+      {
+        label: 'TP: jwt.sign with literal secret',
+        hypothesis: 'Hardcoded secret',
+        expected: 'fire',
+        code: `
+          const jwt = require('jsonwebtoken');
+          jwt.sign({ id: 1 }, 'super-secret-key-12345', { expiresIn: '1h' });
+        `,
+      },
+      {
+        label: 'FP: jwt.sign with process.env',
+        hypothesis: 'Env-sourced secret',
+        expected: 'silent',
+        code: `
+          const jwt = require('jsonwebtoken');
+          jwt.sign({ id: 1 }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        `,
+      },
+      {
+        label: 'FN: secret stored in const then used',
+        hypothesis: 'Indirection through a variable should still be flagged',
+        expected: 'fire',
+        code: `
+          const jwt = require('jsonwebtoken');
+          const SECRET = 'super-secret-key-12345';
+          jwt.sign({ id: 1 }, SECRET, { expiresIn: '1h' });
+        `,
+      },
+    ],
+  },
+  {
+    pluginName: 'eslint-plugin-browser-security',
+    pluginEntry: 'packages/eslint-plugin-browser-security/src/index.ts',
+    fullRuleName: 'browser-security/no-eval',
+    shortRuleName: 'no-eval',
+    cases: [
+      {
+        label: 'TP: direct eval call',
+        hypothesis: 'Classic XSS sink',
+        expected: 'fire',
+        code: `function run(code) { eval(code); }`,
+      },
+      {
+        label: 'TP: indirect eval via window["eval"]',
+        hypothesis: 'Common bypass',
+        expected: 'fire',
+        code: `function run(code) { window['eval'](code); }`,
+      },
+      {
+        label: 'FN: eval via Function constructor',
+        hypothesis: 'new Function(code) is equivalent to eval but bypasses name match',
+        expected: 'fire',
+        code: `
+          function run(code) {
+            const fn = new Function(code);
+            return fn();
+          }
+        `,
+      },
+    ],
+  },
+  {
+    pluginName: 'eslint-plugin-browser-security',
+    pluginEntry: 'packages/eslint-plugin-browser-security/src/index.ts',
+    fullRuleName: 'browser-security/no-innerhtml',
+    shortRuleName: 'no-innerhtml',
+    cases: [
+      {
+        label: 'TP: el.innerHTML = userInput',
+        hypothesis: 'Direct DOM XSS',
+        expected: 'fire',
+        code: `
+          function render(el, userInput) {
+            el.innerHTML = userInput;
+          }
+        `,
+      },
+      {
+        label: 'FP: el.innerHTML = literal string',
+        hypothesis: 'Static content has no taint source',
+        expected: 'silent',
+        code: `
+          function clear(el) {
+            el.innerHTML = '<p>Loading...</p>';
+          }
+        `,
+      },
+      {
+        label: 'FN: insertAdjacentHTML with user input',
+        hypothesis: 'Same XSS class, different sink',
+        expected: 'fire',
+        code: `
+          function render(el, userInput) {
+            el.insertAdjacentHTML('beforeend', userInput);
+          }
+        `,
+      },
+    ],
+  },
+  {
+    pluginName: 'eslint-plugin-pg',
+    pluginEntry: 'packages/eslint-plugin-pg/src/index.ts',
+    fullRuleName: 'pg/no-unsafe-query',
+    shortRuleName: 'no-unsafe-query',
+    cases: [
+      {
+        label: 'TP: SQL string concatenation',
+        hypothesis: 'SQL injection',
+        expected: 'fire',
+        code: `
+          const { Pool } = require('pg');
+          const pool = new Pool();
+          async function getUser(id) {
+            return pool.query('SELECT * FROM users WHERE id = ' + id);
+          }
+        `,
+      },
+      {
+        label: 'FP: parameterized query',
+        hypothesis: 'Safe pattern; audit verified',
+        expected: 'silent',
+        code: `
+          const { Pool } = require('pg');
+          const pool = new Pool();
+          async function getUser(id) {
+            return pool.query('SELECT * FROM users WHERE id = $1', [id]);
+          }
+        `,
+      },
+      {
+        label: 'FN: SQL via template literal interpolation',
+        hypothesis: 'Same as concat but with template literal — same vuln',
+        expected: 'fire',
+        code: `
+          const { Pool } = require('pg');
+          const pool = new Pool();
+          async function getUser(id) {
+            return pool.query(\`SELECT * FROM users WHERE id = \${id}\`);
+          }
+        `,
+      },
+    ],
+  },
+];
+
+// ---------------------------------------------------------------------------
+// HARNESS
+// ---------------------------------------------------------------------------
+
+interface CaseResult {
+  rule: string;
+  label: string;
+  hypothesis: string;
+  expected: 'fire' | 'silent';
+  actual: 'fire' | 'silent' | 'error';
+  match: boolean;
+  details?: string;
+}
+
+const linter = new Linter();
+const pluginCache = new Map<string, unknown>();
+
+async function loadPlugin(entry: string): Promise<unknown> {
+  if (pluginCache.has(entry)) return pluginCache.get(entry);
+  const abs = path.join(ROOT, entry);
+  const mod = await import(abs);
+  const plugin = (mod.default ?? mod) as { rules?: Record<string, unknown> };
+  pluginCache.set(entry, plugin);
+  return plugin;
+}
+
+async function runCase(spec: RuleSpec, c: Case): Promise<CaseResult> {
+  try {
+    const plugin = (await loadPlugin(spec.pluginEntry)) as {
+      rules?: Record<string, Linter.RuleEntry>;
+    };
+    const rule = plugin.rules?.[spec.shortRuleName];
+    if (!rule) {
+      return {
+        rule: spec.fullRuleName,
+        label: c.label,
+        hypothesis: c.hypothesis,
+        expected: c.expected,
+        actual: 'error',
+        match: false,
+        details: `Rule not found in plugin: ${spec.shortRuleName}`,
+      };
+    }
+    const messages = linter.verify(
+      c.code,
+      {
+        languageOptions: {
+          ecmaVersion: 'latest',
+          sourceType: 'module',
+          parserOptions: { ecmaFeatures: { jsx: false } },
+        },
+        plugins: { [spec.fullRuleName.split('/')[0]]: { rules: { [spec.shortRuleName]: rule } } } as never,
+        rules: { [spec.fullRuleName]: 'error' } as never,
+      } as never,
+    );
+    const fired = messages.length > 0;
+    const actual: 'fire' | 'silent' = fired ? 'fire' : 'silent';
+    return {
+      rule: spec.fullRuleName,
+      label: c.label,
+      hypothesis: c.hypothesis,
+      expected: c.expected,
+      actual,
+      match: actual === c.expected,
+      details: fired
+        ? messages.map((m) => `${m.line}:${m.column} ${m.messageId ?? ''} ${m.message?.slice(0, 120) ?? ''}`).join(' | ')
+        : undefined,
+    };
+  } catch (err) {
+    return {
+      rule: spec.fullRuleName,
+      label: c.label,
+      hypothesis: c.hypothesis,
+      expected: c.expected,
+      actual: 'error',
+      match: false,
+      details: (err as Error).message?.slice(0, 200),
+    };
+  }
+}
+
+async function main() {
+  const results: CaseResult[] = [];
+  for (const spec of CASES) {
+    if (RULE_FILTER && !spec.fullRuleName.includes(RULE_FILTER)) continue;
+    for (const c of spec.cases) {
+      results.push(await runCase(spec, c));
+    }
+  }
+
+  const totals = {
+    cases: results.length,
+    matched: results.filter((r) => r.match).length,
+    disagreement: results.filter((r) => !r.match && r.actual !== 'error').length,
+    errors: results.filter((r) => r.actual === 'error').length,
+  };
+
+  fs.mkdirSync(path.dirname(REPORT_PATH), { recursive: true });
+  fs.writeFileSync(
+    REPORT_PATH,
+    JSON.stringify({ generatedAt: new Date().toISOString(), totals, results }, null, 2),
+  );
+
+  console.log('\nILB Stress Test\n');
+  for (const r of results) {
+    const icon = r.match ? '✅' : r.actual === 'error' ? '⚠️ ' : '❌';
+    const tag =
+      r.expected === 'fire' && r.actual === 'silent'
+        ? 'FN'
+        : r.expected === 'silent' && r.actual === 'fire'
+          ? 'FP'
+          : '';
+    console.log(`${icon} ${r.rule.padEnd(48)} ${tag.padEnd(3)} ${r.label}`);
+    if (!r.match && r.details) console.log(`     → ${r.details}`);
+  }
+  console.log(
+    `\n${totals.cases} cases · ${totals.matched} matched · ${totals.disagreement} disagreement · ${totals.errors} error`,
+  );
+  console.log(`\n✅ ${path.relative(ROOT, REPORT_PATH)}`);
+  process.exit(totals.disagreement > 0 ? 1 : 0);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

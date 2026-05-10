@@ -1,0 +1,24 @@
+{
+  "name": "interlace-vulnerable-app",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Deliberately-vulnerable demo target for the Interlace ESLint ecosystem. One fixture per flagship rule. DO NOT DEPLOY.",
+  "type": "module",
+  "scripts": {
+    "audit": "interlace audit src",
+    "audit:sarif": "interlace audit --sarif src > findings.sarif"
+  },
+  "devDependencies": {
+    "@interlace/cli": "*",
+    "@interlace/eslint-plugin-browser-security": "*",
+    "@interlace/eslint-plugin-import-next": "*",
+    "@interlace/eslint-plugin-jwt": "*",
+    "@interlace/eslint-plugin-mongodb-security": "*",
+    "@interlace/eslint-plugin-pg": "*",
+    "@interlace/eslint-plugin-react-a11y": "*",
+    "@interlace/eslint-plugin-react-features": "*",
+    "@interlace/eslint-plugin-secure-coding": "*",
+    "@interlace/eslint-plugin-vercel-ai-security": "*",
+    "eslint": "^9.0.0"
+  }
+}

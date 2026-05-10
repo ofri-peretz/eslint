@@ -1,1 +1,0 @@
-// Valid example for enforce-dependency-direction\nexport const valid = true;\n

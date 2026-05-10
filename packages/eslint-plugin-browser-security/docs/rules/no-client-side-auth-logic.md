@@ -34,15 +34,7 @@ Client-side authentication checks can be easily bypassed. Always validate authen
 ### ❌ Incorrect
 
 ```javascript
-// Client-side role check
-if (user.role === 'admin') {
-  showAdminPanel();
-}
-
-// Client-side password validation
-if (password === storedPassword) {
-  grantAccess();
-}
+if (localStorage.getItem('authenticated')) { proceed() }
 ```
 
 ### ✅ Correct

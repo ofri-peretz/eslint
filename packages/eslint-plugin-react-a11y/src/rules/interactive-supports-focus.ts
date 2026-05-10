@@ -22,9 +22,9 @@ type Options = {
 
 type RuleOptions = [Options?];
 
-const INTERACTIVE_HANDLERS = [
+const INTERACTIVE_HANDLERS = new Set([
     'onClick', 'onKeyPress', 'onKeyDown', 'onKeyUp', 'onMouseDown', 'onMouseUp'
-];
+]);
 
 const NATIVE_INTERACTIVE_ELEMENTS = new Set([
     'a', 'button', 'input', 'select', 'textarea', 'area', 'option', 'summary'
@@ -35,7 +35,10 @@ export const interactiveSupportsFocus = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/interactive-supports-focus.md',
       description: 'Enforce that elements with interactive handlers are focusable',
+      cwe: 'CWE-252',
+      cvss: 7.5,
     },
     messages: {
       missingTabIndex: formatLLMMessage({
@@ -73,7 +76,7 @@ export const interactiveSupportsFocus = createRule<RuleOptions, MessageIds>({
         const hasInteractiveHandler = node.attributes.some((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
             attr.type === 'JSXAttribute' && 
             attr.name.type === 'JSXIdentifier' && 
-            INTERACTIVE_HANDLERS.includes(attr.name?.name ?? '')
+            INTERACTIVE_HANDLERS.has(attr.name?.name ?? '')
         );
 
         if (!hasInteractiveHandler) return;

@@ -63,25 +63,7 @@ analytics.track('Profile Update', {
 ## ✅ Correct
 
 ```typescript
-// Send only non-sensitive identifiers
-analytics.track('User Signup', {
-  userId: user.id, // ✅ Non-PII identifier
-  timestamp: new Date(),
-});
-
-// Hash or mask sensitive data before tracking
-analytics.track('Profile Update', {
-  userId: user.id,
-  hasEmail: !!user.email, // ✅ Boolean flag, not actual email
-  emailDomain: user.email.split('@')[1], // ✅ Domain only (e.g., "gmail.com")
-});
-
-// Use event names and counts, not PII
-analytics.track('Payment Completed', {
-  userId: user.id,
-  amount: total, // ✅ Transaction data, not PII
-  currency: 'USD',
-});
+analytics.track('page_view', { page: '/home' })
 ```
 
 ## ⚙️ Configuration

@@ -65,7 +65,10 @@ export const roleSupportsAriaProps = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/role-supports-aria-props.md',
       description: 'Enforce that elements with roles contain only supported ARIA properties',
+      cwe: 'CWE-252',
+      cvss: 7.5,
     },
     messages: {
       unsupportedAriaProp: formatLLMMessage({

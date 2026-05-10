@@ -60,6 +60,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-extraneous-dependencies.md',
       description:
         'Forbid the use of extraneous packages not listed in package.json',
     },
@@ -275,6 +276,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
       );
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isExternalPackage(importPath: string): string | null {
       // Skip relative imports
       if (importPath.startsWith('./') || importPath.startsWith('../')) {
@@ -358,6 +360,7 @@ export const noExtraneousDependencies = createRule<RuleOptions, MessageIds>({
       return packageName;
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isWorkspacePackage(packageName: string): boolean {
       // For testing purposes, consider packages with @workspace/ or @company/ as workspace packages
       return (

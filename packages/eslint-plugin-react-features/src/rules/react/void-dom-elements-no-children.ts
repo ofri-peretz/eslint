@@ -42,6 +42,7 @@ export const voidDomElementsNoChildren = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/void-dom-elements-no-children.md',
       description: 'Prevent void DOM elements from having children',
     },
     messages: {
@@ -76,6 +77,7 @@ export const voidDomElementsNoChildren = createRule<RuleOptions, MessageIds>({
       );
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function hasJSXChildren(node: TSESTree.JSXElement): boolean {
       return node.children.some(child => {
         if (child.type === 'JSXText') {

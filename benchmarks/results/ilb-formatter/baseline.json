@@ -1,0 +1,6857 @@
+{
+  "bench": "ILB-Formatter",
+  "benchVersion": "1.2",
+  "timestamp": "2026-05-09T23:52:47.351Z",
+  "toolchain": {
+    "node": "24.12.0",
+    "eslint": "9.39.2",
+    "typescript": "5.9.3",
+    "tsCompiler": "tsc-classic",
+    "typescriptEslint": "8.54.0",
+    "platform": "darwin-arm64"
+  },
+  "cost": {
+    "tokensO200k": 407.9,
+    "tokensCl100k": 406.7,
+    "meanTokensO200k": 407.9
+  },
+  "effectiveness": {
+    "signalScore": 4
+  },
+  "latency": {
+    "meanLatencyMs": 0.131,
+    "latencyMsP50": 0.031,
+    "latencyMsP95": 0.549
+  },
+  "schemaVersion": 1,
+  "benchmark": "ilb-formatter",
+  "benchmarkType": "whole-run-formatter-cost",
+  "scoringMode": "composite-mean-delta-vs-baseline",
+  "methodologyVersion": "v1.2",
+  "methodology": {
+    "file": "eslint/benchmarks/suites/ilb-formatter/methodology.md",
+    "version": "v1.2",
+    "tokenizer": "gpt-tokenizer",
+    "tokenizerEncoding": "o200k_base (headline) + cl100k_base (sanity)",
+    "score": "mean across (shape × scale × format) of (tokens(format)/tokens(eslint-stylish) − 1), as percent",
+    "baselineFormat": "eslint-stylish",
+    "aspects": {
+      "cost": {
+        "fields": [
+          "tokensO200k",
+          "tokensCl100k",
+          "meanTokensO200k"
+        ],
+        "slo": "interlace-compact ≤ eslint-stylish (mean delta ≤ 0%)"
+      },
+      "effectiveness": {
+        "fields": [
+          "signal.score",
+          "meanSignalScore",
+          "groupCollapse",
+          "meanGroupCollapse"
+        ],
+        "slo": "structured formats (interlace-json, eslint-json, eslint-json-with-metadata) score 4.0/4 on every fixture"
+      },
+      "latency": {
+        "fields": [
+          "latencyMsP50",
+          "latencyMsP95",
+          "meanLatencyMs",
+          "worstLatencyMsP95"
+        ],
+        "slo": "interlace-* P50 ≤ {tiny:5, small:10, medium:25, large:50, extreme:250} ms"
+      }
+    },
+    "sloHeadline": "interlace-compact ≤ eslint-stylish on token cost; structured formats signalScore = 4.0 on every fixture; interlace-* P50 latency under per-scale ceiling."
+  },
+  "versions": {
+    "tokenizer": "gpt-tokenizer@3.4.0",
+    "eslintFormatter": "@interlace/eslint-formatter@0.1.0",
+    "eslint": "eslint@9.39.2",
+    "fixtures": "v1.1"
+  },
+  "environment": {
+    "nodeVersion": "v24.12.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "provenance": {
+    "model": {
+      "kind": "tokenizer-proxy",
+      "name": "o200k_base + cl100k_base (gpt-tokenizer)",
+      "role": "No LLM is called by this bench. The tokenizer stands in for the consumer model on the cost axis. For LLM-call benches, see ilb-llm-fix and ilb-ai."
+    },
+    "tools": {
+      "count": 5,
+      "items": [
+        {
+          "name": "@interlace/eslint-formatter",
+          "version": "0.1.0",
+          "role": "subject under test — three modes (human, compact, json) loaded from compiled dist (5 mode(s) active this run)"
+        },
+        {
+          "name": "eslint",
+          "version": "9.39.2",
+          "role": "industry baseline + comparators — built-in formatters loaded directly via require: eslint-stylish, eslint-json, eslint-json-with-metadata, eslint-html"
+        },
+        {
+          "name": "gpt-tokenizer",
+          "version": "3.4.0",
+          "role": "cost-axis tokenizer — o200k_base (headline, GPT-4o/Claude proxy) + cl100k_base (sanity, GPT-3.5/4 proxy)"
+        },
+        {
+          "name": "node:process.hrtime.bigint",
+          "version": "v24.12.0",
+          "role": "latency-axis measurement — median-of-5 samples per cell after one warm-up render"
+        },
+        {
+          "name": "tsx",
+          "version": "4.21.0",
+          "role": "TypeScript runtime — runs the suite without a separate transpile step"
+        }
+      ]
+    },
+    "subjectsUnderTest": [
+      "interlace-human",
+      "interlace-compact",
+      "interlace-json",
+      "interlace-ndjson",
+      "interlace-xml"
+    ],
+    "comparators": [
+      "eslint-stylish",
+      "eslint-json",
+      "eslint-json-with-metadata",
+      "eslint-html"
+    ],
+    "baselineFormat": "eslint-stylish"
+  },
+  "headlineScore": {
+    "interlace-human": -64.5,
+    "interlace-compact": -90.2,
+    "interlace-json": -67.9,
+    "interlace-ndjson": -66.7,
+    "interlace-xml": -51.4,
+    "eslint-json": -29.2,
+    "eslint-json-with-metadata": 2.2,
+    "eslint-html": 295.6
+  },
+  "signalContract": {
+    "strictFormats": [
+      "interlace-json",
+      "interlace-ndjson",
+      "interlace-xml",
+      "eslint-json",
+      "eslint-json-with-metadata"
+    ],
+    "requiredScore": 4,
+    "failures": [],
+    "passing": true
+  },
+  "latencyContract": {
+    "strictFormats": [
+      "interlace-human",
+      "interlace-compact",
+      "interlace-json",
+      "interlace-ndjson",
+      "interlace-xml"
+    ],
+    "perScaleCeilingMs": {
+      "tiny": 5,
+      "small": 10,
+      "medium": 25,
+      "large": 50,
+      "extreme": 250
+    },
+    "failures": [],
+    "passing": true
+  },
+  "regressionCheck": {
+    "baselinePath": "/Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/results/ilb-formatter/baseline.json",
+    "baselinePresent": true,
+    "baselineCellCount": 240,
+    "comparedCells": 240,
+    "newCells": 30,
+    "subjectFailures": [],
+    "comparatorDrift": [],
+    "passing": true
+  },
+  "summary": [
+    {
+      "format": "interlace-human",
+      "count": 30,
+      "meanChars": 2866.2,
+      "meanTokensO200k": 1372.3,
+      "meanTokensCl100k": 1210.8,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.585,
+      "meanLatencyMs": 0.157,
+      "medianLatencyMsP50": 0.072,
+      "worstLatencyMsP95": 0.77
+    },
+    {
+      "format": "interlace-compact",
+      "count": 30,
+      "meanChars": 1394.7,
+      "meanTokensO200k": 407.9,
+      "meanTokensCl100k": 406.7,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.75,
+      "meanLatencyMs": 0.131,
+      "medianLatencyMsP50": 0.031,
+      "worstLatencyMsP95": 0.549
+    },
+    {
+      "format": "interlace-json",
+      "count": 30,
+      "meanChars": 11259.7,
+      "meanTokensO200k": 3900.3,
+      "meanTokensCl100k": 3883.7,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.144,
+      "medianLatencyMsP50": 0.056,
+      "worstLatencyMsP95": 1.919
+    },
+    {
+      "format": "interlace-ndjson",
+      "count": 30,
+      "meanChars": 11356.1,
+      "meanTokensO200k": 3934.1,
+      "meanTokensCl100k": 3918.5,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.75,
+      "meanLatencyMs": 0.147,
+      "medianLatencyMsP50": 0.056,
+      "worstLatencyMsP95": 0.741
+    },
+    {
+      "format": "interlace-xml",
+      "count": 30,
+      "meanChars": 12338.5,
+      "meanTokensO200k": 3335,
+      "meanTokensCl100k": 3326.9,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.436,
+      "meanLatencyMs": 0.137,
+      "medianLatencyMsP50": 0.058,
+      "worstLatencyMsP95": 0.69
+    },
+    {
+      "format": "eslint-stylish",
+      "count": 30,
+      "meanChars": 206259.2,
+      "meanTokensO200k": 104483,
+      "meanTokensCl100k": 88601,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0,
+      "meanLatencyMs": 2.521,
+      "medianLatencyMsP50": 0.494,
+      "worstLatencyMsP95": 11.055
+    },
+    {
+      "format": "eslint-json",
+      "count": 30,
+      "meanChars": 287709.3,
+      "meanTokensO200k": 79346,
+      "meanTokensCl100k": 77191.8,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.289,
+      "medianLatencyMsP50": 0.052,
+      "worstLatencyMsP95": 1.508
+    },
+    {
+      "format": "eslint-json-with-metadata",
+      "count": 30,
+      "meanChars": 289330.6,
+      "meanTokensO200k": 79727.2,
+      "meanTokensCl100k": 77560.3,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.364,
+      "medianLatencyMsP50": 0.07,
+      "worstLatencyMsP95": 2.282
+    },
+    {
+      "format": "eslint-html",
+      "count": 30,
+      "meanChars": 572382.8,
+      "meanTokensO200k": 181306.3,
+      "meanTokensCl100k": 179970.5,
+      "meanSignalScore": 3.833,
+      "meanGroupCollapse": 0,
+      "meanLatencyMs": 0.585,
+      "medianLatencyMsP50": 0.097,
+      "worstLatencyMsP95": 3.305
+    }
+  ],
+  "perShape": [
+    {
+      "shape": "mono-rule-storm",
+      "format": "interlace-human",
+      "count": 5,
+      "meanTokensO200k": 220.2,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.721,
+      "meanLatencyMs": 0.174
+    },
+    {
+      "shape": "mono-rule-storm",
+      "format": "interlace-compact",
+      "count": 5,
+      "meanTokensO200k": 62.6,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.833,
+      "meanLatencyMs": 0.162
+    },
+    {
+      "shape": "mono-rule-storm",
+      "format": "interlace-json",
+      "count": 5,
+      "meanTokensO200k": 668.6,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.151
+    },
+    {
+      "shape": "mono-rule-storm",
+      "format": "interlace-ndjson",
+      "count": 5,
+      "meanTokensO200k": 671.6,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.833,
+      "meanLatencyMs": 0.145
+    },
+    {
+      "shape": "mono-rule-storm",
+      "format": "interlace-xml",
+      "count": 5,
+      "meanTokensO200k": 571.6,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.573,
+      "meanLatencyMs": 0.127
+    },
+    {
+      "shape": "mono-rule-storm",
+      "format": "eslint-stylish",
+      "count": 5,
+      "meanTokensO200k": 94267.8,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0,
+      "meanLatencyMs": 2.457
+    },
+    {
+      "shape": "mono-rule-storm",
+      "format": "eslint-json",
+      "count": 5,
+      "meanTokensO200k": 65999.2,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.25
+    },
+    {
+      "shape": "mono-rule-storm",
+      "format": "eslint-json-with-metadata",
+      "count": 5,
+      "meanTokensO200k": 66039.2,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.245
+    },
+    {
+      "shape": "mono-rule-storm",
+      "format": "eslint-html",
+      "count": 5,
+      "meanTokensO200k": 167292.4,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0,
+      "meanLatencyMs": 0.625
+    },
+    {
+      "shape": "diverse-rules",
+      "format": "interlace-human",
+      "count": 5,
+      "meanTokensO200k": 3042.6,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.473,
+      "meanLatencyMs": 0.187
+    },
+    {
+      "shape": "diverse-rules",
+      "format": "interlace-compact",
+      "count": 5,
+      "meanTokensO200k": 890.2,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.676,
+      "meanLatencyMs": 0.132
+    },
+    {
+      "shape": "diverse-rules",
+      "format": "interlace-json",
+      "count": 5,
+      "meanTokensO200k": 8558.2,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.165
+    },
+    {
+      "shape": "diverse-rules",
+      "format": "interlace-ndjson",
+      "count": 5,
+      "meanTokensO200k": 8639.2,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.676,
+      "meanLatencyMs": 0.184
+    },
+    {
+      "shape": "diverse-rules",
+      "format": "interlace-xml",
+      "count": 5,
+      "meanTokensO200k": 7369.2,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.304,
+      "meanLatencyMs": 0.163
+    },
+    {
+      "shape": "diverse-rules",
+      "format": "eslint-stylish",
+      "count": 5,
+      "meanTokensO200k": 107966.4,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0,
+      "meanLatencyMs": 2.534
+    },
+    {
+      "shape": "diverse-rules",
+      "format": "eslint-json",
+      "count": 5,
+      "meanTokensO200k": 79383.6,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.289
+    },
+    {
+      "shape": "diverse-rules",
+      "format": "eslint-json-with-metadata",
+      "count": 5,
+      "meanTokensO200k": 80136.6,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.534
+    },
+    {
+      "shape": "diverse-rules",
+      "format": "eslint-html",
+      "count": 5,
+      "meanTokensO200k": 186084,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0,
+      "meanLatencyMs": 0.56
+    },
+    {
+      "shape": "mixed-severity",
+      "format": "interlace-human",
+      "count": 5,
+      "meanTokensO200k": 1797.4,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.529,
+      "meanLatencyMs": 0.15
+    },
+    {
+      "shape": "mixed-severity",
+      "format": "interlace-compact",
+      "count": 5,
+      "meanTokensO200k": 536,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.727,
+      "meanLatencyMs": 0.124
+    },
+    {
+      "shape": "mixed-severity",
+      "format": "interlace-json",
+      "count": 5,
+      "meanTokensO200k": 5166.2,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.142
+    },
+    {
+      "shape": "mixed-severity",
+      "format": "interlace-ndjson",
+      "count": 5,
+      "meanTokensO200k": 5211.2,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.727,
+      "meanLatencyMs": 0.14
+    },
+    {
+      "shape": "mixed-severity",
+      "format": "interlace-xml",
+      "count": 5,
+      "meanTokensO200k": 4449.4,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.362,
+      "meanLatencyMs": 0.139
+    },
+    {
+      "shape": "mixed-severity",
+      "format": "eslint-stylish",
+      "count": 5,
+      "meanTokensO200k": 107844.2,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0,
+      "meanLatencyMs": 2.656
+    },
+    {
+      "shape": "mixed-severity",
+      "format": "eslint-json",
+      "count": 5,
+      "meanTokensO200k": 79157.8,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.288
+    },
+    {
+      "shape": "mixed-severity",
+      "format": "eslint-json-with-metadata",
+      "count": 5,
+      "meanTokensO200k": 79910.8,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.514
+    },
+    {
+      "shape": "mixed-severity",
+      "format": "eslint-html",
+      "count": 5,
+      "meanTokensO200k": 186510.6,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0,
+      "meanLatencyMs": 0.544
+    },
+    {
+      "shape": "all-fixable",
+      "format": "interlace-human",
+      "count": 5,
+      "meanTokensO200k": 1160.2,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.559,
+      "meanLatencyMs": 0.152
+    },
+    {
+      "shape": "all-fixable",
+      "format": "interlace-compact",
+      "count": 5,
+      "meanTokensO200k": 349.2,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.755,
+      "meanLatencyMs": 0.127
+    },
+    {
+      "shape": "all-fixable",
+      "format": "interlace-json",
+      "count": 5,
+      "meanTokensO200k": 3362.8,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.14
+    },
+    {
+      "shape": "all-fixable",
+      "format": "interlace-ndjson",
+      "count": 5,
+      "meanTokensO200k": 3387.8,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.755,
+      "meanLatencyMs": 0.151
+    },
+    {
+      "shape": "all-fixable",
+      "format": "interlace-xml",
+      "count": 5,
+      "meanTokensO200k": 2647.6,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.454,
+      "meanLatencyMs": 0.139
+    },
+    {
+      "shape": "all-fixable",
+      "format": "eslint-stylish",
+      "count": 5,
+      "meanTokensO200k": 108688,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0,
+      "meanLatencyMs": 2.666
+    },
+    {
+      "shape": "all-fixable",
+      "format": "eslint-json",
+      "count": 5,
+      "meanTokensO200k": 99941,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.354
+    },
+    {
+      "shape": "all-fixable",
+      "format": "eslint-json-with-metadata",
+      "count": 5,
+      "meanTokensO200k": 100166,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.353
+    },
+    {
+      "shape": "all-fixable",
+      "format": "eslint-html",
+      "count": 5,
+      "meanTokensO200k": 189225.2,
+      "meanSignalScore": 3,
+      "meanGroupCollapse": 0,
+      "meanLatencyMs": 0.675
+    },
+    {
+      "shape": "security-heavy",
+      "format": "interlace-human",
+      "count": 5,
+      "meanTokensO200k": 1680,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.535,
+      "meanLatencyMs": 0.155
+    },
+    {
+      "shape": "security-heavy",
+      "format": "interlace-compact",
+      "count": 5,
+      "meanTokensO200k": 517.4,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.732,
+      "meanLatencyMs": 0.126
+    },
+    {
+      "shape": "security-heavy",
+      "format": "interlace-json",
+      "count": 5,
+      "meanTokensO200k": 4896.6,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.14
+    },
+    {
+      "shape": "security-heavy",
+      "format": "interlace-ndjson",
+      "count": 5,
+      "meanTokensO200k": 4937.6,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.732,
+      "meanLatencyMs": 0.145
+    },
+    {
+      "shape": "security-heavy",
+      "format": "interlace-xml",
+      "count": 5,
+      "meanTokensO200k": 4263.4,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.359,
+      "meanLatencyMs": 0.141
+    },
+    {
+      "shape": "security-heavy",
+      "format": "eslint-stylish",
+      "count": 5,
+      "meanTokensO200k": 113850.8,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0,
+      "meanLatencyMs": 2.454
+    },
+    {
+      "shape": "security-heavy",
+      "format": "eslint-json",
+      "count": 5,
+      "meanTokensO200k": 85582.2,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.305
+    },
+    {
+      "shape": "security-heavy",
+      "format": "eslint-json-with-metadata",
+      "count": 5,
+      "meanTokensO200k": 86016.2,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.29
+    },
+    {
+      "shape": "security-heavy",
+      "format": "eslint-html",
+      "count": 5,
+      "meanTokensO200k": 191418.4,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0,
+      "meanLatencyMs": 0.589
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "format": "interlace-human",
+      "count": 5,
+      "meanTokensO200k": 333.2,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.693,
+      "meanLatencyMs": 0.123
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "format": "interlace-compact",
+      "count": 5,
+      "meanTokensO200k": 92,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.778,
+      "meanLatencyMs": 0.112
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "format": "interlace-json",
+      "count": 5,
+      "meanTokensO200k": 749.2,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.126
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "format": "interlace-ndjson",
+      "count": 5,
+      "meanTokensO200k": 757.2,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.778,
+      "meanLatencyMs": 0.119
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "format": "interlace-xml",
+      "count": 5,
+      "meanTokensO200k": 708.6,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.564,
+      "meanLatencyMs": 0.115
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "format": "eslint-stylish",
+      "count": 5,
+      "meanTokensO200k": 94280.8,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0,
+      "meanLatencyMs": 2.358
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "format": "eslint-json",
+      "count": 5,
+      "meanTokensO200k": 66012.2,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.245
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "format": "eslint-json-with-metadata",
+      "count": 5,
+      "meanTokensO200k": 66094.2,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0.944,
+      "meanLatencyMs": 0.247
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "format": "eslint-html",
+      "count": 5,
+      "meanTokensO200k": 167307.4,
+      "meanSignalScore": 4,
+      "meanGroupCollapse": 0,
+      "meanLatencyMs": 0.515
+    }
+  ],
+  "perScale": [
+    {
+      "scale": "tiny",
+      "format": "interlace-human",
+      "count": 6,
+      "meanTokensO200k": 306.7,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.014,
+      "worstLatencyMsP95": 0.039
+    },
+    {
+      "scale": "tiny",
+      "format": "interlace-compact",
+      "count": 6,
+      "meanTokensO200k": 82.7,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.004,
+      "worstLatencyMsP95": 0.014
+    },
+    {
+      "scale": "tiny",
+      "format": "interlace-json",
+      "count": 6,
+      "meanTokensO200k": 232.3,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.004,
+      "worstLatencyMsP95": 0.022
+    },
+    {
+      "scale": "tiny",
+      "format": "interlace-ndjson",
+      "count": 6,
+      "meanTokensO200k": 242.8,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.004,
+      "worstLatencyMsP95": 0.011
+    },
+    {
+      "scale": "tiny",
+      "format": "interlace-xml",
+      "count": 6,
+      "meanTokensO200k": 395.5,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.005,
+      "worstLatencyMsP95": 0.02
+    },
+    {
+      "scale": "tiny",
+      "format": "eslint-stylish",
+      "count": 6,
+      "meanTokensO200k": 280,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.009,
+      "worstLatencyMsP95": 0.03
+    },
+    {
+      "scale": "tiny",
+      "format": "eslint-json",
+      "count": 6,
+      "meanTokensO200k": 152.7,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.001,
+      "worstLatencyMsP95": 0.001
+    },
+    {
+      "scale": "tiny",
+      "format": "eslint-json-with-metadata",
+      "count": 6,
+      "meanTokensO200k": 533.8,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.003,
+      "worstLatencyMsP95": 0.023
+    },
+    {
+      "scale": "tiny",
+      "format": "eslint-html",
+      "count": 6,
+      "meanTokensO200k": 3186,
+      "meanSignalScore": 3.833,
+      "meanLatencyMs": 0.004,
+      "worstLatencyMsP95": 0.044
+    },
+    {
+      "scale": "small",
+      "format": "interlace-human",
+      "count": 6,
+      "meanTokensO200k": 1242,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.034,
+      "worstLatencyMsP95": 0.061
+    },
+    {
+      "scale": "small",
+      "format": "interlace-compact",
+      "count": 6,
+      "meanTokensO200k": 353.7,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.01,
+      "worstLatencyMsP95": 0.02
+    },
+    {
+      "scale": "small",
+      "format": "interlace-json",
+      "count": 6,
+      "meanTokensO200k": 1053.8,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.012,
+      "worstLatencyMsP95": 1.919
+    },
+    {
+      "scale": "small",
+      "format": "interlace-ndjson",
+      "count": 6,
+      "meanTokensO200k": 1093.5,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.013,
+      "worstLatencyMsP95": 0.031
+    },
+    {
+      "scale": "small",
+      "format": "interlace-xml",
+      "count": 6,
+      "meanTokensO200k": 1592.8,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.016,
+      "worstLatencyMsP95": 0.03
+    },
+    {
+      "scale": "small",
+      "format": "eslint-stylish",
+      "count": 6,
+      "meanTokensO200k": 2072.3,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.063,
+      "worstLatencyMsP95": 0.211
+    },
+    {
+      "scale": "small",
+      "format": "eslint-json",
+      "count": 6,
+      "meanTokensO200k": 1513.2,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.006,
+      "worstLatencyMsP95": 0.007
+    },
+    {
+      "scale": "small",
+      "format": "eslint-json-with-metadata",
+      "count": 6,
+      "meanTokensO200k": 1894.3,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.008,
+      "worstLatencyMsP95": 0.014
+    },
+    {
+      "scale": "small",
+      "format": "eslint-html",
+      "count": 6,
+      "meanTokensO200k": 6238.2,
+      "meanSignalScore": 3.833,
+      "meanLatencyMs": 0.012,
+      "worstLatencyMsP95": 0.021
+    },
+    {
+      "scale": "medium",
+      "format": "interlace-human",
+      "count": 6,
+      "meanTokensO200k": 1768.7,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.076,
+      "worstLatencyMsP95": 0.121
+    },
+    {
+      "scale": "medium",
+      "format": "interlace-compact",
+      "count": 6,
+      "meanTokensO200k": 532.2,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.039,
+      "worstLatencyMsP95": 0.116
+    },
+    {
+      "scale": "medium",
+      "format": "interlace-json",
+      "count": 6,
+      "meanTokensO200k": 3989.8,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.055,
+      "worstLatencyMsP95": 0.092
+    },
+    {
+      "scale": "medium",
+      "format": "interlace-ndjson",
+      "count": 6,
+      "meanTokensO200k": 4029.5,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.055,
+      "worstLatencyMsP95": 0.081
+    },
+    {
+      "scale": "medium",
+      "format": "interlace-xml",
+      "count": 6,
+      "meanTokensO200k": 4319.8,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.055,
+      "worstLatencyMsP95": 0.099
+    },
+    {
+      "scale": "medium",
+      "format": "eslint-stylish",
+      "count": 6,
+      "meanTokensO200k": 20037.3,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.512,
+      "worstLatencyMsP95": 0.815
+    },
+    {
+      "scale": "medium",
+      "format": "eslint-json",
+      "count": 6,
+      "meanTokensO200k": 15160,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.054,
+      "worstLatencyMsP95": 0.067
+    },
+    {
+      "scale": "medium",
+      "format": "eslint-json-with-metadata",
+      "count": 6,
+      "meanTokensO200k": 15541.2,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.069,
+      "worstLatencyMsP95": 0.115
+    },
+    {
+      "scale": "medium",
+      "format": "eslint-html",
+      "count": 6,
+      "meanTokensO200k": 36828.8,
+      "meanSignalScore": 3.833,
+      "meanLatencyMs": 0.092,
+      "worstLatencyMsP95": 0.975
+    },
+    {
+      "scale": "large",
+      "format": "interlace-human",
+      "count": 6,
+      "meanTokensO200k": 1770.3,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.177,
+      "worstLatencyMsP95": 0.282
+    },
+    {
+      "scale": "large",
+      "format": "interlace-compact",
+      "count": 6,
+      "meanTokensO200k": 533.8,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.151,
+      "worstLatencyMsP95": 0.287
+    },
+    {
+      "scale": "large",
+      "format": "interlace-json",
+      "count": 6,
+      "meanTokensO200k": 7111.2,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.173,
+      "worstLatencyMsP95": 0.262
+    },
+    {
+      "scale": "large",
+      "format": "interlace-ndjson",
+      "count": 6,
+      "meanTokensO200k": 7150.8,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.178,
+      "worstLatencyMsP95": 0.449
+    },
+    {
+      "scale": "large",
+      "format": "interlace-xml",
+      "count": 6,
+      "meanTokensO200k": 5181.7,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.144,
+      "worstLatencyMsP95": 0.183
+    },
+    {
+      "scale": "large",
+      "format": "eslint-stylish",
+      "count": 6,
+      "meanTokensO200k": 99856,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 2.383,
+      "worstLatencyMsP95": 3.204
+    },
+    {
+      "scale": "large",
+      "format": "eslint-json",
+      "count": 6,
+      "meanTokensO200k": 75783.3,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.278,
+      "worstLatencyMsP95": 0.386
+    },
+    {
+      "scale": "large",
+      "format": "eslint-json-with-metadata",
+      "count": 6,
+      "meanTokensO200k": 76164.5,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.36,
+      "worstLatencyMsP95": 0.556
+    },
+    {
+      "scale": "large",
+      "format": "eslint-html",
+      "count": 6,
+      "meanTokensO200k": 172764,
+      "meanSignalScore": 3.833,
+      "meanLatencyMs": 0.503,
+      "worstLatencyMsP95": 0.987
+    },
+    {
+      "scale": "extreme",
+      "format": "interlace-human",
+      "count": 6,
+      "meanTokensO200k": 1773.7,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.483,
+      "worstLatencyMsP95": 0.77
+    },
+    {
+      "scale": "extreme",
+      "format": "interlace-compact",
+      "count": 6,
+      "meanTokensO200k": 537.2,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.449,
+      "worstLatencyMsP95": 0.549
+    },
+    {
+      "scale": "extreme",
+      "format": "interlace-json",
+      "count": 6,
+      "meanTokensO200k": 7114.2,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.475,
+      "worstLatencyMsP95": 0.56
+    },
+    {
+      "scale": "extreme",
+      "format": "interlace-ndjson",
+      "count": 6,
+      "meanTokensO200k": 7153.8,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.487,
+      "worstLatencyMsP95": 0.741
+    },
+    {
+      "scale": "extreme",
+      "format": "interlace-xml",
+      "count": 6,
+      "meanTokensO200k": 5185,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 0.466,
+      "worstLatencyMsP95": 0.69
+    },
+    {
+      "scale": "extreme",
+      "format": "eslint-stylish",
+      "count": 6,
+      "meanTokensO200k": 400169.3,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 9.638,
+      "worstLatencyMsP95": 11.055
+    },
+    {
+      "scale": "extreme",
+      "format": "eslint-json",
+      "count": 6,
+      "meanTokensO200k": 304120.8,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 1.105,
+      "worstLatencyMsP95": 1.508
+    },
+    {
+      "scale": "extreme",
+      "format": "eslint-json-with-metadata",
+      "count": 6,
+      "meanTokensO200k": 304502,
+      "meanSignalScore": 4,
+      "meanLatencyMs": 1.378,
+      "worstLatencyMsP95": 2.282
+    },
+    {
+      "scale": "extreme",
+      "format": "eslint-html",
+      "count": 6,
+      "meanTokensO200k": 687514.7,
+      "meanSignalScore": 3.833,
+      "meanLatencyMs": 2.313,
+      "worstLatencyMsP95": 3.305
+    }
+  ],
+  "measurements": [
+    {
+      "shape": "mono-rule-storm",
+      "scale": "tiny",
+      "format": "interlace-human",
+      "chars": 397,
+      "lines": 11,
+      "tokensO200k": 174,
+      "tokensCl100k": 155,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.03,
+      "latencyMsP95": 0.038,
+      "latencyMsMin": 0.02,
+      "latencyMsMax": 0.038
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "tiny",
+      "format": "interlace-compact",
+      "chars": 151,
+      "lines": 3,
+      "tokensO200k": 46,
+      "tokensCl100k": 46,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.25,
+      "latencyMsP50": 0.011,
+      "latencyMsP95": 0.014,
+      "latencyMsMin": 0.009,
+      "latencyMsMax": 0.014
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "tiny",
+      "format": "interlace-json",
+      "chars": 411,
+      "lines": 1,
+      "tokensO200k": 130,
+      "tokensCl100k": 126,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.75,
+      "latencyMsP50": 0.009,
+      "latencyMsP95": 0.014,
+      "latencyMsMin": 0.007,
+      "latencyMsMax": 0.014
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "tiny",
+      "format": "interlace-ndjson",
+      "chars": 421,
+      "lines": 3,
+      "tokensO200k": 133,
+      "tokensCl100k": 130,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.25,
+      "latencyMsP50": 0.008,
+      "latencyMsP95": 0.011,
+      "latencyMsMin": 0.008,
+      "latencyMsMax": 0.011
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "tiny",
+      "format": "interlace-xml",
+      "chars": 776,
+      "lines": 21,
+      "tokensO200k": 211,
+      "tokensCl100k": 209,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.01,
+      "latencyMsP95": 0.015,
+      "latencyMsMin": 0.006,
+      "latencyMsMax": 0.015
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "tiny",
+      "format": "eslint-stylish",
+      "chars": 440,
+      "lines": 8,
+      "tokensO200k": 251,
+      "tokensCl100k": 207,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.018,
+      "latencyMsP95": 0.03,
+      "latencyMsMin": 0.015,
+      "latencyMsMax": 0.03
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "tiny",
+      "format": "eslint-json",
+      "chars": 485,
+      "lines": 1,
+      "tokensO200k": 128,
+      "tokensCl100k": 125,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.75,
+      "latencyMsP50": 0.001,
+      "latencyMsP95": 0.001,
+      "latencyMsMin": 0.001,
+      "latencyMsMax": 0.001
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "tiny",
+      "format": "eslint-json-with-metadata",
+      "chars": 658,
+      "lines": 1,
+      "tokensO200k": 168,
+      "tokensCl100k": 161,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.75,
+      "latencyMsP50": 0.001,
+      "latencyMsP95": 0.002,
+      "latencyMsMin": 0.001,
+      "latencyMsMax": 0.002
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "tiny",
+      "format": "eslint-html",
+      "chars": 7829,
+      "lines": 175,
+      "tokensO200k": 3156,
+      "tokensCl100k": 3271,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.013,
+      "latencyMsP95": 0.044,
+      "latencyMsMin": 0.006,
+      "latencyMsMax": 0.044
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "small",
+      "format": "interlace-human",
+      "chars": 508,
+      "lines": 14,
+      "tokensO200k": 230,
+      "tokensCl100k": 205,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.65,
+      "latencyMsP50": 0.024,
+      "latencyMsP95": 0.025,
+      "latencyMsMin": 0.02,
+      "latencyMsMax": 0.025
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "small",
+      "format": "interlace-compact",
+      "chars": 212,
+      "lines": 3,
+      "tokensO200k": 65,
+      "tokensCl100k": 65,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.925,
+      "latencyMsP50": 0.013,
+      "latencyMsP95": 0.015,
+      "latencyMsMin": 0.013,
+      "latencyMsMax": 0.015
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "small",
+      "format": "interlace-json",
+      "chars": 1582,
+      "lines": 1,
+      "tokensO200k": 562,
+      "tokensCl100k": 558,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.975,
+      "latencyMsP50": 0.022,
+      "latencyMsP95": 1.919,
+      "latencyMsMin": 0.021,
+      "latencyMsMax": 1.919
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "small",
+      "format": "interlace-ndjson",
+      "chars": 1592,
+      "lines": 3,
+      "tokensO200k": 565,
+      "tokensCl100k": 562,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.925,
+      "latencyMsP50": 0.017,
+      "latencyMsP95": 0.019,
+      "latencyMsMin": 0.016,
+      "latencyMsMax": 0.019
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "small",
+      "format": "interlace-xml",
+      "chars": 2383,
+      "lines": 44,
+      "tokensO200k": 660,
+      "tokensCl100k": 658,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.017,
+      "latencyMsP95": 0.027,
+      "latencyMsMin": 0.017,
+      "latencyMsMax": 0.027
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "small",
+      "format": "eslint-stylish",
+      "chars": 3511,
+      "lines": 53,
+      "tokensO200k": 1871,
+      "tokensCl100k": 1557,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.088,
+      "latencyMsP95": 0.144,
+      "latencyMsMin": 0.073,
+      "latencyMsMax": 0.144
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "small",
+      "format": "eslint-json",
+      "chars": 4821,
+      "lines": 1,
+      "tokensO200k": 1262,
+      "tokensCl100k": 1232,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.975,
+      "latencyMsP50": 0.005,
+      "latencyMsP95": 0.006,
+      "latencyMsMin": 0.005,
+      "latencyMsMax": 0.006
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "small",
+      "format": "eslint-json-with-metadata",
+      "chars": 4994,
+      "lines": 1,
+      "tokensO200k": 1302,
+      "tokensCl100k": 1268,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.975,
+      "latencyMsP50": 0.006,
+      "latencyMsP95": 0.006,
+      "latencyMsMin": 0.005,
+      "latencyMsMax": 0.006
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "small",
+      "format": "eslint-html",
+      "chars": 16838,
+      "lines": 472,
+      "tokensO200k": 5973,
+      "tokensCl100k": 6061,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.018,
+      "latencyMsP95": 0.021,
+      "latencyMsMin": 0.016,
+      "latencyMsMax": 0.021
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "medium",
+      "format": "interlace-human",
+      "chars": 512,
+      "lines": 14,
+      "tokensO200k": 230,
+      "tokensCl100k": 205,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.965,
+      "latencyMsP50": 0.103,
+      "latencyMsP95": 0.121,
+      "latencyMsMin": 0.102,
+      "latencyMsMax": 0.121
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "medium",
+      "format": "interlace-compact",
+      "chars": 215,
+      "lines": 3,
+      "tokensO200k": 65,
+      "tokensCl100k": 65,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9925,
+      "latencyMsP50": 0.081,
+      "latencyMsP95": 0.116,
+      "latencyMsMin": 0.078,
+      "latencyMsMax": 0.116
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "medium",
+      "format": "interlace-json",
+      "chars": 2471,
+      "lines": 1,
+      "tokensO200k": 882,
+      "tokensCl100k": 878,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9975,
+      "latencyMsP50": 0.08,
+      "latencyMsP95": 0.092,
+      "latencyMsMin": 0.08,
+      "latencyMsMax": 0.092
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "medium",
+      "format": "interlace-ndjson",
+      "chars": 2481,
+      "lines": 3,
+      "tokensO200k": 885,
+      "tokensCl100k": 882,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9925,
+      "latencyMsP50": 0.08,
+      "latencyMsP95": 0.081,
+      "latencyMsMin": 0.048,
+      "latencyMsMax": 0.081
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "medium",
+      "format": "interlace-xml",
+      "chars": 2389,
+      "lines": 44,
+      "tokensO200k": 660,
+      "tokensCl100k": 658,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.89,
+      "latencyMsP50": 0.048,
+      "latencyMsP95": 0.049,
+      "latencyMsMin": 0.047,
+      "latencyMsMax": 0.049
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "medium",
+      "format": "eslint-stylish",
+      "chars": 34254,
+      "lines": 503,
+      "tokensO200k": 18071,
+      "tokensCl100k": 15057,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.629,
+      "latencyMsP95": 0.73,
+      "latencyMsMin": 0.561,
+      "latencyMsMax": 0.73
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "medium",
+      "format": "eslint-json",
+      "chars": 48291,
+      "lines": 1,
+      "tokensO200k": 12602,
+      "tokensCl100k": 12302,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9975,
+      "latencyMsP50": 0.052,
+      "latencyMsP95": 0.067,
+      "latencyMsMin": 0.048,
+      "latencyMsMax": 0.067
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "medium",
+      "format": "eslint-json-with-metadata",
+      "chars": 48464,
+      "lines": 1,
+      "tokensO200k": 12642,
+      "tokensCl100k": 12338,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9975,
+      "latencyMsP50": 0.048,
+      "latencyMsP95": 0.048,
+      "latencyMsMin": 0.047,
+      "latencyMsMax": 0.048
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "medium",
+      "format": "eslint-html",
+      "chars": 107380,
+      "lines": 3442,
+      "tokensO200k": 34143,
+      "tokensCl100k": 33961,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.102,
+      "latencyMsP95": 0.143,
+      "latencyMsMin": 0.091,
+      "latencyMsMax": 0.143
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "large",
+      "format": "interlace-human",
+      "chars": 515,
+      "lines": 14,
+      "tokensO200k": 233,
+      "tokensCl100k": 208,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.993,
+      "latencyMsP50": 0.245,
+      "latencyMsP95": 0.282,
+      "latencyMsMin": 0.241,
+      "latencyMsMax": 0.282
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "large",
+      "format": "interlace-compact",
+      "chars": 219,
+      "lines": 3,
+      "tokensO200k": 68,
+      "tokensCl100k": 68,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9985,
+      "latencyMsP50": 0.275,
+      "latencyMsP95": 0.287,
+      "latencyMsMin": 0.231,
+      "latencyMsMax": 0.287
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "large",
+      "format": "interlace-json",
+      "chars": 2476,
+      "lines": 1,
+      "tokensO200k": 884,
+      "tokensCl100k": 880,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9995,
+      "latencyMsP50": 0.217,
+      "latencyMsP95": 0.255,
+      "latencyMsMin": 0.208,
+      "latencyMsMax": 0.255
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "large",
+      "format": "interlace-ndjson",
+      "chars": 2486,
+      "lines": 3,
+      "tokensO200k": 887,
+      "tokensCl100k": 884,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9985,
+      "latencyMsP50": 0.206,
+      "latencyMsP95": 0.449,
+      "latencyMsMin": 0.161,
+      "latencyMsMax": 0.449
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "large",
+      "format": "interlace-xml",
+      "chars": 2390,
+      "lines": 44,
+      "tokensO200k": 663,
+      "tokensCl100k": 661,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.978,
+      "latencyMsP50": 0.134,
+      "latencyMsP95": 0.142,
+      "latencyMsMin": 0.123,
+      "latencyMsMax": 0.142
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "large",
+      "format": "eslint-stylish",
+      "chars": 171327,
+      "lines": 2503,
+      "tokensO200k": 90073,
+      "tokensCl100k": 75059,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 2.231,
+      "latencyMsP95": 2.379,
+      "latencyMsMin": 2.192,
+      "latencyMsMax": 2.379
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "large",
+      "format": "eslint-json",
+      "chars": 241896,
+      "lines": 1,
+      "tokensO200k": 63002,
+      "tokensCl100k": 61502,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9995,
+      "latencyMsP50": 0.253,
+      "latencyMsP95": 0.336,
+      "latencyMsMin": 0.251,
+      "latencyMsMax": 0.336
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "large",
+      "format": "eslint-json-with-metadata",
+      "chars": 242069,
+      "lines": 1,
+      "tokensO200k": 63042,
+      "tokensCl100k": 61538,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9995,
+      "latencyMsP50": 0.239,
+      "latencyMsP95": 0.247,
+      "latencyMsMin": 0.234,
+      "latencyMsMax": 0.247
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "large",
+      "format": "eslint-html",
+      "chars": 511787,
+      "lines": 16642,
+      "tokensO200k": 159345,
+      "tokensCl100k": 157963,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.461,
+      "latencyMsP95": 0.987,
+      "latencyMsMin": 0.439,
+      "latencyMsMax": 0.987
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "extreme",
+      "format": "interlace-human",
+      "chars": 517,
+      "lines": 14,
+      "tokensO200k": 234,
+      "tokensCl100k": 209,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.99825,
+      "latencyMsP50": 0.466,
+      "latencyMsP95": 0.77,
+      "latencyMsMin": 0.46,
+      "latencyMsMax": 0.77
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "extreme",
+      "format": "interlace-compact",
+      "chars": 221,
+      "lines": 3,
+      "tokensO200k": 69,
+      "tokensCl100k": 69,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999625,
+      "latencyMsP50": 0.431,
+      "latencyMsP95": 0.455,
+      "latencyMsMin": 0.425,
+      "latencyMsMax": 0.455
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "extreme",
+      "format": "interlace-json",
+      "chars": 2474,
+      "lines": 1,
+      "tokensO200k": 885,
+      "tokensCl100k": 881,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999875,
+      "latencyMsP50": 0.425,
+      "latencyMsP95": 0.455,
+      "latencyMsMin": 0.416,
+      "latencyMsMax": 0.455
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "extreme",
+      "format": "interlace-ndjson",
+      "chars": 2484,
+      "lines": 3,
+      "tokensO200k": 888,
+      "tokensCl100k": 885,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999625,
+      "latencyMsP50": 0.416,
+      "latencyMsP95": 0.423,
+      "latencyMsMin": 0.415,
+      "latencyMsMax": 0.423
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "extreme",
+      "format": "interlace-xml",
+      "chars": 2394,
+      "lines": 44,
+      "tokensO200k": 664,
+      "tokensCl100k": 662,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9945,
+      "latencyMsP50": 0.425,
+      "latencyMsP95": 0.49,
+      "latencyMsMin": 0.422,
+      "latencyMsMax": 0.49
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "extreme",
+      "format": "eslint-stylish",
+      "chars": 686290,
+      "lines": 10003,
+      "tokensO200k": 361073,
+      "tokensCl100k": 301059,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 9.317,
+      "latencyMsP95": 10.051,
+      "latencyMsMin": 8.893,
+      "latencyMsMax": 10.051
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "extreme",
+      "format": "eslint-json",
+      "chars": 969000,
+      "lines": 1,
+      "tokensO200k": 253002,
+      "tokensCl100k": 247002,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999875,
+      "latencyMsP50": 0.939,
+      "latencyMsP95": 1.031,
+      "latencyMsMin": 0.913,
+      "latencyMsMax": 1.031
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "extreme",
+      "format": "eslint-json-with-metadata",
+      "chars": 969173,
+      "lines": 1,
+      "tokensO200k": 253042,
+      "tokensCl100k": 247038,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999875,
+      "latencyMsP50": 0.929,
+      "latencyMsP95": 1.034,
+      "latencyMsMin": 0.904,
+      "latencyMsMax": 1.034
+    },
+    {
+      "shape": "mono-rule-storm",
+      "scale": "extreme",
+      "format": "eslint-html",
+      "chars": 2033391,
+      "lines": 66142,
+      "tokensO200k": 633845,
+      "tokensCl100k": 627963,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 2.531,
+      "latencyMsP95": 2.756,
+      "latencyMsMin": 2.045,
+      "latencyMsMax": 2.756
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "tiny",
+      "format": "interlace-human",
+      "chars": 726,
+      "lines": 19,
+      "tokensO200k": 333,
+      "tokensCl100k": 294,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.013,
+      "latencyMsP95": 0.039,
+      "latencyMsMin": 0.011,
+      "latencyMsMax": 0.039
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "tiny",
+      "format": "interlace-compact",
+      "chars": 275,
+      "lines": 5,
+      "tokensO200k": 83,
+      "tokensCl100k": 83,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.003,
+      "latencyMsP95": 0.005,
+      "latencyMsMin": 0.003,
+      "latencyMsMax": 0.005
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "tiny",
+      "format": "interlace-json",
+      "chars": 852,
+      "lines": 1,
+      "tokensO200k": 255,
+      "tokensCl100k": 246,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.75,
+      "latencyMsP50": 0.004,
+      "latencyMsP95": 0.006,
+      "latencyMsMin": 0.004,
+      "latencyMsMax": 0.006
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "tiny",
+      "format": "interlace-ndjson",
+      "chars": 890,
+      "lines": 5,
+      "tokensO200k": 268,
+      "tokensCl100k": 260,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.004,
+      "latencyMsP95": 0.006,
+      "latencyMsMin": 0.004,
+      "latencyMsMax": 0.006
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "tiny",
+      "format": "interlace-xml",
+      "chars": 1695,
+      "lines": 45,
+      "tokensO200k": 446,
+      "tokensCl100k": 441,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.006,
+      "latencyMsP95": 0.008,
+      "latencyMsMin": 0.005,
+      "latencyMsMax": 0.008
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "tiny",
+      "format": "eslint-stylish",
+      "chars": 499,
+      "lines": 8,
+      "tokensO200k": 268,
+      "tokensCl100k": 224,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.012,
+      "latencyMsP95": 0.016,
+      "latencyMsMin": 0.011,
+      "latencyMsMax": 0.016
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "tiny",
+      "format": "eslint-json",
+      "chars": 508,
+      "lines": 1,
+      "tokensO200k": 143,
+      "tokensCl100k": 140,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.75,
+      "latencyMsP50": 0.001,
+      "latencyMsP95": 0.001,
+      "latencyMsMin": 0.001,
+      "latencyMsMax": 0.001
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "tiny",
+      "format": "eslint-json-with-metadata",
+      "chars": 3731,
+      "lines": 1,
+      "tokensO200k": 896,
+      "tokensCl100k": 870,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.75,
+      "latencyMsP50": 0.011,
+      "latencyMsP95": 0.023,
+      "latencyMsMin": 0.005,
+      "latencyMsMax": 0.023
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "tiny",
+      "format": "eslint-html",
+      "chars": 7878,
+      "lines": 175,
+      "tokensO200k": 3187,
+      "tokensCl100k": 3302,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.002,
+      "latencyMsP95": 0.005,
+      "latencyMsMin": 0.002,
+      "latencyMsMax": 0.005
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "small",
+      "format": "interlace-human",
+      "chars": 4990,
+      "lines": 114,
+      "tokensO200k": 2354,
+      "tokensCl100k": 2064,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.058,
+      "latencyMsP95": 0.061,
+      "latencyMsMin": 0.054,
+      "latencyMsMax": 0.061
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "small",
+      "format": "interlace-compact",
+      "chars": 2240,
+      "lines": 22,
+      "tokensO200k": 626,
+      "tokensCl100k": 624,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.45,
+      "latencyMsP50": 0.013,
+      "latencyMsP95": 0.02,
+      "latencyMsMin": 0.013,
+      "latencyMsMax": 0.02
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "small",
+      "format": "interlace-json",
+      "chars": 6010,
+      "lines": 1,
+      "tokensO200k": 1793,
+      "tokensCl100k": 1750,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.975,
+      "latencyMsP50": 0.014,
+      "latencyMsP95": 0.015,
+      "latencyMsMin": 0.013,
+      "latencyMsMax": 0.015
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "small",
+      "format": "interlace-ndjson",
+      "chars": 6286,
+      "lines": 22,
+      "tokensO200k": 1891,
+      "tokensCl100k": 1849,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.45,
+      "latencyMsP50": 0.017,
+      "latencyMsP95": 0.018,
+      "latencyMsMin": 0.017,
+      "latencyMsMax": 0.018
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "small",
+      "format": "interlace-xml",
+      "chars": 11459,
+      "lines": 276,
+      "tokensO200k": 2959,
+      "tokensCl100k": 2938,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.024,
+      "latencyMsP95": 0.025,
+      "latencyMsMin": 0.023,
+      "latencyMsMax": 0.025
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "small",
+      "format": "eslint-stylish",
+      "chars": 4164,
+      "lines": 53,
+      "tokensO200k": 2096,
+      "tokensCl100k": 1779,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.087,
+      "latencyMsP95": 0.104,
+      "latencyMsMin": 0.077,
+      "latencyMsMax": 0.104
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "small",
+      "format": "eslint-json",
+      "chars": 5345,
+      "lines": 1,
+      "tokensO200k": 1479,
+      "tokensCl100k": 1446,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.975,
+      "latencyMsP50": 0.005,
+      "latencyMsP95": 0.005,
+      "latencyMsMin": 0.005,
+      "latencyMsMax": 0.005
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "small",
+      "format": "eslint-json-with-metadata",
+      "chars": 8568,
+      "lines": 1,
+      "tokensO200k": 2232,
+      "tokensCl100k": 2176,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.975,
+      "latencyMsP50": 0.013,
+      "latencyMsP95": 0.014,
+      "latencyMsMin": 0.013,
+      "latencyMsMax": 0.014
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "small",
+      "format": "eslint-html",
+      "chars": 17601,
+      "lines": 472,
+      "tokensO200k": 6299,
+      "tokensCl100k": 6393,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.012,
+      "latencyMsP95": 0.013,
+      "latencyMsMin": 0.012,
+      "latencyMsMax": 0.013
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "medium",
+      "format": "interlace-human",
+      "chars": 8602,
+      "lines": 204,
+      "tokensO200k": 4174,
+      "tokensCl100k": 3684,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.49,
+      "latencyMsP50": 0.119,
+      "latencyMsP95": 0.12,
+      "latencyMsMin": 0.116,
+      "latencyMsMax": 0.12
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "medium",
+      "format": "interlace-compact",
+      "chars": 4300,
+      "lines": 22,
+      "tokensO200k": 1246,
+      "tokensCl100k": 1244,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.945,
+      "latencyMsP50": 0.042,
+      "latencyMsP95": 0.049,
+      "latencyMsMin": 0.037,
+      "latencyMsMax": 0.049
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "medium",
+      "format": "interlace-json",
+      "chars": 18014,
+      "lines": 1,
+      "tokensO200k": 6113,
+      "tokensCl100k": 6070,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9975,
+      "latencyMsP50": 0.064,
+      "latencyMsP95": 0.064,
+      "latencyMsMin": 0.063,
+      "latencyMsMax": 0.064
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "medium",
+      "format": "interlace-ndjson",
+      "chars": 18290,
+      "lines": 22,
+      "tokensO200k": 6211,
+      "tokensCl100k": 6169,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.945,
+      "latencyMsP50": 0.066,
+      "latencyMsP95": 0.067,
+      "latencyMsMin": 0.065,
+      "latencyMsMax": 0.067
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "medium",
+      "format": "interlace-xml",
+      "chars": 31023,
+      "lines": 546,
+      "tokensO200k": 8359,
+      "tokensCl100k": 8338,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.09,
+      "latencyMsP95": 0.099,
+      "latencyMsMin": 0.089,
+      "latencyMsMax": 0.099
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "medium",
+      "format": "eslint-stylish",
+      "chars": 40543,
+      "lines": 503,
+      "tokensO200k": 20696,
+      "tokensCl100k": 17652,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.587,
+      "latencyMsP95": 0.815,
+      "latencyMsMin": 0.521,
+      "latencyMsMax": 0.815
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "medium",
+      "format": "eslint-json",
+      "chars": 55021,
+      "lines": 1,
+      "tokensO200k": 15167,
+      "tokensCl100k": 14822,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9975,
+      "latencyMsP50": 0.057,
+      "latencyMsP95": 0.061,
+      "latencyMsMin": 0.05,
+      "latencyMsMax": 0.061
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "medium",
+      "format": "eslint-json-with-metadata",
+      "chars": 58244,
+      "lines": 1,
+      "tokensO200k": 15920,
+      "tokensCl100k": 15552,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9975,
+      "latencyMsP50": 0.1,
+      "latencyMsP95": 0.108,
+      "latencyMsMin": 0.092,
+      "latencyMsMax": 0.108
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "medium",
+      "format": "eslint-html",
+      "chars": 116976,
+      "lines": 3442,
+      "tokensO200k": 37743,
+      "tokensCl100k": 37651,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.097,
+      "latencyMsP95": 0.207,
+      "latencyMsMin": 0.087,
+      "latencyMsMax": 0.207
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "large",
+      "format": "interlace-human",
+      "chars": 8602,
+      "lines": 204,
+      "tokensO200k": 4175,
+      "tokensCl100k": 3685,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.898,
+      "latencyMsP50": 0.22,
+      "latencyMsP95": 0.224,
+      "latencyMsMin": 0.215,
+      "latencyMsMax": 0.224
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "large",
+      "format": "interlace-compact",
+      "chars": 4298,
+      "lines": 22,
+      "tokensO200k": 1247,
+      "tokensCl100k": 1245,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.989,
+      "latencyMsP50": 0.14,
+      "latencyMsP95": 0.14,
+      "latencyMsMin": 0.138,
+      "latencyMsMax": 0.14
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "large",
+      "format": "interlace-json",
+      "chars": 49787,
+      "lines": 1,
+      "tokensO200k": 17314,
+      "tokensCl100k": 17271,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9995,
+      "latencyMsP50": 0.238,
+      "latencyMsP95": 0.262,
+      "latencyMsMin": 0.234,
+      "latencyMsMax": 0.262
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "large",
+      "format": "interlace-ndjson",
+      "chars": 50063,
+      "lines": 22,
+      "tokensO200k": 17412,
+      "tokensCl100k": 17370,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.989,
+      "latencyMsP50": 0.237,
+      "latencyMsP95": 0.241,
+      "latencyMsMin": 0.23,
+      "latencyMsMax": 0.241
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "large",
+      "format": "interlace-xml",
+      "chars": 46429,
+      "lines": 766,
+      "tokensO200k": 12540,
+      "tokensCl100k": 12519,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.617,
+      "latencyMsP50": 0.178,
+      "latencyMsP95": 0.18,
+      "latencyMsMin": 0.177,
+      "latencyMsMax": 0.18
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "large",
+      "format": "eslint-stylish",
+      "chars": 202664,
+      "lines": 2503,
+      "tokensO200k": 103198,
+      "tokensCl100k": 88034,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 2.465,
+      "latencyMsP95": 3.012,
+      "latencyMsMin": 2.295,
+      "latencyMsMax": 3.012
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "large",
+      "format": "eslint-json",
+      "chars": 275543,
+      "lines": 1,
+      "tokensO200k": 75827,
+      "tokensCl100k": 74102,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9995,
+      "latencyMsP50": 0.28,
+      "latencyMsP95": 0.296,
+      "latencyMsMin": 0.274,
+      "latencyMsMax": 0.296
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "large",
+      "format": "eslint-json-with-metadata",
+      "chars": 278766,
+      "lines": 1,
+      "tokensO200k": 76580,
+      "tokensCl100k": 74832,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9995,
+      "latencyMsP50": 0.511,
+      "latencyMsP95": 0.529,
+      "latencyMsMin": 0.506,
+      "latencyMsMax": 0.529
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "large",
+      "format": "eslint-html",
+      "chars": 559761,
+      "lines": 16642,
+      "tokensO200k": 177345,
+      "tokensCl100k": 176413,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.53,
+      "latencyMsP95": 0.541,
+      "latencyMsMin": 0.517,
+      "latencyMsMax": 0.541
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "extreme",
+      "format": "interlace-human",
+      "chars": 8636,
+      "lines": 204,
+      "tokensO200k": 4177,
+      "tokensCl100k": 3687,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9745,
+      "latencyMsP50": 0.526,
+      "latencyMsP95": 0.61,
+      "latencyMsMin": 0.484,
+      "latencyMsMax": 0.61
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "extreme",
+      "format": "interlace-compact",
+      "chars": 4334,
+      "lines": 22,
+      "tokensO200k": 1249,
+      "tokensCl100k": 1247,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.99725,
+      "latencyMsP50": 0.464,
+      "latencyMsP95": 0.549,
+      "latencyMsMin": 0.44,
+      "latencyMsMax": 0.549
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "extreme",
+      "format": "interlace-json",
+      "chars": 49801,
+      "lines": 1,
+      "tokensO200k": 17316,
+      "tokensCl100k": 17273,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999875,
+      "latencyMsP50": 0.506,
+      "latencyMsP95": 0.56,
+      "latencyMsMin": 0.498,
+      "latencyMsMax": 0.56
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "extreme",
+      "format": "interlace-ndjson",
+      "chars": 50077,
+      "lines": 22,
+      "tokensO200k": 17414,
+      "tokensCl100k": 17372,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.99725,
+      "latencyMsP50": 0.595,
+      "latencyMsP95": 0.641,
+      "latencyMsMin": 0.502,
+      "latencyMsMax": 0.641
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "extreme",
+      "format": "interlace-xml",
+      "chars": 46466,
+      "lines": 766,
+      "tokensO200k": 12542,
+      "tokensCl100k": 12521,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.90425,
+      "latencyMsP50": 0.518,
+      "latencyMsP95": 0.69,
+      "latencyMsMin": 0.501,
+      "latencyMsMax": 0.69
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "extreme",
+      "format": "eslint-stylish",
+      "chars": 811684,
+      "lines": 10003,
+      "tokensO200k": 413574,
+      "tokensCl100k": 352960,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 9.518,
+      "latencyMsP95": 10.458,
+      "latencyMsMin": 9.29,
+      "latencyMsMax": 10.458
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "extreme",
+      "format": "eslint-json",
+      "chars": 1103390,
+      "lines": 1,
+      "tokensO200k": 304302,
+      "tokensCl100k": 297402,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999875,
+      "latencyMsP50": 1.102,
+      "latencyMsP95": 1.413,
+      "latencyMsMin": 1.048,
+      "latencyMsMax": 1.413
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "extreme",
+      "format": "eslint-json-with-metadata",
+      "chars": 1106613,
+      "lines": 1,
+      "tokensO200k": 305055,
+      "tokensCl100k": 298132,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999875,
+      "latencyMsP50": 2.035,
+      "latencyMsP95": 2.282,
+      "latencyMsMin": 2.015,
+      "latencyMsMax": 2.282
+    },
+    {
+      "shape": "diverse-rules",
+      "scale": "extreme",
+      "format": "eslint-html",
+      "chars": 2225084,
+      "lines": 66142,
+      "tokensO200k": 705846,
+      "tokensCl100k": 701764,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 2.157,
+      "latencyMsP95": 2.67,
+      "latencyMsMin": 1.893,
+      "latencyMsMax": 2.67
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "tiny",
+      "format": "interlace-human",
+      "chars": 695,
+      "lines": 19,
+      "tokensO200k": 328,
+      "tokensCl100k": 288,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.008,
+      "latencyMsP95": 0.01,
+      "latencyMsMin": 0.007,
+      "latencyMsMax": 0.01
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "tiny",
+      "format": "interlace-compact",
+      "chars": 278,
+      "lines": 5,
+      "tokensO200k": 88,
+      "tokensCl100k": 88,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.003,
+      "latencyMsP95": 0.003,
+      "latencyMsMin": 0.002,
+      "latencyMsMax": 0.003
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "tiny",
+      "format": "interlace-json",
+      "chars": 824,
+      "lines": 1,
+      "tokensO200k": 258,
+      "tokensCl100k": 250,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.75,
+      "latencyMsP50": 0.003,
+      "latencyMsP95": 0.022,
+      "latencyMsMin": 0.003,
+      "latencyMsMax": 0.022
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "tiny",
+      "format": "interlace-ndjson",
+      "chars": 862,
+      "lines": 5,
+      "tokensO200k": 271,
+      "tokensCl100k": 264,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.003,
+      "latencyMsP95": 0.003,
+      "latencyMsMin": 0.003,
+      "latencyMsMax": 0.003
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "tiny",
+      "format": "interlace-xml",
+      "chars": 1677,
+      "lines": 45,
+      "tokensO200k": 456,
+      "tokensCl100k": 452,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.004,
+      "latencyMsP95": 0.02,
+      "latencyMsMin": 0.004,
+      "latencyMsMax": 0.02
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "tiny",
+      "format": "eslint-stylish",
+      "chars": 479,
+      "lines": 8,
+      "tokensO200k": 273,
+      "tokensCl100k": 229,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.005,
+      "latencyMsP95": 0.008,
+      "latencyMsMin": 0.005,
+      "latencyMsMax": 0.008
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "tiny",
+      "format": "eslint-json",
+      "chars": 513,
+      "lines": 1,
+      "tokensO200k": 149,
+      "tokensCl100k": 146,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.75,
+      "latencyMsP50": 0.001,
+      "latencyMsP95": 0.001,
+      "latencyMsMin": 0.001,
+      "latencyMsMax": 0.001
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "tiny",
+      "format": "eslint-json-with-metadata",
+      "chars": 3736,
+      "lines": 1,
+      "tokensO200k": 902,
+      "tokensCl100k": 876,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.75,
+      "latencyMsP50": 0.004,
+      "latencyMsP95": 0.005,
+      "latencyMsMin": 0.004,
+      "latencyMsMax": 0.005
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "tiny",
+      "format": "eslint-html",
+      "chars": 7877,
+      "lines": 175,
+      "tokensO200k": 3199,
+      "tokensCl100k": 3314,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.002,
+      "latencyMsP95": 0.003,
+      "latencyMsMin": 0.002,
+      "latencyMsMax": 0.003
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "small",
+      "format": "interlace-human",
+      "chars": 3465,
+      "lines": 78,
+      "tokensO200k": 1650,
+      "tokensCl100k": 1450,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.036,
+      "latencyMsP95": 0.037,
+      "latencyMsMin": 0.035,
+      "latencyMsMax": 0.037
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "small",
+      "format": "interlace-compact",
+      "chars": 1623,
+      "lines": 13,
+      "tokensO200k": 464,
+      "tokensCl100k": 463,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.675,
+      "latencyMsP50": 0.008,
+      "latencyMsP95": 0.009,
+      "latencyMsMin": 0.007,
+      "latencyMsMax": 0.009
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "small",
+      "format": "interlace-json",
+      "chars": 4005,
+      "lines": 1,
+      "tokensO200k": 1232,
+      "tokensCl100k": 1209,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.975,
+      "latencyMsP50": 0.009,
+      "latencyMsP95": 0.011,
+      "latencyMsMin": 0.009,
+      "latencyMsMax": 0.011
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "small",
+      "format": "interlace-ndjson",
+      "chars": 4155,
+      "lines": 13,
+      "tokensO200k": 1285,
+      "tokensCl100k": 1263,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.675,
+      "latencyMsP50": 0.012,
+      "latencyMsP95": 0.012,
+      "latencyMsMin": 0.01,
+      "latencyMsMax": 0.012
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "small",
+      "format": "interlace-xml",
+      "chars": 7419,
+      "lines": 168,
+      "tokensO200k": 1942,
+      "tokensCl100k": 1931,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.013,
+      "latencyMsP95": 0.015,
+      "latencyMsMin": 0.013,
+      "latencyMsMax": 0.015
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "small",
+      "format": "eslint-stylish",
+      "chars": 4324,
+      "lines": 53,
+      "tokensO200k": 2131,
+      "tokensCl100k": 1815,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.054,
+      "latencyMsP95": 0.211,
+      "latencyMsMin": 0.051,
+      "latencyMsMax": 0.211
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "small",
+      "format": "eslint-json",
+      "chars": 5558,
+      "lines": 1,
+      "tokensO200k": 1514,
+      "tokensCl100k": 1480,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.975,
+      "latencyMsP50": 0.005,
+      "latencyMsP95": 0.005,
+      "latencyMsMin": 0.004,
+      "latencyMsMax": 0.005
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "small",
+      "format": "eslint-json-with-metadata",
+      "chars": 8781,
+      "lines": 1,
+      "tokensO200k": 2267,
+      "tokensCl100k": 2210,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.975,
+      "latencyMsP50": 0.012,
+      "latencyMsP95": 0.013,
+      "latencyMsMin": 0.012,
+      "latencyMsMax": 0.013
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "small",
+      "format": "eslint-html",
+      "chars": 17882,
+      "lines": 472,
+      "tokensO200k": 6341,
+      "tokensCl100k": 6435,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.011,
+      "latencyMsP95": 0.011,
+      "latencyMsMin": 0.01,
+      "latencyMsMax": 0.011
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "medium",
+      "format": "interlace-human",
+      "chars": 4851,
+      "lines": 114,
+      "tokensO200k": 2334,
+      "tokensCl100k": 2062,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.715,
+      "latencyMsP50": 0.07,
+      "latencyMsP95": 0.073,
+      "latencyMsMin": 0.068,
+      "latencyMsMax": 0.073
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "medium",
+      "format": "interlace-compact",
+      "chars": 2426,
+      "lines": 13,
+      "tokensO200k": 707,
+      "tokensCl100k": 706,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9675,
+      "latencyMsP50": 0.029,
+      "latencyMsP95": 0.033,
+      "latencyMsMin": 0.028,
+      "latencyMsMax": 0.033
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "medium",
+      "format": "interlace-json",
+      "chars": 15105,
+      "lines": 1,
+      "tokensO200k": 5232,
+      "tokensCl100k": 5209,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9975,
+      "latencyMsP50": 0.047,
+      "latencyMsP95": 0.049,
+      "latencyMsMin": 0.047,
+      "latencyMsMax": 0.049
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "medium",
+      "format": "interlace-ndjson",
+      "chars": 15255,
+      "lines": 13,
+      "tokensO200k": 5285,
+      "tokensCl100k": 5263,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9675,
+      "latencyMsP50": 0.049,
+      "latencyMsP95": 0.05,
+      "latencyMsMin": 0.049,
+      "latencyMsMax": 0.05
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "medium",
+      "format": "interlace-xml",
+      "chars": 21977,
+      "lines": 370,
+      "tokensO200k": 5960,
+      "tokensCl100k": 5949,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.075,
+      "latencyMsP50": 0.058,
+      "latencyMsP95": 0.059,
+      "latencyMsMin": 0.057,
+      "latencyMsMax": 0.059
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "medium",
+      "format": "eslint-stylish",
+      "chars": 42433,
+      "lines": 503,
+      "tokensO200k": 20671,
+      "tokensCl100k": 17637,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.494,
+      "latencyMsP95": 0.51,
+      "latencyMsMin": 0.476,
+      "latencyMsMax": 0.51
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "medium",
+      "format": "eslint-json",
+      "chars": 55677,
+      "lines": 1,
+      "tokensO200k": 15122,
+      "tokensCl100k": 14782,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9975,
+      "latencyMsP50": 0.05,
+      "latencyMsP95": 0.052,
+      "latencyMsMin": 0.049,
+      "latencyMsMax": 0.052
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "medium",
+      "format": "eslint-json-with-metadata",
+      "chars": 58900,
+      "lines": 1,
+      "tokensO200k": 15875,
+      "tokensCl100k": 15512,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9975,
+      "latencyMsP50": 0.098,
+      "latencyMsP95": 0.115,
+      "latencyMsMin": 0.092,
+      "latencyMsMax": 0.115
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "medium",
+      "format": "eslint-html",
+      "chars": 117828,
+      "lines": 3442,
+      "tokensO200k": 37823,
+      "tokensCl100k": 37701,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.091,
+      "latencyMsP95": 0.102,
+      "latencyMsMin": 0.086,
+      "latencyMsMax": 0.102
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "large",
+      "format": "interlace-human",
+      "chars": 4875,
+      "lines": 114,
+      "tokensO200k": 2334,
+      "tokensCl100k": 2062,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.943,
+      "latencyMsP50": 0.154,
+      "latencyMsP95": 0.161,
+      "latencyMsMin": 0.152,
+      "latencyMsMax": 0.161
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "large",
+      "format": "interlace-compact",
+      "chars": 2449,
+      "lines": 13,
+      "tokensO200k": 707,
+      "tokensCl100k": 706,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9935,
+      "latencyMsP50": 0.132,
+      "latencyMsP95": 0.138,
+      "latencyMsMin": 0.121,
+      "latencyMsMax": 0.138
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "large",
+      "format": "interlace-json",
+      "chars": 27358,
+      "lines": 1,
+      "tokensO200k": 9552,
+      "tokensCl100k": 9529,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9995,
+      "latencyMsP50": 0.154,
+      "latencyMsP95": 0.161,
+      "latencyMsMin": 0.148,
+      "latencyMsMax": 0.161
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "large",
+      "format": "interlace-ndjson",
+      "chars": 27508,
+      "lines": 13,
+      "tokensO200k": 9605,
+      "tokensCl100k": 9583,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9935,
+      "latencyMsP50": 0.161,
+      "latencyMsP95": 0.162,
+      "latencyMsMin": 0.157,
+      "latencyMsMax": 0.162
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "large",
+      "format": "interlace-xml",
+      "chars": 25625,
+      "lines": 424,
+      "tokensO200k": 6941,
+      "tokensCl100k": 6930,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.788,
+      "latencyMsP50": 0.152,
+      "latencyMsP95": 0.183,
+      "latencyMsMin": 0.147,
+      "latencyMsMax": 0.183
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "large",
+      "format": "eslint-stylish",
+      "chars": 212219,
+      "lines": 2503,
+      "tokensO200k": 103072,
+      "tokensCl100k": 87958,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 2.463,
+      "latencyMsP95": 3.204,
+      "latencyMsMin": 2.423,
+      "latencyMsMax": 3.204
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "large",
+      "format": "eslint-json",
+      "chars": 278828,
+      "lines": 1,
+      "tokensO200k": 75602,
+      "tokensCl100k": 73902,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9995,
+      "latencyMsP50": 0.274,
+      "latencyMsP95": 0.281,
+      "latencyMsMin": 0.27,
+      "latencyMsMax": 0.281
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "large",
+      "format": "eslint-json-with-metadata",
+      "chars": 282051,
+      "lines": 1,
+      "tokensO200k": 76355,
+      "tokensCl100k": 74632,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9995,
+      "latencyMsP50": 0.514,
+      "latencyMsP95": 0.547,
+      "latencyMsMin": 0.503,
+      "latencyMsMax": 0.547
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "large",
+      "format": "eslint-html",
+      "chars": 564020,
+      "lines": 16642,
+      "tokensO200k": 177744,
+      "tokensCl100k": 176662,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.498,
+      "latencyMsP95": 0.533,
+      "latencyMsMin": 0.484,
+      "latencyMsMax": 0.533
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "extreme",
+      "format": "interlace-human",
+      "chars": 4886,
+      "lines": 114,
+      "tokensO200k": 2341,
+      "tokensCl100k": 2069,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.98575,
+      "latencyMsP50": 0.48,
+      "latencyMsP95": 0.512,
+      "latencyMsMin": 0.475,
+      "latencyMsMax": 0.512
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "extreme",
+      "format": "interlace-compact",
+      "chars": 2461,
+      "lines": 13,
+      "tokensO200k": 714,
+      "tokensCl100k": 713,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.998375,
+      "latencyMsP50": 0.45,
+      "latencyMsP95": 0.481,
+      "latencyMsMin": 0.444,
+      "latencyMsMax": 0.481
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "extreme",
+      "format": "interlace-json",
+      "chars": 27352,
+      "lines": 1,
+      "tokensO200k": 9557,
+      "tokensCl100k": 9534,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999875,
+      "latencyMsP50": 0.496,
+      "latencyMsP95": 0.52,
+      "latencyMsMin": 0.477,
+      "latencyMsMax": 0.52
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "extreme",
+      "format": "interlace-ndjson",
+      "chars": 27502,
+      "lines": 13,
+      "tokensO200k": 9610,
+      "tokensCl100k": 9588,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.998375,
+      "latencyMsP50": 0.477,
+      "latencyMsP95": 0.605,
+      "latencyMsMin": 0.45,
+      "latencyMsMax": 0.605
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "extreme",
+      "format": "interlace-xml",
+      "chars": 25625,
+      "lines": 424,
+      "tokensO200k": 6948,
+      "tokensCl100k": 6937,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.947,
+      "latencyMsP50": 0.466,
+      "latencyMsP95": 0.506,
+      "latencyMsMin": 0.458,
+      "latencyMsMax": 0.506
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "extreme",
+      "format": "eslint-stylish",
+      "chars": 849905,
+      "lines": 10003,
+      "tokensO200k": 413074,
+      "tokensCl100k": 352660,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 10.266,
+      "latencyMsP95": 10.994,
+      "latencyMsMin": 10.041,
+      "latencyMsMax": 10.994
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "extreme",
+      "format": "eslint-json",
+      "chars": 1116605,
+      "lines": 1,
+      "tokensO200k": 303402,
+      "tokensCl100k": 296602,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999875,
+      "latencyMsP50": 1.111,
+      "latencyMsP95": 1.2,
+      "latencyMsMin": 1.076,
+      "latencyMsMax": 1.2
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "extreme",
+      "format": "eslint-json-with-metadata",
+      "chars": 1119828,
+      "lines": 1,
+      "tokensO200k": 304155,
+      "tokensCl100k": 297332,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999875,
+      "latencyMsP50": 1.942,
+      "latencyMsP95": 2.048,
+      "latencyMsMin": 1.926,
+      "latencyMsMax": 2.048
+    },
+    {
+      "shape": "mixed-severity",
+      "scale": "extreme",
+      "format": "eslint-html",
+      "chars": 2242199,
+      "lines": 66142,
+      "tokensO200k": 707446,
+      "tokensCl100k": 702764,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 2.12,
+      "latencyMsP95": 2.482,
+      "latencyMsMin": 2.001,
+      "latencyMsMax": 2.482
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "tiny",
+      "format": "interlace-human",
+      "chars": 783,
+      "lines": 20,
+      "tokensO200k": 381,
+      "tokensCl100k": 333,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.012,
+      "latencyMsP95": 0.019,
+      "latencyMsMin": 0.011,
+      "latencyMsMax": 0.019
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "tiny",
+      "format": "interlace-compact",
+      "chars": 320,
+      "lines": 5,
+      "tokensO200k": 104,
+      "tokensCl100k": 104,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.003,
+      "latencyMsP95": 0.006,
+      "latencyMsMin": 0.003,
+      "latencyMsMax": 0.006
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "tiny",
+      "format": "interlace-json",
+      "chars": 823,
+      "lines": 1,
+      "tokensO200k": 258,
+      "tokensCl100k": 250,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.75,
+      "latencyMsP50": 0.003,
+      "latencyMsP95": 0.005,
+      "latencyMsMin": 0.003,
+      "latencyMsMax": 0.005
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "tiny",
+      "format": "interlace-ndjson",
+      "chars": 861,
+      "lines": 5,
+      "tokensO200k": 271,
+      "tokensCl100k": 264,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.004,
+      "latencyMsP95": 0.004,
+      "latencyMsMin": 0.004,
+      "latencyMsMax": 0.004
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "tiny",
+      "format": "interlace-xml",
+      "chars": 1676,
+      "lines": 45,
+      "tokensO200k": 456,
+      "tokensCl100k": 452,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.005,
+      "latencyMsP95": 0.006,
+      "latencyMsMin": 0.004,
+      "latencyMsMax": 0.006
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "tiny",
+      "format": "eslint-stylish",
+      "chars": 599,
+      "lines": 9,
+      "tokensO200k": 333,
+      "tokensCl100k": 279,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.006,
+      "latencyMsP95": 0.01,
+      "latencyMsMin": 0.006,
+      "latencyMsMax": 0.01
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "tiny",
+      "format": "eslint-json",
+      "chars": 611,
+      "lines": 1,
+      "tokensO200k": 187,
+      "tokensCl100k": 181,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.75,
+      "latencyMsP50": 0.001,
+      "latencyMsP95": 0.001,
+      "latencyMsMin": 0.001,
+      "latencyMsMax": 0.001
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "tiny",
+      "format": "eslint-json-with-metadata",
+      "chars": 1539,
+      "lines": 1,
+      "tokensO200k": 412,
+      "tokensCl100k": 393,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.75,
+      "latencyMsP50": 0.001,
+      "latencyMsP95": 0.002,
+      "latencyMsMin": 0.001,
+      "latencyMsMax": 0.002
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "tiny",
+      "format": "eslint-html",
+      "chars": 7879,
+      "lines": 175,
+      "tokensO200k": 3199,
+      "tokensCl100k": 3314,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": false,
+        "score": 3
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.003,
+      "latencyMsP95": 0.005,
+      "latencyMsMin": 0.002,
+      "latencyMsMax": 0.005
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "small",
+      "format": "interlace-human",
+      "chars": 2546,
+      "lines": 59,
+      "tokensO200k": 1280,
+      "tokensCl100k": 1122,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.035,
+      "latencyMsP95": 0.037,
+      "latencyMsMin": 0.035,
+      "latencyMsMax": 0.037
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "small",
+      "format": "interlace-compact",
+      "chars": 1257,
+      "lines": 8,
+      "tokensO200k": 394,
+      "tokensCl100k": 391,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.8,
+      "latencyMsP50": 0.01,
+      "latencyMsP95": 0.01,
+      "latencyMsMin": 0.01,
+      "latencyMsMax": 0.01
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "small",
+      "format": "interlace-json",
+      "chars": 2709,
+      "lines": 1,
+      "tokensO200k": 896,
+      "tokensCl100k": 877,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.975,
+      "latencyMsP50": 0.011,
+      "latencyMsP95": 0.014,
+      "latencyMsMin": 0.01,
+      "latencyMsMax": 0.014
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "small",
+      "format": "interlace-ndjson",
+      "chars": 2789,
+      "lines": 8,
+      "tokensO200k": 924,
+      "tokensCl100k": 906,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.8,
+      "latencyMsP50": 0.012,
+      "latencyMsP95": 0.014,
+      "latencyMsMin": 0.012,
+      "latencyMsMax": 0.014
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "small",
+      "format": "interlace-xml",
+      "chars": 4990,
+      "lines": 108,
+      "tokensO200k": 1352,
+      "tokensCl100k": 1341,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.017,
+      "latencyMsP95": 0.03,
+      "latencyMsMin": 0.015,
+      "latencyMsMax": 0.03
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "small",
+      "format": "eslint-stylish",
+      "chars": 4232,
+      "lines": 54,
+      "tokensO200k": 2206,
+      "tokensCl100k": 1867,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.05,
+      "latencyMsP95": 0.052,
+      "latencyMsMin": 0.048,
+      "latencyMsMax": 0.052
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "small",
+      "format": "eslint-json",
+      "chars": 6297,
+      "lines": 1,
+      "tokensO200k": 1912,
+      "tokensCl100k": 1832,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.975,
+      "latencyMsP50": 0.007,
+      "latencyMsP95": 0.007,
+      "latencyMsMin": 0.006,
+      "latencyMsMax": 0.007
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "small",
+      "format": "eslint-json-with-metadata",
+      "chars": 7225,
+      "lines": 1,
+      "tokensO200k": 2137,
+      "tokensCl100k": 2044,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.975,
+      "latencyMsP50": 0.006,
+      "latencyMsP95": 0.007,
+      "latencyMsMin": 0.006,
+      "latencyMsMax": 0.007
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "small",
+      "format": "eslint-html",
+      "chars": 17549,
+      "lines": 472,
+      "tokensO200k": 6393,
+      "tokensCl100k": 6461,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": false,
+        "score": 3
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.012,
+      "latencyMsP95": 0.015,
+      "latencyMsMin": 0.011,
+      "latencyMsMax": 0.015
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "medium",
+      "format": "interlace-human",
+      "chars": 2734,
+      "lines": 65,
+      "tokensO200k": 1376,
+      "tokensCl100k": 1206,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.8375,
+      "latencyMsP50": 0.058,
+      "latencyMsP95": 0.065,
+      "latencyMsMin": 0.055,
+      "latencyMsMax": 0.065
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "medium",
+      "format": "interlace-compact",
+      "chars": 1328,
+      "lines": 8,
+      "tokensO200k": 412,
+      "tokensCl100k": 409,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.98,
+      "latencyMsP50": 0.031,
+      "latencyMsP95": 0.031,
+      "latencyMsMin": 0.03,
+      "latencyMsMax": 0.031
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "medium",
+      "format": "interlace-json",
+      "chars": 14697,
+      "lines": 1,
+      "tokensO200k": 5216,
+      "tokensCl100k": 5197,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9975,
+      "latencyMsP50": 0.053,
+      "latencyMsP95": 0.056,
+      "latencyMsMin": 0.051,
+      "latencyMsMax": 0.056
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "medium",
+      "format": "interlace-ndjson",
+      "chars": 14777,
+      "lines": 8,
+      "tokensO200k": 5244,
+      "tokensCl100k": 5226,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.98,
+      "latencyMsP50": 0.053,
+      "latencyMsP95": 0.053,
+      "latencyMsMin": 0.052,
+      "latencyMsMax": 0.053
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "medium",
+      "format": "interlace-xml",
+      "chars": 13912,
+      "lines": 234,
+      "tokensO200k": 3806,
+      "tokensCl100k": 3795,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.415,
+      "latencyMsP50": 0.05,
+      "latencyMsP95": 0.055,
+      "latencyMsMin": 0.048,
+      "latencyMsMax": 0.055
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "medium",
+      "format": "eslint-stylish",
+      "chars": 40522,
+      "lines": 504,
+      "tokensO200k": 20881,
+      "tokensCl100k": 17707,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.482,
+      "latencyMsP95": 0.574,
+      "latencyMsMin": 0.471,
+      "latencyMsMax": 0.574
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "medium",
+      "format": "eslint-json",
+      "chars": 63095,
+      "lines": 1,
+      "tokensO200k": 19102,
+      "tokensCl100k": 18302,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9975,
+      "latencyMsP50": 0.066,
+      "latencyMsP95": 0.067,
+      "latencyMsMin": 0.065,
+      "latencyMsMax": 0.067
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "medium",
+      "format": "eslint-json-with-metadata",
+      "chars": 64023,
+      "lines": 1,
+      "tokensO200k": 19327,
+      "tokensCl100k": 18514,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9975,
+      "latencyMsP50": 0.07,
+      "latencyMsP95": 0.102,
+      "latencyMsMin": 0.069,
+      "latencyMsMax": 0.102
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "medium",
+      "format": "eslint-html",
+      "chars": 114535,
+      "lines": 3442,
+      "tokensO200k": 38343,
+      "tokensCl100k": 37961,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": false,
+        "score": 3
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.102,
+      "latencyMsP95": 0.125,
+      "latencyMsMin": 0.098,
+      "latencyMsMax": 0.125
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "large",
+      "format": "interlace-human",
+      "chars": 2749,
+      "lines": 65,
+      "tokensO200k": 1378,
+      "tokensCl100k": 1208,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9675,
+      "latencyMsP50": 0.168,
+      "latencyMsP95": 0.169,
+      "latencyMsMin": 0.165,
+      "latencyMsMax": 0.169
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "large",
+      "format": "interlace-compact",
+      "chars": 1342,
+      "lines": 8,
+      "tokensO200k": 414,
+      "tokensCl100k": 411,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.996,
+      "latencyMsP50": 0.132,
+      "latencyMsP95": 0.147,
+      "latencyMsMin": 0.129,
+      "latencyMsMax": 0.147
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "large",
+      "format": "interlace-json",
+      "chars": 14708,
+      "lines": 1,
+      "tokensO200k": 5218,
+      "tokensCl100k": 5199,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9995,
+      "latencyMsP50": 0.161,
+      "latencyMsP95": 0.165,
+      "latencyMsMin": 0.151,
+      "latencyMsMax": 0.165
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "large",
+      "format": "interlace-ndjson",
+      "chars": 14788,
+      "lines": 8,
+      "tokensO200k": 5246,
+      "tokensCl100k": 5228,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.996,
+      "latencyMsP50": 0.2,
+      "latencyMsP95": 0.363,
+      "latencyMsMin": 0.172,
+      "latencyMsMax": 0.363
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "large",
+      "format": "interlace-xml",
+      "chars": 13936,
+      "lines": 234,
+      "tokensO200k": 3808,
+      "tokensCl100k": 3797,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.883,
+      "latencyMsP50": 0.149,
+      "latencyMsP95": 0.162,
+      "latencyMsMin": 0.14,
+      "latencyMsMax": 0.162
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "large",
+      "format": "eslint-stylish",
+      "chars": 202177,
+      "lines": 2504,
+      "tokensO200k": 103884,
+      "tokensCl100k": 88110,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 2.586,
+      "latencyMsP95": 2.82,
+      "latencyMsMin": 2.435,
+      "latencyMsMax": 2.82
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "large",
+      "format": "eslint-json",
+      "chars": 315871,
+      "lines": 1,
+      "tokensO200k": 95502,
+      "tokensCl100k": 91502,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9995,
+      "latencyMsP50": 0.354,
+      "latencyMsP95": 0.386,
+      "latencyMsMin": 0.333,
+      "latencyMsMax": 0.386
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "large",
+      "format": "eslint-json-with-metadata",
+      "chars": 316799,
+      "lines": 1,
+      "tokensO200k": 95727,
+      "tokensCl100k": 91714,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9995,
+      "latencyMsP50": 0.346,
+      "latencyMsP95": 0.378,
+      "latencyMsMin": 0.328,
+      "latencyMsMax": 0.378
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "large",
+      "format": "eslint-html",
+      "chars": 547514,
+      "lines": 16642,
+      "tokensO200k": 180345,
+      "tokensCl100k": 177963,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": false,
+        "score": 3
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.571,
+      "latencyMsP95": 0.593,
+      "latencyMsMin": 0.553,
+      "latencyMsMax": 0.593
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "extreme",
+      "format": "interlace-human",
+      "chars": 2759,
+      "lines": 65,
+      "tokensO200k": 1386,
+      "tokensCl100k": 1216,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.991875,
+      "latencyMsP50": 0.486,
+      "latencyMsP95": 0.486,
+      "latencyMsMin": 0.476,
+      "latencyMsMax": 0.486
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "extreme",
+      "format": "interlace-compact",
+      "chars": 1351,
+      "lines": 8,
+      "tokensO200k": 422,
+      "tokensCl100k": 419,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999,
+      "latencyMsP50": 0.457,
+      "latencyMsP95": 0.494,
+      "latencyMsMin": 0.447,
+      "latencyMsMax": 0.494
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "extreme",
+      "format": "interlace-json",
+      "chars": 14718,
+      "lines": 1,
+      "tokensO200k": 5226,
+      "tokensCl100k": 5207,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999875,
+      "latencyMsP50": 0.471,
+      "latencyMsP95": 0.478,
+      "latencyMsMin": 0.465,
+      "latencyMsMax": 0.478
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "extreme",
+      "format": "interlace-ndjson",
+      "chars": 14798,
+      "lines": 8,
+      "tokensO200k": 5254,
+      "tokensCl100k": 5236,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999,
+      "latencyMsP50": 0.486,
+      "latencyMsP95": 0.741,
+      "latencyMsMin": 0.477,
+      "latencyMsMax": 0.741
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "extreme",
+      "format": "interlace-xml",
+      "chars": 13939,
+      "lines": 234,
+      "tokensO200k": 3816,
+      "tokensCl100k": 3805,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.97075,
+      "latencyMsP50": 0.474,
+      "latencyMsP95": 0.482,
+      "latencyMsMin": 0.468,
+      "latencyMsMax": 0.482
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "extreme",
+      "format": "eslint-stylish",
+      "chars": 809416,
+      "lines": 10004,
+      "tokensO200k": 416136,
+      "tokensCl100k": 353112,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 10.206,
+      "latencyMsP95": 11.055,
+      "latencyMsMin": 10.102,
+      "latencyMsMax": 11.055
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "extreme",
+      "format": "eslint-json",
+      "chars": 1264984,
+      "lines": 1,
+      "tokensO200k": 383002,
+      "tokensCl100k": 367002,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999875,
+      "latencyMsP50": 1.343,
+      "latencyMsP95": 1.508,
+      "latencyMsMin": 1.32,
+      "latencyMsMax": 1.508
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "extreme",
+      "format": "eslint-json-with-metadata",
+      "chars": 1265912,
+      "lines": 1,
+      "tokensO200k": 383227,
+      "tokensCl100k": 367214,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999875,
+      "latencyMsP50": 1.342,
+      "latencyMsP95": 1.362,
+      "latencyMsMin": 1.311,
+      "latencyMsMax": 1.362
+    },
+    {
+      "shape": "all-fixable",
+      "scale": "extreme",
+      "format": "eslint-html",
+      "chars": 2176378,
+      "lines": 66142,
+      "tokensO200k": 717846,
+      "tokensCl100k": 707964,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": false,
+        "score": 3
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 2.685,
+      "latencyMsP95": 3.305,
+      "latencyMsMin": 2.218,
+      "latencyMsMax": 3.305
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "tiny",
+      "format": "interlace-human",
+      "chars": 862,
+      "lines": 19,
+      "tokensO200k": 353,
+      "tokensCl100k": 312,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.008,
+      "latencyMsP95": 0.012,
+      "latencyMsMin": 0.008,
+      "latencyMsMax": 0.012
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "tiny",
+      "format": "interlace-compact",
+      "chars": 392,
+      "lines": 5,
+      "tokensO200k": 106,
+      "tokensCl100k": 104,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.003,
+      "latencyMsP95": 0.005,
+      "latencyMsMin": 0.002,
+      "latencyMsMax": 0.005
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "tiny",
+      "format": "interlace-json",
+      "chars": 1025,
+      "lines": 1,
+      "tokensO200k": 292,
+      "tokensCl100k": 282,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.75,
+      "latencyMsP50": 0.003,
+      "latencyMsP95": 0.004,
+      "latencyMsMin": 0.003,
+      "latencyMsMax": 0.004
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "tiny",
+      "format": "interlace-ndjson",
+      "chars": 1063,
+      "lines": 5,
+      "tokensO200k": 305,
+      "tokensCl100k": 296,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.003,
+      "latencyMsP95": 0.004,
+      "latencyMsMin": 0.003,
+      "latencyMsMax": 0.004
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "tiny",
+      "format": "interlace-xml",
+      "chars": 1838,
+      "lines": 45,
+      "tokensO200k": 472,
+      "tokensCl100k": 466,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.004,
+      "latencyMsP95": 0.004,
+      "latencyMsMin": 0.003,
+      "latencyMsMax": 0.004
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "tiny",
+      "format": "eslint-stylish",
+      "chars": 586,
+      "lines": 8,
+      "tokensO200k": 291,
+      "tokensCl100k": 245,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.006,
+      "latencyMsP95": 0.008,
+      "latencyMsMin": 0.005,
+      "latencyMsMax": 0.008
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "tiny",
+      "format": "eslint-json",
+      "chars": 627,
+      "lines": 1,
+      "tokensO200k": 168,
+      "tokensCl100k": 162,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.75,
+      "latencyMsP50": 0.001,
+      "latencyMsP95": 0.001,
+      "latencyMsMin": 0.001,
+      "latencyMsMax": 0.001
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "tiny",
+      "format": "eslint-json-with-metadata",
+      "chars": 2457,
+      "lines": 1,
+      "tokensO200k": 602,
+      "tokensCl100k": 589,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.75,
+      "latencyMsP50": 0.002,
+      "latencyMsP95": 0.002,
+      "latencyMsMin": 0.002,
+      "latencyMsMax": 0.002
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "tiny",
+      "format": "eslint-html",
+      "chars": 8012,
+      "lines": 175,
+      "tokensO200k": 3204,
+      "tokensCl100k": 3317,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.002,
+      "latencyMsP95": 0.004,
+      "latencyMsMin": 0.002,
+      "latencyMsMax": 0.004
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "small",
+      "format": "interlace-human",
+      "chars": 3420,
+      "lines": 74,
+      "tokensO200k": 1591,
+      "tokensCl100k": 1407,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.039,
+      "latencyMsP95": 0.039,
+      "latencyMsMin": 0.039,
+      "latencyMsMax": 0.039
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "small",
+      "format": "interlace-compact",
+      "chars": 1660,
+      "lines": 12,
+      "tokensO200k": 477,
+      "tokensCl100k": 476,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.7,
+      "latencyMsP50": 0.009,
+      "latencyMsP95": 0.009,
+      "latencyMsMin": 0.009,
+      "latencyMsMax": 0.009
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "small",
+      "format": "interlace-json",
+      "chars": 3906,
+      "lines": 1,
+      "tokensO200k": 1207,
+      "tokensCl100k": 1190,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.975,
+      "latencyMsP50": 0.012,
+      "latencyMsP95": 0.012,
+      "latencyMsMin": 0.011,
+      "latencyMsMax": 0.012
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "small",
+      "format": "interlace-ndjson",
+      "chars": 4042,
+      "lines": 12,
+      "tokensO200k": 1255,
+      "tokensCl100k": 1239,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.7,
+      "latencyMsP50": 0.013,
+      "latencyMsP95": 0.031,
+      "latencyMsMin": 0.012,
+      "latencyMsMax": 0.031
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "small",
+      "format": "interlace-xml",
+      "chars": 7045,
+      "lines": 156,
+      "tokensO200k": 1843,
+      "tokensCl100k": 1838,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.014,
+      "latencyMsP95": 0.03,
+      "latencyMsMin": 0.013,
+      "latencyMsMax": 0.03
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "small",
+      "format": "eslint-stylish",
+      "chars": 4558,
+      "lines": 53,
+      "tokensO200k": 2246,
+      "tokensCl100k": 1929,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.053,
+      "latencyMsP95": 0.057,
+      "latencyMsMin": 0.049,
+      "latencyMsMax": 0.057
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "small",
+      "format": "eslint-json",
+      "chars": 5933,
+      "lines": 1,
+      "tokensO200k": 1637,
+      "tokensCl100k": 1598,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.975,
+      "latencyMsP50": 0.005,
+      "latencyMsP95": 0.006,
+      "latencyMsMin": 0.005,
+      "latencyMsMax": 0.006
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "small",
+      "format": "eslint-json-with-metadata",
+      "chars": 7763,
+      "lines": 1,
+      "tokensO200k": 2071,
+      "tokensCl100k": 2025,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.975,
+      "latencyMsP50": 0.007,
+      "latencyMsP95": 0.007,
+      "latencyMsMin": 0.007,
+      "latencyMsMax": 0.007
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "small",
+      "format": "eslint-html",
+      "chars": 18367,
+      "lines": 472,
+      "tokensO200k": 6435,
+      "tokensCl100k": 6541,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.01,
+      "latencyMsP95": 0.01,
+      "latencyMsMin": 0.009,
+      "latencyMsMax": 0.01
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "medium",
+      "format": "interlace-human",
+      "chars": 4551,
+      "lines": 104,
+      "tokensO200k": 2151,
+      "tokensCl100k": 1907,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.74,
+      "latencyMsP50": 0.072,
+      "latencyMsP95": 0.077,
+      "latencyMsMin": 0.064,
+      "latencyMsMax": 0.077
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "medium",
+      "format": "interlace-compact",
+      "chars": 2294,
+      "lines": 12,
+      "tokensO200k": 667,
+      "tokensCl100k": 666,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.97,
+      "latencyMsP50": 0.03,
+      "latencyMsP95": 0.034,
+      "latencyMsMin": 0.029,
+      "latencyMsMax": 0.034
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "medium",
+      "format": "interlace-json",
+      "chars": 15905,
+      "lines": 1,
+      "tokensO200k": 5527,
+      "tokensCl100k": 5510,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9975,
+      "latencyMsP50": 0.056,
+      "latencyMsP95": 0.074,
+      "latencyMsMin": 0.055,
+      "latencyMsMax": 0.074
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "medium",
+      "format": "interlace-ndjson",
+      "chars": 16041,
+      "lines": 12,
+      "tokensO200k": 5575,
+      "tokensCl100k": 5559,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.97,
+      "latencyMsP50": 0.056,
+      "latencyMsP95": 0.064,
+      "latencyMsMin": 0.055,
+      "latencyMsMax": 0.064
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "medium",
+      "format": "interlace-xml",
+      "chars": 23341,
+      "lines": 386,
+      "tokensO200k": 6333,
+      "tokensCl100k": 6328,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.035,
+      "latencyMsP50": 0.059,
+      "latencyMsP95": 0.06,
+      "latencyMsMin": 0.058,
+      "latencyMsMax": 0.06
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "medium",
+      "format": "eslint-stylish",
+      "chars": 44754,
+      "lines": 503,
+      "tokensO200k": 21821,
+      "tokensCl100k": 18777,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.449,
+      "latencyMsP95": 0.472,
+      "latencyMsMin": 0.443,
+      "latencyMsMax": 0.472
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "medium",
+      "format": "eslint-json",
+      "chars": 59410,
+      "lines": 1,
+      "tokensO200k": 16352,
+      "tokensCl100k": 15962,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9975,
+      "latencyMsP50": 0.05,
+      "latencyMsP95": 0.053,
+      "latencyMsMin": 0.047,
+      "latencyMsMax": 0.053
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "medium",
+      "format": "eslint-json-with-metadata",
+      "chars": 61240,
+      "lines": 1,
+      "tokensO200k": 16786,
+      "tokensCl100k": 16389,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9975,
+      "latencyMsP50": 0.053,
+      "latencyMsP95": 0.057,
+      "latencyMsMin": 0.052,
+      "latencyMsMax": 0.057
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "medium",
+      "format": "eslint-html",
+      "chars": 122669,
+      "lines": 3442,
+      "tokensO200k": 38763,
+      "tokensCl100k": 38761,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.084,
+      "latencyMsP95": 0.089,
+      "latencyMsMin": 0.083,
+      "latencyMsMax": 0.089
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "large",
+      "format": "interlace-human",
+      "chars": 4572,
+      "lines": 104,
+      "tokensO200k": 2152,
+      "tokensCl100k": 1908,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.948,
+      "latencyMsP50": 0.164,
+      "latencyMsP95": 0.168,
+      "latencyMsMin": 0.146,
+      "latencyMsMax": 0.168
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "large",
+      "format": "interlace-compact",
+      "chars": 2314,
+      "lines": 12,
+      "tokensO200k": 668,
+      "tokensCl100k": 667,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.994,
+      "latencyMsP50": 0.124,
+      "latencyMsP95": 0.132,
+      "latencyMsMin": 0.118,
+      "latencyMsMax": 0.132
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "large",
+      "format": "interlace-json",
+      "chars": 24947,
+      "lines": 1,
+      "tokensO200k": 8728,
+      "tokensCl100k": 8711,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9995,
+      "latencyMsP50": 0.157,
+      "latencyMsP95": 0.167,
+      "latencyMsMin": 0.153,
+      "latencyMsMax": 0.167
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "large",
+      "format": "interlace-ndjson",
+      "chars": 25083,
+      "lines": 12,
+      "tokensO200k": 8776,
+      "tokensCl100k": 8760,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.994,
+      "latencyMsP50": 0.155,
+      "latencyMsP95": 0.173,
+      "latencyMsMin": 0.152,
+      "latencyMsMax": 0.173
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "large",
+      "format": "interlace-xml",
+      "chars": 23344,
+      "lines": 386,
+      "tokensO200k": 6334,
+      "tokensCl100k": 6329,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.807,
+      "latencyMsP50": 0.144,
+      "latencyMsP95": 0.164,
+      "latencyMsMin": 0.144,
+      "latencyMsMax": 0.164
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "large",
+      "format": "eslint-stylish",
+      "chars": 223794,
+      "lines": 2503,
+      "tokensO200k": 108823,
+      "tokensCl100k": 93659,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 2.321,
+      "latencyMsP95": 3.145,
+      "latencyMsMin": 2.246,
+      "latencyMsMax": 3.145
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "large",
+      "format": "eslint-json",
+      "chars": 297385,
+      "lines": 1,
+      "tokensO200k": 81752,
+      "tokensCl100k": 79802,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9995,
+      "latencyMsP50": 0.267,
+      "latencyMsP95": 0.281,
+      "latencyMsMin": 0.259,
+      "latencyMsMax": 0.281
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "large",
+      "format": "eslint-json-with-metadata",
+      "chars": 299215,
+      "lines": 1,
+      "tokensO200k": 82186,
+      "tokensCl100k": 80229,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9995,
+      "latencyMsP50": 0.283,
+      "latencyMsP95": 0.393,
+      "latencyMsMin": 0.28,
+      "latencyMsMax": 0.393
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "large",
+      "format": "eslint-html",
+      "chars": 588126,
+      "lines": 16642,
+      "tokensO200k": 182445,
+      "tokensCl100k": 181963,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.471,
+      "latencyMsP95": 0.5,
+      "latencyMsMin": 0.454,
+      "latencyMsMax": 0.5
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "extreme",
+      "format": "interlace-human",
+      "chars": 4571,
+      "lines": 104,
+      "tokensO200k": 2153,
+      "tokensCl100k": 1909,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.987,
+      "latencyMsP50": 0.491,
+      "latencyMsP95": 0.752,
+      "latencyMsMin": 0.482,
+      "latencyMsMax": 0.752
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "extreme",
+      "format": "interlace-compact",
+      "chars": 2312,
+      "lines": 12,
+      "tokensO200k": 669,
+      "tokensCl100k": 668,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9985,
+      "latencyMsP50": 0.465,
+      "latencyMsP95": 0.537,
+      "latencyMsMin": 0.463,
+      "latencyMsMax": 0.537
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "extreme",
+      "format": "interlace-json",
+      "chars": 24974,
+      "lines": 1,
+      "tokensO200k": 8729,
+      "tokensCl100k": 8712,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999875,
+      "latencyMsP50": 0.47,
+      "latencyMsP95": 0.471,
+      "latencyMsMin": 0.468,
+      "latencyMsMax": 0.471
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "extreme",
+      "format": "interlace-ndjson",
+      "chars": 25110,
+      "lines": 12,
+      "tokensO200k": 8777,
+      "tokensCl100k": 8761,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9985,
+      "latencyMsP50": 0.496,
+      "latencyMsP95": 0.496,
+      "latencyMsMin": 0.489,
+      "latencyMsMax": 0.496
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "extreme",
+      "format": "interlace-xml",
+      "chars": 23366,
+      "lines": 386,
+      "tokensO200k": 6335,
+      "tokensCl100k": 6330,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.95175,
+      "latencyMsP50": 0.483,
+      "latencyMsP95": 0.539,
+      "latencyMsMin": 0.479,
+      "latencyMsMax": 0.539
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "extreme",
+      "format": "eslint-stylish",
+      "chars": 896179,
+      "lines": 10003,
+      "tokensO200k": 436073,
+      "tokensCl100k": 375459,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 9.443,
+      "latencyMsP95": 10.482,
+      "latencyMsMin": 9.17,
+      "latencyMsMax": 10.482
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "extreme",
+      "format": "eslint-json",
+      "chars": 1190884,
+      "lines": 1,
+      "tokensO200k": 328002,
+      "tokensCl100k": 320202,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999875,
+      "latencyMsP50": 1.2,
+      "latencyMsP95": 1.222,
+      "latencyMsMin": 1.131,
+      "latencyMsMax": 1.222
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "extreme",
+      "format": "eslint-json-with-metadata",
+      "chars": 1192714,
+      "lines": 1,
+      "tokensO200k": 328436,
+      "tokensCl100k": 320629,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999875,
+      "latencyMsP50": 1.104,
+      "latencyMsP95": 1.197,
+      "latencyMsMin": 1.075,
+      "latencyMsMax": 1.197
+    },
+    {
+      "shape": "security-heavy",
+      "scale": "extreme",
+      "format": "eslint-html",
+      "chars": 2338675,
+      "lines": 66142,
+      "tokensO200k": 726245,
+      "tokensCl100k": 723963,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 2.379,
+      "latencyMsP95": 2.668,
+      "latencyMsMin": 1.937,
+      "latencyMsMax": 2.668
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "tiny",
+      "format": "interlace-human",
+      "chars": 606,
+      "lines": 15,
+      "tokensO200k": 271,
+      "tokensCl100k": 238,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.01,
+      "latencyMsP95": 0.034,
+      "latencyMsMin": 0.007,
+      "latencyMsMax": 0.034
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "tiny",
+      "format": "interlace-compact",
+      "chars": 240,
+      "lines": 4,
+      "tokensO200k": 69,
+      "tokensCl100k": 68,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.002,
+      "latencyMsP95": 0.003,
+      "latencyMsMin": 0.002,
+      "latencyMsMax": 0.003
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "tiny",
+      "format": "interlace-json",
+      "chars": 672,
+      "lines": 1,
+      "tokensO200k": 201,
+      "tokensCl100k": 194,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.75,
+      "latencyMsP50": 0.003,
+      "latencyMsP95": 0.004,
+      "latencyMsMin": 0.003,
+      "latencyMsMax": 0.004
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "tiny",
+      "format": "interlace-ndjson",
+      "chars": 696,
+      "lines": 4,
+      "tokensO200k": 209,
+      "tokensCl100k": 203,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.002,
+      "latencyMsP95": 0.003,
+      "latencyMsMin": 0.002,
+      "latencyMsMax": 0.003
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "tiny",
+      "format": "interlace-xml",
+      "chars": 1261,
+      "lines": 33,
+      "tokensO200k": 332,
+      "tokensCl100k": 328,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.003,
+      "latencyMsP95": 0.003,
+      "latencyMsMin": 0.003,
+      "latencyMsMax": 0.003
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "tiny",
+      "format": "eslint-stylish",
+      "chars": 527,
+      "lines": 8,
+      "tokensO200k": 264,
+      "tokensCl100k": 219,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.006,
+      "latencyMsP95": 0.009,
+      "latencyMsMin": 0.006,
+      "latencyMsMax": 0.009
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "tiny",
+      "format": "eslint-json",
+      "chars": 523,
+      "lines": 1,
+      "tokensO200k": 141,
+      "tokensCl100k": 137,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.75,
+      "latencyMsP50": 0.001,
+      "latencyMsP95": 0.001,
+      "latencyMsMin": 0.001,
+      "latencyMsMax": 0.001
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "tiny",
+      "format": "eslint-json-with-metadata",
+      "chars": 874,
+      "lines": 1,
+      "tokensO200k": 223,
+      "tokensCl100k": 213,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.75,
+      "latencyMsP50": 0.001,
+      "latencyMsP95": 0.002,
+      "latencyMsMin": 0.001,
+      "latencyMsMax": 0.002
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "tiny",
+      "format": "eslint-html",
+      "chars": 7870,
+      "lines": 175,
+      "tokensO200k": 3171,
+      "tokensCl100k": 3285,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.002,
+      "latencyMsP95": 0.003,
+      "latencyMsMin": 0.002,
+      "latencyMsMax": 0.003
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "small",
+      "format": "interlace-human",
+      "chars": 761,
+      "lines": 19,
+      "tokensO200k": 347,
+      "tokensCl100k": 306,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.525,
+      "latencyMsP50": 0.01,
+      "latencyMsP95": 0.011,
+      "latencyMsMin": 0.01,
+      "latencyMsMax": 0.011
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "small",
+      "format": "interlace-compact",
+      "chars": 329,
+      "lines": 4,
+      "tokensO200k": 96,
+      "tokensCl100k": 95,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9,
+      "latencyMsP50": 0.004,
+      "latencyMsP95": 0.005,
+      "latencyMsMin": 0.004,
+      "latencyMsMax": 0.005
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "small",
+      "format": "interlace-json",
+      "chars": 1848,
+      "lines": 1,
+      "tokensO200k": 633,
+      "tokensCl100k": 626,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.975,
+      "latencyMsP50": 0.007,
+      "latencyMsP95": 0.007,
+      "latencyMsMin": 0.006,
+      "latencyMsMax": 0.007
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "small",
+      "format": "interlace-ndjson",
+      "chars": 1872,
+      "lines": 4,
+      "tokensO200k": 641,
+      "tokensCl100k": 635,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9,
+      "latencyMsP50": 0.008,
+      "latencyMsP95": 0.009,
+      "latencyMsMin": 0.008,
+      "latencyMsMax": 0.009
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "small",
+      "format": "interlace-xml",
+      "chars": 2944,
+      "lines": 57,
+      "tokensO200k": 801,
+      "tokensCl100k": 797,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.008,
+      "latencyMsP95": 0.008,
+      "latencyMsMin": 0.008,
+      "latencyMsMax": 0.008
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "small",
+      "format": "eslint-stylish",
+      "chars": 3595,
+      "lines": 53,
+      "tokensO200k": 1884,
+      "tokensCl100k": 1569,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.044,
+      "latencyMsP95": 0.045,
+      "latencyMsMin": 0.044,
+      "latencyMsMax": 0.045
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "small",
+      "format": "eslint-json",
+      "chars": 4864,
+      "lines": 1,
+      "tokensO200k": 1275,
+      "tokensCl100k": 1244,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.975,
+      "latencyMsP50": 0.006,
+      "latencyMsP95": 0.007,
+      "latencyMsMin": 0.005,
+      "latencyMsMax": 0.007
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "small",
+      "format": "eslint-json-with-metadata",
+      "chars": 5215,
+      "lines": 1,
+      "tokensO200k": 1357,
+      "tokensCl100k": 1320,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.975,
+      "latencyMsP50": 0.006,
+      "latencyMsP95": 0.012,
+      "latencyMsMin": 0.005,
+      "latencyMsMax": 0.012
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "small",
+      "format": "eslint-html",
+      "chars": 16884,
+      "lines": 472,
+      "tokensO200k": 5988,
+      "tokensCl100k": 6075,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.008,
+      "latencyMsP95": 0.009,
+      "latencyMsMin": 0.008,
+      "latencyMsMax": 0.009
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "medium",
+      "format": "interlace-human",
+      "chars": 761,
+      "lines": 19,
+      "tokensO200k": 347,
+      "tokensCl100k": 306,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9525,
+      "latencyMsP50": 0.032,
+      "latencyMsP95": 0.033,
+      "latencyMsMin": 0.03,
+      "latencyMsMax": 0.033
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "medium",
+      "format": "interlace-compact",
+      "chars": 331,
+      "lines": 4,
+      "tokensO200k": 96,
+      "tokensCl100k": 95,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.99,
+      "latencyMsP50": 0.023,
+      "latencyMsP95": 0.024,
+      "latencyMsMin": 0.021,
+      "latencyMsMax": 0.024
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "medium",
+      "format": "interlace-json",
+      "chars": 2784,
+      "lines": 1,
+      "tokensO200k": 969,
+      "tokensCl100k": 962,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9975,
+      "latencyMsP50": 0.028,
+      "latencyMsP95": 0.03,
+      "latencyMsMin": 0.027,
+      "latencyMsMax": 0.03
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "medium",
+      "format": "interlace-ndjson",
+      "chars": 2808,
+      "lines": 4,
+      "tokensO200k": 977,
+      "tokensCl100k": 971,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.99,
+      "latencyMsP50": 0.027,
+      "latencyMsP95": 0.031,
+      "latencyMsMin": 0.027,
+      "latencyMsMax": 0.031
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "medium",
+      "format": "interlace-xml",
+      "chars": 2947,
+      "lines": 57,
+      "tokensO200k": 801,
+      "tokensCl100k": 797,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.8575,
+      "latencyMsP50": 0.027,
+      "latencyMsP95": 0.029,
+      "latencyMsMin": 0.027,
+      "latencyMsMax": 0.029
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "medium",
+      "format": "eslint-stylish",
+      "chars": 34353,
+      "lines": 503,
+      "tokensO200k": 18084,
+      "tokensCl100k": 15069,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.431,
+      "latencyMsP95": 0.432,
+      "latencyMsMin": 0.426,
+      "latencyMsMax": 0.432
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "medium",
+      "format": "eslint-json",
+      "chars": 48350,
+      "lines": 1,
+      "tokensO200k": 12615,
+      "tokensCl100k": 12314,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9975,
+      "latencyMsP50": 0.046,
+      "latencyMsP95": 0.049,
+      "latencyMsMin": 0.046,
+      "latencyMsMax": 0.049
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "medium",
+      "format": "eslint-json-with-metadata",
+      "chars": 48701,
+      "lines": 1,
+      "tokensO200k": 12697,
+      "tokensCl100k": 12390,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9975,
+      "latencyMsP50": 0.047,
+      "latencyMsP95": 0.053,
+      "latencyMsMin": 0.045,
+      "latencyMsMax": 0.053
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "medium",
+      "format": "eslint-html",
+      "chars": 107442,
+      "lines": 3442,
+      "tokensO200k": 34158,
+      "tokensCl100k": 33975,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.077,
+      "latencyMsP95": 0.975,
+      "latencyMsMin": 0.069,
+      "latencyMsMax": 0.975
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "large",
+      "format": "interlace-human",
+      "chars": 765,
+      "lines": 19,
+      "tokensO200k": 350,
+      "tokensCl100k": 309,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9905,
+      "latencyMsP50": 0.111,
+      "latencyMsP95": 0.113,
+      "latencyMsMin": 0.107,
+      "latencyMsMax": 0.113
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "large",
+      "format": "interlace-compact",
+      "chars": 334,
+      "lines": 4,
+      "tokensO200k": 99,
+      "tokensCl100k": 98,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.998,
+      "latencyMsP50": 0.104,
+      "latencyMsP95": 0.112,
+      "latencyMsMin": 0.103,
+      "latencyMsMax": 0.112
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "large",
+      "format": "interlace-json",
+      "chars": 2780,
+      "lines": 1,
+      "tokensO200k": 971,
+      "tokensCl100k": 964,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9995,
+      "latencyMsP50": 0.111,
+      "latencyMsP95": 0.13,
+      "latencyMsMin": 0.11,
+      "latencyMsMax": 0.13
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "large",
+      "format": "interlace-ndjson",
+      "chars": 2804,
+      "lines": 4,
+      "tokensO200k": 979,
+      "tokensCl100k": 973,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.998,
+      "latencyMsP50": 0.108,
+      "latencyMsP95": 0.112,
+      "latencyMsMin": 0.107,
+      "latencyMsMax": 0.112
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "large",
+      "format": "interlace-xml",
+      "chars": 2945,
+      "lines": 57,
+      "tokensO200k": 804,
+      "tokensCl100k": 800,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9715,
+      "latencyMsP50": 0.109,
+      "latencyMsP95": 0.111,
+      "latencyMsMin": 0.108,
+      "latencyMsMax": 0.111
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "large",
+      "format": "eslint-stylish",
+      "chars": 171399,
+      "lines": 2503,
+      "tokensO200k": 90086,
+      "tokensCl100k": 75071,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 2.229,
+      "latencyMsP95": 2.71,
+      "latencyMsMin": 2.083,
+      "latencyMsMax": 2.71
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "large",
+      "format": "eslint-json",
+      "chars": 241953,
+      "lines": 1,
+      "tokensO200k": 63015,
+      "tokensCl100k": 61514,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9995,
+      "latencyMsP50": 0.238,
+      "latencyMsP95": 0.268,
+      "latencyMsMin": 0.232,
+      "latencyMsMax": 0.268
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "large",
+      "format": "eslint-json-with-metadata",
+      "chars": 242304,
+      "lines": 1,
+      "tokensO200k": 63097,
+      "tokensCl100k": 61590,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9995,
+      "latencyMsP50": 0.267,
+      "latencyMsP95": 0.556,
+      "latencyMsMin": 0.232,
+      "latencyMsMax": 0.556
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "large",
+      "format": "eslint-html",
+      "chars": 511847,
+      "lines": 16642,
+      "tokensO200k": 159360,
+      "tokensCl100k": 157977,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 0.484,
+      "latencyMsP95": 0.554,
+      "latencyMsMin": 0.411,
+      "latencyMsMax": 0.554
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "extreme",
+      "format": "interlace-human",
+      "chars": 768,
+      "lines": 19,
+      "tokensO200k": 351,
+      "tokensCl100k": 310,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.997625,
+      "latencyMsP50": 0.45,
+      "latencyMsP95": 0.629,
+      "latencyMsMin": 0.423,
+      "latencyMsMax": 0.629
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "extreme",
+      "format": "interlace-compact",
+      "chars": 336,
+      "lines": 4,
+      "tokensO200k": 100,
+      "tokensCl100k": 99,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9995,
+      "latencyMsP50": 0.425,
+      "latencyMsP95": 0.426,
+      "latencyMsMin": 0.42,
+      "latencyMsMax": 0.426
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "extreme",
+      "format": "interlace-json",
+      "chars": 2774,
+      "lines": 1,
+      "tokensO200k": 972,
+      "tokensCl100k": 965,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999875,
+      "latencyMsP50": 0.483,
+      "latencyMsP95": 0.483,
+      "latencyMsMin": 0.428,
+      "latencyMsMax": 0.483
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "extreme",
+      "format": "interlace-ndjson",
+      "chars": 2798,
+      "lines": 4,
+      "tokensO200k": 980,
+      "tokensCl100k": 974,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.9995,
+      "latencyMsP50": 0.45,
+      "latencyMsP95": 0.458,
+      "latencyMsMin": 0.432,
+      "latencyMsMax": 0.458
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "extreme",
+      "format": "interlace-xml",
+      "chars": 2943,
+      "lines": 57,
+      "tokensO200k": 805,
+      "tokensCl100k": 801,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.992875,
+      "latencyMsP50": 0.428,
+      "latencyMsP95": 0.455,
+      "latencyMsMin": 0.423,
+      "latencyMsMax": 0.455
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "extreme",
+      "format": "eslint-stylish",
+      "chars": 686350,
+      "lines": 10003,
+      "tokensO200k": 361086,
+      "tokensCl100k": 301071,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 9.079,
+      "latencyMsP95": 9.746,
+      "latencyMsMin": 8.975,
+      "latencyMsMax": 9.746
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "extreme",
+      "format": "eslint-json",
+      "chars": 969011,
+      "lines": 1,
+      "tokensO200k": 253015,
+      "tokensCl100k": 247014,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999875,
+      "latencyMsP50": 0.935,
+      "latencyMsP95": 0.962,
+      "latencyMsMin": 0.875,
+      "latencyMsMax": 0.962
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "extreme",
+      "format": "eslint-json-with-metadata",
+      "chars": 969362,
+      "lines": 1,
+      "tokensO200k": 253097,
+      "tokensCl100k": 247090,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0.999875,
+      "latencyMsP50": 0.913,
+      "latencyMsP95": 0.94,
+      "latencyMsMin": 0.902,
+      "latencyMsMax": 0.94
+    },
+    {
+      "shape": "rare-error-amid-noise",
+      "scale": "extreme",
+      "format": "eslint-html",
+      "chars": 2033405,
+      "lines": 66142,
+      "tokensO200k": 633860,
+      "tokensCl100k": 627977,
+      "signal": {
+        "ruleIdRecoverable": true,
+        "severityRecoverable": true,
+        "countRecoverable": true,
+        "fixableFlagRecoverable": true,
+        "score": 4
+      },
+      "groupCollapse": 0,
+      "latencyMsP50": 2.005,
+      "latencyMsP95": 2.23,
+      "latencyMsMin": 1.734,
+      "latencyMsMax": 2.23
+    }
+  ]
+}

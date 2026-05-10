@@ -46,7 +46,10 @@ export const noNoninteractiveElementToInteractiveRole = createRule<RuleOptions, 
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-noninteractive-element-to-interactive-role.md',
       description: 'Enforce that non-interactive elements don\'t have interactive ARIA roles',
+      cwe: 'CWE-252',
+      cvss: 7.5,
     },
     messages: {
       noninteractiveToInteractive: formatLLMMessage({

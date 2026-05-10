@@ -20,6 +20,7 @@ export const noIsMounted = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-is-mounted.md',
       description: 'Prevent isMounted anti-pattern',
     },
     schema: [],

@@ -1,0 +1,102 @@
+{
+  "timestamp": "2026-05-10T00:22:06.435Z",
+  "methodology": {
+    "runs": 3,
+    "files": 1046,
+    "corpus": "/Users/ofri/repos/ofriperetz.dev/eslint/node_modules/lodash"
+  },
+  "results": [
+    {
+      "name": "baseline (Linter, no rules)",
+      "median": 234.86404199999993,
+      "perFile": 0.224535413001912,
+      "issues": 0,
+      "parseErrors": 0,
+      "samples": [
+        233.623333,
+        234.86404199999993,
+        237.79954099999998
+      ],
+      "heapDeltaMB": 109.93782043457031
+    },
+    {
+      "name": "Interlace (full security fleet)",
+      "median": 984.280917,
+      "perFile": 0.9409951405353729,
+      "issues": 1351,
+      "parseErrors": 0,
+      "samples": [
+        978.6015419999994,
+        984.280917,
+        999.837959
+      ],
+      "heapDeltaMB": 370.469970703125
+    },
+    {
+      "name": "eslint-plugin-sonarjs",
+      "median": 1992.498790999999,
+      "perFile": 1.9048745611854676,
+      "issues": 267,
+      "parseErrors": 0,
+      "samples": [
+        1885.2408749999995,
+        1992.498790999999,
+        2012.8742500000008
+      ],
+      "heapDeltaMB": 250.2695770263672
+    },
+    {
+      "name": "eslint-plugin-no-secrets",
+      "median": 678.8117500000008,
+      "perFile": 0.6489596080305935,
+      "issues": 0,
+      "parseErrors": 0,
+      "samples": [
+        667.4492499999997,
+        678.8117500000008,
+        682.3477080000011
+      ],
+      "heapDeltaMB": 376.9537048339844
+    },
+    {
+      "name": "eslint-plugin-no-unsanitized",
+      "median": 279.43566700000156,
+      "perFile": 0.26714690917782175,
+      "issues": 0,
+      "parseErrors": 0,
+      "samples": [
+        274.1212919999998,
+        279.43566700000156,
+        279.8105829999986
+      ],
+      "heapDeltaMB": 270.67362213134766
+    },
+    {
+      "name": "eslint-plugin-security-node",
+      "median": 320.80975000000035,
+      "perFile": 0.3067014818355644,
+      "issues": 5,
+      "parseErrors": 0,
+      "samples": [
+        320.0489579999994,
+        320.80975000000035,
+        335.7730410000004
+      ],
+      "heapDeltaMB": 460.90452575683594
+    },
+    null,
+    {
+      "name": "eslint-plugin-security (broken on ESLint 9)",
+      "median": 271.7525830000013,
+      "perFile": 0.2598017045889114,
+      "issues": 0,
+      "parseErrors": 0,
+      "samples": [
+        271.0230420000007,
+        271.7525830000013,
+        306.0621250000004
+      ],
+      "heapDeltaMB": 322.9670944213867
+    }
+  ]
+}

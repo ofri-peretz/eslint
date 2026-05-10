@@ -32,7 +32,10 @@ export const noImportModuleExports = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-import-module-exports.md',
       description: 'Forbid import statements with CommonJS module.exports',
+      cwe: 'CWE-1078',
+      cvss: 7.5,
     },
     fixable: 'code',
     messages: {

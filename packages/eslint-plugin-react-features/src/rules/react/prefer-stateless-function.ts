@@ -23,6 +23,7 @@ export const preferStatelessFunction = createRule<[Options], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/prefer-stateless-function.md',
       description: 'Prefer stateless functions',
     },
     messages: {
@@ -69,6 +70,7 @@ export const preferStatelessFunction = createRule<[Options], MessageIds>({
       },
     };
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
       if (!node.superClass) return false;
 
@@ -88,6 +90,7 @@ export const preferStatelessFunction = createRule<[Options], MessageIds>({
       return false;
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isPureComponent(node: TSESTree.ClassDeclaration): boolean {
       if (!node.superClass) return false;
 
@@ -107,6 +110,7 @@ export const preferStatelessFunction = createRule<[Options], MessageIds>({
       return false;
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function hasState(node: TSESTree.ClassDeclaration): boolean {
       for (const member of node.body.body) {
         // PropertyDefinition is used by TypeScript parser for class properties
@@ -143,19 +147,20 @@ export const preferStatelessFunction = createRule<[Options], MessageIds>({
       return false;
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function hasLifecycleMethods(node: TSESTree.ClassDeclaration): boolean {
-      const lifecycleMethods = [
+      const lifecycleMethods = new Set([
         'componentDidMount', 'componentDidUpdate', 'componentWillUnmount',
         'componentWillMount', 'componentWillReceiveProps', 'componentWillUpdate',
         'shouldComponentUpdate', 'getDerivedStateFromProps', 'getSnapshotBeforeUpdate',
         'UNSAFE_componentWillMount', 'UNSAFE_componentWillReceiveProps', 'UNSAFE_componentWillUpdate',
-      ];
+      ]);
 
       for (const member of node.body.body) {
         if (
           member.type === 'MethodDefinition' &&
           member.key.type === 'Identifier' &&
-          lifecycleMethods.includes(member.key.name)
+          lifecycleMethods.has(member.key.name)
         ) {
           return true;
         }

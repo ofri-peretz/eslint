@@ -72,21 +72,7 @@ const search = `/items/item[contains(text(), '${searchTerm}')]`;
 ### ✅ Correct
 
 ```typescript
-// Escape XPath input
-import { escapeXPath } from 'xpath-escape';
-const xpath = `/users/user[@name='${escapeXPath(username)}']`;
-
-// Use parameterized XPath construction
-const safeQuery = buildXPath({
-  element: 'user',
-  attribute: 'name',
-  value: username, // automatically escaped
-});
-
-// Validate input against whitelist
-if (isValidUsername(username)) {
-  const xpath = `/users/user[@name='${username}']`;
-}
+const safeId = validateId(userInput); const xpath = `/users/user[@id="${safeId}"]`;
 ```
 
 ## Configuration

@@ -34,8 +34,11 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/require-expiration.md',
       description:
         'Require expiration claim (exp) or expiresIn option in JWT signing',
+      cwe: 'CWE-613',
+      cvss: 5,
     },
     fixable: undefined,
     hasSuggestions: false,
@@ -99,6 +102,7 @@ export const requireExpiration = createRule<RuleOptions, MessageIds>({
     /**
      * Check if payload contains exp claim
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const payloadHasExp = (payloadNode: TSESTree.Node): boolean => {
       if (payloadNode.type !== 'ObjectExpression') {
         return false;

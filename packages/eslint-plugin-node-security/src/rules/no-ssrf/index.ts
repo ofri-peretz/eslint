@@ -188,8 +188,11 @@ export const noSsrf = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-ssrf.md',
       description:
         'Detects HTTP requests with user-controlled URLs (SSRF vulnerability)',
+      cwe: 'CWE-918',
+      cvss: 7.5,
     },
     messages: {
       ssrfVulnerability: formatLLMMessage({

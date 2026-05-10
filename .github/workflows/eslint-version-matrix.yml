@@ -1,0 +1,121 @@
+name: ILB Cross-Version Matrix
+
+# Runs the cheap synthetic benches (ILB-Arena + ILB-Juliet) across a
+# matrix of Node and ESLint major versions to catch silent FN drift
+# from upstream AST changes before users hit it.
+#
+# Supported ESLint majors are governed by docs/ESLINT_VERSION_SUPPORT.md:
+#   - v8 (24% weekly share — gate)
+#   - v9 (60% — gate, current default)
+#   - v10 (9% — forward-looking exception, released 2026-02-06)
+# This matrix MUST cover all three. When the policy changes, update both
+# this matrix and the policy doc together.
+#
+# Why per-major matters (Gap J in the FP_FN_REMEDIATION_TRACKER):
+#   - AST shape changes between majors can silently make rules MISS findings
+#     (= FN regression with passing tests on the old version). Recall is
+#     principle #1 — we cannot allow it to drift on a version bump.
+#   - We don't run Wild here — the matrix is hot-path only.
+#
+# Failure mode: this workflow runs continuously and is INFORMATIONAL by
+# default. Promote a row to required status only after it's been green for
+# 14 consecutive runs (per the lifecycle gate in benchmarks/README.md §1).
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packages/eslint-plugin-*/**'
+      - 'packages/eslint-devkit/**'
+      - 'benchmarks/**'
+      - 'scripts/ilb-*.ts'
+      - 'scripts/ilb-*.ts'
+      - '.github/workflows/eslint-version-matrix.yml'
+  schedule:
+    # Nightly at 04:00 UTC — surfaces upstream-version drift overnight.
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ilb-matrix-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  matrix:
+    name: ${{ matrix.bench }} · node-${{ matrix.node }} · eslint-${{ matrix.eslint }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+        # All three are supported per docs/ESLINT_VERSION_SUPPORT.md:
+        #   8.x = legacy active (24% share), 9.x = current default (60%),
+        #   10.x = forward-looking (9%, released 2026-02-06).
+        eslint: ['8.x', '9.x', '10.x']
+        bench: [arena, juliet]
+        experimental: [false]
+        include:
+          # Pinned-version sanity check on the most-used minor — catches
+          # regressions specific to that pin without exploding the matrix.
+          - node: 24
+            eslint: '9.39'
+            bench: arena
+            experimental: false
+          - node: 24
+            eslint: '9.39'
+            bench: juliet
+            experimental: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install ESLint ${{ matrix.eslint }}
+        run: |
+          set -e
+          case "${{ matrix.eslint }}" in
+            "8.x")
+              npm install --no-save eslint@^8
+              ;;
+            "9.39")
+              npm install --no-save eslint@9.39.0
+              ;;
+            "9.x")
+              npm install --no-save eslint@^9
+              ;;
+            "10.x")
+              npm install --no-save eslint@^10
+              ;;
+            *)
+              echo "::error::Unknown ESLint version selector: ${{ matrix.eslint }}"
+              exit 1
+              ;;
+          esac
+          node -e "console.log('eslint@' + require('eslint/package.json').version)"
+
+      - name: Run ILB-Arena
+        if: matrix.bench == 'arena'
+        run: npm run ilb:arena
+
+      - name: Run ILB-Juliet
+        if: matrix.bench == 'juliet'
+        run: npm run ilb:juliet
+
+      - name: Upload result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ilb-${{ matrix.bench }}-node${{ matrix.node }}-eslint${{ matrix.eslint }}-${{ github.run_number }}
+          path: benchmarks/results/ilb-${{ matrix.bench }}/*.json
+          retention-days: 14

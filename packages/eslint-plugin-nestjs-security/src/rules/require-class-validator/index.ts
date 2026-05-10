@@ -25,7 +25,7 @@ export interface Options {
 type RuleOptions = [Options?];
 
 // Common class-validator decorators
-const VALIDATOR_DECORATORS = [
+const VALIDATOR_DECORATORS = new Set([
   // Type validation
   'IsString',
   'IsNumber',
@@ -96,14 +96,17 @@ const VALIDATOR_DECORATORS = [
   'ArrayMinSize',
   'ArrayMaxSize',
   'ArrayUnique',
-];
+]);
 
 export const requireClassValidator = createRule<RuleOptions, MessageIds>({
   name: 'require-class-validator',
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/require-class-validator.md',
       description: 'Requires class-validator decorators on DTO properties',
+      cwe: 'CWE-20',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
@@ -187,7 +190,7 @@ export const requireClassValidator = createRule<RuleOptions, MessageIds>({
               dec.expression.callee.type === AST_NODE_TYPES.Identifier
             ? dec.expression.callee.name
             : '';
-        return VALIDATOR_DECORATORS.includes(name);
+        return VALIDATOR_DECORATORS.has(name);
       });
     }
 

@@ -27,10 +27,10 @@ export interface Options {
 type RuleOptions = [Options?];
 
 // Decorators that receive user input
-const INPUT_DECORATORS = ['Body', 'Query', 'Param'];
+const INPUT_DECORATORS = new Set(['Body', 'Query', 'Param']);
 
 // HTTP method decorators that indicate route handlers
-const HTTP_METHOD_DECORATORS = [
+const HTTP_METHOD_DECORATORS = new Set([
   'Get',
   'Post',
   'Put',
@@ -39,14 +39,17 @@ const HTTP_METHOD_DECORATORS = [
   'Options',
   'Head',
   'All',
-];
+]);
 
 export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
   name: 'no-missing-validation-pipe',
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/no-missing-validation-pipe.md',
       description: 'Requires ValidationPipe for DTO input parameters',
+      cwe: 'CWE-20',
+      cvss: 8.6,
     },
     hasSuggestions: true,
     messages: {
@@ -159,7 +162,7 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
               dec.expression.callee.type === AST_NODE_TYPES.Identifier
             ? dec.expression.callee.name
             : '';
-        return HTTP_METHOD_DECORATORS.includes(name);
+        return HTTP_METHOD_DECORATORS.has(name);
       });
     }
 
@@ -178,7 +181,7 @@ export const noMissingValidationPipe = createRule<RuleOptions, MessageIds>({
               dec.expression.callee.type === AST_NODE_TYPES.Identifier
             ? dec.expression.callee.name
             : '';
-        if (INPUT_DECORATORS.includes(name)) {
+        if (INPUT_DECORATORS.has(name)) {
           return name;
         }
       }

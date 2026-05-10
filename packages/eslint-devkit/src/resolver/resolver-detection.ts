@@ -117,6 +117,7 @@ export function generateRecommendedConfig(workspaceRoot: string): {
   }
 
   // Prioritize resolvers
+  // oxlint-disable-next-line no-array-sort
   const prioritized = availableResolvers.sort((a, b) => {
     const priorityOrder = ['typescript', 'webpack', 'vite', 'rollup', 'css'];
     const aIndex = priorityOrder.indexOf(a.name);

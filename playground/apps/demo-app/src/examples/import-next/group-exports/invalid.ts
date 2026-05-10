@@ -1,1 +1,0 @@
-// Invalid example for group-exports\n// TODO: Add failing code\nexport const invalid = true;\n

@@ -55,10 +55,10 @@ These commands are TypeScript files in `.cursor/commands/` that:
 
 ## 📚 Checklist Locations
 
-- ESLint Rule: `.cursorrules/eslint-rule-checklist.md`
-- New Package: `.cursorrules/add-new-package-checklist.md`
-- Workflow Maintenance: `.cursorrules/workflow-maintenance-checklist.md`
-- LLM Discoverability: `LLM_DISCOVERABILITY_CHECKLIST.md`
+- ESLint Rule: `.cursor/commands/eslint-rule.md`
+- New Package: `.cursor/commands/new-package.md`
+- Workflow Maintenance: `.cursor/commands/workflow-maintenance.md`
+- LLM Discoverability: `.cursor/commands/llm-discoverability.md`
 
 ## ⚠️ Troubleshooting
 
@@ -80,6 +80,6 @@ If a command doesn't work:
 If commands don't work, you can manually reference checklists:
 
 ```
-Please follow the checklist in .cursorrules/eslint-rule-checklist.md when adding this new rule.
+Please follow the checklist in .cursor/commands/eslint-rule.md when adding this new rule.
 ```
 

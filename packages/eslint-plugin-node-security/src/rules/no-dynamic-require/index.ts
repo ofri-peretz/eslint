@@ -28,8 +28,12 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-dynamic-require.md',
       description:
         'Forbid `require()` calls with expressions',
+      cwe: 'CWE-94',
+      cweJustification: 'CWE-94 (Improper Control of Generation of Code) — dynamic require with attacker-influenced path can load arbitrary modules, equivalent to remote code execution.',
+      confidence: 'high',
     },
     hasSuggestions: false,
     messages: {
@@ -111,6 +115,7 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
     }
     /* v8 ignore stop */
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isStaticLiteral(node: TSESTree.Node): boolean {
       return node.type === 'Literal' && typeof node.value === 'string';
     }

@@ -1,20 +1,21 @@
 #!/usr/bin/env tsx
 /**
  * Sync Git Tags with Package Versions
- * 
- * This script aligns git tags with current package.json versions.
- * Useful when packages are published manually without going through nx release.
- * 
+ *
+ * Aligns git tags with current package.json versions. Useful when a package
+ * was published manually outside the changesets release flow and the
+ * corresponding `<name>@<version>` tag is missing.
+ *
  * Usage:
  *   npx tsx scripts/sync-git-tags.ts [--dry-run] [--commit SHA]
- * 
+ *
  * Options:
- *   --dry-run    Preview what tags would be created without creating them
+ *   --dry-run     Preview what tags would be created without creating them
  *   --commit SHA  Point tags to specific commit (default: HEAD)
  */
 
 import { execSync } from 'node:child_process';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 interface PackageInfo {
@@ -24,10 +25,33 @@ interface PackageInfo {
   tagName: string;
 }
 
-// Read nx.json to get release projects
+// Discover release-eligible packages by walking the npm-workspace folders.
+// Replaces the old `nx.json` lookup (Nx is no longer in this repo).
 function getReleaseProjects(): string[] {
-  const nxConfig = JSON.parse(readFileSync('nx.json', 'utf-8'));
-  return nxConfig.release?.projects || [];
+  const roots = ['packages', 'apps', 'tools'];
+  const projects: string[] = [];
+  for (const root of roots) {
+    if (!existsSync(root)) continue;
+    for (const name of readdirSync(root)) {
+      const full = join(root, name);
+      try {
+        if (!statSync(full).isDirectory()) continue;
+      } catch {
+        continue;
+      }
+      const pkgJson = join(full, 'package.json');
+      if (!existsSync(pkgJson)) continue;
+      try {
+        const pkg = JSON.parse(readFileSync(pkgJson, 'utf-8'));
+        if (pkg.private === true) continue;
+        if (!pkg.name || !pkg.version) continue;
+        projects.push(full);
+      } catch {
+        // Skip unreadable package.json
+      }
+    }
+  }
+  return projects;
 }
 
 // Read package.json and extract name and version
@@ -158,7 +182,7 @@ function main() {
     console.log('\n💡 Next steps:');
     console.log('  1. Review tags: git tag --list | grep -E "@(1\\.|2\\.)"');
     console.log('  2. Push tags: git push --tags');
-    console.log('  3. Verify: npx nx release version --dry-run');
+    console.log('  3. For ongoing release management, prefer `npm run changeset` (changesets-driven flow).');
   } else if (dryRun) {
     console.log('\n💡 Run without --dry-run to create tags');
   }

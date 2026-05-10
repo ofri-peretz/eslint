@@ -23,7 +23,10 @@ export const requireBackendAuthorization = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/require-backend-authorization.md',
       description: 'Require server-side authorization checks',
+      cwe: 'CWE-602',
+      cvss: 9.5,
     },
     messages: {
       violationDetected: formatLLMMessage({
@@ -44,7 +47,7 @@ export const requireBackendAuthorization = createRule<RuleOptions, MessageIds>({
       context.report({ node, messageId: 'violationDetected' });
     }
     
-    const authProperties = ['role', 'isAdmin', 'isAuthenticated', 'permissions', 'admin'];
+    const authProperties = new Set(['role', 'isAdmin', 'isAuthenticated', 'permissions', 'admin']);
     
     return {
       IfStatement(node: TSESTree.IfStatement) {
@@ -53,7 +56,7 @@ export const requireBackendAuthorization = createRule<RuleOptions, MessageIds>({
           const checkMember = (expr: TSESTree.Expression) => {
             if (expr.type === 'MemberExpression' && 
                 expr.property.type === 'Identifier' &&
-                authProperties.includes(expr.property.name)) {
+                authProperties.has(expr.property.name)) {
               return true;
             }
             return false;
@@ -68,7 +71,7 @@ export const requireBackendAuthorization = createRule<RuleOptions, MessageIds>({
         // Check for user.role or user.isAdmin access
         if (node.test.type === 'MemberExpression' &&
             node.test.property.type === 'Identifier' &&
-            authProperties.includes(node.test.property.name)) {
+            authProperties.has(node.test.property.name)) {
           report(node);
         }
       },

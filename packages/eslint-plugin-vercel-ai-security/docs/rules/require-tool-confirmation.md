@@ -33,28 +33,7 @@ This rule identifies destructive tools (delete, transfer, execute, etc.) that do
 
 ## ❌ Incorrect Code
 
-```typescript
-// Delete without confirmation
-const tools = {
-  deleteFile: {
-    execute: async ({ path }) => fs.unlinkSync(path),
-  },
-};
-
-// Transfer without confirmation
-const tools = {
-  transferFunds: {
-    execute: async ({ amount, to }) => bank.transfer(amount, to),
-  },
-};
-
-// Execute without confirmation
-const tools = {
-  executeCommand: {
-    execute: async ({ cmd }) => exec(cmd),
-  },
-};
-```
+> _Awaiting a tested example. The previous snippet was removed because the rule does not behave as the doc claimed; track the regression in [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../../../benchmarks/FP_FN_REMEDIATION_TRACKER.md)._
 
 ## ✅ Correct Code
 

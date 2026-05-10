@@ -1,0 +1,31 @@
+{
+  "bench": "ILB-Wild",
+  "benchVersion": "v0.0",
+  "toolchain": {
+    "node": "unknown",
+    "npm": "unknown",
+    "eslint": "unknown",
+    "os": "unknown",
+    "backfilled": true,
+    "backfilledAt": "2026-05-10T00:06:45.722Z",
+    "backfilledBy": "scripts/ilb-result-schema-backfill.ts",
+    "typescript": "unknown",
+    "tsCompiler": "unknown",
+    "platform": "unknown"
+  },
+  "suite": "ilb-oxlint-parity",
+  "version": "1.0",
+  "runAt": "2026-05-09T23:59:53.358Z",
+  "corpus": "benchmarks/suites/ilb-oxlint-parity/harvested-fixtures",
+  "eslintFindings": 2661,
+  "oxlintFindings": 2661,
+  "shared": 2630,
+  "eslintOnly": 0,
+  "oxlintOnly": 0,
+  "parityRate": 1,
+  "eslintOnlyAllowlisted": 0,
+  "oxlintOnlyAllowlisted": 0,
+  "eslintOnlyUnexplained": [],
+  "oxlintOnlyUnexplained": [],
+  "timestamp": "2026-05-09T00:00:00.000Z"
+}

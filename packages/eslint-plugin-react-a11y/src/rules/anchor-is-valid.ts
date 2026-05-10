@@ -29,6 +29,7 @@ export const anchorIsValid = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/anchor-is-valid.md',
       description: 'Enforce that anchors are valid, navigable elements',
     },
     messages: {
@@ -72,11 +73,11 @@ export const anchorIsValid = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{}],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
     const { components = [], specialLink = [] } = options || {};
-    const anchors = ['a', ...components];
+    const anchors = new Set(['a', ...components]);
 
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
-        if (node.name.type !== 'JSXIdentifier' || !anchors.includes(node.name.name)) {
+        if (node.name.type !== 'JSXIdentifier' || !anchors.has(node.name.name)) {
           return;
         }
 

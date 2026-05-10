@@ -1,4 +1,16 @@
 {
+  "bench": "ILB-AI",
+  "benchVersion": "v0.0",
+  "toolchain": {
+    "node": "unknown",
+    "eslint": "unknown",
+    "typescript": "unknown",
+    "tsCompiler": "unknown",
+    "platform": "unknown",
+    "backfilled": true,
+    "backfilledAt": "2026-05-10T00:08:17.714Z",
+    "backfilledBy": "scripts/ilb-result-schema-backfill.ts"
+  },
   "modelId": "gemini-2.5-pro-cli",
   "timestamp": "2026-02-09T12:05:11.548Z",
   "config": {

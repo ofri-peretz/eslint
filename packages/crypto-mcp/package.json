@@ -1,0 +1,33 @@
+{
+  "name": "@interlace/crypto-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for the @interlace/eslint-plugin-crypto ESLint plugin. Exposes list_rules, audit_file, find_rule_violations, suggest_fix over stdio. Built on @interlace/eslint-mcp-base.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.mjs",
+  "bin": {
+    "crypto-mcp": "./src/index.mjs"
+  },
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "keywords": [
+    "mcp",
+    "eslint",
+    "static-analysis",
+    "crypto",
+    "interlace",
+    "agent"
+  ],
+  "peerDependencies": {
+    "eslint": ">=8.0.0"
+  },
+  "dependencies": {
+    "@interlace/eslint-mcp-base": "*",
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}

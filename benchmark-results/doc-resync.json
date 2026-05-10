@@ -1,0 +1,28 @@
+{
+  "generatedAt": "2026-05-09T23:19:48.958Z",
+  "apply": true,
+  "scanned": 1,
+  "candidatesFound": 1,
+  "verified": 1,
+  "written": 1,
+  "skipped": 0,
+  "plan": [
+    {
+      "plugin": "eslint-plugin-lambda-security",
+      "rule": "lambda-security/no-unvalidated-event-body",
+      "shortName": "no-unvalidated-event-body",
+      "section": "correct",
+      "blockIndex": 0,
+      "lang": "typescript",
+      "parserUsed": "ts",
+      "expected": "silent",
+      "actual": "fire",
+      "match": false,
+      "ruleHits": 1,
+      "firstMessage": "🔒 CWE-20 OWASP:A06-Insecure CVSS:8 | Lambda handler uses event.body without validation. This can lead to injection atta",
+      "action": "replaced",
+      "docPath": "packages/eslint-plugin-lambda-security/docs/rules/no-unvalidated-event-body.md",
+      "newCode": "zod"
+    }
+  ]
+}

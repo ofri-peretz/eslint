@@ -51,11 +51,25 @@ export interface LintResult {
 }
 
 /**
- * ESLint formatter context
+ * ESLint formatter context.
+ *
+ * `rulesMeta.docs.cwe` and `rulesMeta.docs.cvss` are non-standard but
+ * Interlace plugins populate them. We surface them when present and
+ * silently skip otherwise — works fine with any ESLint plugin.
  */
 export interface FormatterContext {
   cwd: string;
-  rulesMeta?: Record<string, { type?: string; docs?: { description?: string; url?: string } }>;
+  rulesMeta?: Record<string, {
+    type?: string;
+    docs?: {
+      description?: string;
+      url?: string;
+      /** Interlace extension: CWE identifier (e.g. "CWE-089"). */
+      cwe?: string;
+      /** Interlace extension: CVSS 3.1 score (0.0–10.0). */
+      cvss?: number;
+    };
+  }>;
 }
 
 // ============================================================================
@@ -63,7 +77,7 @@ export interface FormatterContext {
 // ============================================================================
 
 /** Output mode for the formatter */
-export type OutputMode = 'human' | 'compact' | 'json';
+export type OutputMode = 'human' | 'compact' | 'json' | 'ndjson' | 'xml';
 
 /**
  * A grouped rule result — all violations for a single ruleId
@@ -77,15 +91,32 @@ export interface GroupedRule {
   description?: string;
   /** Rule docs URL from meta, if available */
   docsUrl?: string;
+  /** CWE identifier (e.g. "CWE-089") if rule meta declares it. */
+  cwe?: string;
+  /** CVSS 3.1 score (0.0–10.0) if rule meta declares it. */
+  cvss?: number;
+  /**
+   * Representative ESLint message text — usually identical across
+   * occurrences of the same ruleId, so we capture the first one. This
+   * is the single most actionable field for an LLM-fix consumer; we
+   * used to drop it which inflated FP perception.
+   */
+  message?: string;
   /** Total number of violations */
   count: number;
   /** Whether violations are auto-fixable */
   fixable: boolean;
+  /** Whether at least one occurrence carries an ESLint suggestion[] entry. */
+  hasSuggestions: boolean;
   /** Representative file locations (capped to avoid flooding) */
   locations: Array<{
     file: string;
     line: number;
     column: number;
+    /** AST node type from ESLint (e.g. "CallExpression"). Cheap LLM disambiguator. */
+    nodeType?: string;
+    /** ESLint suggestions[] descriptions (manual fixes), if any. */
+    suggestions?: Array<{ desc: string }>;
   }>;
 }
 

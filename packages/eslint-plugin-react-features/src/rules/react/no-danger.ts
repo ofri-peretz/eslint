@@ -19,7 +19,10 @@ export const noDanger = createRule<[], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-danger.md',
       description: 'Disallow dangerouslySetInnerHTML usage',
+      cwe: 'CWE-79',
+      cvss: 9.5,
     },
     schema: [],
     messages: {

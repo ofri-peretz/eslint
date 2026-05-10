@@ -134,13 +134,7 @@ await generateText({ prompt: clientQuestion });
 
 **Why**: Validation function quality is not assessed.
 
-```typescript
-// ❌ NOT DETECTED - Weak validation
-function validate(input) {
-  return input;
-} // Just returns input!
-await generateText({ prompt: validate(userInput) });
-```
+> _Awaiting a tested example. The previous snippet was removed because the rule does not behave as the doc claimed; track the regression in [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../../../benchmarks/FP_FN_REMEDIATION_TRACKER.md)._
 
 **Mitigation**: Review validation functions. Use proper sanitization.
 

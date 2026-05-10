@@ -32,7 +32,10 @@ export const noSha1Hash = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-sha1-hash.md',
       description: 'Disallow sha1() from crypto-hash package (use sha256 or sha512)',
+      cwe: 'CWE-327',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

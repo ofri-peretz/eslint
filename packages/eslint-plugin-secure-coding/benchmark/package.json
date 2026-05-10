@@ -4,8 +4,8 @@
     "description": "Benchmark comparing eslint-plugin-secure-coding vs eslint-plugin-security",
     "type": "module",
     "scripts": {
-        "benchmark": "node benchmark.mjs",
-        "benchmark:fair": "node fair-benchmark.mjs",
+        "benchmark": "tsx benchmark.ts",
+        "benchmark:fair": "tsx fair-benchmark.ts",
         "lint:secure-coding": "eslint --config eslint.config.secure-coding.mjs test-files/",
         "lint:security": "eslint --config eslint.config.security.mjs test-files/"
     },

@@ -2,13 +2,15 @@
 
 > **Purpose:** Ensure all new ESLint rules are properly integrated, documented, and released following project standards.
 
-**⚠️ CRITICAL:** When adding a new ESLint rule to `eslint-plugin-llm-optimized`, you MUST complete ALL items in this checklist. Missing any item will cause issues in the release process.
+**⚠️ CRITICAL:** When adding a new ESLint rule to any `@interlace/eslint-plugin-*` package in this monorepo, you MUST complete ALL items in this checklist. Missing any item will cause issues in the release process.
+
+> **Plugin scope decision:** Pick the right target plugin per [`docs/QUALITY_STANDARDS.md`](../../docs/QUALITY_STANDARDS.md) §1 (Conceptual Fit & Plugin Separation) and the table in [`ARCHITECTURE.md`](../../ARCHITECTURE.md#plugin-organization-the-rule-that-decides-where-new-code-goes). Throughout this checklist, `<plugin>` refers to the chosen target package — e.g. `eslint-plugin-secure-coding`, `eslint-plugin-pg`, `eslint-plugin-react-features`.
 
 ## 📋 Complete Checklist
 
 ### 1. Rule Implementation ✅
 
-- [ ] **Rule file created** in `packages/eslint-plugin/src/rules/{category}/{rule-name}.ts`
+- [ ] **Rule file created** in `packages/<plugin>/src/rules/{category}/{rule-name}.ts`
 - [ ] **TypeScript types correct:**
   - [ ] `Options` interface defined (NOT `RuleOptions` - that's the tuple type)
   - [ ] `type RuleOptions = [Options?]` (array tuple format - REQUIRED)
@@ -24,14 +26,14 @@
   - [ ] Uses appropriate severity (CRITICAL, HIGH, MEDIUM, LOW)
   - [ ] Includes CWE reference if security-related
   - [ ] Uses `MessageIcons` constants for consistency
-- [ ] **Rule exported** from `packages/eslint-plugin/src/index.ts`:
+- [ ] **Rule exported** from `packages/<plugin>/src/index.ts`:
   - [ ] Import statement added at top
   - [ ] Added to `rules` object with flat name: `'rule-name': ruleName`
   - [ ] Added to `rules` object with categorized name: `'category/rule-name': ruleName`
 
 ### 2. Testing ✅
 
-- [ ] **Unit tests created** in `packages/eslint-plugin/src/tests/{rule-name}.test.ts`
+- [ ] **Unit tests created** in `packages/<plugin>/src/tests/{rule-name}.test.ts`
 - [ ] **Test coverage includes:**
   - [ ] Valid cases (should pass)
   - [ ] Invalid cases (should fail)
@@ -39,18 +41,18 @@
   - [ ] Edge cases
   - [ ] Configuration options (if rule has options)
 - [ ] **100% test coverage policy (REQUIRED):**
-  - [ ] Run `npx nx test eslint-plugin --coverage` to verify coverage
+  - [ ] Run `npx turbo run test --filter=<plugin> -- --coverage` to verify coverage
   - [ ] Achieve 100% line coverage for the rule implementation
   - [ ] Achieve 100% branch coverage for the rule implementation
   - [ ] All uncovered lines must be documented with `@coverage-note` comments explaining why they cannot be tested
   - [ ] Integration tests added if rule requires file system access or special context
-- [ ] **Tests pass:** `npx nx test eslint-plugin`
-- [ ] **Build succeeds:** `npx nx build eslint-plugin`
-- [ ] **No lint errors:** `npx nx lint eslint-plugin`
+- [ ] **Tests pass:** `npx turbo run test --filter=<plugin>`
+- [ ] **Build succeeds:** `npx turbo run build --filter=<plugin>`
+- [ ] **No lint errors:** `npx turbo run lint --filter=<plugin>`
 
 ### 3. Documentation ✅
 
-- [ ] **AEO-optimized docs page created** at `packages/eslint-plugin/docs/rules/{rule-name}.md`
+- [ ] **AEO-optimized docs page created** at `packages/<plugin>/docs/rules/{rule-name}.md`
   - [ ] Includes keywords for SEO (top of file)
   - [ ] Quick Summary table (Aspect | Details)
   - [ ] Mermaid flowchart showing rule logic (with modern accessible theme)
@@ -61,12 +63,12 @@
   - [ ] Related rules section
   - [ ] Resources/links section
   - [ ] Version history (if applicable)
-- [ ] **README updated** (`packages/eslint-plugin/README.md`):
+- [ ] **README updated** (`packages/<plugin>/README.md`):
   - [ ] Rule added to appropriate category table
   - [ ] Correct icons (💼 ⚠️ 🔧 💡) based on rule configuration
   - [ ] Link to docs page: `[rule-name](./docs/rules/{rule-name}.md)`
   - [ ] Description matches rule purpose
-- [ ] **CHANGELOG updated** (`packages/eslint-plugin/CHANGELOG.md`):
+- [ ] **CHANGELOG updated** (`packages/<plugin>/CHANGELOG.md`):
   - [ ] Entry under `## [Unreleased]` → `### Added`
   - [ ] Brief description of rule purpose
   - [ ] Key features/options mentioned
@@ -75,7 +77,7 @@
 ### 4. Configuration ✅
 
 - [ ] **Rule added to recommended config** (if applicable):
-  - [ ] Check `packages/eslint-plugin/src/configs/recommended.ts`
+  - [ ] Check `packages/<plugin>/src/configs/recommended.ts`
   - [ ] Add rule with appropriate severity
   - [ ] Add any necessary configuration options
 - [ ] **Root ESLint config updated** (if rule should be enabled globally):
@@ -83,15 +85,15 @@
   - [ ] Add rule configuration if needed
   - [ ] Ensure plugin is imported correctly
 - [ ] **Plugin exports verified:**
-  - [ ] Rule accessible via `eslint-plugin-llm-optimized`
+  - [ ] Rule accessible via the target package's public entry (e.g. `eslint-plugin-secure-coding/rules/<rule-name>`)
   - [ ] Both flat name and categorized name work
-  - [ ] Test with: `import llmOptimized from 'eslint-plugin-llm-optimized'`
+  - [ ] Test with: `import plugin from '<plugin-package>'` then assert `plugin.rules['<rule-name>']` exists
 
 ### 5. Version & Release ✅
 
 - [ ] **Version bump:**
   - [ ] Determine version bump type (patch/minor/major)
-  - [ ] Update `packages/eslint-plugin/package.json` version
+  - [ ] Update `packages/<plugin>/package.json` version
   - [ ] Update any dependent packages if needed
   - [ ] Run `npm install` to update lockfile
 - [ ] **Git tags alignment:**
@@ -99,7 +101,7 @@
   - [ ] Run `npm sync-tags:dry-run` to preview tag changes
   - [ ] Run `npm sync-tags` if tags need updating (after version bump)
 - [ ] **Release preparation:**
-  - [ ] Run `npx nx release version --dry-run` to verify release
+  - [ ] Run `npm run release:dry-run` (`gh workflow run release.yml --ref main -f dry-run=true`) to verify release
   - [ ] Ensure CHANGELOG is complete
   - [ ] Ensure all tests pass
   - [ ] Ensure build succeeds
@@ -108,15 +110,15 @@
 ### 6. Integration Testing ✅
 
 - [ ] **Playground testing:**
-  - [ ] Test rule in `apps/playground`
+  - [ ] Test rule in the external playground repo (`~/repos/ofriperetz.dev/playground/apps/<plugin>-demo/`) — see [`docs/PLUGIN-REVIEW-WORKFLOW.md`](../../docs/PLUGIN-REVIEW-WORKFLOW.md)
   - [ ] Verify error messages display correctly
   - [ ] Verify auto-fix works (if applicable)
   - [ ] Verify rule configuration options work
 - [ ] **Lint verification:**
-  - [ ] Run `npx nx lint` to ensure no new lint errors
+  - [ ] Run `npx turbo run lint` to ensure no new lint errors
   - [ ] Fix any lint errors introduced
 - [ ] **Type checking:**
-  - [ ] Run `npx nx typecheck` (if available)
+  - [ ] Run `npx turbo run typecheck`
   - [ ] Fix any type errors
 
 ### 7. Final Verification ✅
@@ -140,26 +142,26 @@
 
 | Item                | Location                                                                    |
 | ------------------- | --------------------------------------------------------------------------- |
-| Rule implementation | `packages/eslint-plugin/src/rules/{category}/{rule-name}.ts`                |
-| Rule tests          | `packages/eslint-plugin/src/rules/{category}/__tests__/{rule-name}.test.ts` |
-| Rule exports        | `packages/eslint-plugin/src/index.ts`                                       |
-| Rule documentation  | `packages/eslint-plugin/docs/rules/{rule-name}.md`                          |
-| README              | `packages/eslint-plugin/README.md`                                          |
-| CHANGELOG           | `packages/eslint-plugin/CHANGELOG.md`                                       |
-| Recommended config  | `packages/eslint-plugin/src/configs/recommended.ts`                         |
+| Rule implementation | `packages/<plugin>/src/rules/{category}/{rule-name}.ts`                |
+| Rule tests          | `packages/<plugin>/src/rules/{category}/__tests__/{rule-name}.test.ts` |
+| Rule exports        | `packages/<plugin>/src/index.ts`                                       |
+| Rule documentation  | `packages/<plugin>/docs/rules/{rule-name}.md`                          |
+| README              | `packages/<plugin>/README.md`                                          |
+| CHANGELOG           | `packages/<plugin>/CHANGELOG.md`                                       |
+| Recommended config  | `packages/<plugin>/src/configs/recommended.ts`                         |
 | Root ESLint config  | `eslint.config.mjs`                                                         |
 
 ### Common Commands
 
 ```bash
 # Build plugin
-npx nx build eslint-plugin
+npx turbo run build --filter=<plugin>
 
 # Run tests
-npx nx test eslint-plugin
+npx turbo run test --filter=<plugin>
 
 # Lint
-npx nx lint eslint-plugin
+npx turbo run lint --filter=<plugin>
 
 # Check versions
 npm check-versions
@@ -171,7 +173,7 @@ npm sync-tags:dry-run
 npm sync-tags
 
 # Release dry-run
-npx nx release version --dry-run
+gh workflow run release.yml --ref main -f dry-run=true
 ```
 
 ### Error Message Format (LLM-Optimized)

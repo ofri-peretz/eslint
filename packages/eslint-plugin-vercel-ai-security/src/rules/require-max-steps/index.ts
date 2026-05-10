@@ -27,7 +27,10 @@ export const requireMaxSteps = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-max-steps.md',
       description: 'Require maxSteps limit for multi-step tool calling to prevent infinite loops',
+      cwe: 'CWE-834',
+      cvss: 6.5,
     },
     messages: {
       missingMaxSteps: formatLLMMessage({

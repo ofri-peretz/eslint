@@ -191,8 +191,12 @@ export const noCycle = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-cycle.md',
       description:
         'Detect circular dependencies that cause bundle memory bloat and initialization issues',
+      cwe: 'CWE-407',
+      cvss: 9.5,
+      confidence: 'high',
     },
     messages: {
       // 🎯 Token optimization: 45% reduction (~70→38 tokens per message) for architecture clarity

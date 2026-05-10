@@ -19,6 +19,9 @@ export const noTransactionOnPool: TSESLint.RuleModule<
     docs: {
       description: 'Prevent starting transactions directly on the Pool, which is unsafe due to lack of client affinity.',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-transaction-on-pool.md',
+      cwe: 'CWE-662',
+      cweJustification: 'CWE-662 (Improper Synchronization) — running BEGIN/COMMIT on a connection pool can split a logical transaction across different physical clients, breaking ACID atomicity.',
+      confidence: 'high',
     },
     messages: {
       noTransactionOnPool: formatLLMMessage({

@@ -66,7 +66,9 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-unlimited-resource-allocation.md',
       description: 'Detects unlimited resource allocation that could cause DoS',
+      cwe: 'CWE-770',
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -260,7 +262,7 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
       strictMode = false,
     }: Options = options;
 
-    const sourceCode = context.sourceCode || context.sourceCode;
+    const sourceCode = context.sourceCode;
     const filename = context.filename || context.getFilename();
 
     // Create safety checker for false positive detection
@@ -609,8 +611,6 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
 
         // Check for resource allocation inside loops
         if (isInsideLoop(node)) {
-          const calleeText = sourceCode.getText(callee);
-
           // Check if this allocates resources
           if (calleeText.includes('alloc') ||
               calleeText.includes('Array') ||
@@ -743,13 +743,12 @@ export const noUnlimitedResourceAllocation = createRule<RuleOptions, MessageIds>
 
         // Check for resource allocation inside loops
         if (isInsideLoop(node)) {
-          const calleeText = sourceCode.getText(callee);
-
           // Check if this allocates resources
-          if (calleeText.includes('Buffer') ||
-              calleeText.includes('Array') ||
-              calleeText.includes('Map') ||
-              calleeText.includes('Set')) {
+          const newCalleeText = sourceCode.getText(callee);
+          if (newCalleeText.includes('Buffer') ||
+              newCalleeText.includes('Array') ||
+              newCalleeText.includes('Map') ||
+              newCalleeText.includes('Set')) {
 
             /* c8 ignore start -- safetyChecker requires JSDoc annotations not testable via RuleTester */
             if (safetyChecker.isSafe(node, context)) {

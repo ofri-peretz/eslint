@@ -9,6 +9,10 @@
     ".": {
       "types": "./src/index.d.ts",
       "default": "./src/index.js"
+    },
+    "./oxlint": {
+      "types": "./src/oxlint.d.ts",
+      "default": "./src/oxlint.js"
     }
   },
   "author": "Ofri Peretz <ofriperetzdev@gmail.com>",
@@ -49,6 +53,7 @@
     "node": ">=18.0.0"
   },
   "peerDependencies": {
+    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0",
     "pg": "^6.0.0 || ^7.0.0 || ^8.0.0"
   },
   "peerDependenciesMeta": {
@@ -66,7 +71,7 @@
     "pg": "^8.16.3"
   },
   "scripts": {
-    "build": "node ../../scripts/build-package.mjs",
+    "build": "tsx ../../scripts/build-package.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc -p tsconfig.lib.json --noEmit"

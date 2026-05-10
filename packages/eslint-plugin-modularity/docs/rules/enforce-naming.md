@@ -88,17 +88,7 @@ flowchart TD
 
 ### ❌ Incorrect
 
-```typescript
-// E-commerce domain with wrong terminology
-class UserOrder {
-  items: Product[];
-  buyer: Customer;
-  
-  calculatePrice() {
-    return this.items.reduce((sum, item) => sum + item.cost, 0);
-  }
-}
-```
+> _Awaiting a tested example. The previous snippet was removed because the rule does not behave as the doc claimed; track the regression in [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../../../benchmarks/FP_FN_REMEDIATION_TRACKER.md)._
 
 ### ✅ Correct
 

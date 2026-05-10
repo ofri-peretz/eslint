@@ -8,7 +8,9 @@
 
 ## What this repo is
 
-The **Interlace ESLint** plugin suite. ~24 independently-versioned ESLint plugins covering security, quality, and architecture governance for JavaScript and TypeScript projects, plus shared developer tooling.
+The **Interlace ESLint** ecosystem. **37 independently-versioned packages** covering security rules, quality rules, MCP servers, formatters, and shared developer tooling for JavaScript and TypeScript projects.
+
+Composition (as of 2026-05): **20 ESLint plugins** + **11 MCP servers** (one per security plugin) + **6 supporting packages** (devkit, 2 formatters, mcp-base, CLI, telemetry).
 
 Sister repos: [`agents/`](../agents/) (cross-product baselines + skills), [`serverless/`](../serverless/) (Serverless Framework plugins).
 
@@ -16,21 +18,28 @@ Sister repos: [`agents/`](../agents/) (cross-product baselines + skills), [`serv
 
 ```
 eslint/
-├── packages/                    ← all the plugins live here (~24 of them)
-│   ├── eslint-plugin-*/         ← security + quality + architecture plugins
+├── packages/                    ← every published package (37 of them)
+│   ├── eslint-plugin-*/         ← 20 ESLint plugins (security + quality + architecture)
+│   ├── *-mcp/                   ← 11 MCP servers (one per security plugin)
 │   ├── eslint-devkit/           ← shared rule-creation utilities (createRule, helpers)
-│   ├── eslint-formatter/        ← custom CLI formatter
-│   ├── cli/                     ← @interlace/eslint CLI (preset bundler)
-│   └── benchmarks/              ← perf benchmark suite
+│   ├── eslint-formatter/        ← custom CLI formatter (compact / json / ndjson modes)
+│   ├── eslint-formatter-sarif/  ← SARIF output for security tooling integration
+│   ├── eslint-mcp-base/         ← shared MCP-server base package
+│   ├── interlace-cli/           ← @interlace CLI
+│   └── interlace-telemetry/     ← shared telemetry helpers
 │
 ├── apps/
-│   └── docs/                    ← Fumadocs site at docs.interlace.dev/eslint (Next.js)
+│   └── docs/                    ← Fumadocs site at eslint.interlace.tools (Next.js)
 │
-├── distribution/                ← npm registry strategy, competitive analysis
-├── docs/                        ← repo-internal docs (CICD, quality standards, ADRs)
-├── tools/                       ← repo-local tooling (release scripts, etc.)
-└── scripts/                     ← build + CI scripts
+├── benchmarks/                  ← Interlace Lint Bench (ILB) suites — see benchmarks/README.md
+├── benchmark-results/           ← live benchmark output — see benchmark-results/README.md
+├── distribution/                ← public-facing project strategy (sensitive items gitignored)
+├── docs/                        ← repo-internal docs — see docs/README.md
+├── tools/                       ← built/published tooling (cwe-engine, oxlint shims, internal rules) — see tools/README.md
+└── scripts/                     ← repo-wide automation invoked from npm/CI — see scripts/README.md
 ```
+
+> **Deeper plugin-placement reference:** [`.agent/plugin-classification-graph.md`](.agent/plugin-classification-graph.md) holds the authoritative plugin-scope ↔ rule mapping (with mermaid graph). Use it when the table in "Plugin organization" below isn't enough.
 
 ## Plugin organization (the rule that decides where new code goes)
 
@@ -50,7 +59,8 @@ When adding a rule, decide which plugin owns it using the **scope rule**:
 - **Bundler per package:** Vite for libraries, esbuild via Nx targets
 - **Test runner:** Vitest (workspace config at `vitest.workspace.ts`)
 - **Coverage:** v8 / c8, uploaded to Codecov
-- **Release flow:** `pnpm nx release` per package; each plugin versions independently
+- **Release flow:** [`gh workflow run release.yml`](.github/workflows/release.yml) (Trusted Publishing OIDC for `@interlace/*`, `NPM_TOKEN` for unscoped); each package versions independently from conventional-commits
+- **ESLint compatibility:** every package declares `"eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"` as a peer dep, and the FN/FP arena ([`benchmarks/suites/ilb-arena/`](benchmarks/suites/ilb-arena/)) runs against all three majors. Driven by [docs/ESLINT_VERSION_SUPPORT.md](docs/ESLINT_VERSION_SUPPORT.md) — refresh data with `npm run stats:eslint-versions`.
 
 ## Documentation site
 
@@ -75,4 +85,5 @@ These follow the [llms.txt convention](https://llmstxt.org/) supported by Anthro
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guide |
 | [docs/QUALITY_STANDARDS.md](docs/QUALITY_STANDARDS.md) | Production-ready rule checklist |
 | [docs/CICD.md](docs/CICD.md) | CI/CD workflow |
+| [docs/ESLINT_VERSION_SUPPORT.md](docs/ESLINT_VERSION_SUPPORT.md) | Which ESLint majors we support and why |
 | [ROADMAP.md](ROADMAP.md) | Phased delivery plan |

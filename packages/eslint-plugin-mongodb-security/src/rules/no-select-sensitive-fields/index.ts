@@ -18,13 +18,17 @@ type RuleOptions = [Options?];
 
 const DEFAULT_SENSITIVE_FIELDS = ['password', 'refreshToken', 'apiKey', 'secret'];
 
-const QUERY_METHODS = ['find', 'findOne', 'findById'];
+const QUERY_METHODS = new Set(['find', 'findOne', 'findById']);
 
 export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
   name: 'no-select-sensitive-fields',
   meta: {
     type: 'problem',
-    docs: { description: 'Prevent returning sensitive fields like password in queries' },
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-select-sensitive-fields.md', description: 'Prevent returning sensitive fields like password in queries',
+      cwe: 'CWE-200',
+      cvss: 5.3,
+    },
     hasSuggestions: true,
     messages: {
       selectSensitiveFields: formatLLMMessage({
@@ -62,7 +66,7 @@ export const noSelectSensitiveFields = createRule<RuleOptions, MessageIds>({
           ? node.callee.property.name
           : null;
 
-        if (!methodName || !QUERY_METHODS.includes(methodName)) {
+        if (!methodName || !QUERY_METHODS.has(methodName)) {
           return;
         }
 

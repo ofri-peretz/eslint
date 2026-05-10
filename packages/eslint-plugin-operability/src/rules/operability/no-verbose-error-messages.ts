@@ -30,7 +30,10 @@ export const noVerboseErrorMessages = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-operability/docs/rules/no-verbose-error-messages.md',
       description: 'Prevent exposing stack traces to users',
+      cwe: 'CWE-209',
+      cvss: 5,
     },
     messages: {
       violationDetected: formatLLMMessage({

@@ -15,12 +15,13 @@ import type { TSESLint, TSESTree } from '@interlace/eslint-devkit';
 import { createRule } from '@interlace/eslint-devkit';
 import { formatLLMMessage, MessageIcons } from '@interlace/eslint-devkit';
 
-type MessageIds = 
-  | 'missingDep' 
-  | 'extraDep' 
+type MessageIds =
+  | 'missingDep'
+  | 'extraDep'
   | 'unnecessaryDep'
   | 'suggestAddDep'
-  | 'suggestRemoveDep';
+  | 'suggestRemoveDep'
+  | 'depsNotArrayLiteral';
 
 export interface Options {
   /** Additional hooks to check (e.g., custom hooks using useEffect internally) */
@@ -32,20 +33,22 @@ export interface Options {
 type RuleOptions = [Options?];
 
 // Hook names that require dependency array checking
-const HOOKS_WITH_DEPS = [
+const HOOKS_WITH_DEPS = new Set([
   'useEffect',
   'useLayoutEffect',
   'useCallback',
   'useMemo',
   'useImperativeHandle',
-];
+]);
 
 export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
   name: 'hooks-exhaustive-deps',
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/hooks-exhaustive-deps.md',
       description: 'Enforce exhaustive dependencies in React hooks to prevent stale closures',
+      confidence: 'high',
     },
     hasSuggestions: true,
     messages: {
@@ -89,6 +92,14 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         fix: 'Remove the unnecessary dependency',
         documentationLink: 'https://react.dev/reference/react/useEffect#removing-unnecessary-dependencies',
       }),
+      depsNotArrayLiteral: formatLLMMessage({
+        icon: MessageIcons.WARNING,
+        issueName: 'Non-literal Dependency Array',
+        description: 'React Hook {{hookName}} was passed a dependency list that is not an array literal. This means we cannot statically verify whether you have passed the correct dependencies.',
+        severity: 'HIGH',
+        fix: 'Replace the variable with an inline array literal: [dep1, dep2]. If you need dynamic deps, refactor to compute them inside the hook callback instead.',
+        documentationLink: 'https://react.dev/reference/react/useEffect#specifying-reactive-dependencies',
+      }),
     },
     schema: [
       {
@@ -124,7 +135,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
       
       // Direct hook call: useEffect(...)
       if (callee.type === 'Identifier') {
-        if (HOOKS_WITH_DEPS.includes(callee.name)) {
+        if (HOOKS_WITH_DEPS.has(callee.name)) {
           return true;
         }
         if (additionalHooksPattern?.test(callee.name)) {
@@ -138,7 +149,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         callee.object.type === 'Identifier' &&
         callee.object.name === 'React' &&
         callee.property.type === 'Identifier' &&
-        HOOKS_WITH_DEPS.includes(callee.property.name)
+        HOOKS_WITH_DEPS.has(callee.property.name)
       ) {
         return true;
       }
@@ -149,6 +160,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
     /**
      * Get the hook name from a call expression
      */
+    // oxlint-disable-next-line consistent-function-scoping
     function getHookName(node: TSESTree.CallExpression): string {
       const callee = node.callee;
       if (callee.type === 'Identifier') {
@@ -201,6 +213,40 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         // Function parameters and declarations
         if (n.type === 'FunctionDeclaration' && n.id) {
           declared.add(n.id.name);
+        }
+
+        // Function parameters of nested arrow / function expressions —
+        // these are LOCAL to the inner callback, not closures over the
+        // hook's body. Without this, callbacks like `.then((r) => ...)`
+        // had `r` flagged as a missing dependency (real FP found by the
+        // CWE-react-hooks corpus).
+        if (
+          n.type === 'ArrowFunctionExpression' ||
+          n.type === 'FunctionExpression' ||
+          n.type === 'FunctionDeclaration'
+        ) {
+          const collectFromPattern = (param: TSESTree.Node) => {
+            if (param.type === 'Identifier') {
+              declared.add(param.name);
+            } else if (param.type === 'ObjectPattern') {
+              for (const prop of param.properties) {
+                if (prop.type === 'Property' && prop.value.type === 'Identifier') {
+                  declared.add(prop.value.name);
+                } else if (prop.type === 'RestElement' && prop.argument.type === 'Identifier') {
+                  declared.add(prop.argument.name);
+                }
+              }
+            } else if (param.type === 'ArrayPattern') {
+              for (const el of param.elements) {
+                if (el && el.type === 'Identifier') declared.add(el.name);
+              }
+            } else if (param.type === 'RestElement' && param.argument.type === 'Identifier') {
+              declared.add(param.argument.name);
+            } else if (param.type === 'AssignmentPattern' && param.left.type === 'Identifier') {
+              declared.add(param.left.name);
+            }
+          };
+          for (const param of n.params) collectFromPattern(param);
         }
         
         // Traverse children
@@ -320,6 +366,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
     /**
      * Check if an identifier is a stable React reference
      */
+    // oxlint-disable-next-line consistent-function-scoping
     function isStableReference(name: string): boolean {
       // setState functions from useState are stable
       // dispatch from useReducer is stable
@@ -417,10 +464,28 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
           return;
         }
         
-        if (depsArg.type !== 'ArrayExpression') {
+        // Mirrors eslint-plugin-react-hooks: handle `as const` casts on the
+        // deps array, then report when the deps argument is anything other
+        // than an inline array literal (we can't statically verify a variable
+        // reference, so the user gets no protection — silent skip would be
+        // a missed FN, see CWE-XXX in next.js compiled bundles for examples).
+        const isTSAsArrayExpression =
+          depsArg.type === 'TSAsExpression' && depsArg.expression?.type === 'ArrayExpression';
+        const isArrayExpression = depsArg.type === 'ArrayExpression';
+
+        if (!isArrayExpression && !isTSAsArrayExpression) {
+          context.report({
+            node: depsArg,
+            messageId: 'depsNotArrayLiteral',
+            data: { hookName },
+          });
           return;
         }
-        
+
+        const depsArrayNode = isTSAsArrayExpression
+          ? ((depsArg as TSESTree.TSAsExpression).expression as TSESTree.ArrayExpression)
+          : (depsArg as TSESTree.ArrayExpression);
+
         // Extract used identifiers from callback
         const usedInCallback = extractUsedIdentifiers(callback.body);
         
@@ -438,7 +503,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
         const reactiveDeps = filterReactiveDeps(externalUsed);
         
         // Extract declared dependencies
-        const declaredDeps = extractDependencies(depsArg);
+        const declaredDeps = extractDependencies(depsArrayNode);
         
         // Find missing dependencies
         const missingDeps: string[] = [];
@@ -471,13 +536,13 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
               messageId: 'suggestAddDep' as const,
               data: { dep },
               fix(fixer: TSESLint.RuleFixer) {
-                const lastElement = depsArg.elements[depsArg.elements.length - 1];
+                const lastElement = depsArrayNode.elements[depsArrayNode.elements.length - 1];
                 if (lastElement) {
                   return fixer.insertTextAfter(lastElement, `, ${dep}`);
                 } else {
                   // Empty array
                   return fixer.insertTextAfterRange(
-                    [depsArg.range[0] + 1, depsArg.range[0] + 1],
+                    [depsArrayNode.range[0] + 1, depsArrayNode.range[0] + 1],
                     dep
                   );
                 }
@@ -500,17 +565,17 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
                 messageId: 'suggestRemoveDep' as const,
                 data: { dep },
                 fix(fixer: TSESLint.RuleFixer) {
-                  const element = depsArg.elements.find(
+                  const element = depsArrayNode.elements.find(
                     (el: TSESTree.Expression | TSESTree.SpreadElement | null) => el?.type === 'Identifier' && el.name === dep
                   );
                   if (element) {
-                    const index = depsArg.elements.indexOf(element);
-                    const isLast = index === depsArg.elements.length - 1;
+                    const index = depsArrayNode.elements.indexOf(element);
+                    const isLast = index === depsArrayNode.elements.length - 1;
                     const isFirst = index === 0;
                     
-                    if (isFirst && depsArg.elements.length > 1) {
+                    if (isFirst && depsArrayNode.elements.length > 1) {
                       // Remove first element and following comma
-                      const nextElement = depsArg.elements[1];
+                      const nextElement = depsArrayNode.elements[1];
                       if (nextElement) {
                         return fixer.removeRange([
                           element.range[0],
@@ -519,7 +584,7 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
                       }
                     } else if (isLast && index > 0) {
                       // Remove last element and preceding comma
-                      const prevElement = depsArg.elements[index - 1];
+                      const prevElement = depsArrayNode.elements[index - 1];
                       if (prevElement) {
                         return fixer.removeRange([
                           prevElement.range[1],

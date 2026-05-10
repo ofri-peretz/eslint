@@ -34,7 +34,10 @@ export const requireBlobUrlRevocation = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/require-blob-url-revocation.md',
       description: 'Require revoking Blob URLs to prevent memory leaks',
+      cwe: 'CWE-401',
+      cvss: 5.3,
     },
     hasSuggestions: true,
     messages: {

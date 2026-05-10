@@ -28,7 +28,10 @@ export const requireHttpsOnly = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/require-https-only.md',
       description: 'Enforce HTTPS for all external requests',
+      cwe: 'CWE-319',
+      cvss: 7.5,
     },
     messages: {
       violationDetected: formatLLMMessage({

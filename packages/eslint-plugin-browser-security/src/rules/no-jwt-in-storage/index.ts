@@ -83,8 +83,11 @@ export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-jwt-in-storage.md',
       description:
         'Disallow storing JWT tokens in localStorage or sessionStorage',
+      cwe: 'CWE-922',
+      cvss: 8.1,
     },
     hasSuggestions: true,
     messages: {
@@ -138,7 +141,7 @@ export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    const storageObjects = ['localStorage', 'sessionStorage'];
+    const storageObjects = new Set(['localStorage', 'sessionStorage']);
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
@@ -148,7 +151,7 @@ export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
         if (
           callee.type === AST_NODE_TYPES.MemberExpression &&
           callee.object.type === AST_NODE_TYPES.Identifier &&
-          storageObjects.includes(callee.object.name) &&
+          storageObjects.has(callee.object.name) &&
           callee.property.type === AST_NODE_TYPES.Identifier &&
           callee.property.name === 'setItem'
         ) {
@@ -211,7 +214,7 @@ export const noJwtInStorage = createRule<RuleOptions, MessageIds>({
         const obj = node.left.object;
         if (
           obj.type !== AST_NODE_TYPES.Identifier ||
-          !storageObjects.includes(obj.name)
+          !storageObjects.has(obj.name)
         ) {
           /* c8 ignore next - Guard clause for non-storage objects */
           return;

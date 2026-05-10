@@ -62,7 +62,9 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
     deprecated: true,
     replacedBy: ['@see eslint-plugin-express-security/require-helmet'],
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-clickjacking.md',
       description: 'Detects clickjacking vulnerabilities and missing frame protections',
+      cwe: 'CWE-1021',
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -283,6 +285,7 @@ export const noClickjacking = createRule<RuleOptions, MessageIds>({
     /**
      * Check for transparent/invisible elements that could hide clickjacking
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const hasTransparentStyles = (styleText: string): boolean => {
       const styles = styleText.toLowerCase();
       return styles.includes('opacity: 0') ||

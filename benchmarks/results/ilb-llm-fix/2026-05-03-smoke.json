@@ -1,4 +1,18 @@
 {
+  "bench": "ILB-LLM-Fix",
+  "benchVersion": "v0.0",
+  "toolchain": {
+    "node": "unknown",
+    "npm": "unknown",
+    "eslint": "unknown",
+    "os": "unknown",
+    "backfilled": true,
+    "backfilledAt": "2026-05-10T00:06:45.720Z",
+    "backfilledBy": "scripts/ilb-result-schema-backfill.ts",
+    "typescript": "unknown",
+    "tsCompiler": "unknown",
+    "platform": "unknown"
+  },
   "schemaVersion": 1,
   "timestamp": "2026-05-03T22:56:39.792Z",
   "benchmark": "ilb-llm-fix",

@@ -79,8 +79,11 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-operability/docs/rules/no-console-log.md',
       description:
         'Disallow console.log with configurable remediation strategies',
+      cwe: 'CWE-532',
+      cvss: 5,
     },
     fixable: 'code',
     hasSuggestions: false,
@@ -219,7 +222,8 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
     const effectiveSeverityMap = { ...DEFAULT_SEVERITY_MAP, ...severityMap };
 
     const filename = context.filename || context.getFilename();
-    const sourceCode = context.sourceCode || context.sourceCode;
+    // oxlint-disable-next-line no-shadow
+    const sourceCode = context.sourceCode;
     const occurrences: number[] = [];
 
     /**
@@ -347,7 +351,6 @@ export const noConsoleLog = createRule<RuleOptions, MessageIds>({
           maxOccurrences > 0 &&
           occurrences.length > maxOccurrences;
 
-        const sourceCode = context.sourceCode || context.sourceCode;
         const relativePath = getRelativePath(process.cwd(), filename);
 
         /**

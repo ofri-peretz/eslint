@@ -1,0 +1,17 @@
+{
+  "name": "@interlace/cli",
+  "version": "0.1.0",
+  "description": "One-command Interlace CLI: `interlace audit <path>`, `interlace init`, `interlace bench`. Adoption accelerator — kills the `npx eslint --plugin secure-coding` ceremony for new users. Roadmap item 5.4.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.mjs",
+  "bin": {
+    "interlace": "./src/index.mjs"
+  },
+  "files": ["src", "README.md"],
+  "keywords": ["cli", "eslint", "static-analysis", "security", "interlace"],
+  "peerDependencies": {
+    "eslint": ">=8.0.0"
+  },
+  "dependencies": {}
+}

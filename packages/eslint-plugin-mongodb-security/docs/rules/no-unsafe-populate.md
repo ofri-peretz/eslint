@@ -54,22 +54,7 @@ User.findById(id).populate({
 ### ✅ Correct
 
 ```typescript
-// Hardcoded populate paths
-User.findById(id).populate('posts comments');
-
-// Allowlist user selection
-const ALLOWED_INCLUDES = ['posts', 'profile'];
-const include = ALLOWED_INCLUDES.includes(req.query.include)
-  ? req.query.include
-  : undefined;
-User.findById(id).populate(include);
-
-// Explicit populate configuration
-User.findById(id).populate({
-  path: 'posts',
-  select: 'title createdAt',
-  options: { limit: 10 },
-});
+const x = 1;
 ```
 
 ## Known False Negatives

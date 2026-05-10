@@ -72,21 +72,7 @@ const ldapFilter = `(&(objectClass=user)(mail=${email}))`;
 ### ✅ Correct
 
 ```typescript
-// Escape LDAP filter values
-import { escape } from 'ldap-escape';
-const filter = `(uid=${escape.filterValue(username)})`;
-
-// Use ldapjs with proper escaping
-const filter = new ldap.filters.EqualityFilter({
-  attribute: 'uid',
-  value: username, // ldapjs handles escaping
-});
-
-// Validate input before LDAP query
-if (isValidUsername(username)) {
-  const escapedUser = ldap.escape.filterValue(username);
-  const filter = `(uid=${escapedUser})`;
-}
+const filter = `(uid=${ldap.escape.filterValue(userId)})`;
 ```
 
 ## Configuration

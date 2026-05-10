@@ -30,7 +30,7 @@ export interface Options {
 type RuleOptions = [Options?];
 
 // HTTP client function/method names
-const HTTP_CLIENT_METHODS = [
+const HTTP_CLIENT_METHODS = new Set([
   // Built-in
   'fetch',
   // Node.js http module
@@ -48,13 +48,13 @@ const HTTP_CLIENT_METHODS = [
   'nodeFetch',
   // superagent
   'superagent',
-];
+]);
 
 // HTTP client objects with methods
-const HTTP_CLIENT_OBJECTS = ['http', 'https', 'axios', 'got', 'request'];
+const HTTP_CLIENT_OBJECTS = new Set(['http', 'https', 'axios', 'got', 'request']);
 
 // Event properties containing user input
-const USER_INPUT_PROPERTIES = [
+const USER_INPUT_PROPERTIES = new Set([
   'body',
   'queryStringParameters',
   'pathParameters',
@@ -62,18 +62,21 @@ const USER_INPUT_PROPERTIES = [
   'headers',
   'rawPath',
   'rawQueryString',
-];
+]);
 
 // Lambda event parameter names
-const EVENT_PARAM_NAMES = ['event', 'evt', 'e', 'request', 'req'];
+const EVENT_PARAM_NAMES = new Set(['event', 'evt', 'e', 'request', 'req']);
 
 export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
   name: 'no-user-controlled-requests',
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-user-controlled-requests.md',
       description:
         'Detects HTTP requests with user-controlled URLs (SSRF vulnerability)',
+      cwe: 'CWE-918',
+      cvss: 9.1,
     },
     hasSuggestions: true,
     messages: {
@@ -153,7 +156,7 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
         node.object.type === AST_NODE_TYPES.Identifier &&
         isEventParameter(node.object.name) &&
         node.property.type === AST_NODE_TYPES.Identifier &&
-        USER_INPUT_PROPERTIES.includes(node.property.name)
+        USER_INPUT_PROPERTIES.has(node.property.name)
       ) {
         return `event.${node.property.name}`;
       }
@@ -164,7 +167,7 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
         node.object.object.type === AST_NODE_TYPES.Identifier &&
         isEventParameter(node.object.object.name) &&
         node.object.property.type === AST_NODE_TYPES.Identifier &&
-        USER_INPUT_PROPERTIES.includes(node.object.property.name)
+        USER_INPUT_PROPERTIES.has(node.object.property.name)
       ) {
         return `event.${node.object.property.name}.${
           node.property.type === AST_NODE_TYPES.Identifier
@@ -218,7 +221,7 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
       // fetch(url), axios(url), got(url)
       if (
         node.callee.type === AST_NODE_TYPES.Identifier &&
-        HTTP_CLIENT_METHODS.includes(node.callee.name)
+        HTTP_CLIENT_METHODS.has(node.callee.name)
       ) {
         return true;
       }
@@ -227,7 +230,7 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
       if (
         node.callee.type === AST_NODE_TYPES.MemberExpression &&
         node.callee.object.type === AST_NODE_TYPES.Identifier &&
-        HTTP_CLIENT_OBJECTS.includes(node.callee.object.name)
+        HTTP_CLIENT_OBJECTS.has(node.callee.object.name)
       ) {
         return true;
       }
@@ -290,7 +293,7 @@ export const noUserControlledRequests = createRule<RuleOptions, MessageIds>({
       ) {
         for (const param of node.params) {
           if (param.type === AST_NODE_TYPES.Identifier) {
-            if (EVENT_PARAM_NAMES.includes(param.name)) {
+            if (EVENT_PARAM_NAMES.has(param.name)) {
               eventParameters.add(param.name);
             }
           }

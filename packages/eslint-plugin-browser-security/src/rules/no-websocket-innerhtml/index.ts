@@ -30,16 +30,19 @@ export interface Options {
 type RuleOptions = [Options?];
 
 // Dangerous DOM properties and methods
-const DANGEROUS_PROPERTIES = ['innerHTML', 'outerHTML'];
-const DANGEROUS_METHODS = ['insertAdjacentHTML', 'write', 'writeln'];
+const DANGEROUS_PROPERTIES = new Set(['innerHTML', 'outerHTML']);
+const DANGEROUS_METHODS = new Set(['insertAdjacentHTML', 'write', 'writeln']);
 
 export const noWebsocketInnerhtml = createRule<RuleOptions, MessageIds>({
   name: 'no-websocket-innerhtml',
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-websocket-innerhtml.md',
       description:
         'Disallow using innerHTML or similar methods with WebSocket message data',
+      cwe: 'CWE-79',
+      cvss: 8.1,
     },
     hasSuggestions: true,
     messages: {
@@ -188,7 +191,7 @@ export const noWebsocketInnerhtml = createRule<RuleOptions, MessageIds>({
         if (
           node.left.type === AST_NODE_TYPES.MemberExpression &&
           node.left.property.type === AST_NODE_TYPES.Identifier &&
-          DANGEROUS_PROPERTIES.includes(node.left.property.name)
+          DANGEROUS_PROPERTIES.has(node.left.property.name)
         ) {
           if (referencesEventData(node.right, eventParamName)) {
             context.report({
@@ -230,7 +233,7 @@ export const noWebsocketInnerhtml = createRule<RuleOptions, MessageIds>({
         if (
           node.callee.type === AST_NODE_TYPES.MemberExpression &&
           node.callee.property.type === AST_NODE_TYPES.Identifier &&
-          DANGEROUS_METHODS.includes(node.callee.property.name)
+          DANGEROUS_METHODS.has(node.callee.property.name)
         ) {
           for (const arg of node.arguments) {
             if (referencesEventData(arg, eventParamName)) {

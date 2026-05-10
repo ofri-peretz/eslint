@@ -26,7 +26,10 @@ export const noDynamicSystemPrompt = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/no-dynamic-system-prompt.md',
       description: 'Prevent dynamic content in system prompts to avoid agent confusion attacks',
+      cwe: 'CWE-74',
+      cvss: 8,
     },
     messages: {
       dynamicSystemPrompt: formatLLMMessage({

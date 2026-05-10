@@ -64,7 +64,9 @@ export const noDirectiveInjection = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-directive-injection.md',
       description: 'Detects directive injection vulnerabilities in templates',
+      cwe: 'CWE-96',
     },
     fixable: 'code',
     hasSuggestions: true,

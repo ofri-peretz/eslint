@@ -58,13 +58,13 @@ packages/<plugin>/src/rules/<rule-name>/
 // turbo
 
 ```bash
-nx run <package>:test
+npx turbo run test --filter=<package>
 ```
 
 // turbo
 
 ```bash
-nx run <package>:lint
+npx turbo run lint --filter=<package>
 ```
 
 ### Step 5: Benchmark Update

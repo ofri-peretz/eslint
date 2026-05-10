@@ -23,7 +23,10 @@ export const iframeHasTitle = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/iframe-has-title.md',
       description: 'Enforce that iframes have a title attribute',
+      cwe: 'CWE-252',
+      cvss: 9.5,
     },
     messages: {
       missingTitle: formatLLMMessage({

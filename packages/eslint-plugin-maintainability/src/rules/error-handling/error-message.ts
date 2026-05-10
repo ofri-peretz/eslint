@@ -26,6 +26,7 @@ export const errorMessage = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/error-message.md',
       description:
         'Enforce providing a message when creating built-in Error objects for better debugging',
     },
@@ -84,6 +85,7 @@ export const errorMessage = createRule<RuleOptions, MessageIds>({
       return errorConstructors.has(name);
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function hasMessageArgument(
       node: TSESTree.NewExpression | TSESTree.CallExpression,
     ): boolean {

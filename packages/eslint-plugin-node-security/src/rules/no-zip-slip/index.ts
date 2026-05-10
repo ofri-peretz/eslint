@@ -49,12 +49,46 @@ export interface Options {
 type RuleOptions = [Options?];
 
 
+/**
+ * Check if path contains dangerous traversal sequences
+ */
+const containsPathTraversal = (pathText: string): boolean => {
+  // Check for ../ sequences
+  return /\.\.\//.test(pathText) ||
+         /\.\.\\/.test(pathText) || // Windows paths
+         pathText.startsWith('..') ||
+         /\/\.\./.test(pathText);  // Embedded /..
+};
+
+/**
+ * Check if destination is dangerous (sensitive system directories)
+ * Note: /tmp is NOT dangerous - it's the standard safe temp location
+ */
+const isDangerousDestination = (destText: string): boolean => {
+  // /tmp is SAFE - it's the standard temp location
+  if (destText.startsWith('/tmp') || destText.includes('os.tmpdir') || destText.includes('TMPDIR')) {
+    return false;
+  }
+  
+  return destText.includes('/var') ||
+         destText.includes('/usr') ||
+         destText.includes('/etc') ||
+         destText.includes('/root') ||
+         destText.includes('/home') ||
+         destText.includes('C:\\Windows') ||
+         destText.includes('C:\\Program Files') ||
+         destText.includes('C:\\Users');
+};
+
+
 export const noZipSlip = createRule<RuleOptions, MessageIds>({
   name: 'no-zip-slip',
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-zip-slip.md',
       description: 'Detects zip slip/archive extraction vulnerabilities',
+      cwe: 'CWE-22',
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -218,17 +252,6 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       return false;
     };
 
-    /**
-     * Check if path contains dangerous traversal sequences
-     */
-    const containsPathTraversal = (pathText: string): boolean => {
-      // Check for ../ sequences
-      return /\.\.\//.test(pathText) ||
-             /\.\.\\/.test(pathText) || // Windows paths
-             pathText.startsWith('..') ||
-             /\/\.\./.test(pathText);  // Embedded /..
-    };
-
 
     /**
      * Check if path has been validated or sanitized
@@ -315,26 +338,6 @@ export const noZipSlip = createRule<RuleOptions, MessageIds>({
       }
 
       return false;
-    };
-
-    /**
-     * Check if destination is dangerous (sensitive system directories)
-     * Note: /tmp is NOT dangerous - it's the standard safe temp location
-     */
-    const isDangerousDestination = (destText: string): boolean => {
-      // /tmp is SAFE - it's the standard temp location
-      if (destText.startsWith('/tmp') || destText.includes('os.tmpdir') || destText.includes('TMPDIR')) {
-        return false;
-      }
-      
-      return destText.includes('/var') ||
-             destText.includes('/usr') ||
-             destText.includes('/etc') ||
-             destText.includes('/root') ||
-             destText.includes('/home') ||
-             destText.includes('C:\\Windows') ||
-             destText.includes('C:\\Program Files') ||
-             destText.includes('C:\\Users');
     };
 
     return {

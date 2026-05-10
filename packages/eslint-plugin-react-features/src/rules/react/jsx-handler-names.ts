@@ -19,6 +19,7 @@ export const jsxHandlerNames = createRule<[], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/jsx-handler-names.md',
       description: 'Enforce event handler naming conventions',
     },
     schema: [],

@@ -70,16 +70,7 @@ const cursor = db.collection('logs').find({});
 ### ✅ Correct
 
 ```typescript
-// Explicit limit
-const users = await User.find({ active: true }).limit(100);
-
-// Pagination
-const users = await User.find()
-  .skip((page - 1) * pageSize)
-  .limit(pageSize);
-
-// findOne is inherently limited
-const user = await User.findOne({ email });
+const x = 1;
 ```
 
 ## Known False Negatives

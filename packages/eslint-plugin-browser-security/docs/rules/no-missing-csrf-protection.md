@@ -107,29 +107,7 @@ app.delete('/api/users/:id', handler); // ❌ No CSRF middleware
 ### ✅ Correct
 
 ```typescript
-// CSRF middleware added
-app.post('/api/users', csrf(), (req, res) => {
-  // ✅ CSRF middleware
-  // Create user
-});
-
-router.put('/api/users/:id', csrfProtection, (req, res) => {
-  // ✅ CSRF middleware
-  // Update user
-});
-
-// Global CSRF middleware
-app.use(csrf({ cookie: true })); // ✅ Global protection
-app.post('/api/users', (req, res) => {
-  // ✅ Protected by global middleware
-  // Create user
-});
-
-// GET requests don't need CSRF
-app.get('/api/users', (req, res) => {
-  // ✅ GET doesn't need CSRF
-  // Return users
-});
+app.post("/api/users", csrf(), handler);
 ```
 
 ## Error Message Format

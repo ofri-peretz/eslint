@@ -58,7 +58,7 @@ oxlint → loads ./tools/oxlint-plugins/interlace-pg.cjs
          → loads dist/packages/eslint-plugin-pg/
 ```
 
-**Prerequisite:** `npx nx build eslint-plugin-pg` must run before `oxlint:interlace`.
+**Prerequisite:** `npx turbo run build --filter=eslint-plugin-pg` must run before `oxlint:interlace`.
 
 ## Oxlint JS Plugin API Compatibility
 
@@ -100,7 +100,7 @@ jobs:
       - run: npm run oxlint
 
       # Tier 2: Interlace security rules (< 2s)
-      - run: npx nx build eslint-plugin-pg
+      - run: npx turbo run build --filter=eslint-plugin-pg
       - run: npm run oxlint:interlace
 
       # Tier 3: Full ESLint (type-aware, only if needed)
@@ -149,6 +149,26 @@ issue TBD), the shim layer becomes unnecessary. At that point:
   "rules": { "pg/no-unsafe-query": "error" }
 }
 ```
+
+## Authoring rules for oxlint compatibility
+
+See **[.agent/rules/oxlint-compatibility.md](../.agent/rules/oxlint-compatibility.md)** for the
+authoring checklist, blocker list, and gate behavior. The CI gate
+(`npm run audit:portability:ci`) fails the `quality` script when the
+oxlint-ready percentage drops or a new hard-blocker rule is added.
+
+To add a new plugin, run `npm run oxlint:shims` after creating
+`packages/eslint-plugin-<name>/src/index.ts` — the generator writes the
+shim, subpath export, and updates the manifest at
+`.agent/oxlint-jsplugins-manifest.json`.
+
+## Parity benchmark
+
+ESLint ↔ oxlint finding-parity is verified by
+[`benchmarks/suites/ilb-oxlint-parity/`](../benchmarks/suites/ilb-oxlint-parity/README.md).
+It runs the same fixtures through both runtimes, normalizes findings to
+`(rule, file, line)` tuples, and fails if oxlint diverges from ESLint
+beyond the documented allowlist.
 
 ## Future: Native Oxlint Rules
 

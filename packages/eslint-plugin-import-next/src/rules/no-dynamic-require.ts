@@ -32,7 +32,10 @@ export const noDynamicRequire = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-dynamic-require.md',
       description: 'Forbid require() calls with expressions',
+      cwe: 'CWE-829',
+      cvss: 5,
     },
     messages: {
       dynamicRequire: formatLLMMessage({

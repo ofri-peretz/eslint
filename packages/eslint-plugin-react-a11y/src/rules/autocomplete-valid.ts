@@ -40,6 +40,7 @@ export const autocompleteValid = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/autocomplete-valid.md',
       description: 'Enforce that autocomplete attribute has valid value',
     },
     messages: {
@@ -65,11 +66,11 @@ export const autocompleteValid = createRule<RuleOptions, MessageIds>({
   defaultOptions: [{}],
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>, [options = {} as Options]) {
     const { inputComponents = [] } = options ?? {} as Options;
-    const inputs = ['input', ...inputComponents];
+    const inputs = new Set(['input', ...inputComponents]);
 
     return {
       JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
-        if (node.name.type !== 'JSXIdentifier' || !inputs.includes(node.name.name)) return;
+        if (node.name.type !== 'JSXIdentifier' || !inputs.has(node.name.name)) return;
 
         const autocomplete = node.attributes.find((attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute): attr is TSESTree.JSXAttribute => 
             attr.type === 'JSXAttribute' && 

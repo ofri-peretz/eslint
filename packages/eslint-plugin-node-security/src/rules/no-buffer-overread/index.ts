@@ -62,7 +62,9 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-buffer-overread.md',
       description: 'Detects buffer access beyond bounds',
+      cwe: 'CWE-126',
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -269,6 +271,12 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
       for (const type of bufferTypesSet) {
         if (lowerName.includes(type)) return true;
       }
+      // Conventional Buffer parameter names that don't lexically include
+      // 'buffer'. The audit FN was on `function readChunk(buf, req) {
+      // buf.slice(0, req.query.length) }` — `buf` is the universal Node
+      // Buffer parameter convention. Adding these aliases closes the FN
+      // without requiring authors to rename parameters.
+      if (lowerName === 'buf' || lowerName === 'b' || lowerName === 'bytes' || lowerName === 'chunk') return true;
       return false;
     };
 
@@ -277,6 +285,31 @@ export const noBufferOverread = createRule<RuleOptions, MessageIds>({
      * Uses Set-based keyword matching for O(1) lookups
      */
     const isUserControlledIndex = (indexNode: TSESTree.Node): boolean => {
+      // Direct MemberExpression: `req.query.length`, `req.body.size`,
+      // `event.queryStringParameters.limit`, etc. — walk the chain to
+      // check if the root identifier is a known taint source. Closes the
+      // audit FN where `buf.slice(0, req.query.length)` was bypassing
+      // detection because the arg was a MemberExpression, not an
+      // Identifier. See benchmarks/AUDIT_PATTERNS.md §3.6 ("taint-source
+      // breadth").
+      if (indexNode.type === 'MemberExpression') {
+        let walker: TSESTree.Node = indexNode;
+        while (walker.type === 'MemberExpression') {
+          walker = walker.object;
+        }
+        if (walker.type === 'Identifier') {
+          const root = walker.name.toLowerCase();
+          // Express / Lambda / Koa / Hono taint-source roots.
+          if (['req', 'request', 'event', 'ctx', 'context'].includes(root)) {
+            return true;
+          }
+          // Generic user-controlled keyword check on root name.
+          for (const keyword of userControlledKeywords) {
+            if (root.includes(keyword)) return true;
+          }
+        }
+      }
+
       if (indexNode.type === 'Identifier') {
         const varName = indexNode.name.toLowerCase();
         // Check each part of the variable name against keywords Set

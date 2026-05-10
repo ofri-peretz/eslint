@@ -19,6 +19,8 @@ export const noUnsafeSearchPath: TSESLint.RuleModule<
     docs: {
       description: 'Prevent unsafe SET search_path usage with dynamic values, which can lead to schema hijacking.',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-unsafe-search-path.md',
+      cwe: 'CWE-426',
+      cvss: 9.5,
     },
     messages: {
       noUnsafeSearchPath: formatLLMMessage({

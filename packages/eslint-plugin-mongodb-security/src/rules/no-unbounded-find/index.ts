@@ -16,13 +16,17 @@ type MessageIds = 'unboundedFind';
 export interface Options { allowInTests?: boolean; }
 type RuleOptions = [Options?];
 
-const FIND_METHODS = ['find', 'findOne'];
+const FIND_METHODS = new Set(['find', 'findOne']);
 
 export const noUnboundedFind = createRule<RuleOptions, MessageIds>({
   name: 'no-unbounded-find',
   meta: {
     type: 'suggestion',
-    docs: { description: 'Require limit() on find queries to prevent resource exhaustion' },
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-unbounded-find.md', description: 'Require limit() on find queries to prevent resource exhaustion',
+      cwe: 'CWE-400',
+      cvss: 4.3,
+    },
     hasSuggestions: true,
     messages: {
       unboundedFind: formatLLMMessage({
@@ -60,7 +64,7 @@ export const noUnboundedFind = createRule<RuleOptions, MessageIds>({
           ? node.callee.property.name
           : null;
 
-        if (!methodName || !FIND_METHODS.includes(methodName)) {
+        if (!methodName || !FIND_METHODS.has(methodName)) {
           return;
         }
 

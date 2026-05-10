@@ -33,7 +33,10 @@ export const noUnsafeEvalCsp = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-unsafe-eval-csp.md',
       description: "Disallow 'unsafe-eval' in Content Security Policy",
+      cwe: 'CWE-95',
+      cvss: 8.1,
     },
     hasSuggestions: true,
     messages: {

@@ -56,41 +56,7 @@ const data = await httpClient.request({ url: '/api' });
 ### ✅ Correct
 
 ```typescript
-// fetch with AbortController timeout
-const controller = new AbortController();
-const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-try {
-  const response = await fetch('/api/data', {
-    signal: controller.signal,
-  });
-} finally {
-  clearTimeout(timeoutId);
-}
-
-// axios with timeout
-const result = await axios.get('/api/users', {
-  timeout: 5000,
-});
-
-// Using a timeout utility
-async function fetchWithTimeout(url: string, timeout = 5000) {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-
-  try {
-    const response = await fetch(url, { signal: controller.signal });
-    return response;
-  } finally {
-    clearTimeout(id);
-  }
-}
-
-// Global axios configuration
-const api = axios.create({
-  baseURL: '/api',
-  timeout: 10000,
-});
+fetch(url, { timeout: 5000 })
 ```
 
 ## Configuration Examples

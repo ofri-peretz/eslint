@@ -28,9 +28,18 @@ export const noUnsafeQuery: TSESLint.RuleModule<
 > = {
   meta: {
     type: 'problem',
+    // CWE / CVSS lifted to meta.docs (Interlace extension) so
+    // @interlace/eslint-formatter renders them inline. Previously these
+    // values lived only inside the `messages` factory below, where the
+    // whole-run formatter cannot see them. See docs/META_HYGIENE.md for
+    // the fleet-wide audit and tracker P1 #5 for the rollout plan.
     docs: {
       description: 'Prevent SQL injection by disallowing string concatenation or unsafe template literals in queries.',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-unsafe-query.md',
+      // CWE / CVSS surfaces in the formatter (devkit augments RuleMetaDataDocs).
+      cwe: 'CWE-89',
+      cvss: 9.8,
+      confidence: 'high',
     },
     messages: {
       noUnsafeQuery: formatLLMMessage({

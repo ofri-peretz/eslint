@@ -2,12 +2,12 @@ name: ILB Benchmark Regression Gate
 
 # Runs ILB-Wild on a small, fast subset of the corpus and compares the
 # resulting scorecard against benchmark-results/baseline.json. PR fails on
-# regression beyond thresholds defined in scripts/ilb-regression-check.mjs.
+# regression beyond thresholds defined in scripts/ilb-regression-check.ts.
 #
 # Full 17-repo corpus runs are intentionally NOT in CI (~30 min, network-
 # heavy). Run those locally before bumping the baseline:
 #   npm run ilb:wild
-#   node scripts/ilb-regression-check.mjs --update-baseline
+#   tsx scripts/ilb-regression-check.ts --update-baseline
 #   git commit benchmark-results/baseline.json
 
 on:
@@ -16,8 +16,14 @@ on:
     paths:
       - 'packages/eslint-plugin-*/**'
       - 'packages/eslint-devkit/**'
-      - 'scripts/ilb-*.mjs'
+      - 'packages/eslint-formatter/**'
+      - 'benchmarks/suites/ilb-formatter/**'
+      - 'benchmarks/results/ilb-formatter/baseline.json'
       - 'scripts/ilb-*.ts'
+      - 'scripts/ilb-*.ts'
+      - 'scripts/audit-rule-meta-completeness.ts'
+      - 'scripts/audit-cwe-rendering.ts'
+      - 'scripts/codemod-lift-cwe-to-meta-docs.ts'
       - 'benchmark-results/baseline.json'
       - '.github/workflows/benchmark.yml'
   workflow_dispatch:
@@ -41,6 +47,72 @@ permissions:
   pull-requests: write
 
 jobs:
+  # Synthetic, deterministic, ~10 s wall-clock — runs on every matching PR
+  # with three hard gates: signal-preservation contract (4/4 on every
+  # structured-format cell), latency contract (per-scale ms ceilings on
+  # interlace-* cells), and per-cell regression check vs baseline.json
+  # (+5 % tokens / max(+50 %, +0.5 ms) latency / signal floor). Failure
+  # at any of the three exits the runner non-zero and fails the job.
+  ilb-formatter:
+    name: ILB-Formatter (signal + latency + regression gate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build @interlace/eslint-formatter
+        run: npx tsc -p packages/eslint-formatter/tsconfig.lib.json
+      - name: Unit + snapshot + ESLint integration tests
+        run: npx vitest run --root packages/eslint-formatter --reporter=default
+      - name: Run ILB-Formatter (270 cells, 3 contracts)
+        run: npm run ilb:formatter
+      - name: Validate vocabulary contract on result envelope
+        run: npm run ilb:validate-results
+      - name: Fleet CWE-rendering smoke (every plugin's first CWE-bearing rule renders end-to-end)
+        run: npm run audit:cwe-rendering
+      - name: Upload formatter result artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ilb-formatter-${{ github.run_number }}
+          path: |
+            benchmarks/results/ilb-formatter/latest.json
+            benchmarks/results/ilb-formatter/baseline.json
+          retention-days: 30
+
+  # Static-source audit: every plugin's rule meta is scanned for the
+  # fields the whole-run formatter renders. Holes here translate directly
+  # into less-actionable LLM output. As of 2026-05-09 this is a HARD
+  # GATE: --strict enforces per-plugin completeness floors (description
+  # ≥ 75%, score ≥ 50%, security-plugin CWE ≥ 85%). The floors are set
+  # at the current passing minimum so the gate is a "don't get worse"
+  # ratchet — bump them in scripts/audit-rule-meta-completeness.ts as
+  # plugins improve.
+  audit-meta:
+    name: Plugin rule-meta hygiene audit (strict)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Run audit:meta:strict (gates the build)
+        run: npm run audit:meta:strict
+      - name: Upload meta-hygiene report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: meta-hygiene-${{ github.run_number }}
+          path: docs/META_HYGIENE.md
+          retention-days: 30
+
   ilb-wild:
     name: ILB-Wild smoke + regression gate
     runs-on: ubuntu-latest
@@ -50,7 +122,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version-file: .nvmrc
           cache: npm
 
       - run: npm ci
@@ -60,7 +132,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .bench-repos
-          key: ilb-bench-repos-${{ hashFiles('scripts/ilb-wild.mjs') }}
+          key: ilb-bench-repos-${{ hashFiles('scripts/ilb-wild.ts') }}
           restore-keys: |
             ilb-bench-repos-
 
@@ -72,7 +144,7 @@ jobs:
           IFS=',' read -ra REPOS <<< "$ILB_REPOS"
           for r in "${REPOS[@]}"; do
             echo "::group::ilb:wild --repo $r"
-            node scripts/ilb-wild.mjs --repo "$r" --runs 1 || echo "::warning::repo $r failed"
+            tsx scripts/ilb-wild.ts --repo "$r" --runs 1 || echo "::warning::repo $r failed"
             echo "::endgroup::"
           done
 

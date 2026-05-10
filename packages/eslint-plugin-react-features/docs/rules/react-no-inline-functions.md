@@ -63,23 +63,7 @@ function TodoList({ todos }: Props) {
 ### ✅ Correct
 
 ```typescript
-function TodoList({ todos }: Props) {
-  const handleDelete = useCallback((todoId: string) => {
-    deleteTodo(todoId);
-  }, []);
-
-  return (
-    <div>
-      {todos.map((todo) => (
-        <TodoItem
-          key={todo.id}
-          todo={todo}
-          onDelete={() => handleDelete(todo.id)}  // ✅ Using useCallback
-        />
-      ))}
-    </div>
-  );
-}
+function MyComponent() { return <div>Hello</div>; }
 ```
 
 ## Configuration Examples

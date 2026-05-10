@@ -36,8 +36,11 @@ export const noErrorSwallowing = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-error-swallowing.md',
       description:
         'Detects empty catch blocks and missing error logging in Lambda handlers',
+      cwe: 'CWE-390',
+      cvss: 5,
     },
     hasSuggestions: true,
     messages: {

@@ -63,6 +63,19 @@ export const plugin: TSESLint.FlatConfig.Plugin = {
  */
 export const configs: Record<string, TSESLint.FlatConfig.Config> = {
   /**
+   * Flagship preset — exactly the rule(s) from this plugin that appear in
+   * the ecosystem-wide flagship list (`.agent/flagship-rules.md`). Use this
+   * when you want the highest-signal subset shippable in CI gates without
+   * the noise of `recommended`.
+   */
+  flagship: {
+    plugins: { 'pg': plugin },
+    rules: {
+      'pg/no-unsafe-query': 'error',
+    },
+  } satisfies TSESLint.FlatConfig.Config,
+
+  /**
    * Recommended preset - balanced security for most projects
    */
   recommended: {

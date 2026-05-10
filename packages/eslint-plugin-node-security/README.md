@@ -65,40 +65,43 @@ npm install eslint-plugin-node-security --save-dev
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
+| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
+| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [detect-child-process](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/detect-child-process) | CWE-78 |  | 9.8 | ESLint rule documentation for detect-child-process | 💼 |  |  | 💡 |  |
-| [detect-eval-with-expression](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/detect-eval-with-expression) | CWE-95 |  | 9.8 | ESLint rule documentation for detect-eval-with-expression | 💼 |  |  |  |  |
-| [detect-non-literal-fs-filename](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/detect-non-literal-fs-filename) | CWE-22 |  | 7.5 | ESLint rule documentation for detect-non-literal-fs-filename | 💼 |  |  | 💡 |  |
-| [detect-suspicious-dependencies](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/detect-suspicious-dependencies) | CWE-829 |  | 8.2 | ESLint rule documentation for detect-suspicious-dependencies | 💼 |  |  |  |  |
-| [lock-file](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/lock-file) | CWE-829 |  | 7.5 | ESLint rule documentation for lock-file | 💼 |  |  |  |  |
-| [no-arbitrary-file-access](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-arbitrary-file-access) | CWE-22 |  | 7.5 | ESLint rule documentation for no-arbitrary-file-access | 💼 |  |  |  |  |
-| [no-buffer-overread](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-buffer-overread) | CWE-126 |  | 7.5 | ESLint rule documentation for no-buffer-overread | 💼 |  |  |  |  |
-| [no-cryptojs](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-cryptojs) | CWE-327 |  | 5.0 | ESLint rule documentation for no-cryptojs | 💼 | ⚠️ |  | 💡 |  |
-| [no-cryptojs-weak-random](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-cryptojs-weak-random) | CWE-338 |  | 5.3 | ESLint rule documentation for no-cryptojs-weak-random | 💼 |  |  | 💡 |  |
-| [no-data-in-temp-storage](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-data-in-temp-storage) | CWE-312 |  | 7.5 | ESLint rule documentation for no-data-in-temp-storage |  | ⚠️ |  |  |  |
-| [no-deprecated-cipher-method](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-deprecated-cipher-method) | CWE-327 |  | 5.0 | ESLint rule documentation for no-deprecated-cipher-method | 💼 |  |  | 💡 |  |
-| [no-dynamic-dependency-loading](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-dynamic-dependency-loading) | CWE-829 |  | 7.5 | ESLint rule documentation for no-dynamic-dependency-loading |  | ⚠️ |  |  |  |
-| [no-dynamic-require](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-dynamic-require) | CWE-706 |  | 7.5 | ESLint rule documentation for no-dynamic-require |  | ⚠️ |  |  |  |
-| [no-ecb-mode](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-ecb-mode) | CWE-327 |  | 7.5 | ESLint rule documentation for no-ecb-mode | 💼 |  |  | 💡 |  |
-| [no-insecure-key-derivation](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-insecure-key-derivation) | CWE-916 |  | 7.5 | ESLint rule documentation for no-insecure-key-derivation | 💼 |  |  | 💡 |  |
-| [no-insecure-rsa-padding](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-insecure-rsa-padding) | CWE-327 |  | 7.4 | ESLint rule documentation for no-insecure-rsa-padding | 💼 |  |  | 💡 |  |
-| [no-pii-in-logs](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-pii-in-logs) | CWE-532 |  | 7.5 | ESLint rule documentation for no-pii-in-logs |  | ⚠️ |  |  |  |
-| [no-self-signed-certs](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-self-signed-certs) | CWE-295 |  | 7.5 | ESLint rule documentation for no-self-signed-certs | 💼 |  |  | 💡 |  |
-| [no-sha1-hash](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-sha1-hash) | CWE-327 |  | 7.5 | ESLint rule documentation for no-sha1-hash | 💼 |  |  | 💡 |  |
-| [no-static-iv](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-static-iv) | CWE-329 |  | 7.5 | ESLint rule documentation for no-static-iv | 💼 |  |  | 💡 |  |
-| [no-timing-unsafe-compare](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-timing-unsafe-compare) | CWE-208 |  | 5.9 | ESLint rule documentation for no-timing-unsafe-compare | 💼 | ⚠️ |  | 💡 |  |
-| [no-toctou-vulnerability](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-toctou-vulnerability) | CWE-367 |  | 7.0 | ESLint rule documentation for no-toctou-vulnerability | 💼 |  |  | 💡 |  |
-| [no-unsafe-dynamic-require](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-unsafe-dynamic-require) | CWE-706 |  | 7.5 | ESLint rule documentation for no-unsafe-dynamic-require | 💼 |  |  | 💡 |  |
-| [no-weak-cipher-algorithm](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-weak-cipher-algorithm) | CWE-327 |  | 7.5 | ESLint rule documentation for no-weak-cipher-algorithm | 💼 |  |  | 💡 |  |
-| [no-weak-hash-algorithm](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-weak-hash-algorithm) | CWE-327 |  | 7.5 | ESLint rule documentation for no-weak-hash-algorithm | 💼 |  |  | 💡 |  |
-| [no-zip-slip](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-zip-slip) | CWE-22 |  | 8.1 | ESLint rule documentation for no-zip-slip | 💼 |  |  |  |  |
-| [prefer-native-crypto](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/prefer-native-crypto) | CWE-327 |  | 5.0 | ESLint rule documentation for prefer-native-crypto | 💼 | ⚠️ |  | 💡 |  |
-| [require-dependency-integrity](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-dependency-integrity) | CWE-494 |  | 7.5 | ESLint rule documentation for require-dependency-integrity |  |  |  |  |  |
-| [require-secure-credential-storage](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-secure-credential-storage) | CWE-522 |  | 7.5 | ESLint rule documentation for require-secure-credential-storage |  |  |  |  |  |
-| [require-secure-deletion](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-secure-deletion) | CWE-459 |  | 7.5 | ESLint rule documentation for require-secure-deletion |  |  |  |  |  |
-| [require-storage-encryption](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-storage-encryption) | CWE-311 |  | 7.5 | ESLint rule documentation for require-storage-encryption |  |  |  |  |  |
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [detect-child-process](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/detect-child-process) | CWE-78 |  | 9.8 | ESLint rule documentation for detect-child-process | 🟢 | 💼 |  |  | 💡 |  |
+| [detect-eval-with-expression](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/detect-eval-with-expression) | CWE-95 |  | 9.8 | ESLint rule documentation for detect-eval-with-expression | 🟢 | 💼 |  |  |  |  |
+| [detect-non-literal-fs-filename](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/detect-non-literal-fs-filename) | CWE-22 |  | 7.5 | ESLint rule documentation for detect-non-literal-fs-filename | 🟢 | 💼 |  |  | 💡 |  |
+| [detect-suspicious-dependencies](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/detect-suspicious-dependencies) | CWE-829 |  | 8.2 | ESLint rule documentation for detect-suspicious-dependencies | 🟢 | 💼 |  |  |  |  |
+| [lock-file](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/lock-file) | CWE-829 |  | 7.5 | ESLint rule documentation for lock-file | 🟢 | 💼 |  |  |  |  |
+| [no-arbitrary-file-access](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-arbitrary-file-access) | CWE-22 |  | 7.5 | ESLint rule documentation for no-arbitrary-file-access | 🟢 | 💼 |  |  |  |  |
+| [no-buffer-overread](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-buffer-overread) | CWE-126 |  | 7.5 | ESLint rule documentation for no-buffer-overread | 🟢 | 💼 |  |  |  |  |
+| [no-cryptojs](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-cryptojs) | CWE-327 |  | 5.0 | ESLint rule documentation for no-cryptojs | 🟢 | 💼 | ⚠️ |  | 💡 |  |
+| [no-cryptojs-weak-random](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-cryptojs-weak-random) | CWE-338 |  | 5.3 | ESLint rule documentation for no-cryptojs-weak-random | 🟢 | 💼 |  |  | 💡 |  |
+| [no-data-in-temp-storage](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-data-in-temp-storage) | CWE-312 |  | 7.5 | ESLint rule documentation for no-data-in-temp-storage | 🟢 |  | ⚠️ |  |  |  |
+| [no-deprecated-cipher-method](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-deprecated-cipher-method) | CWE-327 |  | 5.0 | ESLint rule documentation for no-deprecated-cipher-method | 🟢 | 💼 |  |  | 💡 |  |
+| [no-dynamic-dependency-loading](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-dynamic-dependency-loading) | CWE-829 |  | 7.5 | ESLint rule documentation for no-dynamic-dependency-loading | 🟢 |  | ⚠️ |  |  |  |
+| [no-dynamic-require](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-dynamic-require) | CWE-706 |  | 7.5 | ESLint rule documentation for no-dynamic-require | 🟢 |  | ⚠️ |  |  |  |
+| [no-ecb-mode](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-ecb-mode) | CWE-327 |  | 7.5 | ESLint rule documentation for no-ecb-mode | 🟢 | 💼 |  |  | 💡 |  |
+| [no-insecure-key-derivation](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-insecure-key-derivation) | CWE-916 |  | 7.5 | ESLint rule documentation for no-insecure-key-derivation | 🟢 | 💼 |  |  | 💡 |  |
+| [no-insecure-rsa-padding](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-insecure-rsa-padding) | CWE-327 |  | 7.4 | ESLint rule documentation for no-insecure-rsa-padding | 🟢 | 💼 |  |  | 💡 |  |
+| [no-pii-in-logs](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-pii-in-logs) | CWE-532 |  | 7.5 | ESLint rule documentation for no-pii-in-logs | 🟢 |  | ⚠️ |  |  |  |
+| [no-self-signed-certs](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-self-signed-certs) | CWE-295 |  | 7.5 | ESLint rule documentation for no-self-signed-certs | 🟢 | 💼 |  |  | 💡 |  |
+| [no-sha1-hash](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-sha1-hash) | CWE-327 |  | 7.5 | ESLint rule documentation for no-sha1-hash | 🟢 | 💼 |  |  | 💡 |  |
+| [no-static-iv](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-static-iv) | CWE-329 |  | 7.5 | ESLint rule documentation for no-static-iv | 🟢 | 💼 |  |  | 💡 |  |
+| [no-timing-unsafe-compare](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-timing-unsafe-compare) | CWE-208 |  | 5.9 | ESLint rule documentation for no-timing-unsafe-compare | 🟢 | 💼 | ⚠️ |  | 💡 |  |
+| [no-toctou-vulnerability](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-toctou-vulnerability) | CWE-367 |  | 7.0 | ESLint rule documentation for no-toctou-vulnerability | 🟢 | 💼 |  |  | 💡 |  |
+| [no-unsafe-dynamic-require](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-unsafe-dynamic-require) | CWE-706 |  | 7.5 | ESLint rule documentation for no-unsafe-dynamic-require | 🟢 | 💼 |  |  | 💡 |  |
+| [no-weak-cipher-algorithm](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-weak-cipher-algorithm) | CWE-327 |  | 7.5 | ESLint rule documentation for no-weak-cipher-algorithm | 🟢 | 💼 |  |  | 💡 |  |
+| [no-weak-hash-algorithm](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-weak-hash-algorithm) | CWE-327 |  | 7.5 | ESLint rule documentation for no-weak-hash-algorithm | 🟢 | 💼 |  |  | 💡 |  |
+| [no-zip-slip](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-zip-slip) | CWE-22 |  | 8.1 | ESLint rule documentation for no-zip-slip | 🟢 | 💼 |  |  |  |  |
+| [prefer-native-crypto](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/prefer-native-crypto) | CWE-327 |  | 5.0 | ESLint rule documentation for prefer-native-crypto | 🟢 | 💼 | ⚠️ |  | 💡 |  |
+| [require-dependency-integrity](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-dependency-integrity) | CWE-494 |  | 7.5 | ESLint rule documentation for require-dependency-integrity | 🟢 |  |  |  |  |  |
+| [require-secure-credential-storage](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-secure-credential-storage) | CWE-522 |  | 7.5 | ESLint rule documentation for require-secure-credential-storage | 🟢 |  |  |  |  |  |
+| [require-secure-deletion](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-secure-deletion) | CWE-459 |  | 7.5 | ESLint rule documentation for require-secure-deletion | 🟢 |  |  |  |  |  |
+| [require-storage-encryption](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-storage-encryption) | CWE-311 |  | 7.5 | ESLint rule documentation for require-storage-encryption | 🟢 |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins
 
@@ -117,6 +120,15 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
+
+## 📦 Compatibility
+
+| Package | Version |
+| :--- | :--- |
+| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0` |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
 ## 📄 License
 

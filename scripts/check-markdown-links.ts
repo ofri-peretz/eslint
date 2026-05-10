@@ -27,7 +27,7 @@ const checkedFiles = new Set<string>();
 function getMarkdownFiles(rootDir = '.'): string[] {
   try {
     const result = execSync(
-      `find ${rootDir} -name "*.md" -type f ! -path "*/node_modules/*" ! -path "*/.nx/cache/*" ! -path "*/dist/*" ! -path "*/.git/*" ! -path "*/coverage/*"`,
+      `find ${rootDir} -name "*.md" -type f ! -path "*/node_modules/*" ! -path "*/.turbo/*" ! -path "*/dist/*" ! -path "*/.git/*" ! -path "*/coverage/*"`,
       { encoding: 'utf-8' }
     );
     return result

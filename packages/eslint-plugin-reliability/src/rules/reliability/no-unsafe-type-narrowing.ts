@@ -102,6 +102,7 @@ export const noUnsafeTypeNarrowing = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-reliability/docs/rules/no-unsafe-type-narrowing.md',
       description: 'Detects unsafe type narrowing patterns',
     },
     hasSuggestions: true,

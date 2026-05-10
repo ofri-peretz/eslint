@@ -16,6 +16,10 @@ on:
     # - cron: "0 0 * * 0"
   workflow_dispatch:
 
+concurrency:
+  group: check-links-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   pull-requests: write
@@ -23,6 +27,7 @@ permissions:
 jobs:
   check-links:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,7 +35,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version-file: .nvmrc
           cache: "npm"
 
       - name: Install dependencies
@@ -40,7 +45,7 @@ jobs:
         id: linkcheck
         working-directory: apps/docs
         continue-on-error: true
-        run: node scripts/check-links.mjs
+        run: tsx scripts/check-links.ts
 
       - name: Upload link report
         if: always()

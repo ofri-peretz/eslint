@@ -26,7 +26,10 @@ export const noSystemPromptLeak = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/no-system-prompt-leak.md',
       description: 'Prevent system prompts from being exposed in API responses or client code',
+      cwe: 'CWE-200',
+      cvss: 7.5,
     },
     messages: {
       systemPromptLeak: formatLLMMessage({

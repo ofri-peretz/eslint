@@ -129,6 +129,7 @@ export const noFullPackageImport = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-full-package-import.md',
       description:
         'Disallow full package imports from known large packages that prevent tree-shaking',
     },

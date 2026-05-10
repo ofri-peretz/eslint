@@ -32,6 +32,20 @@ Detects variable in filename argument of fs calls, which might allow an attacker
 | **ESLint MCP**    | ✅ Optimized for ESLint MCP integration                                   |
 | **Best For**      | Node.js applications, file processing systems, file upload handlers       |
 
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE** | [CWE-22](https://cwe.mitre.org/data/definitions/22.html) — Improper Limitation of a Pathname to a Restricted Directory (Path Traversal) |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · 10,000+× cheaper than customer disclosure ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** infra/devtools, B2B SaaS handling user uploads, fintech (document storage) · **High:** healthtech (medical-record file access), marketplaces · **Medium:** B2C |
+| **Investor-frame impact** | Path traversal → unauthorized file access (configs, source code, secrets) or unauthorized writes (overwriting system files). Single bug class that often escalates to full system compromise; catch at lint-time is the cheapest possible defense. |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
 ## Vulnerability and Risk
 
 **Vulnerability:** Using non-literal (dynamic) values for filesystem operations (like opening, reading, or writing files) without strict validation allows users to control file paths.
@@ -116,21 +130,7 @@ fs.writeFile(userFile, data, callback); // Can write anywhere
 ### ✅ Correct
 
 ```typescript
-// Safe file reading
-const SAFE_UPLOADS_DIR = path.join(__dirname, 'uploads');
-const safePath = path.join(SAFE_UPLOADS_DIR, path.basename(userFile));
-fs.readFile(safePath, callback);
-
-// Safe directory listing
-const ALLOWED_DIRS = [path.join(__dirname, 'public')];
-const resolvedDir = path.resolve(ALLOWED_DIRS[0], userSubDir);
-if (resolvedDir.startsWith(ALLOWED_DIRS[0])) {
-  fs.readdir(resolvedDir, callback);
-}
-
-// Safe file writing
-const safeWritePath = path.join(SAFE_WRITES_DIR, path.basename(userFile));
-fs.writeFile(safeWritePath, data, callback);
+fs.readFile("/path/to/file.txt", callback);
 ```
 
 ## Path Traversal Prevention

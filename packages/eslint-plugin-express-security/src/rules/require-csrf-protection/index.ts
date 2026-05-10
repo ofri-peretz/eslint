@@ -141,8 +141,11 @@ export const requireCsrfProtection = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/require-csrf-protection.md',
       description:
         'Require CSRF protection middleware for state-changing HTTP methods',
+      cwe: 'CWE-352',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

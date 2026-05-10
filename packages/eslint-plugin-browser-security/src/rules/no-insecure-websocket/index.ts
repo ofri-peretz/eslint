@@ -23,7 +23,10 @@ export const noInsecureWebsocket = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-insecure-websocket.md',
       description: 'Require secure WebSocket connections (wss://)',
+      cwe: 'CWE-319',
+      cvss: 7.5,
     },
     messages: {
       violationDetected: formatLLMMessage({

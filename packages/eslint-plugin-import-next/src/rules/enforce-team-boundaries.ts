@@ -157,6 +157,7 @@ export const enforceTeamBoundaries = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/enforce-team-boundaries.md',
       description: 'Prevent unauthorized cross-team imports in large codebases',
     },
     messages: {

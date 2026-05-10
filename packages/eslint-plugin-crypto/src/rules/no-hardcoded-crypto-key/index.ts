@@ -31,7 +31,10 @@ export const noHardcodedCryptoKey = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-crypto/docs/rules/no-hardcoded-crypto-key.md',
       description: 'Disallow hardcoded encryption keys',
+      cwe: 'CWE-321',
+      cvss: 9.5,
     },
     hasSuggestions: true,
     messages: {

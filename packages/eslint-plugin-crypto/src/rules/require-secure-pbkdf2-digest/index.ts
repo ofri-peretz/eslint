@@ -35,7 +35,10 @@ export const requireSecurePbkdf2Digest = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-crypto/docs/rules/require-secure-pbkdf2-digest.md',
       description: 'Require secure digest algorithm for PBKDF2 (not SHA1)',
+      cwe: 'CWE-328',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

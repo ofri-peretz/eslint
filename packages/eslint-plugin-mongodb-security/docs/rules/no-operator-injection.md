@@ -30,6 +30,20 @@ Detects MongoDB operator injection attacks where user input is passed directly a
 | **Category**   | Security |
 | **ESLint MCP**    | ✅ Optimized for AI assistant integration |
 
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE** | [CWE-943](https://cwe.mitre.org/data/definitions/943.html) — Improper Neutralization of Special Elements in Data Query Logic (NoSQL injection, CVSS 9.1) |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · 10,000+× cheaper than customer disclosure ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** fintech, healthtech, B2B SaaS (any MongoDB-backed multi-tenant app) · **High:** marketplaces, infra/devtools · **Medium:** B2C |
+| **Investor-frame impact** | NoSQL operator injection (`$ne`, `$gt`, `$or` injection) → authentication bypass + data exfiltration. The MongoDB-specific equivalent of SQL injection; same class of disclosure event. Catch at lint-time prevents the entire attack family. |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
 ## Rule Details
 
 This rule specifically targets operator injection - a subset of NoSQL injection where attackers submit objects with MongoDB operators instead of expected primitive values.
@@ -51,10 +65,7 @@ db.users.findOne({ username: 'admin', password: { $ne: '' } });
 ### ❌ Incorrect
 
 ```typescript
-// User input passed directly - vulnerable to operator injection
-User.findOne({ email: req.body.email });
-User.findOne({ password: req.body.password });
-User.deleteMany({ userId: req.query.id });
+const filter = { $ne: req.body.value };
 ```
 
 ### ✅ Correct

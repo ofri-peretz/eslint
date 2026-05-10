@@ -19,6 +19,7 @@ export const requireRenderReturn = createRule<[], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/require-render-return.md',
       description: 'Require render methods to return',
     },
     schema: [],

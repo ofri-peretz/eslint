@@ -25,7 +25,10 @@ export const detectSuspiciousDependencies = createRule<RuleOptions, MessageIds>(
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/detect-suspicious-dependencies.md',
       description: 'Detect typosquatting in package names',
+      cwe: 'CWE-506',
+      cvss: 7.5,
     },
     messages: {
       violationDetected: formatLLMMessage({
@@ -44,6 +47,7 @@ export const detectSuspiciousDependencies = createRule<RuleOptions, MessageIds>(
   create(context) {
     const popularPackages = ['react', 'lodash', 'express', 'axios', 'webpack'];
     
+    // oxlint-disable-next-line consistent-function-scoping
     function levenshtein(a: string, b: string): number {
       const matrix = [];
       for (let i = 0; i <= b.length; i++) {

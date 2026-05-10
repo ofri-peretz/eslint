@@ -77,20 +77,7 @@ const data = xmlParser.parse(req.body.xml);
 ### ✅ Correct
 
 ```typescript
-// Use safe parser with external entities disabled
-const parser = new DOMParser();
-// Set secure options
-const doc = parser.parseFromString(sanitizedXml, 'text/xml');
-
-// Validate and sanitize XML input
-const safeXml = validateXml(userInput);
-const data = xmlParser.parse(safeXml, {
-  noent: false, // Disable entity resolution
-  resolveExternals: false, // Disable external references
-});
-
-// Use JSON instead of XML when possible
-const data = JSON.parse(userInput);
+const libxml = require("libxmljs"); const doc = libxml.parseXmlString(xmlString, { noent: false });
 ```
 
 ## Configuration

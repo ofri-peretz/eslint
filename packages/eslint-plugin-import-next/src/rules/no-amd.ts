@@ -28,6 +28,7 @@ export const noAmd = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-amd.md',
       description: 'Prevents AMD require/define calls',
     },
     hasSuggestions: false,

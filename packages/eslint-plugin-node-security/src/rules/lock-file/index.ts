@@ -26,7 +26,10 @@ export const lockFile = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/lock-file.md',
       description: 'Ensure package lock file exists for the configured package manager',
+      cwe: 'CWE-829',
+      cvss: 7.5,
     },
     messages: {
       violationDetected: formatLLMMessage({

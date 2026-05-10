@@ -120,6 +120,20 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
  */
 export const configs: Record<string, TSESLint.FlatConfig.Config> = {
   /**
+   * Flagship preset — the rule from this plugin in the ecosystem-wide
+   * flagship list (`.agent/flagship-rules.md`). Use this when you want the
+   * highest-signal subset shippable in CI gates.
+   */
+  flagship: {
+    plugins: {
+      'mongodb-security': plugin,
+    },
+    rules: {
+      'mongodb-security/no-unsafe-query': 'error',
+    },
+  } satisfies TSESLint.FlatConfig.Config,
+
+  /**
    * Recommended configuration
    * Critical rules as errors, high as warnings
    */

@@ -37,8 +37,15 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
       'no-pii-in-logs', // Migrated from node-security
       'no-unlimited-resource-allocation',
       'no-unchecked-loop-condition',
+      // Auth & runtime hardening (wired 2026-05-09 — implementations
+      // existed but the plugin index didn't register them, leaving the
+      // doc-harvest stress test reporting them as orphans).
+      'detect-weak-password-validation',
+      'no-electron-security-issues',
+      'no-hardcoded-session-tokens',
+      'require-secure-defaults',
     ]);
-    expect(ruleKeys.length).toBe(23);
+    expect(ruleKeys.length).toBe(27);
   });
 
   describe('configurations', () => {
@@ -51,7 +58,12 @@ describe('eslint-plugin-secure-coding plugin interface', () => {
         expect(ruleName).toMatch(/^secure-coding\//);
       });
       
-      expect(recommendedRules['secure-coding/no-unsafe-deserialization']).toBe('error');
+      // Demoted to 'warn' 2026-05-09 — `npm run ilb:severity-audit` showed
+      // 76% Wild hits on adversarial Edge corpus, failing the README §1
+      // ≥ 95% precision floor for `error`-tier severity. The rule is still
+      // in `recommended` (just at lower severity) and remains 'error' in
+      // the `strict` config — see the test below.
+      expect(recommendedRules['secure-coding/no-unsafe-deserialization']).toBe('warn');
     });
 
     it('should provide strict configuration', () => {

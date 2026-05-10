@@ -60,7 +60,9 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-improper-type-validation.md',
       description: 'Detects improper type validation in user input handling',
+      cwe: 'CWE-1287',
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -346,6 +348,7 @@ export const noImproperTypeValidation = createRule<RuleOptions, MessageIds>({
     /**
      * Check for unreliable constructor checks
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const isUnreliableConstructorCheck = (node: TSESTree.MemberExpression): boolean => {
       return node.property.type === 'Identifier' &&
              node.property.name === 'name' &&

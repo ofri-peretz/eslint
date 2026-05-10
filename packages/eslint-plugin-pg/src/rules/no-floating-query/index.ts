@@ -16,6 +16,8 @@ export const noFloatingQuery: TSESLint.RuleModule<
     docs: {
       description: 'Ensure all queries are awaited or returned to prevent unhandled promise rejections.',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-floating-query.md',
+      cwe: 'CWE-391',
+      cvss: 7.5,
     },
     messages: {
       noFloatingQuery: formatLLMMessage({

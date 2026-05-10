@@ -62,6 +62,7 @@ const COMMAND_PATTERNS: CommandPattern[] = [
     vulnerability: 'command-injection',
     safeAlternatives: ['execFile', 'spawn'],
     example: {
+      // oxlint-disable-next-line no-template-curly-in-string
       bad: 'exec(`git clone ${repoUrl}`)',
       good: [
         'execFile(\'git\', [\'clone\', repoUrl], {shell: false})',
@@ -75,7 +76,9 @@ const COMMAND_PATTERNS: CommandPattern[] = [
     dangerous: true,
     vulnerability: 'command-injection',
     safeAlternatives: ['execFileSync', 'spawnSync'],
+    // oxlint-disable-next-line no-template-curly-in-string
     example: {
+      // oxlint-disable-next-line no-template-curly-in-string
       bad: 'execSync(`npm install ${packageName}`)',
       good: [
         'execFileSync(\'npm\', [\'install\', packageName], {shell: false})',
@@ -175,7 +178,11 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/detect-child-process.md',
       description: 'Detects child_process usage that may allow command injection',
+      cwe: 'CWE-78',
+      cvss: 9.5,
+      confidence: 'medium',
     },
     messages: {
       // 🎯 Token optimization: 44% reduction (55→31 tokens) - removes ❌/✅/📚 labels
@@ -325,6 +332,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
     /**
      * Check if a node contains string interpolation or concatenation
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const containsDynamicStrings = (node: TSESTree.Node): boolean => {
       if (node.type === 'TemplateLiteral') {
         return node.expressions.length > 0;
@@ -534,7 +542,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
         method = node.callee.name;
       }
 
-      const sourceCode = context.sourceCode || context.sourceCode;
+      const sourceCode = context.sourceCode;
       const args = node.arguments.map((arg: TSESTree.Node) => sourceCode.getText(arg)).join(', ');
 
       const pattern = COMMAND_PATTERNS.find(p => p.method === method) || null;
@@ -548,6 +556,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
     /**
      * Generate refactoring steps based on the pattern
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const generateRefactoringSteps = (pattern: CommandPattern): string => {
       switch (pattern.method) {
         case 'exec':
@@ -628,6 +637,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
     /**
      * Determine risk level based on the call pattern
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const determineRiskLevel = (pattern: CommandPattern | null, isDynamic: boolean): 'critical' | 'high' | 'medium' => {
       if (pattern?.dangerous && isDynamic) {
         return 'critical';
@@ -703,15 +713,15 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
       // Allow safe methods with literal args if configured
       // execFile, execFileSync, spawn, spawnSync are inherently safer than exec
       // when using literal command + literal args array
-      const saferMethods = ['spawn', 'spawnSync', 'execFile', 'execFileSync'];
-      if (allowLiteralSpawn && saferMethods.includes(method) && hasOnlyLiteralArgs(node.arguments)) {
+      const saferMethods = new Set(['spawn', 'spawnSync', 'execFile', 'execFileSync']);
+      if (allowLiteralSpawn && saferMethods.has(method) && hasOnlyLiteralArgs(node.arguments)) {
         return;
       }
 
       // ALWAYS safe: literal command + ALL literal args (no dynamic input at all).
       // For execFile/execFileSync: no shell by default, all-literal = nothing to inject.
       // For spawn/spawnSync: requires shell:false + all-literal args.
-      if (saferMethods.includes(method) && hasOnlyLiteralArgs(node.arguments)) {
+      if (saferMethods.has(method) && hasOnlyLiteralArgs(node.arguments)) {
         const isExecFile = method === 'execFile' || method === 'execFileSync';
         if (isExecFile || hasShellFalseOption(node)) {
           return;

@@ -52,15 +52,18 @@ npm install eslint-plugin-maintainability --save-dev
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
+| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
+| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [complexity](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/complexity) |  |  |  | Enforce complexity |  |  |  |  |  |
-| [development](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/development) |  |  |  | Enforce development |  |  |  |  |  |
-| [duplication](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/duplication) |  |  |  | Enforce duplication |  |  |  |  |  |
-| [error-handling](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/error-handling) |  |  |  | Enforce error handling |  |  |  |  |  |
-| [maintainability](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/maintainability) |  |  |  | Enforce maintainability |  |  |  |  |  |
-| [quality](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/quality) |  |  |  | Enforce quality |  |  |  |  |  |
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [complexity](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/complexity) |  |  |  | Enforce complexity | 🟢 |  |  |  |  |  |
+| [development](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/development) |  |  |  | Enforce development | 🟢 |  |  |  |  |  |
+| [duplication](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/duplication) |  |  |  | Enforce duplication | 🟢 |  |  |  |  |  |
+| [error-handling](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/error-handling) |  |  |  | Enforce error handling | 🟢 |  |  |  |  |  |
+| [maintainability](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/maintainability) |  |  |  | Enforce maintainability | 🟢 |  |  |  |  |  |
+| [quality](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/quality) |  |  |  | Enforce quality | 🟢 |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins
 
@@ -79,6 +82,15 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
+
+## 📦 Compatibility
+
+| Package | Version |
+| :--- | :--- |
+| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0` |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
 ## 📄 License
 

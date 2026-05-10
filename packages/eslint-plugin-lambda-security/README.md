@@ -106,23 +106,26 @@ All rules accept these common options:
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
+| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
+| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [no-env-logging](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-env-logging) | CWE-532 |  | 7.5 | ESLint rule documentation for no-env-logging | 💼 | ⚠️ |  |  |  |
-| [no-error-swallowing](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-error-swallowing) | CWE-391 |  | 7.5 | ESLint rule documentation for no-error-swallowing | 💼 | ⚠️ |  |  |  |
-| [no-exposed-debug-endpoints](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-exposed-debug-endpoints) |  |  |  | ESLint rule documentation for no-exposed-debug-endpoints |  |  |  |  |  |
-| [no-exposed-error-details](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-exposed-error-details) | CWE-209 |  | 7.5 | ESLint rule documentation for no-exposed-error-details | 💼 | ⚠️ |  |  |  |
-| [no-hardcoded-credentials-sdk](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-hardcoded-credentials-sdk) | CWE-798 |  | 9.8 | ESLint rule documentation for no-hardcoded-credentials-sdk | 💼 |  |  |  |  |
-| [no-missing-authorization-check](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-missing-authorization-check) | CWE-862 |  | 7.5 | ESLint rule documentation for no-missing-authorization-check | 💼 | ⚠️ |  |  |  |
-| [no-overly-permissive-iam-policy](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-overly-permissive-iam-policy) | CWE-732 |  | 9.8 | ESLint rule documentation for no-overly-permissive-iam-policy | 💼 |  |  |  |  |
-| [no-permissive-cors-middy](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-permissive-cors-middy) | CWE-942 |  | 9.1 | ESLint rule documentation for no-permissive-cors-middy | 💼 |  |  |  |  |
-| [no-permissive-cors-response](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-permissive-cors-response) | CWE-942 |  | 9.1 | ESLint rule documentation for no-permissive-cors-response | 💼 |  | 🔧 |  |  |
-| [no-secrets-in-env](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-secrets-in-env) | CWE-522 |  | 9.8 | ESLint rule documentation for no-secrets-in-env | 💼 |  |  |  |  |
-| [no-unbounded-batch-processing](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-unbounded-batch-processing) | CWE-400 |  | 7.5 | ESLint rule documentation for no-unbounded-batch-processing | 💼 | ⚠️ |  |  |  |
-| [no-unvalidated-event-body](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-unvalidated-event-body) | CWE-20 |  | 7.5 | ESLint rule documentation for no-unvalidated-event-body | 💼 | ⚠️ |  |  |  |
-| [no-user-controlled-requests](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-user-controlled-requests) | CWE-918 |  | 9.8 | ESLint rule documentation for no-user-controlled-requests | 💼 |  |  |  |  |
-| [require-timeout-handling](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/require-timeout-handling) | CWE-703 |  | 7.5 | ESLint rule documentation for require-timeout-handling | 💼 | ⚠️ |  |  |  |
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [no-env-logging](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-env-logging) | CWE-532 |  | 7.5 | ESLint rule documentation for no-env-logging | 🟢 | 💼 | ⚠️ |  |  |  |
+| [no-error-swallowing](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-error-swallowing) | CWE-391 |  | 7.5 | ESLint rule documentation for no-error-swallowing | 🟢 | 💼 | ⚠️ |  |  |  |
+| [no-exposed-debug-endpoints](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-exposed-debug-endpoints) |  |  |  | ESLint rule documentation for no-exposed-debug-endpoints | 🟢 |  |  |  |  |  |
+| [no-exposed-error-details](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-exposed-error-details) | CWE-209 |  | 7.5 | ESLint rule documentation for no-exposed-error-details | 🟢 | 💼 | ⚠️ |  |  |  |
+| [no-hardcoded-credentials-sdk](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-hardcoded-credentials-sdk) | CWE-798 |  | 9.8 | ESLint rule documentation for no-hardcoded-credentials-sdk | 🟢 | 💼 |  |  |  |  |
+| [no-missing-authorization-check](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-missing-authorization-check) | CWE-862 |  | 7.5 | ESLint rule documentation for no-missing-authorization-check | 🟢 | 💼 | ⚠️ |  |  |  |
+| [no-overly-permissive-iam-policy](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-overly-permissive-iam-policy) | CWE-732 |  | 9.8 | ESLint rule documentation for no-overly-permissive-iam-policy | 🟢 | 💼 |  |  |  |  |
+| [no-permissive-cors-middy](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-permissive-cors-middy) | CWE-942 |  | 9.1 | ESLint rule documentation for no-permissive-cors-middy | 🟢 | 💼 |  |  |  |  |
+| [no-permissive-cors-response](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-permissive-cors-response) | CWE-942 |  | 9.1 | ESLint rule documentation for no-permissive-cors-response | 🟢 | 💼 |  | 🔧 |  |  |
+| [no-secrets-in-env](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-secrets-in-env) | CWE-522 |  | 9.8 | ESLint rule documentation for no-secrets-in-env | 🟢 | 💼 |  |  |  |  |
+| [no-unbounded-batch-processing](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-unbounded-batch-processing) | CWE-400 |  | 7.5 | ESLint rule documentation for no-unbounded-batch-processing | 🟢 | 💼 | ⚠️ |  |  |  |
+| [no-unvalidated-event-body](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-unvalidated-event-body) | CWE-20 |  | 7.5 | ESLint rule documentation for no-unvalidated-event-body | 🟢 | 💼 | ⚠️ |  |  |  |
+| [no-user-controlled-requests](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/no-user-controlled-requests) | CWE-918 |  | 9.8 | ESLint rule documentation for no-user-controlled-requests | 🟢 | 💼 |  |  |  |  |
+| [require-timeout-handling](https://eslint.interlace.tools/docs/security/plugin-lambda-security/rules/require-timeout-handling) | CWE-703 |  | 7.5 | ESLint rule documentation for require-timeout-handling | 🟢 | 💼 | ⚠️ |  |  |  |
 
 ## 🔗 Related ESLint Plugins
 
@@ -141,6 +144,15 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
+
+## 📦 Compatibility
+
+| Package | Version |
+| :--- | :--- |
+| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0` |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
 ## 📄 License
 

@@ -18,6 +18,20 @@ This rule detects Express.js applications that are missing the helmet middleware
 **Severity:** 🔴 High  
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE** | [CWE-693](https://cwe.mitre.org/data/definitions/693.html) — Protection Mechanism Failure (missing security headers) |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · 10,000+× cheaper than customer disclosure ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** B2B SaaS, B2C (any browser-facing surface) · **High:** fintech, healthtech, marketplaces · **Medium:** infra/devtools |
+| **Investor-frame impact** | Missing Helmet → no CSP, X-Frame-Options, HSTS, etc. Defense-in-depth gap that **SOC2 Common Criteria CC6.6 explicitly addresses**. Lint-time enforcement = audit-grade evidence. |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
 ## Rule Details
 
 This rule detects Express.js applications that are missing the helmet middleware. Helmet sets various HTTP headers to help protect your app from well-known web vulnerabilities.

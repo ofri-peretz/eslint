@@ -34,8 +34,11 @@ export const noPostmessageWildcardOrigin = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-postmessage-wildcard-origin.md',
       description:
         'Disallow using wildcard (*) as targetOrigin in postMessage calls',
+      cwe: 'CWE-346',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

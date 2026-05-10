@@ -1,1 +1,0 @@
-// Valid example for no-relative-parent-imports\nexport const valid = true;\n

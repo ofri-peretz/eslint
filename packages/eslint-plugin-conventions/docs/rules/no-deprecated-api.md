@@ -73,12 +73,7 @@ Enforces migration from deprecated APIs with clear timelines, replacement sugges
 
 ### ❌ Incorrect
 
-```typescript
-// Using deprecated API
-import { oldFunction } from 'my-library';
-
-oldFunction({ data: 'test' });
-```
+> _Awaiting a tested example. The previous snippet was removed because the rule does not behave as the doc claimed; track the regression in [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../../../benchmarks/FP_FN_REMEDIATION_TRACKER.md)._
 
 ### ✅ Correct
 

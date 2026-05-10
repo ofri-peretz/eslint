@@ -103,6 +103,7 @@ export const preferDirectImport = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/prefer-direct-import.md',
       description:
         'Prefer direct imports over barrel imports for better tree-shaking and build performance',
     },

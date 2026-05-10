@@ -56,7 +56,10 @@ export const noRelativePackages = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-relative-packages.md',
       description: 'Forbid importing packages through relative paths',
+      cwe: 'CWE-1047',
+      cvss: 5,
     },
     fixable: 'code',
     messages: {

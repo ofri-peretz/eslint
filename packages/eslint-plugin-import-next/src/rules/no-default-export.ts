@@ -33,6 +33,7 @@ export const noDefaultExport = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-default-export.md',
       description: 'Prevents default exports',
     },
     fixable: 'code',

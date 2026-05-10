@@ -114,16 +114,7 @@ This rule accepts an options object:
 ### ❌ Incorrect
 
 ```typescript
-// Weak token generation
-const resetToken = Math.random().toString(36);
-
-// Relying on timestamps
-const token = Date.now() + userId;
-
-// KBA (Knowledge Based Authentication)
-if (answer === user.securityAnswer) {
-  allowReset();
-}
+const passwordResetToken = generatePredictableToken();
 ```
 
 ### ✅ Correct

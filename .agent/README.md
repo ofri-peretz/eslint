@@ -13,7 +13,6 @@ This directory defines the automated orchestration system for the Interlace ESLi
 - **`agents/`**: Expert personas and domain-specific instructions.
 - **`orchestrators/`**: Multi-agent coordination logic.
 - **`reports/`**: Historical audits and validation logs.
-- **`archive/`**: Retired sessions and old debug data.
 
 ## 🚀 Quick Start
 
@@ -44,7 +43,6 @@ This directory defines the automated orchestration system for the Interlace ESLi
 ├── agents/             # Specialist personas
 ├── orchestrators/      # Multi-agent coordination
 ├── reports/           # Active audits
-├── archive/           # History
 └── README.md
 ```
 

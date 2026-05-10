@@ -32,7 +32,10 @@ export const noDeprecatedCipherMethod = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-deprecated-cipher-method.md',
       description: 'Disallow deprecated crypto.createCipher/createDecipher methods (use createCipheriv/createDecipheriv instead)',
+      cwe: 'CWE-327',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

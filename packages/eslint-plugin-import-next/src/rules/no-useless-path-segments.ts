@@ -35,8 +35,11 @@ export const noUselessPathSegments = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-useless-path-segments.md',
       description:
         'Forbid unnecessary path segments in import and require statements',
+      cwe: 'CWE-1078',
+      cvss: 2.5,
     },
     fixable: 'code',
     messages: {

@@ -21,6 +21,7 @@ export const first = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/first.md',
       description: 'Ensure all imports appear before other statements',
     },
     fixable: 'code',
@@ -61,6 +62,7 @@ export const first = createRule<RuleOptions, MessageIds>({
       },
     };
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isDirective(node: TSESTree.Node) {
       return (
         node.type === 'ExpressionStatement' &&

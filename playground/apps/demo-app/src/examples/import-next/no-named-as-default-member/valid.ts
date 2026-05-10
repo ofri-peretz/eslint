@@ -1,1 +1,0 @@
-// Valid example for no-named-as-default-member\nexport const valid = true;\n

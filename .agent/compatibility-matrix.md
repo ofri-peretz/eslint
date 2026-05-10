@@ -2,15 +2,17 @@
 
 This document defines the supported versions of key dependencies and runtime environments for all Interlace ESLint plugins.
 
+> **ESLint version policy:** see [`docs/ESLINT_VERSION_SUPPORT.md`](../docs/ESLINT_VERSION_SUPPORT.md) for the authoritative support matrix, the 20% gate, the forward-looking exception (covers v10 today), and the refresh script (`npm run stats:eslint-versions`). Last data refresh: **2026-05-09**.
+
 ## Quick Reference
 
-| Dependency                   | Supported Versions   | Notes                                |
-| :--------------------------- | :------------------- | :----------------------------------- |
-| **Node.js**                  | `>=18.0.0`           | LTS versions recommended             |
-| **ESLint**                   | `^8.0.0 \|\| ^9.0.0` | Both legacy and flat config          |
-| **TypeScript**               | `^4.7.0 \|\| ^5.0.0` | **Optional** - JS projects supported |
-| **@typescript-eslint/utils** | `^7.0.0 \|\| ^8.0.0` | Core AST utilities                   |
-| **tslib**                    | `^2.3.0`             | Runtime helper library               |
+| Dependency                   | Supported Versions               | Notes                                |
+| :--------------------------- | :------------------------------- | :----------------------------------- |
+| **Node.js**                  | `>=18.0.0`                       | LTS versions recommended             |
+| **ESLint**                   | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` | Legacy + flat config + v10           |
+| **TypeScript**               | `^4.7.0 \|\| ^5.0.0`             | **Optional** - JS projects supported |
+| **@typescript-eslint/utils** | `^7.0.0 \|\| ^8.0.0`             | Core AST utilities                   |
+| **tslib**                    | `^2.3.0`                         | Runtime helper library               |
 
 ---
 
@@ -31,12 +33,13 @@ All plugins use ES2020 features and require Node.js 18+ for:
 
 ### ESLint Versions
 
-| Version | Config Format                    | Status       |
-| :------ | :------------------------------- | :----------- |
-| 8.x     | Legacy (`.eslintrc.*`)           | ✅ Supported |
-| 9.x     | Flat Config (`eslint.config.js`) | ✅ Supported |
+| Version | Config Format                    | Share (2026-05-09) | Status                          |
+| :------ | :------------------------------- | :----------------- | :------------------------------ |
+| 8.x     | Legacy (`.eslintrc.*`)           | 24.3%              | ✅ Supported (≥20% gate)        |
+| 9.x     | Flat Config (`eslint.config.js`) | 60.4%              | ✅ Supported (≥20% gate)        |
+| 10.x    | Flat Config (`eslint.config.js`) | 9.2%               | ✅ Supported (forward-looking)  |
 
-**Important**: ESLint 9.x uses flat config by default. All plugins export both legacy and flat config presets.
+**Important**: ESLint 9.x and 10.x use flat config by default. All plugins export both legacy and flat config presets so the same plugin code works across v8, v9, and v10.
 
 ### TypeScript Versions
 

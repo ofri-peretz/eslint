@@ -1,0 +1,446 @@
+{
+  "generatedAt": "2026-05-10T00:20:27.127Z",
+  "totals": {
+    "cases": 51,
+    "matched": 51,
+    "disagreement": 0,
+    "errors": 0
+  },
+  "results": [
+    {
+      "rule": "secure-coding/detect-object-injection",
+      "label": "FP: typed-array indexing (Three.js render-loop pattern)",
+      "hypothesis": "Rule should skip Float32Array/Uint8Array typed-arrays since prototype pollution is impossible",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "secure-coding/detect-object-injection",
+      "label": "FP: Object.hasOwn-guarded access",
+      "hypothesis": "Bracket access guarded by Object.hasOwn / hasOwnProperty cannot be polluted",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "secure-coding/detect-object-injection",
+      "label": "FP: AST walker (codemod context)",
+      "hypothesis": "When file imports @babel/types, node[name] is AST traversal not user input",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "secure-coding/detect-object-injection",
+      "label": "TP: dynamic key from req.body",
+      "hypothesis": "Should fire — classic prototype pollution",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "3:13 objectInjection ⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-"
+    },
+    {
+      "rule": "secure-coding/detect-object-injection",
+      "label": "FN: spread-merge of user input",
+      "hypothesis": "Object.assign(target, req.body) is the same vuln as obj[key]=value but bypasses bracket-access detection",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "3:13 objectInjection ⚠️ CWE-915 OWASP:A01-Broken CVSS:9.8 | Object injection/Prototype pollution (incl. model/tool outputs) | HIGH [SOC2,PCI-"
+    },
+    {
+      "rule": "secure-coding/no-graphql-injection",
+      "label": "TP: gql template with variable interpolation",
+      "hypothesis": "Should fire — direct string interpolation in gql",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "4:23 unsafeVariableInterpolation 🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | Unsafe interpolation in GraphQL query | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   F"
+    },
+    {
+      "rule": "secure-coding/no-graphql-injection",
+      "label": "FP: console.log template literal (not GraphQL)",
+      "hypothesis": "Audit fix is supposed to detect console.log context — verify still works",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "secure-coding/no-graphql-injection",
+      "label": "FP: URL template (not GraphQL keywords)",
+      "hypothesis": "Audit fix should skip https:// templates",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "secure-coding/no-graphql-injection",
+      "label": "FN: dynamic field selection in gql",
+      "hypothesis": "Variable used as a FIELD name (not just a value) is harder to detect",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "4:23 unsafeVariableInterpolation 🔒 CWE-89 OWASP:A05-Injection CVSS:9.8 | Unsafe interpolation in GraphQL query | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   F"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "label": "TP: hardcoded API key",
+      "hypothesis": "Should fire — clear hardcoded credential",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "2:26 useEnvironmentVariable 🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded API key detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n   Fix: U"
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "label": "FP: variable named password but value is from env",
+      "hypothesis": "Audit fix exists; verify",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "label": "FP: UI label string (i18n key)",
+      "hypothesis": "Audit fix landed in iter-2 for label/name/type contexts",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "secure-coding/no-hardcoded-credentials",
+      "label": "FN: credential in array element",
+      "hypothesis": "Credential in array literal may bypass detection",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "2:27 useEnvironmentVariable 🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Credential value detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n | 2:67 useEnvironmentVariable 🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Hard-coded Credential value detected | CRITICAL [SOC2,PCI-DSS,HIPAA,GDPR]\n"
+    },
+    {
+      "rule": "secure-coding/no-redos-vulnerable-regex",
+      "label": "TP: catastrophic backtracking (a+)+",
+      "hypothesis": "Classic ReDoS pattern",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "2:22 redosVulnerable 🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Self-loop quantifier (exponential backtracking): A quantifier reaches itself vi"
+    },
+    {
+      "rule": "secure-coding/no-redos-vulnerable-regex",
+      "label": "FP: linear regex with bounded quantifiers",
+      "hypothesis": "Bounded quantifiers cannot cause ReDoS",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "secure-coding/no-redos-vulnerable-regex",
+      "label": "FP: anchored regex with character class",
+      "hypothesis": "Atomic character classes are linear",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "secure-coding/no-redos-vulnerable-regex",
+      "label": "FN: ReDoS in dynamically constructed RegExp",
+      "hypothesis": "new RegExp(`(${pattern})+`) hides the catastrophic shape",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "3:20 redosVulnerable 🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Runtime-built nested quantifier: Template-literal pattern interpolation places "
+    },
+    {
+      "rule": "secure-coding/no-unsafe-deserialization",
+      "label": "TP: JSON.parse on req.body",
+      "hypothesis": "User-controlled deserialization",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "3:20 untrustedDeserializationInput 🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | Deserializing untrusted input (incl. LLM/MCP responses) without validation | HI"
+    },
+    {
+      "rule": "secure-coding/no-unsafe-deserialization",
+      "label": "FP: JSON.parse on a literal",
+      "hypothesis": "Static input cannot be exploited",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "secure-coding/no-unsafe-deserialization",
+      "label": "FP: JSON.parse on require()-loaded path",
+      "hypothesis": "Internal config from require() is trusted",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "secure-coding/no-unsafe-deserialization",
+      "label": "FN: JSON.parse(req.cookies.session)",
+      "hypothesis": "Cookies are also user-controlled",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "3:26 untrustedDeserializationInput 🔒 CWE-502 OWASP:A08-Software CVSS:9.8 | Deserializing untrusted input (incl. LLM/MCP responses) without validation | HI"
+    },
+    {
+      "rule": "node-security/no-buffer-overread",
+      "label": "TP: Buffer.slice with user-controlled length",
+      "hypothesis": "Possible overread when length > buffer.length",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "3:33 unsafeBufferSlice 🔒 CWE-126 | Buffer slice with unvalidated indices | MEDIUM\n   Fix: Validate slice start/end indices | https://nodejs.or | 3:33 missingBoundsCheck 🔒 CWE-126 | Buffer operation missing bounds validation | MEDIUM\n   Fix: Validate indices before buffer operations | htt"
+    },
+    {
+      "rule": "node-security/no-buffer-overread",
+      "label": "FP: Buffer.slice with length-bounded literal",
+      "hypothesis": "Statically-bounded length cannot overread",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "node-security/no-buffer-overread",
+      "label": "FP: typed-array slice with provably-valid bound",
+      "hypothesis": "Three.js render-loop pattern; bound derived from .length",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "secure-coding/no-unchecked-loop-condition",
+      "label": "TP: while loop with no exit",
+      "hypothesis": "Genuinely unbounded",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "3:13 infiniteLoop 🔒 CWE-400 OWASP:A06-Insecure CVSS:7.5 | Loop may run indefinitely | CRITICAL\n   Fix: Add termination condition or itera"
+    },
+    {
+      "rule": "secure-coding/no-unchecked-loop-condition",
+      "label": "FP: for loop with literal bound",
+      "hypothesis": "Bounded — not unchecked",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "secure-coding/no-unchecked-loop-condition",
+      "label": "FP: while loop with break condition",
+      "hypothesis": "Has explicit exit",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "secure-coding/no-insecure-comparison",
+      "label": "TP: == on credentials",
+      "hypothesis": "Timing-unsafe comparison on secrets",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "3:17 insecureComparison 🔒 CWE-697 OWASP:A06-Insecure CVSS:5.3 | Insecure comparison operator (==) detected - can lead to type coercion vulnerab"
+    },
+    {
+      "rule": "secure-coding/no-insecure-comparison",
+      "label": "FP: === on AST node types (codemod context)",
+      "hypothesis": "Audit fix detects @babel/types imports → skip",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "secure-coding/no-insecure-comparison",
+      "label": "FP: .length comparison before timingSafeEqual",
+      "hypothesis": "Standard pattern, addressed by audit",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "node-security/detect-child-process",
+      "label": "TP: exec with user input",
+      "hypothesis": "Classic command injection",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "3:31 childProcessCommandInjection ⚠️ CWE-78 OWASP:A05-Injection CVSS:9.8 | Command injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix: "
+    },
+    {
+      "rule": "node-security/detect-child-process",
+      "label": "FP: exec with literal command (audit iter-2 fix)",
+      "hypothesis": "Fully literal command should be safe",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "node-security/detect-child-process",
+      "label": "FN: spawn with user-controlled args array",
+      "hypothesis": "spawn(cmd, [userArg]) — args from req still risky if cmd is shell",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "4:13 childProcessCommandInjection ⚠️ CWE-78 OWASP:A05-Injection CVSS:9.8 | Command injection detected | CRITICAL [SOC2,PCI-DSS,ISO27001,NIST-CSF]\n   Fix: "
+    },
+    {
+      "rule": "node-security/detect-non-literal-fs-filename",
+      "label": "TP: fs.readFile with req param",
+      "hypothesis": "Path traversal",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "3:39 fsPathTraversal 🔑 CWE-22 OWASP:A01-Broken CVSS:7.5 | Path traversal vulnerability | HIGH [SOC2,PCI-DSS,HIPAA,ISO27001]\n   Fix: Use path"
+    },
+    {
+      "rule": "node-security/detect-non-literal-fs-filename",
+      "label": "FP: path.resolve(__dirname, literal)",
+      "hypothesis": "Module-relative path is safe",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "node-security/detect-non-literal-fs-filename",
+      "label": "FP: validated via allowlist (audit fix)",
+      "hypothesis": "Audit added .includes() validation detection",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "jwt/no-algorithm-none",
+      "label": "TP: jwt.verify with algorithms: [\"none\"]",
+      "hypothesis": "Critical — accepts unsigned tokens",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "4:61 algorithmNoneInArray 🔒 CWE-347 | Including \"none\" in algorithms array allows unsigned tokens | CRITICAL\n   Fix: Remove \"none\" from the algor"
+    },
+    {
+      "rule": "jwt/no-algorithm-none",
+      "label": "FP: jwt.verify with algorithms: [\"HS256\"]",
+      "hypothesis": "Explicit good algorithm",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "jwt/no-algorithm-none",
+      "label": "FN: jwt.decode with no verification at all",
+      "hypothesis": "Same outcome as algorithm: none — token bypasses signature",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "4:29 decodeWithoutVerify 🔒 CWE-347 | jwt.decode() does NOT verify the signature — using its result as if it were authenticated is functionally e"
+    },
+    {
+      "rule": "jwt/no-hardcoded-secret",
+      "label": "TP: jwt.sign with literal secret",
+      "hypothesis": "Hardcoded secret",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "3:31 hardcodedSecret 🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Secret key hardcoded in source code can be extracted from repositories | H"
+    },
+    {
+      "rule": "jwt/no-hardcoded-secret",
+      "label": "FP: jwt.sign with process.env",
+      "hypothesis": "Env-sourced secret",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "jwt/no-hardcoded-secret",
+      "label": "FN: secret stored in const then used",
+      "hypothesis": "Indirection through a variable should still be flagged",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "4:31 hardcodedSecret 🔒 CWE-798 OWASP:A04-Cryptographic CVSS:9.8 | Secret key hardcoded in source code can be extracted from repositories | H"
+    },
+    {
+      "rule": "browser-security/no-eval",
+      "label": "TP: direct eval call",
+      "hypothesis": "Classic XSS sink",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "1:22 dangerousEval 🔒 CWE-95 OWASP:A05-Injection CVSS:9.8 | Using eval with dynamic input can execute arbitrary code. This is a critical se"
+    },
+    {
+      "rule": "browser-security/no-eval",
+      "label": "TP: indirect eval via window[\"eval\"]",
+      "hypothesis": "Common bypass",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "1:22 dangerousEval 🔒 CWE-95 OWASP:A05-Injection CVSS:9.8 | Using eval with dynamic input can execute arbitrary code. This is a critical se"
+    },
+    {
+      "rule": "browser-security/no-eval",
+      "label": "FN: eval via Function constructor",
+      "hypothesis": "new Function(code) is equivalent to eval but bypasses name match",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "3:24 dangerousEval 🔒 CWE-95 OWASP:A05-Injection CVSS:9.8 | Using Function constructor with dynamic input can execute arbitrary code. This "
+    },
+    {
+      "rule": "browser-security/no-innerhtml",
+      "label": "TP: el.innerHTML = userInput",
+      "hypothesis": "Direct DOM XSS",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "3:13 dangerousInnerHTML 🔒 CWE-79 OWASP:A05-Injection CVSS:6.1 | Assigning to innerHTML with variable \"userInput\" can execute malicious scripts."
+    },
+    {
+      "rule": "browser-security/no-innerhtml",
+      "label": "FP: el.innerHTML = literal string",
+      "hypothesis": "Static content has no taint source",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "browser-security/no-innerhtml",
+      "label": "FN: insertAdjacentHTML with user input",
+      "hypothesis": "Same XSS class, different sink",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "3:13 dangerousInnerHTML 🔒 CWE-79 OWASP:A05-Injection CVSS:6.1 | Assigning to insertAdjacentHTML with variable \"userInput\" can execute malicious"
+    },
+    {
+      "rule": "pg/no-unsafe-query",
+      "label": "TP: SQL string concatenation",
+      "hypothesis": "SQL injection",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "5:31 noUnsafeQuery 🔒 CWE-89 OWASP:A03-Injection CVSS:9.8 | Unsafe SQL query detected. Variable interpolation found. | CRITICAL [SOC2,PCI-D"
+    },
+    {
+      "rule": "pg/no-unsafe-query",
+      "label": "FP: parameterized query",
+      "hypothesis": "Safe pattern; audit verified",
+      "expected": "silent",
+      "actual": "silent",
+      "match": true
+    },
+    {
+      "rule": "pg/no-unsafe-query",
+      "label": "FN: SQL via template literal interpolation",
+      "hypothesis": "Same as concat but with template literal — same vuln",
+      "expected": "fire",
+      "actual": "fire",
+      "match": true,
+      "details": "5:31 unsafeTemplateLiteral 🔒 Unsafe SQL query construction detected (template literal). | CRITICAL\n   Fix: Use parameterized queries ($1, $2) inst"
+    }
+  ]
+}

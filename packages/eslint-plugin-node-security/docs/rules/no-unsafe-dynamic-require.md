@@ -68,33 +68,7 @@ const module = require(modulePath);
 ### ✅ Correct
 
 ```typescript
-// Static require
-const config = require('./config/production');
-
-// Whitelist approach
-const allowedModules = {
-  config: './config',
-  utils: './utils',
-};
-const modulePath = allowedModules[userInput];
-if (modulePath) {
-  const module = require(modulePath);
-}
-
-// Import maps (hardcoded)
-const modules = {
-  dev: require('./config/dev'),
-  prod: require('./config/prod'),
-};
-const config = modules[environment];
-
-// ES6 dynamic import with validation
-async function loadModule(name: string) {
-  if (!/^[a-z0-9-]+$/.test(name)) {
-    throw new Error('Invalid module name');
-  }
-  return await import(`./plugins/${name}`);
-}
+const fs = require("fs");
 ```
 
 ## Configuration

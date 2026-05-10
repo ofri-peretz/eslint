@@ -26,6 +26,20 @@ This rule identifies code patterns where system prompts or AI instructions are r
 | **CVSS**           | 7.5                                                                                                         |
 | **Config Default** | `error` (recommended, strict)                                                                               |
 
+## Value & investment case
+
+> Why this rule pays for itself. Framework: [`cicd-impact/philosophy.md`](../../../../cicd-impact/philosophy.md).
+
+| Dimension | Value |
+| :--- | :--- |
+| **CWE / OWASP-LLM** | [CWE-200](https://cwe.mitre.org/data/definitions/200.html) — Information Exposure · [OWASP LLM07: System Prompt Leakage](https://owasp.org/www-project-top-10-for-large-language-model-applications/) |
+| **Feedback-loop tier** | Editor / pre-commit (sub-second) — cheapest layer per the [feedback-loop hierarchy](../../../../cicd-impact/philosophy.md#the-feedback-loop-hierarchy--why-a-high-end-static-analyzer-is-the-highest-leverage-investment) |
+| **Defensive-layer leverage** | ~10× cheaper than unit-test · ~1,000× cheaper than production rollback · 10,000+× cheaper than customer disclosure ([cost-ratio anchors](../../../../cicd-impact/philosophy.md#deliverability-axis--quality-risk-and-ma-diligence)) |
+| **Niche relevance** | **Critical:** AI/ML platforms (system prompts encode the product moat) · **High:** B2B SaaS shipping AI features, infra/devtools (AI-tooling category) · **Medium:** B2C, fintech (AI risk-modeling), healthtech (clinical-AI guardrails) |
+| **Investor-frame impact** | System-prompt leakage → loss of competitive moat (the prompt *is* the product for many AI startups) + indirect IP/data exposure. AI-niche-specific rule class with no equivalent in pre-LLM analyzers; lint-time prevention is the cheapest defense for an attack class that didn't exist three years ago. |
+
+**Read also:** [`philosophy.md` §investor-frame](../../../../cicd-impact/philosophy.md#the-investor-frame--engineering-efficiency-as-a-portfolio-metric) · [`niche-presets.json`](../../../../cicd-impact/data/niche-presets.json) · [`analyzer-evaluation-framework.md`](../../../../cicd-impact/analyzer-evaluation-framework.md)
+
 ## 🔍 What This Rule Detects
 
 This rule identifies code patterns where system prompts or AI instructions are returned in API responses, logged, or otherwise exposed to clients. System prompts often contain sensitive business logic and instructions that should remain server-side only.

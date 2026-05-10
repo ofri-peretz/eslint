@@ -1,0 +1,58 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: CodeQL
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Static security analysis. Runs on every PR + push to main, with weekly
+# baseline rebuild. Findings show up under Security → Code scanning.
+#
+# Why we want this on a security-focused plugin monorepo: our rules look for
+# vulnerabilities — we should not be the source of any. CodeQL also catches
+# JS/TS-level issues that ESLint won't (e.g. tainted-data flows across files).
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly Monday 03:17 UTC — runs on a steady cadence regardless of activity,
+    # so the security tab stays warm even on quiet weeks. Off-peak time keeps
+    # us out of cron storms at the top of the hour.
+    - cron: "17 3 * * 1"
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      security-events: write
+      packages: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended,security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

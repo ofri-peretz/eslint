@@ -68,7 +68,9 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-format-string-injection.md',
       description: 'Detects format string injection vulnerabilities',
+      cwe: 'CWE-134',
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -205,9 +207,9 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
 
     // Create safety checker for false positive detection (simplified implementation)
     const safetyChecker = {
-      isSafe: (node: TSESTree.Node, context: TSESLint.RuleContext<MessageIds, RuleOptions>) => {
+      isSafe: (safeNode: TSESTree.Node, ruleCtx: TSESLint.RuleContext<MessageIds, RuleOptions>) => {
         // Check for JSDoc @safe-format annotation
-        const comments = context.sourceCode.getCommentsBefore(node);
+        const comments = ruleCtx.sourceCode.getCommentsBefore(safeNode);
         for (const comment of comments) {
           if (comment.type === 'Block' && comment.value.includes('@safe-format')) {
             return true;
@@ -215,13 +217,13 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
         }
 
         // Check if the node is a validated/sanitized variable
-        if (node.type === 'Identifier' && validatedVariables.has(node.name)) {
+        if (safeNode.type === 'Identifier' && validatedVariables.has(safeNode.name)) {
           return true;
         }
 
         // For CallExpression nodes, check if first argument is safe
-        if (node.type === 'CallExpression' && node.arguments.length > 0) {
-          const firstArg = node.arguments[0];
+        if (safeNode.type === 'CallExpression' && safeNode.arguments.length > 0) {
+          const firstArg = safeNode.arguments[0];
           if (firstArg.type === 'Identifier' && validatedVariables.has(firstArg.name)) {
             return true;
           }
@@ -281,6 +283,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
     /**
      * Get the full name of a member expression (e.g., req.query.format)
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const getMemberExpressionName = (node: TSESTree.MemberExpression): string => {
       if (node.object.type === 'Identifier') {
         if (node.property.type === 'Identifier') {
@@ -305,6 +308,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
     /**
      * Check if a call expression uses format functions
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const isConsoleMethod = (node: TSESTree.CallExpression): boolean => {
       const callee = node.callee;
       return callee.type === 'MemberExpression' &&
@@ -314,6 +318,7 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
              ['log', 'error', 'warn', 'info', 'debug'].includes(callee.property.name);
     };
 
+    // oxlint-disable-next-line consistent-function-scoping
     const isFormatFunctionCall = (node: TSESTree.CallExpression): boolean => {
       const callee = node.callee;
 
@@ -505,9 +510,9 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
 
         // Check for format specifiers in subsequent arguments (could indicate user input in format position)
         // Only check if the format string itself is not validated/safe
-        const firstArg = args[0];
-        const isFormatSafe = isInputValidated(firstArg) ||
-                            (firstArg.type === 'Identifier' && validatedVariables.has(firstArg.name));
+        const fmtArg = args[0];
+        const isFormatSafe = isInputValidated(fmtArg) ||
+                            (fmtArg.type === 'Identifier' && validatedVariables.has(fmtArg.name));
 
         if (!isFormatSafe) {
           let hasUserInputInArgs = false;
@@ -662,18 +667,18 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
       // Check template literals for format string injection
       TemplateLiteral: function(node: TSESTree.TemplateLiteral) {
         // Check if template literal is used as format string
-        let current: TSESTree.Node | undefined = node;
+        let templateCurrent: TSESTree.Node | undefined = node;
         let isFormatString = false;
 
-        while (current && !isFormatString) {
-          if (current.type === 'CallExpression' && isFormatFunctionCall(current)) {
-            const args = current.arguments;
+        while (templateCurrent && !isFormatString) {
+          if (templateCurrent.type === 'CallExpression' && isFormatFunctionCall(templateCurrent)) {
+            const args = templateCurrent.arguments;
             if (args.length > 0 && args[0] === node) {
               isFormatString = true;
               break;
             }
           }
-          current = current.parent as TSESTree.Node;
+          templateCurrent = templateCurrent.parent as TSESTree.Node;
         }
 
         if (isFormatString) {
@@ -689,15 +694,15 @@ export const noFormatStringInjection = createRule<RuleOptions, MessageIds>({
 
         if (hasUserInput) {
           // Check if this template is assigned to a variable that could be used as format string
-          let current: TSESTree.Node | undefined = node;
+          let assignCurrent: TSESTree.Node | undefined = node;
           let isAssignedToVariable = false;
 
-          while (current) {
-            if (current.type === 'VariableDeclarator') {
+          while (assignCurrent) {
+            if (assignCurrent.type === 'VariableDeclarator') {
               isAssignedToVariable = true;
               break;
             }
-            current = current.parent as TSESTree.Node;
+            assignCurrent = assignCurrent.parent as TSESTree.Node;
           }
 
           if (isAssignedToVariable) {

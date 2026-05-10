@@ -35,7 +35,10 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
     deprecated: true,
     replacedBy: ['@see eslint-plugin-crypto/no-timing-unsafe-compare'],
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-insecure-comparison.md',
       description: 'Detects insecure comparison operators (==, !=) that can lead to type coercion vulnerabilities',
+      cwe: 'CWE-697',
+      cvss: 7.5,
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -135,6 +138,7 @@ export const noInsecureComparison = createRule<RuleOptions, MessageIds>({
     /**
      * Check if a string matches any ignore pattern
      */
+    // oxlint-disable-next-line consistent-function-scoping
     function matchesIgnorePattern(text: string, patterns: string[]): boolean {
       return patterns.some(pattern => {
         try {

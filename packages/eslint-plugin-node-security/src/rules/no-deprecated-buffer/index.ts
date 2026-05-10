@@ -34,7 +34,10 @@ export const noDeprecatedBuffer: TSESLint.RuleModule<MessageIds, []> = createRul
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-deprecated-buffer.md',
       description: 'Disallow the deprecated `new Buffer()` constructor and `Buffer()` factory call.',
+      cwe: 'CWE-676',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

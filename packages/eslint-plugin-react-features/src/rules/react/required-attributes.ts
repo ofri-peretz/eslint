@@ -36,8 +36,11 @@ export const requiredAttributes = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/required-attributes.md',
       description:
         'Enforce required attributes on React components with customizable ignore lists',
+      cwe: 'CWE-252',
+      cvss: 5,
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -144,6 +147,7 @@ attributes = [], ignoreComponents = []
     /**
      * Get attribute purpose based on name
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const getAttributePurpose = (attribute: string): string => {
       const purposes: Record<string, string> = {
         'data-testid': 'Testing & QA automation',
@@ -165,10 +169,12 @@ attributes = [], ignoreComponents = []
     /**
      * Check if an element is a form element that should have type/name attributes
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const isFormElement = (elementName: string): boolean => {
       return ['input', 'button', 'select', 'textarea'].includes(elementName.toLowerCase());
     };
 
+    // oxlint-disable-next-line consistent-function-scoping
     const getDefaultSuggestedValue = (attribute: string, elementName: string): string => {
       if (attribute === 'data-testid') {
         // Generate kebab-case testid from element name

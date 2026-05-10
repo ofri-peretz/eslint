@@ -1,0 +1,541 @@
+{
+  "generatedAt": "2026-05-09T23:38:10.557Z",
+  "rules": [
+    {
+      "plugin": "eslint-plugin-browser-security",
+      "rule": "no-clickjacking",
+      "file": "packages/eslint-plugin-browser-security/src/rules/no-clickjacking/index.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": "packages/eslint-plugin-browser-security/src/rules/no-clickjacking/no-clickjacking.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-browser-security",
+      "rule": "require-websocket-wss",
+      "file": "packages/eslint-plugin-browser-security/src/rules/require-websocket-wss/index.ts",
+      "fixerKind": "code",
+      "hasFixerTest": true,
+      "testFile": "packages/eslint-plugin-browser-security/src/rules/require-websocket-wss/require-websocket-wss.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-conventions",
+      "rule": "conventions",
+      "file": "packages/eslint-plugin-conventions/src/rules/conventions/consistent-existence-index-check.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-conventions",
+      "rule": "conventions",
+      "file": "packages/eslint-plugin-conventions/src/rules/conventions/no-console-spaces.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-conventions",
+      "rule": "conventions",
+      "file": "packages/eslint-plugin-conventions/src/rules/conventions/prefer-dependency-version-strategy.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-conventions",
+      "rule": "deprecation",
+      "file": "packages/eslint-plugin-conventions/src/rules/deprecation/no-deprecated-api.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-import-next",
+      "rule": "consistent-type-specifier-style",
+      "file": "packages/eslint-plugin-import-next/src/rules/consistent-type-specifier-style.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-import-next",
+      "rule": "enforce-import-order",
+      "file": "packages/eslint-plugin-import-next/src/rules/enforce-import-order.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-import-next",
+      "rule": "extensions",
+      "file": "packages/eslint-plugin-import-next/src/rules/extensions.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-import-next",
+      "rule": "first",
+      "file": "packages/eslint-plugin-import-next/src/rules/first.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-import-next",
+      "rule": "named",
+      "file": "packages/eslint-plugin-import-next/src/rules/named.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-import-next",
+      "rule": "newline-after-import",
+      "file": "packages/eslint-plugin-import-next/src/rules/newline-after-import.ts",
+      "fixerKind": "whitespace",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-import-next",
+      "rule": "no-absolute-path",
+      "file": "packages/eslint-plugin-import-next/src/rules/no-absolute-path.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-import-next",
+      "rule": "no-barrel-import",
+      "file": "packages/eslint-plugin-import-next/src/rules/no-barrel-import.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-import-next",
+      "rule": "no-default-export",
+      "file": "packages/eslint-plugin-import-next/src/rules/no-default-export.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-import-next",
+      "rule": "no-duplicates",
+      "file": "packages/eslint-plugin-import-next/src/rules/no-duplicates.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-import-next",
+      "rule": "no-empty-named-blocks",
+      "file": "packages/eslint-plugin-import-next/src/rules/no-empty-named-blocks.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-import-next",
+      "rule": "no-import-module-exports",
+      "file": "packages/eslint-plugin-import-next/src/rules/no-import-module-exports.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-import-next",
+      "rule": "no-internal-modules",
+      "file": "packages/eslint-plugin-import-next/src/rules/no-internal-modules.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-import-next",
+      "rule": "no-legacy-imports",
+      "file": "packages/eslint-plugin-import-next/src/rules/no-legacy-imports.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-import-next",
+      "rule": "no-namespace",
+      "file": "packages/eslint-plugin-import-next/src/rules/no-namespace.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-import-next",
+      "rule": "no-relative-packages",
+      "file": "packages/eslint-plugin-import-next/src/rules/no-relative-packages.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-import-next",
+      "rule": "no-useless-path-segments",
+      "file": "packages/eslint-plugin-import-next/src/rules/no-useless-path-segments.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-import-next",
+      "rule": "prefer-direct-import",
+      "file": "packages/eslint-plugin-import-next/src/rules/prefer-direct-import.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-import-next",
+      "rule": "prefer-node-protocol",
+      "file": "packages/eslint-plugin-import-next/src/rules/prefer-node-protocol.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-lambda-security",
+      "rule": "no-permissive-cors-response",
+      "file": "packages/eslint-plugin-lambda-security/src/rules/no-permissive-cors-response/index.ts",
+      "fixerKind": "code",
+      "hasFixerTest": true,
+      "testFile": "packages/eslint-plugin-lambda-security/src/rules/no-permissive-cors-response/no-permissive-cors-response.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-modernization",
+      "rule": "prefer-at",
+      "file": "packages/eslint-plugin-modernization/src/rules/prefer-at.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-modernization",
+      "rule": "prefer-event-target",
+      "file": "packages/eslint-plugin-modernization/src/rules/prefer-event-target.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-modularity",
+      "rule": "enforce-naming",
+      "file": "packages/eslint-plugin-modularity/src/rules/enforce-naming.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-node-security",
+      "rule": "no-buffer-overread",
+      "file": "packages/eslint-plugin-node-security/src/rules/no-buffer-overread/index.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": "packages/eslint-plugin-node-security/src/rules/no-buffer-overread/no-buffer-overread.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-node-security",
+      "rule": "no-unsafe-dynamic-require",
+      "file": "packages/eslint-plugin-node-security/src/rules/no-unsafe-dynamic-require/index.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": "packages/eslint-plugin-node-security/src/rules/no-unsafe-dynamic-require/no-unsafe-dynamic-require.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-node-security",
+      "rule": "no-zip-slip",
+      "file": "packages/eslint-plugin-node-security/src/rules/no-zip-slip/index.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": "packages/eslint-plugin-node-security/src/rules/no-zip-slip/no-zip-slip.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-operability",
+      "rule": "operability",
+      "file": "packages/eslint-plugin-operability/src/rules/operability/no-console-log.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-react-a11y",
+      "rule": "alt-text",
+      "file": "packages/eslint-plugin-react-a11y/src/rules/alt-text.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-react-features",
+      "rule": "migration",
+      "file": "packages/eslint-plugin-react-features/src/rules/migration/react-class-to-hooks.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-react-features",
+      "rule": "performance",
+      "file": "packages/eslint-plugin-react-features/src/rules/performance/react-no-inline-functions.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-react-features",
+      "rule": "react",
+      "file": "packages/eslint-plugin-react-features/src/rules/react/jsx-no-target-blank.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-react-features",
+      "rule": "react",
+      "file": "packages/eslint-plugin-react-features/src/rules/react/required-attributes.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-reliability",
+      "rule": "reliability",
+      "file": "packages/eslint-plugin-reliability/src/rules/reliability/no-jsdoc-terminator-in-example.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": null,
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-secure-coding",
+      "rule": "no-directive-injection",
+      "file": "packages/eslint-plugin-secure-coding/src/rules/no-directive-injection/index.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": "packages/eslint-plugin-secure-coding/src/rules/no-directive-injection/no-directive-injection.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-secure-coding",
+      "rule": "no-electron-security-issues",
+      "file": "packages/eslint-plugin-secure-coding/src/rules/no-electron-security-issues/index.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": "packages/eslint-plugin-secure-coding/src/rules/no-electron-security-issues/no-electron-security-issues.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-secure-coding",
+      "rule": "no-format-string-injection",
+      "file": "packages/eslint-plugin-secure-coding/src/rules/no-format-string-injection/index.ts",
+      "fixerKind": "code",
+      "hasFixerTest": true,
+      "testFile": "packages/eslint-plugin-secure-coding/src/rules/no-format-string-injection/no-format-string-injection.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-secure-coding",
+      "rule": "no-graphql-injection",
+      "file": "packages/eslint-plugin-secure-coding/src/rules/no-graphql-injection/index.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": "packages/eslint-plugin-secure-coding/src/rules/no-graphql-injection/no-graphql-injection.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-secure-coding",
+      "rule": "no-hardcoded-credentials",
+      "file": "packages/eslint-plugin-secure-coding/src/rules/no-hardcoded-credentials/index.ts",
+      "fixerKind": "code",
+      "hasFixerTest": true,
+      "testFile": "packages/eslint-plugin-secure-coding/src/rules/no-hardcoded-credentials/no-hardcoded-credentials.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-secure-coding",
+      "rule": "no-improper-sanitization",
+      "file": "packages/eslint-plugin-secure-coding/src/rules/no-improper-sanitization/index.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": "packages/eslint-plugin-secure-coding/src/rules/no-improper-sanitization/no-improper-sanitization.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-secure-coding",
+      "rule": "no-improper-type-validation",
+      "file": "packages/eslint-plugin-secure-coding/src/rules/no-improper-type-validation/index.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": "packages/eslint-plugin-secure-coding/src/rules/no-improper-type-validation/no-improper-type-validation.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-secure-coding",
+      "rule": "no-insecure-comparison",
+      "file": "packages/eslint-plugin-secure-coding/src/rules/no-insecure-comparison/index.ts",
+      "fixerKind": "code",
+      "hasFixerTest": true,
+      "testFile": "packages/eslint-plugin-secure-coding/src/rules/no-insecure-comparison/no-insecure-comparison.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-secure-coding",
+      "rule": "no-ldap-injection",
+      "file": "packages/eslint-plugin-secure-coding/src/rules/no-ldap-injection/index.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": "packages/eslint-plugin-secure-coding/src/rules/no-ldap-injection/no-ldap-injection.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-secure-coding",
+      "rule": "no-unchecked-loop-condition",
+      "file": "packages/eslint-plugin-secure-coding/src/rules/no-unchecked-loop-condition/index.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": "packages/eslint-plugin-secure-coding/src/rules/no-unchecked-loop-condition/no-unchecked-loop-condition.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-secure-coding",
+      "rule": "no-unlimited-resource-allocation",
+      "file": "packages/eslint-plugin-secure-coding/src/rules/no-unlimited-resource-allocation/index.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": "packages/eslint-plugin-secure-coding/src/rules/no-unlimited-resource-allocation/no-unlimited-resource-allocation.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-secure-coding",
+      "rule": "no-unsafe-deserialization",
+      "file": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-deserialization/index.ts",
+      "fixerKind": "code",
+      "hasFixerTest": true,
+      "testFile": "packages/eslint-plugin-secure-coding/src/rules/no-unsafe-deserialization/no-unsafe-deserialization.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-secure-coding",
+      "rule": "no-weak-password-recovery",
+      "file": "packages/eslint-plugin-secure-coding/src/rules/no-weak-password-recovery/index.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": "packages/eslint-plugin-secure-coding/src/rules/no-weak-password-recovery/no-weak-password-recovery.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    },
+    {
+      "plugin": "eslint-plugin-secure-coding",
+      "rule": "no-xpath-injection",
+      "file": "packages/eslint-plugin-secure-coding/src/rules/no-xpath-injection/index.ts",
+      "fixerKind": "code",
+      "hasFixerTest": false,
+      "testFile": "packages/eslint-plugin-secure-coding/src/rules/no-xpath-injection/no-xpath-injection.test.ts",
+      "hasIncorrectSnippet": false,
+      "snippetLength": 0
+    }
+  ],
+  "summary": {
+    "fixableRules": 53,
+    "withFixerTest": 6,
+    "withoutFixerTest": 47,
+    "snippetsExtracted": 0
+  }
+}

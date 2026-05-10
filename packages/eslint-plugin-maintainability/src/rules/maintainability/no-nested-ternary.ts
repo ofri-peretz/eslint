@@ -26,6 +26,7 @@ export const noNestedTernary = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/no-nested-ternary.md',
       description: 'Prevent nested ternary expressions for better readability',
     },
     hasSuggestions: true,

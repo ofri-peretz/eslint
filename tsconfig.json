@@ -38,10 +38,13 @@
         "jsx": "react-jsx",
         "jsxImportSource": "react",
     },
-    // Include all TypeScript source files for comprehensive checking
+    // Include production source for strict checking. Build/dev scripts
+    // and benchmark runners run via tsx and have their own looser
+    // tsconfigs (scripts/tsconfig.json, benchmarks/tsconfig.scripts.json) —
+    // typecheck those via `npm run typecheck:scripts` /
+    // `npm run typecheck:benchmarks`.
     "include": [
         "packages/*/src/**/*",
-        "scripts/**/*",
         "apps/*/src/**/*"
     ],
     // Exclude generated and external files

@@ -7,13 +7,16 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/ofri-peretz/eslint/actions/workflows/quality.yml"><img src="https://github.com/ofri-peretz/eslint/actions/workflows/quality.yml/badge.svg?branch=main" alt="Quality Gate" /></a>
+  <a href="https://github.com/ofri-peretz/eslint/actions/workflows/codeql.yml"><img src="https://github.com/ofri-peretz/eslint/actions/workflows/codeql.yml/badge.svg?branch=main" alt="CodeQL" /></a>
+  <a href="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint"><img src="https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint/badge" alt="OpenSSF Scorecard" /></a>
+  <a href="https://codecov.io/gh/ofri-peretz/eslint"><img src="https://codecov.io/gh/ofri-peretz/eslint/branch/main/graph/badge.svg" alt="Codecov" /></a>
+  <a href="https://github.com/changesets/changesets"><img src="https://img.shields.io/badge/maintained%20with-changesets-176de3.svg" alt="Maintained with Changesets" /></a>
+  <a href="https://turbo.build/"><img src="https://img.shields.io/badge/built%20with-turborepo-1d1d1d.svg" alt="Built with Turborepo" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.9+-blue.svg" alt="TypeScript" /></a>
-  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-20+-green.svg" alt="Node.js" /></a>
-  <a href="https://pnpm.io/"><img src="https://img.shields.io/badge/pnpm-9.15-cc00ff.svg" alt="pnpm" /></a>
-  <a href="https://nx.dev/"><img src="https://img.shields.io/badge/Nx-22.0-143055.svg" alt="Nx" /></a>
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-24+-green.svg" alt="Node.js" /></a>
   <a href="https://vitest.dev/"><img src="https://img.shields.io/badge/Vitest-4.0-6E9F18.svg" alt="Vitest" /></a>
-  <a href="https://codecov.io/gh/ofri-peretz/eslint"><img src="https://codecov.io/gh/ofri-peretz/eslint/branch/main/graph/badge.svg" alt="Codecov" /></a>
 </p>
 
 <p align="center">
@@ -26,9 +29,15 @@ This monorepo houses battle-tested ESLint plugins, sharable configs, and support
 
 **Interlace** fosters **strength through integration**. We **interlace** security directly into your workflow, creating a resilient fabric of code. Tools should **guide rather than gatekeep**, providing educational feedback that strengthens developers.
 
-**Why an independent ecosystem?** 🚀 Ship fast without upstream bureaucracy • 🤖 AI-optimized messages (CWE, OWASP, fixes) • ⚡ Unified codebase for performance • 🏗️ Consistent patterns across all plugins • 📚 Educational "why" explanations • 🔧 Modern ESLint 9 flat config
+**Why an independent ecosystem?** 🚀 Ship fast without upstream bureaucracy • 🤖 AI-optimized messages (CWE, OWASP, fixes) • ⚡ Unified codebase for performance • 🏗️ Consistent patterns across all plugins • 📚 Educational "why" explanations • 🔧 Modern ESLint flat config (v8 / v9 / v10)
 
 All rules are **clean-room implementations** — familiar naming, better engineering.
+
+**The deeper case:**
+
+- [`cicd-impact/value-philosophy.md`](cicd-impact/value-philosophy.md) — what value is (Buffett, Munger, software-industry voices), the two ruling systems (capitalism + humanism), why static code analysis is hard to measure, and the unbroken chain from human incentives down to a single ESLint rule.
+- [`cicd-impact/philosophy.md`](cicd-impact/philosophy.md) — how CI/CD friction expresses itself along three axes (money, velocity, deliverability) plus the investor frame, and where a faster / better lint suite plugs in to lower the bill on all four.
+- [`cicd-impact/`](cicd-impact/) — a forkable calculator that turns the philosophy into a `$/CI minute` figure for any GitHub Actions repo.
 
 ---
 
@@ -92,6 +101,32 @@ ESLint is the backbone for keeping large codebases healthy. These packages targe
 - **Actionable Feedback**: Error messages explain the "why" and show how to fix
 - **LLM-Ready**: Optimized for modern AI-assisted development workflows
 - **Zero Configuration Burden**: Sensible defaults with escape hatches when needed
+
+---
+
+## 🛟 ESLint Support Matrix
+
+> **Last data refresh:** 2026-05-09 (window: 2026-05-02 → 2026-05-09, source: npm registry)
+
+| ESLint Major | Weekly Downloads | Share | Status                           |
+| :----------- | :--------------- | :---- | :------------------------------- |
+| **v10**      | 11.8M            | 9.24% | ✅ Supported (forward-looking)   |
+| **v9**       | 76.9M            | 60.4% | ✅ Supported (current default)   |
+| **v8**       | 30.9M            | 24.3% | ✅ Supported (legacy active)     |
+| v7 and older | 7.7M             | 6.1%  | ❌ Unsupported (EOL)             |
+
+All published packages declare `"eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"` as a peer dependency.
+
+### Our baseline for supporting a major version
+
+A major is **supported** when either:
+
+1. **20% gate** — it has ≥20% of weekly downloads on npm (v8 and v9 today), OR
+2. **Forward-looking exception** — it is the next major after a currently-supported version (v10 today, the future of v9). We ship support pre-emptively so users can upgrade ahead of the curve, not behind it.
+
+A supported major is in our `peerDependencies`, our benchmark matrix, and our CI matrix. Versions are dropped only after two consecutive refreshes below the gate AND a successor that is itself supported.
+
+The data above can be re-fetched at any time via `npm run stats:eslint-versions` ([script](./scripts/fetch-eslint-version-stats.ts)). Full policy: [docs/ESLINT_VERSION_SUPPORT.md](./docs/ESLINT_VERSION_SUPPORT.md).
 
 ---
 

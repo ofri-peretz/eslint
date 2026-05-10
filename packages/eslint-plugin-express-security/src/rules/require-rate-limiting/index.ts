@@ -82,8 +82,11 @@ export const requireRateLimiting = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/require-rate-limiting.md',
       description:
         'Require rate limiting middleware in Express.js applications',
+      cwe: 'CWE-770',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

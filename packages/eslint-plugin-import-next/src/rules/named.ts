@@ -26,6 +26,7 @@ export const named = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/named.md',
       description:
         'Ensure named imports correspond to a named export in the remote file',
     },

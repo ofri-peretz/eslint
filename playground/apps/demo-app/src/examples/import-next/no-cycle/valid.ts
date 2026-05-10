@@ -1,1 +1,0 @@
-// Valid example for no-cycle\nexport const valid = true;\n

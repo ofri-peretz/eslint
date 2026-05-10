@@ -44,6 +44,7 @@ export const noTypos = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-typos.md',
       description: 'Catch common typos',
     },
     schema: [],

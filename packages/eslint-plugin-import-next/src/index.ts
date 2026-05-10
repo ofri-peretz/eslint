@@ -183,6 +183,19 @@ export const plugin = {
  */
 export const configs = {
   /**
+   * Flagship preset — exactly the rule from this plugin that appears in the
+   * ecosystem-wide flagship list (`.agent/flagship-rules.md`). Use this when
+   * you want the highest-signal subset shippable in CI gates without the
+   * noise of `recommended`.
+   */
+  flagship: {
+    plugins: { 'import-next': plugin },
+    rules: {
+      'import-next/no-cycle': 'error',
+    },
+  },
+
+  /**
    * Recommended configuration for most projects
    *
    * Includes essential rules with sensible defaults:

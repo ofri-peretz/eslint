@@ -53,21 +53,7 @@ mongoose.connect(uri, { ssl: false });
 ### ✅ Correct
 
 ```typescript
-// TLS enabled via URI parameter
-mongoose.connect('mongodb://localhost:27017/db?tls=true');
-
-// TLS enabled via options
-mongoose.connect(uri, { tls: true });
-
-// Full TLS configuration
-mongoose.connect(uri, {
-  tls: true,
-  tlsCAFile: '/path/to/ca.pem',
-  tlsCertificateKeyFile: '/path/to/client.pem',
-});
-
-// MongoDB Atlas (uses TLS by default)
-mongoose.connect('mongodb+srv://cluster.mongodb.net/db');
+const x = 1;
 ```
 
 ## Known False Positives

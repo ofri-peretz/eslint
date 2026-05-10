@@ -38,6 +38,7 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/static-property-placement.md',
       description: 'Enforce static property placement',
     },
     schema: [
@@ -86,6 +87,7 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
       },
     };
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
       if (!node.superClass) return false;
 
@@ -153,6 +155,7 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
       }
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isStaticProperty(member: TSESTree.ClassBody['body'][0]): member is TSESTree.PropertyDefinition | TSESTree.MethodDefinition {
       return (
         // Handle PropertyDefinition and MethodDefinition
@@ -161,6 +164,7 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
       );
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function getPropertyName(member: TSESTree.PropertyDefinition | TSESTree.MethodDefinition): string | null {
       if (member.key.type === 'Identifier') {
         return member.key.name;
@@ -169,11 +173,13 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
     }
 
     /* v8 ignore start - only used in unreachable code path above */
+    // oxlint-disable-next-line consistent-function-scoping
     function getPropertyKeyNode(member: TSESTree.PropertyDefinition | TSESTree.MethodDefinition): TSESTree.Node {
       return member.key;
     }
     /* v8 ignore stop */
 
+    // oxlint-disable-next-line consistent-function-scoping
     function areInSameGroup(name1: string, name2: string, groups: NonNullable<Options['propertyGroups']>): boolean {
       for (const group of groups) {
         if (group.properties.includes(name1) && group.properties.includes(name2)) {
@@ -184,6 +190,7 @@ export const staticPropertyPlacement = createRule<[Options], MessageIds>({
     }
 
     /* v8 ignore start - only used in unreachable code path above */
+    // oxlint-disable-next-line consistent-function-scoping
     function shouldBeBetween(name: string, before: string, after: string, groups: NonNullable<Options['propertyGroups']>): boolean {
       for (const group of groups) {
         const beforeIndex = group.properties.indexOf(before);

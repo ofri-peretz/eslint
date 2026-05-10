@@ -114,29 +114,7 @@ function UserProfile({ userId }) {
 ### ✅ Correct
 
 ```tsx
-// All dependencies included
-function SearchResults({ query }) {
-  const [results, setResults] = useState([]);
-
-  useEffect(() => {
-    fetchResults(query).then(setResults);
-  }, [query]);  // ✅ 'query' included
-
-  return <ResultList items={results} />;
-}
-
-// Memoized callback with correct deps
-function UserProfile({ userId }) {
-  const loadUser = useCallback(() => {
-    return fetch(`/api/users/${userId}`);
-  }, [userId]);  // ✅ 'userId' included
-
-  useEffect(() => {
-    loadUser().then(setUser);
-  }, [loadUser]);  // ✅ 'loadUser' included
-
-  // ...
-}
+mounted
 ```
 
 ## Configuration

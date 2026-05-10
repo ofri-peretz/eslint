@@ -23,6 +23,7 @@ export const requireDefaultProps = createRule<[Options], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/require-default-props.md',
       description: 'Require default props',
     },
     messages: {
@@ -133,6 +134,7 @@ export const requireDefaultProps = createRule<[Options], MessageIds>({
       },
     };
 
+    // oxlint-disable-next-line consistent-function-scoping
     function getComponentName(node: TSESTree.PropertyDefinition): string | null {
       if (node.parent.type === 'ClassBody' && node.parent.parent.type === 'ClassDeclaration') {
         return node.parent.parent.id?.name || null;
@@ -140,6 +142,7 @@ export const requireDefaultProps = createRule<[Options], MessageIds>({
       return null;
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isReactComponent(node: TSESTree.ClassDeclaration): boolean {
       if (!node.superClass) return false;
 
@@ -159,6 +162,7 @@ export const requireDefaultProps = createRule<[Options], MessageIds>({
       return false;
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isRequiredProp(propType: TSESTree.Property): boolean {
       // Check if prop type ends with .isRequired
       if (

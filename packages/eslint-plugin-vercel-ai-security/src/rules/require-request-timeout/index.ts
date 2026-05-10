@@ -26,7 +26,10 @@ export const requireRequestTimeout = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-request-timeout.md',
       description: 'Require timeout configuration for AI SDK calls to prevent DoS',
+      cwe: 'CWE-400',
+      cvss: 5,
     },
     messages: {
       missingTimeout: formatLLMMessage({
@@ -76,7 +79,7 @@ export const requireRequestTimeout = createRule<RuleOptions, MessageIds>({
     const aiSDKFunctions = ['generateText', 'streamText', 'generateObject', 'streamObject'];
 
     // Timeout-related property names
-    const timeoutProperties = ['timeout', 'abortSignal', 'signal', 'timeoutMs', 'requestTimeout'];
+    const timeoutProperties = new Set(['timeout', 'abortSignal', 'signal', 'timeoutMs', 'requestTimeout']);
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
@@ -101,7 +104,7 @@ export const requireRequestTimeout = createRule<RuleOptions, MessageIds>({
         const hasTimeout = optionsArg.properties.some(prop => {
           if (prop.type !== 'Property') return false;
           const keyName = prop.key.type === 'Identifier' ? prop.key.name : null;
-          return keyName && timeoutProperties.includes(keyName);
+          return keyName && timeoutProperties.has(keyName);
         });
 
         if (!hasTimeout) {

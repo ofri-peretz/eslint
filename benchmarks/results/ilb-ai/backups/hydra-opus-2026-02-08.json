@@ -1,4 +1,16 @@
 {
+  "bench": "ILB-AI",
+  "benchVersion": "v0.0",
+  "toolchain": {
+    "node": "unknown",
+    "eslint": "unknown",
+    "typescript": "unknown",
+    "tsCompiler": "unknown",
+    "platform": "unknown",
+    "backfilled": true,
+    "backfilledAt": "2026-05-10T00:08:17.710Z",
+    "backfilledBy": "scripts/ilb-result-schema-backfill.ts"
+  },
   "timestamp": "2026-02-08T04:35:13.280Z",
   "methodology": {
     "name": "The Hydra Problem",

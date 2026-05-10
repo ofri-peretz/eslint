@@ -1,0 +1,113 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: ESLint Version Stats Refresh
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Refreshes npm download share by ESLint major version. Drives the support
+# matrix in docs/ESLINT_VERSION_SUPPORT.md and the per-major peerDependencies
+# range in every published package.
+#
+# Manual-trigger only (no schedule) per the project's quota-conservation
+# policy — same pattern as sdk-compatibility.yml. Run after each release or
+# whenever you suspect the policy gate (≥20% weekly downloads) needs
+# re-evaluation.
+#
+# RUN IT
+#   gh workflow run eslint-version-stats.yml
+#   gh workflow run eslint-version-stats.yml -f open_pr=true   # opens PR with updated JSON
+#
+# OUTPUT
+#   - Workflow summary: human-readable table of weekly downloads by major
+#   - Artifact: full JSON snapshot (90 days retention)
+#   - Optional PR: bumps benchmark-results/eslint-version-stats.json + this
+#                  workflow shows the diff for policy review
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  workflow_dispatch:
+    inputs:
+      open_pr:
+        description: "Open a PR with the refreshed JSON if it differs from the tracked snapshot."
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: eslint-version-stats-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    name: Refresh ESLint Version Stats
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write       # only used when open_pr=true
+      pull-requests: write  # only used when open_pr=true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Run stats:eslint-versions
+        id: stats
+        run: |
+          set -euo pipefail
+          # Refresh the JSON artifact and capture the table
+          npx tsx scripts/fetch-eslint-version-stats.ts \
+            --out=benchmark-results/eslint-version-stats.json \
+            > stats-table.txt
+          {
+            echo '## ESLint Version Stats — last-week npm downloads'
+            echo ''
+            echo '```'
+            cat stats-table.txt
+            echo '```'
+            echo ''
+            echo 'See [docs/ESLINT_VERSION_SUPPORT.md](../blob/main/docs/ESLINT_VERSION_SUPPORT.md) for the policy this drives.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload JSON artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: eslint-version-stats-${{ github.run_number }}
+          path: benchmark-results/eslint-version-stats.json
+          retention-days: 90
+
+      - name: Detect drift
+        if: ${{ inputs.open_pr }}
+        id: diff
+        run: |
+          if git diff --quiet benchmark-results/eslint-version-stats.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No drift since last tracked snapshot — no PR needed."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open PR
+        if: ${{ inputs.open_pr && steps.diff.outputs.changed == 'true' }}
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: chore/refresh-eslint-version-stats
+          title: "chore(stats): refresh ESLint version download share"
+          body: |
+            Refreshed `benchmark-results/eslint-version-stats.json` from the npm registry.
+
+            Review the new share by major. If the gate (`≥ 20% weekly downloads`) status of any major has changed, update [`docs/ESLINT_VERSION_SUPPORT.md`](docs/ESLINT_VERSION_SUPPORT.md) and the `peerDependencies.eslint` range across every package in `packages/`.
+
+            See [`docs/ESLINT_VERSION_SUPPORT.md`](docs/ESLINT_VERSION_SUPPORT.md) for the policy.
+
+            Triggered by: @${{ github.actor }} via `gh workflow run eslint-version-stats.yml -f open_pr=true`.
+          commit-message: "chore(stats): refresh ESLint version download share"
+          add-paths: |
+            benchmark-results/eslint-version-stats.json

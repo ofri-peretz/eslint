@@ -32,6 +32,7 @@ export const maxDependencies = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/max-dependencies.md',
       description:
         'Enforce the maximum number of dependencies a module can have',
     },

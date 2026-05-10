@@ -33,7 +33,10 @@ export const noUnsafeInlineCsp = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-unsafe-inline-csp.md',
       description: "Disallow 'unsafe-inline' in Content Security Policy",
+      cwe: 'CWE-79',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

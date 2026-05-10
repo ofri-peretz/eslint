@@ -45,9 +45,7 @@ Validates that HTML attribute values are valid according to HTML spec.
 ### ❌ Incorrect
 
 ```tsx
-<a rel="noopner">Link</a>  // Typo: noopner -> noopener
-<a target="_new">Link</a>  // Invalid: _new -> _blank
-<input type="mail" />  // Invalid: mail -> email
+<label for="input-id">Label</label>
 ```
 
 ### ✅ Correct

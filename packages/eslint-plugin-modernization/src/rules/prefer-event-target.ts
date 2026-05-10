@@ -26,6 +26,7 @@ export const preferEventTarget = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modernization/docs/rules/prefer-event-target.md',
       description:
         'Prefer EventTarget over EventEmitter for cross-platform compatibility',
     },

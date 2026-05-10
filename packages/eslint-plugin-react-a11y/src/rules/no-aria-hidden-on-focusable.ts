@@ -18,7 +18,7 @@ type MessageIds = 'ariaHiddenFocusable';
 
 type RuleOptions = [];
 
-const FOCUSABLE_ELEMENTS = ['a', 'button', 'input', 'select', 'textarea', 'area'];
+const FOCUSABLE_ELEMENTS = new Set(['a', 'button', 'input', 'select', 'textarea', 'area']);
 
 const isJSXAttribute = (
   attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute,
@@ -29,7 +29,10 @@ export const noAriaHiddenOnFocusable = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-aria-hidden-on-focusable.md',
       description: 'Enforce that aria-hidden="true" is not used on focusable elements',
+      cwe: 'CWE-252',
+      cvss: 7.5,
     },
     messages: {
       ariaHiddenFocusable: formatLLMMessage({
@@ -63,7 +66,7 @@ export const noAriaHiddenOnFocusable = createRule<RuleOptions, MessageIds>({
         }
 
         const element = node.name.name;
-        let isFocusable = FOCUSABLE_ELEMENTS.includes(element);
+        let isFocusable = FOCUSABLE_ELEMENTS.has(element);
         
         // Check tabIndex
         const tabIndex = node.attributes.find(

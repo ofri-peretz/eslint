@@ -19,6 +19,7 @@ export const jsxNoBind = createRule<[], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/jsx-no-bind.md',
       description: 'Prevent .bind() in JSX',
     },
     schema: [],

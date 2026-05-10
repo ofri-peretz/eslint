@@ -192,7 +192,10 @@ export const noUnhandledPromise = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/no-unhandled-promise.md',
       description: 'Detects unhandled Promise rejections',
+      cwe: 'CWE-1024',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

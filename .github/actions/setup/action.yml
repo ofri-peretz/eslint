@@ -1,0 +1,78 @@
+# Composite action: standard repo setup for CI jobs.
+#
+# IMPORTANT: caller must run `actions/checkout@v4` first — composite actions
+# referenced via `./.github/actions/setup` need the workspace populated to load
+# this file. Caller controls fetch-depth (some jobs need full history for
+# affected detection, others don't).
+#
+# Layered caching, fastest-first:
+#   1. node_modules cache keyed on package-lock.json — skips `npm ci` on hit.
+#   2. ~/.npm cache (via setup-node) — falls back to a warm registry on miss.
+#   3. .turbo cache — Turborepo's task cache, shared across runs of the same
+#      workflow when input/output hashes match.
+#
+# Node version comes from .nvmrc (single source of truth). Override via the
+# `node-version` input only when intentionally testing a different version
+# (e.g. cross-version matrix workflows).
+
+name: Setup
+description: Install Node, hydrate npm + Turbo caches, run `npm ci` (skipped on cache hit).
+
+inputs:
+  node-version:
+    description: Node version override. Defaults to .nvmrc.
+    required: false
+    default: ""
+  install:
+    description: Run `npm ci` after restoring caches. Set to "false" to skip (rare).
+    required: false
+    default: "true"
+  turbo-cache:
+    description: Restore + save the Turborepo task cache. Set to "false" for jobs that don't run turbo.
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node (from .nvmrc)
+      if: inputs.node-version == ''
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: .nvmrc
+        cache: npm
+
+    - name: Setup Node (override)
+      if: inputs.node-version != ''
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+
+    - name: Restore node_modules cache
+      if: inputs.install == 'true'
+      id: node-modules-cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          node_modules
+          packages/*/node_modules
+          apps/*/node_modules
+          tools/*/node_modules
+          benchmarks/node_modules
+        key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+    - name: Install dependencies
+      if: inputs.install == 'true' && steps.node-modules-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: npm ci --prefer-offline --no-audit --fund=false
+
+    - name: Restore Turbo cache
+      if: inputs.turbo-cache == 'true'
+      uses: actions/cache@v4
+      with:
+        path: .turbo
+        key: turbo-${{ runner.os }}-${{ github.job }}-${{ github.sha }}
+        restore-keys: |
+          turbo-${{ runner.os }}-${{ github.job }}-
+          turbo-${{ runner.os }}-

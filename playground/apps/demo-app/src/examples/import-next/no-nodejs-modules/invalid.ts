@@ -1,1 +1,0 @@
-// Invalid example for no-nodejs-modules\n// TODO: Add failing code\nexport const invalid = true;\n

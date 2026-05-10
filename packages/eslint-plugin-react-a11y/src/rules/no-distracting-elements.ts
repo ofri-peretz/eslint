@@ -27,7 +27,10 @@ export const noDistractingElements = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-distracting-elements.md',
       description: 'Enforce that distracting elements are not used',
+      cwe: 'CWE-252',
+      cvss: 7.5,
     },
     messages: {
       noDistractingElements: formatLLMMessage({

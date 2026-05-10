@@ -23,19 +23,19 @@ Multi-step orchestration for releasing npm packages.
 // turbo
 
 ```bash
-nx run <package>:lint
+npx turbo run lint --filter=<package>
 ```
 
 // turbo
 
 ```bash
-nx run <package>:test
+npx turbo run test --filter=<package>
 ```
 
 ### Step 2: Version Bump
 
 ```bash
-nx release version <package>
+gh workflow run release.yml --ref main -f dry-run=true
 ```
 
 **Expected**: User selects semantic version (patch/minor/major)

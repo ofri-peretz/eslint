@@ -1,0 +1,3093 @@
+{
+  "generatedBy": "scripts/generate-oxlint-shims.mjs",
+  "generatedAt": "2026-05-10",
+  "totalPlugins": 20,
+  "totalRules": 397,
+  "oxlintCompatible": 397,
+  "oxlintPartial": 0,
+  "oxlintBlocked": 0,
+  "plugins": [
+    {
+      "package": "eslint-plugin-browser-security",
+      "short": "browser-security",
+      "shim": "tools/oxlint-plugins/interlace-browser-security.cjs",
+      "subpath": "eslint-plugin-browser-security/oxlint",
+      "ruleCount": 45,
+      "rules": [
+        {
+          "name": "detect-mixed-content",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-allow-arbitrary-loads",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-clickjacking",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-client-side-auth-logic",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-cookie-auth-tokens",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-credentials-in-query-params",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-disabled-certificate-validation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-dynamic-service-worker-url",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-eval",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-filereader-innerhtml",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-http-urls",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-innerhtml",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-insecure-redirects",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-insecure-websocket",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-jwt-in-storage",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-missing-cors-check",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-missing-csrf-protection",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-missing-security-headers",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-password-in-url",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-permissive-cors",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-postmessage-innerhtml",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-postmessage-wildcard-origin",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-sensitive-cookie-js",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-sensitive-data-in-analytics",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-sensitive-data-in-cache",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-sensitive-indexeddb",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-sensitive-localstorage",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-sensitive-sessionstorage",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-tracking-without-consent",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unencrypted-transmission",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unescaped-url-parameter",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unsafe-eval-csp",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unsafe-inline-csp",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unvalidated-deeplinks",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-websocket-eval",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-websocket-innerhtml",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-worker-message-innerhtml",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-blob-url-revocation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-cookie-secure-attrs",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-csp-headers",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-https-only",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-mime-type-validation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-postmessage-origin-check",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-url-validation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-websocket-wss",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-conventions",
+      "short": "conventions",
+      "shim": "tools/oxlint-plugins/interlace-conventions.cjs",
+      "subpath": "eslint-plugin-conventions/oxlint",
+      "ruleCount": 10,
+      "rules": [
+        {
+          "name": "conventions/consistent-existence-index-check",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "conventions/expiring-todo-comments",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "conventions/filename-case",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "conventions/no-commented-code",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "conventions/no-console-spaces",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "conventions/no-json-schema-tags",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "conventions/prefer-code-point",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "conventions/prefer-dependency-version-strategy",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "conventions/prefer-dom-node-text-content",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "deprecation/no-deprecated-api",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-crypto",
+      "short": "crypto",
+      "shim": "tools/oxlint-plugins/interlace-crypto.cjs",
+      "subpath": "eslint-plugin-crypto/oxlint",
+      "ruleCount": 11,
+      "rules": [
+        {
+          "name": "no-hardcoded-crypto-key",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-key-reuse",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-math-random-crypto",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-numeric-only-tokens",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-predictable-salt",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-web-crypto-export",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-authenticated-encryption",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-key-length",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-random-iv",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-secure-pbkdf2-digest",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-sufficient-length",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-express-security",
+      "short": "express-security",
+      "shim": "tools/oxlint-plugins/interlace-express-security.cjs",
+      "subpath": "eslint-plugin-express-security/oxlint",
+      "ruleCount": 10,
+      "rules": [
+        {
+          "name": "no-cors-credentials-wildcard",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-exposed-debug-endpoints",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-express-unsafe-regex-route",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-graphql-introspection-production",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-insecure-cookie-options",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-permissive-cors",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-csrf-protection",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-express-body-parser-limits",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-helmet",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-rate-limiting",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-import-next",
+      "short": "import-next",
+      "shim": "tools/oxlint-plugins/interlace-import-next.cjs",
+      "subpath": "eslint-plugin-import-next/oxlint",
+      "ruleCount": 55,
+      "rules": [
+        {
+          "name": "consistent-type-specifier-style",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "default",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": true
+        },
+        {
+          "name": "dynamic-import-chunkname",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "enforce-dependency-direction",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "enforce-import-order",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "enforce-team-boundaries",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "export",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "exports-last",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "extensions",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "first",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "group-exports",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "max-dependencies",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "named",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": true
+        },
+        {
+          "name": "namespace",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": true
+        },
+        {
+          "name": "newline-after-import",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-absolute-path",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-amd",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-anonymous-default-export",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-barrel-file",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-barrel-import",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-commonjs",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-cross-domain-imports",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-cycle",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-default-export",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-deprecated",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-duplicates",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-dynamic-require",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-empty-named-blocks",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-extraneous-dependencies",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-full-package-import",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-import-module-exports",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-internal-modules",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-legacy-imports",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-mutable-exports",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-named-as-default-member",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-named-as-default",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-named-default",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-named-export",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-namespace",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-nodejs-modules",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-relative-packages",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-relative-parent-imports",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-restricted-paths",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-self-import",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unassigned-import",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unresolved",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unused-modules",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-useless-path-segments",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "prefer-default-export",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "prefer-direct-import",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "prefer-modern-api",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "prefer-node-protocol",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "prefer-tree-shakeable-imports",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-import-approval",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "unambiguous",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-jwt",
+      "short": "jwt",
+      "shim": "tools/oxlint-plugins/interlace-jwt.cjs",
+      "subpath": "eslint-plugin-jwt/oxlint",
+      "ruleCount": 13,
+      "rules": [
+        {
+          "name": "no-algorithm-confusion",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-algorithm-none",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-decode-without-verify",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-hardcoded-secret",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-sensitive-payload",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-timestamp-manipulation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-weak-secret",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-algorithm-whitelist",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-audience-validation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-expiration",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-issued-at",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-issuer-validation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-max-age",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-lambda-security",
+      "short": "lambda-security",
+      "shim": "tools/oxlint-plugins/interlace-lambda-security.cjs",
+      "subpath": "eslint-plugin-lambda-security/oxlint",
+      "ruleCount": 14,
+      "rules": [
+        {
+          "name": "no-env-logging",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-error-swallowing",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-exposed-debug-endpoints",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-exposed-error-details",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-hardcoded-credentials-sdk",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-missing-authorization-check",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-overly-permissive-iam-policy",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-permissive-cors-middy",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-permissive-cors-response",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-secrets-in-env",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unbounded-batch-processing",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unvalidated-event-body",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-user-controlled-requests",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-timeout-handling",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-maintainability",
+      "short": "maintainability",
+      "shim": "tools/oxlint-plugins/interlace-maintainability.cjs",
+      "subpath": "eslint-plugin-maintainability/oxlint",
+      "ruleCount": 12,
+      "rules": [
+        {
+          "name": "error-handling/error-message",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "error-handling/no-missing-error-context",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "error-handling/no-silent-errors",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "error-handling/no-unhandled-promise",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "maintainability/cognitive-complexity",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "maintainability/consistent-function-scoping",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "maintainability/identical-functions",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "maintainability/max-parameters",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "maintainability/nested-complexity-hotspots",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "maintainability/no-lonely-if",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "maintainability/no-nested-ternary",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "maintainability/no-unreadable-iife",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modernization",
+      "short": "modernization",
+      "shim": "tools/oxlint-plugins/interlace-modernization.cjs",
+      "subpath": "eslint-plugin-modernization/oxlint",
+      "ruleCount": 3,
+      "rules": [
+        {
+          "name": "no-instanceof-array",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "prefer-at",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "prefer-event-target",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-modularity",
+      "short": "modularity",
+      "shim": "tools/oxlint-plugins/interlace-modularity.cjs",
+      "subpath": "eslint-plugin-modularity/oxlint",
+      "ruleCount": 5,
+      "rules": [
+        {
+          "name": "ddd-anemic-domain-model",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "ddd-value-object-immutability",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "enforce-naming",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "enforce-rest-conventions",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-external-api-calls-in-utils",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-mongodb-security",
+      "short": "mongodb-security",
+      "shim": "tools/oxlint-plugins/interlace-mongodb-security.cjs",
+      "subpath": "eslint-plugin-mongodb-security/oxlint",
+      "ruleCount": 16,
+      "rules": [
+        {
+          "name": "no-bypass-middleware",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-debug-mode-production",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-hardcoded-connection-string",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-hardcoded-credentials",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-operator-injection",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-select-sensitive-fields",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unbounded-find",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unsafe-populate",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unsafe-query",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unsafe-regex-query",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unsafe-where",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-auth-mechanism",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-lean-queries",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-projection",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-schema-validation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-tls-connection",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-nestjs-security",
+      "short": "nestjs-security",
+      "shim": "tools/oxlint-plugins/interlace-nestjs-security.cjs",
+      "subpath": "eslint-plugin-nestjs-security/oxlint",
+      "ruleCount": 6,
+      "rules": [
+        {
+          "name": "no-exposed-debug-endpoints",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-exposed-private-fields",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-missing-validation-pipe",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-class-validator",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-guards",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-throttler",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-node-security",
+      "short": "node-security",
+      "shim": "tools/oxlint-plugins/interlace-node-security.cjs",
+      "subpath": "eslint-plugin-node-security/oxlint",
+      "ruleCount": 33,
+      "rules": [
+        {
+          "name": "detect-child-process",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "detect-eval-with-expression",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "detect-non-literal-fs-filename",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "detect-suspicious-dependencies",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "lock-file",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-arbitrary-file-access",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-buffer-overread",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-cryptojs",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-cryptojs-weak-random",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-data-in-temp-storage",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-deprecated-buffer",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-deprecated-cipher-method",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-dynamic-dependency-loading",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-dynamic-require",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-ecb-mode",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-insecure-key-derivation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-insecure-rsa-padding",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-pii-in-logs",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-self-signed-certs",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-sha1-hash",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-ssrf",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-static-iv",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-timing-unsafe-compare",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-toctou-vulnerability",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unsafe-dynamic-require",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-weak-cipher-algorithm",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-weak-hash-algorithm",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-zip-slip",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "prefer-native-crypto",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-dependency-integrity",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-secure-credential-storage",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-secure-deletion",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-storage-encryption",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-operability",
+      "short": "operability",
+      "shim": "tools/oxlint-plugins/interlace-operability.cjs",
+      "subpath": "eslint-plugin-operability/oxlint",
+      "ruleCount": 6,
+      "rules": [
+        {
+          "name": "operability/no-console-log",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "operability/no-debug-code-in-production",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "operability/no-process-exit",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "operability/no-verbose-error-messages",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "operability/require-code-minification",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "operability/require-data-minimization",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-pg",
+      "short": "pg",
+      "shim": "tools/oxlint-plugins/interlace-pg.cjs",
+      "subpath": "eslint-plugin-pg/oxlint",
+      "ruleCount": 13,
+      "rules": [
+        {
+          "name": "check-query-params",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-batch-insert-loop",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-floating-query",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-hardcoded-credentials",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-insecure-ssl",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-missing-client-release",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-select-all",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-transaction-on-pool",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unsafe-copy-from",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unsafe-query",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unsafe-search-path",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "prefer-pool-query",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "prevent-double-release",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-a11y",
+      "short": "react-a11y",
+      "shim": "tools/oxlint-plugins/interlace-react-a11y.cjs",
+      "subpath": "eslint-plugin-react-a11y/oxlint",
+      "ruleCount": 37,
+      "rules": [
+        {
+          "name": "alt-text",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "anchor-ambiguous-text",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "anchor-has-content",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "anchor-is-valid",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "aria-activedescendant-has-tabindex",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "aria-props",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "aria-role",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "aria-unsupported-elements",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "autocomplete-valid",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "click-events-have-key-events",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "control-has-associated-label",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "heading-has-content",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "html-has-lang",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "iframe-has-title",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "img-redundant-alt",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "interactive-supports-focus",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "label-has-associated-control",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "lang",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "media-has-caption",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "mouse-events-have-key-events",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-access-key",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-aria-hidden-on-focusable",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-autofocus",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-distracting-elements",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-interactive-element-to-noninteractive-role",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-keyboard-inaccessible-elements",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-missing-aria-labels",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-noninteractive-element-interactions",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-noninteractive-element-to-interactive-role",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-noninteractive-tabindex",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-redundant-roles",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-static-element-interactions",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "prefer-tag-over-role",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "role-has-required-aria-props",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "role-supports-aria-props",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "scope",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "tabindex-no-positive",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-react-features",
+      "short": "react-features",
+      "shim": "tools/oxlint-plugins/interlace-react-features.cjs",
+      "subpath": "eslint-plugin-react-features/oxlint",
+      "ruleCount": 53,
+      "rules": [
+        {
+          "name": "migration/react-class-to-hooks",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "performance/no-unnecessary-rerenders",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "performance/react-no-inline-functions",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "performance/react-render-optimization",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/checked-requires-onchange-or-readonly",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/default-props-match-prop-types",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/display-name",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/hooks-exhaustive-deps",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/jsx-handler-names",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/jsx-key",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/jsx-max-depth",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/jsx-no-bind",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/jsx-no-duplicate-props",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/jsx-no-literals",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/jsx-no-script-url",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/jsx-no-target-blank",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-access-state-in-setstate",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-adjacent-inline-elements",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-arrow-function-lifecycle",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-children-prop",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-danger-with-children",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-danger",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-deprecated",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-did-mount-set-state",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-did-update-set-state",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-direct-mutation-state",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-find-dom-node",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-invalid-html-attribute",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-is-mounted",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-multi-comp",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-namespace",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-object-type-as-default-prop",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-redundant-should-component-update",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-render-return-value",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-set-state",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-string-refs",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-this-in-sfc",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-typos",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-unescaped-entities",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-unknown-property",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/no-unsafe",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/prefer-es6-class",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/prefer-stateless-function",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/prop-types",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/react-in-jsx-scope",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/require-default-props",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/require-optimization",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/require-render-return",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/required-attributes",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/sort-comp",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/state-in-constructor",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/static-property-placement",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "react/void-dom-elements-no-children",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-reliability",
+      "short": "reliability",
+      "shim": "tools/oxlint-plugins/interlace-reliability.cjs",
+      "subpath": "eslint-plugin-reliability/oxlint",
+      "ruleCount": 9,
+      "rules": [
+        {
+          "name": "error-handling/error-message",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "error-handling/no-missing-error-context",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "error-handling/no-silent-errors",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "error-handling/no-unhandled-promise",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "reliability/no-await-in-loop",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "reliability/no-jsdoc-terminator-in-example",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "reliability/no-missing-null-checks",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "reliability/no-unsafe-type-narrowing",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "reliability/require-network-timeout",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-secure-coding",
+      "short": "secure-coding",
+      "shim": "tools/oxlint-plugins/interlace-secure-coding.cjs",
+      "subpath": "eslint-plugin-secure-coding/oxlint",
+      "ruleCount": 27,
+      "rules": [
+        {
+          "name": "detect-non-literal-regexp",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "detect-object-injection",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": true
+        },
+        {
+          "name": "detect-weak-password-validation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-directive-injection",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-electron-security-issues",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-format-string-injection",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-graphql-injection",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-hardcoded-credentials",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-hardcoded-session-tokens",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-improper-sanitization",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-improper-type-validation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-insecure-comparison",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-ldap-injection",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-missing-authentication",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-pii-in-logs",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-privilege-escalation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-redos-vulnerable-regex",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-sensitive-data-exposure",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unchecked-loop-condition",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unlimited-resource-allocation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unsafe-deserialization",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unsafe-regex-construction",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-weak-password-recovery",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-xpath-injection",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-xxe-injection",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-backend-authorization",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-secure-defaults",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    },
+    {
+      "package": "eslint-plugin-vercel-ai-security",
+      "short": "vercel-ai-security",
+      "shim": "tools/oxlint-plugins/interlace-vercel-ai-security.cjs",
+      "subpath": "eslint-plugin-vercel-ai-security/oxlint",
+      "ruleCount": 19,
+      "rules": [
+        {
+          "name": "no-dynamic-system-prompt",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-hardcoded-api-keys",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-sensitive-in-prompt",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-system-prompt-leak",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-training-data-exposure",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "no-unsafe-output-handling",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-abort-signal",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-audit-logging",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-embedding-validation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-error-handling",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-max-steps",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-max-tokens",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-output-filtering",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-output-validation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-rag-content-validation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-request-timeout",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-tool-confirmation",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-tool-schema",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        },
+        {
+          "name": "require-validated-prompt",
+          "portability": "compatible",
+          "blockers": [],
+          "isTypeAware": false
+        }
+      ]
+    }
+  ],
+  "runtimeRuleNames": {
+    "browser-security": [
+      "detect-mixed-content",
+      "no-allow-arbitrary-loads",
+      "no-clickjacking",
+      "no-client-side-auth-logic",
+      "no-cookie-auth-tokens",
+      "no-credentials-in-query-params",
+      "no-disabled-certificate-validation",
+      "no-dynamic-service-worker-url",
+      "no-eval",
+      "no-filereader-innerhtml",
+      "no-http-urls",
+      "no-innerhtml",
+      "no-insecure-redirects",
+      "no-insecure-websocket",
+      "no-jwt-in-storage",
+      "no-missing-cors-check",
+      "no-missing-csrf-protection",
+      "no-missing-security-headers",
+      "no-password-in-url",
+      "no-permissive-cors",
+      "no-postmessage-innerhtml",
+      "no-postmessage-wildcard-origin",
+      "no-sensitive-cookie-js",
+      "no-sensitive-data-in-analytics",
+      "no-sensitive-data-in-cache",
+      "no-sensitive-indexeddb",
+      "no-sensitive-localstorage",
+      "no-sensitive-sessionstorage",
+      "no-tracking-without-consent",
+      "no-unencrypted-transmission",
+      "no-unescaped-url-parameter",
+      "no-unsafe-eval-csp",
+      "no-unsafe-inline-csp",
+      "no-unvalidated-deeplinks",
+      "no-websocket-eval",
+      "no-websocket-innerhtml",
+      "no-worker-message-innerhtml",
+      "require-blob-url-revocation",
+      "require-cookie-secure-attrs",
+      "require-csp-headers",
+      "require-https-only",
+      "require-mime-type-validation",
+      "require-postmessage-origin-check",
+      "require-url-validation",
+      "require-websocket-wss"
+    ],
+    "conventions": [
+      "consistent-existence-index-check",
+      "expiring-todo-comments",
+      "filename-case",
+      "no-commented-code",
+      "no-console-spaces",
+      "no-deprecated-api",
+      "no-json-schema-tags",
+      "prefer-code-point",
+      "prefer-dependency-version-strategy",
+      "prefer-dom-node-text-content"
+    ],
+    "crypto": [
+      "no-hardcoded-crypto-key",
+      "no-key-reuse",
+      "no-math-random-crypto",
+      "no-numeric-only-tokens",
+      "no-predictable-salt",
+      "no-web-crypto-export",
+      "require-authenticated-encryption",
+      "require-key-length",
+      "require-random-iv",
+      "require-secure-pbkdf2-digest",
+      "require-sufficient-length"
+    ],
+    "express-security": [
+      "no-cors-credentials-wildcard",
+      "no-exposed-debug-endpoints",
+      "no-express-unsafe-regex-route",
+      "no-graphql-introspection-production",
+      "no-insecure-cookie-options",
+      "no-permissive-cors",
+      "require-csrf-protection",
+      "require-express-body-parser-limits",
+      "require-helmet",
+      "require-rate-limiting"
+    ],
+    "import-next": [
+      "consistent-type-specifier-style",
+      "default",
+      "dynamic-import-chunkname",
+      "enforce-dependency-direction",
+      "enforce-import-order",
+      "enforce-team-boundaries",
+      "export",
+      "exports-last",
+      "extensions",
+      "first",
+      "group-exports",
+      "max-dependencies",
+      "named",
+      "namespace",
+      "newline-after-import",
+      "no-absolute-path",
+      "no-amd",
+      "no-anonymous-default-export",
+      "no-barrel-file",
+      "no-barrel-import",
+      "no-commonjs",
+      "no-cross-domain-imports",
+      "no-cycle",
+      "no-default-export",
+      "no-deprecated",
+      "no-duplicates",
+      "no-dynamic-require",
+      "no-empty-named-blocks",
+      "no-extraneous-dependencies",
+      "no-full-package-import",
+      "no-import-module-exports",
+      "no-internal-modules",
+      "no-legacy-imports",
+      "no-mutable-exports",
+      "no-named-as-default",
+      "no-named-as-default-member",
+      "no-named-default",
+      "no-named-export",
+      "no-namespace",
+      "no-nodejs-modules",
+      "no-relative-packages",
+      "no-relative-parent-imports",
+      "no-restricted-paths",
+      "no-self-import",
+      "no-unassigned-import",
+      "no-unresolved",
+      "no-unused-modules",
+      "no-useless-path-segments",
+      "order",
+      "prefer-default-export",
+      "prefer-direct-import",
+      "prefer-modern-api",
+      "prefer-node-protocol",
+      "prefer-tree-shakeable-imports",
+      "require-import-approval",
+      "unambiguous"
+    ],
+    "jwt": [
+      "no-algorithm-confusion",
+      "no-algorithm-none",
+      "no-decode-without-verify",
+      "no-hardcoded-secret",
+      "no-sensitive-payload",
+      "no-timestamp-manipulation",
+      "no-weak-secret",
+      "require-algorithm-whitelist",
+      "require-audience-validation",
+      "require-expiration",
+      "require-issued-at",
+      "require-issuer-validation",
+      "require-max-age"
+    ],
+    "lambda-security": [
+      "no-env-logging",
+      "no-error-swallowing",
+      "no-exposed-debug-endpoints",
+      "no-exposed-error-details",
+      "no-hardcoded-credentials-sdk",
+      "no-missing-authorization-check",
+      "no-overly-permissive-iam-policy",
+      "no-permissive-cors-middy",
+      "no-permissive-cors-response",
+      "no-secrets-in-env",
+      "no-unbounded-batch-processing",
+      "no-unvalidated-event-body",
+      "no-user-controlled-requests",
+      "require-timeout-handling"
+    ],
+    "maintainability": [
+      "cognitive-complexity",
+      "consistent-function-scoping",
+      "error-message",
+      "identical-functions",
+      "maintainability/cognitive-complexity",
+      "maintainability/consistent-function-scoping",
+      "maintainability/error-message",
+      "maintainability/identical-functions",
+      "maintainability/max-parameters",
+      "maintainability/nested-complexity-hotspots",
+      "maintainability/no-lonely-if",
+      "maintainability/no-missing-error-context",
+      "maintainability/no-nested-ternary",
+      "maintainability/no-silent-errors",
+      "maintainability/no-unhandled-promise",
+      "maintainability/no-unreadable-iife",
+      "max-parameters",
+      "nested-complexity-hotspots",
+      "no-lonely-if",
+      "no-missing-error-context",
+      "no-nested-ternary",
+      "no-silent-errors",
+      "no-unhandled-promise",
+      "no-unreadable-iife"
+    ],
+    "modernization": [
+      "no-instanceof-array",
+      "prefer-at",
+      "prefer-event-target"
+    ],
+    "modularity": [
+      "ddd-anemic-domain-model",
+      "ddd-value-object-immutability",
+      "enforce-naming",
+      "enforce-rest-conventions",
+      "no-external-api-calls-in-utils"
+    ],
+    "mongodb-security": [
+      "no-bypass-middleware",
+      "no-debug-mode-production",
+      "no-hardcoded-connection-string",
+      "no-hardcoded-credentials",
+      "no-operator-injection",
+      "no-select-sensitive-fields",
+      "no-unbounded-find",
+      "no-unsafe-populate",
+      "no-unsafe-query",
+      "no-unsafe-regex-query",
+      "no-unsafe-where",
+      "require-auth-mechanism",
+      "require-lean-queries",
+      "require-projection",
+      "require-schema-validation",
+      "require-tls-connection"
+    ],
+    "nestjs-security": [
+      "no-exposed-debug-endpoints",
+      "no-exposed-private-fields",
+      "no-missing-validation-pipe",
+      "require-class-validator",
+      "require-guards",
+      "require-throttler"
+    ],
+    "node-security": [
+      "detect-child-process",
+      "detect-eval-with-expression",
+      "detect-non-literal-fs-filename",
+      "detect-suspicious-dependencies",
+      "lock-file",
+      "no-arbitrary-file-access",
+      "no-buffer-overread",
+      "no-cryptojs",
+      "no-cryptojs-weak-random",
+      "no-data-in-temp-storage",
+      "no-deprecated-buffer",
+      "no-deprecated-cipher-method",
+      "no-dynamic-dependency-loading",
+      "no-dynamic-require",
+      "no-ecb-mode",
+      "no-insecure-key-derivation",
+      "no-insecure-rsa-padding",
+      "no-pii-in-logs",
+      "no-self-signed-certs",
+      "no-sha1-hash",
+      "no-ssrf",
+      "no-static-iv",
+      "no-timing-unsafe-compare",
+      "no-toctou-vulnerability",
+      "no-unsafe-dynamic-require",
+      "no-weak-cipher-algorithm",
+      "no-weak-hash-algorithm",
+      "no-zip-slip",
+      "prefer-native-crypto",
+      "require-dependency-integrity",
+      "require-secure-credential-storage",
+      "require-secure-deletion",
+      "require-storage-encryption"
+    ],
+    "operability": [
+      "no-console-log",
+      "no-debug-code-in-production",
+      "no-process-exit",
+      "no-verbose-error-messages",
+      "operability/no-console-log",
+      "operability/no-debug-code-in-production",
+      "operability/no-process-exit",
+      "operability/no-verbose-error-messages",
+      "operability/require-code-minification",
+      "operability/require-data-minimization",
+      "require-code-minification",
+      "require-data-minimization"
+    ],
+    "pg": [
+      "check-query-params",
+      "no-batch-insert-loop",
+      "no-floating-query",
+      "no-hardcoded-credentials",
+      "no-insecure-ssl",
+      "no-missing-client-release",
+      "no-select-all",
+      "no-transaction-on-pool",
+      "no-unsafe-copy-from",
+      "no-unsafe-query",
+      "no-unsafe-search-path",
+      "prefer-pool-query",
+      "prevent-double-release"
+    ],
+    "react-a11y": [
+      "alt-text",
+      "anchor-ambiguous-text",
+      "anchor-has-content",
+      "anchor-is-valid",
+      "aria-activedescendant-has-tabindex",
+      "aria-props",
+      "aria-role",
+      "aria-unsupported-elements",
+      "autocomplete-valid",
+      "click-events-have-key-events",
+      "control-has-associated-label",
+      "heading-has-content",
+      "html-has-lang",
+      "iframe-has-title",
+      "img-redundant-alt",
+      "interactive-supports-focus",
+      "label-has-associated-control",
+      "lang",
+      "media-has-caption",
+      "mouse-events-have-key-events",
+      "no-access-key",
+      "no-aria-hidden-on-focusable",
+      "no-autofocus",
+      "no-distracting-elements",
+      "no-interactive-element-to-noninteractive-role",
+      "no-keyboard-inaccessible-elements",
+      "no-missing-aria-labels",
+      "no-noninteractive-element-interactions",
+      "no-noninteractive-element-to-interactive-role",
+      "no-noninteractive-tabindex",
+      "no-redundant-roles",
+      "no-static-element-interactions",
+      "prefer-tag-over-role",
+      "role-has-required-aria-props",
+      "role-supports-aria-props",
+      "scope",
+      "tabindex-no-positive"
+    ],
+    "react-features": [
+      "checked-requires-onchange-or-readonly",
+      "default-props-match-prop-types",
+      "display-name",
+      "hooks-exhaustive-deps",
+      "jsx-handler-names",
+      "jsx-key",
+      "jsx-max-depth",
+      "jsx-no-bind",
+      "jsx-no-duplicate-props",
+      "jsx-no-literals",
+      "jsx-no-script-url",
+      "jsx-no-target-blank",
+      "migration/react-class-to-hooks",
+      "no-access-state-in-setstate",
+      "no-adjacent-inline-elements",
+      "no-arrow-function-lifecycle",
+      "no-children-prop",
+      "no-danger",
+      "no-danger-with-children",
+      "no-deprecated",
+      "no-did-mount-set-state",
+      "no-did-update-set-state",
+      "no-direct-mutation-state",
+      "no-find-dom-node",
+      "no-invalid-html-attribute",
+      "no-is-mounted",
+      "no-multi-comp",
+      "no-namespace",
+      "no-object-type-as-default-prop",
+      "no-redundant-should-component-update",
+      "no-render-return-value",
+      "no-set-state",
+      "no-string-refs",
+      "no-this-in-sfc",
+      "no-typos",
+      "no-unescaped-entities",
+      "no-unknown-property",
+      "no-unnecessary-rerenders",
+      "no-unsafe",
+      "performance/no-unnecessary-rerenders",
+      "performance/react-no-inline-functions",
+      "performance/react-render-optimization",
+      "prefer-es6-class",
+      "prefer-stateless-function",
+      "prop-types",
+      "react-class-to-hooks",
+      "react-in-jsx-scope",
+      "react-no-inline-functions",
+      "react-render-optimization",
+      "react/checked-requires-onchange-or-readonly",
+      "react/default-props-match-prop-types",
+      "react/display-name",
+      "react/hooks-exhaustive-deps",
+      "react/jsx-handler-names",
+      "react/jsx-key",
+      "react/jsx-max-depth",
+      "react/jsx-no-bind",
+      "react/jsx-no-duplicate-props",
+      "react/jsx-no-literals",
+      "react/jsx-no-script-url",
+      "react/jsx-no-target-blank",
+      "react/no-access-state-in-setstate",
+      "react/no-adjacent-inline-elements",
+      "react/no-arrow-function-lifecycle",
+      "react/no-children-prop",
+      "react/no-danger",
+      "react/no-danger-with-children",
+      "react/no-deprecated",
+      "react/no-did-mount-set-state",
+      "react/no-did-update-set-state",
+      "react/no-direct-mutation-state",
+      "react/no-find-dom-node",
+      "react/no-invalid-html-attribute",
+      "react/no-is-mounted",
+      "react/no-multi-comp",
+      "react/no-namespace",
+      "react/no-object-type-as-default-prop",
+      "react/no-redundant-should-component-update",
+      "react/no-render-return-value",
+      "react/no-set-state",
+      "react/no-string-refs",
+      "react/no-this-in-sfc",
+      "react/no-typos",
+      "react/no-unescaped-entities",
+      "react/no-unknown-property",
+      "react/no-unsafe",
+      "react/prefer-es6-class",
+      "react/prefer-stateless-function",
+      "react/prop-types",
+      "react/react-in-jsx-scope",
+      "react/require-default-props",
+      "react/require-optimization",
+      "react/require-render-return",
+      "react/required-attributes",
+      "react/sort-comp",
+      "react/state-in-constructor",
+      "react/static-property-placement",
+      "react/void-dom-elements-no-children",
+      "require-default-props",
+      "require-optimization",
+      "require-render-return",
+      "required-attributes",
+      "sort-comp",
+      "state-in-constructor",
+      "static-property-placement",
+      "void-dom-elements-no-children"
+    ],
+    "reliability": [
+      "error-handling/error-message",
+      "error-handling/no-missing-error-context",
+      "error-handling/no-silent-errors",
+      "error-handling/no-unhandled-promise",
+      "error-message",
+      "no-await-in-loop",
+      "no-jsdoc-terminator-in-example",
+      "no-missing-error-context",
+      "no-missing-null-checks",
+      "no-silent-errors",
+      "no-unhandled-promise",
+      "no-unsafe-type-narrowing",
+      "reliability/no-await-in-loop",
+      "reliability/no-jsdoc-terminator-in-example",
+      "reliability/no-missing-null-checks",
+      "reliability/no-unsafe-type-narrowing",
+      "reliability/require-network-timeout",
+      "require-network-timeout"
+    ],
+    "secure-coding": [
+      "detect-non-literal-regexp",
+      "detect-object-injection",
+      "detect-weak-password-validation",
+      "no-directive-injection",
+      "no-electron-security-issues",
+      "no-format-string-injection",
+      "no-graphql-injection",
+      "no-hardcoded-credentials",
+      "no-hardcoded-session-tokens",
+      "no-improper-sanitization",
+      "no-improper-type-validation",
+      "no-insecure-comparison",
+      "no-ldap-injection",
+      "no-missing-authentication",
+      "no-pii-in-logs",
+      "no-privilege-escalation",
+      "no-redos-vulnerable-regex",
+      "no-sensitive-data-exposure",
+      "no-unchecked-loop-condition",
+      "no-unlimited-resource-allocation",
+      "no-unsafe-deserialization",
+      "no-unsafe-regex-construction",
+      "no-weak-password-recovery",
+      "no-xpath-injection",
+      "no-xxe-injection",
+      "require-backend-authorization",
+      "require-secure-defaults"
+    ],
+    "vercel-ai-security": [
+      "no-dynamic-system-prompt",
+      "no-hardcoded-api-keys",
+      "no-sensitive-in-prompt",
+      "no-system-prompt-leak",
+      "no-training-data-exposure",
+      "no-unsafe-output-handling",
+      "require-abort-signal",
+      "require-audit-logging",
+      "require-embedding-validation",
+      "require-error-handling",
+      "require-max-steps",
+      "require-max-tokens",
+      "require-output-filtering",
+      "require-output-validation",
+      "require-rag-content-validation",
+      "require-request-timeout",
+      "require-tool-confirmation",
+      "require-tool-schema",
+      "require-validated-prompt"
+    ]
+  }
+}

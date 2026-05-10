@@ -28,7 +28,10 @@ export const requireOutputFiltering = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-output-filtering.md',
       description: 'Require filtering of sensitive data returned by AI tools',
+      cwe: 'CWE-200',
+      cvss: 6.5,
     },
     messages: {
       missingOutputFilter: formatLLMMessage({
@@ -116,6 +119,7 @@ export const requireOutputFiltering = createRule<RuleOptions, MessageIds>({
     /**
      * Get tool name from context
      */
+    // oxlint-disable-next-line consistent-function-scoping
     function getToolName(node: TSESTree.Node): string {
       let current = node.parent;
       while (current) {

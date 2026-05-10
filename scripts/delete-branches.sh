@@ -1,8 +1,7 @@
 #!/bin/bash
 # Script to delete all remote branches matching a pattern (excluding main)
 # Usage: ./scripts/delete-branches.sh [pattern]
-#        nx delete-branches [-- pattern]
-#        npm delete-branches [-- pattern]
+#        npm run delete-branches -- [pattern]
 # Example: ./scripts/delete-branches.sh dependabot
 #          ./scripts/delete-branches.sh feature/
 #          ./scripts/delete-branches.sh "chore/"

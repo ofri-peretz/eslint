@@ -1,0 +1,72 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: OSSF Scorecard
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OpenSSF Scorecard — measures the supply-chain security posture of this repo
+# (branch protection, signed releases, dangerous workflow patterns, pinned
+# dependencies, etc.) and uploads the SARIF result to GitHub's Code Scanning
+# tab. Also publishes results to the public Scorecard API so the badge in
+# README stays live.
+#
+# Quotas: weekly + on push to main only. The branch_protection check needs a
+# token with admin:read permission, which is why repo_token references
+# SCORECARD_REPO_TOKEN if available (PAT in repo secrets); otherwise it falls
+# back to the default GITHUB_TOKEN which can run all checks except branch
+# protection scoring.
+#
+# Get the badge: after the first run lands, copy the markdown from
+# https://api.securityscorecards.dev/projects/github.com/ofri-peretz/eslint
+# into README.md.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Weekly Tuesday 04:23 UTC — staggered off codeql + cron-storm hours.
+    - cron: "23 4 * * 2"
+  workflow_dispatch:
+
+concurrency:
+  group: scorecard-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: read-all
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      security-events: write   # to upload SARIF
+      id-token: write          # to publish to securityscorecards.dev
+      contents: read
+      actions: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Run analysis
+        uses: ossf/scorecard-action@v2.4.0
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          # Publishing to the public API enables the badge + history view.
+          # Toggle to false here if you ever need to keep results private.
+          publish_results: true
+          repo_token: ${{ secrets.SCORECARD_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scorecard-sarif
+          path: results.sarif
+          retention-days: 14
+
+      - name: Upload SARIF to Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif

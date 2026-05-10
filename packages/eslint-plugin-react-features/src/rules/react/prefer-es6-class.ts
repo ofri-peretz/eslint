@@ -19,6 +19,7 @@ export const preferEs6Class = createRule<[], MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/prefer-es6-class.md',
       description: 'Prefer ES6 classes over createClass',
     },
     schema: [],

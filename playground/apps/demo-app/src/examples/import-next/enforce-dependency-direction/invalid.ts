@@ -1,1 +1,0 @@
-// Invalid example for enforce-dependency-direction\n// TODO: Add failing code\nexport const invalid = true;\n

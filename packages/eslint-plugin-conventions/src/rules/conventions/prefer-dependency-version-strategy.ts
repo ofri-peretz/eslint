@@ -39,6 +39,7 @@ export const preferDependencyVersionStrategy = createRule<
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/prefer-dependency-version-strategy.md',
       description:
         'Enforce consistent version strategy (caret, tilde, exact, etc.) for package.json dependencies',
     },

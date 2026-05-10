@@ -133,8 +133,11 @@ export const noPermissiveCors = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-express-security/docs/rules/no-permissive-cors.md',
       description:
         'Disallow overly permissive CORS configurations (wildcard origin, origin: true)',
+      cwe: 'CWE-942',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

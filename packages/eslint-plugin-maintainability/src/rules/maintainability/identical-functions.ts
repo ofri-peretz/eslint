@@ -59,6 +59,7 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/identical-functions.md',
       description:
         'Detects duplicate function implementations with DRY refactoring suggestions',
     },
@@ -156,6 +157,7 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
      * Normalize function body for comparison
      * Remove variable names, keep structure
      */
+    // oxlint-disable-next-line consistent-function-scoping
     function normalizeBody(body: string): string {
       return (
         body
@@ -191,6 +193,7 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
     /**
      * Levenshtein distance algorithm
      */
+    // oxlint-disable-next-line consistent-function-scoping
     function levenshteinDistance(str1: string, str2: string): number {
       const matrix: number[][] = [];
 
@@ -274,6 +277,7 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
     /**
      * Generate unified function suggestion
      */
+    // oxlint-disable-next-line consistent-function-scoping
     function generateUnifiedFunction(group: DuplicationGroup): string {
       const firstFunc = group.functions[0];
 
@@ -302,6 +306,7 @@ export const identicalFunctions = createRule<RuleOptions, MessageIds>({
     /**
      * Suggest refactoring approach
      */
+    // oxlint-disable-next-line consistent-function-scoping
     function suggestRefactoringApproach(group: DuplicationGroup): {
       approach: string;
       pattern: string;

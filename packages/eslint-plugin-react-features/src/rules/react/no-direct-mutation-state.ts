@@ -26,6 +26,7 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-direct-mutation-state.md',
       description:
         'Prevent direct mutation of this.state that breaks React reconciliation',
     },
@@ -80,6 +81,7 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
     let inLifecycleMethod = false;
     const classStack: boolean[] = [];
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isLifecycleMethod(methodName: string): boolean {
       const lifecycleMethods = [
         'componentDidMount',
@@ -156,6 +158,27 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
       });
     }
 
+    // Shared helper — uses `target` to avoid shadowing visitor `node` params
+    // oxlint-disable-next-line consistent-function-scoping
+    function isStatePropertyAccess(target: TSESTree.Node): boolean {
+      if (target.type === 'MemberExpression' &&
+          target.object.type === 'MemberExpression' &&
+          target.object.object.type === 'ThisExpression' &&
+          target.object.property.type === 'Identifier' &&
+          target.object.property.name === 'state') {
+        return true; // this.state.xxx
+      }
+      // Handle deeper nesting
+      if (target.type === 'MemberExpression') {
+        return isStatePropertyAccess(target.object);
+      }
+      // Handle logical expressions like (this.state.items || [])
+      if (target.type === 'LogicalExpression') {
+        return isStatePropertyAccess(target.left);
+      }
+      return false;
+    }
+
     return {
       ClassDeclaration(node: TSESTree.ClassDeclaration) {
         // Check if this is a React component class
@@ -197,22 +220,6 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
       // Assignment to this.state properties
       AssignmentExpression(node: TSESTree.AssignmentExpression) {
         if (node.left.type === 'MemberExpression') {
-          // Check if this is assignment to this.state.xxx (but not this.state itself)
-          function isStatePropertyAccess(node: TSESTree.Node): boolean {
-            if (node.type === 'MemberExpression' &&
-                node.object.type === 'MemberExpression' &&
-                node.object.object.type === 'ThisExpression' &&
-                node.object.property.type === 'Identifier' &&
-                node.object.property.name === 'state') {
-              return true; // this.state.xxx
-            }
-            // Handle deeper nesting
-            if (node.type === 'MemberExpression') {
-              return isStatePropertyAccess(node.object);
-            }
-            return false;
-          }
-
           if (isStatePropertyAccess(node.left)) {
             reportStateMutation(node, 'assignment');
           }
@@ -222,22 +229,6 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
       // Update expressions on this.state properties (++state.count, state.count--)
       UpdateExpression(node: TSESTree.UpdateExpression) {
         if (node.argument.type === 'MemberExpression') {
-          // Check if this is update on this.state.xxx
-          function isStatePropertyAccess(node: TSESTree.Node): boolean {
-            if (node.type === 'MemberExpression' &&
-                node.object.type === 'MemberExpression' &&
-                node.object.object.type === 'ThisExpression' &&
-                node.object.property.type === 'Identifier' &&
-                node.object.property.name === 'state') {
-              return true; // this.state.xxx
-            }
-            // Handle deeper nesting
-            if (node.type === 'MemberExpression') {
-              return isStatePropertyAccess(node.object);
-            }
-            return false;
-          }
-
           if (isStatePropertyAccess(node.argument)) {
             reportStateMutation(node, 'update');
           }
@@ -247,22 +238,6 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
       // Delete operator on this.state properties
       UnaryExpression(node: TSESTree.UnaryExpression) {
         if (node.operator === 'delete' && node.argument.type === 'MemberExpression') {
-          // Check if this is delete on this.state.xxx
-          function isStatePropertyAccess(node: TSESTree.Node): boolean {
-            if (node.type === 'MemberExpression' &&
-                node.object.type === 'MemberExpression' &&
-                node.object.object.type === 'ThisExpression' &&
-                node.object.property.type === 'Identifier' &&
-                node.object.property.name === 'state') {
-              return true; // this.state.xxx
-            }
-            // Handle deeper nesting
-            if (node.type === 'MemberExpression') {
-              return isStatePropertyAccess(node.object);
-            }
-            return false;
-          }
-
           if (isStatePropertyAccess(node.argument)) {
             reportStateMutation(node, 'delete operator');
           }
@@ -276,26 +251,6 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
           node.callee.property.type === 'Identifier'
         ) {
           const methodName = node.callee.property.name;
-
-          // Check if this is a call on this.state.xxx
-          function isStatePropertyAccess(node: TSESTree.Node): boolean {
-            if (node.type === 'MemberExpression' &&
-                node.object.type === 'MemberExpression' &&
-                node.object.object.type === 'ThisExpression' &&
-                node.object.property.type === 'Identifier' &&
-                node.object.property.name === 'state') {
-              return true; // this.state.xxx
-            }
-            // Handle deeper nesting
-            if (node.type === 'MemberExpression') {
-              return isStatePropertyAccess(node.object);
-            }
-            // Handle logical expressions like (this.state.items || [])
-            if (node.type === 'LogicalExpression') {
-              return isStatePropertyAccess(node.left);
-            }
-            return false;
-          }
 
           if (isStatePropertyAccess(node.callee.object)) {
             // Methods that mutate arrays/objects
@@ -311,7 +266,6 @@ export const noDirectMutationState = createRule<RuleOptions, MessageIds>({
             }
           }
         }
-
       },
     };
   },

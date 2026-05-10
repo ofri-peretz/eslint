@@ -1,4 +1,16 @@
 {
+  "bench": "ILB-AI",
+  "benchVersion": "v0.0",
+  "toolchain": {
+    "node": "unknown",
+    "eslint": "unknown",
+    "typescript": "unknown",
+    "tsCompiler": "unknown",
+    "platform": "unknown",
+    "backfilled": true,
+    "backfilledAt": "2026-05-10T00:08:17.708Z",
+    "backfilledBy": "scripts/ilb-result-schema-backfill.ts"
+  },
   "timestamp": "2026-02-06T02:13:52.022Z",
   "methodology": {
     "isolation": "Zero-context generation - each prompt is independent with no session persistence",

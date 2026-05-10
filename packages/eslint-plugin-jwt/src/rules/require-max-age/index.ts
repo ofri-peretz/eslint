@@ -30,8 +30,11 @@ export const requireMaxAge = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/require-max-age.md',
       description:
         'Require maxAge option in verify operations to enforce token freshness',
+      cwe: 'CWE-294',
+      cvss: 5,
     },
     fixable: undefined,
     hasSuggestions: false,

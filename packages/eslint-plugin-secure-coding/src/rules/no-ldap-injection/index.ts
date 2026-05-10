@@ -61,7 +61,9 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-ldap-injection.md',
       description: 'Detects LDAP injection vulnerabilities',
+      cwe: 'CWE-90',
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -243,6 +245,7 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
     /**
      * Check if LDAP filter contains dangerous patterns
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const containsDangerousLdapFilter = (filterText: string): boolean => {
       // Dangerous LDAP filter patterns
       const dangerousPatterns = [
@@ -261,6 +264,7 @@ export const noLdapInjection = createRule<RuleOptions, MessageIds>({
     /**
      * Check if string contains LDAP filter interpolation
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const containsLdapInterpolation = (text: string): boolean => {
       return /\$\{[^}]+\}/.test(text) || /'[^']*\+[^+]*'/.test(text) || /"[^"]*\+[^+]*"/.test(text);
     };

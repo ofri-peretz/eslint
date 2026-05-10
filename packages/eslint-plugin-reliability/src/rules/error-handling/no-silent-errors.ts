@@ -109,6 +109,7 @@ export const noSilentErrors = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-reliability/docs/rules/no-silent-errors.md',
       description: 'Detects empty catch blocks',
     },
     hasSuggestions: true,

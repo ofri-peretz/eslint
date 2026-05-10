@@ -23,6 +23,8 @@ export const noSelectAll: TSESLint.RuleModule<
     docs: {
       description: 'Prevent using * in SELECT statements (implicit columns).',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-select-all.md',
+      cwe: 'CWE-1049',
+      cvss: 5,
     },
     messages: {
       noSelectAll: formatLLMMessage({

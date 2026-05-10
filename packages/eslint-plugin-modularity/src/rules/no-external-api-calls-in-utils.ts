@@ -65,6 +65,7 @@ export const noExternalApiCallsInUtils = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modularity/docs/rules/no-external-api-calls-in-utils.md',
       description: 'Detects network calls in utility functions',
     },
     hasSuggestions: true,

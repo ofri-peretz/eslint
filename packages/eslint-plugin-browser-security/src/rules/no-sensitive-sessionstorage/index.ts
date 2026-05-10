@@ -70,7 +70,10 @@ export const noSensitiveSessionstorage = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-sensitive-sessionstorage.md',
       description: 'Disallow storing sensitive data in sessionStorage',
+      cwe: 'CWE-922',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {

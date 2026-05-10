@@ -27,6 +27,7 @@ export const jsxNoLiterals = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/jsx-no-literals.md',
       description: 'Prevent string literals in JSX',
     },
     messages: {

@@ -53,14 +53,7 @@ Ensures React components have required attributes (e.g., accessibility attribute
 
 ### ❌ Incorrect
 
-```tsx
-// Missing accessibility attributes
-<button onClick={handleClick}>
-  Click me
-</button>
-
-<img src="/photo.jpg" />
-```
+> _Awaiting a tested example. The previous snippet was removed because the rule does not behave as the doc claimed; track the regression in [`benchmarks/FP_FN_REMEDIATION_TRACKER.md`](../../../../benchmarks/FP_FN_REMEDIATION_TRACKER.md)._
 
 ### ✅ Correct
 

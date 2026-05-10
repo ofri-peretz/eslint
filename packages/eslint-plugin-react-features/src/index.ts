@@ -204,6 +204,21 @@ export const plugin = {
 } satisfies TSESLint.FlatConfig.Plugin;
 
 export const configs = {
+  /**
+   * Flagship preset — the rule from this plugin in the ecosystem-wide
+   * flagship list (`.agent/flagship-rules.md`). Head-to-head with
+   * `react-hooks/exhaustive-deps` — same scope, more permissive context
+   * detection (catches non-array deps, TS `as const` cast deps).
+   */
+  flagship: {
+    plugins: {
+      '@eslint/react-features': plugin,
+    },
+    rules: {
+      '@eslint/react-features/react/hooks-exhaustive-deps': 'error',
+    },
+  },
+
   recommended: {
     plugins: {
       '@eslint/react-features': plugin,

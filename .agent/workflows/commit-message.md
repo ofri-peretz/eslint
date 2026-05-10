@@ -147,7 +147,7 @@ If either fails, the commit is rejected with a helpful error message.
 
 ## Version Bump Mapping
 
-The commit type determines the version bump in Nx Release (configured in `nx.json`):
+The commit type determines the version bump in the release pipeline ([`.github/workflows/release.yml`](../../.github/workflows/release.yml), driven by conventional-commits):
 
 | Type                                  | Version Bump |
 | ------------------------------------- | ------------ |

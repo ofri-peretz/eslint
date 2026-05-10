@@ -111,18 +111,7 @@ app.get('/home', (req, res) => {
 ### ✅ Correct
 
 ```javascript
-// Using Helmet middleware to set secure headers
-import helmet from 'helmet';
-app.use(helmet());
-
-// Or setting CSP manually for a specific route
-app.get('/', (req, res) => {
-  res.setHeader(
-    'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' https://trustedscripts.com",
-  );
-  res.send('<!DOCTYPE html><html>...</html>');
-});
+res.send({ data: 'json' })
 ```
 
 ## Known False Negatives

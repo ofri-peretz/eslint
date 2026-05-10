@@ -122,6 +122,7 @@ export const noInternalModules = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-internal-modules.md',
       description: 'Forbid importing the submodules of other modules',
     },
     fixable: 'code',

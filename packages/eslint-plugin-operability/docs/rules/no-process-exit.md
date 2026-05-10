@@ -58,32 +58,7 @@ process.on('uncaughtException', (err) => {
 ### ✅ Correct
 
 ```typescript
-// Use throw for errors
-if (error) {
-  throw new Error('Configuration error');
-}
-
-// Graceful shutdown pattern
-function gracefulShutdown(signal: string) {
-  console.log(`Received ${signal}. Starting graceful shutdown...`);
-  
-  server.close(() => {
-    console.log('HTTP server closed');
-    database.close(() => {
-      console.log('Database connection closed');
-      // Process will exit naturally
-    });
-  });
-  
-  // Force exit after timeout
-  setTimeout(() => {
-    console.error('Forced shutdown after timeout');
-    process.exit(1);  // eslint-disable-line quality/no-process-exit
-  }, 30000);
-}
-
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.cwd();
 ```
 
 ## Configuration Examples

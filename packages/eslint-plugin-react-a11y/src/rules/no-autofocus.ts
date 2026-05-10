@@ -27,7 +27,10 @@ export const noAutofocus = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-autofocus.md',
       description: 'Enforce that autoFocus prop is not used on elements',
+      cwe: 'CWE-252',
+      cvss: 5,
     },
     messages: {
       noAutoFocus: formatLLMMessage({

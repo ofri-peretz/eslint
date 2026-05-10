@@ -1,4 +1,18 @@
 {
+  "bench": "ILB-Perf",
+  "benchVersion": "v0.0",
+  "toolchain": {
+    "node": "unknown",
+    "npm": "unknown",
+    "eslint": "unknown",
+    "os": "unknown",
+    "backfilled": true,
+    "backfilledAt": "2026-05-10T00:06:45.722Z",
+    "backfilledBy": "scripts/ilb-result-schema-backfill.ts",
+    "typescript": "unknown",
+    "tsCompiler": "unknown",
+    "platform": "unknown"
+  },
   "benchmark": "Import Plugin Benchmark",
   "timestamp": "2026-01-02T05:54:31.295Z",
   "iterations": 5,

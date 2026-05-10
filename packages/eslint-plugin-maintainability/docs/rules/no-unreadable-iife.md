@@ -42,17 +42,7 @@ Complex IIFEs with multiple nested functions or unclear structure reduce readabi
 ### ❌ Incorrect
 
 ```typescript
-// Unreadable nested IIFE
-const result = (function() {
-  return (function() {
-    return (function() {
-      return value;
-    })();
-  })();
-})();
-
-// Complex arrow IIFE
-const data = (() => (() => (() => fetch())())())();
+(() => { const a = 1; const b = 2; const c = 3; const d = 4; })();
 ```
 
 ### ✅ Correct

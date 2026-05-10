@@ -49,8 +49,11 @@ export const noAlgorithmConfusion = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/no-algorithm-confusion.md',
       description:
         'Prevent algorithm confusion attacks using symmetric algorithms with asymmetric keys',
+      cwe: 'CWE-347',
+      cvss: 9.5,
     },
     fixable: undefined,
     hasSuggestions: false,

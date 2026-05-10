@@ -12,6 +12,11 @@
  * - Abbreviated severity
  * - File locations as compact paths
  * - No decorative separators
+ *
+ * Includes the ESLint message text (the most actionable single field for
+ * an LLM-fix consumer) and a CWE prefix when meta declares one — both
+ * are cheap on tokens and disproportionately valuable for downstream
+ * consumers.
  */
 
 import type { GroupedRule, LintSummary } from '../types';
@@ -36,8 +41,14 @@ export function renderCompact(
 
   for (const rule of grouped) {
     const sev = SEV_SHORT[rule.severity];
-    const fixTag = rule.fixable ? ' [fixable]' : '';
-    const desc = rule.description ? ` — ${rule.description}` : '';
+    const fixTag = rule.fixable
+      ? ' [fixable]'
+      : rule.hasSuggestions ? ' [has suggestions]' : '';
+    const cwe = rule.cwe ? ` [${rule.cwe}]` : '';
+    // Prefer the per-message text (more specific) over the rule's
+    // generic description; fall back to description when message absent.
+    const detail = rule.message ?? rule.description ?? '';
+    const detailTail = detail ? ` — ${detail}` : '';
     const locs = rule.locations
       .map((l: { file: string; line: number }) => `${l.file}:${l.line}`)
       .join(', ');
@@ -45,10 +56,10 @@ export function renderCompact(
       ? ` +${rule.count - rule.locations.length} more`
       : '';
 
-    lines.push(`${sev} ${rule.ruleId} ×${rule.count}${fixTag}${desc} @ ${locs}${overflow}`);
+    lines.push(`${sev} ${rule.ruleId} ×${rule.count}${fixTag}${cwe}${detailTail} @ ${locs}${overflow}`);
   }
 
-  // One-line summary
+  // One-line summary.
   lines.push(`${summary.errorCount}E ${summary.warningCount}W ${summary.filesWithIssues} files ${summary.uniqueRules} rules${summary.fixableCount > 0 ? ` ${summary.fixableCount} fixable` : ''}`);
 
   return lines.join('\n') + '\n';

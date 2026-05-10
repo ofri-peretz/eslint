@@ -44,42 +44,13 @@ Path traversal vulnerabilities allow attackers to access files outside the inten
 ### ❌ Incorrect
 
 ```typescript
-// Direct user input to fs - DANGEROUS
-app.get('/file', (req, res) => {
-  const content = fs.readFileSync(req.query.filename); // Path traversal!
-  res.send(content);
-});
-
-// User input from params
-fs.readFile(req.params.path, callback);
-
-// Unsanitized body input
-fs.writeFileSync(req.body.filePath, data);
+fs.readFile(userFile, cb)
 ```
 
 ### ✅ Correct
 
 ```typescript
-// Using path.basename() to strip directory components
-const safeName = path.basename(req.query.filename);
-const fullPath = path.join(UPLOAD_DIR, safeName);
-fs.readFileSync(fullPath);
-
-// Validation with startsWith() guard
-const filePath = path.resolve(UPLOAD_DIR, req.query.filename);
-if (!filePath.startsWith(UPLOAD_DIR)) {
-  throw new Error('Invalid path');
-}
-fs.readFileSync(filePath);
-
-// Literal paths are always safe
-fs.readFileSync('./config/app.json');
-
-// Using allowlisted filenames
-const ALLOWED_FILES = ['readme.txt', 'license.txt'];
-if (ALLOWED_FILES.includes(req.query.file)) {
-  fs.readFileSync(path.join(PUBLIC_DIR, req.query.file));
-}
+fs.readFileSync('./config.json')
 ```
 
 ## Error Message Format

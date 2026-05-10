@@ -58,22 +58,7 @@ Unlimited resource allocation can cause denial of service by exhausting system r
 ### ❌ Incorrect
 
 ```typescript
-// Allocating buffer with user-controlled size
-const size = parseInt(req.query.size);
-const buffer = Buffer.alloc(size); // Can be huge!
-
-// Reading entire file into memory
-const data = fs.readFileSync(userFile);
-
-// Creating array with user-controlled length
-const array = new Array(userInput.length);
-array.fill(0);
-
-// Unlimited network connections
-const connections = [];
-for (const url of urls) {
-  connections.push(fetch(url)); // No limit!
-}
+const buf = Buffer.alloc(req.query.size);
 ```
 
 ### ✅ Correct

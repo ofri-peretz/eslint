@@ -90,34 +90,7 @@ export default {
 ### ✅ Correct
 
 ```javascript
-// webpack.config.js - Production
-module.exports = {
-  mode: 'production',
-  optimization: {
-    minimize: true, // ✅ Minification enabled
-  },
-};
-
-// webpack.config.js - Development (OK to disable)
-module.exports = {
-  mode: 'development',
-  optimization: {
-    minimize: false, // ✅ OK for development
-  },
-};
-
-// vite.config.js
-export default {
-  build: {
-    minify: 'terser', // ✅ Terser minification
-  },
-};
-
-// Default behavior (minification enabled by default in production)
-module.exports = {
-  mode: 'production',
-  // minimize defaults to true in production mode ✅
-};
+const config = { minimize: true }
 ```
 
 ## Build Configuration Best Practices

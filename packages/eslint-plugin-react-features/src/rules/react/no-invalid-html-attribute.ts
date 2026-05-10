@@ -60,6 +60,7 @@ export const noInvalidHtmlAttribute = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-invalid-html-attribute.md',
       description: 'Prevent invalid HTML attributes',
     },
     messages: {

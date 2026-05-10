@@ -104,6 +104,7 @@ export const noMissingErrorContext = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-reliability/docs/rules/no-missing-error-context.md',
       description: 'Detects thrown errors without context',
     },
     hasSuggestions: true,

@@ -10,7 +10,7 @@
     },
     {
       "name": "eslint-plugin-node-security",
-      "rules": 33,
+      "rules": 34,
       "description": "Security-focused ESLint plugin for Node",
       "category": "security",
       "version": "4.1.0",
@@ -18,7 +18,7 @@
     },
     {
       "name": "eslint-plugin-secure-coding",
-      "rules": 26,
+      "rules": 30,
       "description": "Security-focused ESLint plugin with 89 AI-parseable rules for detecting and preventing vulnerabilities",
       "category": "security",
       "version": "3.2.0",
@@ -97,6 +97,14 @@
       "published": true
     },
     {
+      "name": "eslint-plugin-maintainability",
+      "rules": 12,
+      "description": "ESLint rules for reducing cognitive load and ensuring code readability",
+      "category": "quality",
+      "version": "3.0.3",
+      "published": true
+    },
+    {
       "name": "eslint-plugin-conventions",
       "rules": 10,
       "description": "ESLint rules for team-specific disciplinary patterns and code conventions",
@@ -110,14 +118,6 @@
       "description": "ESLint rules for runtime stability, fault tolerance, and type safety",
       "category": "quality",
       "version": "3.1.3",
-      "published": true
-    },
-    {
-      "name": "eslint-plugin-maintainability",
-      "rules": 8,
-      "description": "ESLint rules for reducing cognitive load and ensuring code readability",
-      "category": "quality",
-      "version": "3.0.3",
       "published": true
     },
     {
@@ -161,8 +161,8 @@
       "published": false
     }
   ],
-  "totalRules": 336,
+  "totalRules": 345,
   "totalPlugins": 18,
   "allPluginsCount": 20,
-  "generatedAt": "2026-05-07T04:17:04.433Z"
+  "generatedAt": "2026-05-09T23:50:30.236Z"
 }

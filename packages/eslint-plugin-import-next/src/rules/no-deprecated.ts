@@ -32,6 +32,7 @@ export const noDeprecated = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-deprecated.md',
       description:
         'Forbid imported names marked with @deprecated documentation tag',
     },

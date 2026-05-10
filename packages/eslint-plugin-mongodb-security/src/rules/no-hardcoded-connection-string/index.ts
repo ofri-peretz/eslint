@@ -22,7 +22,11 @@ export const noHardcodedConnectionString = createRule<RuleOptions, MessageIds>({
   name: 'no-hardcoded-connection-string',
   meta: {
     type: 'problem',
-    docs: { description: 'Prevent hardcoded MongoDB connection strings with credentials' },
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/no-hardcoded-connection-string.md', description: 'Prevent hardcoded MongoDB connection strings with credentials',
+      cwe: 'CWE-798',
+      cvss: 7.5,
+    },
     hasSuggestions: true,
     messages: {
       hardcodedConnectionString: formatLLMMessage({

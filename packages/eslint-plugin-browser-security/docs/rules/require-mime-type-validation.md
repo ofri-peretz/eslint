@@ -98,15 +98,7 @@ This rule has no configuration options in the current version.
 ### ❌ Incorrect
 
 ```javascript
-// Multer configured without any file filter or limits
-const upload = multer({ dest: 'uploads/' });
-
-app.post('/profile', upload.single('avatar'), (req, res) => {
-  // ...
-});
-
-// Multer call with no configuration at all
-const upload = multer();
+multer().array('photos')
 ```
 
 ### ✅ Correct

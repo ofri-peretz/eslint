@@ -369,7 +369,7 @@ function main(): void {
   console.log(`✨ Processed ${processed} plugins, updated ${updated}`);
 
   if (!dryRun) {
-    console.log(`\nRun 'nx run lint-docs' to validate documentation.`);
+    console.log(`\nRun 'npm run lint:md' to validate documentation.`);
   }
 }
 

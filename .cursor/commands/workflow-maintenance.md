@@ -1,169 +1,67 @@
 # GitHub Workflow Maintenance Checklist
 
-This checklist ensures consistency and best practices when working with GitHub Actions workflows in the eslint monorepo.
+> **Purpose:** Consistency and best practices when editing or adding GitHub Actions workflows in this monorepo.
 
 ## 🎯 When to Use This Checklist
 
-- ✅ Adding a new GitHub Actions workflow
-- ✅ Updating an existing workflow
-- ✅ Changing workflow patterns/format (requires updating ALL workflows)
-- ✅ Adding new error handling patterns
-- ✅ Modifying Nx Cloud integration
+- Adding a new workflow file under `.github/workflows/`
+- Modifying any existing workflow (CI, release, scheduled jobs, version-matrix gates)
+- Changing a pattern (env block, concurrency, action version, retry logic) that other workflows mirror
 
 ## 📋 Checklist: Adding a New Workflow
 
-### 1. Workflow Structure
+### 1. File Conventions
 
-- [ ] **File naming:** Use kebab-case (e.g., `my-new-workflow.yml`)
-- [ ] **Location:** Place in `.github/workflows/` directory
-- [ ] **Schema:** Include `# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json` at top
-- [ ] **Name:** Use descriptive name in `name:` field
-- [ ] **Documentation:** Add header comments explaining workflow purpose
+- [ ] **Filename:** lowercase, kebab-case, `.yml` extension (e.g. `eslint-version-matrix.yml`)
+- [ ] **Top-of-file docstring:** explain *what the workflow does and why*, not just the trigger. The version-matrix file is a good template.
+- [ ] **Cron triggers:** if this workflow uses `schedule:`, confirm it's actually needed — quota conservation is the explicit reason cron triggers across this repo are commented out (see commit `7fed8416`)
 
-### 2. Nx Cloud Integration (If Using Nx Commands)
+### 2. Required Header Fields
 
-- [ ] **Configure Nx Cloud step:** Add "🔗 Configure Nx Cloud (Optional)" step with:
-  - `continue-on-error: true`
-  - Checks for `NX_CLOUD_ACCESS_TOKEN` secret
-  - Sets `NX_SKIP_NX_CLOUD=true` in `$GITHUB_ENV` if connection fails
-- [ ] **Error handling:** Wrap ALL Nx commands with Nx Cloud error handling pattern
-- [ ] **Environment variable:** Add `NX_SKIP_NX_CLOUD: ${{ env.NX_SKIP_NX_CLOUD || 'false' }}` to env section
+- [ ] **`name:`** human-readable, distinct from filename
+- [ ] **`on:`** specify trigger explicitly — never rely on the implicit `pull_request: [opened, synchronize]` default; declare every event you want
+- [ ] **`concurrency:`** group + cancel-in-progress for any non-release workflow that can be re-triggered (avoids wasted minutes)
+- [ ] **`permissions:`** start with `contents: read` and add only what the workflow needs
 
-### 3. Nx Cloud Error Handling Pattern (REQUIRED for all Nx commands)
+### 3. Job Configuration
 
-Every Nx command MUST use this pattern:
+- [ ] **`runs-on: ubuntu-latest`** unless a specific OS is required
+- [ ] **`timeout-minutes:`** set explicitly (the default 360 is too lenient for a stuck job)
+- [ ] **`strategy.fail-fast: false`** for matrix workflows when each cell is independent (don't kill other cells when one fails)
 
-```bash
-# Function to run command with error handling for Nx Cloud failures
-run_command() {
-  CMD="npx nx <command>"
-  
-  # First attempt with Nx Cloud (if enabled)
-  set +e  # Don't exit on error - we'll handle it
-  eval "$CMD" 2>&1 | tee /tmp/command-output.log
-  EXIT=${PIPESTATUS[0]}
-  set -e  # Re-enable exit on error
-  
-  # If command failed, check if it's Nx Cloud related
-  if [ "$EXIT" -ne 0 ]; then
-    # Check for any Nx Cloud related errors
-    if grep -qiE "(nx.?cloud|quota|rate limit|429|too many requests|exceeded|connection.*failed|authentication.*failed|unauthorized|NX_CLOUD.*quota|rate.*limit.*exceeded|429.*Too Many Requests)" /tmp/command-output.log; then
-      echo ""
-      echo "⚠️  Nx Cloud error detected - disabling Nx Cloud and retrying..."
-      echo "   Error details:"
-      grep -iE "(nx.?cloud|quota|rate limit|429|too many requests|exceeded|connection|authentication|unauthorized|NX_CLOUD)" /tmp/command-output.log | head -5 || true
-      echo ""
-      echo "NX_SKIP_NX_CLOUD=true" >> $GITHUB_ENV
-      export NX_SKIP_NX_CLOUD=true
-      
-      # Retry without Nx Cloud
-      echo "🔄 Retrying without Nx Cloud (using local cache only)..."
-      set +e
-      eval "$CMD"
-      RETRY_EXIT=$?
-      set -e
-      
-      if [ "$RETRY_EXIT" -ne 0 ]; then
-        echo "❌ Command failed even without Nx Cloud - this is a real error"
-        exit $RETRY_EXIT
-      else
-        echo "✅ Command succeeded without Nx Cloud"
-      fi
-    else
-      # Not an Nx Cloud error - this is a real error
-      echo "❌ Command failed with non-Nx Cloud error - exiting"
-      exit $EXIT
-    fi
-  else
-    echo "✅ Command succeeded with Nx Cloud"
-  fi
-}
+### 4. Standard Steps
 
-run_command
+- [ ] **Checkout:** `actions/checkout@v4`
+- [ ] **Node:** `actions/setup-node@v4` with `node-version` matching `package.json`'s `engines.node`, and `cache: npm`
+- [ ] **Install:** `npm ci` (uses lockfile, faster, fails on drift) — never `npm install`
+- [ ] **Build / test / lint:** invoke via Turborepo (`npx turbo run <task> --filter=<scope>`). The `--filter` is what scopes work to a package; without it everything builds.
 
-# Cleanup temporary log files
-rm -f /tmp/command-output.log 2>/dev/null || true
-```
+### 5. ESLint-Version Matrix Concerns (if applicable)
 
-### 4. Error Pattern Matching
+If the workflow exercises plugins or formatter behavior that depends on ESLint version, it MUST be in the matrix per [`docs/ESLINT_VERSION_SUPPORT.md`](../../docs/ESLINT_VERSION_SUPPORT.md). The canonical example is [`.github/workflows/eslint-version-matrix.yml`](../../.github/workflows/eslint-version-matrix.yml) — `node × eslint × bench` with v8/v9/v10.
 
-- [ ] **Enhanced patterns:** Use comprehensive error detection:
-  ```bash
-  grep -qiE "(nx.?cloud|quota|rate limit|429|too many requests|exceeded|connection.*failed|authentication.*failed|unauthorized|NX_CLOUD.*quota|rate.*limit.*exceeded|429.*Too Many Requests)"
-  ```
-- [ ] **Error details:** Include `NX_CLOUD` in error detail grep patterns
+### 6. Failure Surface
 
-### 5. Cleanup
+- [ ] **`continue-on-error:`** use sparingly. Only for advisory checks (e.g. ILB regression on PR smoke runs); production gates should fail loudly.
+- [ ] **Artifact upload:** for any workflow that produces a result (benchmark JSON, lint report, coverage), `actions/upload-artifact@v4` with `if: always()` so the artifact survives a failed job
+- [ ] **`retention-days:`** keep tight (14 is the project default for benchmark artifacts)
 
-- [ ] **Log files:** Clean up temporary log files at end of step:
-  ```bash
-  rm -f /tmp/*-output.log 2>/dev/null || true
-  ```
+## 📋 Checklist: Modifying an Existing Workflow
 
-### 6. Diagnostics (Optional but Recommended)
+- [ ] **Read the docstring** at top of file — most workflows in this repo explain *why* they exist and *when* to break the rule. Don't change behavior without acknowledging the rationale.
+- [ ] **Pattern propagation:** if you're changing a shared pattern (e.g. node version pin, concurrency group format), grep for it across all workflows: `grep -l '<pattern>' .github/workflows/*.yml`
+- [ ] **Lint:** `actionlint` is wired up via `npm run lint:workflows` — run it locally before pushing
+- [ ] **Test the trigger path:** for cron-triggered workflows, you can test via `workflow_dispatch` (must be in the `on:` block)
 
-- [ ] **Diagnostics step:** Add `if: always()` diagnostics step
-- [ ] **Nx Cloud status:** Include Nx Cloud status in diagnostics:
-  ```bash
-  echo "Nx Cloud status:"
-  if [ "${{ env.NX_SKIP_NX_CLOUD }}" == "true" ]; then
-    echo "  ⚠️  Nx Cloud disabled (using local cache only)"
-  else
-    echo "  ✅ Nx Cloud enabled (if token configured)"
-  fi
-  ```
+## 📋 Checklist: Repo-Wide Pattern Change
 
-### 7. Consistency Checks
+When changing a pattern that *all* workflows share, update every file in lockstep. The current inventory + grouping lives in [`../../.github/workflows/README.md`](../../.github/workflows/README.md). Run `ls .github/workflows/` to refresh if that index is stale.
 
-- [ ] **Node version:** Use `NODE_VERSION: "20"` (or reference from env)
-- [ ] **npm version:** Use `PNPM_VERSION: "10.18.3"` (or reference from env)
-- [ ] **Concurrency:** Set appropriate concurrency group
-- [ ] **Permissions:** Set minimal required permissions
-- [ ] **Timeout:** Set appropriate timeout for job
+## ⚠️ Common Mistakes
 
-## 📋 Checklist: Updating an Existing Workflow
-
-### 1. Before Making Changes
-
-- [ ] **Review:** Check if change affects pattern used in other workflows
-- [ ] **Impact analysis:** Determine if change requires updating ALL workflows
-- [ ] **Documentation:** Update workflow comments if behavior changes
-
-### 2. Nx Cloud Error Handling Updates
-
-If updating Nx Cloud error handling pattern:
-
-- [ ] **Pattern consistency:** Ensure pattern matches all other workflows
-- [ ] **Error detection:** Verify enhanced error patterns are used
-- [ ] **Cleanup:** Ensure log file cleanup is present
-- [ ] **Environment:** Verify `NX_SKIP_NX_CLOUD` env variable is set
-
-### 3. After Making Changes
-
-- [ ] **Test locally:** Validate workflow syntax (if possible)
-- [ ] **Review:** Check for consistency with other workflows
-- [ ] **Documentation:** Update any related documentation
-
-## 📋 Checklist: Format/Pattern Changes (Update ALL Workflows)
-
-**⚠️ CRITICAL:** When changing a pattern used across workflows, you MUST update ALL workflows that use it.
-
-### Workflows to Update
-
-1. [ ] `.github/workflows/lint-pr.yml`
-2. [ ] `.github/workflows/ci-pr.yml`
-3. [ ] `.github/workflows/release.yml`
-4. [ ] `.github/workflows/release-unscoped.yml`
-
-## ⚠️ Common Mistakes to Avoid
-
-1. **❌ Forgetting to add Nx Cloud error handling** to new Nx commands
-2. **❌ Inconsistent error patterns** across workflows
-3. **❌ Missing cleanup** of temporary log files
-4. **❌ Not updating ALL workflows** when changing patterns
-5. **❌ Missing `NX_SKIP_NX_CLOUD` env variable** in steps
-6. **❌ Forgetting diagnostics** for troubleshooting
-7. **❌ Inconsistent naming** of log files (`/tmp/*-output.log`)
-
-**Rule:** If a workflow uses ANY Nx command, it MUST have Nx Cloud error handling.
-
+- ❌ **Mixing `npm install` and `npm ci`** — workflows must use `npm ci` for reproducibility
+- ❌ **Missing `concurrency:` block** on PR-triggered workflows — burns minutes on superseded commits
+- ❌ **Leaving `continue-on-error: true` on a production gate** — turns a real failure into silent green
+- ❌ **Hard-coding plugin names in the matrix** — use `--filter=...` patterns or read from workspaces config
+- ❌ **Adding a cron trigger without commenting out** — the project policy is to leave `schedule:` commented unless explicitly justified
+- ❌ **Skipping `actionlint`** — almost every YAML mistake is caught by it

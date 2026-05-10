@@ -21,6 +21,7 @@ export const displayName = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/display-name.md',
       description: 'Enforce component display names',
     },
     schema: [],

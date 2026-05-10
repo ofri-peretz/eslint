@@ -9,7 +9,7 @@ This directory contains Cursor IDE commands that inject checklists into prompts 
 **Purpose:** Include the ESLint Rule Addition Checklist
 
 **When to use:**
-- Adding a new ESLint rule to `eslint-plugin-llm-optimized`
+- Adding a new ESLint rule to any `@interlace/eslint-plugin-*` package
 - Creating rule documentation
 - Updating rule exports
 
@@ -94,7 +94,7 @@ These commands are Markdown files (`.md`) in `.cursor/commands/` that contain th
 To add a new command:
 
 1. Create a new Markdown file in `.cursor/commands/` (e.g., `my-command.md`)
-2. Copy the checklist content from the source checklist file (e.g., `.cursorrules/my-checklist.md`)
+2. Write the checklist content directly in that file (this directory is the canonical location — there is no separate source-of-truth folder)
 3. Optionally add a brief header explaining the command's purpose
 4. Update this README with the new command documentation
 
@@ -124,9 +124,8 @@ If a command fails to load:
 
 ## 📚 Related Documentation
 
-- [Cursor Rules README](../.cursorrules/README.md) - Overview of all checklists
-- [ESLint Rule Checklist](../.cursorrules/eslint-rule-checklist.md)
-- [New Package Checklist](../.cursorrules/add-new-package-checklist.md)
-- [Workflow Maintenance Checklist](../.cursorrules/workflow-maintenance-checklist.md)
-- [LLM Discoverability Checklist](../../LLM_DISCOVERABILITY_CHECKLIST.md)
+- [Architecture](../../ARCHITECTURE.md) — repo layout and the rule that decides where new code goes
+- [Quality Standards](../../docs/QUALITY_STANDARDS.md) — production-ready checklist for ESLint rules
+- [Plugin Review Workflow](../../docs/PLUGIN-REVIEW-WORKFLOW.md) — review process referenced from the eslint-rule command
+- [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — which ESLint majors we support and the peer-dep range
 

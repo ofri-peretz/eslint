@@ -44,7 +44,7 @@ const DANGEROUS_EVENT_PROPERTIES = [
 ];
 
 // Property accesses that indicate validation
-const VALIDATION_INDICATORS = [
+const VALIDATION_INDICATORS = new Set([
   // Middy validators
   'validator',
   'httpJsonBodyParser',
@@ -57,15 +57,18 @@ const VALIDATION_INDICATORS = [
   'safeParseAsync',
   'assert', // superstruct.assert()
   'is', // superstruct.is()
-];
+]);
 
 export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
   name: 'no-unvalidated-event-body',
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-unvalidated-event-body.md',
       description:
         'Detects Lambda handlers using event body/params without validation',
+      cwe: 'CWE-20',
+      cvss: 8,
     },
     hasSuggestions: true,
     messages: {
@@ -130,10 +133,10 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    const dangerousProperties = [
+    const dangerousProperties = new Set([
       ...DANGEROUS_EVENT_PROPERTIES,
       ...additionalProperties,
-    ];
+    ]);
 
     // Track which variables have been validated
     const validatedVariables = new Set<string>();
@@ -152,14 +155,14 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
           const property = node.callee.property;
           if (
             property.type === AST_NODE_TYPES.Identifier &&
-            VALIDATION_INDICATORS.includes(property.name)
+            VALIDATION_INDICATORS.has(property.name)
           ) {
             return true;
           }
         }
         // Check for direct function calls like validate(x)
         if (node.callee.type === AST_NODE_TYPES.Identifier) {
-          if (VALIDATION_INDICATORS.includes(node.callee.name)) {
+          if (VALIDATION_INDICATORS.has(node.callee.name)) {
             return true;
           }
         }
@@ -177,7 +180,7 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
         node.object.type === AST_NODE_TYPES.Identifier &&
         eventParameters.has(node.object.name) &&
         node.property.type === AST_NODE_TYPES.Identifier &&
-        dangerousProperties.includes(node.property.name)
+        dangerousProperties.has(node.property.name)
       ) {
         return {
           eventName: node.object.name,
@@ -207,18 +210,118 @@ export const noUnvalidatedEventBody = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
+    // Determine whether THIS file looks like Lambda code at all. We're
+    // strict: a function parameter is only treated as a Lambda event if
+    // (a) it's named `event` AND its sibling is `context` (the AWS
+    // signature `(event, context)` or `(event, context, callback)`),
+    // or (b) the file imports `aws-lambda` types / `@aws-sdk/*` /
+    // `@middy/*`. This eliminates the audit-reported FP class where
+    // Express handlers (`function handler(req, res)` or
+    // `(request, response)`) were misclassified as Lambda. The previous
+    // allowlist of `['event', 'evt', 'e', 'request', 'req']` was too
+    // loose — see benchmarks/AUDIT_PATTERNS.md §2.4.
+    const sourceCode = context.getSourceCode();
+    const fileImportsLambda = sourceCode.ast.body.some((n) => {
+      if (n.type !== AST_NODE_TYPES.ImportDeclaration) return false;
+      const src = String((n as TSESTree.ImportDeclaration).source.value);
+      return (
+        src === 'aws-lambda' ||
+        src.startsWith('@aws-sdk/') ||
+        src.startsWith('@middy/') ||
+        src === '@aws-cdk/aws-lambda'
+      );
+    });
+
+    // Detect the `export const handler = ...`, `exports.handler = ...`,
+    // and `module.exports.handler = ...` Lambda export conventions. A
+    // function attached to one of these is a Lambda handler regardless
+    // of whether it has the (event, context) signature or just a single
+    // `event` parameter — that's the AWS Lambda convention.
+    function isExportedAsHandler(
+      node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression | TSESTree.FunctionDeclaration,
+    ): boolean {
+      // function handler() {}  /  export function handler() {}
+      if (
+        node.type === AST_NODE_TYPES.FunctionDeclaration &&
+        node.id?.name === 'handler'
+      ) {
+        return true;
+      }
+      const parent = (node as TSESTree.Node & { parent?: TSESTree.Node }).parent;
+      if (!parent) return false;
+      // const handler = (...)  /  export const handler = (...)
+      if (
+        parent.type === AST_NODE_TYPES.VariableDeclarator &&
+        parent.id.type === AST_NODE_TYPES.Identifier &&
+        parent.id.name === 'handler'
+      ) {
+        return true;
+      }
+      // exports.handler = (...) / module.exports.handler = (...)
+      if (parent.type === AST_NODE_TYPES.AssignmentExpression) {
+        const left = parent.left;
+        if (
+          left.type === AST_NODE_TYPES.MemberExpression &&
+          left.property.type === AST_NODE_TYPES.Identifier &&
+          left.property.name === 'handler'
+        ) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function isLambdaSignature(
+      params: readonly TSESTree.Parameter[],
+      node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression | TSESTree.FunctionDeclaration,
+    ): boolean {
+      if (params.length < 1) return false;
+      const first = params[0];
+      if (first.type !== AST_NODE_TYPES.Identifier) return false;
+      const second = params[1];
+      const hasContextSibling =
+        second?.type === AST_NODE_TYPES.Identifier &&
+        (second.name === 'context' || second.name === 'callback');
+      // Discriminator: 2-arg `(req, res)` / `(request, response)` is
+      // Express, not Lambda. Reject explicitly so we never misclassify.
+      const looksLikeExpress =
+        second?.type === AST_NODE_TYPES.Identifier &&
+        ((first.name === 'req' && second.name === 'res') ||
+          (first.name === 'request' && second.name === 'response'));
+      if (looksLikeExpress) return false;
+
+      const isEventName = first.name === 'event' || first.name === 'evt';
+      // Path 1: classic AWS signature (event, context, ...).
+      if (isEventName && hasContextSibling) return true;
+      // Path 2: file imports Lambda-related modules — single-arg
+      // `event`/`evt` is enough.
+      if (isEventName && fileImportsLambda) return true;
+      // Path 3: function is exported under the conventional `handler`
+      // name (AWS Lambda runtime invokes by that name). The Lambda
+      // export convention narrows the param-name allowlist to common
+      // AWS-event identifiers — Express's 2-arg form is already
+      // excluded by `looksLikeExpress` above.
+      if (isExportedAsHandler(node)) {
+        const allowedHandlerParam = ['event', 'evt', 'e', 'request', 'req'];
+        if (allowedHandlerParam.includes(first.name)) return true;
+      }
+      return false;
+    }
+
     return {
-      // Track arrow function/function parameters named 'event'
+      // Track arrow function/function parameters that match a Lambda
+      // handler signature. Three valid paths (see isLambdaSignature):
+      //   (a) (event, context, ...) — classic AWS shape
+      //   (b) single-arg `event` AND file imports aws-lambda / @aws-sdk
+      //   (c) function exported as `handler` (AWS Lambda export convention)
+      // Express handlers never satisfy any of these.
       'ArrowFunctionExpression, FunctionExpression, FunctionDeclaration'(
         node: TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression | TSESTree.FunctionDeclaration,
       ) {
-        for (const param of node.params) {
-          if (param.type === AST_NODE_TYPES.Identifier) {
-            // Common Lambda handler parameter names
-            if (['event', 'evt', 'e', 'request', 'req'].includes(param.name)) {
-              eventParameters.add(param.name);
-            }
-          }
+        if (!isLambdaSignature(node.params, node)) return;
+        const first = node.params[0];
+        if (first.type === AST_NODE_TYPES.Identifier) {
+          eventParameters.add(first.name);
         }
       },
 

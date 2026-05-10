@@ -64,7 +64,9 @@ export const noImproperSanitization = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-improper-sanitization.md',
       description: 'Detects improper sanitization of user input',
+      cwe: 'CWE-116',
     },
     fixable: 'code',
     hasSuggestions: true,

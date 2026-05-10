@@ -93,22 +93,25 @@ export default [
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
+| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
+| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [check-query-params](https://eslint.interlace.tools/docs/security/plugin-pg/rules/check-query-params) | CWE-20 | A06:2025 |  | ESLint rule documentation for check-query-params | 💼 | ⚠️ |  | 💡 |  |
-| [no-batch-insert-loop](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-batch-insert-loop) | CWE-400 | A04:2025 |  | ESLint rule documentation for no-batch-insert-loop | 💼 | ⚠️ |  | 💡 |  |
-| [no-floating-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-floating-query) | CWE-252 | A06:2025 |  | ESLint rule documentation for no-floating-query | 💼 |  |  | 💡 |  |
-| [no-hardcoded-credentials](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-hardcoded-credentials) | CWE-798 | A05:2025 |  | ESLint rule documentation for no-hardcoded-credentials | 💼 |  |  | 💡 |  |
-| [no-insecure-ssl](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-insecure-ssl) | CWE-295 | A05:2025 |  | ESLint rule documentation for no-insecure-ssl | 💼 |  |  | 💡 |  |
-| [no-missing-client-release](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-missing-client-release) | CWE-772 | A09:2025 |  | ESLint rule documentation for no-missing-client-release | 💼 |  |  | 💡 |  |
-| [no-select-all](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-select-all) | CWE-400 | A04:2025 |  | ESLint rule documentation for no-select-all | 💼 | ⚠️ |  | 💡 |  |
-| [no-transaction-on-pool](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-transaction-on-pool) | CWE-362 | A04:2025 |  | ESLint rule documentation for no-transaction-on-pool | 💼 |  |  | 💡 |  |
-| [no-unsafe-copy-from](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-copy-from) | CWE-22 | A03:2025 |  | ESLint rule documentation for no-unsafe-copy-from | 💼 |  |  | 💡 |  |
-| [no-unsafe-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-query) | CWE-89 | A03:2025 |  | ESLint rule documentation for no-unsafe-query | 💼 |  |  | 💡 |  |
-| [no-unsafe-search-path](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-search-path) | CWE-426 | A01:2025 |  | ESLint rule documentation for no-unsafe-search-path | 💼 |  |  | 💡 |  |
-| [prefer-pool-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/prefer-pool-query) | CWE-404 | A04:2025 |  | ESLint rule documentation for prefer-pool-query | 💼 | ⚠️ |  | 💡 |  |
-| [prevent-double-release](https://eslint.interlace.tools/docs/security/plugin-pg/rules/prevent-double-release) | CWE-415 | A04:2025 |  | ESLint rule documentation for prevent-double-release | 💼 |  |  | 💡 |  |
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [check-query-params](https://eslint.interlace.tools/docs/security/plugin-pg/rules/check-query-params) | CWE-20 | A06:2025 |  | ESLint rule documentation for check-query-params | 🟢 | 💼 | ⚠️ |  | 💡 |  |
+| [no-batch-insert-loop](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-batch-insert-loop) | CWE-400 | A04:2025 |  | ESLint rule documentation for no-batch-insert-loop | 🟢 | 💼 | ⚠️ |  | 💡 |  |
+| [no-floating-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-floating-query) | CWE-252 | A06:2025 |  | ESLint rule documentation for no-floating-query | 🟢 | 💼 |  |  | 💡 |  |
+| [no-hardcoded-credentials](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-hardcoded-credentials) | CWE-798 | A05:2025 |  | ESLint rule documentation for no-hardcoded-credentials | 🟢 | 💼 |  |  | 💡 |  |
+| [no-insecure-ssl](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-insecure-ssl) | CWE-295 | A05:2025 |  | ESLint rule documentation for no-insecure-ssl | 🟢 | 💼 |  |  | 💡 |  |
+| [no-missing-client-release](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-missing-client-release) | CWE-772 | A09:2025 |  | ESLint rule documentation for no-missing-client-release | 🟢 | 💼 |  |  | 💡 |  |
+| [no-select-all](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-select-all) | CWE-400 | A04:2025 |  | ESLint rule documentation for no-select-all | 🟢 | 💼 | ⚠️ |  | 💡 |  |
+| [no-transaction-on-pool](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-transaction-on-pool) | CWE-362 | A04:2025 |  | ESLint rule documentation for no-transaction-on-pool | 🟢 | 💼 |  |  | 💡 |  |
+| [no-unsafe-copy-from](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-copy-from) | CWE-22 | A03:2025 |  | ESLint rule documentation for no-unsafe-copy-from | 🟢 | 💼 |  |  | 💡 |  |
+| [no-unsafe-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-query) | CWE-89 | A03:2025 |  | ESLint rule documentation for no-unsafe-query | 🟢 | 💼 |  |  | 💡 |  |
+| [no-unsafe-search-path](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-search-path) | CWE-426 | A01:2025 |  | ESLint rule documentation for no-unsafe-search-path | 🟢 | 💼 |  |  | 💡 |  |
+| [prefer-pool-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/prefer-pool-query) | CWE-404 | A04:2025 |  | ESLint rule documentation for prefer-pool-query | 🟢 | 💼 | ⚠️ |  | 💡 |  |
+| [prevent-double-release](https://eslint.interlace.tools/docs/security/plugin-pg/rules/prevent-double-release) | CWE-415 | A04:2025 |  | ESLint rule documentation for prevent-double-release | 🟢 | 💼 |  |  | 💡 |  |
 
 ## 🔗 Related ESLint Plugins
 
@@ -127,6 +130,15 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
+
+## 📦 Compatibility
+
+| Package | Version |
+| :--- | :--- |
+| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0` |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
 ## 📄 License
 

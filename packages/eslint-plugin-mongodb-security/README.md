@@ -87,25 +87,28 @@ User.find({ name: { $eq: sanitize(userInput) } });
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
+| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
+| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [no-bypass-middleware](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-bypass-middleware) |  |  |  | ESLint rule documentation for no-bypass-middleware |  |  |  |  |  |
-| [no-debug-mode-production](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-debug-mode-production) |  |  |  | ESLint rule documentation for no-debug-mode-production |  |  |  |  |  |
-| [no-hardcoded-connection-string](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-hardcoded-connection-string) |  |  |  | ESLint rule documentation for no-hardcoded-connection-string |  |  |  |  |  |
-| [no-hardcoded-credentials](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-hardcoded-credentials) |  |  |  | ESLint rule documentation for no-hardcoded-credentials |  |  |  |  |  |
-| [no-operator-injection](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-operator-injection) |  |  |  | ESLint rule documentation for no-operator-injection |  |  |  |  |  |
-| [no-select-sensitive-fields](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-select-sensitive-fields) |  |  |  | ESLint rule documentation for no-select-sensitive-fields |  |  |  |  |  |
-| [no-unbounded-find](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-unbounded-find) |  |  |  | ESLint rule documentation for no-unbounded-find |  |  |  |  |  |
-| [no-unsafe-populate](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-unsafe-populate) |  |  |  | ESLint rule documentation for no-unsafe-populate |  |  |  |  |  |
-| [no-unsafe-query](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-unsafe-query) |  |  |  | ESLint rule documentation for no-unsafe-query |  |  |  |  |  |
-| [no-unsafe-regex-query](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-unsafe-regex-query) |  |  |  | ESLint rule documentation for no-unsafe-regex-query |  |  |  |  |  |
-| [no-unsafe-where](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-unsafe-where) |  |  |  | ESLint rule documentation for no-unsafe-where |  |  |  |  |  |
-| [require-auth-mechanism](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/require-auth-mechanism) |  |  |  | ESLint rule documentation for require-auth-mechanism |  |  |  |  |  |
-| [require-lean-queries](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/require-lean-queries) |  |  |  | ESLint rule documentation for require-lean-queries |  |  |  |  |  |
-| [require-projection](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/require-projection) |  |  |  | ESLint rule documentation for require-projection |  |  |  |  |  |
-| [require-schema-validation](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/require-schema-validation) |  |  |  | ESLint rule documentation for require-schema-validation |  |  |  |  |  |
-| [require-tls-connection](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/require-tls-connection) |  |  |  | ESLint rule documentation for require-tls-connection |  |  |  |  |  |
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [no-bypass-middleware](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-bypass-middleware) |  |  |  | ESLint rule documentation for no-bypass-middleware | 🟢 |  |  |  |  |  |
+| [no-debug-mode-production](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-debug-mode-production) |  |  |  | ESLint rule documentation for no-debug-mode-production | 🟢 |  |  |  |  |  |
+| [no-hardcoded-connection-string](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-hardcoded-connection-string) |  |  |  | ESLint rule documentation for no-hardcoded-connection-string | 🟢 |  |  |  |  |  |
+| [no-hardcoded-credentials](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-hardcoded-credentials) |  |  |  | ESLint rule documentation for no-hardcoded-credentials | 🟢 |  |  |  |  |  |
+| [no-operator-injection](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-operator-injection) |  |  |  | ESLint rule documentation for no-operator-injection | 🟢 |  |  |  |  |  |
+| [no-select-sensitive-fields](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-select-sensitive-fields) |  |  |  | ESLint rule documentation for no-select-sensitive-fields | 🟢 |  |  |  |  |  |
+| [no-unbounded-find](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-unbounded-find) |  |  |  | ESLint rule documentation for no-unbounded-find | 🟢 |  |  |  |  |  |
+| [no-unsafe-populate](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-unsafe-populate) |  |  |  | ESLint rule documentation for no-unsafe-populate | 🟢 |  |  |  |  |  |
+| [no-unsafe-query](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-unsafe-query) |  |  |  | ESLint rule documentation for no-unsafe-query | 🟢 |  |  |  |  |  |
+| [no-unsafe-regex-query](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-unsafe-regex-query) |  |  |  | ESLint rule documentation for no-unsafe-regex-query | 🟢 |  |  |  |  |  |
+| [no-unsafe-where](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-unsafe-where) |  |  |  | ESLint rule documentation for no-unsafe-where | 🟢 |  |  |  |  |  |
+| [require-auth-mechanism](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/require-auth-mechanism) |  |  |  | ESLint rule documentation for require-auth-mechanism | 🟢 |  |  |  |  |  |
+| [require-lean-queries](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/require-lean-queries) |  |  |  | ESLint rule documentation for require-lean-queries | 🟢 |  |  |  |  |  |
+| [require-projection](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/require-projection) |  |  |  | ESLint rule documentation for require-projection | 🟢 |  |  |  |  |  |
+| [require-schema-validation](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/require-schema-validation) |  |  |  | ESLint rule documentation for require-schema-validation | 🟢 |  |  |  |  |  |
+| [require-tls-connection](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/require-tls-connection) |  |  |  | ESLint rule documentation for require-tls-connection | 🟢 |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins
 
@@ -124,6 +127,15 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
+
+## 📦 Compatibility
+
+| Package | Version |
+| :--- | :--- |
+| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0` |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
 ## 📄 License
 

@@ -1,0 +1,125 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-formatter/schema.json",
+  "title": "@interlace/eslint-formatter — structured output",
+  "description": "JSON Schema for the `json` and `ndjson` output modes of @interlace/eslint-formatter. Downstream agents and tools can validate they're consuming the envelope correctly. The shape is the same across both modes — `json` ships one object containing { summary, rules[] }; `ndjson` ships one summary line followed by one rule line per rule, each tagged with `kind`.",
+  "oneOf": [
+    { "$ref": "#/definitions/JsonModeOutput" },
+    { "$ref": "#/definitions/NdjsonModeLine" }
+  ],
+  "definitions": {
+    "JsonModeOutput": {
+      "type": "object",
+      "description": "`json` mode: one object containing summary first (cache-friendly prefix) and the per-rule list after.",
+      "required": ["summary", "rules"],
+      "additionalProperties": false,
+      "properties": {
+        "summary": { "$ref": "#/definitions/Summary" },
+        "rules": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Rule" }
+        }
+      }
+    },
+    "NdjsonModeLine": {
+      "description": "`ndjson` mode: each line is a complete JSON object with a `kind` discriminator.",
+      "oneOf": [
+        { "$ref": "#/definitions/NdjsonSummaryLine" },
+        { "$ref": "#/definitions/NdjsonRuleLine" }
+      ]
+    },
+    "NdjsonSummaryLine": {
+      "type": "object",
+      "description": "First line of an ndjson stream — the summary.",
+      "required": ["kind", "errors", "warnings", "files", "fixable", "rules"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "type": "string", "const": "summary" },
+        "errors": { "type": "integer", "minimum": 0 },
+        "warnings": { "type": "integer", "minimum": 0 },
+        "files": { "type": "integer", "minimum": 0 },
+        "fixable": { "type": "integer", "minimum": 0 },
+        "rules": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "NdjsonRuleLine": {
+      "type": "object",
+      "description": "A rule line in an ndjson stream.",
+      "required": ["kind", "id", "sev", "n", "fix", "sugg", "locs"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "type": "string", "const": "rule" },
+        "id": { "type": "string", "description": "ESLint ruleId" },
+        "sev": { "type": "string", "enum": ["error", "warning"] },
+        "n": { "type": "integer", "minimum": 1, "description": "Total occurrences across the lint run" },
+        "fix": { "type": "boolean", "description": "At least one occurrence is autofixable" },
+        "sugg": { "type": "boolean", "description": "At least one occurrence carries an ESLint suggestions[] entry" },
+        "desc": { "type": "string", "description": "Rule description from meta.docs.description" },
+        "msg": { "type": "string", "description": "Representative ESLint message text — the most actionable single field for an LLM-fix consumer" },
+        "docs": { "type": "string", "format": "uri", "description": "Rule docs URL from meta.docs.url" },
+        "cwe": { "type": "string", "pattern": "^CWE-[0-9]+$", "description": "CWE identifier (Interlace meta.docs extension)" },
+        "cvss": { "type": "number", "minimum": 0, "maximum": 10, "description": "CVSS 3.1 score (Interlace meta.docs extension)" },
+        "locs": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Location" }
+        }
+      }
+    },
+    "Summary": {
+      "type": "object",
+      "required": ["errors", "warnings", "files", "fixable", "rules"],
+      "additionalProperties": false,
+      "properties": {
+        "errors": { "type": "integer", "minimum": 0 },
+        "warnings": { "type": "integer", "minimum": 0 },
+        "files": { "type": "integer", "minimum": 0, "description": "Files with at least one issue" },
+        "fixable": { "type": "integer", "minimum": 0, "description": "Total autofixable issues" },
+        "rules": { "type": "integer", "minimum": 0, "description": "Distinct ruleIds violated" }
+      }
+    },
+    "Rule": {
+      "type": "object",
+      "description": "One grouped rule entry. Same shape as NdjsonRuleLine but without the `kind` discriminator.",
+      "required": ["id", "sev", "n", "fix", "sugg", "locs"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "sev": { "type": "string", "enum": ["error", "warning"] },
+        "n": { "type": "integer", "minimum": 1 },
+        "fix": { "type": "boolean" },
+        "sugg": { "type": "boolean" },
+        "desc": { "type": "string" },
+        "msg": { "type": "string" },
+        "docs": { "type": "string", "format": "uri" },
+        "cwe": { "type": "string", "pattern": "^CWE-[0-9]+$" },
+        "cvss": { "type": "number", "minimum": 0, "maximum": 10 },
+        "locs": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Location" }
+        }
+      }
+    },
+    "Location": {
+      "type": "object",
+      "required": ["f", "l", "c"],
+      "additionalProperties": false,
+      "properties": {
+        "f": { "type": "string", "description": "File path (relative to cwd when given)" },
+        "l": { "type": "integer", "minimum": 1, "description": "Line (1-indexed)" },
+        "c": { "type": "integer", "minimum": 1, "description": "Column (1-indexed)" },
+        "t": { "type": "string", "description": "ESLint AST nodeType (e.g. CallExpression)" },
+        "sugg": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["desc"],
+            "additionalProperties": false,
+            "properties": {
+              "desc": { "type": "string", "description": "ESLint suggestion description" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

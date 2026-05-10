@@ -93,7 +93,7 @@ Generic linters guess at patterns. This plugin knows the **exact** Vercel AI SDK
 
 ### Does this work with ESLint 9 Flat Config?
 
-Yes! Designed specifically for ESLint Flat Config.
+Yes! Designed specifically for ESLint Flat Config — works on ESLint 8 (with flat config), 9, and 10. See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) for the full matrix.
 
 ### How do I suppress a rule for a specific line?
 
@@ -122,28 +122,31 @@ TypeScript/JavaScript are memory-safe languages. Memory corruption vulnerabiliti
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
+| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
+| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [no-dynamic-system-prompt](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-dynamic-system-prompt) | CWE-74 |  | 8.0 | ESLint rule documentation for no-dynamic-system-prompt | 💼 |  |  |  |  |
-| [no-hardcoded-api-keys](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-hardcoded-api-keys) | CWE-798 |  | 8.5 | ESLint rule documentation for no-hardcoded-api-keys | 💼 |  |  |  |  |
-| [no-sensitive-in-prompt](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-sensitive-in-prompt) | CWE-200 |  | 8.0 | ESLint rule documentation for no-sensitive-in-prompt | 💼 |  |  |  |  |
-| [no-system-prompt-leak](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-system-prompt-leak) | CWE-200 |  | 7.5 | ESLint rule documentation for no-system-prompt-leak | 💼 |  |  |  |  |
-| [no-training-data-exposure](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-training-data-exposure) | CWE-359 |  | 7.0 | ESLint rule documentation for no-training-data-exposure | 💼 | ⚠️ |  |  |  |
-| [no-unsafe-output-handling](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-unsafe-output-handling) | CWE-94 |  | 9.8 | ESLint rule documentation for no-unsafe-output-handling | 💼 |  |  |  |  |
-| [require-abort-signal](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-abort-signal) | CWE-404 |  | 4.0 | ESLint rule documentation for require-abort-signal |  |  |  | 💡 |  |
-| [require-audit-logging](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-audit-logging) | CWE-778 |  | 4.0 | ESLint rule documentation for require-audit-logging |  |  |  | 💡 |  |
-| [require-embedding-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-embedding-validation) | CWE-20 |  | 5.5 | ESLint rule documentation for require-embedding-validation |  |  |  | 💡 |  |
-| [require-error-handling](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-error-handling) | CWE-755 |  | 5.0 | ESLint rule documentation for require-error-handling |  |  |  | 💡 |  |
-| [require-max-steps](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-steps) | CWE-834 |  | 6.5 | ESLint rule documentation for require-max-steps | 💼 | ⚠️ |  |  |  |
-| [require-max-tokens](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-tokens) | CWE-770 |  | 6.5 | ESLint rule documentation for require-max-tokens | 💼 | ⚠️ |  |  |  |
-| [require-output-filtering](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-output-filtering) | CWE-200 |  | 6.5 | ESLint rule documentation for require-output-filtering | 💼 | ⚠️ |  |  |  |
-| [require-output-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-output-validation) | CWE-707 |  | 5.0 | ESLint rule documentation for require-output-validation |  |  |  | 💡 |  |
-| [require-rag-content-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-rag-content-validation) | CWE-74 |  | 6.0 | ESLint rule documentation for require-rag-content-validation | 💼 | ⚠️ |  |  |  |
-| [require-request-timeout](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-request-timeout) | CWE-400 |  | 5.0 | ESLint rule documentation for require-request-timeout | 💼 | ⚠️ |  |  |  |
-| [require-tool-confirmation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-tool-confirmation) | CWE-862 |  | 7.0 | ESLint rule documentation for require-tool-confirmation | 💼 |  |  |  |  |
-| [require-tool-schema](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-tool-schema) | CWE-20 |  | 7.5 | ESLint rule documentation for require-tool-schema | 💼 | ⚠️ |  |  |  |
-| [require-validated-prompt](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-validated-prompt) | CWE-74 |  | 9.0 | ESLint rule documentation for require-validated-prompt | 💼 |  |  |  |  |
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [no-dynamic-system-prompt](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-dynamic-system-prompt) | CWE-74 |  | 8.0 | ESLint rule documentation for no-dynamic-system-prompt | 🟢 | 💼 |  |  |  |  |
+| [no-hardcoded-api-keys](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-hardcoded-api-keys) | CWE-798 |  | 8.5 | ESLint rule documentation for no-hardcoded-api-keys | 🟢 | 💼 |  |  |  |  |
+| [no-sensitive-in-prompt](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-sensitive-in-prompt) | CWE-200 |  | 8.0 | ESLint rule documentation for no-sensitive-in-prompt | 🟢 | 💼 |  |  |  |  |
+| [no-system-prompt-leak](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-system-prompt-leak) | CWE-200 |  | 7.5 | ESLint rule documentation for no-system-prompt-leak | 🟢 | 💼 |  |  |  |  |
+| [no-training-data-exposure](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-training-data-exposure) | CWE-359 |  | 7.0 | ESLint rule documentation for no-training-data-exposure | 🟢 | 💼 | ⚠️ |  |  |  |
+| [no-unsafe-output-handling](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-unsafe-output-handling) | CWE-94 |  | 9.8 | ESLint rule documentation for no-unsafe-output-handling | 🟢 | 💼 |  |  |  |  |
+| [require-abort-signal](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-abort-signal) | CWE-404 |  | 4.0 | ESLint rule documentation for require-abort-signal | 🟢 |  |  |  | 💡 |  |
+| [require-audit-logging](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-audit-logging) | CWE-778 |  | 4.0 | ESLint rule documentation for require-audit-logging | 🟢 |  |  |  | 💡 |  |
+| [require-embedding-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-embedding-validation) | CWE-20 |  | 5.5 | ESLint rule documentation for require-embedding-validation | 🟢 |  |  |  | 💡 |  |
+| [require-error-handling](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-error-handling) | CWE-755 |  | 5.0 | ESLint rule documentation for require-error-handling | 🟢 |  |  |  | 💡 |  |
+| [require-max-steps](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-steps) | CWE-834 |  | 6.5 | ESLint rule documentation for require-max-steps | 🟢 | 💼 | ⚠️ |  |  |  |
+| [require-max-tokens](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-tokens) | CWE-770 |  | 6.5 | ESLint rule documentation for require-max-tokens | 🟢 | 💼 | ⚠️ |  |  |  |
+| [require-output-filtering](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-output-filtering) | CWE-200 |  | 6.5 | ESLint rule documentation for require-output-filtering | 🟢 | 💼 | ⚠️ |  |  |  |
+| [require-output-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-output-validation) | CWE-707 |  | 5.0 | ESLint rule documentation for require-output-validation | 🟢 |  |  |  | 💡 |  |
+| [require-rag-content-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-rag-content-validation) | CWE-74 |  | 6.0 | ESLint rule documentation for require-rag-content-validation | 🟢 | 💼 | ⚠️ |  |  |  |
+| [require-request-timeout](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-request-timeout) | CWE-400 |  | 5.0 | ESLint rule documentation for require-request-timeout | 🟢 | 💼 | ⚠️ |  |  |  |
+| [require-tool-confirmation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-tool-confirmation) | CWE-862 |  | 7.0 | ESLint rule documentation for require-tool-confirmation | 🟢 | 💼 |  |  |  |  |
+| [require-tool-schema](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-tool-schema) | CWE-20 |  | 7.5 | ESLint rule documentation for require-tool-schema | 🟢 | 💼 | ⚠️ |  |  |  |
+| [require-validated-prompt](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-validated-prompt) | CWE-74 |  | 9.0 | ESLint rule documentation for require-validated-prompt | 🟢 | 💼 |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins
 

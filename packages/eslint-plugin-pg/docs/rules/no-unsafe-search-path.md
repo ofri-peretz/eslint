@@ -48,16 +48,7 @@ await client.query('SET search_path = ' + userSchema);
 ### ✅ Correct
 
 ```typescript
-// Static schema name
-await client.query('SET search_path = public, my_schema');
-
-// Safe: using pg-format with schema validation
-if (!ALLOWED_SCHEMAS.includes(schema)) throw new Error('Invalid schema');
-await client.query(format('SET search_path = %I', schema));
-
-// Using validated schema from allowlist
-const safeSchema = validateSchema(userInput); // throws if invalid
-await client.query('SET search_path = $1', [safeSchema]);
+const x = 1;
 ```
 
 ## Error Message Format

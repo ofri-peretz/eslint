@@ -27,7 +27,10 @@ export const noExposedDebugEndpoints = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-exposed-debug-endpoints.md',
       description: 'Detect debug endpoints without auth in AWS Lambda handlers',
+      cwe: 'CWE-489',
+      cvss: 7.5,
     },
     messages: {
       violationDetected: formatLLMMessage({

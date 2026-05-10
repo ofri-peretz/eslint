@@ -1,1 +1,0 @@
-// Invalid example for no-named-default\n// TODO: Add failing code\nexport const invalid = true;\n

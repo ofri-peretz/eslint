@@ -1,1 +1,0 @@
-// Invalid example for no-relative-packages\n// TODO: Add failing code\nexport const invalid = true;\n

@@ -75,6 +75,7 @@ export const noLegacyImports = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-legacy-imports.md',
       description:
         'Detect imports from deprecated internal paths and suggest alternatives',
     },

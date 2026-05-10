@@ -30,7 +30,10 @@ export const noKeyReuse = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-crypto/docs/rules/no-key-reuse.md',
       description: 'Warn when same key is used for multiple cipher operations',
+      cwe: 'CWE-323',
+      cvss: 5,
     },
     hasSuggestions: true,
     messages: {

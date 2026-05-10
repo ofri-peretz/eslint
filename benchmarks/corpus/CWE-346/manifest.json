@@ -1,0 +1,17 @@
+{
+  "cwe": "CWE-346",
+  "name": "Origin Validation Error (postMessage wildcard)",
+  "owasp": "A01:2021",
+  "severity": "HIGH",
+  "expectedPlugins": ["eslint-plugin-browser-security"],
+  "fixtures": {
+    "vulnerable": [
+      { "file": "iframe-wildcard.js", "description": "iframe.contentWindow.postMessage(data, '*')" },
+      { "file": "window-parent-wildcard.js", "description": "window.parent.postMessage(data, '*')" }
+    ],
+    "safe": [
+      { "file": "explicit-origin.js", "description": "postMessage with explicit https origin" },
+      { "file": "self-origin.js", "description": "postMessage with location.origin" }
+    ]
+  }
+}

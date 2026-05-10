@@ -29,8 +29,11 @@ export const requireIssuedAt = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/require-issued-at.md',
       description:
         'Require iat (issued at) claim for token freshness validation',
+      cwe: 'CWE-294',
+      cvss: 5,
     },
     fixable: undefined,
     hasSuggestions: false,
@@ -80,6 +83,7 @@ export const requireIssuedAt = createRule<RuleOptions, MessageIds>({
     /**
      * Check if payload contains iat claim
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const payloadHasIat = (payloadNode: TSESTree.Node): boolean => {
       if (payloadNode.type !== 'ObjectExpression') {
         return false;

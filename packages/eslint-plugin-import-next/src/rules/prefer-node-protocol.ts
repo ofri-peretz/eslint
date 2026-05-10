@@ -72,6 +72,7 @@ export const preferNodeProtocol = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/prefer-node-protocol.md',
       description:
         'Prefer using the node: protocol when importing Node.js builtin modules',
     },
@@ -197,6 +198,7 @@ export const preferNodeProtocol = createRule<RuleOptions, MessageIds>({
       },
     };
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isBuiltInModule(
       moduleName: string,
       modulesToCheck: Set<string>,

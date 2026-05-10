@@ -136,16 +136,7 @@ function search(term) {
 ### ✅ Correct
 
 ```typescript
-import escapeStringRegexp from 'escape-string-regexp';
-
-// Escaping input first
-const safePattern = new RegExp(escapeStringRegexp(req.query.search));
-
-// Fixed strings (if allowLiterals: true)
-const fixed = new RegExp('^[a-z]+$');
-
-// RegExp literal (always preferred if pattern is static)
-const literal = /^[a-z]+$/;
+const regex = /^[a-z]+$/;
 ```
 
 ## LLM-Based Suggestions

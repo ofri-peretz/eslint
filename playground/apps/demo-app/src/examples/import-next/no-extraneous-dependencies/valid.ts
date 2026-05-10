@@ -1,1 +1,0 @@
-// Valid example for no-extraneous-dependencies\nexport const valid = true;\n

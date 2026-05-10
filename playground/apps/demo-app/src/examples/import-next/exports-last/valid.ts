@@ -1,1 +1,0 @@
-// Valid example for exports-last\nexport const valid = true;\n

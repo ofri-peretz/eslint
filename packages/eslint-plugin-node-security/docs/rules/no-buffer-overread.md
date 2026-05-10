@@ -78,31 +78,7 @@ const value = buf.readUInt32LE(userOffset);
 ### ✅ Correct
 
 ```typescript
-// Validate index before access
-const buf = Buffer.from('hello');
-if (index >= 0 && index < buf.length) {
-  const byte = buf[index];
-}
-
-// Bounds checking for user input
-const index = parseInt(req.query.index);
-if (!Number.isInteger(index) || index < 0 || index >= buffer.length) {
-  throw new Error('Invalid index');
-}
-const value = buffer[index];
-
-// Safe slice with validation
-if (offset >= 0 && length > 0 && offset + length <= buffer.length) {
-  const data = buffer.slice(offset, offset + length);
-}
-
-// Use safe read methods
-function safeRead(buf: Buffer, offset: number): number | undefined {
-  if (offset >= 0 && offset + 4 <= buf.length) {
-    return buf.readUInt32LE(offset);
-  }
-  return undefined;
-}
+if (index >= 0 && index < buffer.length) { const byte = buffer[index]; }
 ```
 
 ## Configuration

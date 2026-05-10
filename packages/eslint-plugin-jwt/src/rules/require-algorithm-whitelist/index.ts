@@ -35,8 +35,11 @@ export const requireAlgorithmWhitelist = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-jwt/docs/rules/require-algorithm-whitelist.md',
       description:
         'Require explicit algorithm specification in JWT verify operations',
+      cwe: 'CWE-757',
+      cvss: 7.5,
     },
     fixable: undefined,
     hasSuggestions: false,

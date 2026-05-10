@@ -1,0 +1,167 @@
+# Supply-chain attestation for Interlace npm packages.
+#
+# Roadmap item 6.D — produces, on every release, a verifiable supply-chain
+# attestation bundle:
+#
+#   1. **SBOM** (CycloneDX 1.5 + SPDX 2.3) per package
+#   2. **SLSA Provenance** v1.0 (build-attestation, signed by GitHub OIDC)
+#   3. **sigstore signatures** for each tarball + SBOM (cosign keyless)
+#   4. **OSV-Scanner** report — known vulnerabilities in declared deps
+#
+# The bundle uploads as workflow artifacts AND attaches to the corresponding
+# GitHub Release. Consumers verify via `gh attestation verify` or the cosign /
+# slsa-verifier CLIs — see CONTRIBUTING.md "Verifying supply chain" section.
+#
+# Triggers:
+#   - On any tag matching `v*.*.*`           (production releases)
+#   - Manual dispatch                          (testing)
+#   - On push to `main` that touches packages/ (preview attestations)
+
+name: Supply-chain attestation
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: 'Comma-separated package basenames (e.g. interlace-cli,interlace-telemetry) or "all".'
+        default: 'all'
+
+permissions:
+  contents: read
+  id-token: write           # for sigstore + SLSA OIDC token
+  attestations: write       # for `actions/attest-build-provenance`
+  packages: write
+
+jobs:
+  attest:
+    name: Attest each package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install + build workspaces
+        run: |
+          npm ci
+          npx turbo run build --filter='./packages/*'
+
+      - name: Resolve target packages
+        id: targets
+        run: |
+          DEFAULT="interlace-cli interlace-telemetry eslint-mcp-base eslint-formatter-sarif \
+                   secure-coding-mcp browser-security-mcp node-security-mcp crypto-mcp jwt-mcp \
+                   express-security-mcp lambda-security-mcp mongodb-security-mcp nestjs-security-mcp \
+                   vercel-ai-security-mcp pg-mcp"
+          REQ="${{ inputs.packages || 'all' }}"
+          if [ "$REQ" = "all" ]; then
+            echo "list=$DEFAULT" >> "$GITHUB_OUTPUT"
+          else
+            echo "list=$(echo "$REQ" | tr ',' ' ')" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pack tarballs (one per package)
+        run: |
+          mkdir -p artifacts/tarballs
+          for PKG in ${{ steps.targets.outputs.list }}; do
+            DIR="packages/$PKG"
+            [ -d "$DIR" ] || { echo "::warning::missing $DIR"; continue; }
+            ( cd "$DIR" && npm pack --pack-destination "$GITHUB_WORKSPACE/artifacts/tarballs" )
+          done
+          ls -la artifacts/tarballs
+
+      # ───────── SBOM (CycloneDX + SPDX) ─────────────────────────────────
+      - name: Generate SBOM (CycloneDX) per package
+        run: |
+          npm install -g @cyclonedx/cyclonedx-npm
+          mkdir -p artifacts/sbom
+          for PKG in ${{ steps.targets.outputs.list }}; do
+            DIR="packages/$PKG"
+            [ -d "$DIR" ] || continue
+            cyclonedx-npm --output-file "artifacts/sbom/$PKG.cyclonedx.json" --output-format json "$DIR" || \
+              echo "::warning::CycloneDX failed for $PKG"
+          done
+
+      - name: Generate SBOM (SPDX) per package
+        uses: anchore/sbom-action@v0
+        with:
+          path: ./packages
+          format: spdx-json
+          artifact-name: interlace-spdx-sbom.json
+          upload-artifact: true
+
+      # ───────── SLSA Provenance v1.0 ────────────────────────────────────
+      # actions/attest-build-provenance attaches a signed SLSA L3 statement
+      # to the tarballs. Verification: `gh attestation verify <tarball>`.
+      - name: Attest build provenance (SLSA L3)
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: artifacts/tarballs/*.tgz
+
+      # ───────── Sigstore signatures (cosign keyless) ────────────────────
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign tarballs + SBOMs with cosign (keyless)
+        run: |
+          for FILE in artifacts/tarballs/*.tgz artifacts/sbom/*.json; do
+            [ -f "$FILE" ] || continue
+            cosign sign-blob --yes --output-signature "$FILE.sig" --output-certificate "$FILE.pem" "$FILE"
+          done
+
+      # ───────── OSV vulnerability scan ──────────────────────────────────
+      - name: Run OSV-Scanner against declared deps
+        uses: google/osv-scanner-action/osv-scanner-action@v1
+        with:
+          scan-args: |-
+            --output=artifacts/osv-report.json
+            --format=json
+            --recursive
+            packages/
+
+      - name: Upload attestation bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: supply-chain-attestation-${{ github.sha }}
+          path: |
+            artifacts/tarballs/*.tgz
+            artifacts/tarballs/*.sig
+            artifacts/tarballs/*.pem
+            artifacts/sbom/
+            artifacts/osv-report.json
+
+      - name: Attach attestation bundle to release (when tag-triggered)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/tarballs/*.tgz
+            artifacts/tarballs/*.sig
+            artifacts/tarballs/*.pem
+            artifacts/sbom/*
+            artifacts/osv-report.json
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Supply-chain attestation"
+            echo ""
+            echo "- Trigger: ${{ github.event_name }}"
+            echo "- Tag: ${{ github.ref_name }}"
+            echo "- Packages: $(echo '${{ steps.targets.outputs.list }}' | wc -w)"
+            echo ""
+            echo "Verification (consumer):"
+            echo '```bash'
+            echo "gh attestation verify <tarball.tgz> --owner ofri-peretz"
+            echo "cosign verify-blob --signature <tarball.tgz.sig> --certificate <tarball.tgz.pem> <tarball.tgz>"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

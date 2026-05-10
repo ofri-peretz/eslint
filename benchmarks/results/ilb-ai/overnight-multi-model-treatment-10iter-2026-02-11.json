@@ -1,4 +1,18 @@
 {
+  "bench": "ILB-AI",
+  "benchVersion": "v0.0",
+  "toolchain": {
+    "node": "unknown",
+    "npm": "unknown",
+    "eslint": "unknown",
+    "os": "unknown",
+    "backfilled": true,
+    "backfilledAt": "2026-05-10T00:06:45.684Z",
+    "backfilledBy": "scripts/ilb-result-schema-backfill.ts",
+    "typescript": "unknown",
+    "tsCompiler": "unknown",
+    "platform": "unknown"
+  },
   "timestamp": "2026-02-11T08:08:22.199Z",
   "runner": "antigravity",
   "methodology": {

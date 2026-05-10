@@ -49,7 +49,7 @@ A clear description of what you expected to happen.
 
 - Node.js version: [e.g., 20.10.0]
 - Package version: [e.g., 1.5.0]
-- ESLint version: [e.g., 9.39.0]
+- ESLint version: [e.g., 9.39.0 — supported majors are 8.x, 9.x, 10.x; see docs/ESLINT_VERSION_SUPPORT.md]
 - TypeScript version: [e.g., 5.9.3]
 
 **Additional context**
@@ -99,22 +99,35 @@ Add any other context or screenshots about the feature request here.
    cd eslint
    ```
 
-2. **Install dependencies**:
+2. **Install dependencies** (npm — the repo is on npm, not pnpm):
 
    ```bash
-   pnpm install
+   npm install
    ```
 
 3. **Build all packages**:
 
    ```bash
-   pnpm nx run-many -t build --all
+   npm run build
    ```
 
 4. **Run tests**:
+
    ```bash
-   pnpm nx run-many -t test --all
+   npm test
    ```
+
+5. **Add a changeset** if your change is user-visible (see "Versioning & Releases" below):
+
+   ```bash
+   npm run changeset
+   ```
+
+### ESLint Version Support
+
+We support **ESLint v8, v9, and v10** — every package in `packages/*` declares `"eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"` as a peer dependency. New code, new rules, and new packages must keep this range valid.
+
+The policy and current ecosystem-share data are in [docs/ESLINT_VERSION_SUPPORT.md](./docs/ESLINT_VERSION_SUPPORT.md). Refresh the data anytime with `npm run stats:eslint-versions`.
 
 ### Code Style
 
@@ -168,6 +181,106 @@ All ESLint rules must meet these criteria before release:
 | **Documentation**  | Rule docs with examples, OWASP mapping     |
 
 See **[docs/QUALITY_STANDARDS.md](./docs/QUALITY_STANDARDS.md)** for the complete checklist.
+
+---
+
+## 📦 Versioning & Releases (Changesets)
+
+This repo uses [Changesets](https://github.com/changesets/changesets) for
+versioning + CHANGELOG generation. **Every PR with a user-visible change to a
+published package needs a changeset.**
+
+### Adding a changeset
+
+```bash
+npm run changeset
+```
+
+The CLI prompts:
+
+1. Which packages changed?
+2. `major` (breaking) / `minor` (feature) / `patch` (fix)?
+3. A short summary (lands in the CHANGELOG).
+
+It writes a markdown file like `.changeset/spicy-llamas-dance.md`. Commit
+that file with the PR.
+
+### When to skip a changeset
+
+- Internal-only changes (refactor of build scripts, test-only PRs, doc tweaks).
+- Repo-tooling PRs that don't touch any published package's source.
+
+### What happens after merge
+
+1. CI's `changesets-pr.yml` workflow opens (or refreshes) a **"Version
+   Packages"** PR. It accumulates every changeset since the last release,
+   bumps each affected `package.json`, regenerates `CHANGELOG.md`, and
+   deletes the consumed changeset files.
+2. **Merging that PR** triggers `release.yml`, which:
+   - Detects the version diff vs npm and fans out a matrix job per package.
+   - For each package: runs `npm publish --provenance`, creates the
+     `<short-name>@<version>` git tag, and creates a **GitHub Release**
+     with notes auto-extracted from the package's `CHANGELOG.md`.
+
+There is no `npx nx release` anymore — the Nx setup was retired in favour of
+Turborepo + Changesets.
+
+### Day-to-day commands
+
+```bash
+npm run changeset                  # add a changeset
+npm run changeset:status           # what's queued for the next release?
+npm run release:status             # combined view: pending + last 3 tags / package
+npm run release:notes <pkg> <ver>  # preview the GH Release body for a version
+```
+
+### Recovery flows
+
+#### "A publish failed mid-flight"
+
+Re-running the workflow is safe — every step is idempotent:
+
+```bash
+npm run release            # re-runs release.yml (workflow_dispatch)
+npm run release:dry-run    # preview only, no side effects
+```
+
+The detect step skips packages whose version is already on npm; the publish
+step skips `npm view <pkg>@<ver>` matches; the tag step is a no-op if the
+tag already exists; the GitHub Release step `--edit`s an existing release
+instead of failing.
+
+#### "Tags and npm have drifted out of sync"
+
+The `release:reconcile` family compares git tags vs npm versions vs GitHub
+Releases for every package and flags / fixes drift:
+
+```bash
+npm run release:reconcile               # report only (exits 1 on drift)
+npm run release:reconcile:backfill      # create missing tags + push them
+npm run release:reconcile:releases      # fill in missing GitHub Releases
+npm run release:reconcile:cleanup       # DELETE orphan tags (destructive)
+```
+
+Or, hands-off: the **`release-hygiene.yml`** workflow runs the same
+reconciler weekly, opens a tracking issue when drift appears, and closes
+the issue automatically when drift clears. You can trigger it manually
+via `gh workflow run release-hygiene.yml -f action=full`.
+
+#### "A package was published manually outside this workflow"
+
+The next `release-hygiene.yml` run will see the npm version with no
+matching git tag and surface it in the tracking issue. Run with
+`action=backfill-missing` to create the tags retroactively (the script
+walks `git log` on `<pkg>/package.json` to find the commit where the
+version was first set).
+
+#### "An old tag has no GitHub Release"
+
+Common for tags pushed before this workflow added GH Release creation.
+Fix once with `action=create-releases` (or `action=full`); the script
+generates notes from each package's `CHANGELOG.md` (or a generic stub
+when no entry exists).
 
 ---
 
@@ -246,8 +359,8 @@ BREAKING CHANGE: Configuration now requires 'rules' object instead of flat struc
 
 1. **Update documentation** - Ensure README and docs are updated
 2. **Add tests** - Include tests for new features or bug fixes
-3. **Run tests** - Ensure all tests pass: `pnpm nx run-many -t test --all`
-4. **Run linter** - Fix any linting errors: `pnpm nx run-many -t lint --all`
+3. **Run tests** - Ensure all tests pass: `npm test`
+4. **Run linter** - Fix any linting errors: `npm run lint`
 5. **Update CHANGELOG** - Add entry to CHANGELOG.md (if applicable)
 
 ### PR Checklist

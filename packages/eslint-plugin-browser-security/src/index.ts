@@ -233,6 +233,20 @@ const recommendedRules: Record<string, TSESLint.FlatConfig.RuleEntry> = {
  */
 export const configs: Record<string, TSESLint.FlatConfig.Config> = {
   /**
+   * Flagship preset — the rule from this plugin in the ecosystem-wide
+   * flagship list (`.agent/flagship-rules.md`). Narrow signature, no
+   * legitimate use case for `postMessage(data, '*')` — high-signal CI gate.
+   */
+  flagship: {
+    plugins: {
+      'browser-security': plugin,
+    },
+    rules: {
+      'browser-security/no-postmessage-wildcard-origin': 'error',
+    },
+  } satisfies TSESLint.FlatConfig.Config,
+
+  /**
    * Recommended security configuration
    */
   recommended: {

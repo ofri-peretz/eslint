@@ -46,6 +46,7 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-reliability/docs/rules/no-await-in-loop.md',
       description:
         'Disallow await inside loops and suggest appropriate concurrency patterns',
     },
@@ -180,7 +181,7 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
     }
 
     function analyzeLoopContext(node: TSESTree.Node, loopType: string): LoopContext {
-      const context: LoopContext = {
+      const loopCtx: LoopContext = {
         loopType,
         operationCount: 1,
         hasDependencies: false,
@@ -198,30 +199,30 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
       function analyzeOperations(currentNode: TSESTree.Node) {
         if (currentNode.type === 'CallExpression') {
           if (currentNode.callee.type === 'Identifier') {
-            context.operations.push(currentNode.callee.name);
+            loopCtx.operations.push(currentNode.callee.name);
           } else if (currentNode.callee.type === 'MemberExpression' &&
                      currentNode.callee.property.type === 'Identifier') {
-            context.operations.push(currentNode.callee.property.name);
+            loopCtx.operations.push(currentNode.callee.property.name);
           }
         }
 
         // Check for dependencies between iterations
         if (currentNode.type === 'AssignmentExpression' ||
             currentNode.type === 'UpdateExpression') {
-          context.hasDependencies = true;
+          loopCtx.hasDependencies = true;
         }
 
         // Check for side effects that might require sequential execution
         if (currentNode.type === 'CallExpression' &&
-            (context.operations.includes('push') ||
-             context.operations.includes('splice') ||
-             context.operations.includes('delete'))) {
-          context.hasSideEffects = true;
+            (loopCtx.operations.includes('push') ||
+             loopCtx.operations.includes('splice') ||
+             loopCtx.operations.includes('delete'))) {
+          loopCtx.hasSideEffects = true;
         }
 
         // Count operations
         if (currentNode.type === 'AwaitExpression') {
-          context.operationCount++;
+          loopCtx.operationCount++;
         }
 
         // Recursively analyze
@@ -244,19 +245,20 @@ export const noAwaitInLoop = createRule<RuleOptions, MessageIds>({
       analyzeOperations(node);
 
       // Determine if operations can be concurrent
-      if (context.hasDependencies || context.hasSideEffects) {
-        context.isSequential = true;
-        context.estimatedPerformance = `sequential (${context.operationCount} operations)`;
+      if (loopCtx.hasDependencies || loopCtx.hasSideEffects) {
+        loopCtx.isSequential = true;
+        loopCtx.estimatedPerformance = `sequential (${loopCtx.operationCount} operations)`;
       } else {
-        context.isSequential = false;
-        context.estimatedPerformance = `potential ${context.operationCount}x speedup with concurrency`;
+        loopCtx.isSequential = false;
+        loopCtx.estimatedPerformance = `potential ${loopCtx.operationCount}x speedup with concurrency`;
       }
 
-      return context;
+      return loopCtx;
     }
 
-    function getSuggestion(context: LoopContext): string {
-      if (context.isSequential) {
+    // oxlint-disable-next-line consistent-function-scoping
+    function getSuggestion(loopCtx: LoopContext): string {
+      if (loopCtx.isSequential) {
         return 'operations may need to be sequential - consider if concurrency is safe';
       } else {
         return 'operations appear independent - consider Promise.all() for concurrency';

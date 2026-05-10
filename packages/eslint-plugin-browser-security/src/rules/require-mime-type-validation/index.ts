@@ -23,7 +23,10 @@ export const requireMimeTypeValidation = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/require-mime-type-validation.md',
       description: 'Require MIME type validation for file uploads',
+      cwe: 'CWE-434',
+      cvss: 7.5,
     },
     messages: {
       violationDetected: formatLLMMessage({

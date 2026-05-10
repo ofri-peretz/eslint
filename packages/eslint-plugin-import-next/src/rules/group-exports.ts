@@ -26,8 +26,11 @@ export const groupExports = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/group-exports.md',
       description:
         'Prefer named exports to be grouped together in a single export declaration',
+      cwe: 'CWE-1078',
+      cvss: 2.5,
     },
     messages: {
       groupExports: formatLLMMessage({

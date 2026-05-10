@@ -1,0 +1,68 @@
+{
+  "bench": "ILB-Diff",
+  "benchVersion": "0.1",
+  "timestamp": "2026-05-09T21:58:41.911Z",
+  "methodologyCommit": "19b89fc5b924386f2d1f7a5a8dd210c90664841f",
+  "toolchain": {
+    "node": "24.12.0",
+    "eslint": "9.39.2",
+    "typescript": "5.9.3",
+    "tsCompiler": "tsc-classic",
+    "typescriptEslint": "8.54.0",
+    "platform": "darwin-arm64"
+  },
+  "preregistration": {
+    "methodologyCommit": "19b89fc5b924386f2d1f7a5a8dd210c90664841f",
+    "dirtyPaths": [
+      "M benchmarks/score.mjs",
+      "benchmarks/suites/ilb-arena/README.md",
+      "scripts/ilb-wild.mjs",
+      "benchmarks/corpus/CVE/",
+      "benchmarks/lib/history.mjs",
+      "benchmarks/lib/preregister.mjs",
+      "benchmarks/lib/result-schema.json",
+      "benchmarks/lib/stats.mjs",
+      "benchmarks/lib/toolchain.mjs",
+      "benchmarks/suites/ilb-arena/eslint10-compat/",
+      "benchmarks/suites/ilb-arena/eslint9-compat/",
+      "benchmarks/suites/ilb-determinism/",
+      "benchmarks/suites/ilb-diff/",
+      "benchmarks/suites/ilb-formatter/"
+    ],
+    "capturedAt": "2026-05-09T21:58:41.240Z",
+    "paths": [
+      "benchmarks/corpus",
+      "benchmarks/suites",
+      "benchmarks/lib",
+      "benchmarks/score.mjs",
+      "scripts/ilb-wild.mjs",
+      "scripts/ilb-validate-fixtures.mjs"
+    ]
+  },
+  "cost": {},
+  "effectiveness": {},
+  "latency": {},
+  "corpus": "benchmarks/corpus/CWE-089",
+  "matrix": {
+    "tools": [
+      "interlace"
+    ],
+    "totalKeys": 3,
+    "byCombo": {
+      "interlace": 3
+    }
+  },
+  "summary": {
+    "interlaceFindings": 6,
+    "peerFindings": {}
+  },
+  "adapters": [
+    {
+      "tool": "interlace",
+      "installed": true,
+      "error": null,
+      "note": null,
+      "findingCount": 6
+    }
+  ]
+}

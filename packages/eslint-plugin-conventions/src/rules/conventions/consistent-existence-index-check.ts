@@ -26,6 +26,7 @@ export const consistentExistenceIndexCheck = createRule<RuleOptions, MessageIds>
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/consistent-existence-index-check.md',
       description:
         'Enforce consistent style for checking object property existence',
     },

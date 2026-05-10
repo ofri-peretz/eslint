@@ -27,7 +27,10 @@ export const noDataInTempStorage = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-node-security/docs/rules/no-data-in-temp-storage.md',
       description: 'Prevent sensitive data in temp directories',
+      cwe: 'CWE-312',
+      cvss: 7.5,
     },
     messages: {
       violationDetected: formatLLMMessage({

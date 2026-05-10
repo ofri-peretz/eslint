@@ -1,0 +1,166 @@
+{
+  "schema": "ilb-flagship/v2",
+  "runAt": "2026-05-10T00:23:19.782Z",
+  "workspace": "/Users/ofri/repos/ofriperetz.dev/eslint/benchmarks/suites/ilb-flagship/workspace",
+  "oosDir": "/Users/ofri/repos/ofriperetz.dev/oos",
+  "eslintVersion": "v9.39.4",
+  "oxlintVersion": "Version: 1.63.0",
+  "nodeVersion": "v24.13.0",
+  "results": [
+    {
+      "rule": "react-a11y/alt-text",
+      "repo": "next.js",
+      "repoHead": "dafcd43f",
+      "starsK": 100,
+      "tier": "T1",
+      "runs": {
+        "oursEslint": {
+          "cold": {
+            "ms": 18859,
+            "repeats": 1,
+            "exitCode": 1,
+            "filesProcessed": 2363,
+            "findingsCount": 3,
+            "findings": [
+              {
+                "file": "packages/next/src/client/image-component.tsx",
+                "line": 259,
+                "column": 7,
+                "ruleId": "react-a11y/alt-text",
+                "message": "♿ CWE-252 OWASP:A10-Mishandling CVSS:5.3 | Image missing alt text | CRITICAL\n   Fix: Add alt=\"Descriptive text about image\" | https://www.w3.org/WAI/tutorials/images/"
+              },
+              {
+                "file": "packages/next/src/client/legacy/image.tsx",
+                "line": 530,
+                "column": 7,
+                "ruleId": "react-a11y/alt-text",
+                "message": "♿ CWE-252 OWASP:A10-Mishandling CVSS:5.3 | Image missing alt text | CRITICAL\n   Fix: Add alt=\"Descriptive text about image\" | https://www.w3.org/WAI/tutorials/images/"
+              },
+              {
+                "file": "packages/next/src/client/legacy/image.tsx",
+                "line": 591,
+                "column": 11,
+                "ruleId": "react-a11y/alt-text",
+                "message": "♿ CWE-252 OWASP:A10-Mishandling CVSS:5.3 | Image missing alt text | CRITICAL\n   Fix: Add alt=\"Descriptive text about image\" | https://www.w3.org/WAI/tutorials/images/"
+              }
+            ]
+          },
+          "warm": {
+            "ms": 391,
+            "repeats": 1,
+            "exitCode": 1,
+            "findingsCount": 3
+          }
+        },
+        "competitorEslint": {
+          "cold": {
+            "ms": 18449,
+            "repeats": 1,
+            "exitCode": 1,
+            "filesProcessed": 2363,
+            "findingsCount": 3,
+            "findings": [
+              {
+                "file": "packages/next/src/client/image-component.tsx",
+                "line": 259,
+                "column": 7,
+                "ruleId": "jsx-a11y/alt-text",
+                "message": "img elements must have an alt prop, either with meaningful text, or an empty string for decorative images."
+              },
+              {
+                "file": "packages/next/src/client/legacy/image.tsx",
+                "line": 530,
+                "column": 7,
+                "ruleId": "jsx-a11y/alt-text",
+                "message": "img elements must have an alt prop, either with meaningful text, or an empty string for decorative images."
+              },
+              {
+                "file": "packages/next/src/client/legacy/image.tsx",
+                "line": 591,
+                "column": 11,
+                "ruleId": "jsx-a11y/alt-text",
+                "message": "img elements must have an alt prop, either with meaningful text, or an empty string for decorative images."
+              }
+            ]
+          },
+          "warm": {
+            "ms": 421,
+            "repeats": 1,
+            "exitCode": 1,
+            "findingsCount": 3
+          }
+        },
+        "oxlintNative": {
+          "cold": {
+            "ms": 55,
+            "repeats": 1,
+            "findingsCount": 3,
+            "findings": [
+              {
+                "file": "packages/next/src/client/image-component.tsx",
+                "line": 259,
+                "column": 7,
+                "ruleId": "jsx-a11y(alt-text)",
+                "message": "Missing `alt` attribute."
+              },
+              {
+                "file": "packages/next/src/client/legacy/image.tsx",
+                "line": 530,
+                "column": 7,
+                "ruleId": "jsx-a11y(alt-text)",
+                "message": "Missing `alt` attribute."
+              },
+              {
+                "file": "packages/next/src/client/legacy/image.tsx",
+                "line": 591,
+                "column": 11,
+                "ruleId": "jsx-a11y(alt-text)",
+                "message": "Missing `alt` attribute."
+              }
+            ]
+          },
+          "warm": {
+            "ms": 54,
+            "repeats": 1,
+            "findingsCount": 3
+          }
+        }
+      },
+      "overlap": {
+        "counts": {
+          "both": 3,
+          "oursOnly": 0,
+          "theirsOnly": 0
+        },
+        "samples": {
+          "both": [
+            {
+              "file": "packages/next/src/client/image-component.tsx",
+              "line": 259,
+              "column": 7,
+              "ruleId": "react-a11y/alt-text",
+              "message": "♿ CWE-252 OWASP:A10-Mishandling CVSS:5.3 | Image missing alt text | CRITICAL\n   Fix: Add alt=\"Descriptive text about image\" | https://www.w3.org/WAI/tutorials/images/"
+            },
+            {
+              "file": "packages/next/src/client/legacy/image.tsx",
+              "line": 530,
+              "column": 7,
+              "ruleId": "react-a11y/alt-text",
+              "message": "♿ CWE-252 OWASP:A10-Mishandling CVSS:5.3 | Image missing alt text | CRITICAL\n   Fix: Add alt=\"Descriptive text about image\" | https://www.w3.org/WAI/tutorials/images/"
+            },
+            {
+              "file": "packages/next/src/client/legacy/image.tsx",
+              "line": 591,
+              "column": 11,
+              "ruleId": "react-a11y/alt-text",
+              "message": "♿ CWE-252 OWASP:A10-Mishandling CVSS:5.3 | Image missing alt text | CRITICAL\n   Fix: Add alt=\"Descriptive text about image\" | https://www.w3.org/WAI/tutorials/images/"
+            }
+          ],
+          "oursOnly": [],
+          "theirsOnly": []
+        }
+      },
+      "corpus": null
+    }
+  ]
+}

@@ -121,7 +121,10 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/no-unescaped-url-parameter.md',
       description: 'Detects unescaped URL parameters',
+      cwe: 'CWE-79',
+      cvss: 7.5,
     },
     hasSuggestions: true,
     messages: {
@@ -139,6 +142,7 @@ export const noUnescapedUrlParameter = createRule<RuleOptions, MessageIds>({
         issueName: 'Use encodeURIComponent',
         description: 'Use encodeURIComponent for URL params',
         severity: 'LOW',
+        // oxlint-disable-next-line no-template-curly-in-string
         fix: '`https://example.com?q=${encodeURIComponent(param)}`',
         documentationLink: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent',
       }),

@@ -1,0 +1,17 @@
+{
+  "plugins": [
+    "react"
+  ],
+  "categories": {
+    "correctness": "off",
+    "suspicious": "off",
+    "pedantic": "off",
+    "style": "off",
+    "perf": "off",
+    "restriction": "off",
+    "nursery": "off"
+  },
+  "rules": {
+    "react/exhaustive-deps": "error"
+  }
+}

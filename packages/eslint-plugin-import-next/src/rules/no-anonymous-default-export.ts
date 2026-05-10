@@ -34,6 +34,7 @@ export const noAnonymousDefaultExport = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-anonymous-default-export.md',
       description: 'Forbid anonymous values as default exports',
     },
     messages: {
@@ -154,6 +155,7 @@ export const noAnonymousDefaultExport = createRule<RuleOptions, MessageIds>({
       }
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function getSuggestionText(
       node: TSESTree.ExportDefaultDeclaration,
     ): string {

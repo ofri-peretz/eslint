@@ -1,0 +1,119 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://benchmarks.interlace.dev/schemas/result-envelope-v1.json",
+  "title": "ILB Result Envelope v1",
+  "description": "Vocabulary contract for every Interlace bench result. Operationalizes roadmap item 1.11. Standard field names enforced; synonyms (`tokens`, `accuracy`, `time`) fail validation. See benchmarks/README.md §1 'The three measurement aspects'.",
+  "type": "object",
+  "required": ["bench", "benchVersion", "timestamp", "toolchain"],
+  "additionalProperties": true,
+  "properties": {
+    "bench": {
+      "type": "string",
+      "enum": [
+        "ILB-Arena",
+        "ILB-Arena-Quality",
+        "ILB-Juliet",
+        "ILB-Wild",
+        "ILB-Edge",
+        "ILB-Cov",
+        "ILB-Perf",
+        "ILB-AI",
+        "ILB-LLM-Tokens",
+        "ILB-LLM-Fix",
+        "ILB-Formatter",
+        "ILB-Determinism",
+        "ILB-Autofix",
+        "ILB-Confidence",
+        "ILB-Discover",
+        "ILB-Evade",
+        "ILB-Provenance",
+        "ILB-Cache-Matrix",
+        "ILB-Diff",
+        "ILB-Node-Matrix",
+        "ILB-TSC-Matrix",
+        "ILB-ESLint-Matrix",
+        "ILB-Parser-Matrix",
+        "ILB-Mutate",
+        "ILB-Wild-Federated",
+        "ILB-Public-Submission"
+      ],
+      "description": "Bench identity. New benches added here MUST also be added to .agent/rules/bench-context.md and benchmarks/state.json."
+    },
+    "benchVersion": {
+      "type": "string",
+      "pattern": "^v?\\d+\\.\\d+(\\.\\d+)?$",
+      "description": "Bench version per principle #9. Bumping the corpus, scoring formula, or competitor set bumps this."
+    },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "methodologyCommit": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{7,40}$",
+      "description": "Pre-registration field (item 1.5): SHA of the commit that defined the methodology when the run started. CI requires this once 1.5 lands."
+    },
+    "toolchain": {
+      "type": "object",
+      "required": ["node", "eslint", "typescript", "tsCompiler", "platform"],
+      "additionalProperties": true,
+      "properties": {
+        "node": { "type": "string", "description": "process.version without leading 'v'" },
+        "eslint": { "type": ["string", "null"] },
+        "typescript": { "type": ["string", "null"] },
+        "tsCompiler": { "type": "string", "enum": ["tsc-classic", "tsc-go", "unknown"] },
+        "typescriptEslint": { "type": ["string", "null"] },
+        "platform": { "type": "string" }
+      }
+    },
+    "cost": {
+      "type": "object",
+      "description": "Token-cost aspect. Use these exact field names — synonyms (`tokens`, `cost`, `len`) fail validation.",
+      "additionalProperties": false,
+      "properties": {
+        "tokensO200k":     { "type": ["number", "null"], "description": "Headline. tiktoken o200k_base." },
+        "tokensCl100k":    { "type": ["number", "null"], "description": "Sanity. tiktoken cl100k_base." },
+        "meanTokensO200k": { "type": ["number", "null"], "description": "Aggregate over fixtures." }
+      }
+    },
+    "effectiveness": {
+      "type": "object",
+      "description": "Effectiveness aspect. Concrete fields per bench type — F1 family for rule benches, signalScore for formatter, passRate for LLM-Fix, vulnDetectionRate for AI.",
+      "additionalProperties": false,
+      "properties": {
+        "f1":                  { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "precision":           { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "recall":              { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "ciLow":               { "type": ["number", "null"] },
+        "ciHigh":              { "type": ["number", "null"] },
+        "ciMethod":            { "type": ["string", "null"], "enum": ["wilson", "bootstrap", "wilson+bootstrap", null] },
+        "signalScore":         { "type": ["number", "null"], "minimum": 0, "maximum": 4 },
+        "passRate":            { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "vulnDetectionRate":   { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "activationRate":      { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "ruleSurvivalRate":    { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "recall1":             { "type": ["number", "null"], "minimum": 0, "maximum": 1, "description": "ILB-Discover: top-1 retrieval recall." },
+        "recall5":             { "type": ["number", "null"], "minimum": 0, "maximum": 1, "description": "ILB-Discover: top-5 retrieval recall." },
+        "ece":                 { "type": ["number", "null"], "minimum": 0, "maximum": 1, "description": "ILB-Confidence: Expected Calibration Error." },
+        "mce":                 { "type": ["number", "null"], "minimum": 0, "maximum": 1, "description": "ILB-Confidence: Maximum Calibration Error." }
+      }
+    },
+    "latency": {
+      "type": "object",
+      "description": "Latency aspect. Standard field names — synonyms (`time`, `duration`, `speed`) fail validation.",
+      "additionalProperties": false,
+      "properties": {
+        "latencyMsP50":  { "type": ["number", "null"], "minimum": 0 },
+        "latencyMsP95":  { "type": ["number", "null"], "minimum": 0 },
+        "meanLatencyMs": { "type": ["number", "null"], "minimum": 0 },
+        "msPerFile":     { "type": ["number", "null"], "minimum": 0 },
+        "peakRssMb":     { "type": ["number", "null"], "minimum": 0 },
+        "coldMedianMs":  { "type": ["number", "null"], "minimum": 0, "description": "ILB-Cache-Matrix: cold-cache median wall-clock." },
+        "warmMedianMs":  { "type": ["number", "null"], "minimum": 0, "description": "ILB-Cache-Matrix: warm-cache median wall-clock." }
+      }
+    }
+  },
+  "definitions": {
+    "synonymsBlocked": {
+      "_comment": "These keys MUST NOT appear at the top level of a result file. They are common synonyms that drift the vocabulary contract.",
+      "blockedAtRoot": ["tokens", "accuracy", "time", "duration", "speed", "score", "msPerFileMedian", "p50", "p95", "rss", "memory", "cost"]
+    }
+  }
+}

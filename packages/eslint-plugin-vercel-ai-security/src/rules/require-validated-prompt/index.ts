@@ -33,7 +33,10 @@ export const requireValidatedPrompt = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-vercel-ai-security/docs/rules/require-validated-prompt.md',
       description: 'Require validated/sanitized prompts in generateText and streamText calls',
+      cwe: 'CWE-74',
+      cvss: 9,
     },
     messages: {
       unsafePrompt: formatLLMMessage({

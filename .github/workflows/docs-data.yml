@@ -1,0 +1,83 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Docs Data Sync
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Replaces the trio of stats-sync workflows (sync-docs-data.yml,
+# update-coverage-stats.yml, update-docs-stats.yml) — all three wrote to
+# apps/docs/src/data/, two of them duplicated each other's plugin-stats logic.
+#
+# All sync logic now lives in `apps/docs/scripts/*.mjs`. This workflow
+# orchestrates them in one job, commits the result once, and exits.
+#
+# Triggers:
+#   - push to main on packages/** → auto-sync after every plugin change.
+#   - workflow_dispatch with `targets` input → run a subset on demand.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/**"
+  workflow_dispatch:
+    inputs:
+      targets:
+        description: "Which sync steps to run (comma-separated). Empty = all."
+        required: false
+        default: ""
+
+concurrency:
+  # Don't run two syncs at once — they all write to the same JSON files.
+  group: docs-data-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Sync apps/docs/src/data
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write   # commits regenerated JSON back to main
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "false"
+
+      - name: Sync plugin stats
+        if: inputs.targets == '' || contains(inputs.targets, 'plugin-stats')
+        run: node apps/docs/scripts/sync-plugin-stats.mjs
+
+      - name: Sync README rule tables
+        if: inputs.targets == '' || contains(inputs.targets, 'readme-rules')
+        run: node apps/docs/scripts/sync-readme-rules.mjs
+
+      - name: Sync articles
+        if: inputs.targets == '' || contains(inputs.targets, 'articles')
+        env:
+          DEV_TO_API_KEY: ${{ secrets.DEV_TO_API_KEY }}
+        run: node apps/docs/scripts/update-articles-data.mjs
+
+      - name: Sync coverage stats
+        if: inputs.targets == '' || contains(inputs.targets, 'coverage')
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: npx tsx apps/docs/scripts/update-coverage-stats.ts
+
+      - name: Commit changes (single rollup commit)
+        run: |
+          set -euo pipefail
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet apps/docs/src/data/; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git add apps/docs/src/data/
+          git commit -m "chore(docs): sync data [automated]"
+          git push

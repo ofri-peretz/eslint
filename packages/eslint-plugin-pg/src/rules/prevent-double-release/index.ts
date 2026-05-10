@@ -230,6 +230,9 @@ export const preventDoubleRelease: TSESLint.RuleModule<
     docs: {
       description: 'Prevent releasing a pg client multiple times.',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/prevent-double-release.md',
+      cwe: 'CWE-415',
+      cweJustification: 'CWE-415 (Double Free) — semantic equivalent for connection lifecycle: releasing a pooled client twice corrupts the pool\'s internal accounting and can hand the same connection to two callers.',
+      confidence: 'medium',
     },
     messages: {
       doubleRelease: formatLLMMessage({
@@ -508,8 +511,8 @@ export const preventDoubleRelease: TSESLint.RuleModule<
 
                 // Case 13: Expression-based release (ternary, short-circuit) + sequential
                 // Check if A is in a ternary/conditional expression or logical expression
-                const isInExpression = (node: TSESTree.Node): boolean => {
-                  let current = node.parent;
+                const isInExpression = (exprNode: TSESTree.Node): boolean => {
+                  let current = exprNode.parent;
                   while (current) {
                     if (current.type === AST_NODE_TYPES.ConditionalExpression) return true;
                     if (current.type === AST_NODE_TYPES.LogicalExpression) return true;

@@ -1,4 +1,18 @@
 {
+  "benchVersion": "v0.0",
+  "bench": "ILB-Arena",
+  "toolchain": {
+    "node": "unknown",
+    "npm": "unknown",
+    "eslint": "unknown",
+    "os": "unknown",
+    "backfilled": true,
+    "backfilledAt": "2026-05-10T00:06:45.699Z",
+    "backfilledBy": "scripts/ilb-result-schema-backfill.ts",
+    "typescript": "unknown",
+    "tsCompiler": "unknown",
+    "platform": "unknown"
+  },
   "timestamp": "2026-02-08T19:33:25.634Z",
   "eslintVersion": "8.57.0",
   "methodology": "ESLint 8 legacy config for fair comparison",

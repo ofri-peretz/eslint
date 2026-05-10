@@ -68,6 +68,7 @@ export const noKeyboardInaccessibleElements = createRule<RuleOptions, MessageIds
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/no-keyboard-inaccessible-elements.md',
       description: 'Detects clickable divs without keyboard support',
     },
     hasSuggestions: true,

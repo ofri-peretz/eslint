@@ -27,7 +27,10 @@ export const noNamespace = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-namespace.md',
       description: 'Forbid namespace (a.k.a. "wildcard" *) imports',
+      cwe: 'CWE-1078',
+      cvss: 2.5,
     },
     fixable: 'code',
     messages: {

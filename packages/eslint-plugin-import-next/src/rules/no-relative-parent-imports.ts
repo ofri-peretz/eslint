@@ -31,6 +31,7 @@ export const noRelativeParentImports = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-relative-parent-imports.md',
       description: 'Prevents ../ imports',
     },
     hasSuggestions: false,

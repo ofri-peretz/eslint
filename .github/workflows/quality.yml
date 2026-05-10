@@ -1,18 +1,17 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Quality Gate
 
+run-name: >-
+  Quality · ${{ github.event_name == 'pull_request' && format('PR #{0} · {1}', github.event.pull_request.number, github.event.pull_request.title) || github.event.head_commit.message }}
+
 # ─────────────────────────────────────────────────────────────────────────────
-# Migrated from Nx to Turborepo (2026-05-04).
+# PR gates for the monorepo. On `pull_request`, all turbo runs are scoped to
+# affected packages via `--filter=...[origin/main]`. On `push` to main, the
+# full graph runs (post-merge validation).
 #
-# - Replaces `npx nx run-many -t <task>` with `npx turbo run <task>`.
-# - On `pull_request`, scopes work to *affected* packages via Turbo's
-#   `--filter=...[origin/main]` syntax (only run a task in packages whose
-#   source — or the source of any upstream dep — changed since main).
-# - On `push` to main, runs the full graph (post-merge validation).
-#
-# Turbo's local cache is keyed on inputs declared in turbo.json; CI doesn't
-# share cache state across runs in this workflow, but each individual run
-# parallelizes tasks and short-circuits on cache hits within the run.
+# Caching:
+#   - `./.github/actions/setup` hydrates node_modules (skips `npm ci` on hit)
+#     and the `.turbo` task cache (keyed per job, falls back across runs).
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
@@ -25,11 +24,19 @@ concurrency:
   group: quality-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 env:
-  # On PRs, scope all `turbo run` commands to packages affected since main.
-  # On main pushes, the variable is empty and Turbo runs across the whole graph.
   TURBO_FILTER_ARGS: ${{ github.event_name == 'pull_request' && '--filter=...[origin/main]' || '' }}
   TURBO_TELEMETRY_DISABLED: "1"
+  # Turbo Remote Cache (optional). Setting both lets jobs share cache
+  # artefacts across runs/branches/PRs — typical 50–80% reduction in build
+  # + test wall time. Falls back to local cache when unset.
+  #   - secrets.TURBO_TOKEN  : Vercel access token (or self-hosted token)
+  #   - vars.TURBO_TEAM      : Vercel team slug (e.g. "interlace")
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
 jobs:
   oxlint:
@@ -38,15 +45,10 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
         with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci --prefer-offline --no-audit
-      - name: Run oxlint
-        run: npm run oxlint
+          turbo-cache: "false"
+      - run: npm run oxlint
 
   test:
     name: Unit Tests (Turbo)
@@ -56,11 +58,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci --prefer-offline --no-audit
+      - uses: ./.github/actions/setup
       - name: Run tests via Turbo
         run: npx turbo run test ${{ env.TURBO_FILTER_ARGS }}
 
@@ -72,13 +70,21 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci --prefer-offline --no-audit
+      - uses: ./.github/actions/setup
       - name: Build via Turbo
         run: npx turbo run build ${{ env.TURBO_FILTER_ARGS }}
+
+  typecheck:
+    name: Typecheck (Turbo)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - name: Typecheck via Turbo
+        run: npx turbo run typecheck ${{ env.TURBO_FILTER_ARGS }}
 
   markdown:
     name: Markdown Lint
@@ -86,13 +92,10 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: ./.github/actions/setup
         with:
-          node-version: 24
-          cache: npm
-      - run: npm ci --prefer-offline --no-audit
-      - name: Run markdownlint
-        run: npm run lint:md
+          turbo-cache: "false"
+      - run: npm run lint:md
 
   changelog:
     name: CHANGELOG Check
@@ -100,13 +103,10 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: ./.github/actions/setup
         with:
-          node-version: 24
-          cache: npm
-      - run: npm ci --prefer-offline --no-audit
-      - name: Check CHANGELOGs
-        run: npm run audit:changelogs
+          turbo-cache: "false"
+      - run: npm run audit:changelogs
 
   portability:
     name: Portability Audit
@@ -114,10 +114,114 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "false"
+      - run: npm run audit:portability
+
+  workflows:
+    name: Workflow Conventions
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          turbo-cache: "false"
+      - run: npm run lint:workflows
+
+  lockfile:
+    name: Lockfile Sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version-file: .nvmrc
           cache: npm
-      - run: npm ci --prefer-offline --no-audit
-      - name: Audit rule portability
-        run: npm run audit:portability
+      # Re-resolve package-lock.json from package.json without installing.
+      # Any change indicates the lockfile is out of sync — the contributor
+      # edited package.json but didn't run `npm install`.
+      - name: Verify package-lock.json is in sync
+        run: |
+          set -euo pipefail
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          if ! git diff --exit-code --quiet package-lock.json; then
+            echo "::error::package-lock.json is out of sync with package.json."
+            echo ""
+            echo "Run \`npm install\` locally and commit the updated lockfile."
+            echo ""
+            echo "--- Diff (truncated to 80 lines) ---"
+            git --no-pager diff package-lock.json | head -80
+            exit 1
+          fi
+          echo "✅ Lockfile is in sync."
+
+  # Aggregate gate so branch protection has a single required check to gate on.
+  # When you add a new gate above, add it to the `needs:` list below.
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    needs: [oxlint, test, build, typecheck, markdown, changelog, portability, workflows, lockfile]
+    if: always()
+    steps:
+      - name: Render gate report
+        env:
+          R_OXLINT: ${{ needs.oxlint.result }}
+          R_TEST: ${{ needs.test.result }}
+          R_BUILD: ${{ needs.build.result }}
+          R_TYPECHECK: ${{ needs.typecheck.result }}
+          R_MARKDOWN: ${{ needs.markdown.result }}
+          R_CHANGELOG: ${{ needs.changelog.result }}
+          R_PORTABILITY: ${{ needs.portability.result }}
+          R_WORKFLOWS: ${{ needs.workflows.result }}
+          R_LOCKFILE: ${{ needs.lockfile.result }}
+        run: |
+          set -euo pipefail
+          # Map raw conclusion → emoji.
+          icon() {
+            case "$1" in
+              success)   echo "✅" ;;
+              failure)   echo "❌" ;;
+              cancelled) echo "⏹" ;;
+              skipped)   echo "⏭" ;;
+              *)         echo "⚠️" ;;
+            esac
+          }
+
+          all_pass=true
+          for r in "$R_OXLINT" "$R_TEST" "$R_BUILD" "$R_TYPECHECK" \
+                   "$R_MARKDOWN" "$R_CHANGELOG" "$R_PORTABILITY" "$R_WORKFLOWS" \
+                   "$R_LOCKFILE"; do
+            [ "$r" = "success" ] || all_pass=false
+          done
+          if $all_pass; then
+            header="✅ All quality gates passed"
+          else
+            header="❌ One or more quality gates failed"
+          fi
+
+          {
+            echo "# $header"
+            echo ""
+            echo "| Gate | Result | Notes |"
+            echo "|---|---|---|"
+            echo "| oxlint              | $(icon "$R_OXLINT") $R_OXLINT           | fast lint pass (Rust-native) |"
+            echo "| Unit tests          | $(icon "$R_TEST") $R_TEST               | \`turbo run test\` (affected on PRs) |"
+            echo "| Build               | $(icon "$R_BUILD") $R_BUILD             | \`turbo run build\` (affected on PRs) |"
+            echo "| Typecheck           | $(icon "$R_TYPECHECK") $R_TYPECHECK     | \`turbo run typecheck\` (affected on PRs) |"
+            echo "| Markdown lint       | $(icon "$R_MARKDOWN") $R_MARKDOWN       | \`markdownlint-cli2\` |"
+            echo "| CHANGELOG present   | $(icon "$R_CHANGELOG") $R_CHANGELOG     | every published package has CHANGELOG.md |"
+            echo "| Rule portability    | $(icon "$R_PORTABILITY") $R_PORTABILITY | oxlint/Biome/typescript-go compatibility |"
+            echo "| Workflow conventions | $(icon "$R_WORKFLOWS") $R_WORKFLOWS    | \`scripts/lint-workflows.ts\` |"
+            echo "| Lockfile sync       | $(icon "$R_LOCKFILE") $R_LOCKFILE      | \`package-lock.json\` matches \`package.json\` |"
+            echo ""
+            if ! $all_pass; then
+              echo "**Investigate failures via the per-gate jobs above.** Branch-protection gates only on this aggregate, so all checks must be green to merge."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          $all_pass || { echo "::error::One or more quality gates failed"; exit 1; }
+          echo "All quality gates passed."

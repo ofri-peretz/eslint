@@ -1,1 +1,0 @@
-// Valid example for no-nodejs-modules\nexport const valid = true;\n

@@ -1,1 +1,0 @@
-// Valid example for max-dependencies\nexport const valid = true;\n

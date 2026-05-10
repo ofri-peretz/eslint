@@ -16,6 +16,16 @@ import { noNestedTernary } from './rules/maintainability/no-nested-ternary';
 import { consistentFunctionScoping } from './rules/maintainability/consistent-function-scoping';
 import { noUnreadableIife } from './rules/maintainability/no-unreadable-iife';
 
+// Error-handling rules (wired 2026-05-09 — implementations + docs both
+// existed but the plugin index didn't register them; users following the
+// docs couldn't enable them. They are also exported by `eslint-plugin-
+// reliability` under the same names — the dual export is intentional
+// because the rules apply to both maintainability and reliability concerns).
+import { errorMessage } from './rules/error-handling/error-message';
+import { noMissingErrorContext } from './rules/error-handling/no-missing-error-context';
+import { noSilentErrors } from './rules/error-handling/no-silent-errors';
+import { noUnhandledPromise } from './rules/error-handling/no-unhandled-promise';
+
 export const rules = {
   'cognitive-complexity': cognitiveComplexity,
   'nested-complexity-hotspots': nestedComplexityHotspots,
@@ -25,6 +35,10 @@ export const rules = {
   'no-nested-ternary': noNestedTernary,
   'consistent-function-scoping': consistentFunctionScoping,
   'no-unreadable-iife': noUnreadableIife,
+  'error-message': errorMessage,
+  'no-missing-error-context': noMissingErrorContext,
+  'no-silent-errors': noSilentErrors,
+  'no-unhandled-promise': noUnhandledPromise,
 
   // Categorized names
   'maintainability/cognitive-complexity': cognitiveComplexity,
@@ -35,6 +49,10 @@ export const rules = {
   'maintainability/no-nested-ternary': noNestedTernary,
   'maintainability/consistent-function-scoping': consistentFunctionScoping,
   'maintainability/no-unreadable-iife': noUnreadableIife,
+  'maintainability/error-message': errorMessage,
+  'maintainability/no-missing-error-context': noMissingErrorContext,
+  'maintainability/no-silent-errors': noSilentErrors,
+  'maintainability/no-unhandled-promise': noUnhandledPromise,
 } satisfies Record<string, TSESLint.RuleModule<string, readonly unknown[]>>;
 
 export const plugin = {

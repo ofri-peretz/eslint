@@ -107,44 +107,7 @@ const withAuth = (WrappedComponent) => {
 ### ✅ Correct
 
 ```tsx
-// Named function declaration
-function MyComponent() {
-  return <div>Hello</div>;
-}
-
-// Arrow function with displayName
-const AnotherComponent = () => {
-  return <div>World</div>;
-};
-AnotherComponent.displayName = 'AnotherComponent';
-
-// Class with displayName
-class UserCard extends React.Component {
-  static displayName = 'UserCard';
-  
-  render() {
-    return <div>{this.props.name}</div>;
-  }
-}
-
-// HOC with proper displayName
-const withAuth = (WrappedComponent) => {
-  const WithAuth = (props) => <WrappedComponent {...props} />;
-  WithAuth.displayName = `withAuth(${WrappedComponent.displayName || WrappedComponent.name || 'Component'})`;
-  return WithAuth;
-};
-
-// forwardRef with displayName
-const Input = React.forwardRef((props, ref) => {
-  return <input ref={ref} {...props} />;
-});
-Input.displayName = 'Input';
-
-// memo with displayName
-const MemoizedComponent = React.memo(function ExpensiveComponent(props) {
-  return <div>{props.data}</div>;
-});
-MemoizedComponent.displayName = 'MemoizedComponent';
+MyComponent
 ```
 
 ## Configuration Examples

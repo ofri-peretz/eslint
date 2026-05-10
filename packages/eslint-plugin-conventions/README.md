@@ -64,12 +64,15 @@ export default [conventions.configs.recommended];
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
+| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
+| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [conventions](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/conventions) |  |  |  | Enforce conventions |  |  |  |  |  |
-| [deprecation](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/deprecation) |  |  |  | Enforce deprecation |  |  |  |  |  |
-| [development](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/development) |  |  |  | Enforce development |  |  |  |  |  |
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [conventions](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/conventions) |  |  |  | Enforce conventions | 🟢 |  |  |  |  |  |
+| [deprecation](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/deprecation) |  |  |  | Enforce deprecation | 🟢 |  |  |  |  |  |
+| [development](https://eslint.interlace.tools/docs/quality/plugin-conventions/rules/development) |  |  |  | Enforce development | 🟢 |  |  |  |  |  |
 
 ## 🔗 Related ESLint Plugins
 
@@ -88,6 +91,15 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
+
+## 📦 Compatibility
+
+| Package | Version |
+| :--- | :--- |
+| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0` |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
 ## 📄 License
 

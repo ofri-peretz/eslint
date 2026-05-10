@@ -50,7 +50,10 @@ export const requireAuthenticatedEncryption = createRule<RuleOptions, MessageIds
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-crypto/docs/rules/require-authenticated-encryption.md',
       description: 'Require authenticated encryption (GCM) instead of unauthenticated modes (CBC)',
+      cwe: 'CWE-327',
+      cvss: 5,
     },
     hasSuggestions: true,
     messages: {

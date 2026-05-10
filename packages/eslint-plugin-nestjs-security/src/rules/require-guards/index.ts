@@ -31,7 +31,7 @@ export interface Options {
 type RuleOptions = [Options?];
 
 // HTTP method decorators that indicate route handlers
-const HTTP_METHOD_DECORATORS = [
+const HTTP_METHOD_DECORATORS = new Set([
   'Get',
   'Post',
   'Put',
@@ -40,17 +40,20 @@ const HTTP_METHOD_DECORATORS = [
   'Options',
   'Head',
   'All',
-];
+]);
 
 // Decorators that bypass guard requirements
-const PUBLIC_DECORATORS = ['Public', 'SkipAuth', 'AllowAnonymous', 'NoAuth'];
+const PUBLIC_DECORATORS = new Set(['Public', 'SkipAuth', 'AllowAnonymous', 'NoAuth']);
 
 export const requireGuards = createRule<RuleOptions, MessageIds>({
   name: 'require-guards',
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-nestjs-security/docs/rules/require-guards.md',
       description: 'Requires @UseGuards decorator on controllers or route handlers',
+      cwe: 'CWE-284',
+      cvss: 9.8,
     },
     hasSuggestions: true,
     messages: {
@@ -135,7 +138,7 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
               dec.expression.callee.type === AST_NODE_TYPES.Identifier
             ? dec.expression.callee.name
             : '';
-        return PUBLIC_DECORATORS.includes(name);
+        return PUBLIC_DECORATORS.has(name);
       });
     }
 
@@ -154,7 +157,7 @@ export const requireGuards = createRule<RuleOptions, MessageIds>({
               dec.expression.callee.type === AST_NODE_TYPES.Identifier
             ? dec.expression.callee.name
             : '';
-        if (HTTP_METHOD_DECORATORS.includes(name)) {
+        if (HTTP_METHOD_DECORATORS.has(name)) {
           return name;
         }
       }

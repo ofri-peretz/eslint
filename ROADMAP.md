@@ -58,6 +58,20 @@ We have implemented comprehensive security coverage across multiple domains:
 
 ---
 
+## 🛟 ESLint Compatibility
+
+We currently support **ESLint v8, v9, and v10** (v10 included as the forward-looking exception per our [support policy](./docs/ESLINT_VERSION_SUPPORT.md)).
+
+**Tracked transitions** — re-evaluated each time we run `npm run stats:eslint-versions`:
+
+- **v8 → deprecation candidate** when v10 crosses the 20% gate AND v8 falls below it on two consecutive refreshes
+- **v11 → support window opens** as soon as v11.0.0 ships (forward-looking rule), without waiting for share data
+- **EOL milestones** — track upstream ESLint EOL announcements and align removals with the next major release
+
+Last data refresh: 2026-05-09 (v9: 60.4%, v8: 24.3%, v10: 9.2%).
+
+---
+
 ## 📞 Feedback
 
 Have suggestions for the roadmap? [Open a discussion](https://github.com/ofri-peretz/eslint/discussions).

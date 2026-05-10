@@ -1,0 +1,16 @@
+{
+    "name": "fn-fp-benchmark-eslint9",
+    "version": "1.0.0",
+    "description": "ESLint 9 compatibility environment for fair plugin comparison",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "benchmark": "node run-eslint9.js"
+    },
+    "devDependencies": {
+        "eslint": "^9.0.0",
+        "eslint-plugin-security": "^3.0.0",
+        "eslint-plugin-no-unsanitized": "^4.1.0",
+        "eslint-plugin-import": "^2.32.0"
+    }
+}

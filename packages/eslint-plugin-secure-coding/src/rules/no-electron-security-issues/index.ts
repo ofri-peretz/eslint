@@ -62,7 +62,9 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-secure-coding/docs/rules/no-electron-security-issues.md',
       description: 'Detects Electron security vulnerabilities and insecure configurations',
+      cwe: 'CWE-16',
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -269,6 +271,7 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
     /**
      * Check if this is an Electron BrowserWindow creation
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const isBrowserWindowCreation = (node: TSESTree.NewExpression): boolean => {
       return node.callee.type === 'Identifier' &&
              node.callee.name === 'BrowserWindow';
@@ -328,6 +331,7 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
     /**
      * Check if this is an IPC call
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const isIpcCall = (node: TSESTree.CallExpression): boolean => {
       const callee = node.callee;
 
@@ -389,6 +393,7 @@ export const noElectronSecurityIssues = createRule<RuleOptions, MessageIds>({
     /**
      * Check for Node.js API usage
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const isNodeApiCall = (node: TSESTree.CallExpression): boolean => {
       const callee = node.callee;
 

@@ -20,7 +20,11 @@ export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
   name: 'require-tls-connection',
   meta: {
     type: 'problem',
-    docs: { description: 'Require TLS for MongoDB connections in production' },
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-tls-connection.md', description: 'Require TLS for MongoDB connections in production',
+      cwe: 'CWE-295',
+      cvss: 7.4,
+    },
     hasSuggestions: true,
     messages: {
       requireTls: formatLLMMessage({
@@ -48,7 +52,7 @@ export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
       return {};
     }
 
-    const CONNECT_METHODS = ['connect', 'createConnection'];
+    const CONNECT_METHODS = new Set(['connect', 'createConnection']);
 
     return {
       CallExpression(node: TSESTree.CallExpression) {
@@ -60,7 +64,7 @@ export const requireTlsConnection = createRule<RuleOptions, MessageIds>({
           ? node.callee.property.name
           : null;
 
-        if (!methodName || !CONNECT_METHODS.includes(methodName)) {
+        if (!methodName || !CONNECT_METHODS.has(methodName)) {
           return;
         }
 

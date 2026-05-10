@@ -141,6 +141,7 @@ export const reactRenderOptimization = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/react-render-optimization.md',
       description: 'Detects unnecessary re-renders and expensive computations in React',
     },
     messages: {

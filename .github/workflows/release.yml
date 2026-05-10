@@ -1,38 +1,60 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Release Affected Packages
 
+# Dynamic title shown in the Actions list — distinguishes auto-fired pushes
+# from manual dry-runs at a glance, and surfaces the dist-tag for non-latest
+# releases.
+run-name: >-
+  Release${{ inputs.dry-run && ' (dry-run)' || '' }} · ${{ inputs.dist-tag || 'latest' }} · ${{ github.event_name == 'push' && github.event.head_commit.message || github.actor }}
+
 # ═══════════════════════════════════════════════════════════════════════════════
-# TURBO-BASED RELEASE WORKFLOW
+# TURBO + MATRIX-PARALLEL RELEASE WORKFLOW
 # ═══════════════════════════════════════════════════════════════════════════════
 #
-# Releases only packages whose version (in package.json) is ahead of npm's
-# latest published version. Affected detection comes from Turbo's `--affected`
-# flag (diff against `--filter=...[origin/main]` for PRs, or last release tag
-# for main pushes).
+# Triggers automatically on every push to main (typically the merge of a
+# changesets-managed "Version Packages" PR). The detect stage compares each
+# package's local `version` field against npm's published version and only
+# fans out for packages that actually changed — so non-release pushes are a
+# fast no-op.
 #
-# Versioning model: package.json `version` is the source of truth. Bump it in
-# a PR, merge to main, then trigger this workflow (or set `auto-on-push: true`
-# below to auto-release on every push to main).
+# Four-stage pipeline:
+#
+#   1. detect       — diff package.json versions vs npm; emit JSON matrix of
+#                     publishable packages.
+#   2. build        — run `turbo run build --affected` once (Turbo dedupes
+#                     across packages); upload `dist/` as a single artifact.
+#   3. publish (×N) — matrix fan-out: ONE job per package, all in parallel.
+#                     Each job downloads dist, npm-publishes its own package,
+#                     and tags the release.
+#   4. summarize    — single rollup job posting the result.
+#
+# Dependency order: `@interlace/eslint-devkit` is consumed by other packages,
+# but at PUBLISH time we ship pre-built `dist/` artifacts — there is no
+# build-time interaction between the publish jobs, so parallelism is safe.
+# Turbo's `^build` already ensures consumers built against the new devkit
+# before we got here.
 #
 # Authentication:
-#   - Trusted Publishers (OIDC) for existing packages — no token needed
-#   - NPM_TOKEN fallback for first-release packages
+#   - Trusted Publishers (OIDC) for existing packages — no token needed.
+#   - NPM_TOKEN fallback for first-release packages.
 #
-# Dependency order: `@interlace/eslint-devkit` always publishes first when
-# affected, since other packages depend on it. Turbo's task graph determines
-# this automatically via `^build`.
+# Manual override: workflow_dispatch with dry-run=true lets you preview
+# what would publish without actually shipping anything (useful for
+# debugging the detect logic).
 # ═══════════════════════════════════════════════════════════════════════════════
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       dry-run:
-        description: "Dry run: build + show what would publish, but don't publish"
+        description: "Dry run: build + show what would publish, but don't publish."
         required: false
         type: boolean
         default: false
       dist-tag:
-        description: "NPM distribution tag"
+        description: "NPM distribution tag."
         required: false
         type: choice
         options: [latest, next, beta, rc, alpha]
@@ -42,111 +64,109 @@ concurrency:
   group: release-workflow
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 env:
-  NODE_VERSION: "24"
   TURBO_TELEMETRY_DISABLED: "1"
   TURBO_CONCURRENCY: "4"
+  # Turbo Remote Cache — see quality.yml for setup notes. Pulls build
+  # artefacts the Quality Gate already produced for the same SHA, so the
+  # release "build affected" stage usually returns instantly.
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
 jobs:
-  build-and-detect:
-    name: 🏗️ Build affected + detect publishable
+  # ─────────────────────────────────────────────────────────────────────────
+  # STAGE 1 — Detect publishable packages.
+  # Fast path: doesn't require building. Just compares local versions to npm.
+  # ─────────────────────────────────────────────────────────────────────────
+  detect:
+    name: Detect publishable packages
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
-      packages: ${{ steps.detect.outputs.packages }}
-      package-count: ${{ steps.detect.outputs.package-count }}
+      matrix: ${{ steps.detect.outputs.matrix }}
+      count: ${{ steps.detect.outputs.count }}
     steps:
-      - name: 📥 Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
-
-      - name: ⚙️ Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: ./.github/actions/setup
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          registry-url: https://registry.npmjs.org/
-          cache: npm
+          turbo-cache: "false"
 
-      - name: 📦 Install dependencies
-        run: npm ci --prefer-offline --no-audit
-
-      - name: 🏗️ Build affected packages
-        run: npx turbo run build --affected
-
-      - name: 🔍 Detect packages with version ahead of npm
+      - name: Diff local versions vs npm
         id: detect
         run: |
-          # Iterate every package under packages/, compare local version to
-          # npm-published version. If local > npm (or 404 == first-release),
-          # add to publish list.
-          set -e
-          PUBLISH_LIST=""
-          for pkg_dir in packages/*/; do
-            pkg_name=$(basename "$pkg_dir")
-            pkg_json="$pkg_dir/package.json"
-            [ -f "$pkg_json" ] || continue
+          set -euo pipefail
+          publish=()
+          for pkg_json in packages/*/package.json; do
+            dir=$(dirname "$pkg_json")
+            pkg=$(basename "$dir")
 
-            # Skip private packages
-            is_private=$(node -p "require('./$pkg_json').private === true" 2>/dev/null || echo "false")
+            is_private=$(node -p "require('./$pkg_json').private === true" 2>/dev/null || echo false)
             [ "$is_private" = "true" ] && continue
 
-            # Skip packages without a build output (means turbo --affected didn't include them)
-            [ -d "$pkg_dir/dist" ] || continue
-
-            npm_name=$(node -p "require('./$pkg_json').name")
+            name=$(node -p "require('./$pkg_json').name")
             local_ver=$(node -p "require('./$pkg_json').version")
-
-            # Query npm for latest published version
-            npm_ver=$(npm view "$npm_name" version 2>/dev/null || echo "")
+            npm_ver=$(npm view "$name" version 2>/dev/null || echo "")
 
             if [ -z "$npm_ver" ]; then
-              echo "🆕 $npm_name: first release ($local_ver)"
-              PUBLISH_LIST="${PUBLISH_LIST}${pkg_name},"
+              echo "🆕 $name: first release ($local_ver)"
+              publish+=("{\"dir\":\"$pkg\",\"name\":\"$name\",\"version\":\"$local_ver\"}")
               continue
             fi
 
-            # Use semver to compare; fail-soft if comparison errors
             cmp=$(node -e "
               const semver = require('semver');
-              const local = '$local_ver';
-              const remote = '$npm_ver';
-              if (semver.gt(local, remote)) console.log('ahead');
-              else if (semver.eq(local, remote)) console.log('same');
+              if (semver.gt('$local_ver', '$npm_ver')) console.log('ahead');
+              else if (semver.eq('$local_ver', '$npm_ver')) console.log('same');
               else console.log('behind');
-            " 2>/dev/null || echo "error")
+            " 2>/dev/null || echo error)
 
             case "$cmp" in
               ahead)
-                echo "📦 $npm_name: $npm_ver -> $local_ver (publishing)"
-                PUBLISH_LIST="${PUBLISH_LIST}${pkg_name},"
+                echo "📦 $name: $npm_ver → $local_ver"
+                publish+=("{\"dir\":\"$pkg\",\"name\":\"$name\",\"version\":\"$local_ver\"}")
                 ;;
-              same)
-                echo "✅ $npm_name: $local_ver (already published)"
-                ;;
-              behind)
-                echo "⚠️ $npm_name: local $local_ver < npm $npm_ver (skip)"
-                ;;
-              *)
-                echo "❌ $npm_name: comparison error (skip)"
-                ;;
+              same)    echo "✅ $name: $local_ver (already published)" ;;
+              behind)  echo "⚠️  $name: local $local_ver < npm $npm_ver (skip)" ;;
+              *)       echo "❌ $name: comparison error (skip)" ;;
             esac
           done
 
-          PUBLISH_LIST="${PUBLISH_LIST%,}"
-          if [ -z "$PUBLISH_LIST" ]; then
-            echo "ℹ️ No packages to publish"
-            echo "packages=" >> $GITHUB_OUTPUT
-            echo "package-count=0" >> $GITHUB_OUTPUT
+          count=${#publish[@]}
+          if [ "$count" -eq 0 ]; then
+            echo "matrix={\"include\":[]}" >> "$GITHUB_OUTPUT"
+            echo "count=0" >> "$GITHUB_OUTPUT"
           else
-            COUNT=$(echo "$PUBLISH_LIST" | tr ',' '\n' | wc -l | tr -d ' ')
-            echo "🎯 Publishing $COUNT package(s): $PUBLISH_LIST"
-            echo "packages=$PUBLISH_LIST" >> $GITHUB_OUTPUT
-            echo "package-count=$COUNT" >> $GITHUB_OUTPUT
+            json=$(IFS=,; echo "[${publish[*]}]")
+            echo "matrix={\"include\":$json}" >> "$GITHUB_OUTPUT"
+            echo "count=$count" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: 📤 Upload dist artifacts for publish job
-        if: steps.detect.outputs.package-count != '0'
+  # ─────────────────────────────────────────────────────────────────────────
+  # STAGE 2 — Build affected packages once and upload dist/ artifact.
+  # ─────────────────────────────────────────────────────────────────────────
+  build:
+    name: Build affected
+    needs: detect
+    if: needs.detect.outputs.count != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: ./.github/actions/setup
+
+      - name: Build affected packages
+        run: npx turbo run build --affected
+
+      - name: Upload dist artifact
         uses: actions/upload-artifact@v4
         with:
           name: dist
@@ -154,90 +174,248 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  # ─────────────────────────────────────────────────────────────────────────
+  # STAGE 3 — Publish each package in parallel (matrix fan-out).
+  # ─────────────────────────────────────────────────────────────────────────
   publish:
-    name: 🚀 Publish to npm
-    needs: build-and-detect
-    if: needs.build-and-detect.outputs.package-count != '0'
+    name: Publish ${{ matrix.name }}@${{ matrix.version }}
+    needs: [detect, build]
+    if: needs.detect.outputs.count != '0'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment: production
     permissions:
-      contents: write # for git tag push
-      id-token: write # for npm Trusted Publishers (OIDC)
-    timeout-minutes: 30
+      contents: write   # for git tag push
+      id-token: write   # for npm Trusted Publishers (OIDC)
+    strategy:
+      # Don't cancel siblings on a single publish failure — partial releases
+      # are recoverable, but losing successful publishes to a sibling's failure
+      # is not.
+      fail-fast: false
+      max-parallel: 8
+      matrix: ${{ fromJSON(needs.detect.outputs.matrix) }}
     steps:
-      - name: 📥 Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: ⚙️ Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org/
           cache: npm
 
-      - name: 📦 Install dependencies
-        run: npm ci --prefer-offline --no-audit
-
-      - name: ⬆️ Upgrade npm for OIDC support
+      # OIDC-capable npm CLI ships in npm@>=11.5; runner ships an older one.
+      - name: Upgrade npm for OIDC support
         run: npm install -g npm@latest
 
-      - name: 📥 Restore dist artifacts from build job
+      - name: Restore dist artifact
         uses: actions/download-artifact@v4
         with:
           name: dist
           path: packages/
 
-      - name: 🔧 Configure git
+      - name: Configure git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: 🚀 Publish each affected package
+      - name: Publish ${{ matrix.name }}@${{ matrix.version }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
-          PACKAGES: ${{ needs.build-and-detect.outputs.packages }}
-          DRY_RUN: ${{ inputs.dry-run }}
-          DIST_TAG: ${{ inputs.dist-tag }}
+          # On workflow_dispatch, inputs.* carry user-supplied values.
+          # On push, they default to false / "latest" (real release).
+          DRY_RUN: ${{ inputs.dry-run || false }}
+          DIST_TAG: ${{ inputs.dist-tag || 'latest' }}
+          PKG_DIR: packages/${{ matrix.dir }}/dist
+          PKG_NAME: ${{ matrix.name }}
+          PKG_VER: ${{ matrix.version }}
         run: |
-          set -e
-          IFS=',' read -ra PKG_ARRAY <<< "$PACKAGES"
-          PUBLISHED=""
+          set -euo pipefail
+          if [ ! -d "$PKG_DIR" ]; then
+            echo "::error::Missing $PKG_DIR — build artifact incomplete."
+            exit 1
+          fi
+          # tag format: <unscoped-name>@<version>, e.g. "eslint-plugin-crypto@1.2.3"
+          tag_name="${PKG_NAME##*/}@${PKG_VER}"
 
-          for pkg in "${PKG_ARRAY[@]}"; do
-            dist_dir="packages/$pkg/dist"
-            [ -d "$dist_dir" ] || { echo "⚠️ $pkg: no dist/, skipping"; continue; }
+          echo "═════════════════════════════════════════════════════════"
+          echo "📦 $PKG_NAME@$PKG_VER (dist-tag: $DIST_TAG)"
+          echo "═════════════════════════════════════════════════════════"
 
-            ver=$(node -p "require('./$dist_dir/package.json').version")
-            name=$(node -p "require('./$dist_dir/package.json').name")
-            tag_name="${pkg}@${ver}"
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "🔍 [dry-run] would publish $PKG_NAME@$PKG_VER"
+            (cd "$PKG_DIR" && npm publish --dry-run --tag "$DIST_TAG" --access public)
+            exit 0
+          fi
 
-            echo ""
-            echo "═════════════════════════════════════════════════════════"
-            echo "📦 $name@$ver"
-            echo "═════════════════════════════════════════════════════════"
+          # Idempotency: if this exact version is already on npm, skip without
+          # error. Keeps re-runs after partial failures safe.
+          if npm view "$PKG_NAME@$PKG_VER" version >/dev/null 2>&1; then
+            echo "✅ $PKG_NAME@$PKG_VER already on npm — skipping publish."
+          else
+            (cd "$PKG_DIR" && npm publish --tag "$DIST_TAG" --access public --provenance)
+          fi
 
-            if [ "$DRY_RUN" = "true" ]; then
-              echo "🔍 [dry-run] would publish $name@$ver with tag '$DIST_TAG'"
-              (cd "$dist_dir" && npm publish --dry-run --tag "$DIST_TAG" --access public)
-              continue
+          # Tag in git (idempotent — fail-soft if tag already exists).
+          if git rev-parse -q --verify "refs/tags/$tag_name" >/dev/null; then
+            echo "(local tag $tag_name already exists)"
+          else
+            git tag -a "$tag_name" -m "Release $tag_name"
+          fi
+          git push origin "$tag_name" || echo "(tag push failed — likely already on remote)"
+
+          # Stash the tag name + the per-version CHANGELOG slice for the
+          # GitHub Release step that follows. We use --fallback so a missing
+          # CHANGELOG section produces a generic stub rather than failing
+          # the whole publish.
+          mkdir -p .release-notes
+          notes_file=".release-notes/${tag_name//\//_}.md"
+          npx tsx scripts/extract-changelog.ts "packages/${{ matrix.dir }}" "$PKG_VER" --fallback > "$notes_file"
+          echo "TAG_NAME=$tag_name" >> "$GITHUB_ENV"
+          echo "NOTES_FILE=$notes_file" >> "$GITHUB_ENV"
+
+      - name: Create GitHub Release
+        if: ${{ !inputs.dry-run }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PKG_NAME: ${{ matrix.name }}
+          PKG_VER: ${{ matrix.version }}
+          DIST_TAG: ${{ inputs.dist-tag || 'latest' }}
+        run: |
+          set -euo pipefail
+          # Idempotent: if the release already exists for this tag, just
+          # update its body (handy for re-runs after a flaky publish).
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            echo "↻ Release $TAG_NAME exists — updating notes."
+            gh release edit "$TAG_NAME" \
+              --notes-file "$NOTES_FILE" \
+              --title "$PKG_NAME@$PKG_VER"
+          else
+            echo "🆕 Creating release $TAG_NAME"
+            # `--latest=false` avoids each per-package release stealing
+            # the repo-wide "Latest" badge; the most-recent overall is
+            # marked latest by GitHub automatically.
+            #
+            # `--prerelease` for non-`latest` dist-tags keeps these out of
+            # the default release page view.
+            extra_flags=()
+            if [ "$DIST_TAG" != "latest" ]; then
+              extra_flags+=(--prerelease)
             fi
+            gh release create "$TAG_NAME" \
+              --title "$PKG_NAME@$PKG_VER" \
+              --notes-file "$NOTES_FILE" \
+              --latest=false \
+              "${extra_flags[@]}"
+          fi
 
-            (cd "$dist_dir" && npm publish --tag "$DIST_TAG" --access public --provenance)
+      - name: Job summary
+        if: always()
+        env:
+          PKG_NAME: ${{ matrix.name }}
+          PKG_VER: ${{ matrix.version }}
+          DIST_TAG: ${{ inputs.dist-tag || 'latest' }}
+          DRY_RUN: ${{ inputs.dry-run || false }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          status="✅ published"
+          [ "$DRY_RUN" = "true" ] && status="🔍 dry-run"
 
-            # Tag the release in git
-            git tag -a "$tag_name" -m "Release $tag_name" || echo "(tag exists)"
-            git push origin "$tag_name" || echo "(push failed; tag may exist remotely)"
+          npm_url="https://www.npmjs.com/package/${PKG_NAME}/v/${PKG_VER}"
+          tag_short="${PKG_NAME##*/}@${PKG_VER}"
+          gh_url="https://github.com/${REPO}/releases/tag/${tag_short}"
 
-            PUBLISHED="${PUBLISHED}${name}@${ver} "
-          done
+          {
+            echo "## $status — \`$PKG_NAME@$PKG_VER\`"
+            echo ""
+            echo "| | |"
+            echo "|--|--|"
+            echo "| **Dist-tag**     | \`$DIST_TAG\` |"
+            echo "| **npm**          | [$PKG_NAME@$PKG_VER]($npm_url) |"
+            echo "| **GitHub Release** | [$tag_short]($gh_url) |"
+            echo "| **Provenance**   | [\`--provenance\` enabled](https://docs.npmjs.com/generating-provenance-statements) |"
+            echo ""
+            if [ -f "$NOTES_FILE" ]; then
+              echo "<details><summary>Release notes</summary>"
+              echo ""
+              cat "$NOTES_FILE"
+              echo ""
+              echo "</details>"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
-          echo ""
-          echo "═════════════════════════════════════════════════════════"
-          echo "✅ DONE. Published: ${PUBLISHED:-(none)}"
-          echo "═════════════════════════════════════════════════════════"
+  # ─────────────────────────────────────────────────────────────────────────
+  # STAGE 4 — Summary.
+  # ─────────────────────────────────────────────────────────────────────────
+  summarize:
+    name: Release summary
+    needs: [detect, build, publish]
+    if: always() && needs.detect.outputs.count != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Write rollup
+        env:
+          MATRIX: ${{ needs.detect.outputs.matrix }}
+          PUBLISH_RESULT: ${{ needs.publish.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          DRY_RUN: ${{ inputs.dry-run || false }}
+          DIST_TAG: ${{ inputs.dist-tag || 'latest' }}
+          ACTOR: ${{ github.actor }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Resolve overall status emoji.
+          if [ "$DRY_RUN" = "true" ]; then
+            status_label="🔍 Dry run"
+          elif [ "$PUBLISH_RESULT" = "success" ]; then
+            status_label="✅ Released"
+          elif [ "$PUBLISH_RESULT" = "failure" ]; then
+            status_label="❌ Failed"
+          elif [ "$PUBLISH_RESULT" = "cancelled" ]; then
+            status_label="⏹ Cancelled"
+          else
+            status_label="⚠️ $PUBLISH_RESULT"
+          fi
+
+          {
+            echo "# $status_label · ${{ needs.detect.outputs.count }} package(s)"
+            echo ""
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Trigger | \`${{ github.event_name }}\` by @${ACTOR} |"
+            echo "| Mode | ${DRY_RUN:+dry-run}${DRY_RUN:-publish} |"
+            echo "| Dist-tag | \`$DIST_TAG\` |"
+            echo "| Build | $BUILD_RESULT |"
+            echo "| Publish (matrix) | $PUBLISH_RESULT |"
+            echo ""
+            echo "## Packages"
+            echo ""
+            echo "| Package | Version | npm | GH Release |"
+            echo "|---|---|---|---|"
+            # Iterate the matrix that detect emitted. jq tolerates the
+            # empty-include case (count == 0 is excluded by the job's `if:`).
+            echo "$MATRIX" | jq -r --arg repo "$REPO" '
+              .include[]?
+              | "| \(.name) | \(.version) | [npm](https://www.npmjs.com/package/\(.name)/v/\(.version)) | [\(.name | sub("^@[^/]+/"; ""))@\(.version)](https://github.com/\($repo)/releases/tag/\(.name | sub("^@[^/]+/"; ""))@\(.version)) |"
+            '
+            echo ""
+            if [ "$PUBLISH_RESULT" != "success" ] && [ "$DRY_RUN" != "true" ]; then
+              echo "## ⚠️ Recovery"
+              echo ""
+              echo "If a publish failed mid-flight, re-running this workflow is safe — every step is idempotent:"
+              echo ""
+              echo "\`\`\`bash"
+              echo "npm run release           # re-run via workflow_dispatch"
+              echo "npm run release:status    # see what's still pending"
+              echo "\`\`\`"
+              echo ""
+              echo "If tags / npm / GH Releases drift, the weekly \`release-hygiene.yml\` workflow opens a tracking issue + can backfill."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

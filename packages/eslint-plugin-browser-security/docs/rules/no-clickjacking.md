@@ -79,28 +79,7 @@ const csp = "default-src 'self'"; // No frame protection!
 ### ✅ Correct
 
 ```typescript
-// Set X-Frame-Options header
-app.use((req, res, next) => {
-  res.setHeader('X-Frame-Options', 'DENY');
-  // Or for same-origin only:
-  // res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  next();
-});
-
-// Use CSP frame-ancestors (more flexible)
-res.setHeader(
-  'Content-Security-Policy',
-  "frame-ancestors 'self' https://trusted.com",
-);
-
-// Frame-busting JavaScript (legacy fallback)
-if (top !== self) {
-  top.location = self.location;
-}
-
-// Use helmet middleware
-import helmet from 'helmet';
-app.use(helmet.frameguard({ action: 'deny' }));
+<iframe src="/local-content.html"></iframe>
 ```
 
 ## Configuration

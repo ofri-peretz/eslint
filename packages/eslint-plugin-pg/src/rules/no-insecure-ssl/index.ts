@@ -16,6 +16,8 @@ export const noInsecureSsl: TSESLint.RuleModule<
     docs: {
       description: 'Prevent the use of insecure SSL configurations (rejectUnauthorized: false).',
       url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-pg/docs/rules/no-insecure-ssl.md',
+      cwe: 'CWE-319',
+      cvss: 7.5,
     },
     messages: {
       noInsecureSsl: formatLLMMessage({

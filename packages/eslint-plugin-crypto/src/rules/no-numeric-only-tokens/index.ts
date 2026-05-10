@@ -32,7 +32,10 @@ export const noNumericOnlyTokens = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-crypto/docs/rules/no-numeric-only-tokens.md',
       description: 'Warn against using numeric-only tokens for security purposes',
+      cwe: 'CWE-330',
+      cvss: 5,
     },
     hasSuggestions: true,
     messages: {

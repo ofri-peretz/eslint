@@ -98,6 +98,7 @@ export const requireImportApproval = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/require-import-approval.md',
       description: 'Enforce explicit approval for high-risk package imports',
     },
     messages: {

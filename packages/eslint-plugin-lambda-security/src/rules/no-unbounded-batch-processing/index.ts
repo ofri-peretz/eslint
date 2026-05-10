@@ -32,23 +32,26 @@ export interface Options {
 type RuleOptions = [Options?];
 
 // Event sources with Records array
-const BATCH_SOURCE_PROPERTIES = [
+const BATCH_SOURCE_PROPERTIES = new Set([
   'Records', // SQS, SNS, DynamoDB Streams, Kinesis, S3
   'records', // Some custom structures
   'items', // Custom batches
   'messages', // Custom message batches
-];
+]);
 
 // Event parameter names
-const EVENT_PARAM_NAMES = ['event', 'evt', 'e', 'request', 'req'];
+const EVENT_PARAM_NAMES = new Set(['event', 'evt', 'e', 'request', 'req']);
 
 export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
   name: 'no-unbounded-batch-processing',
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-lambda-security/docs/rules/no-unbounded-batch-processing.md',
       description:
         'Detects processing batch records without size validation',
+      cwe: 'CWE-770',
+      cvss: 5.5,
     },
     hasSuggestions: true,
     messages: {
@@ -123,7 +126,7 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
       const hasEvent = node.params.some((p) => {
         if (
           p.type === AST_NODE_TYPES.Identifier &&
-          EVENT_PARAM_NAMES.includes(p.name)
+          EVENT_PARAM_NAMES.has(p.name)
         ) {
           eventParamName.push(p.name);
           return true;
@@ -196,7 +199,7 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
           node.object.type === AST_NODE_TYPES.Identifier &&
           eventParamName.includes(node.object.name) &&
           node.property.type === AST_NODE_TYPES.Identifier &&
-          BATCH_SOURCE_PROPERTIES.includes(node.property.name)
+          BATCH_SOURCE_PROPERTIES.has(node.property.name)
         ) {
           batchAccessNodes.push({
             node,
@@ -213,7 +216,7 @@ export const noUnboundedBatchProcessing = createRule<RuleOptions, MessageIds>({
           if (
             node.object.type === AST_NODE_TYPES.MemberExpression &&
             node.object.property.type === AST_NODE_TYPES.Identifier &&
-            BATCH_SOURCE_PROPERTIES.includes(node.object.property.name)
+            BATCH_SOURCE_PROPERTIES.has(node.object.property.name)
           ) {
             hasBatchSizeCheck = true;
           }

@@ -207,6 +207,7 @@ export const noCrossDomainImports = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/no-cross-domain-imports.md',
       description: 'Prevents imports across domain/feature boundaries',
     },
     messages: {

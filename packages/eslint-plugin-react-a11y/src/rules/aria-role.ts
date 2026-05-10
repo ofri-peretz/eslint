@@ -28,7 +28,10 @@ export const ariaRole = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/aria-role.md',
       description: 'Enforce that elements with ARIA roles have valid values',
+      cwe: 'CWE-252',
+      cvss: 7.5,
     },
     messages: {
       invalidRole: formatLLMMessage({

@@ -27,7 +27,10 @@ export const exportsLast = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/exports-last.md',
       description: 'Ensure all exports appear after other statements',
+      cwe: 'CWE-1078',
+      cvss: 2.5,
     },
     messages: {
       exportNotLast: formatLLMMessage({

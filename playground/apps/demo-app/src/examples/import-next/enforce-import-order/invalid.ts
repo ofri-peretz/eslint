@@ -1,1 +1,0 @@
-// Invalid example for enforce-import-order\n// TODO: Add failing code\nexport const invalid = true;\n

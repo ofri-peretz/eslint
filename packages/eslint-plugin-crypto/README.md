@@ -118,20 +118,23 @@ if (crypto.timingSafeEqual(Buffer.from(userToken), Buffer.from(storedToken))) { 
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
+| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
+| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
+| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [no-hardcoded-crypto-key](https://eslint.interlace.tools/docs/crypto/rules/no-hardcoded-crypto-key) | CWE-321 | A02:2025 | 9.8 | Enforce no hardcoded crypto key | 💼 |  |  | 💡 |  |
-| [no-key-reuse](https://eslint.interlace.tools/docs/crypto/rules/no-key-reuse) | CWE-323 | A02:2025 | 7.5 | Enforce no key reuse | 💼 | ⚠️ |  | 💡 |  |
-| [no-math-random-crypto](https://eslint.interlace.tools/docs/crypto/rules/no-math-random-crypto) | CWE-338 | A07:2025 | 5.3 | Enforce no math random crypto | 💼 |  |  | 💡 |  |
-| [no-numeric-only-tokens](https://eslint.interlace.tools/docs/crypto/rules/no-numeric-only-tokens) | CWE-330 | A07:2025 | 5.3 | Enforce no numeric only tokens | 💼 | ⚠️ |  | 💡 |  |
-| [no-predictable-salt](https://eslint.interlace.tools/docs/crypto/rules/no-predictable-salt) | CWE-331 | A07:2025 | 7.5 | Enforce no predictable salt | 💼 |  |  | 💡 |  |
-| [no-web-crypto-export](https://eslint.interlace.tools/docs/crypto/rules/no-web-crypto-export) | CWE-321 | A02:2025 | 5.0 | Enforce no web crypto export | 💼 | ⚠️ |  | 💡 |  |
-| [require-authenticated-encryption](https://eslint.interlace.tools/docs/crypto/rules/require-authenticated-encryption) | CWE-327 | A04:2025 | 6.5 | Enforce require authenticated encryption | 💼 | ⚠️ |  | 💡 |  |
-| [require-key-length](https://eslint.interlace.tools/docs/crypto/rules/require-key-length) | CWE-326 | A02:2025 | 7.5 | Enforce require key length | 💼 | ⚠️ |  | 💡 |  |
-| [require-random-iv](https://eslint.interlace.tools/docs/crypto/rules/require-random-iv) | CWE-329 | A02:2025 | 7.5 | Enforce require random iv | 💼 | ⚠️ |  | 💡 |  |
-| [require-secure-pbkdf2-digest](https://eslint.interlace.tools/docs/crypto/rules/require-secure-pbkdf2-digest) | CWE-916 | A02:2025 | 9.1 | Enforce require secure pbkdf2 digest | 💼 |  |  | 💡 |  |
-| [require-sufficient-length](https://eslint.interlace.tools/docs/crypto/rules/require-sufficient-length) | CWE-326 | A02:2025 | 7.5 | Enforce require sufficient length | 💼 | ⚠️ |  | 💡 |  |
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [no-hardcoded-crypto-key](https://eslint.interlace.tools/docs/crypto/rules/no-hardcoded-crypto-key) | CWE-321 | A02:2025 | 9.8 | Enforce no hardcoded crypto key | 🟢 | 💼 |  |  | 💡 |  |
+| [no-key-reuse](https://eslint.interlace.tools/docs/crypto/rules/no-key-reuse) | CWE-323 | A02:2025 | 7.5 | Enforce no key reuse | 🟢 | 💼 | ⚠️ |  | 💡 |  |
+| [no-math-random-crypto](https://eslint.interlace.tools/docs/crypto/rules/no-math-random-crypto) | CWE-338 | A07:2025 | 5.3 | Enforce no math random crypto | 🟢 | 💼 |  |  | 💡 |  |
+| [no-numeric-only-tokens](https://eslint.interlace.tools/docs/crypto/rules/no-numeric-only-tokens) | CWE-330 | A07:2025 | 5.3 | Enforce no numeric only tokens | 🟢 | 💼 | ⚠️ |  | 💡 |  |
+| [no-predictable-salt](https://eslint.interlace.tools/docs/crypto/rules/no-predictable-salt) | CWE-331 | A07:2025 | 7.5 | Enforce no predictable salt | 🟢 | 💼 |  |  | 💡 |  |
+| [no-web-crypto-export](https://eslint.interlace.tools/docs/crypto/rules/no-web-crypto-export) | CWE-321 | A02:2025 | 5.0 | Enforce no web crypto export | 🟢 | 💼 | ⚠️ |  | 💡 |  |
+| [require-authenticated-encryption](https://eslint.interlace.tools/docs/crypto/rules/require-authenticated-encryption) | CWE-327 | A04:2025 | 6.5 | Enforce require authenticated encryption | 🟢 | 💼 | ⚠️ |  | 💡 |  |
+| [require-key-length](https://eslint.interlace.tools/docs/crypto/rules/require-key-length) | CWE-326 | A02:2025 | 7.5 | Enforce require key length | 🟢 | 💼 | ⚠️ |  | 💡 |  |
+| [require-random-iv](https://eslint.interlace.tools/docs/crypto/rules/require-random-iv) | CWE-329 | A02:2025 | 7.5 | Enforce require random iv | 🟢 | 💼 | ⚠️ |  | 💡 |  |
+| [require-secure-pbkdf2-digest](https://eslint.interlace.tools/docs/crypto/rules/require-secure-pbkdf2-digest) | CWE-916 | A02:2025 | 9.1 | Enforce require secure pbkdf2 digest | 🟢 | 💼 |  |  | 💡 |  |
+| [require-sufficient-length](https://eslint.interlace.tools/docs/crypto/rules/require-sufficient-length) | CWE-326 | A02:2025 | 7.5 | Enforce require sufficient length | 🟢 | 💼 | ⚠️ |  | 💡 |  |
 
 ## 🔗 Related ESLint Plugins
 
@@ -150,6 +153,15 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
+
+## 📦 Compatibility
+
+| Package | Version |
+| :--- | :--- |
+| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0` |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
 ## 📄 License
 

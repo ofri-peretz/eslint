@@ -24,6 +24,7 @@ export const extensions = createRule<Options, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/docs/rules/extensions.md',
       description: 'Ensure consistent use of file extensions in imports',
     },
     fixable: 'code',

@@ -222,6 +222,7 @@ export const dddAnemicDomainModel = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-modularity/docs/rules/ddd-anemic-domain-model.md',
       description: 'Detects entities with only getters/setters and no business logic',
     },
     messages: {

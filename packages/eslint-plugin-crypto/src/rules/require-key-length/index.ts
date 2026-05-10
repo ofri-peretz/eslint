@@ -32,7 +32,11 @@ export const requireKeyLength = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-crypto/docs/rules/require-key-length.md',
       description: 'Require AES-256 instead of AES-128/192',
+      cwe: 'CWE-326',
+      cvss: 5,
+      confidence: 'high',
     },
     hasSuggestions: true,
     messages: {

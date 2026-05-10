@@ -1,0 +1,3832 @@
+{
+  "generatedAt": "2026-05-09T23:57:08.054Z",
+  "summary": {
+    "totalRules": 207,
+    "ssdfPracticesHit": 2,
+    "asvsSectionsHit": 9,
+    "capecPatternsHit": 17
+  },
+  "rules": [
+    {
+      "ruleId": "browser-security/detect-mixed-content",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-311",
+        "CWE-311"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-allow-arbitrary-loads",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-295",
+        "CWE-295"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-clickjacking",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-1021",
+        "CWE-1021",
+        "CWE-1021",
+        "CWE-1021",
+        "CWE-1021",
+        "CWE-1021",
+        "CWE-1021",
+        "CWE-1021"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-client-side-auth-logic",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-602",
+        "CWE-602"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-cookie-auth-tokens",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-1004",
+        "CWE-1004"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-credentials-in-query-params",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-798",
+        "CWE-798"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-560",
+        "CAPEC-CWE-798"
+      ]
+    },
+    {
+      "ruleId": "browser-security/no-disabled-certificate-validation",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-295",
+        "CWE-295"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-dynamic-service-worker-url",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-829",
+        "CWE-829"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-eval",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-95",
+        "CWE-95"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-242"
+      ]
+    },
+    {
+      "ruleId": "browser-security/no-filereader-innerhtml",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-79",
+        "CWE-79"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-63"
+      ]
+    },
+    {
+      "ruleId": "browser-security/no-http-urls",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-319",
+        "CWE-319",
+        "CWE-319"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-innerhtml",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-79",
+        "CWE-79"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [
+        "V5.3.3"
+      ],
+      "derivedCapec": [
+        "CAPEC-63"
+      ]
+    },
+    {
+      "ruleId": "browser-security/no-insecure-redirects",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-601",
+        "CWE-601"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-insecure-websocket",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-319",
+        "CWE-319"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-jwt-in-storage",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-922",
+        "CWE-922"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-missing-cors-check",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-346",
+        "CWE-346"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-missing-csrf-protection",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-352",
+        "CWE-352"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-242b"
+      ]
+    },
+    {
+      "ruleId": "browser-security/no-missing-security-headers",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-693",
+        "CWE-693"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-password-in-url",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-521",
+        "CWE-521"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-permissive-cors",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-942",
+        "CWE-942"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [
+        "V13.2.5",
+        "V14.5.3"
+      ],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-postmessage-innerhtml",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-79",
+        "CWE-79"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-63"
+      ]
+    },
+    {
+      "ruleId": "browser-security/no-postmessage-wildcard-origin",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-346",
+        "CWE-346"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-sensitive-cookie-js",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-1004",
+        "CWE-1004"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-sensitive-data-in-analytics",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-359",
+        "CWE-359"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-sensitive-data-in-cache",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-200",
+        "CWE-200"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-310",
+        "CAPEC-118"
+      ]
+    },
+    {
+      "ruleId": "browser-security/no-sensitive-indexeddb",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-922",
+        "CWE-922"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-sensitive-localstorage",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-922",
+        "CWE-922"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-sensitive-sessionstorage",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-922",
+        "CWE-922"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-tracking-without-consent",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-359",
+        "CWE-359"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-unencrypted-transmission",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-319",
+        "CWE-319"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-unescaped-url-parameter",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-79",
+        "CWE-79"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-63"
+      ]
+    },
+    {
+      "ruleId": "browser-security/no-unsafe-eval-csp",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-95",
+        "CWE-95"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-242"
+      ]
+    },
+    {
+      "ruleId": "browser-security/no-unsafe-inline-csp",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-79",
+        "CWE-79"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-63"
+      ]
+    },
+    {
+      "ruleId": "browser-security/no-unvalidated-deeplinks",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-939",
+        "CWE-939"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/no-websocket-eval",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-95",
+        "CWE-95"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-242"
+      ]
+    },
+    {
+      "ruleId": "browser-security/no-websocket-innerhtml",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-79",
+        "CWE-79"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-63"
+      ]
+    },
+    {
+      "ruleId": "browser-security/no-worker-message-innerhtml",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-79",
+        "CWE-79"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-63"
+      ]
+    },
+    {
+      "ruleId": "browser-security/require-blob-url-revocation",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-401",
+        "CWE-401"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/require-cookie-secure-attrs",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-614",
+        "CWE-614",
+        "CWE-352"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-242b"
+      ]
+    },
+    {
+      "ruleId": "browser-security/require-csp-headers",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-1021",
+        "CWE-1021"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/require-https-only",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-319",
+        "CWE-319"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/require-mime-type-validation",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-434",
+        "CWE-434"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/require-postmessage-origin-check",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-346",
+        "CWE-346"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/require-url-validation",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-601",
+        "CWE-601"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "browser-security/require-websocket-wss",
+      "plugin": "browser-security",
+      "cwes": [
+        "CWE-319",
+        "CWE-319"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "crypto/no-hardcoded-crypto-key",
+      "plugin": "crypto",
+      "cwes": [
+        "CWE-321",
+        "CWE-321"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "crypto/no-key-reuse",
+      "plugin": "crypto",
+      "cwes": [
+        "CWE-323",
+        "CWE-323"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "crypto/no-math-random-crypto",
+      "plugin": "crypto",
+      "cwes": [
+        "CWE-338",
+        "CWE-338"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "crypto/no-numeric-only-tokens",
+      "plugin": "crypto",
+      "cwes": [
+        "CWE-330",
+        "CWE-330"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "crypto/no-predictable-salt",
+      "plugin": "crypto",
+      "cwes": [
+        "CWE-331",
+        "CWE-331"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "crypto/no-web-crypto-export",
+      "plugin": "crypto",
+      "cwes": [
+        "CWE-321",
+        "CWE-321"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "crypto/require-authenticated-encryption",
+      "plugin": "crypto",
+      "cwes": [
+        "CWE-327",
+        "CWE-327"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "crypto/require-key-length",
+      "plugin": "crypto",
+      "cwes": [
+        "CWE-326",
+        "CWE-326"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "crypto/require-random-iv",
+      "plugin": "crypto",
+      "cwes": [
+        "CWE-329",
+        "CWE-329"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "crypto/require-secure-pbkdf2-digest",
+      "plugin": "crypto",
+      "cwes": [
+        "CWE-328",
+        "CWE-328"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "crypto/require-sufficient-length",
+      "plugin": "crypto",
+      "cwes": [
+        "CWE-330",
+        "CWE-330"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "express-security/no-cors-credentials-wildcard",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-942",
+        "CWE-942"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "express-security/no-exposed-debug-endpoints",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-489",
+        "CWE-489"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "express-security/no-express-unsafe-regex-route",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-1333",
+        "CWE-1333",
+        "CWE-1333"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "express-security/no-graphql-introspection-production",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-200",
+        "CWE-200"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-310",
+        "CAPEC-118"
+      ]
+    },
+    {
+      "ruleId": "express-security/no-insecure-cookie-options",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-614",
+        "CWE-614"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "express-security/no-permissive-cors",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-942",
+        "CWE-942"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [
+        "V13.2.5",
+        "V14.5.3"
+      ],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "express-security/require-csrf-protection",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-352",
+        "CWE-352"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-242b"
+      ]
+    },
+    {
+      "ruleId": "express-security/require-express-body-parser-limits",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-400",
+        "CWE-400",
+        "CWE-400"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "express-security/require-helmet",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-693",
+        "CWE-693"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [
+        "V14.4.1",
+        "V14.4.5"
+      ],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "express-security/require-rate-limiting",
+      "plugin": "express-security",
+      "cwes": [
+        "CWE-770",
+        "CWE-770"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "jwt/no-algorithm-confusion",
+      "plugin": "jwt",
+      "cwes": [
+        "CWE-347",
+        "CWE-347",
+        "CWE-347"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "jwt/no-algorithm-none",
+      "plugin": "jwt",
+      "cwes": [
+        "CWE-347",
+        "CWE-347",
+        "CWE-347",
+        "CWE-347"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [
+        "V3.5.3",
+        "V6.2.1"
+      ],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "jwt/no-decode-without-verify",
+      "plugin": "jwt",
+      "cwes": [
+        "CWE-345",
+        "CWE-345",
+        "CWE-345"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "jwt/no-hardcoded-secret",
+      "plugin": "jwt",
+      "cwes": [
+        "CWE-798",
+        "CWE-798"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-560",
+        "CAPEC-CWE-798"
+      ]
+    },
+    {
+      "ruleId": "jwt/no-sensitive-payload",
+      "plugin": "jwt",
+      "cwes": [
+        "CWE-359",
+        "CWE-359"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "jwt/no-timestamp-manipulation",
+      "plugin": "jwt",
+      "cwes": [
+        "CWE-294",
+        "CWE-294",
+        "CWE-294"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "jwt/no-weak-secret",
+      "plugin": "jwt",
+      "cwes": [
+        "CWE-326",
+        "CWE-326",
+        "CWE-326"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [
+        "V3.5.3",
+        "V6.4.1"
+      ],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "jwt/require-algorithm-whitelist",
+      "plugin": "jwt",
+      "cwes": [
+        "CWE-757",
+        "CWE-757"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "jwt/require-audience-validation",
+      "plugin": "jwt",
+      "cwes": [
+        "CWE-287",
+        "CWE-287"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-114",
+        "CAPEC-115"
+      ]
+    },
+    {
+      "ruleId": "jwt/require-expiration",
+      "plugin": "jwt",
+      "cwes": [
+        "CWE-613",
+        "CWE-613"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "jwt/require-issued-at",
+      "plugin": "jwt",
+      "cwes": [
+        "CWE-294",
+        "CWE-294"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "jwt/require-issuer-validation",
+      "plugin": "jwt",
+      "cwes": [
+        "CWE-287",
+        "CWE-287"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-114",
+        "CAPEC-115"
+      ]
+    },
+    {
+      "ruleId": "jwt/require-max-age",
+      "plugin": "jwt",
+      "cwes": [
+        "CWE-294",
+        "CWE-294"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "lambda-security/no-env-logging",
+      "plugin": "lambda-security",
+      "cwes": [
+        "CWE-532",
+        "CWE-532"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "lambda-security/no-error-swallowing",
+      "plugin": "lambda-security",
+      "cwes": [
+        "CWE-390",
+        "CWE-390"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "lambda-security/no-exposed-debug-endpoints",
+      "plugin": "lambda-security",
+      "cwes": [
+        "CWE-489",
+        "CWE-489"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "lambda-security/no-exposed-error-details",
+      "plugin": "lambda-security",
+      "cwes": [
+        "CWE-209",
+        "CWE-209"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "lambda-security/no-hardcoded-credentials-sdk",
+      "plugin": "lambda-security",
+      "cwes": [
+        "CWE-798",
+        "CWE-798"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-560",
+        "CAPEC-CWE-798"
+      ]
+    },
+    {
+      "ruleId": "lambda-security/no-missing-authorization-check",
+      "plugin": "lambda-security",
+      "cwes": [
+        "CWE-862",
+        "CWE-862"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-114"
+      ]
+    },
+    {
+      "ruleId": "lambda-security/no-overly-permissive-iam-policy",
+      "plugin": "lambda-security",
+      "cwes": [
+        "CWE-732",
+        "CWE-732"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "lambda-security/no-permissive-cors-middy",
+      "plugin": "lambda-security",
+      "cwes": [
+        "CWE-942",
+        "CWE-942"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "lambda-security/no-permissive-cors-response",
+      "plugin": "lambda-security",
+      "cwes": [
+        "CWE-942",
+        "CWE-942"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "lambda-security/no-secrets-in-env",
+      "plugin": "lambda-security",
+      "cwes": [
+        "CWE-798",
+        "CWE-798"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-560",
+        "CAPEC-CWE-798"
+      ]
+    },
+    {
+      "ruleId": "lambda-security/no-unbounded-batch-processing",
+      "plugin": "lambda-security",
+      "cwes": [
+        "CWE-770",
+        "CWE-770"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "lambda-security/no-unvalidated-event-body",
+      "plugin": "lambda-security",
+      "cwes": [
+        "CWE-20",
+        "CWE-20"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "lambda-security/no-user-controlled-requests",
+      "plugin": "lambda-security",
+      "cwes": [
+        "CWE-918",
+        "CWE-918"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-664"
+      ]
+    },
+    {
+      "ruleId": "lambda-security/require-timeout-handling",
+      "plugin": "lambda-security",
+      "cwes": [
+        "CWE-400",
+        "CWE-400"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "mongodb-security/no-bypass-middleware",
+      "plugin": "mongodb-security",
+      "cwes": [
+        "CWE-284",
+        "CWE-284"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "mongodb-security/no-debug-mode-production",
+      "plugin": "mongodb-security",
+      "cwes": [
+        "CWE-489",
+        "CWE-489"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "mongodb-security/no-hardcoded-connection-string",
+      "plugin": "mongodb-security",
+      "cwes": [
+        "CWE-798",
+        "CWE-798"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-560",
+        "CAPEC-CWE-798"
+      ]
+    },
+    {
+      "ruleId": "mongodb-security/no-hardcoded-credentials",
+      "plugin": "mongodb-security",
+      "cwes": [
+        "CWE-798",
+        "CWE-798"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-560",
+        "CAPEC-CWE-798"
+      ]
+    },
+    {
+      "ruleId": "mongodb-security/no-operator-injection",
+      "plugin": "mongodb-security",
+      "cwes": [
+        "CWE-943",
+        "CWE-943"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-248"
+      ]
+    },
+    {
+      "ruleId": "mongodb-security/no-select-sensitive-fields",
+      "plugin": "mongodb-security",
+      "cwes": [
+        "CWE-200",
+        "CWE-200"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-310",
+        "CAPEC-118"
+      ]
+    },
+    {
+      "ruleId": "mongodb-security/no-unbounded-find",
+      "plugin": "mongodb-security",
+      "cwes": [
+        "CWE-400",
+        "CWE-400"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "mongodb-security/no-unsafe-populate",
+      "plugin": "mongodb-security",
+      "cwes": [
+        "CWE-943",
+        "CWE-943"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-248"
+      ]
+    },
+    {
+      "ruleId": "mongodb-security/no-unsafe-query",
+      "plugin": "mongodb-security",
+      "cwes": [
+        "CWE-943",
+        "CWE-943"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [
+        "V5.3.4"
+      ],
+      "derivedCapec": [
+        "CAPEC-248"
+      ]
+    },
+    {
+      "ruleId": "mongodb-security/no-unsafe-regex-query",
+      "plugin": "mongodb-security",
+      "cwes": [
+        "CWE-400",
+        "CWE-400"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "mongodb-security/no-unsafe-where",
+      "plugin": "mongodb-security",
+      "cwes": [
+        "CWE-943",
+        "CWE-943"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-248"
+      ]
+    },
+    {
+      "ruleId": "mongodb-security/require-auth-mechanism",
+      "plugin": "mongodb-security",
+      "cwes": [
+        "CWE-287",
+        "CWE-287"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-114",
+        "CAPEC-115"
+      ]
+    },
+    {
+      "ruleId": "mongodb-security/require-lean-queries",
+      "plugin": "mongodb-security",
+      "cwes": [
+        "CWE-400",
+        "CWE-400"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "mongodb-security/require-projection",
+      "plugin": "mongodb-security",
+      "cwes": [
+        "CWE-200",
+        "CWE-200"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-310",
+        "CAPEC-118"
+      ]
+    },
+    {
+      "ruleId": "mongodb-security/require-schema-validation",
+      "plugin": "mongodb-security",
+      "cwes": [
+        "CWE-20",
+        "CWE-20"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "mongodb-security/require-tls-connection",
+      "plugin": "mongodb-security",
+      "cwes": [
+        "CWE-295",
+        "CWE-295"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "nestjs-security/no-exposed-debug-endpoints",
+      "plugin": "nestjs-security",
+      "cwes": [
+        "CWE-489",
+        "CWE-489"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "nestjs-security/no-exposed-private-fields",
+      "plugin": "nestjs-security",
+      "cwes": [
+        "CWE-200",
+        "CWE-200"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-310",
+        "CAPEC-118"
+      ]
+    },
+    {
+      "ruleId": "nestjs-security/no-missing-validation-pipe",
+      "plugin": "nestjs-security",
+      "cwes": [
+        "CWE-20",
+        "CWE-20"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "nestjs-security/require-class-validator",
+      "plugin": "nestjs-security",
+      "cwes": [
+        "CWE-20",
+        "CWE-20"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "nestjs-security/require-guards",
+      "plugin": "nestjs-security",
+      "cwes": [
+        "CWE-284",
+        "CWE-284"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "nestjs-security/require-throttler",
+      "plugin": "nestjs-security",
+      "cwes": [
+        "CWE-770",
+        "CWE-770"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/detect-child-process",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-78",
+        "CWE-78"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-88",
+        "CAPEC-248"
+      ]
+    },
+    {
+      "ruleId": "node-security/detect-eval-with-expression",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-95",
+        "CWE-95",
+        "CWE-95",
+        "CWE-95",
+        "CWE-95",
+        "CWE-95",
+        "CWE-95",
+        "CWE-95",
+        "CWE-95",
+        "CWE-95"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-242"
+      ]
+    },
+    {
+      "ruleId": "node-security/detect-non-literal-fs-filename",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-22",
+        "CWE-22"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-126",
+        "CAPEC-79"
+      ]
+    },
+    {
+      "ruleId": "node-security/detect-suspicious-dependencies",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-506",
+        "CWE-506"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/lock-file",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-829",
+        "CWE-829"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-arbitrary-file-access",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-22",
+        "CWE-22"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-126",
+        "CAPEC-79"
+      ]
+    },
+    {
+      "ruleId": "node-security/no-buffer-overread",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-126",
+        "CWE-126",
+        "CWE-126",
+        "CWE-126",
+        "CWE-126",
+        "CWE-126",
+        "CWE-126",
+        "CWE-126"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-cryptojs",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-1104",
+        "CWE-1104"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-cryptojs-weak-random",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-338",
+        "CWE-338"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-data-in-temp-storage",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-312",
+        "CWE-312"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-deprecated-buffer",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-676",
+        "CWE-676",
+        "CWE-676"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-deprecated-cipher-method",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-327",
+        "CWE-327"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-dynamic-dependency-loading",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-1104",
+        "CWE-1104"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-dynamic-require",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-94"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [
+        "V10.3.2",
+        "V14.2.1"
+      ],
+      "derivedCapec": [
+        "CAPEC-242"
+      ]
+    },
+    {
+      "ruleId": "node-security/no-ecb-mode",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-327",
+        "CWE-327"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-insecure-key-derivation",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-916",
+        "CWE-916"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-insecure-rsa-padding",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-327",
+        "CWE-327"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-pii-in-logs",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-359",
+        "CWE-359"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-self-signed-certs",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-295",
+        "CWE-295"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-sha1-hash",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-327",
+        "CWE-327"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-ssrf",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-918",
+        "CWE-918"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [
+        "V12.6.1",
+        "V13.2.6"
+      ],
+      "derivedCapec": [
+        "CAPEC-664"
+      ]
+    },
+    {
+      "ruleId": "node-security/no-static-iv",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-329",
+        "CWE-329"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-timing-unsafe-compare",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-208",
+        "CWE-208"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-toctou-vulnerability",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-367",
+        "CWE-367"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-unsafe-dynamic-require",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-95",
+        "CWE-95"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-242"
+      ]
+    },
+    {
+      "ruleId": "node-security/no-weak-cipher-algorithm",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-327",
+        "CWE-327"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-weak-hash-algorithm",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-327",
+        "CWE-327"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/no-zip-slip",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-22",
+        "CWE-22",
+        "CWE-22",
+        "CWE-22",
+        "CWE-22",
+        "CWE-22"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-126",
+        "CAPEC-79"
+      ]
+    },
+    {
+      "ruleId": "node-security/prefer-native-crypto",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-1104",
+        "CWE-1104"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/require-dependency-integrity",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-494",
+        "CWE-494"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/require-secure-credential-storage",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-312",
+        "CWE-312"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/require-secure-deletion",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-459",
+        "CWE-459"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "node-security/require-storage-encryption",
+      "plugin": "node-security",
+      "cwes": [
+        "CWE-312",
+        "CWE-312"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "pg/check-query-params",
+      "plugin": "pg",
+      "cwes": [
+        "CWE-20",
+        "CWE-20"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "pg/no-batch-insert-loop",
+      "plugin": "pg",
+      "cwes": [
+        "CWE-1049",
+        "CWE-1049"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "pg/no-floating-query",
+      "plugin": "pg",
+      "cwes": [
+        "CWE-391",
+        "CWE-391"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "pg/no-hardcoded-credentials",
+      "plugin": "pg",
+      "cwes": [
+        "CWE-798",
+        "CWE-798"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [
+        "V6.4.1",
+        "V14.3.1"
+      ],
+      "derivedCapec": [
+        "CAPEC-560",
+        "CAPEC-CWE-798"
+      ]
+    },
+    {
+      "ruleId": "pg/no-insecure-ssl",
+      "plugin": "pg",
+      "cwes": [
+        "CWE-319",
+        "CWE-319"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [
+        "V9.1.1"
+      ],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "pg/no-missing-client-release",
+      "plugin": "pg",
+      "cwes": [
+        "CWE-404"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "pg/no-select-all",
+      "plugin": "pg",
+      "cwes": [
+        "CWE-1049",
+        "CWE-1049"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "pg/no-transaction-on-pool",
+      "plugin": "pg",
+      "cwes": [
+        "CWE-662"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [
+        "V11.1.1"
+      ],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "pg/no-unsafe-copy-from",
+      "plugin": "pg",
+      "cwes": [
+        "CWE-73",
+        "CWE-73",
+        "CWE-73",
+        "CWE-73"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "pg/no-unsafe-query",
+      "plugin": "pg",
+      "cwes": [
+        "CWE-89",
+        "CWE-89"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [
+        "V5.3.4"
+      ],
+      "derivedCapec": [
+        "CAPEC-66"
+      ]
+    },
+    {
+      "ruleId": "pg/no-unsafe-search-path",
+      "plugin": "pg",
+      "cwes": [
+        "CWE-426",
+        "CWE-426"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "pg/prefer-pool-query",
+      "plugin": "pg",
+      "cwes": [
+        "CWE-400"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "pg/prevent-double-release",
+      "plugin": "pg",
+      "cwes": [
+        "CWE-415"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [
+        "V11.1.1"
+      ],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/detect-non-literal-regexp",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-400",
+        "CWE-400"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/detect-object-injection",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-915",
+        "CWE-915"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-586"
+      ]
+    },
+    {
+      "ruleId": "secure-coding/detect-weak-password-validation",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-521",
+        "CWE-521"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/no-directive-injection",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-96",
+        "CWE-96",
+        "CWE-96",
+        "CWE-96",
+        "CWE-96",
+        "CWE-96",
+        "CWE-96",
+        "CWE-96",
+        "CWE-96"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/no-electron-security-issues",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-16",
+        "CWE-16",
+        "CWE-16",
+        "CWE-16",
+        "CWE-16",
+        "CWE-16",
+        "CWE-16",
+        "CWE-16",
+        "CWE-16",
+        "CWE-16"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/no-format-string-injection",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-134",
+        "CWE-134",
+        "CWE-134",
+        "CWE-134",
+        "CWE-134"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/no-graphql-injection",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-89",
+        "CWE-89",
+        "CWE-200",
+        "CWE-400",
+        "CWE-89",
+        "CWE-20"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-66",
+        "CAPEC-310",
+        "CAPEC-118"
+      ]
+    },
+    {
+      "ruleId": "secure-coding/no-hardcoded-credentials",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-798",
+        "CWE-798",
+        "CWE-798",
+        "CWE-798"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [
+        "V6.4.1",
+        "V14.3.1"
+      ],
+      "derivedCapec": [
+        "CAPEC-560",
+        "CAPEC-CWE-798"
+      ]
+    },
+    {
+      "ruleId": "secure-coding/no-hardcoded-session-tokens",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-798",
+        "CWE-798"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-560",
+        "CAPEC-CWE-798"
+      ]
+    },
+    {
+      "ruleId": "secure-coding/no-improper-sanitization",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-116",
+        "CWE-116",
+        "CWE-79",
+        "CWE-116",
+        "CWE-116",
+        "CWE-116",
+        "CWE-94",
+        "CWE-89",
+        "CWE-78"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-63",
+        "CAPEC-242",
+        "CAPEC-66",
+        "CAPEC-88",
+        "CAPEC-248"
+      ]
+    },
+    {
+      "ruleId": "secure-coding/no-improper-type-validation",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-1287",
+        "CWE-1287",
+        "CWE-1287",
+        "CWE-1287",
+        "CWE-1287",
+        "CWE-1287",
+        "CWE-1287",
+        "CWE-1287"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/no-insecure-comparison",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-697",
+        "CWE-697",
+        "CWE-208"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [
+        "V6.2.7"
+      ],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/no-ldap-injection",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-90",
+        "CWE-90",
+        "CWE-90",
+        "CWE-90",
+        "CWE-90"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/no-missing-authentication",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-287",
+        "CWE-287"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-114",
+        "CAPEC-115"
+      ]
+    },
+    {
+      "ruleId": "secure-coding/no-pii-in-logs",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-359",
+        "CWE-359"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/no-privilege-escalation",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-269",
+        "CWE-269"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/no-redos-vulnerable-regex",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-400",
+        "CWE-400"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/no-sensitive-data-exposure",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-532",
+        "CWE-532"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/no-unchecked-loop-condition",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-400",
+        "CWE-400",
+        "CWE-400",
+        "CWE-606",
+        "CWE-400",
+        "CWE-400",
+        "CWE-674"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/no-unlimited-resource-allocation",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-770",
+        "CWE-770",
+        "CWE-770",
+        "CWE-770",
+        "CWE-770",
+        "CWE-770",
+        "CWE-770",
+        "CWE-770",
+        "CWE-770"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/no-unsafe-deserialization",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-502",
+        "CWE-502",
+        "CWE-502",
+        "CWE-502",
+        "CWE-502",
+        "CWE-502"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [
+        "V5.5.1",
+        "V10.3.2"
+      ],
+      "derivedCapec": [
+        "CAPEC-242c"
+      ]
+    },
+    {
+      "ruleId": "secure-coding/no-unsafe-regex-construction",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-400",
+        "CWE-400"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/no-weak-password-recovery",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-640",
+        "CWE-640",
+        "CWE-640",
+        "CWE-640",
+        "CWE-640",
+        "CWE-640",
+        "CWE-640",
+        "CWE-640",
+        "CWE-640",
+        "CWE-640"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/no-xpath-injection",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-643",
+        "CWE-643",
+        "CWE-643",
+        "CWE-643",
+        "CWE-643"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/no-xxe-injection",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-611",
+        "CWE-611",
+        "CWE-611",
+        "CWE-611",
+        "CWE-611"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/require-backend-authorization",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-602",
+        "CWE-602"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "secure-coding/require-secure-defaults",
+      "plugin": "secure-coding",
+      "cwes": [
+        "CWE-1188",
+        "CWE-1188"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "vercel-ai-security/no-dynamic-system-prompt",
+      "plugin": "vercel-ai-security",
+      "cwes": [
+        "CWE-74",
+        "CWE-74"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "vercel-ai-security/no-hardcoded-api-keys",
+      "plugin": "vercel-ai-security",
+      "cwes": [
+        "CWE-798",
+        "CWE-798"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-560",
+        "CAPEC-CWE-798"
+      ]
+    },
+    {
+      "ruleId": "vercel-ai-security/no-sensitive-in-prompt",
+      "plugin": "vercel-ai-security",
+      "cwes": [
+        "CWE-200",
+        "CWE-200"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-310",
+        "CAPEC-118"
+      ]
+    },
+    {
+      "ruleId": "vercel-ai-security/no-system-prompt-leak",
+      "plugin": "vercel-ai-security",
+      "cwes": [
+        "CWE-200",
+        "CWE-200"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-310",
+        "CAPEC-118"
+      ]
+    },
+    {
+      "ruleId": "vercel-ai-security/no-training-data-exposure",
+      "plugin": "vercel-ai-security",
+      "cwes": [
+        "CWE-359",
+        "CWE-359"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "vercel-ai-security/no-unsafe-output-handling",
+      "plugin": "vercel-ai-security",
+      "cwes": [
+        "CWE-94",
+        "CWE-94",
+        "CWE-89",
+        "CWE-79"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [
+        "V5.3.3",
+        "V13.2.1"
+      ],
+      "derivedCapec": [
+        "CAPEC-242",
+        "CAPEC-66",
+        "CAPEC-63"
+      ]
+    },
+    {
+      "ruleId": "vercel-ai-security/require-abort-signal",
+      "plugin": "vercel-ai-security",
+      "cwes": [
+        "CWE-404",
+        "CWE-404"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "vercel-ai-security/require-audit-logging",
+      "plugin": "vercel-ai-security",
+      "cwes": [
+        "CWE-778",
+        "CWE-778"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "vercel-ai-security/require-embedding-validation",
+      "plugin": "vercel-ai-security",
+      "cwes": [
+        "CWE-20",
+        "CWE-20"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "vercel-ai-security/require-error-handling",
+      "plugin": "vercel-ai-security",
+      "cwes": [
+        "CWE-755",
+        "CWE-755"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "vercel-ai-security/require-max-steps",
+      "plugin": "vercel-ai-security",
+      "cwes": [
+        "CWE-834",
+        "CWE-834"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "vercel-ai-security/require-max-tokens",
+      "plugin": "vercel-ai-security",
+      "cwes": [
+        "CWE-770",
+        "CWE-770"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "vercel-ai-security/require-output-filtering",
+      "plugin": "vercel-ai-security",
+      "cwes": [
+        "CWE-200",
+        "CWE-200"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-310",
+        "CAPEC-118"
+      ]
+    },
+    {
+      "ruleId": "vercel-ai-security/require-output-validation",
+      "plugin": "vercel-ai-security",
+      "cwes": [
+        "CWE-707",
+        "CWE-707"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "vercel-ai-security/require-rag-content-validation",
+      "plugin": "vercel-ai-security",
+      "cwes": [
+        "CWE-74",
+        "CWE-74"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "vercel-ai-security/require-request-timeout",
+      "plugin": "vercel-ai-security",
+      "cwes": [
+        "CWE-400",
+        "CWE-400"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [
+        "V13.2.1"
+      ],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "vercel-ai-security/require-tool-confirmation",
+      "plugin": "vercel-ai-security",
+      "cwes": [
+        "CWE-862",
+        "CWE-862"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": [
+        "CAPEC-114"
+      ]
+    },
+    {
+      "ruleId": "vercel-ai-security/require-tool-schema",
+      "plugin": "vercel-ai-security",
+      "cwes": [
+        "CWE-20",
+        "CWE-20",
+        "CWE-20"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    },
+    {
+      "ruleId": "vercel-ai-security/require-validated-prompt",
+      "plugin": "vercel-ai-security",
+      "cwes": [
+        "CWE-74",
+        "CWE-74",
+        "CWE-74"
+      ],
+      "ssdf": [],
+      "asvs": [],
+      "capec": [],
+      "derivedSsdf": [
+        "PW.4",
+        "PW.6"
+      ],
+      "derivedAsvs": [],
+      "derivedCapec": []
+    }
+  ]
+}

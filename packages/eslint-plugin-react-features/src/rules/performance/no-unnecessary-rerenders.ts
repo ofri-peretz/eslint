@@ -119,6 +119,7 @@ export const noUnnecessaryRerenders = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/no-unnecessary-rerenders.md',
       description: 'Detects prevented re-renders in React',
     },
     hasSuggestions: true,

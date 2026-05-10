@@ -36,8 +36,11 @@ export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-browser-security/docs/rules/require-websocket-wss.md',
       description:
         'Require secure WebSocket connections (wss://) instead of unencrypted (ws://)',
+      cwe: 'CWE-319',
+      cvss: 7.5,
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -98,6 +101,7 @@ export const requireWebsocketWss = createRule<RuleOptions, MessageIds>({
     /**
      * Check if URL is localhost
      */
+    // oxlint-disable-next-line consistent-function-scoping
     function isLocalhostUrl(url: string): boolean {
       return (
         url.includes('://localhost') ||

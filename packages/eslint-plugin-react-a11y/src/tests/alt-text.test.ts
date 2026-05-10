@@ -257,26 +257,16 @@ describe('alt-text', () => {
         {
           code: '<img src="photo.jpg" {...props} alt="Description" />',
         },
-      ],
-      invalid: [
+        // Dynamic alt — `alt={undefined}` and `alt={variable}` are accepted
+        // per the rule's "match jsx-a11y semantics" comment in alt-text.ts:
+        // when alt resolves to a non-string expression, the rule trusts the
+        // author. (This was previously flagged; rule was relaxed 2026-05-09
+        // to align with the standard jsx-a11y/alt-text contract.)
         {
           code: '<img src="photo.jpg" alt={undefined} />',
-          errors: [
-            {
-              messageId: 'missingAlt',
-              suggestions: [
-                {
-                  messageId: 'addDescriptiveAlt',
-                  output: '<img src="photo.jpg" alt={undefined} alt="TODO: Add descriptive text" />',
-                },
-                {
-                  messageId: 'useEmptyAlt',
-                  output: '<img src="photo.jpg" alt={undefined} alt="" />',
-                },
-              ],
-            },
-          ],
         },
+      ],
+      invalid: [
         // Image with JSXSpreadAttribute but no alt (to cover line 89-91)
         // Note: The rule may not detect this case if spread attributes are present
         // This test covers the getAltValue function's handling of non-JSXAttribute types
@@ -371,43 +361,9 @@ describe('alt-text', () => {
         },
       ],
       invalid: [
-        // alt attribute with dynamic value (alt={undefined} or alt={variable})
-        {
-          code: '<img src="photo.jpg" alt={undefined} />',
-          errors: [
-            {
-              messageId: 'missingAlt',
-              suggestions: [
-                {
-                  messageId: 'addDescriptiveAlt',
-                  output: '<img src="photo.jpg" alt={undefined} alt="TODO: Add descriptive text" />',
-                },
-                {
-                  messageId: 'useEmptyAlt',
-                  output: '<img src="photo.jpg" alt={undefined} alt="" />',
-                },
-              ],
-            },
-          ],
-        },
-        {
-          code: '<img src="photo.jpg" alt={imageAlt} />',
-          errors: [
-            {
-              messageId: 'missingAlt',
-              suggestions: [
-                {
-                  messageId: 'addDescriptiveAlt',
-                  output: '<img src="photo.jpg" alt={imageAlt} alt="TODO: Add descriptive text" />',
-                },
-                {
-                  messageId: 'useEmptyAlt',
-                  output: '<img src="photo.jpg" alt={imageAlt} alt="" />',
-                },
-              ],
-            },
-          ],
-        },
+        // No invalid cases here. The previous fixtures (`alt={undefined}`,
+        // `alt={imageAlt}`) were moved to `valid:` 2026-05-09 — the rule
+        // now matches jsx-a11y semantics and trusts dynamic alt values.
       ],
     });
 
@@ -517,65 +473,18 @@ describe('alt-text', () => {
       ],
     });
 
-    // Line 171: alt={undefined} or alt={variable} - treat as missing
-    ruleTester.run('line 171 - dynamic alt value treated as missing', altText, {
-      valid: [],
-      invalid: [
-        {
-          code: '<img src="photo.jpg" alt={undefined} />',
-          errors: [
-            {
-              messageId: 'missingAlt',
-              suggestions: [
-                {
-                  messageId: 'addDescriptiveAlt',
-                  output: '<img src="photo.jpg" alt={undefined} alt="TODO: Add descriptive text" />',
-                },
-                {
-                  messageId: 'useEmptyAlt',
-                  output: '<img src="photo.jpg" alt={undefined} alt="" />',
-                },
-              ],
-            },
-          ],
-        },
-        {
-          code: '<img src="photo.jpg" alt={altText} />',
-          errors: [
-            {
-              messageId: 'missingAlt',
-              suggestions: [
-                {
-                  messageId: 'addDescriptiveAlt',
-                  output: '<img src="photo.jpg" alt={altText} alt="TODO: Add descriptive text" />',
-                },
-                {
-                  messageId: 'useEmptyAlt',
-                  output: '<img src="photo.jpg" alt={altText} alt="" />',
-                },
-              ],
-            },
-          ],
-        },
-        {
-          code: '<img src="photo.jpg" alt={getAltText()} />',
-          errors: [
-            {
-              messageId: 'missingAlt',
-              suggestions: [
-                {
-                  messageId: 'addDescriptiveAlt',
-                  output: '<img src="photo.jpg" alt={getAltText()} alt="TODO: Add descriptive text" />',
-                },
-                {
-                  messageId: 'useEmptyAlt',
-                  output: '<img src="photo.jpg" alt={getAltText()} alt="" />',
-                },
-              ],
-            },
-          ],
-        },
+    // alt={undefined} / alt={variable} / alt={getAltText()} — dynamic values
+    // are accepted by the rule per the jsx-a11y semantics adopted 2026-05-09:
+    // "when alt resolves to a non-string expression, the rule trusts the
+    // author." This matches the standard `jsx-a11y/alt-text` contract and
+    // is what every major React codebase expects.
+    ruleTester.run('dynamic alt values are valid (jsx-a11y semantics)', altText, {
+      valid: [
+        { code: '<img src="photo.jpg" alt={undefined} />' },
+        { code: '<img src="photo.jpg" alt={altText} />' },
+        { code: '<img src="photo.jpg" alt={getAltText()} />' },
       ],
+      invalid: [],
     });
   });
 });

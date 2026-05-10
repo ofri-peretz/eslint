@@ -32,6 +32,7 @@ export const reactNoInlineFunctions = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-features/docs/rules/react-no-inline-functions.md',
       description: 'Prevent inline functions in React renders with performance metrics',
     },
     fixable: 'code',
@@ -120,6 +121,7 @@ allowInEventHandlers = false, minArraySize = 10
     /**
      * Check if node is inside JSX
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const isInJSX = (node: TSESTree.Node): boolean => {
       let parent = node.parent;
       while (parent) {
@@ -153,6 +155,7 @@ allowInEventHandlers = false, minArraySize = 10
     /**
      * Calculate performance impact
      */
+    // oxlint-disable-next-line consistent-function-scoping
     const calculateImpact = (arrayInfo: ReturnType<typeof isInArrayMethod>): {
       severity: 'high' | 'medium' | 'low';
       estimatedSlowdown: string;

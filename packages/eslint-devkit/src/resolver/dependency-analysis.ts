@@ -952,6 +952,13 @@ export function detectCycleFromImport(
   // only copied when a cycle is actually found (rare).
   const pathStack: string[] = [sourceFile];
 
+  // Track whether the DFS was truncated by the depth limit. If it was, we
+  // CANNOT cache the target as `nonCyclic` — depth-limit truncation isn't
+  // proof of acyclicity, and a poisoned cache cascades into every later
+  // lint pass that touches a file in the same subtree (verified on next.js:
+  // wide scope reported 0 cycles vs. 17 in oxlint, narrow scope reported 5+).
+  let depthLimitHit = false;
+
   function dfs(
     file: string,
     depth: number,
@@ -964,7 +971,10 @@ export function detectCycleFromImport(
     }
 
     // Depth limit
-    if (depth >= maxDepth) return;
+    if (depth >= maxDepth) {
+      depthLimitHit = true;
+      return;
+    }
 
     // Already visited in this search tree
     if (visited.has(file)) return;
@@ -998,9 +1008,11 @@ export function detectCycleFromImport(
   const visited = new Set<string>();
   dfs(targetFile, 1, visited);
 
-  // If no cycle found and we explored the target's subtree,
-  // mark the target as non-cyclic for future O(1) rejection
-  if (allCycles.length === 0) {
+  // Only cache as non-cyclic when the DFS was complete AND found no cycles.
+  // A depth-truncated DFS cannot prove acyclicity (the cycle may exist past
+  // the depth limit), and caching it poisons every future lint pass that
+  // traverses the same subtree.
+  if (allCycles.length === 0 && !depthLimitHit) {
     cache.nonCyclicFiles.add(targetFile);
   }
 

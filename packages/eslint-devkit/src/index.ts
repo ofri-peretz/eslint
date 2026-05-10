@@ -21,6 +21,11 @@
  */
 
 // Rule creation utilities
+// Side-effect import: extends `@typescript-eslint/utils` `RuleMetaDataDocs`
+// with Interlace fields (cwe + cvss) so plugin authors can populate them
+// without per-rule `@ts-expect-error`. See ./types/meta-augmentation.ts.
+import './types/meta-augmentation';
+
 export * from './rule-creation';
 
 // AST utilities

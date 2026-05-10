@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { countRulesInPackage, getPackageMetadata, getCategory } from './sync-plugin-stats.mjs';
+import { countRulesInPackage, getPackageMetadata, getCategory } from './sync-plugin-stats.ts';
 import fs from 'fs';
 import path from 'path';
 

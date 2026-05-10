@@ -21,6 +21,7 @@ export const preferCodePoint = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/prefer-code-point.md',
       description:
         'Prefer codePointAt over charCodeAt for proper Unicode character handling',
     },
@@ -46,13 +47,14 @@ export const preferCodePoint = createRule<RuleOptions, MessageIds>({
   defaultOptions: [],
 
   create(context: TSESLint.RuleContext<MessageIds, RuleOptions>) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, consistent-function-scoping
     function isInAllowedContext(node: TSESTree.CallExpression): boolean {
       // For simplicity, we'll skip the allow option for now
       // This would require more complex logic to check comments/code context
       return false;
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function shouldIgnoreCall(node: TSESTree.CallExpression): boolean {
       // The unicorn rule flags ALL charCodeAt calls, but allows some contexts
 
@@ -75,6 +77,7 @@ export const preferCodePoint = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isCharCodeAtCall(node: TSESTree.CallExpression): boolean {
       // Check if this is a call to charCodeAt method
       if (node.callee.type === 'MemberExpression') {

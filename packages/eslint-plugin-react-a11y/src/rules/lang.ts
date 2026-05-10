@@ -23,6 +23,7 @@ export const lang = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-react-a11y/docs/rules/lang.md',
       description: 'Enforce that lang attribute has a valid value',
     },
     messages: {

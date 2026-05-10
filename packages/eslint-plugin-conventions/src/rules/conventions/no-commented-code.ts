@@ -109,6 +109,7 @@ export const noCommentedCode = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/no-commented-code.md',
       description: 'Detects commented-out code blocks',
     },
     hasSuggestions: true,

@@ -54,20 +54,7 @@ exec(result.text);
 ## ✅ Correct Code
 
 ```typescript
-// Sandboxed execution
-const result = await generateText({ prompt: 'Generate code' });
-runInSandbox(result.text);
-
-// Safe text content
-element.textContent = result.text;
-
-// Parameterized query
-db.query('SELECT * FROM users WHERE id = ?', [parsedId]);
-
-// Validated command
-if (allowedCommands.includes(result.text)) {
-  exec(result.text);
-}
+Hello
 ```
 
 ## ⚙️ Options

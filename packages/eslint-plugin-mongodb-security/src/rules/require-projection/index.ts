@@ -16,7 +16,7 @@ type MessageIds = 'requireProjection';
 export interface Options { allowInTests?: boolean; }
 type RuleOptions = [Options?];
 
-const QUERY_METHODS = ['find', 'findOne', 'findById'];
+const QUERY_METHODS = new Set(['find', 'findOne', 'findById']);
 
 /**
  * Check if any chained call in the parent chain includes .select()
@@ -48,7 +48,11 @@ export const requireProjection = createRule<RuleOptions, MessageIds>({
   name: 'require-projection',
   meta: {
     type: 'suggestion',
-    docs: { description: 'Require field projection on MongoDB queries' },
+    docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-mongodb-security/docs/rules/require-projection.md', description: 'Require field projection on MongoDB queries',
+      cwe: 'CWE-200',
+      cvss: 3.7,
+    },
     hasSuggestions: true,
     messages: {
       requireProjection: formatLLMMessage({
@@ -86,7 +90,7 @@ export const requireProjection = createRule<RuleOptions, MessageIds>({
           ? node.callee.property.name
           : null;
 
-        if (!methodName || !QUERY_METHODS.includes(methodName)) {
+        if (!methodName || !QUERY_METHODS.has(methodName)) {
           return;
         }
 

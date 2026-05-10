@@ -1,20 +1,22 @@
 # Interlace Bench Scorecard
 
-> Generated: 2026-05-04 · Methodology: [`benchmarks/ILB_NAMING.md`](benchmarks/ILB_NAMING.md)
+> Generated: 2026-05-09 · Methodology: [`benchmarks/README.md`](benchmarks/README.md)
 
 ## Top-line scorecard
 
-| Bench | Dimension | Score | Detail | SLO | As of |
-|---|---|---|---|---|---|
-| **ILB-Juliet** | Synthetic CWE accuracy | **F1 100% (rank 1/6)** | TP 13 · FP 0 · FN 0 · BAS 100% · 6 CWEs | F1 ≥ 80% | 2026-05-03 |
-| **ILB-Arena** | Head-to-head vs competitors | **F1 100.0% (rank 1/18)** | TP 40/40 · FP 0 · FN 0 · precision 100.0% · recall 100.0% | Rank ≤ 3 | 2026-05-03 |
-| **ILB-Wild** | Findings on popular OSS | **3.48 findings/kLoC** | 1,824,028 LoC across 22/22 repos | — | 2026-05-03 |
-| **ILB-Edge** | FP resilience on adversarial-real code | **3837 FP candidates** | 5 adversarial-real repos · 361,376 LoC · awaiting triage | FP rate ≤ 2% | 2026-05-03 |
-| **ILB-Perf** | Lint throughput | **5.4 ms/file (median)** | peak RSS 670MB across 22 repos · cold scenario | ≤ 15 ms/file | 2026-05-03 |
-| **ILB-Cov** | Rule activation rate | **19% rules fired** | 39/208 rules across 11 plugins on Wild corpus | ≥ 70% | 2026-05-03 |
-| **ILB-AI** | Vuln detection on LLM-generated code | **68% detection** | 13/19 LLM-generated functions flagged across 1 model | — | 2026-02-09 |
-| **ILB-LLM-Tokens** | Formatter token cost | **sec/compact -8.7% vs V1** | compact: sec -8.7% · qual +6.8% · perf +102.7% · 48 measurements · methodology v1.0 | sec/compact ≤ V1 | 2026-05-03 |
-| **ILB-LLM-Fix** | First-fix accuracy on LLM-consumed lint output | **97.22% macro pass** | v1=91.67% · v2-human=100% · v2-agent=100% · models opus · spent $5.1140 · methodology v1.3 | ≥ 80% macro pass | 2026-05-03 |
+| Bench | Dimension | Score | Trend | Detail | SLO | As of |
+|---|---|---|---|---|---|---|
+| **ILB-Juliet** | Synthetic CWE accuracy | **F1 100% (rank 1/6)** | `—` | TP 13 · FP 0 · FN 0 · BAS 100% · 6 CWEs | F1 ≥ 80% | 2026-05-03 |
+| **ILB-Arena** | Head-to-head vs competitors | **F1 100.0% (rank 1/18)** | `—` | TP 40/40 · FP 0 · FN 0 · precision 100.0% · recall 100.0% | Rank ≤ 3 | 2026-05-03 |
+| **ILB-Wild** | Findings on popular OSS | **3.48 findings/kLoC** | `—` | 1,824,028 LoC across 22/22 repos | — | 2026-05-03 |
+| **ILB-Edge** | FP resilience on adversarial-real code | **3837 FP candidates** | `—` | 5 adversarial-real repos · 361,376 LoC · awaiting triage | FP rate ≤ 2% | 2026-05-03 |
+| **ILB-Perf** | Lint throughput | **5.4 ms/file (median)** | `—` | peak RSS 670MB across 22 repos · cold scenario | ≤ 15 ms/file | 2026-05-03 |
+| **ILB-Cov** | Rule activation rate | **19% rules fired** | `—` | 39/208 rules across 11 plugins on Wild corpus | ≥ 70% | 2026-05-03 |
+| **ILB-AI** | Vuln detection on LLM-generated code | **68% detection** | `—` | 13/19 LLM-generated functions flagged across 1 model | — | 2026-02-09 |
+| **ILB-LLM-Tokens** | Formatter token cost | **sec/compact -8.7% vs V1** | `—` | compact: sec -8.7% · qual +6.8% · perf +102.7% · 48 measurements · methodology v1.0 | sec/compact ≤ V1 | 2026-05-03 |
+| **ILB-LLM-Fix** | First-fix accuracy on LLM-consumed lint output | **97.22% macro pass** | `—` | v1=91.67% · v2-human=100% · v2-agent=100% · models opus · spent $5.1140 · methodology v1.3 | ≥ 80% macro pass | 2026-05-03 |
+
+The **Trend** column shows the last ≤ 12 recorded scores per bench (one per recording day). `▁` = lowest in window, `█` = highest. Source: [`benchmark-results/history.ndjson`](history.ndjson).
 
 ## How to read this
 
@@ -86,6 +88,122 @@
 | crypto | 0 / 11 | 0% | 1 |
 
 
+## Per-rule observability (Gap G + Gap L)
+
+> Aggregated from `benchmark-results/<latest>/per-repo/*/per-rule.json`. The **Measured** column shows where this rule has fixture coverage: `A` = appears in ILB-Arena results, `J` = appears in ILB-Juliet results, `⚠️ none` = the rule fires on real OSS but has no synthetic-bench coverage (we have no precision/recall data for it).
+
+### Top 15 most-firing rules across the Wild corpus
+
+| Rule | Wild hits | Avg ms / hit | Repos | Severity (E/W) | Measured |
+|---|---:|---:|---:|---|---|
+| `secure-coding/detect-object-injection` | 3,484 | 25.4 | 19 | 0E / 28W | A |
+| `secure-coding/no-hardcoded-credentials` | 646 | 14.34 | 19 | 34E / 0W | AJ |
+| `secure-coding/no-insecure-comparison` | 623 | 12.47 | 19 | 0E / 21W | A |
+| `secure-coding/no-unlimited-resource-allocation` | 474 | 30.84 | 19 | 7E / 0W | A |
+| `secure-coding/no-unchecked-loop-condition` | 239 | 31.94 | 19 | 6E / 0W | ⚠️ none |
+| `secure-coding/no-unsafe-deserialization` | 148 | 14.26 | 19 | 3E / 0W | A |
+| `node-security/no-buffer-overread` | 136 | 26.97 | 18 | 4E / 0W | ⚠️ none |
+| `node-security/detect-non-literal-fs-filename` | 84 | 4.99 | 18 | 1E / 0W | AJ |
+| `secure-coding/no-graphql-injection` | 56 | 32.73 | 19 | 6E / 0W | ⚠️ none |
+| `node-security/lock-file` | 48 | 33.96 | 18 | 1E / 0W | ⚠️ none |
+| `secure-coding/detect-non-literal-regexp` | 47 | 6.39 | 19 | 0E / 1W | A |
+| `node-security/no-arbitrary-file-access` | 47 | 4.1 | 18 | 1E / 0W | A |
+| `secure-coding/no-redos-vulnerable-regex` | 46 | 6.69 | 19 | 1E / 0W | A |
+| `secure-coding/no-unsafe-regex-construction` | 38 | 3.84 | 19 | — | A |
+| `lambda-security/no-overly-permissive-iam-policy` | 27 | 4.42 | 4 | — | ⚠️ none |
+
+### Unmeasured rules — fire on Wild but no fixture coverage (≥ 50 hits)
+
+⚠️ 3 rule(s) firing on real OSS without synthetic-bench coverage. Add fixtures to bring these under measurement.
+
+| Rule | Wild hits | Repos | Avg ms / hit |
+|---|---:|---:|---:|
+| `secure-coding/no-unchecked-loop-condition` | 239 | 19 | 31.94 ms |
+| `node-security/no-buffer-overread` | 136 | 18 | 26.97 ms |
+| `secure-coding/no-graphql-injection` | 56 | 19 | 32.73 ms |
+
+
+## Trust signals — inter-rater agreement, over-fit, corpus breadth
+
+> Generated by `npm run ilb:coverage` (reads `benchmark-results/coverage.json`).
+> Closes the OWASP-Benchmark-style trust gap: three orthogonal validation signals that don't depend on labels alone.
+
+### Inter-rater agreement (OWASP-style)
+
+For each fixture, count how many tools' verdicts match the label.
+
+**ILB-Juliet** — 6 tools rated · 26 fixtures · **15 (57.7%)** with ≥ 3 tools agreeing · 9 (34.6%) with all agreeing.
+
+Cohen's κ — Interlace vs each competitor (Juliet) · *< 0.2 slight · 0.2–0.4 fair · 0.4–0.6 moderate · 0.6–0.8 substantial · 0.8–1.0 almost perfect*:
+
+| Competitor | κ | Interpretation |
+|---|---|---|
+| no-unsanitized | 0.154 | slight |
+| sonarjs | 0.077 | slight |
+| microsoft-sdl | 0.077 | slight |
+| eslint-plugin-security | 0 | slight |
+| security-node | 0 | slight |
+
+**ILB-Arena** — 18 tools rated · 77 fixtures · **67 (87%)** with ≥ 3 tools agreeing · 0 (0%) with all agreeing.
+
+Cohen's κ — Interlace vs each competitor (Arena):
+
+| Competitor | κ | Interpretation |
+|---|---|---|
+| sonarjs | 0.21 | fair |
+| microsoft-sdl | 0.07 | slight |
+| security-node | 0.065 | slight |
+| no-secrets | 0.048 | slight |
+| no-unsanitized | 0.022 | slight |
+| eslint-plugin-security | 0 | slight |
+| react | 0 | slight |
+| jsx-a11y | 0 | slight |
+| import | 0 | slight |
+| promise | 0 | slight |
+| jest | 0 | slight |
+| vue | 0 | slight |
+| angular | 0 | slight |
+| regexp | -0.028 | worse than chance |
+| eslint-plugin-n | -0.03 | worse than chance |
+| jsdoc | -0.052 | worse than chance |
+| unicorn | -0.072 | worse than chance |
+
+### Over-fit detector — fixtures only Interlace catches
+
+Vulnerable fixtures only Interlace caught are either a real coverage advantage *or* a fixture written to match our rule. Triage manually.
+
+**Juliet:**
+
+- CWE-022 / path-join-user.js
+- CWE-022 / readfile-concat.js
+- CWE-089 / dynamic-column.js
+- CWE-089 / string-concat.js
+- CWE-089 / template-literal.js
+- CWE-918 / axios-user-url.js
+- CWE-918 / fetch-user-url.js
+
+**Arena:**
+
+_(none)_
+
+### Coverage breadth — corpus depth per CWE
+
+A CWE with fewer than 2 vulnerable + 2 safe fixtures is too thin for its F1 to be meaningful (CI too wide).
+
+| CWE | Vulnerable | Safe | Status |
+|---|---|---|---|
+| CWE-022 | 2 | 2 | ✓ |
+| CWE-078 | 2 | 2 | ✓ |
+| CWE-079 | 2 | 2 | ✓ |
+| CWE-089 | 3 | 3 | ✓ |
+| CWE-798 | 2 | 2 | ✓ |
+| CWE-918 | 2 | 2 | ✓ |
+
+✅ Every CWE meets the ≥ 2 fixture threshold.
+
+**How to read:** high κ vs sonarjs / microsoft-sdl = our verdicts agree with credible commercial tools · high "≥ 3 tools agree" % = clear ground truth · empty over-fit list = TPs corroborated by competitors · no coverage gaps = every CWE has enough fixtures.
+
+
 ## How to refresh
 
 ```bash
@@ -95,7 +213,8 @@ npm run ilb:juliet            # ILB-Juliet (synthetic CWE)
 npm run ilb:ai                # ILB-AI
 npm run ilb:llm:tokens        # ILB-LLM-Tokens (no API calls)
 npm run ilb:llm:fix           # ILB-LLM-Fix (calls Claude CLI; opt-in)
-npm run ilb:scorecard         # regenerate this page
+npm run ilb:coverage          # regenerate inter-rater κ + over-fit + breadth (writes coverage.json)
+npm run ilb:scorecard         # regenerate this page (reads coverage.json if present)
 npm run ilb:regression        # gate against benchmark-results/baseline.json
 ```
 

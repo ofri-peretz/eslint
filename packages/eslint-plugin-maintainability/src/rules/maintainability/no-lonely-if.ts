@@ -26,6 +26,7 @@ export const noLonelyIf = createRule<RuleOptions, MessageIds>({
   meta: {
     type: 'suggestion',
     docs: {
+      url: 'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-maintainability/docs/rules/no-lonely-if.md',
       description:
         'Prevent lone if statements inside else blocks - use else if instead',
     },
@@ -77,6 +78,7 @@ export const noLonelyIf = createRule<RuleOptions, MessageIds>({
       return false;
     }
 
+    // oxlint-disable-next-line consistent-function-scoping
     function isLonelyIf(node: TSESTree.IfStatement): boolean {
       // Check if this if statement is inside an else block (not a proper else if)
       const parent = node.parent;
