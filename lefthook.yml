@@ -1,0 +1,21 @@
+# Lefthook — git hooks manager
+# Replaces legacy .husky/ configuration.
+# Docs: https://github.com/evilmartians/lefthook
+
+pre-commit:
+  commands:
+    oxlint:
+      glob: "packages/**/*.{ts,tsx,js,mjs}"
+      run: npm run --silent oxlint
+    tests:
+      run: |
+        if git rev-parse --verify --quiet origin/main >/dev/null; then
+          npx --no turbo run test --filter="...[origin/main]" --output-logs=errors-only
+        else
+          npx --no turbo run test --output-logs=errors-only
+        fi
+
+commit-msg:
+  commands:
+    commitlint:
+      run: npx --no -- commitlint --edit {1}
