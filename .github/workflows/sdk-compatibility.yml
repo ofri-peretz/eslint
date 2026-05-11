@@ -19,8 +19,18 @@ name: SDK Compatibility
 #   gh workflow run sdk-compatibility.yml -f create_issue=false
 #
 # ADD A NEW SDK
-#   1. Append a row to the matrix `include:` block below.
-#   2. Done. No new workflow file needed.
+#   1. Append a row to the JSON roster in the `setup` job's `Compute filtered
+#      matrix` step below.
+#   2. Add the same `key` to the `sdk` input's `options:` choice list above.
+#   3. Done. No new workflow file needed.
+#
+# WHY THE SETUP JOB
+#   The `matrix` context isn't available in a job-level `if:` (GH Actions
+#   evaluates job-level `if:` before expanding the matrix), so we can't filter
+#   rows by `inputs.sdk` inline. Instead, `setup` filters the static roster
+#   and emits the result as JSON; `compatibility` consumes it via
+#   `fromJSON(needs.setup.outputs.matrix)`. Result: running with `-f sdk=express`
+#   produces exactly one matrix cell — same as the original design intent.
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
