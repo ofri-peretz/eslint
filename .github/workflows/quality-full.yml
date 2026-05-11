@@ -38,8 +38,6 @@ permissions:
 env:
   TURBO_FILTER_ARGS: ${{ github.event_name == 'pull_request' && '--filter=...[origin/main]' || '' }}
   TURBO_TELEMETRY_DISABLED: "1"
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
 jobs:
   gate:
