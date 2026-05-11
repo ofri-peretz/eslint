@@ -164,9 +164,29 @@ async function main() {
     mkdirSync(outputDir, { recursive: true });
   }
 
-  writeFileSync(OUTPUT_FILE, JSON.stringify(output, null, 2));
+  // Compare with existing file to prevent unnecessary git diffs
+  let writeNeeded = true;
+  if (existsSync(OUTPUT_FILE)) {
+    try {
+      const existing = JSON.parse(readFileSync(OUTPUT_FILE, 'utf-8'));
+      const existingData = { ...existing };
+      const newData = { ...output };
+      delete existingData.generatedAt;
+      delete newData.generatedAt;
+      
+      if (JSON.stringify(existingData) === JSON.stringify(newData)) {
+        writeNeeded = false;
+        console.log(`\n✅ plugin-stats.json data unchanged, skipping write to prevent git churn.`);
+      }
+    } catch (e) {
+      // Proceed with write if parsing fails
+    }
+  }
 
-  console.log(`\n✅ Generated plugin-stats.json`);
+  if (writeNeeded) {
+    writeFileSync(OUTPUT_FILE, JSON.stringify(output, null, 2));
+    console.log(`\n✅ Generated plugin-stats.json`);
+  }
   console.log(`   Published: ${totalRules} rules across ${output.totalPlugins} plugins`);
   console.log(`   Total (incl. unpublished): ${stats.reduce((acc, p) => acc + p.rules, 0)} rules across ${stats.length} plugins`);
 }

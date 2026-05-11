@@ -111,8 +111,23 @@ function loadCache() {
  * Save cache to file
  */
 function saveCache(cache) {
-  cache._lastUpdated = new Date().toISOString();
-  writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 2));
+  let writeNeeded = true;
+  if (existsSync(CACHE_FILE)) {
+    try {
+      const existing = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
+      if (JSON.stringify(existing.tweets) === JSON.stringify(cache.tweets)) {
+        writeNeeded = false;
+        console.log(`\n✅ cached-tweets.json data unchanged, skipping write to prevent git churn.`);
+      }
+    } catch (e) {
+      // Proceed with write if parsing fails
+    }
+  }
+
+  if (writeNeeded) {
+    cache._lastUpdated = new Date().toISOString();
+    writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 2));
+  }
 }
 
 /**
