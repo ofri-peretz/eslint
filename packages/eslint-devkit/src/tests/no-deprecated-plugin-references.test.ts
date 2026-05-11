@@ -17,6 +17,7 @@
  *   - .agent/plugin-classification-graph.md — canonical deprecation registry.
  *   - distribution/EXPOSURE_AUDIT_LOG.md
  *   - distribution/EXPOSURE_IMPACT_REVIEW.md — dated download audits.
+ *   - benchmarks/FP_FN_REMEDIATION_TRACKER.md — dated remediation history.
  */
 import { describe, it, expect } from 'vitest';
 import { execSync } from 'node:child_process';
@@ -43,6 +44,7 @@ const DEPRECATED_PLUGINS: DeprecatedPlugin[] = [
       '.agent/plugin-classification-graph.md',
       'distribution/EXPOSURE_AUDIT_LOG.md',
       'distribution/EXPOSURE_IMPACT_REVIEW.md',
+      'benchmarks/FP_FN_REMEDIATION_TRACKER.md',
     ],
   },
 ];

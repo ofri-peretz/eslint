@@ -214,7 +214,7 @@ async function main() {
   const contentFiles = getAllSourceFiles(CONTENT_ROOT, ['.mdx', '.md']);
   const allFiles = [...sourceFiles, ...contentFiles];
   
-  const allTweetIds = new Set();
+  const allTweetIds = new Set<string>();
   
   for (const file of allFiles) {
     const content = readFileSync(file, 'utf-8');
@@ -236,7 +236,7 @@ async function main() {
   let cached = 0;
   let failed = 0;
   
-  for (const id of allTweetIds) {
+  for (const id of Array.from(allTweetIds)) {
     // Check if we can use cached version
     if (!forceRefresh && cache.tweets[id] && isCacheFresh(cache.tweets[id])) {
       const tweet = cache.tweets[id];

@@ -5,9 +5,13 @@
     "rootDir": "..",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "target": "ES2022",
-    "lib": ["ES2022"],
-    "types": ["node"],
+    "target": "ES2023",
+    "lib": [
+      "ES2023"
+    ],
+    "types": [
+      "node"
+    ],
     "skipLibCheck": true,
     "noEmit": true,
     "allowJs": true,

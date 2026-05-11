@@ -6,8 +6,12 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "target": "ES2022",
-    "lib": ["ES2022"],
-    "types": ["node"],
+    "lib": [
+      "ESNext"
+    ],
+    "types": [
+      "node"
+    ],
     "skipLibCheck": true,
     "noEmit": true,
     "allowJs": true,
@@ -31,7 +35,9 @@
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["**/*.ts"],
+  "include": [
+    "**/*.ts"
+  ],
   "exclude": [
     "../node_modules",
     "../tmp",
