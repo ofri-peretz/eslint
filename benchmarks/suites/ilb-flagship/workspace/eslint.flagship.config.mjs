@@ -10,8 +10,10 @@ import vercelAiSecurity from 'eslint-plugin-vercel-ai-security';
 
 export default [
   {
+    ignores: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/coverage/**', '**/*.min.js', '**/*.test.ts', '**/*.spec.ts', '**/test-results/**', '**/.turbo/**'],
+  },
+  {
     files: ['**/*.{js,jsx,mjs,cjs,ts,tsx}'],
-    ignores: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/coverage/**', '**/*.min.js', '**/*.test.ts', '**/*.spec.ts'],
     plugins: {
       'interlace-import-next': importNext,
       'interlace-pg': pg,
