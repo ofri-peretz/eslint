@@ -64,16 +64,20 @@ export const requireNetworkTimeout = createRule<RuleOptions, MessageIds>({
 
         if (isFetch || isAxios) {
           const optionsArg = node.arguments[1];
-          const hasTimeout =
+          // Either an explicit `timeout` option, or an AbortSignal — both
+          // bound the request. `{ signal: controller.signal }` is the
+          // standard timeout-via-AbortController pattern; flagging it as
+          // "missing timeout" is a false positive.
+          const hasBound =
             optionsArg?.type === AST_NODE_TYPES.ObjectExpression &&
             optionsArg.properties.some(
               (p) =>
                 p.type === AST_NODE_TYPES.Property &&
                 p.key.type === AST_NODE_TYPES.Identifier &&
-                p.key.name === 'timeout',
+                (p.key.name === 'timeout' || p.key.name === 'signal'),
             );
 
-          if (!hasTimeout) {
+          if (!hasBound) {
             context.report({ node, messageId: 'violationDetected' });
           }
         }

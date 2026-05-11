@@ -41,6 +41,13 @@ function hasErrorMessage(node: TSESTree.ThrowStatement): boolean {
     return false;
   }
 
+  // `throw error;` — re-throwing a caught/named identifier. The original
+  // error already carries its own message + stack; demanding context on the
+  // re-throw is an FP. Same for `throw err`, `throw cause`, etc.
+  if (node.argument.type === 'Identifier') {
+    return true;
+  }
+
   // Check if it's a new Error() with message (includes TypeError, ReferenceError, etc.)
   if (
     node.argument.type === 'NewExpression' &&
@@ -48,13 +55,24 @@ function hasErrorMessage(node: TSESTree.ThrowStatement): boolean {
     (node.argument.callee.name === 'Error' ||
       node.argument.callee.name.endsWith('Error'))
   ) {
-    // Check if first argument is a string (message)
+    // Check if first argument is a string (message) OR ANY expression — a
+    // custom error class like `new UserNotFoundError(userId)` builds its
+    // own message internally; the constructor argument IS the context.
     if (node.argument.arguments.length > 0) {
       const firstArg = node.argument.arguments[0];
       if (firstArg.type === 'Literal' && typeof firstArg.value === 'string') {
         return firstArg.value.length > 0;
       }
       if (firstArg.type === 'TemplateLiteral') {
+        return true;
+      }
+      // Non-string argument to a custom *Error class — accept as context.
+      // The rule's purpose is "throws should carry information"; passing an
+      // identifier/object to the error constructor carries information.
+      if (
+        node.argument.callee.name !== 'Error' &&
+        node.argument.callee.name.endsWith('Error')
+      ) {
         return true;
       }
     }
