@@ -166,7 +166,7 @@ function ItemList({ items }) {
 | ------------------- | ---------- | ------------------------------------ |
 | Database ID         | ✅ Best    | `key={user.id}`                      |
 | Unique field        | ✅ Good    | `key={item.slug}`                    |
-| Compound unique     | ✅ Good    | `key={\`${cat}-${name}\`}`           |
+| Compound unique     | ✅ Good    | `key={cat + '-' + name}`             |
 | UUID/nanoid         | ⚠️ OK      | `key={generateId()}`                 |
 | Array index         | ❌ Avoid   | `key={index}`                        |
 | Random number       | ❌ Never   | `key={Math.random()}`                |
