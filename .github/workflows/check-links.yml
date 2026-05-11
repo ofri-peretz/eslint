@@ -73,7 +73,7 @@ jobs:
         run: npx tsx scripts/check-links.ts
 
       - name: Upload link report
-        if: always()
+        if: always() && hashFiles('apps/docs/link-report.json') != ''
         uses: actions/upload-artifact@v7
         with:
           name: link-report
@@ -81,7 +81,7 @@ jobs:
           retention-days: 30
 
       - name: Comment on PR with results
-        if: github.event_name == 'pull_request' && steps.linkcheck.outcome == 'failure'
+        if: github.event_name == 'pull_request' && steps.linkcheck.outcome == 'failure' && hashFiles('apps/docs/link-report.json') != ''
         uses: actions/github-script@v9
         with:
           script: |

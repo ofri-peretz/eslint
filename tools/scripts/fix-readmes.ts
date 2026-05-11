@@ -6,9 +6,9 @@ const docsDir = path.join(process.cwd(), 'apps/docs/content/docs');
 
 // Get all directories in packages/
 const packages = fs.readdirSync(packagesDir, { withFileTypes: true })
-    .filter(dirent => dirent.isDirectory())
-    .map(dirent => dirent.name)
-    .filter(name => name.startsWith('eslint-plugin-'));
+    .filter((dirent: fs.Dirent) => dirent.isDirectory())
+    .map((dirent: fs.Dirent) => dirent.name)
+    .filter((name: string) => name.startsWith('eslint-plugin-'));
 
 // Map of short specific descriptions for the Plugin itself
 const DESCRIPTIONS: Record<string, string> = {
@@ -85,7 +85,7 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [\`eslint-plugin-import-next\`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |`;
 
 // Categories for specific plugins
-const CATEGORIES = {
+const CATEGORIES: Record<string, Record<string, string[]>> = {
    // 'eslint-plugin-secure-coding': { ... } DISABLED to enforce single table
 };
 
@@ -126,7 +126,7 @@ function getMdxDescription(docsSubPath: string, ruleName: string): string {
     return '';
 }
 
-packages.forEach(pkg => {
+packages.forEach((pkg: string) => {
     const readmePath = path.join(packagesDir, pkg, 'README.md');
     if (!fs.existsSync(readmePath)) return;
 
@@ -150,22 +150,35 @@ packages.forEach(pkg => {
 
     // --- 1. HARVEST METADATA from existing README ---
     // We scrape existing tables to preserve manual CWE/OWASP/CVSS tags
-    const ruleMetadata = {};
+    type RuleMeta = {
+        cwe: string;
+        owasp: string;
+        cvss: string;
+        flags: {
+            aiAnalyzed: boolean;
+            recommended: boolean;
+            warn: boolean;
+            fixable: boolean;
+            suggestions: boolean;
+            deprecated: boolean;
+        };
+    };
+    const ruleMetadata: Record<string, RuleMeta> = {};
     const ruleRowRegex = /^\|\s*\[?([a-zA-Z0-9\-\/]+)\]?.*\|.*$/;
 
-    lines.forEach(line => {
+    lines.forEach((line: string) => {
         const match = line.match(ruleRowRegex);
         if (match && !line.includes('---')) {
              const rawRuleName = match[1].replace(/\[|\]/g, ''); // Clean logic
              // Extract Cells
-             const cells = line.split('|').map(c => c.trim());
+             const cells = line.split('|').map((c: string) => c.trim());
              if (cells.length < 3) return;
              
              // Extract Metadata
-             let cwe = cells.find(c => c.includes('CWE-')) || '';
-             let owasp = cells.find(c => c.includes(':202')) || '';
+             let cwe = cells.find((c: string) => c.includes('CWE-')) || '';
+             let owasp = cells.find((c: string) => c.includes(':202')) || '';
              if (owasp) owasp = owasp.replace('2021', '2025');
-             let cvss = cells.find(c => /^[0-9]\.[0-9]$/.test(c)) || '';
+             let cvss = cells.find((c: string) => /^[0-9]\.[0-9]$/.test(c)) || '';
              
              // Flags
              const flags = {
@@ -183,17 +196,17 @@ packages.forEach(pkg => {
 
     // --- 2. GET REAL RULES FROM SOURCE ---
     const rulesDir = path.join(packagesDir, pkg, 'src/rules');
-    let realRules = [];
+    let realRules: string[] = [];
     if (fs.existsSync(rulesDir)) {
         realRules = fs.readdirSync(rulesDir, { withFileTypes: true })
-            .filter(d => {
+            .filter((d: fs.Dirent) => {
                 if (d.name.startsWith('__')) return false;
                 if (d.name.startsWith('index.')) return false;
                 if (d.isDirectory()) return true;
                 if (d.isFile() && (d.name.endsWith('.ts') || d.name.endsWith('.js'))) return true;
                 return false;
             })
-            .map(d => d.name.replace(/\.(ts|js)$/, ''));
+            .map((d: fs.Dirent) => d.name.replace(/\.(ts|js)$/, ''));
     }
 
     // --- 3. CUSTOM SECTIONS (Preserve) ---
@@ -220,7 +233,7 @@ packages.forEach(pkg => {
     let currentCustomSection: { header: string; content: string[] } | null = null;
     let capture = false;
 
-    lines.forEach(line => {
+    lines.forEach((line: string) => {
         const trimmed = line.trim();
         if (line.startsWith('## ') || line.startsWith('**Q:')) {
             const isCore = STANDARD_HEADERS.some(h => trimmed.startsWith(h));
@@ -299,7 +312,7 @@ packages.forEach(pkg => {
 
     // Custom Sections (e.g. Configuration Presets)
     customSections.forEach(section => {
-        const filteredContent = section.content.filter(line => !line.includes('[Rules Reference]') && !line.includes('./docs/RULES.md'));
+        const filteredContent = section.content.filter((line: string) => !line.includes('[Rules Reference]') && !line.includes('./docs/RULES.md'));
         if (filteredContent.length === 0 && section.header.includes('Documentation')) return;
         output.push(section.header);
         output.push(filteredContent.join('\n').trim());
@@ -323,18 +336,18 @@ packages.forEach(pkg => {
         output.push('');
 
         const generateRow = (ruleName: string) => {
-            const meta = ruleMetadata[ruleName] || {};
+            const meta = ruleMetadata[ruleName] as RuleMeta | undefined;
             const desc = getMdxDescription(docsSubPath, ruleName) || `Enforce ${ruleName.replace(/-/g, ' ')}`;
             const link = `[${ruleName}](${docUrl}/rules/${ruleName})`;
             
             // Fallbacks
-            const cwe = meta.cwe || '';
-            const owasp = meta.owasp || '';
-            const cvss = meta.cvss || CVSS_MAP[ruleName] || '';
+            const cwe = meta?.cwe || '';
+            const owasp = meta?.owasp || '';
+            const cvss = meta?.cvss || CVSS_MAP[ruleName] || '';
             
-            const has = (key: string) => (meta.flags && meta.flags[key]) ? ({
+            const has = (key: keyof RuleMeta['flags']) => (meta?.flags && meta.flags[key]) ? ({
                 aiAnalyzed: '🧠', recommended: '💼', warn: '⚠️', fixable: '🔧', suggestions: '💡', deprecated: '🚫'
-            })[key as keyof typeof meta.flags] : '';
+            })[key] : '';
 
             return `| ${link} | ${cwe} | ${owasp} | ${cvss} | ${desc} | ${has('aiAnalyzed')} | ${has('recommended')} | ${has('warn')} | ${has('fixable')} | ${has('suggestions')} | ${has('deprecated')} |`;
         };
@@ -345,33 +358,33 @@ packages.forEach(pkg => {
             // Categorized Tables
             Object.entries(hasCategories).forEach(([catName, supportedRules]) => {
                 // Intersect with realRules to ensure we only show existing rules
-                const rulesInCat = supportedRules.filter(r => realRules.includes(r));
+                const rulesInCat = supportedRules.filter((r: string) => realRules.includes(r));
                 if (rulesInCat.length > 0) {
                     output.push(`### ${catName}`);
                     output.push('');
                     output.push('| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |');
                     output.push('| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |');
-                    rulesInCat.forEach(r => output.push(generateRow(r)));
+                    rulesInCat.forEach((r: string) => output.push(generateRow(r)));
                     output.push('');
                 }
             });
             
             // Catch-all for uncategorized
             const allCategorized = Object.values(hasCategories).flat();
-            const leftover = realRules.filter(r => !allCategorized.includes(r));
+            const leftover = realRules.filter((r: string) => !allCategorized.includes(r));
             if (leftover.length > 0) {
                 output.push('### Other Rules');
                 output.push('');
                 output.push('| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |');
                 output.push('| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |');
-                leftover.forEach(r => output.push(generateRow(r)));
+                leftover.forEach((r: string) => output.push(generateRow(r)));
                 output.push('');
             }
         } else {
             // Single Table
             output.push('| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |');
             output.push('| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |');
-            realRules.sort().forEach(r => output.push(generateRow(r)));
+            realRules.sort().forEach((r: string) => output.push(generateRow(r)));
             output.push('');
         }
     }

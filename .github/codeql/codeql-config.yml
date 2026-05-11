@@ -1,0 +1,39 @@
+name: "CodeQL Config — eslint-plugin monorepo"
+
+# CodeQL scans application code only — the security-rule corpora and AI-
+# generated samples live under benchmarks/ and are INTENTIONALLY vulnerable.
+# They are the input fixtures for our ESLint security plugins (we ship rules
+# that detect exactly these patterns), so flagging them here would be both
+# expected and unactionable. Scoping the scan to first-party app code is the
+# standard CodeQL configuration for repositories that maintain their own
+# vulnerable-by-design test corpus.
+
+paths:
+  - apps
+  - packages
+  - scripts
+  - tools
+
+paths-ignore:
+  # Vulnerable-by-design CWE corpus consumed by our security plugins' tests.
+  - benchmarks/corpus/**
+  # AI-generated micro-samples consumed by ILB-AI benchmarks. Many are
+  # auth/crypto anti-patterns by construction; CodeQL findings here are
+  # the EXPECTED output, not regressions.
+  - benchmarks/suites/ilb-ai/generated-haiku/**
+  - benchmarks/suites/ilb-ai/generated/**
+  # Benchmark suite fixtures (committed inputs to bench runners, not
+  # shipped code).
+  - benchmarks/suites/*/fixtures/**
+  # Tool & benchmark output directories that may contain user-supplied
+  # snippets via workflow_dispatch.
+  - benchmarks/results/**
+  - benchmarks/.bench-repos/**
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/.next/**"
+  - "**/.turbo/**"
+
+queries:
+  - uses: security-extended
+  - uses: security-and-quality

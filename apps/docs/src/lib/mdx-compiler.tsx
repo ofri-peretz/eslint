@@ -53,15 +53,18 @@ export interface CompileOptions {
 function remarkRelativeLinks(options: CompileOptions) {
   const { baseUrl, pluginName } = options;
   
-  // Map of external repos to rewrite to our monorepo
+  // Map of external repos to rewrite to our monorepo. Anchored with `^` so a
+  // crafted URL like `https://evil.com/?next=https://github.com/import-js/...`
+  // can never match — CodeQL flagged the unanchored form as
+  // "Missing regular expression anchor".
   const rewritePatterns: [RegExp, string][] = [
     // eslint-plugin-import → our import-next package
     [
-      /https?:\/\/github\.com\/import-js\/eslint-plugin-import\/(blob|tree)\/main\/(.+)/,
+      /^https?:\/\/github\.com\/import-js\/eslint-plugin-import\/(blob|tree)\/main\/(.+)$/,
       'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-import-next/$2'
     ],
     [
-      /https?:\/\/github\.com\/import-js\/eslint-plugin-import\/?$/,
+      /^https?:\/\/github\.com\/import-js\/eslint-plugin-import\/?$/,
       'https://github.com/ofri-peretz/eslint/tree/main/packages/eslint-plugin-import-next'
     ],
   ];

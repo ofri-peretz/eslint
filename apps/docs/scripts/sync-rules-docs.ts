@@ -71,35 +71,60 @@ export function loadTypeAwarenessMap(tsvPath: string): Map<string, TypeStatus> |
   return map;
 }
 
+// Badge / icon glyphs that mark non-prose lines in source rule docs (legend
+// rows, callout headers, etc.). Kept as a non-class alternation so duplicate
+// glyphs and combining variation selectors don't form a malformed character
+// class (CodeQL: "Duplicate character in character class" on the prior
+// `[💼💡🔧🚨⚠️✅📊🔍🔧📝⏱️🔗]` form, where 🔧 appeared twice and U+FE0F
+// repeated across ⚠️ / ⏱️).
+const DOC_ICON_ALT = '💼|💡|🔧|🚨|⚠️|✅|📊|🔍|📝|⏱️|🔗';
+const ICON_HEADER_LINE_RE = new RegExp(`^(?:${DOC_ICON_ALT}).*$\\n?`, 'gmu');
+const ICON_INLINE_RE = new RegExp(`(?:${DOC_ICON_ALT})`, 'gu');
+
+// Strip HTML comments until the input is stable. A single pass leaves
+// adversarial nesting (e.g. `<!-- a <!-- b --> c -->`) partially intact —
+// CodeQL flags this as "Incomplete multi-character sanitization", and rule
+// authors do occasionally nest comments in source `.md` files.
+function stripHtmlComments(input: string): string {
+  let prev: string;
+  let out = input;
+  do {
+    prev = out;
+    out = out.replace(/<!--[\s\S]*?-->/g, '');
+  } while (out !== prev);
+  return out;
+}
+
 export function convertMdToMdx(mdContent, fileName, opts: ConvertOptions = {}) {
   // Extract Title (usually first # header)
   const titleMatch = mdContent.match(/^#\s+(.+)$/m);
   const title = titleMatch ? titleMatch[1].trim() : fileName.replace('.md', '');
-  
+
   // Extract Description (first paragraph after title)
   let description = "";
   // Strip comments, icons, and keyword markers before extracting description
-  const contentFiltered = mdContent
-    .replace(/<!--[\s\S]*?-->/g, '') // Strip comments
-    .replace(/^([💼💡🔧🚨⚠️✅📊🔍🔧📝⏱️🔗].*$\n?)/gmu, '') // Strip icon header lines and formatting
+  // (sanitization detected as incomplete by CodeQL when single-pass — see
+  // stripHtmlComments).
+  const contentFiltered = stripHtmlComments(mdContent)
+    .replace(ICON_HEADER_LINE_RE, '') // Strip icon header lines and formatting
     .replace(/^>\s+\*\*Keywords:\*\*.*$\n?/gm, '') // Strip keyword lines
     .trim();
-    
+
   // Extract first meaningful paragraph after title
   // We look for the first block of text that isn't a header or special marker
   const descRows = contentFiltered.split('\n').map(l => l.trim()).filter(l => l.length > 0);
   // Find the first row that doesn't start with # and isn't a table/list
-  const firstParagraph = descRows.find(row => 
-    !row.startsWith('#') && 
-    !row.startsWith('|') && 
-    !row.startsWith('-') && 
-    !row.startsWith('>') && 
+  const firstParagraph = descRows.find(row =>
+    !row.startsWith('#') &&
+    !row.startsWith('|') &&
+    !row.startsWith('-') &&
+    !row.startsWith('>') &&
     row.length > 20
   );
 
   if (firstParagraph) {
     description = firstParagraph
-      .replace(/[💼💡🔧🚨⚠️✅📊🔍🔧📝⏱️🔗]/g, '') 
+      .replace(ICON_INLINE_RE, '')
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, 160);
@@ -134,8 +159,10 @@ type_aware_status: ${typeStatusForFm}
   // Remove the main title (handled by frontmatter)
   finalContent = finalContent.replace(/^#\s+.+$/m, '');
 
-  // Strip all HTML comments (Markdown markers) entirely for MDX
-  finalContent = finalContent.replace(/<!--[\s\S]*?-->/g, '');
+  // Strip all HTML comments (Markdown markers) entirely for MDX. Loop until
+  // stable — single-pass replace leaves nested `<!-- a <!-- b --> c -->`
+  // partially intact (CodeQL: "Incomplete multi-character sanitization").
+  finalContent = stripHtmlComments(finalContent);
 
   // Inject WhenNotToUse before Known False Negatives
   if (finalContent.includes('## Known False Negatives')) {
@@ -155,15 +182,18 @@ type_aware_status: ${typeStatusForFm}
   // This prevents Mermaid parsing errors in MDX/Turbopack
   finalContent = finalContent.replace(/```mermaid\n([\s\S]*?)```/g, (match, chart) => {
     const lines = chart.split('\n');
+    // Each character class lists the closer it must reject *and* a quote so we
+    // don't double-quote already-quoted labels. The quote appeared twice in the
+    // earlier form (CodeQL: "Duplicate character in character class").
     const fixedLines = lines.map(line => {
       // Handle nodes: A[label], A{label}, A(label), A((label)), A[[label]], A>label]
       // Replace with A["label"], A{"label"}, etc.
       return line.replace(/([A-Z0-9_-]+)\[([^\]"]+)\]/g, '$1["$2"]')
-                 .replace(/([A-Z0-9_-]+)\{([^\}""]+)\}/g, '$1{"$2"}')
-                 .replace(/([A-Z0-9_-]+)\((?!\()([^)""]+)\)/g, '$1("$2")')
-                 .replace(/([A-Z0-9_-]+)\(\(([^)""]+)\)\)/g, '$1(("$2"))')
-                 .replace(/([A-Z0-9_-]+)\[\[([^\]""]+)\]\]/g, '$1[["$2"]]')
-                 .replace(/([A-Z0-9_-]+)>([^\]""]+)\]/g, '$1>"$2"]');
+                 .replace(/([A-Z0-9_-]+)\{([^}"]+)\}/g, '$1{"$2"}')
+                 .replace(/([A-Z0-9_-]+)\((?!\()([^)"]+)\)/g, '$1("$2")')
+                 .replace(/([A-Z0-9_-]+)\(\(([^)"]+)\)\)/g, '$1(("$2"))')
+                 .replace(/([A-Z0-9_-]+)\[\[([^\]"]+)\]\]/g, '$1[["$2"]]')
+                 .replace(/([A-Z0-9_-]+)>([^\]"]+)\]/g, '$1>"$2"]');
     });
     return '```mermaid\n' + fixedLines.join('\n') + '\n```\n';
   });
@@ -178,11 +208,13 @@ export function updateMetaJson(pluginRulesDir, ruleSlugs) {
     pages: [],
   };
 
-  if (fs.existsSync(metaPath)) {
-    try {
-      meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-    } catch {}
-  }
+  // Read directly and catch ENOENT instead of `existsSync()` + `readFileSync()`,
+  // which is a TOCTOU race (CodeQL: "Potential file system race condition" —
+  // the file could be removed between the two calls). The catch absorbs both
+  // missing-file and parse failures into the default `meta`.
+  try {
+    meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+  } catch {}
 
   // Defensive: existing meta.json files may not declare `pages` (the convention
   // is to omit it when the directory is auto-listed). Merge against [] in that

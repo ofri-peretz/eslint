@@ -132,6 +132,50 @@ describe('spliceTable', () => {
     const noTable = '## Rules\n\nSome prose with no table.\n\n## 📦 Compatibility\n';
     expect(() => spliceTable(noTable, NEW_TABLE)).toThrow(/locate existing rule-data table/);
   });
+
+  it('throws when `## Rules` heading is missing (refuses to splice into the wrong section)', () => {
+    // Regression: a `| Rule |` parity/compat table sitting above the (missing)
+    // Rules section used to be auto-wrapped with markers and have its content
+    // replaced by the rule table — silently corrupting the parity matrix.
+    const noRulesHeading = `## 🔄 Parity with \`eslint-plugin-import\`
+
+| Rule | Original Plugin | Status | Notes |
+| :--- | :--- | :--- | :--- |
+| All Rules | eslint-plugin-import | ✅ | drop-in replacement |
+
+## 📦 Compatibility
+`;
+    expect(() => spliceTable(noRulesHeading, NEW_TABLE)).toThrow(
+      /locate `## Rules` heading/,
+    );
+  });
+
+  it('ignores `| Rule |` tables above `## Rules` (e.g., parity matrix) and splices only the Rules-section table', () => {
+    const fixtureWithParity = `## 🔄 Parity with \`eslint-plugin-import\`
+
+| Rule | Original Plugin | Status | Notes |
+| :--- | :--- | :--- | :--- |
+| All Rules | eslint-plugin-import | ✅ | drop-in replacement |
+
+## Rules
+
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [old-rule](https://example.com/old) |  |  |  | Old description | 🟢 |  |  |  |  |  |
+
+## 📦 Compatibility
+`;
+    const { content, modified } = spliceTable(fixtureWithParity, NEW_TABLE);
+    expect(modified).toBe(true);
+    // Parity table must remain untouched, not wrapped in markers.
+    expect(content).toContain('| All Rules | eslint-plugin-import | ✅ | drop-in replacement |');
+    // The rule table inside `## Rules` is the one that got wrapped.
+    const startIdx = content.indexOf('AUTO-GENERATED:RULES_TABLE:START');
+    const rulesIdx = content.indexOf('## Rules');
+    expect(startIdx).toBeGreaterThan(rulesIdx);
+    expect(content).not.toContain('| [old-rule]');
+    expect(content).toContain('no-silent-errors');
+  });
 });
 
 describe('loadPluginRegistry', () => {

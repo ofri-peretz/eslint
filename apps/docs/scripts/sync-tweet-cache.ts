@@ -111,17 +111,18 @@ function loadCache() {
  * Save cache to file
  */
 function saveCache(cache) {
+  // Read directly and catch ENOENT instead of `existsSync()` + `readFileSync()`
+  // (CodeQL: "Potential file system race condition" — the file could vanish
+  // between the two calls). Any read/parse failure means we should just write.
   let writeNeeded = true;
-  if (existsSync(CACHE_FILE)) {
-    try {
-      const existing = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
-      if (JSON.stringify(existing.tweets) === JSON.stringify(cache.tweets)) {
-        writeNeeded = false;
-        console.log(`\n✅ cached-tweets.json data unchanged, skipping write to prevent git churn.`);
-      }
-    } catch (e) {
-      // Proceed with write if parsing fails
+  try {
+    const existing = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
+    if (JSON.stringify(existing.tweets) === JSON.stringify(cache.tweets)) {
+      writeNeeded = false;
+      console.log(`\n✅ cached-tweets.json data unchanged, skipping write to prevent git churn.`);
     }
+  } catch {
+    // Missing or unparseable — fall through to write.
   }
 
   if (writeNeeded) {

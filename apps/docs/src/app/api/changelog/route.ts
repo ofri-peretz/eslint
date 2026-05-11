@@ -6,7 +6,6 @@
  */
 
 import { NextResponse } from 'next/server';
-import { fetchCachedJSON } from '@/lib/json-cache';
 import { PLUGINS } from '@/lib/plugins';
 
 // GitHub configuration
@@ -68,28 +67,33 @@ function parseChangelog(raw: string): ChangelogEntry[] {
 }
 
 /**
- * Fetch a single plugin's changelog from GitHub
+ * Fetch a single plugin's changelog from GitHub.
+ *
+ * Pre-condition: `plugin` MUST be a key of PLUGIN_PATHS — enforced at the API
+ * boundary in GET(). This keeps log statements below safe from request-driven
+ * log-injection (CodeQL: "Log injection" / "Use of externally-controlled
+ * format string"), since the value can only be one of our hard-coded slugs.
  */
 async function fetchPluginChangelog(plugin: string): Promise<PluginChangelog | null> {
   const path = PLUGIN_PATHS[plugin];
   if (!path) return null;
-  
+
   const url = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${path}/CHANGELOG.md`;
-  
+
   try {
     const response = await fetch(url, {
       next: { revalidate: CHANGELOG_TTL },
       headers: { 'Accept': 'text/plain' },
     });
-    
+
     if (!response.ok) {
       console.warn(`[Changelog] No CHANGELOG.md for ${plugin}: ${response.status}`);
       return null;
     }
-    
+
     const raw = await response.text();
     const entries = parseChangelog(raw);
-    
+
     return {
       plugin,
       path: `${path}/CHANGELOG.md`,
@@ -114,12 +118,24 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const pluginFilter = searchParams.get('plugin');
   const includeRaw = searchParams.get('raw') === 'true';
-  
+
+  // Validate the plugin filter against the allow-list BEFORE anything reaches
+  // `fetch`, `console.warn`, or `NextResponse.json`. Without this gate, a
+  // crafted `?plugin=<crlf-injection>` value would taint downstream logs
+  // (CodeQL: "Log injection"). With it, every code path below treats `plugin`
+  // as one of our hard-coded slugs.
+  if (pluginFilter !== null && !(pluginFilter in PLUGIN_PATHS)) {
+    return NextResponse.json(
+      { success: false, error: 'Unknown plugin' },
+      { status: 400 },
+    );
+  }
+
   try {
     if (pluginFilter) {
       // Fetch single plugin
       const changelog = await fetchPluginChangelog(pluginFilter);
-      
+
       if (!changelog) {
         return NextResponse.json(
           { success: false, error: `Changelog not found for plugin: ${pluginFilter}` },

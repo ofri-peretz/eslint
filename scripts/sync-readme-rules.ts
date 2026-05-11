@@ -236,7 +236,10 @@ export function extractRuleMetadata(
     if (cweBody) meta.cwe = `CWE-${cweBody[1]}`;
   }
   if (!meta.owasp) {
-    const owaspBody = content.match(/(A\d{2}:\d{4})/);
+    // Restrict to the real Top-10 range A01–A10. A00 appears in some legacy
+    // docs as a "General Security" placeholder and must not propagate into
+    // README rule tables (it's not a real OWASP category).
+    const owaspBody = content.match(/(A(?:0[1-9]|10):\d{4})/);
     if (owaspBody) meta.owasp = owaspBody[1];
   }
 
@@ -311,11 +314,19 @@ export function spliceTable(readme: string, generatedTable: string): { content: 
   }
 
   // Auto-migration: find the existing rule-data table and wrap it in markers.
-  const match = RULE_TABLE_REGEX.exec(readme);
+  // Scope the search to the body of `## Rules` so we don't match unrelated
+  // tables earlier in the README (e.g., parity / compat matrices that also
+  // happen to start with `| Rule |`).
+  const rulesHeadingIdx = readme.search(/^## Rules\b/m);
+  if (rulesHeadingIdx === -1) {
+    throw new Error('Could not locate `## Rules` heading to anchor table search');
+  }
+  const rulesSection = readme.slice(rulesHeadingIdx);
+  const match = RULE_TABLE_REGEX.exec(rulesSection);
   if (!match) {
     throw new Error('Could not locate existing rule-data table to wrap with markers');
   }
-  const tableStart = match.index;
+  const tableStart = rulesHeadingIdx + match.index;
   const tableEnd = tableStart + match[0].length;
   const before = readme.slice(0, tableStart);
   const after = readme.slice(tableEnd);
