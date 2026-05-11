@@ -50,7 +50,7 @@ Independently versioned ESLint-focused packages: plugins, configs, and supportin
 | Package                                                                           | Description                  | Downloads                                                                                |
 | --------------------------------------------------------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------- |
 | [`eslint-plugin-secure-coding`](./packages/eslint-plugin-secure-coding)           | Comprehensive security rules | ![npm](https://img.shields.io/npm/dm/eslint-plugin-secure-coding?style=flat-square)      |
-| [`eslint-plugin-crypto`](./packages/eslint-plugin-crypto)                         | Cryptographic security       | ![npm](https://img.shields.io/npm/dm/eslint-plugin-crypto?style=flat-square)             |
+| [`eslint-plugin-node-security`](./packages/eslint-plugin-node-security)           | Node.js core-module security | ![npm](https://img.shields.io/npm/dm/eslint-plugin-node-security?style=flat-square)      |
 | [`eslint-plugin-jwt`](./packages/eslint-plugin-jwt)                               | JWT security best practices  | ![npm](https://img.shields.io/npm/dm/eslint-plugin-jwt?style=flat-square)                |
 | [`eslint-plugin-pg`](./packages/eslint-plugin-pg)                                 | PostgreSQL security          | ![npm](https://img.shields.io/npm/dm/eslint-plugin-pg?style=flat-square)                 |
 | [`eslint-plugin-browser-security`](./packages/eslint-plugin-browser-security)     | Browser/frontend security    | ![npm](https://img.shields.io/npm/dm/eslint-plugin-browser-security?style=flat-square)   |

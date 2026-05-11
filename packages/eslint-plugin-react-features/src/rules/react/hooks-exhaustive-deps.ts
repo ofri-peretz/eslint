@@ -32,6 +32,38 @@ export interface Options {
 
 type RuleOptions = [Options?];
 
+/**
+ * Per-(node.type) cache of which property keys point at child AST nodes.
+ *
+ * The previous traversal allocated `Object.keys(node)` for every visited
+ * node and filtered out metadata (`loc`, `range`, `parent`, …). On next.js's
+ * 14K-file lint pass the same node types recur millions of times — the
+ * Object.keys allocation alone showed up as ~4% of the rule's runtime in
+ * the v2 profile. Caching by node.type makes the second-and-later visit
+ * per type a single map lookup.
+ *
+ * Module-level so the cache amortizes across files in one ESLint run.
+ */
+const SKIP_KEYS = new Set(['parent', 'loc', 'range', 'tokens', 'comments', 'type']);
+const CHILD_KEYS_CACHE = new Map<string, string[]>();
+
+function getChildKeys(node: TSESTree.Node): string[] {
+  const cached = CHILD_KEYS_CACHE.get(node.type);
+  if (cached) return cached;
+  const keys: string[] = [];
+  for (const key of Object.keys(node)) {
+    if (SKIP_KEYS.has(key)) continue;
+    const v = (node as unknown as Record<string, unknown>)[key];
+    if (v && typeof v === 'object') {
+      // Either an AST node or an array of nodes — record either way; the
+      // traversal logic at the call site handles both shapes.
+      keys.push(key);
+    }
+  }
+  CHILD_KEYS_CACHE.set(node.type, keys);
+  return keys;
+}
+
 // Hook names that require dependency array checking
 const HOOKS_WITH_DEPS = new Set([
   'useEffect',
@@ -181,7 +213,6 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
     function extractLocallyDeclaredIdentifiers(node: TSESTree.Node): Set<string> {
       const declared = new Set<string>();
       const visited = new WeakSet<TSESTree.Node>();
-      const skipKeys = new Set(['parent', 'loc', 'range', 'tokens', 'comments']);
       
       function visit(n: TSESTree.Node) {
         if (visited.has(n)) return;
@@ -249,24 +280,23 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
           for (const param of n.params) collectFromPattern(param);
         }
         
-        // Traverse children
-        for (const key of Object.keys(n)) {
-          if (skipKeys.has(key)) continue;
-          const child = (n as unknown as Record<string, unknown>)[key];
-          if (child && typeof child === 'object') {
-            if (Array.isArray(child)) {
-              child.forEach((c) => {
-                if (c && typeof c === 'object' && 'type' in c) {
-                  visit(c as TSESTree.Node);
-                }
-              });
-            } else if ('type' in child) {
-              visit(child as TSESTree.Node);
+        // Traverse children using the cached child-keys table.
+        const keys = getChildKeys(n);
+        for (let i = 0; i < keys.length; i++) {
+          const child = (n as unknown as Record<string, unknown>)[keys[i]];
+          if (Array.isArray(child)) {
+            for (let j = 0; j < child.length; j++) {
+              const c = child[j];
+              if (c && typeof c === 'object' && 'type' in c) {
+                visit(c as TSESTree.Node);
+              }
             }
+          } else if (child && typeof child === 'object' && 'type' in child) {
+            visit(child as TSESTree.Node);
           }
         }
       }
-      
+
       visit(node);
       return declared;
     }
@@ -279,7 +309,6 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
       const visited = new WeakSet<TSESTree.Node>();
       
       // Keys to skip during traversal (to avoid infinite loops)
-      const skipKeys = new Set(['parent', 'loc', 'range', 'tokens', 'comments']);
       
       function visit(n: TSESTree.Node, isPropertyKey = false) {
         // Prevent infinite loops
@@ -315,28 +344,23 @@ export const hooksExhaustiveDeps = createRule<RuleOptions, MessageIds>({
           used.add(n.name);
         }
         
-        // Traverse child nodes
-        for (const key of Object.keys(n)) {
-          // Skip parent and metadata to avoid circular references
-          if (skipKeys.has(key)) {
-            continue;
-          }
-          
-          const child = (n as unknown as Record<string, unknown>)[key];
-          if (child && typeof child === 'object') {
-            if (Array.isArray(child)) {
-              child.forEach((c) => {
-                if (c && typeof c === 'object' && 'type' in c) {
-                  visit(c as TSESTree.Node, false);
-                }
-              });
-            } else if ('type' in child) {
-              visit(child as TSESTree.Node, false);
+        // Traverse child nodes (cached child-keys table — see getChildKeys).
+        const keys = getChildKeys(n);
+        for (let i = 0; i < keys.length; i++) {
+          const child = (n as unknown as Record<string, unknown>)[keys[i]];
+          if (Array.isArray(child)) {
+            for (let j = 0; j < child.length; j++) {
+              const c = child[j];
+              if (c && typeof c === 'object' && 'type' in c) {
+                visit(c as TSESTree.Node, false);
+              }
             }
+          } else if (child && typeof child === 'object' && 'type' in child) {
+            visit(child as TSESTree.Node, false);
           }
         }
       }
-      
+
       visit(node);
       return used;
     }

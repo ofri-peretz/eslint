@@ -13,7 +13,7 @@ We have implemented comprehensive security coverage across multiple domains:
 | Plugin                             | Focus Area             | Status    |
 | ---------------------------------- | ---------------------- | --------- |
 | `eslint-plugin-secure-coding`      | General security       | ✅ Stable |
-| `eslint-plugin-crypto`             | Cryptographic security | ✅ Stable |
+| `eslint-plugin-node-security`      | Node.js core modules (fs, child_process, vm, crypto, Buffer) | ✅ Stable |
 | `eslint-plugin-jwt`                | JWT best practices     | ✅ Stable |
 | `eslint-plugin-pg`                 | PostgreSQL security    | ✅ Stable |
 | `eslint-plugin-browser-security`   | Browser/DOM security   | ✅ Stable |

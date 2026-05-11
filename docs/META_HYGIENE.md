@@ -26,7 +26,6 @@ Sorted by descending completeness. CWE column counts rules with `meta.docs.cwe` 
 | `eslint-plugin-mongodb-security` | 17 | 88% | 94% | 94% | 94% | 16/17 | 94% | 0% | 94% |
 | `eslint-plugin-node-security` | 34 | 87% | 97% | 97% | 97% | 33/34 | 85% | 9% | 56% |
 | `eslint-plugin-lambda-security` | 15 | 87% | 93% | 93% | 93% | 14/15 | 93% | 7% | 80% |
-| `eslint-plugin-crypto` | 12 | 86% | 92% | 92% | 92% | 11/12 | 92% | 0% | 92% |
 | `eslint-plugin-secure-coding` | 28 | 84% | 96% | 96% | 96% | 27/28 | 43% | 50% | 68% |
 | `eslint-plugin-express-security` | 11 | 84% | 91% | 91% | 91% | 10/11 | 91% | 0% | 82% |
 | `eslint-plugin-vercel-ai-security` | 20 | 82% | 95% | 95% | 95% | 19/20 | 95% | 0% | 0% |
@@ -50,7 +49,6 @@ Sorted by descending completeness. CWE column counts rules with `meta.docs.cwe` 
 | :--- | :--- | :--- |
 | `eslint-plugin-browser-security` | `plugin` | `type`, `description`, `url` |
 | `eslint-plugin-conventions` | `plugin` | `type`, `description`, `url` |
-| `eslint-plugin-crypto` | `plugin` | `type`, `description`, `url` |
 | `eslint-plugin-express-security` | `plugin` | `type`, `description`, `url` |
 | `eslint-plugin-import-next` | `plugin` | `type`, `description`, `url` |
 | `eslint-plugin-jwt` | `plugin` | `type`, `description`, `url` |

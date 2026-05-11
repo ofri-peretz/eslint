@@ -36,7 +36,7 @@ Each plugin has a specific scope. Rules must NOT leak across boundaries.
 | Plugin                        | Scope                       | Examples                                       | ❌ NOT Allowed        |
 | ----------------------------- | --------------------------- | ---------------------------------------------- | --------------------- |
 | `eslint-plugin-secure-coding` | Framework-agnostic security | `no-sql-injection`, `no-hardcoded-credentials` | SDK-specific patterns |
-| `eslint-plugin-crypto`        | Cryptographic operations    | `no-weak-cipher`, `require-random-iv`          | JWT handling          |
+| `eslint-plugin-node-security` | Node.js core modules incl. cryptography | `no-weak-cipher-algorithm`, `no-static-iv`, `prefer-native-crypto` | Browser APIs, JWT |
 | `eslint-plugin-jwt`           | JWT token handling          | `no-algorithm-none`, `require-expiration`      | Generic crypto        |
 
 #### Framework-Specific Plugins
@@ -627,7 +627,7 @@ pluginName.configs.recommended,
 | Plugin                                                                                           |                                                                Downloads                                                                 | Description                       | Rules |
 | ------------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------: | --------------------------------- | :---: |
 | [`eslint-plugin-secure-coding`](https://npmjs.com/package/eslint-plugin-secure-coding)           |      [![npm](https://img.shields.io/npm/dm/eslint-plugin-secure-coding.svg)](https://npmjs.com/package/eslint-plugin-secure-coding)      | Universal security (OWASP Top 10) |  89   |
-| [`eslint-plugin-crypto`](https://npmjs.com/package/eslint-plugin-crypto)                         |             [![npm](https://img.shields.io/npm/dm/eslint-plugin-crypto.svg)](https://npmjs.com/package/eslint-plugin-crypto)             | Cryptographic security            |  24   |
+| [`eslint-plugin-node-security`](https://npmjs.com/package/eslint-plugin-node-security)           |      [![npm](https://img.shields.io/npm/dm/eslint-plugin-node-security.svg)](https://npmjs.com/package/eslint-plugin-node-security)      | Node.js core modules (incl. crypto) |  34   |
 | [`eslint-plugin-jwt`](https://npmjs.com/package/eslint-plugin-jwt)                               |                [![npm](https://img.shields.io/npm/dm/eslint-plugin-jwt.svg)](https://npmjs.com/package/eslint-plugin-jwt)                | JWT token handling                |  13   |
 | [`eslint-plugin-browser-security`](https://npmjs.com/package/eslint-plugin-browser-security)     |   [![npm](https://img.shields.io/npm/dm/eslint-plugin-browser-security.svg)](https://npmjs.com/package/eslint-plugin-browser-security)   | Browser APIs & DOM                |  21   |
 | [`eslint-plugin-express-security`](https://npmjs.com/package/eslint-plugin-express-security)     |   [![npm](https://img.shields.io/npm/dm/eslint-plugin-express-security.svg)](https://npmjs.com/package/eslint-plugin-express-security)   | Express.js framework              |   9   |
