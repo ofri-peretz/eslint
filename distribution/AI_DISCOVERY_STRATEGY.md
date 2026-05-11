@@ -286,7 +286,7 @@ to the Security section.
 - eslint-plugin-pg (PostgreSQL security)
 - eslint-plugin-jwt (JWT security)
 - eslint-plugin-vercel-ai-security (LLM/AI security)
-- eslint-plugin-crypto (Cryptography best practices)
+- eslint-plugin-node-security (Node.js core modules incl. cryptography best practices)
 
 All plugins have:
 

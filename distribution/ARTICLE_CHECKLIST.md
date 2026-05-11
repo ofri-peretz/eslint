@@ -288,7 +288,7 @@ After publishing, complete these distribution steps:
 
 📦 [`eslint-plugin-secure-coding`](https://npmjs.com/package/eslint-plugin-secure-coding) — 75 security rules
 📦 [`eslint-plugin-pg`](https://npmjs.com/package/eslint-plugin-pg) — PostgreSQL security
-📦 [`eslint-plugin-crypto`](https://npmjs.com/package/eslint-plugin-crypto) — Cryptography security
+📦 [`eslint-plugin-node-security`](https://npmjs.com/package/eslint-plugin-node-security) — Node.js core modules incl. cryptography
 
 {% cta https://github.com/ofri-peretz/eslint %}
 ⭐ Star on GitHub
