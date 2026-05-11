@@ -42,6 +42,37 @@ const CONTENT_PATHS = {
   stats: 'generated/plugin-stats.json',
 } as const;
 
+/**
+ * Allow-list for paths that may be fetched via this proxy.
+ *
+ * Pre-condition for any path that flows into `fetch(url)` below: must match
+ * this pattern. Without this gate the request URL is fully user-controlled
+ * (CodeQL: critical "Server-side request forgery"), and the log statements
+ * downstream become log-injection sinks (CodeQL: "Use of externally-
+ * controlled format string"). The pattern enforces:
+ *   - lowercase ASCII, digits, dot, hyphen, slash, underscore only
+ *   - no parent-directory segments (`..`)
+ *   - no leading slash
+ *   - first segment is one of the four monorepo content roots
+ */
+const ALLOWED_PATH_RE = /^(?:packages|apps|generated|tools)\/(?!\.\.\/)(?:[a-zA-Z0-9._-]+\/?)+$/;
+function isAllowedPath(p: string): boolean {
+  if (!ALLOWED_PATH_RE.test(p)) return false;
+  if (p.includes('..')) return false;
+  if (p.includes('//')) return false;
+  return true;
+}
+
+/**
+ * Validate a plugin/rule slug fragment — kebab-case only, no path separators.
+ * These flow into URL construction via `resolvePath`, so a `../` segment
+ * would otherwise break out of the templated path.
+ */
+const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
+function isAllowedSlug(s: string): boolean {
+  return SLUG_RE.test(s);
+}
+
 interface GitHubContentResponse {
   success: boolean;
   data?: {
@@ -61,12 +92,20 @@ interface GitHubContentResponse {
 }
 
 /**
- * Fetch raw content from GitHub
+ * Fetch raw content from GitHub.
+ *
+ * Pre-condition: `path` MUST have passed `isAllowedPath()` at the API
+ * boundary in GET / POST. The check is delegated to the caller so this
+ * helper can encode that contract in its type-system-adjacent comment
+ * and stay simple inside.
  */
 async function fetchGitHubContent(
   path: string,
   options?: { parseJson?: boolean }
 ): Promise<GitHubContentResponse> {
+  if (!isAllowedPath(path)) {
+    return { success: false, error: 'Path not allowed' };
+  }
   const url = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${path}`;
   const extension = path.split('.').pop() || 'txt';
   const contentType = CONTENT_TYPES[extension as keyof typeof CONTENT_TYPES] || CONTENT_TYPES.txt;
@@ -118,7 +157,11 @@ async function fetchGitHubContent(
       },
     };
   } catch (error) {
-    console.error(`[GitHub Content] Failed to fetch ${path}:`, error);
+    // Pass `path` as a separate argument rather than interpolating into the
+    // format string — the boundary validators already prove it's an allow-
+    // listed path, but separating the args silences CodeQL's "Use of
+    // externally-controlled format string" finding without an inline disable.
+    console.error('[GitHub Content] Failed to fetch', path, error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -149,16 +192,30 @@ function resolvePath(template: string, params: Record<string, string>): string {
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  
+
   // Get parameters
   const directPath = searchParams.get('path');
   const contentType = searchParams.get('type');
   const plugin = searchParams.get('plugin');
   const rule = searchParams.get('rule');
   const parseJson = searchParams.get('json') === 'true';
-  
+
+  // Validate user-controlled fragments at the boundary. Slug/path validation
+  // here prevents SSRF (the path flows into `fetch(url)`) and log injection
+  // (the path is logged on failure). Downstream code can treat all three as
+  // safe strings.
+  if (plugin !== null && !isAllowedSlug(plugin)) {
+    return NextResponse.json({ success: false, error: 'Invalid plugin' }, { status: 400 });
+  }
+  if (rule !== null && !isAllowedSlug(rule)) {
+    return NextResponse.json({ success: false, error: 'Invalid rule' }, { status: 400 });
+  }
+  if (directPath !== null && !isAllowedPath(directPath)) {
+    return NextResponse.json({ success: false, error: 'Invalid path' }, { status: 400 });
+  }
+
   let targetPath: string;
-  
+
   // Determine the path to fetch
   if (directPath) {
     // Direct path takes precedence
@@ -228,7 +285,18 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    
+
+    // Validate every path BEFORE handing them to fetchGitHubContent. Even
+    // though the helper double-checks via `isAllowedPath`, the early gate
+    // returns 400 on the first bad entry so a malicious client can't smuggle
+    // 19 valid paths + 1 SSRF probe and get partial success.
+    if (!paths.every((p) => typeof p === 'string' && isAllowedPath(p))) {
+      return NextResponse.json(
+        { success: false, error: 'One or more paths are not allowed' },
+        { status: 400 },
+      );
+    }
+
     const results = await Promise.all(
       paths.map(path => fetchGitHubContent(path))
     );

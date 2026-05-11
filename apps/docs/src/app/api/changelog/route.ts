@@ -102,7 +102,12 @@ async function fetchPluginChangelog(plugin: string): Promise<PluginChangelog | n
       fetchedAt: new Date().toISOString(),
     };
   } catch (error) {
-    console.error(`[Changelog] Failed to fetch ${plugin}:`, error);
+    // Pass `plugin` as a separate argument rather than interpolating it into
+    // the format string. `plugin` is already guaranteed to be a key of
+    // PLUGIN_PATHS (validated at the API boundary and re-checked above), but
+    // separating the args silences CodeQL's "Use of externally-controlled
+    // format string" finding without an inline disable.
+    console.error('[Changelog] Failed to fetch', plugin, error);
     return null;
   }
 }
