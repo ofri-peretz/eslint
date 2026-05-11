@@ -3,20 +3,20 @@
 </p>
 
 <p align="center">
-  Security-focused ESLint plugin.
+  Modularity rules — module boundaries, circular dependency detection, and layered architecture.
 </p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/eslint-plugin-modularity" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-modularity.svg" alt="NPM Version" /></a>
   <a href="https://www.npmjs.com/package/eslint-plugin-modularity" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-modularity.svg" alt="NPM Downloads" /></a>
   <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
-  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-plugin-modularity" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-plugin-modularity" alt="Codecov" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=modularity" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=modularity" alt="Codecov" /></a>
   <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
 </p>
 
 ## Description
 
-This plugin provides Security-focused ESLint plugin.
+This plugin provides Modularity rules — module boundaries, circular dependency detection, and layered architecture.
 By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
 
 ## Philosophy
@@ -138,6 +138,14 @@ export function format(data: Data): FormattedData {
 
 ---
 
+## 📦 Compatibility
+| Package | Version |
+| :--- | :--- |
+| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0` |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
+
 ## Rules
 
 **Legend**
@@ -149,19 +157,15 @@ export function format(data: Data): FormattedData {
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
-| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
-| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
-| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
-| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [ddd-anemic-domain-model](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-anemic-domain-model) |  |  |  | Detects entities with only getters/setters and no business logic, enforcing the Rich Domain Model over the… | 🟢 |  |  |  | 💡 |  |
-| [ddd-value-object-immutability](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-value-object-immutability) |  |  |  | ESLint Rule: ddd-value-object-immutability with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
-| [enforce-naming](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-naming) |  |  |  | Enforce domain-specific naming conventions with business context | 🟢 |  |  |  | 💡 |  |
-| [enforce-rest-conventions](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-rest-conventions) |  |  |  | ESLint Rule: enforce-rest-conventions with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
-| [no-external-api-calls-in-utils](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/no-external-api-calls-in-utils) |  |  |  | ESLint Rule: no-external-api-calls-in-utils with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
-<!-- AUTO-GENERATED:RULES_TABLE:END -->
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [ddd-anemic-domain-model](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-anemic-domain-model) |  |  |  | Detects entities with only getters/setters and no business logic |  |  |  | 💡 |  |
+| [ddd-value-object-immutability](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/ddd-value-object-immutability) |  |  |  | Validates value objects are properly immutable |  |  |  | 💡 |  |
+| [enforce-naming](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-naming) |  |  |  | Enforce domain-specific naming conventions with business context |  |  |  | 💡 |  |
+| [enforce-rest-conventions](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/enforce-rest-conventions) |  |  |  | Validates REST endpoint design against best practices |  |  |  | 💡 |  |
+| [no-external-api-calls-in-utils](https://eslint.interlace.tools/docs/quality/plugin-modularity/rules/no-external-api-calls-in-utils) |  |  |  | Detects network calls in utility functions |  |  |  | 💡 |  |
+
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
@@ -179,15 +183,6 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
-
-## 📦 Compatibility
-
-| Package | Version |
-| :--- | :--- |
-| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
-| Node.js | `>=18.0.0` |
-
-See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
 ## 📄 License
 

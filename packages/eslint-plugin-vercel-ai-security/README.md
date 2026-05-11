@@ -10,7 +10,7 @@
   <a href="https://www.npmjs.com/package/eslint-plugin-vercel-ai-security" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-vercel-ai-security.svg" alt="NPM Version" /></a>
   <a href="https://www.npmjs.com/package/eslint-plugin-vercel-ai-security" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-vercel-ai-security.svg" alt="NPM Downloads" /></a>
   <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
-  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-plugin-vercel-ai-security" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-plugin-vercel-ai-security" alt="Codecov" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=vercel-ai-security" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=vercel-ai-security" alt="Codecov" /></a>
   <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
 </p>
 
@@ -37,7 +37,6 @@ npm install eslint-plugin-vercel-ai-security --save-dev
 ```
 
 ## ⚙️ Configuration Presets
-
 | Preset        | Description                              |
 | :------------ | :--------------------------------------- |
 | `recommended` | Balanced security (7 errors, 7 warnings) |
@@ -45,13 +44,11 @@ npm install eslint-plugin-vercel-ai-security --save-dev
 | `minimal`     | Minimal config                           |
 
 ## 📚 Supported Libraries
-
 | Library              | npm                                                                                               | Downloads                                                                                                | Detection                      |
 | -------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------ |
 | `ai` (Vercel AI SDK) | [![npm](https://img.shields.io/npm/v/ai.svg?style=flat-square)](https://www.npmjs.com/package/ai) | [![downloads](https://img.shields.io/npm/dt/ai.svg?style=flat-square)](https://www.npmjs.com/package/ai) | Prompt Injection, Data Leakage |
 
 ## 🤖 AI-Agent Optimized Messages
-
 All rule messages follow a structured format optimized for AI coding assistants:
 
 ```
@@ -62,7 +59,6 @@ All rule messages follow a structured format optimized for AI coding assistants:
 By providing this structured context (CWE, OWASP, Fix), we enable AI tools to **reason** about the security flaw rather than hallucinating. This allows Copilot/Cursor to suggest the _exact_ correct fix immediately.
 
 ## 🔧 Supported AI SDK Functions
-
 | Function               | Full Coverage                  |
 | ---------------------- | ------------------------------ |
 | `generateText`         | ✅ All 19 rules                |
@@ -73,7 +69,6 @@ By providing this structured context (CWE, OWASP, Fix), we enable AI tools to **
 | `embed()` / embeddings | ✅ Embedding validation        |
 
 ## 📊 Test Coverage
-
 | Metric        | Coverage |
 | ------------- | -------- |
 | **Rules**     | 19       |
@@ -82,7 +77,6 @@ By providing this structured context (CWE, OWASP, Fix), we enable AI tools to **
 | **Functions** | 100%     |
 
 ## 🙋 FAQ
-
 ### What's the difference between this and generic AI security linters?
 
 Generic linters guess at patterns. This plugin knows the **exact** Vercel AI SDK API.
@@ -102,6 +96,15 @@ await generateText({ prompt: internalPrompt });
 
 TypeScript/JavaScript are memory-safe languages. Memory corruption vulnerabilities (buffer overflows, use-after-free, etc.) are not possible in these environments.
 
+## 📦 Compatibility
+| Package              | Version                                                                                                   |
+| -------------------- | --------------------------------------------------------------------------------------------------------- |
+| `ai` (Vercel AI SDK) | [![npm](https://img.shields.io/npm/v/ai.svg?style=flat-square)](https://www.npmjs.com/package/ai)         |
+| ESLint               | [![npm](https://img.shields.io/npm/v/eslint.svg?style=flat-square)](https://www.npmjs.com/package/eslint) |
+| Node.js              | [![node](https://img.shields.io/badge/node-%5E18.0.0-green?style=flat-square)](https://nodejs.org/)       |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) for the full matrix.
+
 ## Rules
 
 **Legend**
@@ -113,33 +116,29 @@ TypeScript/JavaScript are memory-safe languages. Memory corruption vulnerabiliti
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
-| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
-| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
-| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
-| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [no-dynamic-system-prompt](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-dynamic-system-prompt) | CWE-74 |  |  | This rule identifies code patterns where system prompts contain dynamic or user-controlled content | 🟢 |  |  |  |  |  |
-| [no-hardcoded-api-keys](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-hardcoded-api-keys) | CWE-798 |  |  | This rule identifies hardcoded API keys, tokens, and secrets in your codebase that are used with AI SDK pro… | 🟢 |  |  |  |  |  |
-| [no-sensitive-in-prompt](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-sensitive-in-prompt) | CWE-200 |  |  | This rule identifies code patterns where sensitive data like passwords, API keys, tokens, or personally ide… | 🟢 |  |  |  |  |  |
-| [no-system-prompt-leak](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-system-prompt-leak) | CWE-200 |  |  | This rule identifies code patterns where system prompts or AI instructions are returned in API responses, l… | 🟢 |  |  |  |  |  |
-| [no-training-data-exposure](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-training-data-exposure) | CWE-359 |  |  | This rule identifies code patterns where user data might be sent to LLM training endpoints or when training… | 🟢 |  |  |  |  |  |
-| [no-unsafe-output-handling](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-unsafe-output-handling) | CWE-94 |  |  | This rule identifies code patterns where AI-generated output is passed directly to dangerous functions that… | 🟢 |  |  |  |  |  |
-| [require-abort-signal](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-abort-signal) | CWE-404 |  |  | This rule identifies streaming AI SDK calls (streamText, streamObject) that don't include an AbortSignal fo… | 🟢 |  |  |  |  |  |
-| [require-audit-logging](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-audit-logging) | CWE-778 |  |  | This rule identifies AI SDK calls that aren't preceded by logging statements | 🟢 |  |  |  |  |  |
-| [require-embedding-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-embedding-validation) | CWE-20 |  |  | This rule identifies code patterns where embeddings are stored in vector databases without validation. | 🟢 |  |  |  |  |  |
-| [require-error-handling](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-error-handling) | CWE-755 |  |  | This rule identifies AI SDK calls that aren't wrapped in try-catch blocks | 🟢 |  |  |  |  |  |
-| [require-max-steps](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-steps) | CWE-834 |  |  | This rule identifies AI SDK calls that use tools but don't specify a maxSteps limit | 🟢 |  |  |  |  |  |
-| [require-max-tokens](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-tokens) | CWE-770 |  |  | This rule identifies AI SDK calls that don't specify a maxTokens limit | 🟢 |  |  |  |  |  |
-| [require-output-filtering](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-output-filtering) | CWE-200 |  |  | This rule identifies tool execute functions that return raw data from data sources (databases, APIs, file s… | 🟢 |  |  |  |  |  |
-| [require-output-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-output-validation) | CWE-707 |  |  | This rule identifies code patterns where AI-generated output is displayed to users without validation or fa… | 🟢 |  |  |  |  |  |
-| [require-rag-content-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-rag-content-validation) | CWE-74 |  |  | This rule identifies code patterns where content retrieved from vector stores or document retrieval systems… | 🟢 |  |  |  |  |  |
-| [require-request-timeout](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-request-timeout) | CWE-400 |  |  | This rule identifies AI SDK calls that don't have timeout or abort signal configuration. | 🟢 |  |  |  |  |  |
-| [require-tool-confirmation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-tool-confirmation) | CWE-862 |  |  | This rule identifies destructive tools (delete, transfer, execute, etc.) that don't require human confirmat… | 🟢 |  |  |  |  |  |
-| [require-tool-schema](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-tool-schema) | CWE-20 |  |  | Get weather | 🟢 |  |  |  |  |  |
-| [require-validated-prompt](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-validated-prompt) | CWE-74 |  |  | This rule identifies code patterns where user-controlled input is passed directly to AI prompts without val… | 🟢 |  |  |  |  |  |
-<!-- AUTO-GENERATED:RULES_TABLE:END -->
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-dynamic-system-prompt](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-dynamic-system-prompt) | CWE-74 |  |  | Prevent dynamic content in system prompts to avoid agent confusion attacks |  |  |  |  |  |
+| [no-hardcoded-api-keys](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-hardcoded-api-keys) | CWE-798 |  |  | Prevent hardcoded API keys in AI SDK model configuration |  |  |  |  |  |
+| [no-sensitive-in-prompt](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-sensitive-in-prompt) | CWE-200 |  |  | Prevent sensitive data (secrets, credentials, PII) from being passed to LLM prompts |  |  |  |  |  |
+| [no-system-prompt-leak](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-system-prompt-leak) | CWE-200 |  |  | Prevent system prompts from being exposed in API responses or client code |  |  |  |  |  |
+| [no-training-data-exposure](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-training-data-exposure) | CWE-359 |  |  | Prevent user data from being sent to LLM training endpoints |  |  |  |  |  |
+| [no-unsafe-output-handling](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/no-unsafe-output-handling) | CWE-94 |  |  | Prevent using AI output directly in dangerous operations (eval, SQL, HTML) |  |  |  |  |  |
+| [require-abort-signal](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-abort-signal) | CWE-404 |  |  | Require AbortSignal for streaming AI calls to enable proper cleanup |  |  |  |  |  |
+| [require-audit-logging](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-audit-logging) | CWE-778 |  |  | Suggest audit logging for AI SDK operations |  |  |  |  |  |
+| [require-embedding-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-embedding-validation) | CWE-20 |  |  | Require validation of embeddings before storage or similarity search |  |  |  |  |  |
+| [require-error-handling](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-error-handling) | CWE-755 |  |  | Require error handling for AI SDK calls to prevent cascading failures |  |  |  |  |  |
+| [require-max-steps](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-steps) | CWE-834 |  |  | Require maxSteps limit for multi-step tool calling to prevent infinite loops |  |  |  |  |  |
+| [require-max-tokens](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-max-tokens) | CWE-770 |  |  | Require maxTokens limit in generateText and streamText calls |  |  |  |  |  |
+| [require-output-filtering](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-output-filtering) | CWE-200 |  |  | Require filtering of sensitive data returned by AI tools |  |  |  |  |  |
+| [require-output-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-output-validation) | CWE-707 |  |  | Require validation of AI output before displaying to users |  |  |  |  |  |
+| [require-rag-content-validation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-rag-content-validation) | CWE-74 |  |  | Require validation of RAG content before including in AI prompts |  |  |  |  |  |
+| [require-request-timeout](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-request-timeout) | CWE-400 |  |  | Require timeout configuration for AI SDK calls to prevent DoS |  |  |  |  |  |
+| [require-tool-confirmation](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-tool-confirmation) | CWE-862 |  |  | Require human confirmation for destructive tool operations (delete, transfer, execute) |  |  |  |  |  |
+| [require-tool-schema](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-tool-schema) | CWE-20 |  |  | Require inputSchema (Zod schema) for all AI SDK tools |  |  |  |  |  |
+| [require-validated-prompt](https://eslint.interlace.tools/docs/security/plugin-vercel-ai-security/rules/require-validated-prompt) | CWE-74 |  |  | Require validated/sanitized prompts in generateText and streamText calls |  |  |  |  |  |
+
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
@@ -157,16 +156,6 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
-
-## 📦 Compatibility
-
-| Package              | Version                                                                                                   |
-| -------------------- | --------------------------------------------------------------------------------------------------------- |
-| `ai` (Vercel AI SDK) | [![npm](https://img.shields.io/npm/v/ai.svg?style=flat-square)](https://www.npmjs.com/package/ai)         |
-| ESLint               | [![npm](https://img.shields.io/npm/v/eslint.svg?style=flat-square)](https://www.npmjs.com/package/eslint) |
-| Node.js              | [![node](https://img.shields.io/badge/node-%5E18.0.0-green?style=flat-square)](https://nodejs.org/)       |
-
-See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) for the full matrix.
 
 ## 📄 License
 

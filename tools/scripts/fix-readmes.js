@@ -24,10 +24,14 @@ const DESCRIPTIONS = {
     'eslint-plugin-vercel-ai-security': 'Security rules for Vercel AI SDK usage (prompt injection, data handling).',
     'eslint-plugin-import-next': 'Next-generation import sorting, validation, and architectural boundaries.',
     'eslint-plugin-mongodb-security': 'Security rules for MongoDB queries and interactions (NoSQL injection).',
-    'eslint-plugin-quality': 'Code quality, maintainability standards, and cognitive complexity limits.',
     'eslint-plugin-react-a11y': 'Accessibility (a11y) rules for React applications, enforcing WCAG standards.',
-    'eslint-plugin-architecture': 'Architectural boundaries, circular dependency detection, and module structure.',
-    'eslint-plugin-node-security': 'Security rules for Node.js core modules (fs, child_process, crypto, etc).'
+    'eslint-plugin-node-security': 'Security rules for Node.js core modules (fs, child_process, crypto, etc).',
+    'eslint-plugin-reliability': 'Reliability rules for defensive programming, error handling, and async correctness.',
+    'eslint-plugin-conventions': 'Project conventions: naming, file structure, and code style consistency.',
+    'eslint-plugin-maintainability': 'Maintainability rules — complexity ceilings, dead code, and readability guardrails.',
+    'eslint-plugin-modernization': 'Modernization rules — prefer modern ES idioms over legacy patterns.',
+    'eslint-plugin-modularity': 'Modularity rules — module boundaries, circular dependency detection, and layered architecture.',
+    'eslint-plugin-operability': 'Operability rules — observability hooks, structured logging, and runtime resilience.'
 };
 
 // CVSS fallback map
@@ -130,7 +134,14 @@ packages.forEach(pkg => {
     let content = fs.readFileSync(readmePath, 'utf8');
     const lines = content.split('\n');
     const pluginName = pkg.replace('eslint-plugin-', '');
-    const shortDesc = DESCRIPTIONS[pkg] || 'Security-focused ESLint plugin.';
+    const shortDesc = DESCRIPTIONS[pkg];
+    if (!shortDesc) {
+        console.error(
+            `No DESCRIPTIONS entry for ${pkg} — add one to tools/scripts/fix-readmes.js. ` +
+            `Refusing to silently substitute the security-plugin fallback into a non-security README.`
+        );
+        process.exit(1);
+    }
 
     // Resolve Docs URL
     const docsSubPath = findDocsPath(pkg);

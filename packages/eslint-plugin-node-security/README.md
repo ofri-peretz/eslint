@@ -10,7 +10,7 @@
   <a href="https://www.npmjs.com/package/eslint-plugin-node-security" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-node-security.svg" alt="NPM Version" /></a>
   <a href="https://www.npmjs.com/package/eslint-plugin-node-security" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-node-security.svg" alt="NPM Downloads" /></a>
   <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
-  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-plugin-node-security" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-plugin-node-security" alt="Codecov" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=node-security" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=node-security" alt="Codecov" /></a>
   <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
 </p>
 
@@ -45,13 +45,20 @@ npm install eslint-plugin-node-security --save-dev
 | `crypto`      | Cryptographic security rules only                     |
 
 ## 💡 What You Get
-
 - **31 security rules** covering Node.js core module vulnerabilities
 - **Command Injection Detection** for `child_process.exec`, `spawn`, and `execFile`
 - **Path Traversal Prevention** for `fs` module operations
 - **TOCTOU Race Condition Detection** for file system operations
 - **Cryptographic Security** for weak algorithms and key management
 - **LLM-optimized messages** with CWE references and fix guidance
+
+## 📦 Compatibility
+| Package | Version |
+| :--- | :--- |
+| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0` |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
 ## Rules
 
@@ -64,47 +71,43 @@ npm install eslint-plugin-node-security --save-dev
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
-| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
-| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
-| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
-| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [detect-child-process](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/detect-child-process) | CWE-78 |  |  | Detects instances of childprocess & non-literal exec() calls that may allow command injection | 🟢 |  |  |  |  |  |
-| [detect-eval-with-expression](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/detect-eval-with-expression) | CWE-95 | A03:2021 |  | Detects eval(variable) which can allow an attacker to run arbitrary code inside your process | 🟢 |  |  |  |  |  |
-| [detect-non-literal-fs-filename](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/detect-non-literal-fs-filename) | CWE-22 |  |  | Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your… | 🟢 |  |  |  |  |  |
-| [detect-suspicious-dependencies](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/detect-suspicious-dependencies) | CWE-506 |  |  | This rule detects package imports that look like typosquatting attempts on popular npm packages | 🟢 |  |  |  |  |  |
-| [lock-file](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/lock-file) | CWE-829 |  |  | CWE: [CWE-829](https://cwe.mitre.org/data/definitions/829.html) | 🟢 |  |  |  |  |  |
-| [no-arbitrary-file-access](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-arbitrary-file-access) | CWE-22 | A01:2021 |  | Prevents file system access with unsanitized user input to protect against path traversal attacks. | 🟢 |  |  |  |  |  |
-| [no-buffer-overread](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-buffer-overread) | CWE-126 |  |  | Detects buffer access beyond bounds | 🟢 |  |  |  |  |  |
-| [no-cryptojs](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-cryptojs) | CWE-1104 | A06:2021 |  | Disallow deprecated crypto-js library (use native crypto instead) | 🟢 |  |  |  |  |  |
-| [no-cryptojs-weak-random](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-cryptojs-weak-random) | CWE-338 | A02:2021 |  | Disallow crypto-js WordArray.random() (CVE-2020-36732) | 🟢 |  |  |  |  |  |
-| [no-data-in-temp-storage](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-data-in-temp-storage) | CWE-312 |  |  | Temporary directories (/tmp, /var/tmp, temp/) are often world-readable or persist longer than expected | 🟢 |  |  |  |  |  |
-| [no-deprecated-buffer](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-deprecated-buffer) | CWE-676 |  |  | Disallow the deprecated `new Buffer()` constructor and `Buffer()` factory call. | 🟢 |  |  |  | 💡 |  |
-| [no-deprecated-cipher-method](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-deprecated-cipher-method) | CWE-327 | A02:2021 |  | Disallow deprecated crypto.createCipher/createDecipher methods | 🟢 |  |  |  |  |  |
-| [no-dynamic-dependency-loading](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-dynamic-dependency-loading) | CWE-1104 |  |  | This rule detects dynamically constructed paths in require() and import() statements | 🟢 |  |  |  |  |  |
-| [no-dynamic-require](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-dynamic-require) |  |  |  | Forbid require() calls with non-literal arguments | 🟢 |  |  |  |  |  |
-| [no-ecb-mode](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-ecb-mode) | CWE-327 | A02:2021 |  | Disallow ECB encryption mode (use GCM or CBC instead) | 🟢 |  |  |  |  |  |
-| [no-insecure-key-derivation](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-insecure-key-derivation) | CWE-916 | A02:2021 |  | Disallow PBKDF2 with insufficient iterations (< 100,000) | 🟢 |  |  |  |  |  |
-| [no-insecure-rsa-padding](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-insecure-rsa-padding) | CWE-327 | A02:2021 |  | Disallow RSA PKCS#1 v1.5 padding (CVE-2023-46809 Marvin Attack) | 🟢 |  |  |  |  |  |
-| [no-pii-in-logs](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-pii-in-logs) | CWE-532 |  |  | CWE: [CWE-532](https://cwe.mitre.org/data/definitions/532.html) | 🟢 |  |  |  |  |  |
-| [no-self-signed-certs](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-self-signed-certs) | CWE-295 | A07:2021 |  | Disallow rejectUnauthorized false in TLS options | 🟢 |  |  |  |  |  |
-| [no-sha1-hash](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-sha1-hash) | CWE-327 | A02:2021 |  | Disallow sha1() from crypto-hash package (use sha256 or sha512) | 🟢 |  |  |  |  |  |
-| [no-ssrf](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-ssrf) | CWE-918 | A10:2021 |  | Detect HTTP requests with user-controlled URLs (server-side request forgery). | 🟢 |  |  |  | 💡 |  |
-| [no-static-iv](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-static-iv) | CWE-329 | A02:2021 |  | Disallow static or hardcoded initialization vectors (IVs) | 🟢 |  |  |  |  |  |
-| [no-timing-unsafe-compare](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-timing-unsafe-compare) | CWE-208 | A02:2021 |  | Disallow timing-unsafe comparison of secrets | 🟢 |  |  |  |  |  |
-| [no-toctou-vulnerability](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-toctou-vulnerability) | CWE-367 | A01:2021 |  | Detects Time-of-Check-Time-of-Use (TOCTOU) race condition vulnerabilities in file system operations. | 🟢 |  |  |  |  |  |
-| [no-unsafe-dynamic-require](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-unsafe-dynamic-require) | CWE-494 |  |  | Disallows dynamic require() calls with non-literal arguments that could lead to security vulnerabilities | 🟢 |  |  |  |  |  |
-| [no-weak-cipher-algorithm](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-weak-cipher-algorithm) | CWE-327 | A02:2021 |  | Disallow weak cipher algorithms (DES, 3DES, RC4, Blowfish, RC2, IDEA) | 🟢 |  |  |  |  |  |
-| [no-weak-hash-algorithm](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-weak-hash-algorithm) | CWE-327 | A02:2021 |  | Disallow weak hash algorithms (MD5, MD4, SHA-1, RIPEMD) | 🟢 |  |  |  |  |  |
-| [no-zip-slip](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-zip-slip) | CWE-22 |  |  | Detects zip slip/archive extraction vulnerabilities | 🟢 |  |  |  |  |  |
-| [prefer-native-crypto](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/prefer-native-crypto) | CWE-1104 | A06:2021 |  | Prefer native crypto over third-party libraries | 🟢 |  |  |  |  |  |
-| [require-dependency-integrity](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-dependency-integrity) | CWE-494 |  |  | CWE: [CWE-494](https://cwe.mitre.org/data/definitions/494.html) | 🟢 |  |  |  |  |  |
-| [require-secure-credential-storage](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-secure-credential-storage) | CWE-312 |  |  | This rule detects when credentials are stored using localStorage.setItem() or fs.writeFile() without encryp… | 🟢 |  |  |  |  |  |
-| [require-secure-deletion](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-secure-deletion) | CWE-459 |  |  | CWE: [CWE-459](https://cwe.mitre.org/data/definitions/459.html) | 🟢 |  |  |  |  |  |
-| [require-storage-encryption](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-storage-encryption) | CWE-312 |  |  | CWE: [CWE-312](https://cwe.mitre.org/data/definitions/312.html) | 🟢 |  |  |  |  |  |
-<!-- AUTO-GENERATED:RULES_TABLE:END -->
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [detect-child-process](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/detect-child-process) | CWE-78 |  |  | Detects child_process usage that may allow command injection |  |  |  |  |  |
+| [detect-eval-with-expression](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/detect-eval-with-expression) | CWE-95 | A03:2025 |  | Detects eval(variable) which can allow an attacker to run arbitrary code |  |  |  |  |  |
+| [detect-non-literal-fs-filename](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/detect-non-literal-fs-filename) | CWE-22 |  |  | Detects variable in filename argument of fs calls, which might allow an attacker to access anything on your system |  |  |  |  |  |
+| [detect-suspicious-dependencies](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/detect-suspicious-dependencies) | CWE-506 |  |  | Detect typosquatting in package names |  |  |  |  |  |
+| [lock-file](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/lock-file) | CWE-829 |  |  | Ensure package lock file exists for the configured package manager |  |  |  |  |  |
+| [no-arbitrary-file-access](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-arbitrary-file-access) | CWE-22 | A01:2025 |  | Prevent file access from user input |  |  |  |  |  |
+| [no-buffer-overread](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-buffer-overread) | CWE-126 |  |  | Detects buffer access beyond bounds |  |  |  |  |  |
+| [no-cryptojs](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-cryptojs) | CWE-1104 | A06:2025 | 5.0 | Disallow deprecated crypto-js library (use native crypto instead) |  |  |  |  |  |
+| [no-cryptojs-weak-random](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-cryptojs-weak-random) | CWE-338 | A02:2025 | 5.3 | Disallow crypto-js WordArray.random() (CVE-2020-36732) |  |  |  |  |  |
+| [no-data-in-temp-storage](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-data-in-temp-storage) | CWE-312 |  |  | Prevent sensitive data in temp directories |  |  |  |  |  |
+| [no-deprecated-buffer](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-deprecated-buffer) | CWE-676 |  |  | Disallow the deprecated `new Buffer()` constructor and `Buffer()` factory call. |  |  |  | 💡 |  |
+| [no-deprecated-cipher-method](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-deprecated-cipher-method) | CWE-327 | A02:2025 | 5.0 | Disallow deprecated crypto.createCipher/createDecipher methods (use createCipheriv/createDecipheriv instead) |  |  |  |  |  |
+| [no-dynamic-dependency-loading](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-dynamic-dependency-loading) | CWE-1104 |  |  | Prevent runtime dependency injection with dynamic paths |  |  |  |  |  |
+| [no-dynamic-require](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-dynamic-require) |  |  |  | Forbid `require()` calls with expressions |  |  |  |  |  |
+| [no-ecb-mode](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-ecb-mode) | CWE-327 | A02:2025 | 7.5 | Disallow ECB encryption mode (use GCM or CBC instead) |  |  |  |  |  |
+| [no-insecure-key-derivation](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-insecure-key-derivation) | CWE-916 | A02:2025 | 7.5 | Disallow PBKDF2 with insufficient iterations (< 100,000) |  |  |  |  |  |
+| [no-insecure-rsa-padding](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-insecure-rsa-padding) | CWE-327 | A02:2025 | 7.4 | Disallow RSA PKCS#1 v1.5 padding (CVE-2023-46809 Marvin Attack) |  |  |  |  |  |
+| [no-pii-in-logs](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-pii-in-logs) | CWE-532 |  |  | Prevent PII (email, SSN, credit cards) in console logs |  |  |  |  |  |
+| [no-self-signed-certs](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-self-signed-certs) | CWE-295 | A07:2025 | 7.5 | Disallow rejectUnauthorized: false in TLS options |  |  |  |  |  |
+| [no-sha1-hash](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-sha1-hash) | CWE-327 | A02:2025 | 7.5 | Disallow sha1() from crypto-hash package (use sha256 or sha512) |  |  |  |  |  |
+| [no-ssrf](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-ssrf) | CWE-918 | A10:2025 |  | Detects HTTP requests with user-controlled URLs (SSRF vulnerability) |  |  |  | 💡 |  |
+| [no-static-iv](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-static-iv) | CWE-329 | A02:2025 | 7.5 | Disallow static or hardcoded initialization vectors (IVs) |  |  |  |  |  |
+| [no-timing-unsafe-compare](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-timing-unsafe-compare) | CWE-208 | A02:2025 | 5.9 | Disallow timing-unsafe comparison of secrets |  |  |  |  |  |
+| [no-toctou-vulnerability](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-toctou-vulnerability) | CWE-367 | A01:2025 |  | Detects Time-of-Check-Time-of-Use vulnerabilities |  |  |  |  |  |
+| [no-unsafe-dynamic-require](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-unsafe-dynamic-require) | CWE-494 |  |  | Prevent unsafe dynamic require() calls that could enable code injection |  |  |  |  |  |
+| [no-weak-cipher-algorithm](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-weak-cipher-algorithm) | CWE-327 | A02:2025 | 7.5 | Disallow weak cipher algorithms (DES, 3DES, RC4, Blowfish) |  |  |  |  |  |
+| [no-weak-hash-algorithm](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-weak-hash-algorithm) | CWE-327 | A02:2025 | 7.5 | Disallow weak hash algorithms (MD5, SHA1, MD4) |  |  |  |  |  |
+| [no-zip-slip](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/no-zip-slip) | CWE-22 |  |  | Detects zip slip/archive extraction vulnerabilities |  |  |  |  |  |
+| [prefer-native-crypto](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/prefer-native-crypto) | CWE-1104 | A06:2025 | 5.0 | Prefer native crypto over third-party libraries |  |  |  |  |  |
+| [require-dependency-integrity](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-dependency-integrity) | CWE-494 |  |  | Require SRI (Subresource Integrity) for CDN resources |  |  |  |  |  |
+| [require-secure-credential-storage](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-secure-credential-storage) | CWE-312 |  |  | Enforce secure storage patterns for credentials |  |  |  |  |  |
+| [require-secure-deletion](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-secure-deletion) | CWE-459 |  |  | Require secure data deletion patterns |  |  |  |  |  |
+| [require-storage-encryption](https://eslint.interlace.tools/docs/security/plugin-node-security/rules/require-storage-encryption) | CWE-312 |  |  | Require encryption for persistent storage |  |  |  |  |  |
+
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
@@ -122,15 +125,6 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
-
-## 📦 Compatibility
-
-| Package | Version |
-| :--- | :--- |
-| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
-| Node.js | `>=18.0.0` |
-
-See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
 ## 📄 License
 

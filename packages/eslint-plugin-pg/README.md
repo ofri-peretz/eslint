@@ -10,7 +10,7 @@
   <a href="https://www.npmjs.com/package/eslint-plugin-pg" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-pg.svg" alt="NPM Version" /></a>
   <a href="https://www.npmjs.com/package/eslint-plugin-pg" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-pg.svg" alt="NPM Downloads" /></a>
   <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
-  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-plugin-pg" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-plugin-pg" alt="Codecov" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=pg" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=pg" alt="Codecov" /></a>
   <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
 </p>
 
@@ -64,7 +64,6 @@ export default [
 ```
 
 ## 💡 What You Get
-
 - **PostgreSQL-specific rules:** Catches pg driver anti-patterns that generic linters miss
 - **LLM-optimized messages:** Structured 2-line errors with CWE + fixes that AI assistants can apply
 - **Connection safety:** Prevents leaks, double releases, and transaction race conditions
@@ -79,6 +78,14 @@ src/db.ts
                     Fix: Use parameterized query: client.query('SELECT * FROM users WHERE id = $1', [userId])
 ```
 
+## 📦 Compatibility
+| Package | Version |
+| :--- | :--- |
+| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0` |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
+
 ## Rules
 
 **Legend**
@@ -90,27 +97,23 @@ src/db.ts
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
-| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
-| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
-| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
-| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [check-query-params](https://eslint.interlace.tools/docs/security/plugin-pg/rules/check-query-params) | CWE-89 |  |  | Ensures the number of placeholders in SQL queries matches the provided parameters. | 🟢 |  | ⚠️ |  |  |  |
-| [no-batch-insert-loop](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-batch-insert-loop) | CWE-400 |  |  | Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern). | 🟢 |  | ⚠️ |  |  |  |
-| [no-floating-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-floating-query) | CWE-252 |  |  | Ensures query promises are awaited or handled. | 🟢 | 💼 |  |  |  |  |
-| [no-hardcoded-credentials](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-hardcoded-credentials) | CWE-798 |  |  | Prevents hardcoded passwords and connection strings in PostgreSQL client initialization. | 🟢 | 💼 |  |  |  |  |
-| [no-insecure-ssl](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-insecure-ssl) | CWE-295 |  |  | Prevents disabling SSL certificate validation in PostgreSQL connections. | 🟢 | 💼 |  |  |  |  |
-| [no-missing-client-release](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-missing-client-release) | CWE-772 |  |  | Ensures acquired pool clients are released back to the pool. | 🟢 | 💼 |  |  |  |  |
-| [no-select-all](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-select-all) | CWE-693 |  |  | Discourages SELECT  in favor of explicit column lists. | 🟢 |  | ⚠️ |  |  |  |
-| [no-transaction-on-pool](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-transaction-on-pool) | CWE-362 |  |  | Prevents running transaction commands directly on pool (must use dedicated client). | 🟢 | 💼 |  |  |  |  |
-| [no-unsafe-copy-from](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-copy-from) | CWE-73 | A03:2021 |  | Prevents COPY FROM with file paths (should use STDIN for safe client-side data loading). | 🟢 | 💼 |  |  |  |  |
-| [no-unsafe-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-query) | CWE-89 |  |  | SQL injection is one of the most critical security vulnerabilities | 🟢 | 💼 |  |  |  |  |
-| [no-unsafe-search-path](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-search-path) | CWE-426 |  |  | Prevents dynamic SET searchpath queries that could enable schema hijacking. | 🟢 | 💼 |  |  |  |  |
-| [prefer-pool-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/prefer-pool-query) | CWE-693 |  |  | Suggests using pool.query() for single-shot queries instead of manual connect/release. | 🟢 |  | ⚠️ |  |  |  |
-| [prevent-double-release](https://eslint.interlace.tools/docs/security/plugin-pg/rules/prevent-double-release) | CWE-415 |  |  | Prevents calling client.release() multiple times on the same client. | 🟢 | 💼 |  |  |  |  |
-<!-- AUTO-GENERATED:RULES_TABLE:END -->
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [check-query-params](https://eslint.interlace.tools/docs/security/plugin-pg/rules/check-query-params) | CWE-89 |  |  | Ensure the number of query parameters matches the arguments array. |  | ⚠️ |  |  |  |
+| [no-batch-insert-loop](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-batch-insert-loop) | CWE-400 |  |  | Prevent executing database queries within loops (N+1 problem). |  | ⚠️ |  |  |  |
+| [no-floating-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-floating-query) | CWE-252 |  |  | Ensure all queries are awaited or returned to prevent unhandled promise rejections. | 💼 |  |  |  |  |
+| [no-hardcoded-credentials](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-hardcoded-credentials) | CWE-798 |  |  | Detect hardcoded credentials in pg Client or Pool initialization. | 💼 |  |  |  |  |
+| [no-insecure-ssl](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-insecure-ssl) | CWE-295 |  |  | Prevent the use of insecure SSL configurations (rejectUnauthorized: false). | 💼 |  |  |  |  |
+| [no-missing-client-release](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-missing-client-release) | CWE-772 |  |  | Ensure pg client is released after use to prevent pool exhaustion. | 💼 |  |  |  |  |
+| [no-select-all](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-select-all) | CWE-693 |  |  | Prevent using * in SELECT statements (implicit columns). |  | ⚠️ |  |  |  |
+| [no-transaction-on-pool](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-transaction-on-pool) | CWE-362 |  |  | Prevent starting transactions directly on the Pool, which is unsafe due to lack of client affinity. | 💼 |  |  |  |  |
+| [no-unsafe-copy-from](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-copy-from) | CWE-73 | A03:2025 |  | Prevent unsafe COPY FROM usage with dynamic file paths, which can lead to arbitrary file read/RCE. | 💼 |  |  |  |  |
+| [no-unsafe-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-query) | CWE-89 |  |  | Prevent SQL injection by disallowing string concatenation or unsafe template literals in queries. | 💼 |  |  |  |  |
+| [no-unsafe-search-path](https://eslint.interlace.tools/docs/security/plugin-pg/rules/no-unsafe-search-path) | CWE-426 |  |  | Prevent unsafe SET search_path usage with dynamic values, which can lead to schema hijacking. | 💼 |  |  |  |  |
+| [prefer-pool-query](https://eslint.interlace.tools/docs/security/plugin-pg/rules/prefer-pool-query) | CWE-693 |  |  | Prefer pool.query() over client.query() for single-shot queries. |  | ⚠️ |  |  |  |
+| [prevent-double-release](https://eslint.interlace.tools/docs/security/plugin-pg/rules/prevent-double-release) | CWE-415 |  |  | Prevent releasing a pg client multiple times. | 💼 |  |  |  |  |
+
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
@@ -128,15 +131,6 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
-
-## 📦 Compatibility
-
-| Package | Version |
-| :--- | :--- |
-| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
-| Node.js | `>=18.0.0` |
-
-See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
 ## 📄 License
 

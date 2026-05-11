@@ -10,7 +10,7 @@
   <a href="https://www.npmjs.com/package/eslint-plugin-nestjs-security" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-nestjs-security.svg" alt="NPM Version" /></a>
   <a href="https://www.npmjs.com/package/eslint-plugin-nestjs-security" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-nestjs-security.svg" alt="NPM Downloads" /></a>
   <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
-  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-plugin-nestjs-security" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-plugin-nestjs-security" alt="Codecov" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=nestjs-security" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=nestjs-security" alt="Codecov" /></a>
   <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
 </p>
 
@@ -124,6 +124,14 @@ This will enable a "trust but verify" approach for teams using global configurat
 
 ---
 
+## 📦 Compatibility
+| Package | Version |
+| :--- | :--- |
+| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0` |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
+
 ## Rules
 
 **Legend**
@@ -135,20 +143,16 @@ This will enable a "trust but verify" approach for teams using global configurat
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
-| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
-| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
-| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
-| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [no-exposed-debug-endpoints](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-exposed-debug-endpoints) | CWE-489 |  |  | Identifies potential debug, administration, or testing endpoints that are often left exposed in production… | 🟢 |  |  |  |  |  |
-| [no-exposed-private-fields](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-exposed-private-fields) | CWE-200 | A01:2021 |  | This rule detects sensitive fields (like passwords, tokens, secrets) in entity or DTO classes that are not… | 🟢 |  |  |  |  |  |
-| [no-missing-validation-pipe](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-missing-validation-pipe) | CWE-20 | A03:2021 |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
-| [require-class-validator](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-class-validator) | CWE-20 | A03:2021 |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
-| [require-guards](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-guards) | CWE-284 | A01:2021 |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
-| [require-throttler](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-throttler) | CWE-770 | A05:2021 |  | This rule detects NestJS controllers and route handlers that lack rate limiting, which can make the applica… | 🟢 |  |  |  |  |  |
-<!-- AUTO-GENERATED:RULES_TABLE:END -->
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [no-exposed-debug-endpoints](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-exposed-debug-endpoints) | CWE-489 |  |  | Detect debug endpoints without auth in NestJS applications |  |  |  |  |  |
+| [no-exposed-private-fields](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-exposed-private-fields) | CWE-200 | A01:2025 |  | Detects sensitive fields not excluded from serialization |  |  |  |  |  |
+| [no-missing-validation-pipe](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/no-missing-validation-pipe) | CWE-20 | A03:2025 |  | Requires ValidationPipe for DTO input parameters |  |  |  |  |  |
+| [require-class-validator](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-class-validator) | CWE-20 | A03:2025 |  | Requires class-validator decorators on DTO properties |  |  |  |  |  |
+| [require-guards](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-guards) | CWE-284 | A01:2025 |  | Requires @UseGuards decorator on controllers or route handlers | 💼 |  |  |  |  |
+| [require-throttler](https://eslint.interlace.tools/docs/security/plugin-nestjs-security/rules/require-throttler) | CWE-770 | A05:2025 |  | Requires ThrottlerGuard or @Throttle decorator for rate limiting |  |  |  |  |  |
+
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
@@ -166,15 +170,6 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
-
-## 📦 Compatibility
-
-| Package | Version |
-| :--- | :--- |
-| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
-| Node.js | `>=18.0.0` |
-
-See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
 ## 📄 License
 

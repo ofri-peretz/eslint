@@ -3,20 +3,20 @@
 </p>
 
 <p align="center">
-  Security-focused ESLint plugin.
+  Operability rules — observability hooks, structured logging, and runtime resilience.
 </p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/eslint-plugin-operability" target="_blank"><img src="https://img.shields.io/npm/v/eslint-plugin-operability.svg" alt="NPM Version" /></a>
   <a href="https://www.npmjs.com/package/eslint-plugin-operability" target="_blank"><img src="https://img.shields.io/npm/dm/eslint-plugin-operability.svg" alt="NPM Downloads" /></a>
   <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Package License" /></a>
-  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=eslint-plugin-operability" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=eslint-plugin-operability" alt="Codecov" /></a>
+  <a href="https://app.codecov.io/gh/ofri-peretz/eslint/components?components%5B0%5D=operability" target="_blank"><img src="https://codecov.io/gh/ofri-peretz/eslint/graph/badge.svg?component=operability" alt="Codecov" /></a>
   <a href="https://github.com/ofri-peretz/eslint" target="_blank"><img src="https://img.shields.io/badge/Since-Dec_2025-blue?logo=rocket&logoColor=white" alt="Since Dec 2025" /></a>
 </p>
 
 ## Description
 
-This plugin provides Security-focused ESLint plugin.
+This plugin provides Operability rules — observability hooks, structured logging, and runtime resilience.
 By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
 
 ## Philosophy
@@ -117,6 +117,14 @@ throw new Error('Service temporarily unavailable');
 
 ---
 
+## 📦 Compatibility
+| Package | Version |
+| :--- | :--- |
+| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
+| Node.js | `>=18.0.0` |
+
+See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
+
 ## Rules
 
 **Legend**
@@ -128,20 +136,11 @@ throw new Error('Service temporarily unavailable');
 | 🔧 | **Auto-fixable**: Automatically fixable by the `--fix` CLI option. |
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
-| 🟢 | **Type-unaware**: AST-only, runs in oxlint JS-plugin tier. |
-| 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
-| 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
-<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
-| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [no-console-log](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/no-console-log) | CWE-532 |  |  | Disallow console.log with configurable remediation strategies and LLM-optimized output. This rule is part o… | 🟢 |  |  |  | 💡 |  |
-| [no-debug-code-in-production](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/no-debug-code-in-production) | CWE-489 |  |  | Detects debug code that should not be present in production builds. | 🟢 |  |  |  | 💡 |  |
-| [no-process-exit](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/no-process-exit) |  |  |  | Prevents direct process.exit() calls to encourage graceful shutdown patterns. This rule is part of eslint-p… | 🟢 |  |  |  | 💡 |  |
-| [no-verbose-error-messages](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/no-verbose-error-messages) | CWE-209 | A01:2021 |  | Prevent exposing stack traces to users in API responses | 🟢 |  |  |  |  |  |
-| [require-code-minification](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/require-code-minification) | CWE-656 |  |  | Require minification configuration in build tools | 🟢 |  |  |  |  |  |
-| [require-data-minimization](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/require-data-minimization) | CWE-213 |  |  | Identifies excessive data collection patterns that violate privacy principles | 🟢 |  |  |  | 💡 |  |
-<!-- AUTO-GENERATED:RULES_TABLE:END -->
+| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
+| [operability](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/operability) |  |  |  | Enforce operability |  |  |  |  |  |
+
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
@@ -159,15 +158,6 @@ Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with L
 | [`eslint-plugin-mongodb-security`](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-mongodb-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-mongodb-security) | MongoDB security best practices. |
 | [`eslint-plugin-vercel-ai-security`](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-vercel-ai-security.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-vercel-ai-security) | Vercel AI SDK security hardening. |
 | [`eslint-plugin-import-next`](https://www.npmjs.com/package/eslint-plugin-import-next) | [![downloads](https://img.shields.io/npm/dt/eslint-plugin-import-next.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import-next) | Next-gen import sorting & architecture. |
-
-## 📦 Compatibility
-
-| Package | Version |
-| :--- | :--- |
-| ESLint | `^8.0.0 \|\| ^9.0.0 \|\| ^10.0.0` |
-| Node.js | `>=18.0.0` |
-
-See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) — current ecosystem share data, the 20% gate, and the forward-looking exception that covers v10.
 
 ## 📄 License
 
