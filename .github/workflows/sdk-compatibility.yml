@@ -58,8 +58,96 @@ permissions:
   contents: read
 
 jobs:
+  setup:
+    name: Compute matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      matrix: ${{ steps.compute.outputs.matrix }}
+    steps:
+      - name: Compute filtered matrix
+        id: compute
+        env:
+          SDK: ${{ inputs.sdk }}
+        run: |
+          set -euo pipefail
+          # Full SDK roster. To add a row: append an object below and add
+          # the same `key` to the `sdk` input's `options:` list at the top
+          # of this file. `rules` uses `\n` for newlines in JSON.
+          full=$(cat <<'JSON'
+          [
+            {
+              "key": "express",
+              "label": "Express Ecosystem",
+              "plugin": "eslint-plugin-express-security",
+              "issue_label": "express",
+              "packages": "express@latest helmet@latest cors@latest express-rate-limit@latest",
+              "rules": "| express | no-unsafe-redirect, require-helmet |\n| helmet | require-helmet |\n| cors | no-unsafe-cors |\n| express-rate-limit | require-rate-limit |\n"
+            },
+            {
+              "key": "jwt",
+              "label": "JWT Ecosystem",
+              "plugin": "eslint-plugin-jwt",
+              "issue_label": "jwt",
+              "packages": "jose@latest jsonwebtoken@latest express-jwt@latest",
+              "rules": "| jose / jsonwebtoken | no-weak-algorithm, require-expiration, no-hardcoded-secret |\n| express-jwt | require-issuer, require-audience |\n"
+            },
+            {
+              "key": "lambda",
+              "label": "AWS Lambda Ecosystem (Middy)",
+              "plugin": "eslint-plugin-lambda-security",
+              "issue_label": "middy",
+              "packages": "@middy/core@latest @middy/http-security-headers@latest @middy/http-cors@latest",
+              "rules": "| @middy/core | require-error-handler, require-input-validation |\n| @middy/http-security-headers | require-security-headers |\n| @middy/http-cors | no-unsafe-cors |\n"
+            },
+            {
+              "key": "mongodb",
+              "label": "MongoDB Ecosystem",
+              "plugin": "eslint-plugin-mongodb-security",
+              "issue_label": "mongodb",
+              "packages": "mongodb@latest mongoose@latest",
+              "rules": "| mongodb | no-unsafe-query, require-projection |\n| mongoose | no-server-side-evaluation, require-strict-mode |\n"
+            },
+            {
+              "key": "nestjs",
+              "label": "NestJS Ecosystem",
+              "plugin": "eslint-plugin-nestjs-security",
+              "issue_label": "nestjs",
+              "packages": "@nestjs/common@latest @nestjs/throttler@latest class-validator@latest class-transformer@latest rxjs@latest reflect-metadata@latest",
+              "rules": "| @nestjs/common | require-guards, require-validation-pipe |\n| @nestjs/throttler | require-rate-limit |\n| class-validator | require-validation |\n"
+            },
+            {
+              "key": "pg",
+              "label": "PostgreSQL Ecosystem (pg)",
+              "plugin": "eslint-plugin-pg",
+              "issue_label": "pg",
+              "packages": "pg@latest",
+              "rules": "| pg | no-unsafe-query, require-parameterized-query |\n"
+            },
+            {
+              "key": "vercel-ai",
+              "label": "Vercel AI Ecosystem",
+              "plugin": "eslint-plugin-vercel-ai-security",
+              "issue_label": "vercel-ai",
+              "packages": "ai@latest @ai-sdk/openai@latest",
+              "rules": "| ai | require-prompt-validation, no-hardcoded-system-prompt |\n| @ai-sdk/openai | require-api-key-env |\n"
+            }
+          ]
+          JSON
+          )
+          if [ "$SDK" = "all" ]; then
+            filtered="$full"
+          else
+            filtered=$(jq --arg sdk "$SDK" '[.[] | select(.key == $sdk)]' <<< "$full")
+          fi
+          matrix=$(jq -c '{include: .}' <<< "$filtered")
+          printf 'matrix=%s\n' "$matrix" >> "$GITHUB_OUTPUT"
+          echo "Resolved matrix:"
+          jq . <<< "$matrix"
+
   compatibility:
     name: ${{ matrix.label }}
+    needs: setup
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -68,81 +156,7 @@ jobs:
     strategy:
       fail-fast: false
       max-parallel: 4
-      matrix:
-        # NOTE: each row is one SDK. `key` must match the workflow_dispatch
-        # input choice. `packages` is space-separated `name@latest` tokens
-        # that get passed to `npm install --no-save`. `rules` is a free-form
-        # markdown line shown in the failure issue.
-        include:
-          - key: express
-            label: Express Ecosystem
-            plugin: eslint-plugin-express-security
-            issue_label: express
-            packages: "express@latest helmet@latest cors@latest express-rate-limit@latest"
-            rules: |
-              | express | no-unsafe-redirect, require-helmet |
-              | helmet | require-helmet |
-              | cors | no-unsafe-cors |
-              | express-rate-limit | require-rate-limit |
-
-          - key: jwt
-            label: JWT Ecosystem
-            plugin: eslint-plugin-jwt
-            issue_label: jwt
-            packages: "jose@latest jsonwebtoken@latest express-jwt@latest"
-            rules: |
-              | jose / jsonwebtoken | no-weak-algorithm, require-expiration, no-hardcoded-secret |
-              | express-jwt | require-issuer, require-audience |
-
-          - key: lambda
-            label: AWS Lambda Ecosystem (Middy)
-            plugin: eslint-plugin-lambda-security
-            issue_label: middy
-            packages: "@middy/core@latest @middy/http-security-headers@latest @middy/http-cors@latest"
-            rules: |
-              | @middy/core | require-error-handler, require-input-validation |
-              | @middy/http-security-headers | require-security-headers |
-              | @middy/http-cors | no-unsafe-cors |
-
-          - key: mongodb
-            label: MongoDB Ecosystem
-            plugin: eslint-plugin-mongodb-security
-            issue_label: mongodb
-            packages: "mongodb@latest mongoose@latest"
-            rules: |
-              | mongodb | no-unsafe-query, require-projection |
-              | mongoose | no-server-side-evaluation, require-strict-mode |
-
-          - key: nestjs
-            label: NestJS Ecosystem
-            plugin: eslint-plugin-nestjs-security
-            issue_label: nestjs
-            # rxjs + reflect-metadata are required peerDeps of @nestjs/common.
-            packages: "@nestjs/common@latest @nestjs/throttler@latest class-validator@latest class-transformer@latest rxjs@latest reflect-metadata@latest"
-            rules: |
-              | @nestjs/common | require-guards, require-validation-pipe |
-              | @nestjs/throttler | require-rate-limit |
-              | class-validator | require-validation |
-
-          - key: pg
-            label: PostgreSQL Ecosystem (pg)
-            plugin: eslint-plugin-pg
-            issue_label: pg
-            packages: "pg@latest"
-            rules: |
-              | pg | no-unsafe-query, require-parameterized-query |
-
-          - key: vercel-ai
-            label: Vercel AI Ecosystem
-            plugin: eslint-plugin-vercel-ai-security
-            issue_label: vercel-ai
-            packages: "ai@latest @ai-sdk/openai@latest"
-            rules: |
-              | ai | require-prompt-validation, no-hardcoded-system-prompt |
-              | @ai-sdk/openai | require-api-key-env |
-
-    # Skip rows that don't match the input filter (when not "all").
-    if: ${{ inputs.sdk == 'all' || inputs.sdk == matrix.key }}
+      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
