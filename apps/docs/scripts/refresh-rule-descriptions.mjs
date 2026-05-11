@@ -138,12 +138,31 @@ function updateFrontmatterDescription(src, newDescription) {
   return `---\n${newFmBody}\n---\n` + src.slice(fmMatch[0].length);
 }
 
+function extractDescription(fmBody) {
+  const m = fmBody.match(/^description:\s*(.*)$/m);
+  if (!m) return null;
+  let v = m[1].trim();
+  if (
+    (v.startsWith('"') && v.endsWith('"')) ||
+    (v.startsWith("'") && v.endsWith("'"))
+  ) {
+    v = v.slice(1, -1);
+  }
+  return v;
+}
+
 function stripBoilerplateLeads(src) {
   // Walk the body after the frontmatter. For each top-level paragraph that
-  // matches a boilerplate pattern, drop it (and one trailing blank line).
-  // We stop after the first heading — boilerplate only appears in the lead.
-  const fmMatch = src.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n/);
+  // matches a boilerplate pattern *or* duplicates the frontmatter
+  // description verbatim, drop it (and one trailing blank line). We stop
+  // after the first heading — these only appear in the lead.
+  const fmMatch = src.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
   if (!fmMatch) return src;
+
+  const description = extractDescription(fmMatch[1]);
+  const normalizedDescription = description
+    ? description.replace(/\s+/g, ' ').trim()
+    : null;
 
   const before = src.slice(0, fmMatch[0].length);
   const body = src.slice(fmMatch[0].length);
@@ -170,8 +189,14 @@ function stripBoilerplateLeads(src) {
     while (i < lines.length && lines[i].trim() !== '') i++;
     const end = i;
     const paragraph = lines.slice(start, end).join('\n');
+    const paragraphNormalized = paragraph.replace(/\s+/g, ' ').trim();
 
-    if (isBoilerplateLead(paragraph)) {
+    const isDescriptionDup =
+      normalizedDescription !== null &&
+      normalizedDescription.length >= 20 &&
+      paragraphNormalized === normalizedDescription;
+
+    if (isBoilerplateLead(paragraph) || isDescriptionDup) {
       let dropEnd = end;
       if (dropEnd < lines.length && lines[dropEnd].trim() === '') dropEnd++;
       dropRanges.push([start, dropEnd]);

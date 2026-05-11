@@ -267,13 +267,14 @@ packages.forEach(pkg => {
     output.push('</p>');
     output.push('');
 
-    // Description
+    // Description — use the canonical DESCRIPTIONS entry verbatim. The
+    // previous template appended a "proactively identify and mitigate
+    // security risks" sentence to every plugin, which was wrong for the
+    // quality plugins (reliability, conventions, etc.). The shortDesc
+    // already conveys what the plugin does — no boilerplate epilogue.
     output.push('## Description');
     output.push('');
-    // We use the short description as base, assumed ample enough or user edits manual if needed.
-    // For now we default to the clean standard description.
     output.push(`This plugin provides ${shortDesc}`);
-    output.push(`By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.`);
     output.push('');
     
     // Philosophy

@@ -17,7 +17,6 @@
 ## Description
 
 This plugin provides Advanced React patterns, hook usage, and best practices enforcement.
-By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
 
 ## Philosophy
 
@@ -61,12 +60,63 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [migration](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/migration) |  |  |  | Enforce migration |  |  |  |  |  |
-| [performance](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/performance) |  |  |  | Enforce performance |  |  |  |  |  |
-| [react](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/react) |  |  |  | Enforce react |  |  |  |  |  |
-
+<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [checked-requires-onchange-or-readonly](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/checked-requires-onchange-or-readonly) |  |  |  | checked-requires-onchange-or-readonly rule | 🟢 |  |  |  | 💡 |  |
+| [default-props-match-prop-types](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/default-props-match-prop-types) |  |  |  | default-props-match-prop-types rule | 🟢 |  |  |  | 💡 |  |
+| [display-name](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/display-name) |  |  |  | display-name rule | 🟢 |  |  |  | 💡 |  |
+| [hooks-exhaustive-deps](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/hooks-exhaustive-deps) |  |  |  | hooks-exhaustive-deps rule | 🟢 |  |  |  | 💡 |  |
+| [jsx-handler-names](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-handler-names) |  |  |  | jsx-handler-names rule | 🟢 |  |  |  | 💡 |  |
+| [jsx-key](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-key) |  |  |  | jsx-key rule | 🟢 |  |  |  | 💡 |  |
+| [jsx-max-depth](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-max-depth) |  |  |  | jsx-max-depth rule | 🟢 |  |  |  | 💡 |  |
+| [jsx-no-bind](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-no-bind) |  |  |  | jsx-no-bind rule | 🟢 |  |  |  | 💡 |  |
+| [jsx-no-duplicate-props](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-no-duplicate-props) |  |  |  | Prevent duplicate props in JSX elements. This rule is part of eslint-plugin-react-features and provides LLM… | 🟢 |  |  |  | 💡 |  |
+| [jsx-no-literals](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-no-literals) |  |  |  | jsx-no-literals rule | 🟢 |  |  |  | 💡 |  |
+| [jsx-no-script-url](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-no-script-url) |  |  |  | Prevent javascript: URLs in JSX. This rule is part of eslint-plugin-react-features and provides LLM-optimiz… | 🟢 |  |  |  | 💡 |  |
+| [jsx-no-target-blank](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/jsx-no-target-blank) |  |  |  | Require rel='noopener noreferrer' with target='_blank'. This rule is part of eslint-plugin-react-features a… | 🟢 |  |  |  | 💡 |  |
+| [no-access-state-in-setstate](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-access-state-in-setstate) |  |  |  | no-access-state-in-setstate rule | 🟢 |  |  |  | 💡 |  |
+| [no-adjacent-inline-elements](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-adjacent-inline-elements) |  |  |  | no-adjacent-inline-elements rule | 🟢 |  |  |  | 💡 |  |
+| [no-arrow-function-lifecycle](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-arrow-function-lifecycle) |  |  |  | no-arrow-function-lifecycle rule | 🟢 |  |  |  | 💡 |  |
+| [no-children-prop](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-children-prop) |  |  |  | no-children-prop rule | 🟢 |  |  |  | 💡 |  |
+| [no-danger](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-danger) | CWE-79 |  |  | no-danger rule | 🟢 |  |  |  | 💡 |  |
+| [no-danger-with-children](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-danger-with-children) |  |  |  | Prevent using children and dangerouslySetInnerHTML together. This rule is part of eslint-plugin-react-featu… | 🟢 |  |  |  | 💡 |  |
+| [no-deprecated](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-deprecated) |  |  |  | Warn about using deprecated React APIs. This rule is part of eslint-plugin-react-features and provides LLM-… | 🟢 |  |  |  | 💡 |  |
+| [no-did-mount-set-state](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-did-mount-set-state) |  |  |  | no-did-mount-set-state rule | 🟢 |  |  |  | 💡 |  |
+| [no-did-update-set-state](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-did-update-set-state) |  |  |  | no-did-update-set-state rule | 🟢 |  |  |  | 💡 |  |
+| [no-direct-mutation-state](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-direct-mutation-state) |  |  |  | no-direct-mutation-state rule | 🟢 |  |  |  | 💡 |  |
+| [no-find-dom-node](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-find-dom-node) |  |  |  | Prevent using findDOMNode. This rule is part of eslint-plugin-react-features and provides LLM-optimized err… | 🟢 |  |  |  | 💡 |  |
+| [no-invalid-html-attribute](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-invalid-html-attribute) |  |  |  | no-invalid-html-attribute rule | 🟢 |  |  |  | 💡 |  |
+| [no-is-mounted](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-is-mounted) |  |  |  | no-is-mounted rule | 🟢 |  |  |  | 💡 |  |
+| [no-multi-comp](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-multi-comp) |  |  |  | no-multi-comp rule | 🟢 |  |  |  | 💡 |  |
+| [no-namespace](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-namespace) |  |  |  | no-namespace rule | 🟢 |  |  |  | 💡 |  |
+| [no-object-type-as-default-prop](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-object-type-as-default-prop) |  |  |  | no-object-type-as-default-prop rule | 🟢 |  |  |  | 💡 |  |
+| [no-redundant-should-component-update](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-redundant-should-component-update) |  |  |  | no-redundant-should-component-update rule | 🟢 |  |  |  | 💡 |  |
+| [no-render-return-value](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-render-return-value) |  |  |  | no-render-return-value rule | 🟢 |  |  |  | 💡 |  |
+| [no-set-state](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-set-state) |  |  |  | no-set-state rule | 🟢 |  |  |  | 💡 |  |
+| [no-string-refs](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-string-refs) |  |  |  | no-string-refs rule | 🟢 |  |  |  | 💡 |  |
+| [no-this-in-sfc](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-this-in-sfc) |  |  |  | no-this-in-sfc rule | 🟢 |  |  |  | 💡 |  |
+| [no-typos](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-typos) |  |  |  | no-typos rule | 🟢 |  |  |  | 💡 |  |
+| [no-unescaped-entities](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-unescaped-entities) |  |  |  | no-unescaped-entities rule | 🟢 |  |  |  | 💡 |  |
+| [no-unknown-property](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-unknown-property) |  |  |  | no-unknown-property rule | 🟢 |  |  |  | 💡 |  |
+| [no-unnecessary-rerenders](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-unnecessary-rerenders) |  |  |  | no-unnecessary-rerenders rule | 🟢 |  |  |  | 💡 |  |
+| [no-unsafe](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/no-unsafe) |  |  |  | Warn about UNSAFE_ lifecycle methods. This rule is part of eslint-plugin-react-features and provides LLM-op… | 🟢 |  |  |  | 💡 |  |
+| [prefer-es6-class](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/prefer-es6-class) |  |  |  | prefer-es6-class rule | 🟢 |  |  |  | 💡 |  |
+| [prefer-stateless-function](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/prefer-stateless-function) |  |  |  | prefer-stateless-function rule | 🟢 |  |  |  | 💡 |  |
+| [prop-types](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/prop-types) |  |  |  | prop-types rule | 🟢 |  |  |  | 💡 |  |
+| [react-class-to-hooks](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/react-class-to-hooks) |  |  |  | react-class-to-hooks rule | 🟢 |  |  |  | 💡 |  |
+| [react-in-jsx-scope](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/react-in-jsx-scope) |  |  |  | react-in-jsx-scope rule | 🟢 |  |  |  | 💡 |  |
+| [react-no-inline-functions](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/react-no-inline-functions) |  |  |  | react-no-inline-functions rule | 🟢 |  |  |  | 💡 |  |
+| [react-render-optimization](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/react-render-optimization) |  |  |  | react-render-optimization rule | 🟢 |  |  |  | 💡 |  |
+| [require-default-props](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/require-default-props) |  |  |  | require-default-props rule | 🟢 |  |  |  | 💡 |  |
+| [require-optimization](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/require-optimization) |  |  |  | require-optimization rule | 🟢 |  |  |  | 💡 |  |
+| [require-render-return](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/require-render-return) |  |  |  | require-render-return rule | 🟢 |  |  |  | 💡 |  |
+| [required-attributes](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/required-attributes) |  |  |  | required-attributes rule | 🟢 |  |  |  | 💡 |  |
+| [sort-comp](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/sort-comp) |  |  |  | sort-comp rule | 🟢 |  |  |  | 💡 |  |
+| [state-in-constructor](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/state-in-constructor) |  |  |  | state-in-constructor rule | 🟢 |  |  |  | 💡 |  |
+| [static-property-placement](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/static-property-placement) |  |  |  | static-property-placement rule | 🟢 |  |  |  | 💡 |  |
+| [void-dom-elements-no-children](https://eslint.interlace.tools/docs/quality/plugin-react-features/rules/void-dom-elements-no-children) |  |  |  | Prevent void DOM elements from receiving children. This rule is part of eslint-plugin-react-features and pr… | 🟢 |  |  |  | 💡 |  |
+<!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:

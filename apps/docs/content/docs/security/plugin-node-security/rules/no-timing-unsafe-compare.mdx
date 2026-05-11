@@ -19,8 +19,6 @@ import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleCom
 > **CWE:** [CWE-208](https://cwe.mitre.org/data/definitions/208.html)  
 > **OWASP:** [A02:2021-Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 
-Disallow timing-unsafe comparison of secrets
-
 Detects timing-unsafe comparison of secrets using `===` or `==` operators. This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security) and provides LLM-optimized error messages with fix suggestions.
 
 **🚨 Security rule** | **💡 Provides suggestions** | **⚠️ Set to error in `recommended`**

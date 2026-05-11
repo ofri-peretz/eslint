@@ -17,7 +17,6 @@
 ## Description
 
 This plugin provides Modernization rules — prefer modern ES idioms over legacy patterns.
-By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
 
 ## Philosophy
 
@@ -120,12 +119,13 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [no-instanceof-array](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/no-instanceof-array) |  |  |  | Prefer Array.isArray() over instanceof Array for better cross-realm compatibility |  |  |  | 💡 |  |
-| [prefer-at](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-at) |  |  |  | Prefer .at() method over bracket notation for accessing elements from the end |  |  |  | 💡 |  |
-| [prefer-event-target](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-event-target) |  |  |  | Prefer EventTarget over EventEmitter for cross-platform compatibility |  |  |  | 💡 |  |
-
+<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [no-instanceof-array](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/no-instanceof-array) |  |  |  | Prefer Array.isArray() over instanceof Array for reliable type checking across different JavaScript realms… | 🟢 |  |  |  | 💡 |  |
+| [prefer-at](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-at) |  |  |  | Prefer using Array.at() for accessing elements, especially with negative indices | 🟢 |  |  |  | 💡 |  |
+| [prefer-event-target](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-event-target) |  |  |  | Prefer EventTarget over EventEmitter for isomorphic code | 🟢 |  |  |  | 💡 |  |
+<!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:

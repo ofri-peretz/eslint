@@ -17,7 +17,6 @@
 ## Description
 
 This plugin provides Security rules for MongoDB queries and interactions (NoSQL injection).
-By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
 
 ## Philosophy
 
@@ -90,25 +89,26 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [no-bypass-middleware](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-bypass-middleware) | CWE-284 | A01:2025 |  | This method bypasses Mongoose middleware hooks | 💼 |  |  |  |  |
-| [no-debug-mode-production](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-debug-mode-production) | CWE-489 | A05:2025 |  | Detects Mongoose debug mode that could expose sensitive query information in production. | 💼 |  |  |  |  |
-| [no-hardcoded-connection-string](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-hardcoded-connection-string) | CWE-798 | A07:2025 |  | MongoDB connection string contains hardcoded credentials |  |  |  |  |  |
-| [no-hardcoded-credentials](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-hardcoded-credentials) | CWE-798 | A07:2025 |  | MongoDB authentication credentials are hardcoded |  |  |  |  |  |
-| [no-operator-injection](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-operator-injection) | CWE-943 | A03:2025 |  | Prevent MongoDB operator injection attacks via user input | 💼 |  |  |  |  |
-| [no-select-sensitive-fields](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-select-sensitive-fields) | CWE-200 | A01:2025 |  | Query may return sensitive fields like password or token | 💼 |  |  |  |  |
-| [no-unbounded-find](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-unbounded-find) | CWE-400 | A04:2025 |  | find() without limit() may return excessive data |  |  |  |  |  |
-| [no-unsafe-populate](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-unsafe-populate) | CWE-943 | A03:2025 |  | User-controlled populate() can lead to data exposure or injection | 💼 |  |  |  |  |
-| [no-unsafe-query](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-unsafe-query) | CWE-943 | A03:2025 |  | Prevent NoSQL injection via direct use of user input in MongoDB queries | 💼 |  |  |  |  |
-| [no-unsafe-regex-query](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-unsafe-regex-query) | CWE-400 | A03:2025 |  | User input in $regex can cause ReDoS or information disclosure |  |  |  |  |  |
-| [no-unsafe-where](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-unsafe-where) | CWE-943 | A01:2025 |  | Prevent $where operator RCE attacks (CVE-2025-23061) | 💼 |  |  |  |  |
-| [require-auth-mechanism](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/require-auth-mechanism) | CWE-287 | A07:2025 |  | MongoDB connection uses default authentication mechanism |  |  |  |  |  |
-| [require-lean-queries](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/require-lean-queries) | CWE-400 | A04:2025 |  | Full Mongoose documents use more memory than plain objects |  | ⚠️ |  |  |  |
-| [require-projection](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/require-projection) | CWE-200 | A01:2025 |  | Query returns all fields without projection |  |  |  |  |  |
-| [require-schema-validation](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/require-schema-validation) | CWE-20 | A04:2025 |  | Mongoose schema field lacks validation | 💼 |  |  |  |  |
-| [require-tls-connection](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/require-tls-connection) | CWE-295 | A02:2025 |  | MongoDB connection is not using TLS encryption |  |  |  |  |  |
-
+<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [no-bypass-middleware](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-bypass-middleware) | CWE-284 | A01:2021 |  | Detects Mongoose operations that bypass middleware hooks (pre/post hooks). | 🟢 | 💼 |  |  |  |  |
+| [no-debug-mode-production](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-debug-mode-production) | CWE-489 | A05:2021 |  | Detects Mongoose debug mode that could expose sensitive query information in production. | 🟢 | 💼 |  |  |  |  |
+| [no-hardcoded-connection-string](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-hardcoded-connection-string) | CWE-798 | A07:2021 |  | Detects hardcoded MongoDB connection strings containing credentials in source code. | 🟢 |  |  |  |  |  |
+| [no-hardcoded-credentials](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-hardcoded-credentials) | CWE-798 | A07:2021 |  | Detects hardcoded MongoDB authentication credentials in connection options. | 🟢 |  |  |  |  |  |
+| [no-operator-injection](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-operator-injection) | CWE-943 | A03:2021 |  | Detects MongoDB operator injection attacks where user input is passed directly as query values, allowing at… | 🟢 | 💼 |  |  |  |  |
+| [no-select-sensitive-fields](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-select-sensitive-fields) | CWE-200 | A01:2021 |  | Detects queries that may return sensitive fields like passwords, tokens, or API keys. | 🟢 | 💼 |  |  |  |  |
+| [no-unbounded-find](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-unbounded-find) | CWE-400 | A04:2021 |  | Requires limit() on find queries to prevent resource exhaustion from unbounded result sets. | 🟢 |  |  |  |  |  |
+| [no-unsafe-populate](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-unsafe-populate) | CWE-943 | A03:2021 |  | Detects user-controlled populate() paths that could lead to data exposure or injection. | 🟢 | 💼 |  |  |  |  |
+| [no-unsafe-query](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-unsafe-query) | CWE-943 | A03:2021 |  | Prevents NoSQL injection by detecting direct use of user input in MongoDB query objects. | 🟢 | 💼 |  |  |  |  |
+| [no-unsafe-regex-query](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-unsafe-regex-query) | CWE-400 | A03:2021 |  | Detects user input in MongoDB $regex operators that could cause ReDoS (Regular Expression Denial of Service… | 🟢 |  |  |  |  |  |
+| [no-unsafe-where](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/no-unsafe-where) | CWE-943 | A01:2021 |  | Prevents use of the dangerous $where operator which executes JavaScript on the MongoDB server, enabling Rem… | 🟢 | 💼 |  |  |  |  |
+| [require-auth-mechanism](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/require-auth-mechanism) | CWE-287 | A07:2021 |  | Requires explicit authentication mechanism specification for MongoDB connections. | 🟢 |  |  |  |  |  |
+| [require-lean-queries](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/require-lean-queries) | CWE-400 | A04:2021 |  | Suggests using .lean() for read-only Mongoose queries to reduce memory usage. | 🟢 |  | ⚠️ |  |  |  |
+| [require-projection](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/require-projection) | CWE-200 | A01:2021 |  | Requires field projection on queries to minimize data exposure. | 🟢 |  |  |  |  |  |
+| [require-schema-validation](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/require-schema-validation) | CWE-20 | A04:2021 |  | Requires validation options on Mongoose schema fields to prevent invalid or malicious data. | 🟢 | 💼 |  |  |  |  |
+| [require-tls-connection](https://eslint.interlace.tools/docs/security/plugin-mongodb-security/rules/require-tls-connection) | CWE-295 | A02:2021 |  | Requires TLS/SSL encryption for MongoDB connections in production environments. | 🟢 |  |  |  |  |  |
+<!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:

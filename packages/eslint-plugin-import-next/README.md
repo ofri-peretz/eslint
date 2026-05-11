@@ -17,7 +17,6 @@
 ## Description
 
 This plugin provides Next-generation import sorting, validation, and architectural boundaries.
-By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
 
 ## Philosophy
 

@@ -17,7 +17,6 @@
 ## Description
 
 This plugin provides General secure coding practices and OWASP compliance for JavaScript/TypeScript.
-By using this plugin, you can proactively identify and mitigate security risks across your entire codebase.
 
 ## Philosophy
 
@@ -66,36 +65,37 @@ See the [ESLint Version Support Policy](../../docs/ESLINT_VERSION_SUPPORT.md) �
 | 💡 | **Suggestions**: Providing code suggestions in IDE. |
 | 🚫 | **Deprecated**: This rule is deprecated. |
 
-| Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
-| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: |
-| [detect-non-literal-regexp](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/detect-non-literal-regexp) | CWE-400 |  |  | Detects RegExp(variable), which might allow an attacker to DOS your server with a long-running regular expression |  |  |  |  |  |
-| [detect-object-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/detect-object-injection) | CWE-915 |  |  | Detects variable[key] as a left- or right-hand assignment operand |  |  |  |  |  |
-| [detect-weak-password-validation](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/detect-weak-password-validation) | CWE-521 | A07:2025 |  | Identify weak password requirements |  |  |  |  |  |
-| [no-directive-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-directive-injection) | CWE-94 |  |  | Detects directive injection vulnerabilities in templates |  |  |  |  |  |
-| [no-electron-security-issues](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-electron-security-issues) | CWE-16 |  |  | Detects Electron security vulnerabilities and insecure configurations |  |  |  |  |  |
-| [no-format-string-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-format-string-injection) | CWE-134 |  |  | Detects format string injection vulnerabilities |  |  |  |  |  |
-| [no-graphql-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-graphql-injection) | CWE-943 |  |  | Detects GraphQL injection vulnerabilities and DoS attacks | 💼 |  |  |  |  |
-| [no-hardcoded-credentials](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-hardcoded-credentials) | CWE-798 |  |  | Detects hardcoded passwords, API keys, tokens, and other sensitive credentials | 💼 |  |  |  |  |
-| [no-hardcoded-session-tokens](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-hardcoded-session-tokens) | CWE-798 |  |  | Detect hardcoded session/JWT tokens |  |  |  |  |  |
-| [no-improper-sanitization](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-improper-sanitization) | CWE-116 |  |  | Detects improper sanitization of user input |  |  |  |  |  |
-| [no-improper-type-validation](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-improper-type-validation) | CWE-1287 |  |  | Detects improper type validation in user input handling | 💼 |  |  |  |  |
-| [no-insecure-comparison](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-insecure-comparison) | CWE-697 |  |  | Detects insecure comparison operators (==, !=) that can lead to type coercion vulnerabilities | 💼 |  |  |  |  |
-| [no-ldap-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-ldap-injection) | CWE-90 |  |  | Detects LDAP injection vulnerabilities | 💼 |  |  |  |  |
-| [no-missing-authentication](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-missing-authentication) | CWE-287 |  |  | Detects missing authentication checks in route handlers | 💼 |  |  |  |  |
-| [no-pii-in-logs](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-pii-in-logs) | CWE-359 |  |  | Prevent PII (email, SSN, credit cards) in console logs |  |  |  | 💡 |  |
-| [no-privilege-escalation](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-privilege-escalation) | CWE-269 |  |  | Detects potential privilege escalation vulnerabilities | 💼 |  |  |  |  |
-| [no-redos-vulnerable-regex](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-redos-vulnerable-regex) | CWE-400 |  |  | Nested quantifiers like (a+)+, (a*)*, (a?)? cause exponential backtracking |  |  |  |  |  |
-| [no-sensitive-data-exposure](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-sensitive-data-exposure) | CWE-532 |  |  | Detects PII/credentials in logs, responses, or error messages | 💼 |  |  |  |  |
-| [no-unchecked-loop-condition](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-unchecked-loop-condition) | CWE-400 |  |  | Detects unchecked loop conditions that could cause DoS |  |  |  |  |  |
-| [no-unlimited-resource-allocation](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-unlimited-resource-allocation) | CWE-770 |  |  | Detects unlimited resource allocation that could cause DoS |  |  |  |  |  |
-| [no-unsafe-deserialization](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-unsafe-deserialization) | CWE-502 |  |  | Detects unsafe deserialization of untrusted data | 💼 |  |  |  |  |
-| [no-unsafe-regex-construction](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-unsafe-regex-construction) | CWE-400 |  |  | Detects unsafe regex construction patterns (user input without escaping, dynamic flags) |  |  |  |  |  |
-| [no-weak-password-recovery](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-weak-password-recovery) | CWE-640 |  |  | Detects weak password recovery mechanisms | 💼 |  |  |  |  |
-| [no-xpath-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-xpath-injection) | CWE-643 |  |  | Detects XPath injection vulnerabilities | 💼 |  |  |  |  |
-| [no-xxe-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-xxe-injection) | CWE-611 |  |  | Detect XML External Entity (XXE) injection vulnerabilities | 💼 |  |  |  |  |
-| [require-backend-authorization](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/require-backend-authorization) | CWE-602 |  |  | Require server-side authorization checks |  |  |  |  |  |
-| [require-secure-defaults](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/require-secure-defaults) | CWE-1188 |  |  | Ensure secure default configurations |  |  |  |  |  |
-
+<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [detect-non-literal-regexp](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/detect-non-literal-regexp) | CWE-400 |  |  | Detects RegExp(variable), which might allow an attacker to DOS your server with a long-running regular expr… | 🟢 |  |  |  |  |  |
+| [detect-object-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/detect-object-injection) | CWE-915 |  |  | Detects variable[key] as a left- or right-hand assignment operand (prototype pollution) | 🟡 |  |  |  |  |  |
+| [detect-weak-password-validation](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/detect-weak-password-validation) | CWE-521 | A07:2021 |  | Detects weak password length requirements (less than 8 characters) in validation code. | 🟢 |  |  |  |  |  |
+| [no-directive-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-directive-injection) | CWE-94 |  |  | Detects directive injection vulnerabilities in template systems | 🟢 |  |  |  |  |  |
+| [no-electron-security-issues](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-electron-security-issues) | CWE-16 |  |  | Detects Electron security vulnerabilities and insecure configurations | 🟢 |  |  |  |  |  |
+| [no-format-string-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-format-string-injection) | CWE-134 |  |  | Detects format string injection vulnerabilities | 🟢 |  |  |  |  |  |
+| [no-graphql-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-graphql-injection) | CWE-943 |  |  | Detects GraphQL injection vulnerabilities and DoS attacks | 🟢 | 💼 |  |  |  |  |
+| [no-hardcoded-credentials](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-hardcoded-credentials) | CWE-798 |  |  | Detects hardcoded passwords, API keys, tokens, and other sensitive credentials in source code | 🟢 | 💼 |  |  |  |  |
+| [no-hardcoded-session-tokens](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-hardcoded-session-tokens) | CWE-798 |  |  | This rule detects hardcoded JWT tokens (starting with eyJ), Bearer tokens, and session identifiers | 🟢 |  |  |  |  |  |
+| [no-improper-sanitization](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-improper-sanitization) | CWE-116 |  |  | Detects improper sanitization of user input | 🟢 |  |  |  |  |  |
+| [no-improper-type-validation](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-improper-type-validation) | CWE-1287 |  |  | Detects improper type validation in user input handling | 🟢 | 💼 |  |  |  |  |
+| [no-insecure-comparison](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-insecure-comparison) | CWE-697 |  |  | Detects insecure comparison operators (==, !=) that can lead to type coercion vulnerabilities | 🟢 | 💼 |  |  |  |  |
+| [no-ldap-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-ldap-injection) | CWE-90 |  |  | Detects LDAP injection vulnerabilities | 🟢 | 💼 |  |  |  |  |
+| [no-missing-authentication](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-missing-authentication) | CWE-287 |  |  | CWE: [CWE-287](https://cwe.mitre.org/data/definitions/287.html) | 🟢 | 💼 |  |  |  |  |
+| [no-pii-in-logs](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-pii-in-logs) | CWE-359 |  |  | Prevent personally identifiable information (PII) — emails, SSNs, credit cards, phone numbers — from reachi… | 🟢 |  |  |  | 💡 |  |
+| [no-privilege-escalation](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-privilege-escalation) | CWE-269 |  |  | Detects potential privilege escalation vulnerabilities where user input is used to assign roles or permissi… | 🟢 | 💼 |  |  |  |  |
+| [no-redos-vulnerable-regex](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-redos-vulnerable-regex) | CWE-400 |  |  | ESLint Rule: no-redos-vulnerable-regex | 🟢 |  |  |  |  |  |
+| [no-sensitive-data-exposure](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-sensitive-data-exposure) | CWE-532 |  |  | ESLint Rule: no-sensitive-data-exposure | 🟢 | 💼 |  |  |  |  |
+| [no-unchecked-loop-condition](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-unchecked-loop-condition) | CWE-400 |  |  | Detects unchecked loop conditions that could cause DoS | 🟢 |  |  |  |  |  |
+| [no-unlimited-resource-allocation](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-unlimited-resource-allocation) | CWE-770 |  |  | Detects unlimited resource allocation that could cause DoS | 🟢 |  |  |  |  |  |
+| [no-unsafe-deserialization](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-unsafe-deserialization) | CWE-502 |  |  | Detects unsafe deserialization of untrusted data | 🟢 | 💼 |  |  |  |  |
+| [no-unsafe-regex-construction](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-unsafe-regex-construction) | CWE-400 |  |  | ESLint Rule: no-unsafe-regex-construction with LLM-optimized suggestions and auto-fix capabilities | 🟢 |  |  |  |  |  |
+| [no-weak-password-recovery](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-weak-password-recovery) | CWE-640 |  |  | ESLint Rule: no-weak-password-recovery with LLM-optimized suggestions and auto-fix capabilities | 🟢 | 💼 |  |  |  |  |
+| [no-xpath-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-xpath-injection) | CWE-643 |  |  | Detects XPath injection vulnerabilities | 🟢 | 💼 |  |  |  |  |
+| [no-xxe-injection](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/no-xxe-injection) | CWE-611 |  |  | Detects XML External Entity (XXE) injection vulnerabilities | 🟢 | 💼 |  |  |  |  |
+| [require-backend-authorization](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/require-backend-authorization) | CWE-602 |  |  | CWE: [CWE-602](https://cwe.mitre.org/data/definitions/602.html) | 🟢 |  |  |  |  |  |
+| [require-secure-defaults](https://eslint.interlace.tools/docs/security/plugin-secure-coding/rules/require-secure-defaults) | CWE-1188 |  |  | CWE: [CWE-1188](https://cwe.mitre.org/data/definitions/1188.html) | 🟢 |  |  |  |  |  |
+<!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:
