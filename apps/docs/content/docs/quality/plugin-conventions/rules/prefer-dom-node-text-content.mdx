@@ -1,17 +1,16 @@
 ---
-title: "prefer-dom-node-text-content"
-description: "title: prefer-dom-node-text-content"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: prefer-dom-node-text-content
-description: Prefer textContent over innerText. This rule is part of eslint-plugin-conventions.
+description: "Prefer textContent over innerText for better performance and reliability"
 tags: ['quality', 'conventions', 'style']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** textContent, innerText, DOM, performance, ESLint rule, auto-fix, LLM-optimized
 

@@ -1,19 +1,18 @@
 ---
-title: "require-postmessage-origin-check"
-description: "title: require-postmessage-origin-check"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: require-postmessage-origin-check
-description: Detects postMessage event handlers without origin validation
+description: "Require origin validation in postMessage event listeners"
 tags: ['security', 'browser']
 category: security
 severity: medium
 cwe: CWE-346
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** postMessage, cross-origin, CWE-346, security, iframe, message validation
 

@@ -9,6 +9,7 @@
     "no-commented-code",
     "no-console-spaces",
     "no-deprecated-api",
+    "no-json-schema-tags",
     "prefer-code-point",
     "prefer-dependency-version-strategy",
     "prefer-dom-node-text-content",

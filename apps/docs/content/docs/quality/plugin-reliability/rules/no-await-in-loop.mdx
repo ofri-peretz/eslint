@@ -1,21 +1,18 @@
 ---
-title: "no-await-in-loop"
-description: "title: no-await-in-loop"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-await-in-loop
-description: Disallow await inside loops without considering concurrency implications
+description: "Disallow await inside loops and suggest appropriate concurrency patterns"
 tags: ['quality', 'reliability']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-> **Keywords:** async, await, loop, Promise.all, concurrency, performance, ESLint rule, sequential, parallel, LLM-optimized
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Disallow await inside loops without considering concurrency implications
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** async, await, loop, Promise.all, concurrency, performance, ESLint rule, sequential, parallel, LLM-optimized
 
 Disallow await inside loops without considering concurrency implications. This rule is part of [`eslint-plugin-reliability`](https://www.npmjs.com/package/eslint-plugin-reliability) and provides LLM-optimized error messages with concurrency pattern suggestions.
 

@@ -1,77 +1,86 @@
 ---
 title: 'Use Interlace with Cursor'
-description: 'Wire Interlace MCP servers into Cursor in 3 minutes. Same tools as Claude Code; minor config-file location difference.'
+description: 'Wire Interlace rules into Cursor via the official ESLint MCP server. Local install, no remote server. ~2 minutes.'
+icon: MousePointer
 ---
 
 # Use Interlace with Cursor
 
-> **Time to set up:** ~3 minutes.
-> **Result:** Cursor's agent can call `audit_file`, `find_rule_violations`, `suggest_fix`, and `list_rules` against any of the 11 Interlace plugins as typed MCP tools. Identical tool surface to [Claude Code](./claude-code).
+> **Time to set up:** ~2 minutes.
+> **Result:** Cursor's agent can call ESLint MCP tools against your project — Interlace plugin rules included — and apply fixes through Cursor's editing primitives. Identical surface to [Claude Code](./claude-code).
 
-## Step 1 — install the CLI + the plugin servers
+We **do not ship our own MCP server**. The ESLint team maintains [`@eslint/mcp`](https://www.npmjs.com/package/@eslint/mcp) — the official, local-only stdio MCP. It auto-discovers every ESLint plugin (including ours) from your project's `eslint.config.*`. One server, every plugin, no per-package sprawl.
+
+## Step 1 — install ESLint + the Interlace plugins you want
 
 ```bash
-npm install -g @interlace/cli
-# Pick which plugins to expose:
-npm install -g @interlace/secure-coding-mcp \
-              @interlace/browser-security-mcp \
-              @interlace/node-security-mcp
-# (Or rely on npx — no install needed; see step 2.)
+npm install --save-dev eslint
+npm install --save-dev eslint-plugin-secure-coding eslint-plugin-browser-security eslint-plugin-node-security
+# …or any of our other plugins. See /docs/getting-started/installation
 ```
 
-## Step 2 — register the servers with Cursor
+Wire them into your `eslint.config.mjs`:
 
-Cursor's MCP config lives at `~/.cursor/mcp.json` (global) or `<project>/.cursor/mcp.json` (project-scoped).
+```js
+import secureCoding from 'eslint-plugin-secure-coding';
+import browserSecurity from 'eslint-plugin-browser-security';
+import nodeSecurity from 'eslint-plugin-node-security';
+
+export default [
+  secureCoding.configs.recommended,
+  browserSecurity.configs.recommended,
+  nodeSecurity.configs.recommended,
+];
+```
+
+## Step 2 — register `@eslint/mcp` with Cursor
+
+Cursor's MCP config lives at `~/.cursor/mcp.json` (global) or `<project>/.cursor/mcp.json` (project-scoped). Add a single entry:
 
 ```json
 {
   "mcpServers": {
-    "secure-coding":   { "command": "npx", "args": ["--yes", "@interlace/secure-coding-mcp"] },
-    "node-security":   { "command": "npx", "args": ["--yes", "@interlace/node-security-mcp"] },
-    "browser-security":{ "command": "npx", "args": ["--yes", "@interlace/browser-security-mcp"] }
+    "eslint": {
+      "command": "npx",
+      "args": ["--yes", "@eslint/mcp"]
+    }
   }
 }
 ```
 
-The full list (each is `@interlace/<plugin>-mcp`):
-
-`secure-coding` · `browser-security` · `node-security` · `crypto` · `jwt` · `express-security` · `lambda-security` · `mongodb-security` · `nestjs-security` · `vercel-ai-security` · `pg`
+That one entry exposes every plugin you've installed. No per-plugin server.
 
 ## Step 3 — restart Cursor
 
-The MCP servers will appear in Cursor's tool panel. Each exposes `list_rules`, `audit_file`, `find_rule_violations`, `suggest_fix`.
+The `eslint` server appears in Cursor's tool panel with the tools `@eslint/mcp` exposes — typically `lint-files`, `lint-code`, and friends.
 
 ## Step 4 — use it
 
 In Cursor's agent panel:
 
-> *"Use the secure-coding MCP server to audit the file I just changed. Apply auto-fixes for any high-confidence findings."*
+> *"Lint the file I just changed for security issues. Apply auto-fixes for high-severity findings."*
 
-Cursor calls `audit_file` → reads findings → calls `suggest_fix` per high-confidence finding → applies via its built-in editing tools.
+Cursor calls the lint tool → reads diagnostics → applies any auto-fix range via its built-in Edit primitives.
 
 Other prompts that work well:
 
 | Prompt | What Cursor's agent does |
 | :--- | :--- |
-| *"Show me every hardcoded credential in src/"* | Calls `find_rule_violations` with rule `no-hardcoded-credentials` |
-| *"Audit the diff I'm about to commit"* | Walks the changed files, audits each, summarizes |
-| *"What rules does the jwt MCP server have?"* | Calls `list_rules` on the jwt server |
+| *"Show me every hardcoded credential in src/"* | Lints + filters by `secure-coding/no-hardcoded-credentials` |
+| *"Lint the diff I'm about to commit"* | Walks the changed files, lints each, summarizes |
+| *"What rules from eslint-plugin-jwt are active in this project?"* | Reads `eslint.config.*` via the MCP and lists the JWT rules |
 
-## Tool surface
+Our rule messages are LLM-optimized: every diagnostic carries the CWE id, OWASP category, CVSS, and an inline remediation hint — Cursor has everything it needs without extra lookups. See [AI Leverage](/docs/getting-started/concepts/ai-integration) for the format.
 
-Identical to the [Claude Code walkthrough](./claude-code#what-each-tool-returns) — same JSON shapes, same semantics, same `confidence`-aware fix routing.
+## Why this is useful in Cursor specifically
 
-## Why use this in Cursor specifically
+Cursor's agent already has good code-editing primitives. ESLint diagnostics include a structured `fix` range (when the rule is auto-fixable) — the agent applies them through Cursor's existing Edit tool without any string parsing. Auto-fix loops become reliable.
 
-Cursor's agent already has good code-editing tools — `suggest_fix` returning a structured `{range, replacement}` patch lets the agent apply Interlace fixes through Cursor's existing Edit primitives without any string parsing. Auto-fix loops become reliable.
+Severity routing:
 
-The `confidence` field on every finding means Cursor can:
-
-- **`high`-confidence** → apply the fix automatically
-- **`medium`** → propose the diff and wait for your review
-- **`low`** → flag for manual remediation
-
-The bands are calibrated by the [ILB-Confidence bench](https://github.com/ofri-peretz/eslint/tree/main/benchmarks/suites/ilb-confidence) — empirical precision per band, not vendor vibes.
+- **`error`** → apply the fix automatically (high confidence)
+- **`warn`** → propose the diff and wait for review
+- (Our rules also surface CWE-derived priority in the message — Cursor can route on that too.)
 
 ## Troubleshooting
 
@@ -79,6 +88,7 @@ Identical to [Claude Code troubleshooting](./claude-code#troubleshooting). The M
 
 ## See also
 
-- [Use Interlace with Claude Code](./claude-code) — same tools, identical workflow
-- [Interlace VS Code extension](https://github.com/ofri-peretz/eslint/tree/main/packages/interlace-vscode) — adds an "Interlace: Start MCP Server for Plugin…" command palette entry that handles step 1+2 automatically
-- [Compare Interlace to CodeQL / Semgrep / Snyk](../compare) — the buyer's guide
+- [Use Interlace with Claude Code](./claude-code) — same MCP, slightly different config path
+- [Interlace VS Code extension](https://github.com/ofri-peretz/eslint/tree/main/packages/interlace-vscode) — bundles the CLI + an ESLint MCP launcher
+- [Compare Interlace to CodeQL / Semgrep / Snyk](/docs/getting-started/concepts/compare) — the buyer's guide
+- [`@eslint/mcp`](https://github.com/eslint/mcp) — upstream source

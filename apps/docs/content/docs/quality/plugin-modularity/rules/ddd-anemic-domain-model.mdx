@@ -1,17 +1,16 @@
 ---
-title: "ddd-anemic-domain-model"
-description: "title: ddd-anemic-domain-model"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: ddd-anemic-domain-model
-description: Detects entities with only getters/setters and no business logic, enforcing the Rich Domain Model over the Anemic Domain Model anti-pattern.
+description: "Detects entities with only getters/setters and no business logic"
 tags: ['architecture', 'ddd', 'modularity']
 category: modularity
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** ddd-anemic-domain-model, domain-driven design, rich domain model, anemic domain model, anti-pattern, encapsulation, business logic, Aggregate Root, ESLint rule
 

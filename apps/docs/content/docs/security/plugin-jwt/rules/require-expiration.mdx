@@ -1,19 +1,18 @@
 ---
-title: "require-expiration"
-description: "title: require-expiration"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: require-expiration
-description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+description: "Require expiration claim (exp) or expiresIn option in JWT signing"
 tags: ['security', 'jwt']
 category: security
 severity: medium
 cwe: CWE-613
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Require expiration claim (exp) or expiresIn option in JWT signing
 

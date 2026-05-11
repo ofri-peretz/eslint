@@ -1,19 +1,18 @@
 ---
-title: "no-select-all"
-description: "description: Discourages SELECT in favor of explicit column lists."
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-select-all
-description: Discourages SELECT  in favor of explicit column lists.
+description: "Prevent using * in SELECT statements (implicit columns)."
 tags: ['security', 'postgres']
 category: security
 severity: medium
 cwe: CWE-693
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** SELECT \*, performance, quality, pg, node-postgres
 

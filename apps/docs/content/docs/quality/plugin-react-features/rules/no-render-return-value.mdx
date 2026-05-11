@@ -1,19 +1,16 @@
 ---
-title: "no-render-return-value"
-description: "title: no-render-return-value"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-render-return-value
-description: no-render-return-value rule
+description: "Prevent using render return value"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-no-render-return-value rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** React, render, ReactDOM, deprecated, ESLint rule, migration, LLM-optimized
 

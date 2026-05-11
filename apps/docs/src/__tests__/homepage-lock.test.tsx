@@ -131,8 +131,8 @@ describe('Homepage: Structure Lock', () => {
       expect(homepageSource).toContain('browser-security/no-innerhtml');
     });
 
-    it('links to the full CWE coverage matrix at /docs/cwe-compatibility', () => {
-      expect(homepageSource).toContain('/docs/cwe-compatibility');
+    it('links to the full CWE coverage matrix (moved under Concepts/Ecosystem in 2026-05-10 IA pass)', () => {
+      expect(homepageSource).toContain('/docs/getting-started/concepts/cwe-compatibility');
     });
   });
 });
@@ -238,7 +238,9 @@ describe('HeroSection: Structure Lock', () => {
     });
 
     it('links to GitHub repository', () => {
-      expect(heroSource).toContain("href=\"https://github.com/ofri-peretz/eslint\"");
+      // The URL may appear as `href="..."` (JSX prop) or `href: '...'` (cta
+      // object). Either is acceptable — what matters is the URL is present.
+      expect(heroSource).toContain('https://github.com/ofri-peretz/eslint');
     });
   });
 
@@ -265,17 +267,61 @@ describe('HeroSection: Structure Lock', () => {
   });
 
   describe('Component Dependencies', () => {
-    it('imports buttonVariants from the canonical Button (CTA_PHILOSOPHY.md #5, #9 — replaces hand-rolled ShimmerButton in 2026-05 CTA-philosophy revision)', () => {
-      expect(heroSource).toContain("import { buttonVariants }");
-    });
-
-    it('routes both hero CTAs through buttonVariants with the same `hero` size token (CTA_PHILOSOPHY.md #3 sibling parity)', () => {
-      const matches = heroSource.match(/size:\s*'hero'/g) ?? [];
-      expect(matches.length).toBeGreaterThanOrEqual(2);
-    });
-
-    it('imports ShimmerButton for the hero primary (CTA_PHILOSOPHY.md #8 — animated CTA skin reserved for the hero primary, one per page)', () => {
+    it('imports ShimmerButton for the hero primary (CTA_PHILOSOPHY.md #8 — animated CTA reserved for the surface primary)', () => {
       expect(heroSource).toContain("import { ShimmerButton }");
+    });
+
+    it('uses exactly two ShimmerButton instances in the hero (CTA_PHILOSOPHY.md #3 sibling parity — same component for both CTAs)', () => {
+      // Strip JSDoc/line comments so doc references like `<ShimmerButton>`
+      // in the file header don't inflate the count. We only want JSX opens.
+      const codeOnly = heroSource
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/\/\/.*$/gm, '');
+      const matches = codeOnly.match(/<ShimmerButton[\s>]/g) ?? [];
+      expect(matches.length).toBe(2);
+    });
+
+    it('secondary ShimmerButton passes both `shimmer={false}` and `highlight={false}` (no rotating spark, no white inset)', () => {
+      expect(heroSource).toContain('shimmer={false}');
+      expect(heroSource).toContain('highlight={false}');
+    });
+
+    // The previous assert only checked that the strings appear *somewhere* in
+    // the hero file. It would pass even if `shimmer={false}` ended up on the
+    // PRIMARY button and the secondary regained the rotating spark. The next
+    // three asserts pin the per-button contract.
+    it('PRIMARY ShimmerButton does NOT carry `shimmer={false}` (it keeps the rotating spark — CTA_PHILOSOPHY #8)', () => {
+      const codeOnly = heroSource
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/\/\/.*$/gm, '');
+      // Capture each ShimmerButton opening-tag block (everything from `<ShimmerButton` to the first `>`).
+      const opens = codeOnly.match(/<ShimmerButton\b[\s\S]*?>/g) ?? [];
+      expect(opens.length).toBe(2);
+      expect(opens[0]).not.toMatch(/shimmer=\{false\}/);
+      expect(opens[0]).not.toMatch(/highlight=\{false\}/);
+    });
+
+    it('SECONDARY ShimmerButton carries BOTH `shimmer={false}` AND `highlight={false}` in the same JSX element (CTA_PHILOSOPHY #3 sibling parity, #8 animation budget)', () => {
+      const codeOnly = heroSource
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/\/\/.*$/gm, '');
+      const opens = codeOnly.match(/<ShimmerButton\b[\s\S]*?>/g) ?? [];
+      expect(opens.length).toBe(2);
+      expect(opens[1]).toMatch(/shimmer=\{false\}/);
+      expect(opens[1]).toMatch(/highlight=\{false\}/);
+    });
+
+    it('SECONDARY ShimmerButton contains the GitHub mark + label (catches a future "make it a Docs button" refactor)', () => {
+      // The GitHub viewBox / `M12 0c-6.626` head are distinctive; pin those + the label.
+      expect(heroSource).toContain('viewBox="0 0 24 24"');
+      expect(heroSource).toMatch(/<path\s+d="M12 0c-6\.626/);
+      expect(heroSource).toMatch(/>\s*GitHub\s*<\/ShimmerButton>/);
+    });
+
+    it('HeroCosmic `secondaryCta.label` slot is a `<ShimmerButton …>` (structural lock — refactors that swap the slot break this)', () => {
+      // `secondaryCta={` … `label: ( <ShimmerButton …` — the `label:` value
+      // immediately under `secondaryCta` must open with ShimmerButton.
+      expect(heroSource).toMatch(/secondaryCta=\{[\s\S]*?label:\s*\(\s*<ShimmerButton\b/);
     });
 
     it('does NOT re-import AnimatedGradientText (retired from hero eyebrow in 2026-05 diet)', () => {
@@ -289,6 +335,21 @@ describe('HeroSection: Structure Lock', () => {
 
     it('imports icons from lucide-react', () => {
       expect(heroSource).toContain("from 'lucide-react'");
+    });
+  });
+
+  // LAYOUT_PHILOSOPHY §3 enforcement on the hero. The tagline-to-CTA gap is
+  // a recurring regression target: when the file gets refactored, it drifts
+  // back to `mb-10` (40px, the mobile-section default) which reads cramped
+  // against the 5xl/6xl/7xl hero headline. Lock the `xl` token (64px / `mb-16`).
+  describe('Layout invariants (LAYOUT_PHILOSOPHY §3)', () => {
+    it('tagline → CTA gap uses the `xl` spacing token (`mb-16`, 64px) — hero surfaces breathe', () => {
+      // The hero-cosmic pattern owns the gap; assert against the concatenated
+      // source so any future "consolidate the hero markup into hero-section"
+      // refactor still trips this lock.
+      expect(heroSource).toMatch(/<p[^>]*\bmb-16\b[^>]*>/);
+      // Negative lock — the previous value must not return.
+      expect(heroSource).not.toMatch(/<p[^>]*\bmb-10\b[^>]*>/);
     });
   });
 });
@@ -455,19 +516,34 @@ describe('Homepage: Visual Identity Lock', () => {
       expect(homepageSource).toContain('Two Pillars of Excellence');
     });
 
-    it('has Why section', () => {
-      expect(homepageSource).toContain('Why ESLint Interlace?');
+    it('has How it works section (surfaces Concepts corpus — Philosophy / AST / Detect→Understand→Fix)', () => {
+      expect(homepageSource).toContain('How it works');
+      expect(homepageSource).toContain('/docs/getting-started/concepts/philosophy');
+      expect(homepageSource).toContain('/docs/getting-started/concepts/ast-fundamentals');
+      expect(homepageSource).toContain('/docs/getting-started/concepts/detect-understand-fix');
+    });
+
+    it('has Our edges section (Compatibility / Benchmarks / AI Leverage — replaces generic "Why" grid in 2026-05-10 edges pass)', () => {
+      expect(homepageSource).toContain('Our edges');
+      expect(homepageSource).toContain('/docs/getting-started/concepts/compatibility');
+      expect(homepageSource).toContain('/docs/getting-started/concepts/benchmarks');
+      expect(homepageSource).toContain('/docs/getting-started/concepts/ai-integration');
     });
 
     it('has Final CTA section', () => {
       expect(homepageSource).toContain('Ready to Level Up?');
     });
+
+    it("has What's next pair under final CTA (UX_PHILOSOPHY §4 — compare / CWE matrix)", () => {
+      expect(homepageSource).toContain('Not ready yet? Explore');
+      expect(homepageSource).toContain('/docs/getting-started/concepts/compare');
+      expect(homepageSource).toContain('/docs/getting-started/concepts/cwe-compatibility');
+    });
   });
 
   describe('Interactive Elements', () => {
-    it('uses the canonical Button via buttonVariants for primary CTAs (CTA_PHILOSOPHY.md #9 — replaces ShimmerButton in 2026-05 CTA-philosophy revision)', () => {
-      expect(homepageSource).toContain('buttonVariants(');
-      expect(homepageSource).not.toContain('<ShimmerButton');
+    it('uses ShimmerButton for the final-CTA primary (CTA_PHILOSOPHY.md #8 — final-CTA banner is its own marketing surface, allowed one animated primary)', () => {
+      expect(homepageSource).toContain('<ShimmerButton');
     });
 
     it('uses BorderBeam for visual enhancement', () => {
@@ -476,6 +552,81 @@ describe('Homepage: Visual Identity Lock', () => {
 
     it('uses CatchCard for the CWE-driven vulnerability showcase (replaces Marquee in 2026-05 diet)', () => {
       expect(homepageSource).toContain('<CatchCard');
+    });
+  });
+});
+
+// ============================================================
+// LAYOUT_PHILOSOPHY.md adherence lock
+// ----------------------------------------------------------------
+// The philosophy at /LAYOUT_PHILOSOPHY.md mandates four primitives —
+// <Container>, <Section>, <SectionHeader>, <Stack>. Open-coding section
+// wrappers is forbidden; the homepage was the canonical drift, tracked in
+// apps/docs/HOMEPAGE_LAYOUT_AUDIT.md. After the 2026-05-10 refactor, the
+// home composes only those primitives. This block guards against
+// regression.
+// ============================================================
+
+describe('Homepage: LAYOUT_PHILOSOPHY adherence', () => {
+  let homepageSource: string;
+  const homepagePath = join(process.cwd(), 'src/app/(home)/page.tsx');
+
+  beforeAll(() => {
+    homepageSource = readFileSync(homepagePath, 'utf-8');
+  });
+
+  describe('Required imports', () => {
+    it('imports Section from @interlace/ui (open-coded <section> wrappers are forbidden)', () => {
+      expect(homepageSource).toContain("import { Section } from '@interlace/ui/section'");
+    });
+
+    it('imports SectionHeader from @interlace/ui/blocks/section-header', () => {
+      expect(homepageSource).toContain(
+        "import { SectionHeader } from '@interlace/ui/blocks/section-header'",
+      );
+    });
+  });
+
+  describe('Forbidden patterns (LAYOUT_PHILOSOPHY.md §1, §2, §3, §5, §8)', () => {
+    it('does NOT open-code `container mx-auto px-*` in className strings (§1 — Section owns the wrapper)', () => {
+      // Match inside JSX className strings only — comment prose explaining
+      // the philosophy is allowed (and present in the page header).
+      expect(homepageSource).not.toMatch(/className=["'`][^"'`]*\bcontainer\s+mx-auto\b/);
+    });
+
+    it('does NOT use ad-hoc `max-w-3xl/4xl/5xl/6xl/7xl` widths in className strings (§2 — Container size is a contract)', () => {
+      expect(homepageSource).not.toMatch(/className=["'`][^"'`]*\bmax-w-(3xl|4xl|5xl|6xl|7xl)\b/);
+    });
+
+    it('does NOT open-code a bare `<section className="container ...">` wrapper (§1, §7)', () => {
+      expect(homepageSource).not.toMatch(/<section\s+className="container\b/);
+    });
+
+    it('does NOT use inline `border-y border-fd-border` on the section wrappers (§8 — divider prop owns it)', () => {
+      // After the refactor, dividers are owned by <Section divider="…">.
+      // The only borders left in the file should be card / pillar internals.
+      // Bare `<section …border-y border-fd-border` is what the philosophy forbids.
+      expect(homepageSource).not.toMatch(/<section[^>]*border-y\s+border-fd-border/);
+      expect(homepageSource).not.toMatch(/<section[^>]*border-t\s+border-fd-border/);
+    });
+
+    it('does NOT inline `bg-fd-card/30|50` on the section wrappers (§8 — tone prop owns it)', () => {
+      expect(homepageSource).not.toMatch(/<section[^>]*bg-fd-card\//);
+    });
+  });
+
+  describe('Sections are composed (not open-coded)', () => {
+    it('uses <Section …> for every page-level section block', () => {
+      const sectionPrimitive = (homepageSource.match(/<Section\b/g) ?? []).length;
+      // Hero is full-bleed and out of scope (LAYOUT_AUDIT.md). The remaining
+      // sections — stats / preview / catches / social / pillars / how-it-works
+      // / edges / final-CTA — should all be <Section>.
+      expect(sectionPrimitive).toBeGreaterThanOrEqual(8);
+    });
+
+    it('uses <SectionHeader …> for the repeated headline blocks (replaces 6 hand-coded copies)', () => {
+      const headers = (homepageSource.match(/<SectionHeader\b/g) ?? []).length;
+      expect(headers).toBeGreaterThanOrEqual(5);
     });
   });
 });

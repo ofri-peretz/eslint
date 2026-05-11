@@ -1,19 +1,16 @@
 ---
-title: "require-default-props"
-description: "title: require-default-props"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: require-default-props
-description: require-default-props rule
+description: "Require default props"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-require-default-props rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** React, defaultProps, optional props, type safety, component API, ESLint rule, LLM-optimized
 

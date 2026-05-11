@@ -17,6 +17,7 @@
     "no-insecure-comparison",
     "no-ldap-injection",
     "no-missing-authentication",
+    "no-pii-in-logs",
     "no-privilege-escalation",
     "no-redos-vulnerable-regex",
     "no-sensitive-data-exposure",

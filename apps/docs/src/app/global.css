@@ -4,6 +4,11 @@
 @import 'fumadocs-twoslash/twoslash.css';
 @import 'tw-animate-css';
 @import '@interlace/ui/styles/tokens.css';
+/* App-agnostic theme: shadcn-token bridge, Shiki AAA boosts, fumadocs TOC
+   overrides, remote-content base, lightweight CSS animations. Lives in
+   @interlace/ui so every consumer gets the same baseline. Brand colors
+   (purple primary) below stay app-specific. */
+@import '@interlace/ui/styles/theme.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -45,58 +50,9 @@
   /* Ring/focus color — UI element threshold (≥3:1 vs adjacent colors) */
   --color-fd-ring: hsl(263, 70%, 45%) !important;
 
-  /* ─────────────────────────────────────────────────────────────────
-   * shadcn token bridge — @interlace/ui primitives (Card, DropdownMenu,
-   * Popover, etc.) and the auto-generated `.interlace/components/ui/*`
-   * files use bare shadcn tokens (`bg-card`, `bg-popover`, `bg-accent`,
-   * `text-foreground`, `border` w/ --border color, etc.). Fumadocs
-   * ships the `--color-fd-*` family but NOT the unprefixed shadcn
-   * tokens, so without these aliases every shadcn-style class resolves
-   * to an undefined variable and renders unstyled (e.g. dropdown popups
-   * with no background, "transparent dropdowns" reported in QA).
-   *
-   * This bridge maps the shadcn names to our Fumadocs source of truth
-   * so both families render identically. See COLOR_PHILOSOPHY.md.
-   * ──────────────────────────────────────────────────────────────── */
-  --background: var(--color-fd-background);
-  --foreground: var(--color-fd-foreground);
-  --card: var(--color-fd-card);
-  --card-foreground: var(--color-fd-card-foreground);
-  --popover: var(--color-fd-popover);
-  --popover-foreground: var(--color-fd-popover-foreground);
-  --muted: var(--color-fd-muted);
-  --muted-foreground: var(--color-fd-muted-foreground);
-  --accent: var(--color-fd-accent);
-  --accent-foreground: var(--color-fd-accent-foreground);
-  --secondary: var(--color-fd-secondary);
-  --secondary-foreground: var(--color-fd-secondary-foreground);
-  --border: var(--color-fd-border);
-  --input: var(--color-fd-border);
-  --ring: var(--color-fd-ring);
-  --destructive: hsl(0, 72%, 38%);                /* red-700 — AAA on white */
-  --destructive-foreground: hsl(0, 0%, 100%);
-
-  /* Tailwind v4 needs the @theme-side aliases too so utilities like
-   * `bg-card` / `border-border` resolve. Same value as above. */
-  --color-background: var(--color-fd-background);
-  --color-foreground: var(--color-fd-foreground);
-  --color-card: var(--color-fd-card);
-  --color-card-foreground: var(--color-fd-card-foreground);
-  --color-popover: var(--color-fd-popover);
-  --color-popover-foreground: var(--color-fd-popover-foreground);
-  --color-muted: var(--color-fd-muted);
-  --color-muted-foreground: var(--color-fd-muted-foreground);
-  --color-accent: var(--color-fd-accent);
-  --color-accent-foreground: var(--color-fd-accent-foreground);
-  --color-secondary: var(--color-fd-secondary);
-  --color-secondary-foreground: var(--color-fd-secondary-foreground);
-  --color-border: var(--color-fd-border);
-  --color-input: var(--color-fd-border);
-  --color-ring: var(--color-fd-ring);
-  --color-primary: var(--color-fd-primary);
-  --color-primary-foreground: var(--color-fd-primary-foreground);
-  --color-destructive: hsl(0, 72%, 38%);
-  --color-destructive-foreground: hsl(0, 0%, 100%);
+  /* shadcn-token bridge + Tailwind v4 @theme-side aliases now live in
+   * @interlace/ui/styles/theme.css (imported at top). Brand-specific
+   * primary tokens stay in this file. */
 }
 
 /* Dark mode - AAA contrast on near-black */
@@ -124,248 +80,15 @@
 }
 
 /* =========================================
-   SHIKI TOKEN-COLOR BOOST — WCAG AAA on code blocks.
-   The github-light-default / github-dark-default themes pass AA for nearly
-   every token but a handful of muted ones (comments, certain keywords)
-   land at ~5:1 — passes AA, fails AAA (7:1). We override those specific
-   color values with darker/lighter variants that clear AAA.
-   Selectors target Shiki's per-span CSS-variable inline styles.
+   App-agnostic overrides moved to @interlace/ui/styles/theme.css:
+     - Shiki AAA token-color boosts
+     - Fumadocs TOC single-line indicator + popover spacing + responsive visibility
+     - Remote-content styling (README / changelog / rule-doc)
+     - Lightweight CSS animations (fade-in-up / slide-in-left / scale-in)
+   Brand-specific bits (purple primary colors above) stay in this file.
    ========================================= */
-
-/* Light mode boosts (over white-ish code background) */
-.shiki span[style*="--shiki-light:#6E7781"],
-.shiki span[style*="--shiki-light:#6e7781"] {
-  /* Pushed darker than the github-light-default's #6E7781 by ~2 stops to
-     clear AAA (7:1+ on white) for muted comments. */
-  --shiki-light: #424952 !important;
-}
-.shiki span[style*="--shiki-light:#CF222E"],
-.shiki span[style*="--shiki-light:#cf222e"] {
-  --shiki-light: #82071e !important;
-}
-.shiki span[style*="--shiki-light:#0550AE"],
-.shiki span[style*="--shiki-light:#0550ae"] {
-  --shiki-light: #033d8b !important;
-}
-.shiki span[style*="--shiki-light:#953800"] {
-  --shiki-light: #6c2700 !important;
-}
-.shiki span[style*="--shiki-light:#8250DF"],
-.shiki span[style*="--shiki-light:#8250df"] {
-  --shiki-light: #5a31aa !important;
-}
-.shiki span[style*="--shiki-light:#0A3069"] {
-  --shiki-light: #062350 !important;
-}
-
-/* Dark mode boosts (over near-black code background) */
-.shiki span[style*="--shiki-dark:#8B949E"],
-.shiki span[style*="--shiki-dark:#8b949e"] {
-  --shiki-dark: #b8c0c8 !important;
-}
-.shiki span[style*="--shiki-dark:#FF7B72"],
-.shiki span[style*="--shiki-dark:#ff7b72"] {
-  --shiki-dark: #ffa39d !important;
-}
-.shiki span[style*="--shiki-dark:#FFA657"],
-.shiki span[style*="--shiki-dark:#ffa657"] {
-  --shiki-dark: #ffc787 !important;
-}
-.shiki span[style*="--shiki-dark:#79C0FF"],
-.shiki span[style*="--shiki-dark:#79c0ff"] {
-  --shiki-dark: #a5d6ff !important;
-}
-
-/* =========================================
-   CLERK TOC STYLE FIX
-   Only the arbitrary property utilities that Tailwind v4 cannot generate
-   ========================================= */
-
-/* TOC indicator thumb - the moving purple bar (Tailwind v4 arbitrary props) */
-.h-\(--fd-height\) {
-  height: var(--fd-height);
-}
-
-.top-\(--fd-top\) {
-  top: var(--fd-top);
-}
-
-/* TOC indicator transition - smooth animation when scrolling */
-.transition-\[top\,height\] {
-  transition-property: top, height !important;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
-  transition-duration: 150ms !important;
-}
-
-/* Direct targeting of TOC indicator thumb for transition */
-#nd-toc .bg-fd-primary {
-  transition-property: top, height !important;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
-  transition-duration: 150ms !important;
-}
-
-/* =========================================
-   CLEAN TOC STYLE - Single line indicator
-   Hide the "staircase" gray lines and diagonal connectors
-   Keep only the purple sliding indicator
-   ========================================= */
-
-/* Hide the gray vertical rail segments (causes staircase effect) */
-#nd-toc .bg-fd-foreground\/10 {
-  display: none !important;
-}
-
-/* Hide the diagonal SVG connector lines between depth levels */
-#nd-toc svg line.stroke-fd-foreground\/10,
-#nd-toc .stroke-fd-foreground\/10 {
-  display: none !important;
-}
-
-/* =========================================
-   POPOVER TOC SPACING FIX
-   Ensure proper padding for items in the popover TOC
-   Match the clerk style item offsets
-   ========================================= */
-
-/* Popover TOC items - ensure minimum padding from left edge */
-[data-toc-popover-content] a {
-  padding-inline-start: 14px !important;
-}
-
-/* Nested items in popover get more padding */
-[data-toc-popover-content] a[data-depth='3'] {
-  padding-inline-start: 26px !important;
-}
-
-[data-toc-popover-content] a[data-depth='4'],
-[data-toc-popover-content] a[data-depth='5'],
-[data-toc-popover-content] a[data-depth='6'] {
-  padding-inline-start: 36px !important;
-}
-
-@layer components {
-  /* =================================================
-   * RESPONSIVE TOC VISIBILITY  
-   * - xl+ (≥1280px): Show side TOC, hide popover TOC
-   * - <xl (<1280px): Show popover TOC, hide side TOC
-   * ================================================= */
-
-  /* On large screens (xl+): Hide the popover TOC */
-  @media (min-width: 1280px) {
-    button[data-toc-popover-trigger],
-    div[data-toc-popover-content] {
-      display: none !important;
-    }
-  }
-
-  /* On smaller screens (<xl): Hide the side TOC */
-  @media (max-width: 1279px) {
-    #nd-toc {
-      display: none !important;
-    }
-  }
-}
-
-/* Animations / motion tokens for MagicUI + Aceternity components live in
-   @interlace/ui/styles/tokens.css (imported above). */
 
 /* Base styling is provided by fumadocs-ui/css/preset.css */
-
-/* =========================================
-   REMOTE CONTENT STYLING
-   Styles for README, changelog, and rule docs
-   fetched from GitHub
-   ========================================= */
-
-/* Badge images should be inline with gap */
-.remote-readme a > img,
-.remote-changelog a > img,
-.remote-rule-doc a > img {
-  display: inline-block !important;
-  vertical-align: middle;
-  height: auto;
-}
-
-/* Center-aligned divs (logo, tagline, badges) - transformed from <p align> */
-.remote-readme div[align='center'],
-.remote-changelog div[align='center'],
-.remote-rule-doc div[align='center'] {
-  text-align: center;
-  display: flex !important;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 0.35rem;
-  margin-bottom: 0.5rem;
-}
-
-/* Badge links in centered divs should be inline */
-.remote-readme div[align='center'] a,
-.remote-changelog div[align='center'] a,
-.remote-rule-doc div[align='center'] a {
-  display: inline-flex !important;
-  align-items: center;
-}
-
-/* Ensure images don't break layout */
-.remote-readme img,
-.remote-changelog img,
-.remote-rule-doc img {
-  max-width: 100%;
-  height: auto;
-}
-
-/* =========================================
-   PERFORMANCE-OPTIMIZED ANIMATIONS
-   CSS-based animations to replace Framer Motion
-   for better GPU acceleration
-   ========================================= */
-
-@keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slide-in-left {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-/* Utility classes for animations */
-.animate-fade-in-up {
-  animation: fade-in-up 0.5s ease-out both;
-}
-
-.animate-slide-in-left {
-  animation: slide-in-left 0.5s ease-out 0.3s both;
-}
-
-@keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.animate-scale-in {
-  animation: scale-in 0.4s ease-out 0.2s both;
-}
 
 /* border-beam keyframes + .animate-border-beam class live in
    @interlace/ui/styles/tokens.css (imported above). */

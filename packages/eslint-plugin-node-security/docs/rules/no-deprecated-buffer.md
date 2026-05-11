@@ -1,0 +1,73 @@
+---
+title: no-deprecated-buffer
+description: Disallow the deprecated `new Buffer()` constructor and `Buffer()` factory call.
+tags: ['security', 'node-security', 'memory-safety']
+category: security
+cwe: CWE-676
+autofix: suggestions
+---
+
+> **Keywords:** no-deprecated-buffer, Buffer, Node.js, uninitialized memory, CVE-2018-7166, CWE-676, Buffer.alloc, Buffer.from, ESLint rule
+
+> **CWE:** [CWE-676: Use of Potentially Dangerous Function](https://cwe.mitre.org/data/definitions/676.html)
+
+<!-- @rule-summary -->
+Disallow the deprecated `new Buffer()` constructor and `Buffer()` factory call. Both have been deprecated since Node.js 10 and are unsafe — when called with a number they return uninitialized memory ([CVE-2018-7166](https://nvd.nist.gov/vuln/detail/CVE-2018-7166)).
+<!-- @/rule-summary -->
+
+This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security).
+
+## Quick Summary
+
+| Aspect         | Details                                                       |
+| -------------- | ------------------------------------------------------------- |
+| **Severity**   | High (Security — memory disclosure)                           |
+| **Auto-Fix**   | 💡 Suggestions (`Buffer.alloc` / `Buffer.from`)               |
+| **Category**   | Node Security                                                 |
+| **CWE**        | [CWE-676](https://cwe.mitre.org/data/definitions/676.html)    |
+| **Best For**   | Any Node.js codebase older than the migration to Node 10      |
+
+## Why `new Buffer()` is dangerous
+
+Before Node 10, `new Buffer(N)` where `N` is a number allocated a buffer **without zeroing the underlying memory**. The buffer would expose whatever was previously in that heap region — request bodies, cached secrets, private keys. When user input was passed as the size argument, an attacker could request arbitrary-size buffers and read the contents back over the network.
+
+Node 10 deprecated both `new Buffer(N)` and `Buffer(N)` and introduced safe replacements:
+
+| Old (unsafe)               | New (safe)                | Behavior                                  |
+| :------------------------- | :------------------------ | :---------------------------------------- |
+| `new Buffer(64)`           | `Buffer.alloc(64)`        | Zero-initialized buffer                   |
+| `new Buffer("hello")`      | `Buffer.from("hello")`    | Buffer from string                        |
+| `new Buffer([1, 2, 3])`    | `Buffer.from([1, 2, 3])`  | Buffer from byte array                    |
+| `new Buffer(arrayBuffer)`  | `Buffer.from(arrayBuffer)`| Buffer view over an existing ArrayBuffer  |
+
+## Examples
+
+### ❌ Incorrect
+
+```js
+const buf = new Buffer(64);          // uninitialized memory exposure
+const userBuf = new Buffer(userSize); // attacker-controlled size
+const factory = Buffer(64);          // same risk, no `new`
+```
+
+### ✅ Correct
+
+```js
+const buf = Buffer.alloc(64);                  // zero-filled
+const userBuf = Buffer.alloc(Math.min(userSize, MAX_SIZE));
+const fromString = Buffer.from('hello', 'utf8');
+const fromArray = Buffer.from([0x68, 0x69]);
+```
+
+## Error Message Format
+
+```text
+🔒 NODE-SECURITY CWE-676 | new Buffer() detected | HIGH
+   Fix: Replace `new Buffer(N)` with `Buffer.alloc(N)` (zero-filled) or `Buffer.from(...)` for non-numeric sources.
+```
+
+## Known False Negatives
+
+- Calls reached via dynamic dispatch (`global['Buffer'](N)`, `Reflect.construct(Buffer, [N])`) are not detected.
+- Re-exports under a different identifier (`const B = Buffer; new B(N);`) are flagged only if the alias is in scope at the call site.
+- Polyfills that ship their own `Buffer` shim are out of scope.

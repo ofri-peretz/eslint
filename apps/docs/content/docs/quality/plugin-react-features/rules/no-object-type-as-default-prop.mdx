@@ -1,19 +1,16 @@
 ---
-title: "no-object-type-as-default-prop"
-description: "title: no-object-type-as-default-prop"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-object-type-as-default-prop
-description: no-object-type-as-default-prop rule
+description: "Prevent object types as default props"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-no-object-type-as-default-prop rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** React, defaultProps, object, reference equality, re-renders, performance, ESLint rule, LLM-optimized
 

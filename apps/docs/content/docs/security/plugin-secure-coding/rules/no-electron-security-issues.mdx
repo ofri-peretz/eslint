@@ -1,19 +1,18 @@
 ---
-title: "no-electron-security-issues"
-description: "title: no-electron-security-issues"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-electron-security-issues
-description: Detects Electron security vulnerabilities and insecure configurations
+description: "Detects Electron security vulnerabilities and insecure configurations"
 tags: ['security', 'core']
 category: security
 severity: medium
 cwe: CWE-16
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** Electron, CWE-16, nodeIntegration, contextIsolation, desktop security
 

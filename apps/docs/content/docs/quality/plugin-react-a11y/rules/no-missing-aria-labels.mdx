@@ -1,19 +1,16 @@
 ---
-title: "no-missing-aria-labels"
-description: "title: no-missing-aria-labels"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-missing-aria-labels
-description: no-missing-aria-labels rule
+description: "Detects elements missing ARIA labels"
 tags: ['quality', 'react', 'accessibility', 'a11y']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-no-missing-aria-labels rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** no-missing-aria-labels, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

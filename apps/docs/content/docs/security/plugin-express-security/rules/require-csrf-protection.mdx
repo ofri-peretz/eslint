@@ -1,19 +1,18 @@
 ---
-title: "require-csrf-protection"
-description: "title: require-csrf-protection"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: require-csrf-protection
-description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+description: "Require CSRF protection middleware for state-changing HTTP methods"
 tags: ['security', 'express']
 category: security
 severity: high
 cwe: CWE-352
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Require CSRF protection middleware for state-changing HTTP methods
 

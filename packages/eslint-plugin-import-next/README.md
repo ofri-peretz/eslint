@@ -53,10 +53,66 @@ npm install eslint-plugin-import-next --save-dev
 
 ## 🔄 Parity with `eslint-plugin-import`
 
-| Rule      | Original Plugin                                                                                                                                                                                                    | Status       | Notes                    |
-| :-------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------- | :----------------------- |
-| All Rules | [`eslint-plugin-import`](https://www.npmjs.com/package/eslint-plugin-import) [![npm](https://img.shields.io/npm/v/eslint-plugin-import.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-import) | ✅ Supported | Full drop-in replacement |
-
+<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
+| Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [consistent-type-specifier-style](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/consistent-type-specifier-style) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [default](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/default) |  | A00:2021 |  |  | 🟡 | 💼 |  |  |  |  |
+| [dynamic-import-chunkname](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/dynamic-import-chunkname) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [enforce-dependency-direction](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/enforce-dependency-direction) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [enforce-import-order](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/enforce-import-order) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [enforce-team-boundaries](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/enforce-team-boundaries) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/export) |  | A00:2021 |  |  | 🟢 | 💼 |  |  |  |  |
+| [exports-last](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/exports-last) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [extensions](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/extensions) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [first](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/first) |  | A00:2021 |  |  | 🟢 |  | ⚠️ |  |  |  |
+| [group-exports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/group-exports) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [max-dependencies](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/max-dependencies) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [named](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/named) |  | A00:2021 |  |  | 🟡 | 💼 |  |  |  |  |
+| [namespace](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/namespace) |  | A00:2021 |  |  | 🟡 |  | ⚠️ |  |  |  |
+| [newline-after-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/newline-after-import) |  | A00:2021 |  |  | 🟢 |  | ⚠️ |  |  |  |
+| [no-absolute-path](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-absolute-path) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-amd](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-amd) |  | A00:2021 |  |  | 🟢 |  | ⚠️ |  |  |  |
+| [no-anonymous-default-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-anonymous-default-export) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-barrel-file](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-barrel-file) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-barrel-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-barrel-import) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-commonjs](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-commonjs) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-cross-domain-imports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-cross-domain-imports) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-cycle](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-cycle) |  | A05:2021 |  |  | 🟢 | 💼 |  |  |  |  |
+| [no-default-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-default-export) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-deprecated](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-deprecated) |  | A09:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-duplicates](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-duplicates) |  | A00:2021 |  |  | 🟢 | 💼 |  |  |  |  |
+| [no-dynamic-require](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-dynamic-require) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-empty-named-blocks](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-empty-named-blocks) |  | A00:2021 |  |  | 🟢 |  | ⚠️ |  |  |  |
+| [no-extraneous-dependencies](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-extraneous-dependencies) |  | A00:2021 |  |  | 🟢 |  | ⚠️ |  |  |  |
+| [no-full-package-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-full-package-import) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-import-module-exports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-import-module-exports) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-internal-modules](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-internal-modules) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-legacy-imports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-legacy-imports) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-mutable-exports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-mutable-exports) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-named-as-default](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-named-as-default) |  | A00:2021 |  |  | 🟢 |  | ⚠️ |  |  |  |
+| [no-named-as-default-member](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-named-as-default-member) |  | A00:2021 |  |  | 🟢 |  | ⚠️ |  |  |  |
+| [no-named-default](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-named-default) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-named-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-named-export) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-namespace](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-namespace) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-nodejs-modules](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-nodejs-modules) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-relative-packages](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-relative-packages) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-relative-parent-imports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-relative-parent-imports) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-restricted-paths](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-restricted-paths) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-self-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-self-import) |  | A00:2021 |  |  | 🟢 | 💼 |  |  |  |  |
+| [no-unassigned-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-unassigned-import) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-unresolved](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-unresolved) |  | A03:2021 |  |  | 🟢 | 💼 |  |  |  |  |
+| [no-unused-modules](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-unused-modules) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [no-useless-path-segments](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/no-useless-path-segments) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [order](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/order) |  | A00:2021 |  |  | 🟢 |  | ⚠️ |  |  |  |
+| [prefer-default-export](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-default-export) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [prefer-direct-import](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-direct-import) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [prefer-modern-api](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-modern-api) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [prefer-node-protocol](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-node-protocol) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [prefer-tree-shakeable-imports](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/prefer-tree-shakeable-imports) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [require-import-approval](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/require-import-approval) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+| [unambiguous](https://eslint.interlace.tools/docs/quality/plugin-import-next/rules/unambiguous) |  | A00:2021 |  |  | 🟢 |  |  |  |  |  |
+<!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## Rules
 
 **Legend**

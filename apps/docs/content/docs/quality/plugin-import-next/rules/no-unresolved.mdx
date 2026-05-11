@@ -1,9 +1,13 @@
 ---
 title: "no-unresolved"
 description: "Ensures imports point to resolvable modules"
+type_aware: false
+type_aware_status: unaware
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 💼 This rule is enabled in the following configs: `recommended`, `typescript`.
 💡 This rule is automatically fixable by the `--fix` CLI option.

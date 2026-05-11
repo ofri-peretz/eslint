@@ -296,6 +296,7 @@ export const enforceImportOrder = createRule<RuleOptions, MessageIds>({
         }
 
         const originalImports = [...imports];
+        // oxlint-disable-next-line unicorn/no-array-sort
         const sortedImports = Array.from(imports).sort((a: typeof imports[0], b: typeof imports[0]) => {
           const typeA = getImportType(a);
           const typeB = getImportType(b);

@@ -42,14 +42,6 @@ const ALLOWED_THIRD_PARTY = [
   'eslint-plugin-naming-convention',
   'eslint-plugin-complexity',
 
-  // === Roadmap items in `getting-started/advanced/roadmap.mdx` ===
-  // Aspirational packages we've publicly committed to ship — not yet in the
-  // canonical registry, but legitimate to reference in the roadmap table.
-  // Move into `lib/plugins.ts` when the package ships.
-  'eslint-plugin-aws-security',
-  'eslint-plugin-graphql-security',
-  'eslint-plugin-redis-security',
-
   // === Documentation placeholders ===
   // `eslint-config-mycompany` is the "your shared config" example in
   // `getting-started/configuration.mdx`. Not a real package.

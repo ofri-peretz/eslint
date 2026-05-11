@@ -295,6 +295,10 @@ For CTA buttons specifically — primary/secondary pair, animation budget,
 size tokens, sibling-parity contract — see
 [`CTA_PHILOSOPHY.md`](CTA_PHILOSOPHY.md).
 
+For keyboard accessibility — skip links, focus-visible, Tab order,
+Safari Full Keyboard Access — see
+[`KEYBOARD_PHILOSOPHY.md`](KEYBOARD_PHILOSOPHY.md).
+
 1. **#1 Adoption** — does this remove a click, or add one?
 2. **#2 URL** — is the URL stable, meaningful, and redirected if renamed?
 3. **#3 Share** — what does it look like in a Slack/Twitter/LinkedIn link

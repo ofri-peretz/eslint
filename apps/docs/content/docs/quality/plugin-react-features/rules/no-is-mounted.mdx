@@ -1,19 +1,16 @@
 ---
-title: "no-is-mounted"
-description: "description: no-is-mounted rule"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-is-mounted
-description: no-is-mounted rule
+description: "Prevent isMounted anti-pattern"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-no-is-mounted rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** React, isMounted, deprecated, memory leaks, ESLint rule, anti-pattern, LLM-optimized
 

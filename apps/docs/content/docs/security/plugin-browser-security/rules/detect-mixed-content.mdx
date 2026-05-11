@@ -1,23 +1,20 @@
 ---
-title: "detect-mixed-content"
-description: "title: detect-mixed-content"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: detect-mixed-content
-description: Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulnerabilities.
+description: "Detect HTTP resources in HTTPS pages"
 tags: ['security', 'browser']
 category: security
 severity: medium
 cwe: CWE-311
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> **Keywords:** mixed content, HTTPS, HTTP, CWE-311, insecure resource, TLS, web security
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulnerabilities.
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** mixed content, HTTPS, HTTP, CWE-311, insecure resource, TLS, web security
 
 Detects HTTP URLs in code that should use HTTPS, preventing mixed content vulnerabilities.
 

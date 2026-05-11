@@ -46,9 +46,9 @@ browser-security	require-https-only	unaware
 browser-security	no-sensitive-indexeddb	unaware	
 conventions	no-console-spaces	unaware	
 conventions	consistent-existence-index-check	unaware	
-conventions	filename-case	unaware	
-conventions	no-json-schema-tags	unaware	
-conventions	prefer-dependency-version-strategy	unaware	
+conventions	filename-case	unaware
+conventions	prefer-dependency-version-strategy	unaware
+conventions	require-data-testid	unaware
 conventions	prefer-code-point	unaware	
 conventions	no-commented-code	unaware	
 conventions	expiring-todo-comments	unaware	
@@ -123,8 +123,9 @@ import-next	require-import-approval	unaware
 import-next	no-unassigned-import	unaware	
 import-next	no-full-package-import	unaware	
 import-next	no-duplicates	unaware	
-import-next	enforce-import-order	unaware	
-import-next	group-exports	unaware	
+import-next	enforce-import-order	unaware
+import-next	order	unaware	alias of enforce-import-order
+import-next	group-exports	unaware
 import-next	no-anonymous-default-export	unaware	
 import-next	no-empty-named-blocks	unaware	
 import-next	no-absolute-path	unaware	
@@ -202,18 +203,16 @@ nestjs-security	no-exposed-private-fields	unaware
 node-security	require-secure-credential-storage	unaware	
 node-security	detect-eval-with-expression	unaware	
 node-security	no-zip-slip	unaware	
-node-security	no-dynamic-require	unaware	
-node-security	no-deprecated-buffer	unaware	
-node-security	require-storage-encryption	unaware	
+node-security	no-dynamic-require	unaware
+node-security	require-storage-encryption	unaware
 node-security	no-insecure-key-derivation	unaware	
 node-security	no-weak-hash-algorithm	unaware	
 node-security	no-arbitrary-file-access	unaware	
 node-security	no-insecure-rsa-padding	unaware	
 node-security	no-unsafe-dynamic-require	unaware	
 node-security	detect-child-process	unaware	
-node-security	no-dynamic-dependency-loading	unaware	
-node-security	no-ssrf	unaware	
-node-security	require-dependency-integrity	unaware	
+node-security	no-dynamic-dependency-loading	unaware
+node-security	require-dependency-integrity	unaware
 node-security	require-secure-deletion	unaware	
 node-security	no-deprecated-cipher-method	unaware	
 node-security	detect-non-literal-fs-filename	unaware	
@@ -257,9 +256,8 @@ react-a11y	anchor-has-content	unaware
 react-a11y	scope	unaware	
 react-a11y	mouse-events-have-key-events	unaware	
 react-a11y	no-noninteractive-element-interactions	unaware	
-react-a11y	no-autofocus	unaware	
-react-a11y	alt-text	unaware	
-react-a11y	prefer-tag-over-role	unaware	
+react-a11y	no-autofocus	unaware
+react-a11y	prefer-tag-over-role	unaware
 react-a11y	html-has-lang	unaware	
 react-a11y	no-distracting-elements	unaware	
 react-a11y	no-access-key	unaware	
@@ -345,9 +343,8 @@ reliability	no-unhandled-promise	unaware
 reliability	no-silent-errors	unaware	
 reliability	error-message	unaware	
 reliability	no-missing-error-context	unaware	
-reliability	no-await-in-loop	unaware	
-reliability	no-jsdoc-terminator-in-example	unaware	
-reliability	no-missing-null-checks	unaware	
+reliability	no-await-in-loop	unaware
+reliability	no-missing-null-checks	unaware
 reliability	require-network-timeout	unaware	
 reliability	no-unsafe-type-narrowing	unaware	
 secure-coding	no-electron-security-issues	unaware	
@@ -367,9 +364,8 @@ secure-coding	no-sensitive-data-exposure	unaware
 secure-coding	no-redos-vulnerable-regex	unaware	
 secure-coding	no-improper-sanitization	unaware	
 secure-coding	no-xpath-injection	unaware	
-secure-coding	no-improper-type-validation	unaware	
-secure-coding	no-pii-in-logs	unaware	
-secure-coding	no-graphql-injection	unaware	
+secure-coding	no-improper-type-validation	unaware
+secure-coding	no-graphql-injection	unaware
 secure-coding	no-insecure-comparison	unaware	
 secure-coding	no-privilege-escalation	unaware	
 secure-coding	no-unchecked-loop-condition	unaware	
@@ -396,3 +392,9 @@ vercel-ai-security	require-rag-content-validation	unaware
 vercel-ai-security	require-request-timeout	unaware	
 vercel-ai-security	require-output-filtering	unaware	
 vercel-ai-security	no-hardcoded-api-keys	unaware	
+conventions	no-json-schema-tags	unaware	backfilled docs 2026-05-10
+node-security	no-deprecated-buffer	unaware	backfilled docs 2026-05-10
+node-security	no-ssrf	unaware	backfilled docs 2026-05-10
+react-a11y	alt-text	unaware	backfilled docs 2026-05-10
+reliability	no-jsdoc-terminator-in-example	unaware	backfilled docs 2026-05-10
+secure-coding	no-pii-in-logs	unaware	backfilled docs 2026-05-10

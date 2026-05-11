@@ -1,19 +1,16 @@
 ---
-title: "media-has-caption"
-description: "title: media-has-caption"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: media-has-caption
-description: media-has-caption rule
+description: "Enforce that media elements have captions"
 tags: ['quality', 'react', 'accessibility', 'a11y']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-media-has-caption rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** media-has-caption, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

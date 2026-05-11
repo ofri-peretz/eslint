@@ -1,20 +1,19 @@
 ---
-title: "no-unsafe-regex-query"
-description: "title: no-unsafe-regex-query"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-unsafe-regex-query
-description: Detects user input in MongoDB $regex operators that could cause ReDoS (Regular Expression Denial of Service) or infor...
+description: "User input in $regex can cause ReDoS or information disclosure"
 tags: ['security', 'mongodb']
 category: security
 severity: medium
 cwe: CWE-400
 owasp: "A03:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** ReDoS, CWE-400, MongoDB, $regex, regular expression, denial of service
 

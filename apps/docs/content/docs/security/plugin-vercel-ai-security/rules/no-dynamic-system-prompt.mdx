@@ -1,19 +1,18 @@
 ---
-title: "no-dynamic-system-prompt"
-description: "title: no-dynamic-system-prompt"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-dynamic-system-prompt
-description: This rule identifies code patterns where system prompts contain dynamic or user-controlled content
+description: "Prevent dynamic content in system prompts to avoid agent confusion attacks"
 tags: ['security', 'ai']
 category: security
 severity: medium
 cwe: CWE-74
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Prevents dynamic content in system prompts to avoid agent confusion attacks.
 

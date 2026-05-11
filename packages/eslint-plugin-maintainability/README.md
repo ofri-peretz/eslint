@@ -56,15 +56,22 @@ npm install eslint-plugin-maintainability --save-dev
 | 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
 | 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
+<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [complexity](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/complexity) |  |  |  | Enforce complexity | 🟢 |  |  |  |  |  |
-| [development](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/development) |  |  |  | Enforce development | 🟢 |  |  |  |  |  |
-| [duplication](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/duplication) |  |  |  | Enforce duplication | 🟢 |  |  |  |  |  |
-| [error-handling](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/error-handling) |  |  |  | Enforce error handling | 🟢 |  |  |  |  |  |
-| [maintainability](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/maintainability) |  |  |  | Enforce maintainability | 🟢 |  |  |  |  |  |
-| [quality](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/quality) |  |  |  | Enforce quality | 🟢 |  |  |  |  |  |
-
+| [cognitive-complexity](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/cognitive-complexity) |  |  |  | Enforces a maximum cognitive complexity threshold with refactoring guidance | 🟢 |  |  |  | 💡 |  |
+| [consistent-function-scoping](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/consistent-function-scoping) |  |  |  | Move functions to the highest possible scope | 🟢 |  |  |  | 💡 |  |
+| [error-message](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/error-message) |  |  |  | Enforce providing a message when creating built-in Error objects for better debugging | 🟢 |  |  |  | 💡 |  |
+| [identical-functions](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/identical-functions) | CWE-1104 |  |  | Detects duplicate function implementations with DRY refactoring suggestions | 🟢 |  |  |  | 💡 |  |
+| [max-parameters](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/max-parameters) |  |  |  | ESLint Rule: max-parameters with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
+| [nested-complexity-hotspots](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/nested-complexity-hotspots) |  |  |  | ESLint Rule: nested-complexity-hotspots with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
+| [no-lonely-if](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/no-lonely-if) |  |  |  | Disallow if statements as the only statement in else blocks | 🟢 |  |  |  | 💡 |  |
+| [no-missing-error-context](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/no-missing-error-context) |  |  |  | ESLint Rule: no-missing-error-context with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
+| [no-nested-ternary](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/no-nested-ternary) |  |  |  | Prevent nested ternary expressions for better readability | 🟢 |  |  |  | 💡 |  |
+| [no-silent-errors](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/no-silent-errors) |  |  |  | ESLint Rule: no-silent-errors with LLM-optimized suggestions and auto-fix capabilities. | 🟢 |  |  |  | 💡 |  |
+| [no-unhandled-promise](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/no-unhandled-promise) | CWE-1024 |  |  | Disallow unhandled Promise rejections with LLM-optimized suggestions for proper async error handling | 🟢 |  |  |  | 💡 |  |
+| [no-unreadable-iife](https://eslint.interlace.tools/docs/quality/plugin-maintainability/rules/no-unreadable-iife) |  |  |  | Disallow unreadable IIFE (Immediately Invoked Function Expression) patterns | 🟢 |  |  |  | 💡 |  |
+<!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:

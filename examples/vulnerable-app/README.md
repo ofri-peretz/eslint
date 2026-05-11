@@ -34,8 +34,9 @@ npx @interlace/cli audit --sarif src > findings.sarif
 # 3. Get one rule's violations
 npx @interlace/cli audit --plugin secure-coding src
 
-# 4. Try the MCP server (from Claude Code, Cursor, or any MCP client)
-npx @interlace/secure-coding-mcp
+# 4. Try the official ESLint MCP from Claude Code, Cursor, or any MCP client.
+#    It discovers every Interlace plugin in eslint.config.* automatically.
+npx --yes @eslint/mcp
 ```
 
 ## In CI

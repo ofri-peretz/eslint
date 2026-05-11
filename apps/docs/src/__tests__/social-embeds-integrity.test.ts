@@ -375,32 +375,95 @@ describe('Social Embeds - Cache Validation', () => {
 
     const cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
     const invalidEntries: { id: string; reason: string }[] = [];
-    
+
     for (const [id, tweet] of Object.entries(cache.tweets)) {
       if (!tweet || typeof tweet !== 'object') {
         invalidEntries.push({ id, reason: 'Invalid tweet object' });
         continue;
       }
-      
+
       const tweetData = tweet as Record<string, unknown>;
-      
+
       if (!tweetData.text) {
         invalidEntries.push({ id, reason: 'Missing tweet text' });
       }
-      
+
       if (!tweetData.user) {
         invalidEntries.push({ id, reason: 'Missing user data' });
       }
     }
-    
+
     if (invalidEntries.length > 0) {
       console.error('Invalid cache entries found:');
       for (const { id, reason } of invalidEntries) {
         console.error(`  - Tweet ${id}: ${reason}`);
       }
     }
-    
+
     expect(invalidEntries).toHaveLength(0);
+  });
+
+  // Regression lock — TweetCard preview image (the `card.binding_values`
+  // photo URL) silently disappeared in prod after a `sync-tweet-cache`
+  // run that hit Twitter's syndication endpoint during a window where
+  // it returned a text-only card. The hardened sync script preserves
+  // prior image bindings if the API drops them; this test asserts the
+  // on-disk cache still satisfies that contract before a deploy. Pairs
+  // with the HEAD-check in `scripts/sync-tweet-cache.ts`, which catches
+  // the dynamic case (URL present in JSON but 404 upstream).
+  it('every cached tweet with a `card` retains a preview image URL (regression: 2026-05-10)', () => {
+    if (!existsSync(CACHE_FILE)) {
+      return;
+    }
+
+    const cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8')) as {
+      tweets: Record<string, Record<string, unknown>>;
+    };
+
+    const missing: { id: string; bindingsPresent: string[] }[] = [];
+
+    for (const [id, tweet] of Object.entries(cache.tweets)) {
+      const card = (tweet as { card?: { binding_values?: Record<string, unknown> } }).card;
+      if (!card) continue;
+
+      const bv = (card.binding_values ?? {}) as Record<
+        string,
+        { image_value?: { url?: string } } | undefined
+      >;
+
+      const url =
+        bv.photo_image_full_size_large?.image_value?.url ||
+        bv.thumbnail_image_large?.image_value?.url ||
+        bv.thumbnail_image?.image_value?.url;
+
+      if (!url) {
+        missing.push({ id, bindingsPresent: Object.keys(bv) });
+      }
+    }
+
+    if (missing.length > 0) {
+      console.error(`
+╔════════════════════════════════════════════════════════════════════╗
+║  REGRESSION: cached tweet has a \`card\` but no preview image URL.   ║
+╠════════════════════════════════════════════════════════════════════╣
+║  Twitter's syndication endpoint is non-deterministic — it can     ║
+║  return the same tweet's \`card\` with text-only bindings           ║
+║  (description/domain/title only) and drop the image bindings.     ║
+║                                                                    ║
+║  Fix: re-run \`npm run sync-tweets\` until the cache JSON contains  ║
+║  a \`card.binding_values.photo_image_full_size_large.image_value\`  ║
+║  for the tweet(s) listed below. The hardened sync script will     ║
+║  preserve prior bindings on subsequent runs.                       ║
+╚════════════════════════════════════════════════════════════════════╝`);
+      for (const { id, bindingsPresent } of missing) {
+        console.error(`  - Tweet ${id}: bindings present = [${bindingsPresent.join(', ')}]`);
+      }
+    }
+
+    expect(
+      missing,
+      `${missing.length} cached tweet(s) have a \`card\` field but no preview image URL — this renders an empty box where the article preview should be.`,
+    ).toHaveLength(0);
   });
 });
 

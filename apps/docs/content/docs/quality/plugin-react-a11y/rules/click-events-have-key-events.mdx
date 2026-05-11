@@ -1,19 +1,16 @@
 ---
-title: "click-events-have-key-events"
-description: "title: click-events-have-key-events"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: click-events-have-key-events
-description: click-events-have-key-events rule
+description: "Enforce that onClick is accompanied by keyboard events"
 tags: ['quality', 'react', 'accessibility', 'a11y']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-click-events-have-key-events rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** click-events-have-key-events, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

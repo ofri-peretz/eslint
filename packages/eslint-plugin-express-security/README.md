@@ -69,19 +69,20 @@ npm install eslint-plugin-express-security --save-dev
 | 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
 | 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
+<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [no-cors-credentials-wildcard](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-cors-credentials-wildcard) | CWE-942 |  | 9.1 | ESLint rule documentation for no-cors-credentials-wildcard | 🟢 | 💼 |  |  |  |  |
-| [no-exposed-debug-endpoints](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-exposed-debug-endpoints) |  |  |  | ESLint rule documentation for no-exposed-debug-endpoints | 🟢 |  |  |  |  |  |
-| [no-express-unsafe-regex-route](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-express-unsafe-regex-route) | CWE-1333 |  | 7.5 | ESLint rule documentation for no-express-unsafe-regex-route | 🟢 | 💼 |  |  |  |  |
-| [no-graphql-introspection-production](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-graphql-introspection-production) | CWE-200 |  | 5.3 | ESLint rule documentation for no-graphql-introspection-production | 🟢 | 💼 | ⚠️ |  |  |  |
-| [no-insecure-cookie-options](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-insecure-cookie-options) | CWE-614 |  | 5.3 | ESLint rule documentation for no-insecure-cookie-options | 🟢 | 💼 |  |  |  |  |
-| [no-permissive-cors](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-permissive-cors) | CWE-942 |  | 9.1 | ESLint rule documentation for no-permissive-cors | 🟢 | 💼 |  |  |  |  |
-| [require-csrf-protection](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-csrf-protection) | CWE-352 |  | 8.8 | ESLint rule documentation for require-csrf-protection | 🟢 | 💼 | ⚠️ |  |  |  |
-| [require-express-body-parser-limits](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-express-body-parser-limits) | CWE-770 |  | 7.5 | ESLint rule documentation for require-express-body-parser-limits | 🟢 | 💼 | ⚠️ |  |  |  |
-| [require-helmet](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-helmet) | CWE-693 |  | 7.1 | ESLint rule documentation for require-helmet | 🟢 | 💼 |  |  |  |  |
-| [require-rate-limiting](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-rate-limiting) | CWE-770 |  | 7.5 | ESLint rule documentation for require-rate-limiting | 🟢 | 💼 | ⚠️ |  |  |  |
-
+| [no-cors-credentials-wildcard](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-cors-credentials-wildcard) | CWE-942 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
+| [no-exposed-debug-endpoints](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-exposed-debug-endpoints) | CWE-489 | A05:2021 |  | Identifies potential debug, administration, or testing endpoints that are often left exposed in production… | 🟢 |  |  |  |  |  |
+| [no-express-unsafe-regex-route](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-express-unsafe-regex-route) | CWE-1333 |  |  | This rule detects Regular Expression Denial of Service (ReDoS) vulnerabilities in Express route patterns | 🟢 |  |  |  |  |  |
+| [no-graphql-introspection-production](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-graphql-introspection-production) | CWE-200 |  |  | This rule detects GraphQL servers with introspection enabled in production | 🟢 |  |  |  |  |  |
+| [no-insecure-cookie-options](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-insecure-cookie-options) | CWE-614 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
+| [no-permissive-cors](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/no-permissive-cors) | CWE-942 |  |  | Detects overly permissive CORS configurations in Express.js applications | 🟢 | 💼 |  |  |  |  |
+| [require-csrf-protection](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-csrf-protection) | CWE-352 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 | 💼 |  |  |  |  |
+| [require-express-body-parser-limits](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-express-body-parser-limits) | CWE-400 |  |  | The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance: | 🟢 |  |  |  |  |  |
+| [require-helmet](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-helmet) | CWE-693 |  |  | This rule detects Express.js applications that are missing the helmet middleware | 🟢 | 💼 |  |  |  |  |
+| [require-rate-limiting](https://eslint.interlace.tools/docs/security/plugin-express-security/rules/require-rate-limiting) | CWE-770 |  |  | This rule detects Express.js applications missing rate limiting middleware | 🟢 | 💼 |  |  |  |  |
+<!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:

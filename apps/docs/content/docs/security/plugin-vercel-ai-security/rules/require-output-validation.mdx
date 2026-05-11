@@ -1,23 +1,20 @@
 ---
-title: "require-output-validation"
-description: "title: require-output-validation"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: require-output-validation
-description: This rule identifies code patterns where AI-generated output is displayed to users without validation or fact-checking.
+description: "Require validation of AI output before displaying to users"
 tags: ['security', 'ai']
 category: security
 severity: medium
 cwe: CWE-707
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> Requires validation of AI output before displaying to users.
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-This rule identifies code patterns where AI-generated output is displayed to users without validation or fact-checking.
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> Requires validation of AI output before displaying to users.
 
 ## 📊 Rule Details
 

@@ -47,4 +47,5 @@ declare module '@typescript-eslint/utils/ts-eslint' {
 // The runtime side of this file is intentionally empty — the export
 // only exists to make TypeScript pick the file up under
 // `tsconfig.lib.json`'s file glob.
+// oxlint-disable-next-line unicorn/require-module-specifiers
 export {};

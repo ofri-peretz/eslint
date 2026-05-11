@@ -1,24 +1,21 @@
 ---
-title: "require-blob-url-revocation"
-description: "title: require-blob-url-revocation"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: require-blob-url-revocation
-description: Require revoking Blob URLs after use to prevent memory leaks.
+description: "Require revoking Blob URLs to prevent memory leaks"
 tags: ['security', 'browser']
 category: security
 severity: medium
 cwe: CWE-401
 owasp: "A04:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> Require Blob Url Revocation
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Require revoking Blob URLs after use to prevent memory leaks.
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> Require Blob Url Revocation
 
 Require revoking Blob URLs after use to prevent memory leaks.
 

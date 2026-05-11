@@ -1,21 +1,18 @@
 ---
-title: "consistent-function-scoping"
-description: "title: consistent-function-scoping"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: consistent-function-scoping
-description: Move functions to the highest possible scope
+description: "Move function definitions to the highest possible scope to improve readability and performance"
 tags: ['quality', 'maintainability']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-> **Keywords:** function scope, hoisting, nested functions, ESLint rule, performance, LLM-optimized
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Move functions to the highest possible scope
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** function scope, hoisting, nested functions, ESLint rule, performance, LLM-optimized
 
 Move functions to the highest possible scope. This rule is part of [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability).
 

@@ -1,19 +1,16 @@
 ---
-title: "tabindex-no-positive"
-description: "title: tabindex-no-positive"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: tabindex-no-positive
-description: tabindex-no-positive rule
+description: "Enforce that tabIndex is not positive"
 tags: ['quality', 'react', 'accessibility', 'a11y']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-tabindex-no-positive rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** tabindex-no-positive, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

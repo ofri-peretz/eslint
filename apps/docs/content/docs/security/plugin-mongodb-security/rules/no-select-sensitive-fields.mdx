@@ -1,24 +1,21 @@
 ---
-title: "no-select-sensitive-fields"
-description: "title: no-select-sensitive-fields"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-select-sensitive-fields
-description: Detects queries that may return sensitive fields like passwords, tokens, or API keys.
+description: "Query may return sensitive fields like password or token"
 tags: ['security', 'mongodb']
 category: security
 severity: medium
 cwe: CWE-200
 owasp: "A01:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> **Keywords:** CWE-200, information exposure, password, Mongoose, security
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Detects queries that may return sensitive fields like passwords, tokens, or API keys.
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** CWE-200, information exposure, password, Mongoose, security
 
 Detects queries that may return sensitive fields like passwords, tokens, or API keys.
 

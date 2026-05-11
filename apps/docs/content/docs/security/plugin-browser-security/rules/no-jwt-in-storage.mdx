@@ -1,20 +1,19 @@
 ---
-title: "no-jwt-in-storage"
-description: "title: no-jwt-in-storage"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-jwt-in-storage
-description: This rule prevents storing JWT tokens in browser storage (localStorage/sessionStorage)
+description: "Disallow storing JWT tokens in localStorage or sessionStorage"
 tags: ['security', 'browser']
 category: security
 severity: medium
 cwe: CWE-311
 owasp: "A02:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > 🔒 Disallow storing JWT tokens in localStorage or sessionStorage
 

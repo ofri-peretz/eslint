@@ -1,19 +1,16 @@
 ---
-title: "no-keyboard-inaccessible-elements"
-description: "title: no-keyboard-inaccessible-elements"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-keyboard-inaccessible-elements
-description: no-keyboard-inaccessible-elements rule
+description: "Detects clickable divs without keyboard support"
 tags: ['quality', 'react', 'accessibility', 'a11y']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-no-keyboard-inaccessible-elements rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** no-keyboard-inaccessible-elements, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

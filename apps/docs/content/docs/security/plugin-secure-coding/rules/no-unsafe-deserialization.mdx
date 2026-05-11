@@ -1,19 +1,18 @@
 ---
-title: "no-unsafe-deserialization"
-description: "title: no-unsafe-deserialization"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-unsafe-deserialization
-description: Detects unsafe deserialization of untrusted data
+description: "Detects unsafe deserialization of untrusted data"
 tags: ['security', 'core']
 category: security
 severity: medium
 cwe: CWE-502
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** unsafe deserialization, CWE-502, RCE, code execution, YAML, pickle, security
 

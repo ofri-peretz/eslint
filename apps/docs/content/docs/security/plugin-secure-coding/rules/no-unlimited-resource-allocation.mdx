@@ -1,19 +1,18 @@
 ---
-title: "no-unlimited-resource-allocation"
-description: "title: no-unlimited-resource-allocation"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-unlimited-resource-allocation
-description: Detects unlimited resource allocation that could cause DoS
+description: "Detects unlimited resource allocation that could cause DoS"
 tags: ['security', 'core']
 category: security
 severity: medium
 cwe: CWE-770
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** resource allocation, CWE-770, DoS, memory exhaustion, security, rate limiting
 

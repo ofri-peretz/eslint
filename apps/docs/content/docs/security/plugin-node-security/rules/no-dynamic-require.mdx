@@ -1,18 +1,17 @@
 ---
-title: "no-dynamic-require"
-description: "title: no-dynamic-require"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-dynamic-require
-description: Forbid require() calls with non-literal arguments
+description: "Forbid `require()` calls with expressions"
 tags: ['security', 'node']
 category: security
 severity: medium
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** dynamic require, CommonJS, static analysis, bundler, ESLint rule, webpack, LLM-optimized
 

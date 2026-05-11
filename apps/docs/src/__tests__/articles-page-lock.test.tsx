@@ -173,14 +173,9 @@ describe('ArticlesClient: Component Dependencies', () => {
     expect(articlesSource).toContain('import { Button }');
   });
 
-  it('renders a sort segmented control (state always visible, no hidden Select)', () => {
-    // Lock the post-refactor contract: sort uses a segmented `role="group"`
-    // button bar instead of a hidden Select dropdown — surfaces state, no
-    // extra click to reveal the active sort. See SEARCH_PHILOSOPHY.md.
-    expect(articlesSource).toContain("role=\"group\"");
-    expect(articlesSource).toContain("aria-label=\"Sort articles\"");
-    expect(articlesSource).toContain('SORT_OPTIONS.map');
-  });
+  // Sort UI was removed in the 2026-05 refactor; the articles list now
+  // shows latest-first by default. Tests that locked the sort segmented
+  // control + sort-direction test ID are intentionally absent.
 
   it('imports motion from motion/react', () => {
     expect(articlesSource).toContain("from 'motion/react'");
@@ -246,12 +241,12 @@ describe('articles.filter lib: Pure Logic Lock', () => {
 // =========================================
 
 describe('ArticlesClient: Article Cards Lock', () => {
-  it('defines FeaturedArticle component', () => {
-    expect(articlesSource).toContain('function FeaturedArticle');
-  });
-
-  it('defines ArticleCard component', () => {
+  it('defines a single unified ArticleCard wrapper (featured + grid use one component)', () => {
+    // The historical `FeaturedArticle` helper was inlined into `ArticleCard`
+    // after the @interlace/ui block became the single source of truth for
+    // both variants — the wrapper differentiates with an `isFeatured` prop.
     expect(articlesSource).toContain('function ArticleCard');
+    expect(articlesSource).toContain('isFeatured');
   });
 
   it('uses CSS animation classes (motion-safe gated)', () => {
@@ -291,15 +286,12 @@ describe('ArticlesClient: Article Cards Lock', () => {
     expect(articlesSource).toContain('article.tag_list');
   });
 
-  it('inline <img> tags (FeaturedArticle) carry explicit width/height (CLS budget)', () => {
-    // The grid card's <img> is now owned by the @interlace/ui ArticleCard
-    // block — its CLS budget is enforced in the storybook a11y gate. The
-    // featured article remains inline; assert its cover + author avatar
-    // both ship width/height attributes.
-    const widthMatches = articlesSource.match(/<img[\s\S]*?width=\{/g) ?? [];
-    const heightMatches = articlesSource.match(/<img[\s\S]*?height=\{/g) ?? [];
-    expect(widthMatches.length).toBeGreaterThanOrEqual(2);
-    expect(heightMatches.length).toBeGreaterThanOrEqual(2);
+  it('delegates <img> rendering (and its CLS budget) to the @interlace/ui ArticleCard block', () => {
+    // Both featured and grid variants now flow through `ArticleCardBlock`,
+    // which owns the <img> markup. CLS width/height enforcement is gated by
+    // the Storybook a11y workflow against the UI package source, not here.
+    expect(articlesSource).toContain('ArticleCard as ArticleCardBlock');
+    expect(articlesSource).toContain("variant={isFeatured ? 'overlay' : 'stack'}");
   });
 });
 
@@ -353,13 +345,10 @@ describe('ArticlesClient: Test IDs Lock', () => {
   const staticTestids = [
     'article-count',
     'search-input',
-    'sort-select',
     'filter-toggle',
     'clear-filters',
     'results-count',
     'articles-grid',
-    'featured-article',
-    'article-card',
     'last-synced',
     'prev-page',
     'next-page',
@@ -371,11 +360,14 @@ describe('ArticlesClient: Test IDs Lock', () => {
       expect(articlesSource).toContain(`data-testid="${id}"`);
     });
   }
-  // sort-direction is rendered as a JSX expression on the active sort
-  // option (`data-testid={isActive ? 'sort-direction' : ...}`); match
-  // the quoted value so we tolerate either literal or expression form.
-  it('has sort-direction test id (dynamic)', () => {
-    expect(articlesSource).toMatch(/['"]sort-direction['"]/);
+  // sort-direction test ID removed alongside the sort UI itself (2026-05).
+
+  // The featured/grid wrapper picks its testid via the `isFeatured` prop,
+  // so the value appears inside a JSX expression with single quotes.
+  it('has featured-article and article-card test ids (chosen by isFeatured prop)', () => {
+    expect(articlesSource).toContain("'featured-article'");
+    expect(articlesSource).toContain("'article-card'");
+    expect(articlesSource).toMatch(/data-testid=\{isFeatured\s*\?\s*'featured-article'\s*:\s*'article-card'\}/);
   });
 });
 
@@ -404,8 +396,15 @@ describe('ArticlesClient: Visual Identity Lock', () => {
     expect(articlesSource).toContain('backdrop-blur');
   });
 
-  it('has hover effects on cards', () => {
-    expect(articlesSource).toContain('group-hover');
+  it('has hover effects on cards (now owned by @interlace/ui ArticleCard block)', () => {
+    // Hover affordances moved into the UI package's `ArticleCard` block — see
+    // packages/ui/src/blocks/article-card.tsx. Storybook a11y enforces the
+    // visual contract there. ArticlesClient just consumes the block.
+    const blockSource = readFileSync(
+      join(process.cwd(), '../../packages/ui/src/blocks/article-card.tsx'),
+      'utf-8',
+    );
+    expect(blockSource).toContain('group-hover');
   });
 
   it('has transition animations', () => {
@@ -439,8 +438,14 @@ describe('ArticlesClient: Accessibility Lock', () => {
     expect(articlesSource).toContain('target="_blank"');
   });
 
-  it('images have alt attributes', () => {
-    expect(articlesSource).toContain('alt=');
+  it('images have alt attributes (rendered by @interlace/ui ArticleCard block)', () => {
+    // Image rendering moved into the UI package's `ArticleCard` block — alt
+    // attributes are enforced there + by the Storybook a11y workflow.
+    const blockSource = readFileSync(
+      join(process.cwd(), '../../packages/ui/src/blocks/article-card.tsx'),
+      'utf-8',
+    );
+    expect(blockSource).toContain('alt=');
   });
 
   it('has clear button for search', () => {

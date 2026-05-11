@@ -1,19 +1,18 @@
 ---
-title: "detect-object-injection"
-description: "title: detect-object-injection"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: detect-object-injection
-description: Detects variable[key] as a left- or right-hand assignment operand (prototype pollution)
+description: "Detects variable[key] as a left- or right-hand assignment operand"
 tags: ['security', 'core']
 category: security
 severity: critical
 cwe: CWE-915
 autofix: false
+type_aware: true
+type_aware_status: optional
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={true} typeAwareStatus="optional" />
 
 > **Keywords:** prototype pollution, CWE-915, security, ESLint rule, object injection, bracket notation, property injection, auto-fix, LLM-optimized, code security
 > **CWE:** [CWE-74](https://cwe.mitre.org/data/definitions/74.html)  

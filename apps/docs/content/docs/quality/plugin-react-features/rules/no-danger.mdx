@@ -1,19 +1,16 @@
 ---
-title: "no-danger"
-description: "description: no-danger rule"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-danger
-description: no-danger rule
+description: "Disallow dangerouslySetInnerHTML usage"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-no-danger rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** React, dangerouslySetInnerHTML, XSS, security, sanitize, ESLint rule, HTML injection, LLM-optimized
 

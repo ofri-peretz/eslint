@@ -1,24 +1,21 @@
 ---
-title: "no-unsafe-eval-csp"
-description: "title: no-unsafe-eval-csp"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-unsafe-eval-csp
-description: "Disallow 'unsafe-eval' in Content Security Policy directives."
+description: "Refactor code to avoid eval() and remove unsafe-eval from CSP"
 tags: ['security', 'browser']
 category: security
 severity: critical
 cwe: CWE-95
 owasp: "A03:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> No Unsafe Eval Csp
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Disallow 'unsafe-eval' in Content Security Policy directives.
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> No Unsafe Eval Csp
 
 Disallow 'unsafe-eval' in Content Security Policy directives.
 

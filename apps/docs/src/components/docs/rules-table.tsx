@@ -6,7 +6,7 @@
  */
 
 import Link from 'next/link';
-import { Briefcase, Wrench, Lightbulb, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Briefcase, Wrench, Lightbulb, AlertTriangle, Brain, ExternalLink } from 'lucide-react';
 
 const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/ofri-peretz/eslint/main/packages';
 
@@ -36,6 +36,8 @@ interface RulesTableProps {
   showLinks?: boolean;
 }
 
+type TypeAwareness = 'unaware' | 'optional' | 'aware';
+
 interface ParsedRule {
   name: string;
   description: string;
@@ -44,6 +46,12 @@ interface ParsedRule {
   hasSuggestions: boolean;
   warns: boolean;
   deprecated: boolean;
+  /**
+   * Whether the rule needs the TypeScript program. Sourced from the 🧠 column
+   * in the README rules table — 🟢 unaware, 🟡 type-aware (refining),
+   * 🟠 type-aware (graceful). Plays to {@link .agent/type-awareness-philosophy.md}.
+   */
+  typeAwareness: TypeAwareness;
   cwe?: string;
   owasp?: string;
   href: string;
@@ -57,29 +65,61 @@ function getPluginCategory(plugin: string): 'security' | 'quality' {
 }
 
 /**
+ * In non-production environments, prefer the on-disk README so local edits to
+ * `packages/eslint-plugin-<slug>/README.md` are visible at `npm run dev`
+ * without having to push to `main` and wait for the ISR cache to expire.
+ * Production fetches from the GitHub raw CDN, same as before.
+ */
+async function readLocalReadme(packageName: string): Promise<string | null> {
+  if (process.env.NODE_ENV === 'production') return null;
+  try {
+    // Avoid bundling `node:fs/path` into client-only modules — guarded by env.
+    const fs = await import('node:fs/promises');
+    const path = await import('node:path');
+    // Walk up from cwd looking for a packages/<name>/README.md. The dev server
+    // runs from `apps/docs/`, so the monorepo root is two levels up.
+    const candidates = [
+      path.resolve(process.cwd(), '..', '..', 'packages', packageName, 'README.md'),
+      path.resolve(process.cwd(), 'packages', packageName, 'README.md'),
+    ];
+    for (const p of candidates) {
+      try {
+        const stat = await fs.stat(p);
+        if (stat.isFile()) return await fs.readFile(p, 'utf-8');
+      } catch {}
+    }
+  } catch {}
+  return null;
+}
+
+/**
  * Fetch README and parse rules table
  */
 async function fetchRules(plugin: string): Promise<ParsedRule[]> {
   const packageName = `eslint-plugin-${plugin}`;
   const url = `${GITHUB_RAW_BASE}/${packageName}/README.md`;
   const category = getPluginCategory(plugin);
-  
+
   try {
-    const res = await fetch(url, {
-      next: { revalidate: 21600 }, // 6 hour ISR cache
-    });
-    
-    if (!res.ok) {
-      console.error(`[RulesTable] Failed to fetch ${plugin}: ${res.status}`);
-      return [];
+    let markdown = await readLocalReadme(packageName);
+    if (markdown === null) {
+      const res = await fetch(url, {
+        next: { revalidate: 21600 }, // 6 hour ISR cache
+      });
+
+      if (!res.ok) {
+        console.error(`[RulesTable] Failed to fetch ${plugin}: ${res.status}`);
+        return [];
+      }
+
+      markdown = await res.text();
     }
-    
-    const markdown = await res.text();
+
     const rules = parseRulesFromReadme(markdown, plugin, category);
-    
+
     // Fetch descriptions from individual rule docs (in parallel)
     const rulesWithDescriptions = await fetchRuleDescriptions(plugin, rules);
-    
+
     return rulesWithDescriptions;
   } catch (error) {
     console.error(`[RulesTable] Error fetching ${plugin}:`, error);
@@ -201,23 +241,32 @@ function parseRulesFromReadme(markdown: string, plugin: string, category: 'secur
     
     const cweIdx = headerCells.findIndex(h => h.toLowerCase() === 'cwe');
     const owaspIdx = headerCells.findIndex(h => h.toLowerCase() === 'owasp');
-    
+    // The 🧠 column header is a single brain emoji; identify by exact match.
+    const typeIdx = headerCells.findIndex(h => h.trim() === '🧠');
+
     const dataRows = dataRowsContent.split('\n').filter(row => row.trim().startsWith('|'));
-    
+
     for (const row of dataRows) {
       const cells = row.split('|').map(cell => cell.trim()).filter((_, i, arr) => i > 0 && i < arr.length - 1);
-      
+
       if (cells.length < headerCells.length) continue;
-      
+
       const ruleCell = cells[ruleIdx];
       if (!ruleCell || ruleCell.startsWith('**A') || ruleCell === '') continue;
-      
+
       // Extract rule name from markdown link
       const ruleNameMatch = ruleCell.match(/\[([^\]]+)\]\(([^)]+)\)/);
       const ruleName = (ruleNameMatch ? ruleNameMatch[1] : ruleCell).replace(/[`*~]/g, '');
-      
+
       if (!ruleName || ruleName.includes('|') || ruleName.length < 2) continue;
-      
+
+      const typeCell = typeIdx !== -1 ? cells[typeIdx] : '';
+      const typeAwareness: TypeAwareness = typeCell.includes('🟡')
+        ? 'optional'
+        : typeCell.includes('🟠')
+          ? 'aware'
+          : 'unaware';
+
       rules.push({
         name: ruleName,
         description: '', // Will be filled by fetchRuleDescriptions
@@ -226,6 +275,7 @@ function parseRulesFromReadme(markdown: string, plugin: string, category: 'secur
         fixable: row.includes('🔧'),
         hasSuggestions: row.includes('💡'),
         deprecated: row.includes('🚫'),
+        typeAwareness,
         cwe: cweIdx !== -1 ? stripMarkdown(cells[cweIdx] || '') : undefined,
         owasp: owaspIdx !== -1 ? stripMarkdown(cells[owaspIdx] || '') : undefined,
         href: `/docs/${category}/plugin-${plugin}/rules/${ruleName}`,
@@ -265,6 +315,14 @@ export async function RulesTable({ plugin, limit, compact, showLinks }: RulesTab
       <div className="flex flex-wrap gap-4 text-xs text-fd-muted-foreground pb-3 border-b border-fd-border">
         <span className="font-medium">Legend:</span>
         <span className="flex items-center gap-1">
+          <Brain className="h-3.5 w-3.5 text-emerald-500" />
+          <span aria-hidden>🟢</span> Type-unaware
+        </span>
+        <span className="flex items-center gap-1">
+          <Brain className="h-3.5 w-3.5 text-amber-500" />
+          <span aria-hidden>🟡/🟠</span> Type-aware
+        </span>
+        <span className="flex items-center gap-1">
           <Briefcase className="h-3.5 w-3.5 text-fd-primary" />
           Recommended
         </span>
@@ -281,13 +339,14 @@ export async function RulesTable({ plugin, limit, compact, showLinks }: RulesTab
           Warns
         </span>
       </div>
-      
+
       {/* Rules Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-fd-border">
               <th className="text-left py-2 px-3 font-medium">Rule</th>
+              <th className="text-center py-2 px-3 font-medium w-14" title="Type-awareness">🧠</th>
               <th className="text-center py-2 px-3 font-medium w-12">💼</th>
               <th className="text-center py-2 px-3 font-medium w-12">🔧</th>
               <th className="text-center py-2 px-3 font-medium w-12">💡</th>
@@ -299,7 +358,7 @@ export async function RulesTable({ plugin, limit, compact, showLinks }: RulesTab
             {displayRules.map((rule, idx) => (
               <tr key={idx} className="border-b border-fd-border/50 hover:bg-fd-muted/50">
                 <td className="py-2 px-3">
-                  <Link 
+                  <Link
                     href={rule.href}
                     className="font-mono text-fd-primary hover:underline"
                   >
@@ -309,6 +368,25 @@ export async function RulesTable({ plugin, limit, compact, showLinks }: RulesTab
                     <p className="text-xs text-fd-muted-foreground mt-0.5 max-w-md">
                       {rule.description}
                     </p>
+                  )}
+                </td>
+                <td
+                  className="text-center py-2 px-3"
+                  data-type-awareness={rule.typeAwareness}
+                  title={
+                    rule.typeAwareness === 'unaware'
+                      ? 'Type-unaware (AST-only)'
+                      : rule.typeAwareness === 'optional'
+                        ? 'Type-aware (refining): pure-AST primary path; types refine precision'
+                        : 'Type-aware (graceful): requires TypeScript program'
+                  }
+                >
+                  {rule.typeAwareness === 'unaware' ? (
+                    <span aria-label="Type-unaware">🟢</span>
+                  ) : rule.typeAwareness === 'optional' ? (
+                    <span aria-label="Type-aware (refining)">🟡</span>
+                  ) : (
+                    <span aria-label="Type-aware (graceful)">🟠</span>
                   )}
                 </td>
                 <td className="text-center py-2 px-3">
@@ -324,7 +402,7 @@ export async function RulesTable({ plugin, limit, compact, showLinks }: RulesTab
                   {rule.warns && <AlertTriangle className="h-4 w-4 text-orange-500 mx-auto" />}
                 </td>
                 <td className="text-center py-2 px-3">
-                  <Link 
+                  <Link
                     href={rule.href}
                     className="inline-flex items-center justify-center text-fd-muted-foreground hover:text-fd-primary"
                   >

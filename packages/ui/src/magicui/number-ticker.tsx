@@ -7,6 +7,12 @@ import { useReducedMotion } from "../lib/use-reduced-motion.js"
 
 interface NumberTickerProps extends ComponentPropsWithoutRef<"span"> {
   value: number
+  /**
+   * Where the count-up starts. Defaults to `value` — meaning **no animation**
+   * and an honest SSR render (UX_PHILOSOPHY §6: "ease of use is performance"
+   * — a stat that says `0` on first paint reads as broken). Pass an explicit
+   * lower number to opt into the count-up effect.
+   */
   startValue?: number
   direction?: "up" | "down"
   delay?: number
@@ -17,14 +23,14 @@ interface NumberTickerProps extends ComponentPropsWithoutRef<"span"> {
 
 /**
  * NumberTicker - Performance Optimized
- * 
+ *
  * Uses requestAnimationFrame + easeOutExpo instead of Framer Motion springs.
  * This reduces the JS bundle size and eliminates the motion/react dependency
  * for a simple counting animation.
  */
 export function NumberTicker({
   value,
-  startValue = 0,
+  startValue,
   direction = "up",
   delay = 0,
   className,
@@ -35,6 +41,8 @@ export function NumberTicker({
   const ref = useRef<HTMLSpanElement>(null)
   const [hasAnimated, setHasAnimated] = useState(false)
   const reduceMotion = useReducedMotion()
+  const from = startValue ?? value
+  const shouldAnimate = from !== value
 
   // Format number with locale (memoized to prevent useEffect recreation)
   const formatNumber = useCallback((num: number) =>
@@ -51,17 +59,17 @@ export function NumberTicker({
   }, [reduceMotion, value, formatNumber])
 
   useEffect(() => {
-    if (!ref.current || hasAnimated || reduceMotion) return
+    if (!ref.current || hasAnimated || reduceMotion || !shouldAnimate) return
 
     // IntersectionObserver to trigger when in view
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && !hasAnimated) {
           setHasAnimated(true)
-          
+
           const startTime = Date.now() + delay * 1000
-          const from = direction === "down" ? value : startValue
-          const to = direction === "down" ? startValue : value
+          const animFrom = direction === "down" ? value : from
+          const to = direction === "down" ? from : value
           
           const animate = () => {
             const now = Date.now()
@@ -75,7 +83,7 @@ export function NumberTicker({
             
             // Ease out expo for smooth deceleration
             const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress)
-            const current = from + (to - from) * eased
+            const current = animFrom + (to - animFrom) * eased
             
             if (ref.current) {
               ref.current.textContent = formatNumber(current)
@@ -94,7 +102,7 @@ export function NumberTicker({
 
     observer.observe(ref.current)
     return () => observer.disconnect()
-  }, [value, startValue, direction, delay, duration, decimalPlaces, hasAnimated, formatNumber, reduceMotion])
+  }, [value, from, direction, delay, duration, decimalPlaces, hasAnimated, formatNumber, reduceMotion, shouldAnimate])
 
   return (
     <span
@@ -105,7 +113,7 @@ export function NumberTicker({
       )}
       {...props}
     >
-      {formatNumber(startValue)}
+      {formatNumber(from)}
     </span>
   )
 }

@@ -1,19 +1,16 @@
 ---
-title: "no-redundant-should-component-update"
-description: "title: no-redundant-should-component-update"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-redundant-should-component-update
-description: no-redundant-should-component-update rule
+description: "Prevent redundant shouldComponentUpdate"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-no-redundant-should-component-update rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** React, shouldComponentUpdate, performance, PureComponent, optimization, ESLint rule, LLM-optimized
 

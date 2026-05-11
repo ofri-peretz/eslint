@@ -1,17 +1,16 @@
 ---
-title: "prefer-event-target"
-description: "title: prefer-event-target"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: prefer-event-target
-description: Prefer EventTarget over EventEmitter for isomorphic code
+description: "Prefer EventTarget over EventEmitter for cross-platform compatibility"
 tags: ['architecture', 'modernization']
 category: modernization
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** EventTarget, EventEmitter, browser, Node.js, events, ESLint rule, LLM-optimized
 

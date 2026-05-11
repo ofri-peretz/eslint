@@ -1,20 +1,19 @@
 ---
-title: "no-cryptojs"
-description: "description: Disallow deprecated crypto-js library (use native crypto instead)"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-cryptojs
-description: Disallow deprecated crypto-js library (use native crypto instead)
+description: "Disallow deprecated crypto-js library (use native crypto instead)"
 tags: ['security', 'cryptography', 'cwe-1104', 'nodejs', 'deprecated']
 category: security
 severity: medium
 cwe: CWE-1104
 owasp: "A06:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** crypto-js, deprecated, unmaintained, native crypto, CWE-1104, security, ESLint rule
 > **CWE:** [CWE-1104](https://cwe.mitre.org/data/definitions/1104.html)  

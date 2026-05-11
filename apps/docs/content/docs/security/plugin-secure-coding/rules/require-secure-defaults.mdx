@@ -1,27 +1,22 @@
 ---
-title: "require-secure-defaults"
-description: "title: require-secure-defaults"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: require-secure-defaults
-description: "CWE: [CWE-1188](https://cwe.mitre.org/data/definitions/1188.html)"
+description: "Ensure secure default configurations"
 tags: ['security', 'core']
 category: security
 severity: medium
 cwe: CWE-1188
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** require secure defaults, security, ESLint rule, [CWE-1188](https://cwe.mitre.org/data/definitions/1188.html), secure-by-default, configuration, hardened
 > **CWE:** [CWE-1188: Insecure Default Initialization](https://cwe.mitre.org/data/definitions/1188.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M8: Security Misconfiguration](https://owasp.org/www-project-mobile-top-10/)
-
-CWE: [CWE-1188](https://cwe.mitre.org/data/definitions/1188.html)
-
-ESLint Rule: require-secure-defaults. This rule is part of [`eslint-plugin-secure-coding`](https://www.npmjs.com/package/eslint-plugin-secure-coding).
 
 ## Quick Summary
 

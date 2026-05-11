@@ -1,19 +1,16 @@
 ---
-title: "checked-requires-onchange-or-readonly"
-description: "title: checked-requires-onchange-or-readonly"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: checked-requires-onchange-or-readonly
-description: checked-requires-onchange-or-readonly rule
+description: "Ensure controlled inputs have onChange or readOnly"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-checked-requires-onchange-or-readonly rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** React, controlled input, checkbox, radio, onChange, readOnly, form handling, ESLint rule, LLM-optimized
 

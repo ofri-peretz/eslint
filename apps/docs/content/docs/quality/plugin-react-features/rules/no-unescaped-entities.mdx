@@ -1,19 +1,16 @@
 ---
-title: "no-unescaped-entities"
-description: "title: no-unescaped-entities"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-unescaped-entities
-description: no-unescaped-entities rule
+description: "Prevent unescaped entities"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-no-unescaped-entities rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** React, JSX, entities, quotes, apostrophe, ESLint rule, HTML, LLM-optimized
 

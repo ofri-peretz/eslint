@@ -1,19 +1,16 @@
 ---
-title: "img-redundant-alt"
-description: "title: img-redundant-alt"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: img-redundant-alt
-description: img-redundant-alt rule
+description: "Enforce img alt attribute does not contain redundant words"
 tags: ['quality', 'react', 'accessibility', 'a11y']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-img-redundant-alt rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** img-redundant-alt, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

@@ -1,20 +1,19 @@
 ---
-title: "no-exposed-debug-endpoints"
-description: "title: no-exposed-debug-endpoints"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-exposed-debug-endpoints
-description: Detect debug endpoints without authentication in Lambda handlers
+description: "Detect debug endpoints without auth in AWS Lambda handlers"
 tags: ['security', 'debug', 'cwe-489', 'lambda', 'aws']
 category: security
 severity: high
 cwe: CWE-489
 owasp: "A05:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** debug endpoint, admin endpoint, authentication, CWE-489, Lambda, serverless
 > **CWE:** [CWE-489](https://cwe.mitre.org/data/definitions/489.html)  

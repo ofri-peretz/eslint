@@ -1,19 +1,18 @@
 ---
-title: "no-zip-slip"
-description: "description: Detects zip slip/archive extraction vulnerabilities"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-zip-slip
-description: Detects zip slip/archive extraction vulnerabilities
+description: "Detects zip slip/archive extraction vulnerabilities"
 tags: ['security', 'node']
 category: security
 severity: medium
 cwe: CWE-22
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** zip slip, CWE-22, path traversal, archive extraction, tar, security
 

@@ -1,9 +1,13 @@
 ---
 title: "named"
 description: "Ensure named imports correspond to a named export in the remote file"
+type_aware: true
+type_aware_status: optional
 ---
 
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={true} typeAwareStatus="optional" />
 
 💼 This rule is enabled in the following configs: `recommended`, `typescript`.
 💡 This rule is automatically fixable by the `--fix` CLI option.

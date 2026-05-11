@@ -48,6 +48,7 @@ const VALID_LUCIDE_ICONS = new Set([
   'Check', 'CheckCircle', 'X', 'XCircle', 'Info',
   'Play', 'Pause', 'Search', 'Filter',
   'Image', 'Video', 'Eye', 'EyeOff',
+  'MousePointer',
   
   // ========================================
   // DEPRECATED ICONS (For migration warnings)

@@ -1,11 +1,4 @@
 ---
-title: "no-debug-mode-production"
-description: "title: no-debug-mode-production"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-debug-mode-production
 description: Detects Mongoose debug mode that could expose sensitive query information in production.
 tags: ['security', 'mongodb']
@@ -14,11 +7,15 @@ severity: medium
 cwe: CWE-489
 owasp: "A05:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> **Keywords:** CWE-489, debug, Mongoose, logging, production, security
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Detects Mongoose debug mode that could expose sensitive query information in production.
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** CWE-489, debug, Mongoose, logging, production, security
 
 Detects Mongoose debug mode that could expose sensitive query information in production.
 

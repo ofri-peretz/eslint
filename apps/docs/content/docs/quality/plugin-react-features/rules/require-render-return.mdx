@@ -1,19 +1,16 @@
 ---
-title: "require-render-return"
-description: "title: require-render-return"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: require-render-return
-description: require-render-return rule
+description: "Require render methods to return"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-require-render-return rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** React, render, return, class component, ESLint rule, correctness, LLM-optimized
 

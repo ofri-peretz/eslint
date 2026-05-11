@@ -122,6 +122,23 @@ const config = {
       destination: '/docs/getting-started',
       permanent: true,
     },
+    // 2026-05-10: top-level pages moved into Concepts / Advanced.
+    // URL contract (UX_PHILOSOPHY §2): redirect, never delete.
+    {
+      source: '/docs/compare',
+      destination: '/docs/getting-started/concepts/compare',
+      permanent: true,
+    },
+    {
+      source: '/docs/cwe-compatibility',
+      destination: '/docs/getting-started/concepts/cwe-compatibility',
+      permanent: true,
+    },
+    {
+      source: '/docs/launch',
+      destination: '/docs/getting-started/advanced/launch',
+      permanent: true,
+    },
   ],
 };
 

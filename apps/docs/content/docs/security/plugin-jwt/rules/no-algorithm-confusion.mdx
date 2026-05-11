@@ -1,19 +1,18 @@
 ---
-title: "no-algorithm-confusion"
-description: "title: no-algorithm-confusion"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-algorithm-confusion
-description: This rule detects algorithm confusion attacks where symmetric algorithms (HS256, HS384, HS512) are used with asymmetr...
+description: "Prevent algorithm confusion attacks using symmetric algorithms with asymmetric keys"
 tags: ['security', 'jwt']
 category: security
 severity: medium
 cwe: CWE-347
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Prevent algorithm confusion attacks using symmetric algorithms with asymmetric keys
 

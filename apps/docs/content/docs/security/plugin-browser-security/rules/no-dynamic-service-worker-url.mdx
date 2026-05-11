@@ -1,24 +1,21 @@
 ---
-title: "no-dynamic-service-worker-url"
-description: "title: no-dynamic-service-worker-url"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-dynamic-service-worker-url
-description: Prevent dynamic URLs in service worker registration.
+description: "Disallow dynamic URLs in service worker registration"
 tags: ['security', 'browser']
 category: security
 severity: medium
 cwe: CWE-829
 owasp: "A08:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> No Dynamic Service Worker Url
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Prevent dynamic URLs in service worker registration.
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> No Dynamic Service Worker Url
 
 Prevent dynamic URLs in service worker registration.
 

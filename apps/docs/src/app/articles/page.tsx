@@ -56,8 +56,15 @@ export default async function ArticlesPage({
   const tagCounts = computeTagCounts(articles);
 
   // fumadocs `HomeLayout` already provides the page-level `<main>` landmark.
+  // `id="main-content"` + `tabIndex={-1}` is the focusable target for the
+  // root layout's skip link (KEYBOARD_PHILOSOPHY.md #1) so keyboard users
+  // can bypass fumadocs's nav and land directly on the articles list.
   return (
-    <div className="container max-w-6xl mx-auto px-4 py-8">
+    <div
+      id="main-content"
+      tabIndex={-1}
+      className="container max-w-6xl mx-auto px-4 py-8 outline-hidden"
+    >
       <ArticlesClient
         totalArticles={articles.length}
         params={params}

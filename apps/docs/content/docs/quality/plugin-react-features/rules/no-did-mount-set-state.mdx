@@ -1,19 +1,16 @@
 ---
-title: "no-did-mount-set-state"
-description: "title: no-did-mount-set-state"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-did-mount-set-state
-description: no-did-mount-set-state rule
+description: "Prevent setState in componentDidMount"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-no-did-mount-set-state rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** React, componentDidMount, setState, lifecycle, performance, ESLint rule, LLM-optimized
 

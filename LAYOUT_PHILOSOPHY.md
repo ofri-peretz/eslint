@@ -127,6 +127,22 @@ A page that uses `px-4` at every breakpoint is shipping mobile padding
 to a 1440px monitor. That's the most common regression in this
 codebase today and the most visible to side-door visitors.
 
+**Section spacing variants (the floor rule):** the three named
+variants on `<Section spacing>` exist so callers don't pick `py-*`
+classes by hand — but every variant **must clear the §3 desktop
+floor** (`py-16` = `xl` token) by the `md:` breakpoint. Anything
+smaller renders as a "padless band" — the exact regression the
+stats-bar shipped in 2026-05 (`py-10 md:py-12 lg:py-14`, max 56px
+at desktop). The current variants:
+
+| Variant | Classes | When |
+| --- | --- | --- |
+| `tight` | `py-12 md:py-16 lg:py-20` | Stat bars, divider stripes, short interstitials |
+| `comfortable` | `py-16 md:py-20 lg:py-24` | Default for content sections |
+| `spacious` | `py-20 md:py-24 lg:py-32` | Hero adjacents, final CTAs |
+
+Locked by [layout-primitives-lock.test.tsx](apps/docs/src/__tests__/layout-primitives-lock.test.tsx).
+
 ### 6. Reserve space; never let content jump
 
 A direct extension of MOTION's CLS=0 contract into the static-layout

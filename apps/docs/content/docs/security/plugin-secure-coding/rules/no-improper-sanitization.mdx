@@ -1,19 +1,18 @@
 ---
-title: "no-improper-sanitization"
-description: "title: no-improper-sanitization"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-improper-sanitization
-description: Detects improper sanitization of user input
+description: "Detects improper sanitization of user input"
 tags: ['security', 'core']
 category: security
 severity: medium
 cwe: CWE-116
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** improper sanitization, CWE-116, CWE-79, XSS, encoding, escaping, security
 

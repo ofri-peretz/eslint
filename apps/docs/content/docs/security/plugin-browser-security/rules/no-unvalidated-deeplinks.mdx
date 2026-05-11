@@ -1,19 +1,18 @@
 ---
-title: "no-unvalidated-deeplinks"
-description: "title: no-unvalidated-deeplinks"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-unvalidated-deeplinks
-description: This rule detects when deep link URLs are opened without validation in React Native or mobile web apps
+description: "Require validation of deep link URLs"
 tags: ['security', 'browser']
 category: security
 severity: medium
 cwe: CWE-939
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Requires validation of deep link URLs before navigation
 

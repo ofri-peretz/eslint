@@ -1,19 +1,16 @@
 ---
-title: "react-in-jsx-scope"
-description: "title: react-in-jsx-scope"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: react-in-jsx-scope
-description: react-in-jsx-scope rule
+description: "Ensure React is in scope"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-react-in-jsx-scope rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** React, JSX, import, scope, ESLint rule, React 17, LLM-optimized
 
@@ -23,7 +20,7 @@ Prevent missing React in scope when using JSX. This rule is part of [`eslint-plu
 
 | Aspect         | Details                                                              |
 | -------------- | -------------------------------------------------------------------- |
-| **Severity**   | Error (for React &lt;17)                                                |
+| **Severity**   | Error (for React `<17`)                                              |
 | **Auto-Fix**   | ✅ Yes (adds import)                                                 |
 | **Category**   | React                                                                |
 | **ESLint MCP** | ✅ Optimized for ESLint MCP integration                              |

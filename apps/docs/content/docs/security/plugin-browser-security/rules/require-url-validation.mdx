@@ -1,27 +1,22 @@
 ---
-title: "require-url-validation"
-description: "title: require-url-validation"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: require-url-validation
-description: "CWE: [CWE-601](https://cwe.mitre.org/data/definitions/601.html)"
+description: "Enforce URL validation before navigation"
 tags: ['security', 'browser']
 category: security
 severity: medium
 cwe: CWE-601
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** require url validation, open redirect, security, ESLint rule, [CWE-601](https://cwe.mitre.org/data/definitions/601.html), window.location, phishing
 > **CWE:** [CWE-601: URL Redirection to Untrusted Site ('Open Redirect')](https://cwe.mitre.org/data/definitions/601.html)  
 > **OWASP Mobile:** [OWASP Mobile Top 10 M4: Insufficient Input/Output Validation](https://owasp.org/www-project-mobile-top-10/)
-
-CWE: [CWE-601](https://cwe.mitre.org/data/definitions/601.html)
-
-ESLint Rule: require-url-validation. This rule is part of [`eslint-plugin-browser-security`](https://www.npmjs.com/package/eslint-plugin-browser-security).
 
 ## Quick Summary
 

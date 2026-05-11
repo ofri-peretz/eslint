@@ -1,17 +1,16 @@
 ---
-title: "prefer-dependency-version-strategy"
-description: "title: prefer-dependency-version-strategy"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: prefer-dependency-version-strategy
-description: Enforce consistent version strategy (caret ^, tilde ~, exact, range, or any) for package.json dependencies. Pairs with a lockfile-alignment check to give complete dependency validation.
+description: "Enforce consistent version strategy (caret, tilde, exact, etc.) for package.json dependencies"
 tags: ['quality', 'conventions', 'style']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** dependency version, package.json, semantic versioning, caret, tilde, exact version, version strategy, ESLint rule, monorepo, dependency management, npm, yarn, auto-fix, LLM-optimized, code quality
 

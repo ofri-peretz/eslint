@@ -3,6 +3,7 @@
   "icon": "BookOpen",
   "defaultOpen": false,
   "pages": [
+    "alt-text",
     "anchor-ambiguous-text",
     "anchor-has-content",
     "anchor-is-valid",

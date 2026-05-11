@@ -1,19 +1,16 @@
 ---
-title: "no-namespace"
-description: "description: no-namespace rule"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-namespace
-description: no-namespace rule
+description: "Prevent namespace imports"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-no-namespace rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** React, namespace import, named imports, tree shaking, bundle size, ESLint rule, LLM-optimized
 

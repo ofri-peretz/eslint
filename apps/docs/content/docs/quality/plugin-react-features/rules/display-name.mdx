@@ -1,19 +1,16 @@
 ---
-title: "display-name"
-description: "description: display-name rule"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: display-name
-description: display-name rule
+description: "Enforce component display names"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-display-name rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** React, displayName, component, debugging, DevTools, ESLint rule, naming, LLM-optimized
 

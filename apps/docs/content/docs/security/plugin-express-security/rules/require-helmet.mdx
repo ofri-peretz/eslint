@@ -1,19 +1,18 @@
 ---
-title: "require-helmet"
-description: "title: require-helmet"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: require-helmet
-description: This rule detects Express.js applications that are missing the helmet middleware
+description: "Require helmet middleware for security headers in Express.js applications"
 tags: ['security', 'express']
 category: security
 severity: medium
 cwe: CWE-693
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Require helmet middleware for security headers in Express.js applications
 

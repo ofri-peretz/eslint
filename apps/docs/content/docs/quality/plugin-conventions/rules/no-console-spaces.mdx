@@ -1,17 +1,16 @@
 ---
-title: "no-console-spaces"
-description: "title: no-console-spaces"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-console-spaces
-description: Disallow leading/trailing whitespace in console arguments. This rule is part of eslint-plugin-conventions.
+description: "Prevent leading/trailing space between console.log parameters"
 tags: ['quality', 'conventions', 'style']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** console, logging, spaces, formatting, ESLint rule, auto-fix, LLM-optimized
 

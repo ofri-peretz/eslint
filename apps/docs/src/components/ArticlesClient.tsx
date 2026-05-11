@@ -9,7 +9,7 @@ import {
   PaginationItem,
 } from '@interlace/ui/pagination';
 import { ArticleCard as ArticleCardBlock } from '@interlace/ui/blocks/article-card';
-import type { DevToArticle, SortField, SortDirection } from '@/lib/articles.types';
+import type { DevToArticle } from '@/lib/articles.types';
 import {
   ARTICLES_PER_PAGE,
   type ArticleParams,
@@ -29,16 +29,8 @@ import {
 import {
   Search,
   X,
-  Calendar,
-  Heart,
-  MessageCircle,
-  Clock,
   ChevronLeft,
   ChevronRight,
-  Eye,
-  ExternalLink,
-  Sparkles,
-  ArrowUpDown,
   BookOpen,
   Filter,
   SlidersHorizontal,
@@ -46,19 +38,6 @@ import {
 import { cn } from '@interlace/ui/cn';
 import { motion, AnimatePresence } from 'motion/react';
 import { BackgroundBeamsWithCollision } from '@interlace/ui/aceternity/background-beams-with-collision';
-
-interface SortOption {
-  value: SortField;
-  label: string;
-  icon: React.ReactNode;
-}
-
-const SORT_OPTIONS: SortOption[] = [
-  { value: 'date', label: 'Latest', icon: <Calendar className="size-4" /> },
-  { value: 'reactions', label: 'Popular', icon: <Heart className="size-4" /> },
-  { value: 'comments', label: 'Discussed', icon: <MessageCircle className="size-4" /> },
-  { value: 'reading_time', label: 'Long Reads', icon: <Clock className="size-4" /> },
-];
 
 const SEARCH_DEBOUNCE_MS = 250;
 
@@ -74,118 +53,11 @@ interface ArticlesClientProps {
   lastUpdated: string;
 }
 
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
-function formatViews(count: number): string {
-  if (count >= 1000) {
-    return `${(count / 1000).toFixed(1)}k`;
-  }
-  return count.toString();
-}
-
-// Featured Article Card - WCAG-compliant text shadow over bare cover image.
-function FeaturedArticle({ article }: { article: DevToArticle }) {
-  const image = article.cover_image?.trim() || article.social_image?.trim() || null;
-
-  return (
-    <a
-      href={article.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      data-testid="featured-article"
-      className="group relative block rounded-2xl overflow-hidden bg-linear-to-br from-purple-600 via-violet-600 to-indigo-700 dark:from-purple-800 dark:via-violet-800 dark:to-indigo-900 border-2 border-fd-border h-[420px] md:h-[380px] hover:border-purple-500/50 hover:shadow-2xl hover:shadow-purple-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-4 focus-visible:ring-offset-fd-background transition-all duration-500 motion-safe:animate-fade-in-up"
-      aria-label={`Featured Article: ${article.title}`}
-    >
-      {image && (
-        <img
-          src={image}
-          alt=""
-          width={1000}
-          height={420}
-          loading="lazy"
-          decoding="async"
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-        />
-      )}
-
-      <div
-        className="absolute top-4 left-4 flex items-center gap-2 bg-linear-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg motion-safe:animate-slide-in-left"
-        aria-label="Must read featured article"
-      >
-        <Sparkles className="size-3 motion-safe:animate-pulse" aria-hidden="true" />
-        FEATURED
-      </div>
-
-      <div
-        className="absolute inset-x-0 bottom-0 p-6 md:p-8 [text-shadow:0_2px_4px_rgba(0,0,0,0.9),0_4px_12px_rgba(0,0,0,0.7)]"
-      >
-        <div className="flex flex-wrap gap-2 mb-4">
-          {article.tag_list.slice(0, 4).map((tag) => (
-            <span
-              key={tag}
-              className="bg-white/20 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full border border-white/30 hover:bg-white/30 transition-colors"
-            >
-              #{tag}
-            </span>
-          ))}
-        </div>
-
-        <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 leading-tight group-hover:text-purple-200 transition-colors line-clamp-2 drop-shadow-lg">
-          {article.title}
-        </h2>
-
-        {article.description && (
-          <p className="text-white/90 text-base mb-4 line-clamp-2 max-w-3xl drop-shadow">
-            {article.description}
-          </p>
-        )}
-
-        <div className="flex flex-wrap items-center gap-4 text-white/80 text-sm">
-          <div className="flex items-center gap-2">
-            <img
-              src={article.user.profile_image}
-              alt={article.user.name}
-              width={32}
-              height={32}
-              loading="lazy"
-              decoding="async"
-              className="size-8 rounded-full border-2 border-white/50"
-              suppressHydrationWarning
-            />
-            <span className="font-medium text-white">{article.user.name}</span>
-          </div>
-          <span className="hidden sm:inline">•</span>
-          <span className="hidden sm:inline">{formatDate(article.published_at)}</span>
-          <span className="hidden sm:inline">•</span>
-          <span className="hidden sm:flex items-center gap-1" aria-label={`Reading time: ${article.reading_time_minutes} minutes`}>
-            <Clock className="size-3.5" aria-hidden="true" /> {article.reading_time_minutes} min
-          </span>
-          {article.page_views_count && (
-            <>
-              <span className="hidden sm:inline">•</span>
-              <span className="hidden sm:flex items-center gap-1 text-amber-300" aria-label={`${formatViews(article.page_views_count)} views`}>
-                <Eye className="size-3.5" aria-hidden="true" /> {formatViews(article.page_views_count)} views
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-
-      <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm p-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1 group-hover:-translate-y-1 border border-white/20">
-        <ExternalLink className="size-5 text-white" aria-hidden="true" />
-      </div>
-    </a>
-  );
-}
-
-// Premium Article Card. Animation lives on the card; no per-card stagger
-// (see MOTION_PHILOSOPHY.md — same-frame entries are one commit).
+// Single source of truth for both the featured slot and the grid: the
+// centralized `@interlace/ui` ArticleCard block. The only difference between
+// the two on this page is the `variant` (overlay = hero, stack = grid card)
+// and the analytics payload. The block itself owns all visual decisions and
+// is regression-locked by Storybook stories + axe + interaction tests.
 function ArticleCard({
   article,
   position,
@@ -201,7 +73,7 @@ function ArticleCard({
 
   return (
     <div
-      data-testid="article-card"
+      data-testid={isFeatured ? 'featured-article' : 'article-card'}
       className="motion-safe:animate-fade-in-up"
       onClickCapture={() =>
         track('articles_card_clicked', {
@@ -213,6 +85,7 @@ function ArticleCard({
       }
     >
       <ArticleCardBlock
+        variant={isFeatured ? 'overlay' : 'stack'}
         title={article.title}
         description={article.description}
         href={article.url}
@@ -306,17 +179,6 @@ export function ArticlesClient({
       activeTags: next.tags,
       resultCount: totalFiltered,
     });
-  };
-
-  const setSortField = (sort: SortField) => {
-    navigate({ ...params, sort, page: 1 });
-    track('articles_sort_changed', { field: sort, direction: params.dir });
-  };
-
-  const toggleSortDirection = () => {
-    const direction = params.dir === 'desc' ? 'asc' : 'desc';
-    navigate({ ...params, dir: direction, page: 1 });
-    track('articles_sort_changed', { field: params.sort, direction });
   };
 
   const setCurrentPage = (page: number) => {
@@ -455,6 +317,7 @@ export function ArticlesClient({
               <input
                 type="text"
                 placeholder="Search articles..."
+                aria-label="Search articles"
                 value={searchDraft}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 data-testid="search-input"
@@ -471,58 +334,6 @@ export function ArticlesClient({
                   <X className="size-4" aria-hidden />
                 </button>
               )}
-            </div>
-
-            {/* Sort — segmented control. All 4 options visible, no hidden
-                dropdown state. Active option shows direction chevron and
-                clicking it again toggles asc/desc. Aligns with
-                SEARCH/CODE_EXAMPLE philosophies: surface state, never hide it. */}
-            <div
-              role="group"
-              aria-label="Sort articles"
-              data-testid="sort-select"
-              className="inline-flex items-center rounded-lg border border-fd-border bg-fd-muted/40 p-0.5 gap-0.5"
-            >
-              {SORT_OPTIONS.map((option) => {
-                const isActive = params.sort === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => (isActive ? toggleSortDirection() : setSortField(option.value))}
-                    data-testid={isActive ? 'sort-direction' : `sort-${option.value}`}
-                    aria-pressed={isActive}
-                    aria-label={
-                      isActive
-                        ? `Sort by ${option.label.toLowerCase()} (currently ${params.dir === 'desc' ? 'descending' : 'ascending'}); click to flip direction`
-                        : `Sort by ${option.label.toLowerCase()}`
-                    }
-                    title={
-                      isActive
-                        ? `${option.label} · ${params.dir === 'desc' ? 'descending' : 'ascending'} — click to flip`
-                        : option.label
-                    }
-                    className={cn(
-                      'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fd-primary focus-visible:ring-offset-1',
-                      isActive
-                        ? 'bg-fd-background text-fd-foreground shadow-sm'
-                        : 'text-fd-muted-foreground hover:text-fd-foreground',
-                    )}
-                  >
-                    {option.icon}
-                    <span className="hidden sm:inline">{option.label}</span>
-                    {isActive && (
-                      <ArrowUpDown
-                        className={cn(
-                          'size-3.5 motion-safe:transition-transform duration-200',
-                          params.dir === 'asc' && 'rotate-180',
-                        )}
-                        aria-hidden
-                      />
-                    )}
-                  </button>
-                );
-              })}
             </div>
 
             <Button
@@ -577,11 +388,16 @@ export function ArticlesClient({
               tab order + screen readers without snapping the height. */}
           <div
             data-state={showFilters ? 'open' : 'closed'}
-            className="grid grid-rows-[0fr] data-[state=open]:grid-rows-[1fr] motion-safe:transition-[grid-template-rows] duration-300 ease-in-out"
-            // @ts-expect-error — `inert` is a valid HTMLElement boolean attr in React 19;
-            // the type declaration lags in some versions.
-            inert={!showFilters ? '' : undefined}
-            aria-hidden={!showFilters}
+            className="grid grid-rows-[0fr] data-[state=open]:grid-rows-[1fr] motion-safe:transition-[grid-template-rows] duration-200 ease-out"
+            // `inert` alone handles both AT-hiding and tab-order removal.
+            // We deliberately do NOT also set `aria-hidden` because axe's
+            // `aria-hidden-focus` rule flags any aria-hidden subtree that
+            // still contains focusable children (axe doesn't credit `inert`
+            // as sufficient mitigation, even though browsers do).
+            // React 19: boolean attrs need `true` / `undefined` — empty string
+            // throws a dev-mode warning ("Received an empty string for a
+            // boolean attribute `inert`").
+            inert={!showFilters || undefined}
           >
             <div className="overflow-hidden">
               <div className="mt-4 pt-4 border-t border-fd-border">
@@ -619,8 +435,17 @@ export function ArticlesClient({
           </div>
         </div>
 
-        {/* Featured Article — always rendered on page 1 (PAGINATION_PHILOSOPHY.md). */}
-        {featured && <FeaturedArticle article={featured} />}
+        {/* Featured Article — always rendered on page 1 (PAGINATION_PHILOSOPHY.md).
+            Uses the same `ArticleCard` wrapper as the grid; the only difference
+            is `isFeatured` (which sets the block's `variant="overlay"`). */}
+        {featured && (
+          <ArticleCard
+            article={featured}
+            position={0}
+            isFeatured
+            sourceParams={serializeArticleParams(params)}
+          />
+        )}
 
         {/* Articles Grid — keyed by page so pagination crossfades the whole
             grid as one (MOTION_PHILOSOPHY.md). Padded with placeholders

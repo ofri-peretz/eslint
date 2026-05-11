@@ -1,19 +1,16 @@
 ---
-title: "anchor-ambiguous-text"
-description: "title: anchor-ambiguous-text"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: anchor-ambiguous-text
-description: anchor-ambiguous-text rule
+description: "Enforce that anchor text is not ambiguous"
 tags: ['quality', 'react', 'accessibility', 'a11y']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-anchor-ambiguous-text rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** anchor-ambiguous-text, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

@@ -1,23 +1,20 @@
 ---
-title: "no-permissive-cors"
-description: "title: no-permissive-cors"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-permissive-cors
-description: Detects overly permissive CORS configurations in Express.js applications
+description: "Disallow overly permissive CORS configurations (wildcard origin, origin: true)"
 tags: ['security', 'express']
 category: security
 severity: medium
 cwe: CWE-942
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> **Keywords:** CORS, cross-origin resource sharing, CWE-942, security, ESLint rule, origin validation, wildcard CORS, Access-Control-Allow-Origin, auto-fix, LLM-optimized
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Detects overly permissive CORS configurations in Express.js applications
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** CORS, cross-origin resource sharing, CWE-942, security, ESLint rule, origin validation, wildcard CORS, Access-Control-Allow-Origin, auto-fix, LLM-optimized
 
 Detects overly permissive CORS configurations in Express.js applications. This rule is part of [`eslint-plugin-express-security`](https://www.npmjs.com/package/eslint-plugin-express-security) and provides LLM-optimized error messages.
 

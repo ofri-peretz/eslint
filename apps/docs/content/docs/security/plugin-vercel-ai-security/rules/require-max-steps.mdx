@@ -1,19 +1,18 @@
 ---
-title: "require-max-steps"
-description: "title: require-max-steps"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: require-max-steps
-description: "This rule identifies AI SDK calls that use tools but don't specify a maxSteps limit"
+description: "Require maxSteps limit for multi-step tool calling to prevent infinite loops"
 tags: ['security', 'ai']
 category: security
 severity: medium
 cwe: CWE-834
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Prevents infinite tool calling loops in multi-step agents.
 

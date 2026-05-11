@@ -1,23 +1,20 @@
 ---
-title: "no-missing-client-release"
-description: "title: no-missing-client-release"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-missing-client-release
-description: Ensures acquired pool clients are released back to the pool.
+description: "Ensure pg client is released after use to prevent pool exhaustion."
 tags: ['security', 'postgres']
 category: security
 severity: medium
 cwe: CWE-772
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> **Keywords:** connection leak, resource management, CWE-772, pg, node-postgres, pool
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Ensures acquired pool clients are released back to the pool.
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** connection leak, resource management, CWE-772, pg, node-postgres, pool
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 

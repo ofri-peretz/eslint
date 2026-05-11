@@ -1,19 +1,18 @@
 ---
-title: "no-innerhtml"
-description: "description: Detects dangerous innerHTML/outerHTML assignments that can lead to Cross-Site Scripting (XSS)"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-innerhtml
-description: Detects dangerous innerHTML/outerHTML assignments that can lead to Cross-Site Scripting (XSS)
+description: "Disallow dangerous innerHTML/outerHTML assignments that can lead to XSS"
 tags: ['security', 'browser']
 category: security
 severity: medium
 cwe: CWE-79
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** XSS, innerHTML, outerHTML, CWE-79, security, DOM manipulation, sanitization, DOMPurify
 

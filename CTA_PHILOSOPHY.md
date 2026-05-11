@@ -91,8 +91,21 @@ Sibling CTAs MAY differ on:
 Practical contract: both siblings come from the same `buttonVariants` call,
 sharing the same `size` token, varying only on `variant`.
 
+**Mixed-library exception** — when one sibling is from a third-party design
+system (e.g. magicui `<ShimmerButton>`) and the other is shadcn `<Button>`,
+sibling parity is **intentionally relaxed**. Each component carries the
+geometry its library was designed around (ShimmerButton ships `px-6 py-3`
+pill; shadcn `Button size="lg"` ships `h-10 rounded-md`). Forcing parity
+across libraries means stacking overrides on vendor components — which
+re-introduces the override drift this philosophy exists to prevent
+(see UX_PHILOSOPHY #11 — Build with the ecosystem; Leverage > Inspire >
+Reinvent). Use vendor components as-shipped, or pick a single library for
+all CTAs in the pair.
+
 **Measure**: a Playwright/Chromatic check that compares the bounding box of
-the primary and secondary in any same-row CTA pair — height delta must be 0.
+the primary and secondary in any same-row CTA pair from the SAME library —
+height delta must be 0. Cross-library pairs are exempt from the bounding-box
+check but must each pass their library's own design contract.
 
 ---
 
@@ -127,8 +140,12 @@ a custom Tailwind class set instead of `buttonVariants({ variant })`, flag.
 Every CTA's geometry comes from a single discrete size token on the canonical
 [`Button`](packages/ui/src/primitives/button.tsx). The available sizes are:
 
-- **`hero`** — `h-12`, `text-base`, used in landing hero and final-CTA banners.
-- **`lg`** — `h-10`, used in section CTAs and card CTAs.
+- **`lg`** — `h-10`, used in section CTAs, card CTAs, and the secondary
+  CTA in hero pairs (since the primary is typically a third-party brand
+  asset like magicui's `<ShimmerButton>` — see #3 mixed-library exception).
+  shadcn ships `lg` as its largest size; we don't extend the cva with a
+  `hero` token because doing so meant adding `className` overrides to vendor
+  components and the override stack produced hydration drift in practice.
 - **`default`** — `h-9`, used inline and in toolbars.
 - **`sm`** — `h-8`, used in dense lists and mobile chrome.
 - **`xs`** — `h-6`, used in tag-row actions.
@@ -187,7 +204,8 @@ the button size, not a freehand decision.
   - `xs` / `icon-xs` → `size-3` (12px)
   - `sm` / `default` / `icon` / `icon-sm` → `size-4` (16px)
   - `lg` / `icon-lg` → `size-4` to `size-5` (16-20px)
-  - `hero` → `size-5` (20px)
+  - Vendor components (magicui ShimmerButton, etc.) → use the library's
+    documented icon-size guidance, not ours.
 - **Trailing arrow** (`<ArrowRight />`) is the only purely decorative icon
   permitted on a CTA — and only on forward-navigation CTAs.
 - **Leading icons must carry meaning**: brand mark (GitHub, npm), state
@@ -210,21 +228,27 @@ motion budget defined in [`MOTION_PHILOSOPHY.md`](MOTION_PHILOSOPHY.md).
 
 **Mechanics**
 
-- **The default primary is static.** A filled `Button size="hero"
+- **The default primary is static.** A filled `Button size="lg"
   variant="default"` is what every page reaches for first.
-- **Animated CTA skins are reserved for hero surfaces.** Landing hero,
-  campaign banners. Never inside a content section, never in chrome, never
-  in a card.
-- **One animated CTA per page.** If the hero has the shimmer, the final-CTA
-  banner does not — and vice versa.
-- **Animation only on the primary.** Secondary and tertiary CTAs are static
-  by rule. An animated secondary breaks the hierarchy contract (#3) — it
-  reads as a competing primary.
+- **Animated CTA skins are reserved for primary marketing surfaces.**
+  Landing hero, final-CTA banner, campaign banner. Never inside a content
+  section, never in chrome, never in a card. Each marketing surface gets
+  *at most one* animated CTA (the surface's primary). The home page may
+  legitimately ship two animated CTAs total — one in the hero, one in the
+  final-CTA banner — because they're separate surfaces with their own
+  visual frames.
+- **Animation only on the primary.** Secondary and tertiary CTAs on the
+  same row are STATIC by rule. An animated secondary breaks the hierarchy
+  contract (#3) — it reads as a competing primary. (This was the
+  motivating bug for the 2026-05 revision: the hero secondary was a
+  ShimmerButton, which produced a "dueling animations" effect.)
 - **Respect `prefers-reduced-motion`.** Animated CTAs degrade gracefully to
   their static fill; `MOTION_PHILOSOPHY.md` is the authority.
 
-**Measure**: a single grep for `ShimmerButton` across `apps/` should return
-≤1 match per page-route's component graph; any second match is a regression.
+**Measure**: per-surface audit — count `ShimmerButton` (or any other
+animated CTA skin) inside each marketing surface (hero / final-CTA / campaign
+banner). Each surface MUST have ≤ 1; a second match within the same surface
+is a regression. Cross-surface counts on the same page are allowed.
 
 ---
 
@@ -318,6 +342,39 @@ When in doubt: **what would this CTA look like as a sibling next to itself,
 twice?** If two of them in a row look like a pair, you've satisfied the
 contract. If they don't, you haven't — even if neither one in isolation is
 wrong.
+
+---
+
+## Locked invariants — hero CTAs
+
+The landing-page hero's CTA contract has regressed enough times that we
+lock it via tests. The contract:
+
+1. The hero renders **exactly two** `<ShimmerButton>` instances — primary
+   ("Get Started") and secondary ("GitHub"). Sibling parity per #3 above.
+2. The PRIMARY ShimmerButton keeps the rotating spark and the inset
+   highlight (the defaults — both `shimmer` and `highlight` truthy).
+3. The SECONDARY ShimmerButton passes BOTH `shimmer={false}` AND
+   `highlight={false}` — same pill geometry, no decoration. Animation
+   budget per #8 above.
+4. The tagline-to-CTA gap is `mb-16` (the `xl` spacing token from
+   LAYOUT_PHILOSOPHY §3). Hero surfaces breathe; `mb-10` (the
+   mobile-section default) reads cramped.
+
+**Enforced by:**
+
+- [`apps/docs/src/__tests__/homepage-lock.test.tsx`](apps/docs/src/__tests__/homepage-lock.test.tsx)
+  — source-text asserts per JSX element (primary has no `shimmer={false}`,
+  secondary has both, plus the GitHub icon/label and the `mb-16` gap).
+- [`apps/docs/src/__tests__/hero-section-render.test.tsx`](apps/docs/src/__tests__/hero-section-render.test.tsx)
+  — DOM render-time asserts via `data-slot="shimmer-button"`,
+  `data-shimmer-spark`, `data-shimmer-highlight` seams on the actual mounted
+  output.
+
+**Workflow if you need to break this contract:** edit this section *first*
+(state what's changing and why), then update the two test files, then
+change the code. Same workflow LAYOUT_PHILOSOPHY calls out for layout
+changes. Drift between principle, tests, and practice is the failure mode.
 
 ---
 

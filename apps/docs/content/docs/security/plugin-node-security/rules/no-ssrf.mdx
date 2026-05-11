@@ -1,0 +1,97 @@
+---
+title: no-ssrf
+description: "Detects HTTP requests with user-controlled URLs (SSRF vulnerability)"
+tags: ['security', 'node-security', 'ssrf', 'owasp']
+category: security
+cwe: CWE-918
+owasp: A10:2021
+autofix: suggestions
+type_aware: false
+type_aware_status: unaware
+---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** no-ssrf, SSRF, server-side request forgery, CWE-918, OWASP A10:2021, fetch, axios, http.request, internal services, ESLint rule
+
+> **CWE:** [CWE-918: Server-Side Request Forgery (SSRF)](https://cwe.mitre.org/data/definitions/918.html)
+> **OWASP:** [A10:2021 — Server-Side Request Forgery](https://owasp.org/Top10/A10_2021-Server-Side_Request_Forgery_%28SSRF%29/)
+
+Detect outbound HTTP requests whose URL is derived from user-controlled input. An attacker can pivot the request at internal services (metadata endpoints, admin panels, databases) to bypass perimeter controls.
+
+This rule is part of [`eslint-plugin-node-security`](https://www.npmjs.com/package/eslint-plugin-node-security).
+
+## Quick Summary
+
+| Aspect         | Details                                                            |
+| -------------- | ------------------------------------------------------------------ |
+| **Severity**   | Critical (Security — perimeter bypass)                             |
+| **Auto-Fix**   | 💡 Suggestions (URL allowlist scaffold)                            |
+| **Category**   | Node Security                                                      |
+| **CWE**        | [CWE-918](https://cwe.mitre.org/data/definitions/918.html)         |
+| **OWASP**      | A10:2021                                                           |
+| **Best For**   | Any service that makes outbound HTTP and accepts user-provided URLs |
+
+## Why SSRF matters
+
+A server inside a cloud VPC can typically reach:
+
+- The cloud metadata service (`169.254.169.254`) — AWS IMDS, GCP, Azure — where credentials live.
+- Other internal services (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`).
+- The loopback (`127.0.0.1`) and Unix sockets.
+
+If your server accepts a URL from a user request and fetches it, the user can borrow your server's identity to reach those targets. The 2019 Capital One breach was a textbook SSRF chain that exfiltrated 100M records via IMDS.
+
+## Examples
+
+### ❌ Incorrect
+
+```js
+app.get('/preview', async (req, res) => {
+  const r = await fetch(req.query.url);            // attacker controls target
+  res.send(await r.text());
+});
+
+app.post('/import', async (req, res) => {
+  const r = await axios.get(req.body.feedUrl);     // same exposure via axios
+  res.json(r.data);
+});
+
+const r = await fetch(`${API_BASE}${userPath}`);   // path traversal lets attacker swap host
+```
+
+### ✅ Correct
+
+```js
+import { URL } from 'node:url';
+
+const ALLOWED_HOSTS = new Set(['api.partner.example', 'cdn.partner.example']);
+const BLOCKED_CIDRS = ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '127.0.0.0/8', '169.254.0.0/16'];
+
+function safeFetch(rawUrl) {
+  const url = new URL(rawUrl);
+  if (url.protocol !== 'https:') throw new Error('https only');
+  if (!ALLOWED_HOSTS.has(url.hostname)) throw new Error('host not allowed');
+  // Resolve DNS before request; reject if the resolved IP sits in BLOCKED_CIDRS.
+  return fetch(url, { redirect: 'error' });   // refuse redirects to avoid TOCTOU
+}
+```
+
+## Error Message Format
+
+```text
+🔒 NODE-SECURITY CWE-918 OWASP:A10 | SSRF: user-controlled URL passed to outbound request | CRITICAL
+   Fix: Validate the URL against an allowlist of trusted hosts, refuse redirects, and resolve DNS to block internal IPs (RFC 1918, link-local, loopback).
+```
+
+<WhenNotToUse />
+
+<FalseNegativeCTA />
+
+## Known False Negatives
+
+- URL fragments derived from a chain of variables (more than one assignment hop) are not always traced.
+- Constructed `URL` objects passed to `request.get(urlObject)` are detected when the constructor receives user input directly, not when input enters via setter methods.
+- Allowlists declared in environment variables (consumed at runtime) cannot be validated statically — the rule still fires; suppress with an `eslint-disable-next-line` comment that names the validating function.

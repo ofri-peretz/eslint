@@ -1,19 +1,16 @@
 ---
-title: "no-this-in-sfc"
-description: "title: no-this-in-sfc"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-this-in-sfc
-description: no-this-in-sfc rule
+description: "Disallow this from being used in stateless functional components"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-no-this-in-sfc rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** React, this, stateless, functional component, hooks, SFC, ESLint rule, LLM-optimized
 

@@ -426,7 +426,7 @@ export const detectChildProcess = createRule<RuleOptions, MessageIds>({
             return argNode.expressions.some(e => e.type === 'Identifier' && validatedVarNames.has(e.name));
           }
           if (argNode.type === AST_NODE_TYPES.ArrayExpression) {
-            return argNode.elements.some(el => el != null && check(el));
+            return argNode.elements.some(el => el !== null && check(el));
           }
           return false;
         };

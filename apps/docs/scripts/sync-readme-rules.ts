@@ -52,32 +52,39 @@ export function parseRulesTable(markdown) {
     const headerCells = headerRow.split('|').map(cell => cell.trim()).filter(Boolean);
     
     /**
-     * STANDARD 10-COLUMN SCHEMA:
-     * | Rule | CWE | OWASP | CVSS | Description | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+     * STANDARD 11-COLUMN SCHEMA (since 2026-05; type-aware column added):
+     * | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
+     *
+     * The 10-column legacy schema (without the 🧠 type-aware column) is still
+     * accepted so newly drifted READMEs do not silently get parsed as empty.
+     * Always anchor the rule cell at index 0 and the flag cells (💼/⚠️/🔧/💡/🚫)
+     * at the tail end, so a single helper handles both widths.
      */
-    const isRulesTable = headerCells.length === 10 && 
-                         headerCells[0].toLowerCase() === 'rule' &&
-                         headerCells[1].toLowerCase().includes('cwe') &&
-                         !headerCells.some(h => h.toLowerCase() === 'category') &&
-                         !headerCells.some(h => h.toLowerCase() === 'plugin');
-    
+    const isRulesTable =
+      (headerCells.length === 10 || headerCells.length === 11) &&
+      headerCells[0].toLowerCase() === 'rule' &&
+      headerCells[1].toLowerCase().includes('cwe') &&
+      !headerCells.some((h) => h.toLowerCase() === 'category') &&
+      !headerCells.some((h) => h.toLowerCase() === 'plugin');
+
     if (!isRulesTable) {
       continue;
     }
-    
-    const dataRows = dataRowsContent.split('\n').filter(row => row.trim().startsWith('|'));
-    
+
+    const hasTypeColumn = headerCells.length === 11;
+    const dataRows = dataRowsContent.split('\n').filter((row) => row.trim().startsWith('|'));
+
     for (const row of dataRows) {
-      // Split by | but PRESERVE empty cells
-      // Leading/trailing | and 10 columns = 12 parts
+      // Split by | but PRESERVE empty cells.
+      // Leading + trailing | with N columns => N+2 parts.
       const rawCells = row.split('|');
-      const cells = rawCells.map(cell => cell.trim());
-      
-      // Ensure we have correct number of cells (12 including empty ends)
-      if (cells.length < 11) continue;
-      
+      const cells = rawCells.map((cell) => cell.trim());
+
+      const minCells = hasTypeColumn ? 12 : 11;
+      if (cells.length < minCells) continue;
+
       const shift = row.trim().startsWith('|') ? 1 : 0;
-      
+
       // Extract rule name and strip markdown
       const ruleCell = cells[0 + shift];
       
@@ -110,17 +117,30 @@ export function parseRulesTable(markdown) {
         return val.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1').replace(/[`*~]/g, '').trim();
       };
       
+      // Index calculation:
+      //   10-col: Rule, CWE, OWASP, CVSS, Description, 💼, ⚠️, 🔧, 💡, 🚫
+      //   11-col: Rule, CWE, OWASP, CVSS, Description, 🧠, 💼, ⚠️, 🔧, 💡, 🚫
+      const typeCell = hasTypeColumn ? cells[5 + shift] : '';
+      const flagOffset = hasTypeColumn ? 6 : 5;
       const rule = {
         name: ruleName,
         cwe: stripMd(cells[1 + shift]),
         owasp: stripMd(cells[2 + shift]),
         cvss: stripMd(cells[3 + shift]),
         description: cells[4 + shift] || '',
-        recommended: cells[5 + shift].includes('💼'),
-        warns: cells[6 + shift].includes('⚠️'),
-        fixable: cells[7 + shift].includes('🔧'),
-        hasSuggestions: cells[8 + shift].includes('💡'),
-        deprecated: cells[9 + shift].includes('🚫'),
+        // typeStatus: 'unaware' (🟢) | 'optional' (🟡) | 'aware' (🟠)
+        typeStatus: typeCell.includes('🟢')
+          ? ('unaware' as const)
+          : typeCell.includes('🟡')
+            ? ('optional' as const)
+            : typeCell.includes('🟠')
+              ? ('aware' as const)
+              : ('unaware' as const),
+        recommended: cells[flagOffset + shift].includes('💼'),
+        warns: cells[flagOffset + 1 + shift].includes('⚠️'),
+        fixable: cells[flagOffset + 2 + shift].includes('🔧'),
+        hasSuggestions: cells[flagOffset + 3 + shift].includes('💡'),
+        deprecated: cells[flagOffset + 4 + shift].includes('🚫'),
       };
       
       if (rule.name && !rule.name.includes('|')) {

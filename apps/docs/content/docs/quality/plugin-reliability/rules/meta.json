@@ -5,6 +5,7 @@
   "pages": [
     "error-message",
     "no-await-in-loop",
+    "no-jsdoc-terminator-in-example",
     "no-missing-error-context",
     "no-missing-null-checks",
     "no-silent-errors",

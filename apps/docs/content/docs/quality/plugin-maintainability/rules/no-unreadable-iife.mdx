@@ -1,21 +1,18 @@
 ---
-title: "no-unreadable-iife"
-description: "title: no-unreadable-iife"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-unreadable-iife
-description: Disallow unreadable IIFE (Immediately Invoked Function Expression) patterns
+description: "Prevent unreadable Immediately Invoked Function Expressions that harm code clarity"
 tags: ['quality', 'maintainability']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-> **Keywords:** IIFE, immediately invoked, readability, ESLint rule, function expressions, LLM-optimized
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Disallow unreadable IIFE (Immediately Invoked Function Expression) patterns
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** IIFE, immediately invoked, readability, ESLint rule, function expressions, LLM-optimized
 
 Disallow unreadable IIFE (Immediately Invoked Function Expression) patterns. This rule is part of [`eslint-plugin-maintainability`](https://www.npmjs.com/package/eslint-plugin-maintainability).
 

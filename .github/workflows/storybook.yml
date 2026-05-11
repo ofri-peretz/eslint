@@ -1,0 +1,70 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Storybook Tests
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Runs the Storybook test-runner against every story in @interlace/ui:
+#   - Renders each story in a headless browser
+#   - Executes any `play` function (interactive flow assertions)
+#   - Runs axe-core at the strict tag stack on every rendered story
+#
+# This is the per-component axe scan that complements the route-level scan
+# in `a11y.yml` — together they form Layers 1 and 4 of UX_PHILOSOPHY.md.
+#
+# Triggered only when @interlace/ui or apps/docs change (Storybook is
+# scoped to packages/ui; apps/docs consumes it). Not published anywhere —
+# CI-only gate. Static `storybook:build` artifact uploaded for inspection
+# when the run fails.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'packages/ui/**'
+      - 'apps/docs/**'
+      - '.github/workflows/storybook.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: storybook-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Storybook test-runner
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: packages/ui
+
+      - name: Build @interlace/ui
+        run: npm run build --workspace=@interlace/ui
+
+      # Static-build the storybook + run the test-runner against it via
+      # `start-server-and-test`. Avoids racing a dev-mode server.
+      - name: Build storybook
+        run: npm run storybook:build --workspace=@interlace/ui
+
+      - name: Run Storybook tests (axe + play functions)
+        run: |
+          npx concurrently --kill-others --success first --names "storybook,test-runner" \
+            "npx http-server packages/ui/storybook-static --port 6006 --silent" \
+            "npx wait-on tcp:6006 && npm run storybook:test --workspace=@interlace/ui -- --url http://localhost:6006"
+
+      - name: Upload storybook-static on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: storybook-static
+          path: packages/ui/storybook-static
+          retention-days: 14

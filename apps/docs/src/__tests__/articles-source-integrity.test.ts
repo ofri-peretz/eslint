@@ -24,35 +24,20 @@ describe('ArticlesClient Source File Integrity', () => {
   });
 
   describe('Gradient Placeholder - Required Patterns', () => {
-    it('contains vibrant purple gradient (from-purple-600 via-violet-600 to-indigo-700)', () => {
-      expect(articlesSource).toContain('from-purple-600');
-      expect(articlesSource).toContain('via-violet-600');
-      expect(articlesSource).toContain('to-indigo-700');
-    });
-
-    it('contains dark mode gradient (dark:from-purple-800 dark:via-violet-800 dark:to-indigo-900)', () => {
-      expect(articlesSource).toContain('dark:from-purple-800');
-      expect(articlesSource).toContain('dark:via-violet-800');
-      expect(articlesSource).toContain('dark:to-indigo-900');
-    });
-
-    it('uses gradient direction bg-linear-to-br (Tailwind v4 canonical name)', () => {
-      expect(articlesSource).toContain('bg-linear-to-br');
-    });
-
-    // Card placeholder height was h-44 when ArticlesClient owned the inline
-    // <ArticleCard>. Since the migration to the @interlace/ui ArticleCard
-    // block, the cover dimensions are owned by the block (currently h-48).
-    // This contract moves to the storybook a11y/visual gate against the block.
+    // Placeholder gradient + cover dimensions + Tailwind v4 direction tokens
+    // all moved into the @interlace/ui ArticleCard block. Visual contract is
+    // enforced by Storybook a11y + the block's own source-integrity tests.
+    it.skip('contains vibrant purple gradient (moved to @interlace/ui block)', () => {});
+    it.skip('contains dark mode gradient (moved to @interlace/ui block)', () => {});
+    it.skip('uses gradient direction bg-linear-to-br (moved to @interlace/ui block)', () => {});
     it.skip('contains h-44 container height for regular cards (moved to block)', () => {});
-
     it.skip('contains light overlay effect for depth (moved to block)', () => {});
   });
 
   describe('Article Title in Placeholder - Required Patterns', () => {
-    it('displays title in white text (text-white/90)', () => {
-      expect(articlesSource).toContain('text-white/90');
-    });
+    // Placeholder typography (text-white/90, drop-shadow, line-clamp-3, etc.)
+    // moved into the @interlace/ui ArticleCard block.
+    it.skip('displays title in white text (moved to @interlace/ui block)', () => {});
 
     it('centers title text (text-center)', () => {
       expect(articlesSource).toContain('text-center');
@@ -105,15 +90,18 @@ describe('ArticlesClient Source File Integrity', () => {
   });
 
   describe('Featured Article Section', () => {
-    it('has a Featured Article component', () => {
-      expect(articlesSource).toContain('FeaturedArticle');
-      expect(articlesSource).toContain('data-testid="featured-article"');
+    it('renders the featured slot through the unified ArticleCard wrapper (isFeatured prop)', () => {
+      // The historical `FeaturedArticle` helper was inlined into the unified
+      // `ArticleCard` wrapper — variant is selected by the `isFeatured` prop
+      // which routes to the @interlace/ui block's `overlay` vs `stack`.
+      expect(articlesSource).toContain("'featured-article'");
+      expect(articlesSource).toMatch(/data-testid=\{isFeatured\s*\?\s*'featured-article'/);
     });
 
     it('Featured Article renders conditionally on the resolved server prop', () => {
       // Server passes a `featured` prop that is null on page 2+ or empty
       // filtered set; the client gates render on it.
-      expect(articlesSource).toContain('featured && <FeaturedArticle');
+      expect(articlesSource).toMatch(/\{featured\s*&&\s*\(?\s*<ArticleCard/);
     });
   });
 

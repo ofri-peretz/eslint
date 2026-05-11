@@ -122,11 +122,62 @@ function isCacheFresh(cachedTweet) {
   if (!cachedTweet || !cachedTweet._cachedAt) {
     return false;
   }
-  
+
   const cachedTime = new Date(cachedTweet._cachedAt).getTime();
   const now = Date.now();
-  
+
   return (now - cachedTime) < CACHE_TTL_MS;
+}
+
+/**
+ * Pull the resolved card preview image URL from a tweet, if any.
+ * Twitter's syndication endpoint sometimes drops these bindings —
+ * see `mergePreservedCardImages`. The lock test asserts the same path.
+ */
+function getCardImageUrl(tweet) {
+  const bv = tweet?.card?.binding_values;
+  return (
+    bv?.photo_image_full_size_large?.image_value?.url ||
+    bv?.thumbnail_image_large?.image_value?.url ||
+    bv?.thumbnail_image?.image_value?.url ||
+    null
+  );
+}
+
+/**
+ * Twitter's syndication endpoint is non-deterministic: the same tweet
+ * sometimes returns `card.binding_values` with image URLs, and sometimes
+ * returns the same `card` with text-only bindings. If the previous cache
+ * had a working preview image and the new fetch lost it, retain the
+ * previous image bindings rather than silently regressing the card.
+ * The HTTP check downstream still rejects stale 404 URLs.
+ */
+function mergePreservedCardImages(fresh, previous) {
+  if (!previous?.card?.binding_values) return fresh;
+  if (getCardImageUrl(fresh)) return fresh;
+  if (!getCardImageUrl(previous)) return fresh;
+  return {
+    ...fresh,
+    card: {
+      ...fresh.card,
+      binding_values: {
+        ...fresh.card?.binding_values,
+        ...previous.card.binding_values,
+      },
+    },
+  };
+}
+
+/**
+ * HEAD-check a URL. Returns the HTTP status, or 0 on network error.
+ */
+async function headStatus(url) {
+  try {
+    const res = await fetch(url, { method: 'HEAD' });
+    return res.status;
+  } catch {
+    return 0;
+  }
 }
 
 /**
@@ -179,9 +230,16 @@ async function main() {
       const tweet = await fetchTweet(id);
       
       if (tweet) {
-        // Store the tweet with cache metadata
+        // Defend against the syndication endpoint dropping image bindings:
+        // if the previous cache had a preview image and the new fetch lost
+        // it, retain the previous bindings. The HEAD check below catches
+        // stale URLs.
+        const preserved = mergePreservedCardImages(tweet, cache.tweets[id]);
+        if (preserved !== tweet) {
+          console.log(`  ↳ ${id}: Preserved previous card image bindings (API returned text-only card)`);
+        }
         cache.tweets[id] = {
-          ...tweet,
+          ...preserved,
           _cachedAt: new Date().toISOString(),
         };
         console.log(`  ✓ ${id}: Fetched (@${tweet.user?.screen_name})`);
@@ -211,15 +269,44 @@ async function main() {
   
   // Save updated cache
   saveCache(cache);
-  
+
+  // Verify every cached preview image URL is live. Twitter rotates
+  // `pbs.twimg.com/card_img/*` IDs faster than our 7-day TTL, so a "fresh"
+  // cache can still hold a 404 URL. Fail loudly so the issue surfaces
+  // pre-deploy instead of after prod renders an empty card. The lock test
+  // catches the structural case (URL missing from JSON) at PR time;
+  // this HEAD check catches the dynamic case (URL present but 404).
+  console.log(`\n🔎 Verifying cached preview image URLs are live…`);
+  let unreachable = 0;
+  for (const [id, t] of Object.entries(cache.tweets)) {
+    const url = getCardImageUrl(t);
+    if (!url) {
+      console.log(`  · ${id}: no card preview image — skipped`);
+      continue;
+    }
+    const status = await headStatus(url);
+    if (status >= 200 && status < 300) {
+      console.log(`  ✓ ${id}: card image OK (${status})`);
+    } else {
+      console.error(`  ✗ ${id}: card image unreachable (HTTP ${status}) — ${url}`);
+      unreachable++;
+    }
+  }
+
   console.log(`\n✅ Tweet cache sync complete:`);
   console.log(`   Fetched: ${fetched}`);
   console.log(`   Used cache: ${cached}`);
   console.log(`   Failed: ${failed}`);
-  
-  if (failed > 0) {
-    console.log(`\n⚠️  ${failed} tweet(s) could not be fetched.`);
-    console.log(`   Check if these tweets are deleted or the accounts are private.`);
+  console.log(`   Unreachable card images: ${unreachable}`);
+
+  if (failed > 0 || unreachable > 0) {
+    if (failed > 0) {
+      console.log(`\n⚠️  ${failed} tweet(s) could not be fetched.`);
+    }
+    if (unreachable > 0) {
+      console.log(`\n⚠️  ${unreachable} cached card image URL(s) returned non-2xx.`);
+      console.log(`   Re-run with --force; if the failure repeats, the tweet's preview image was removed upstream.`);
+    }
     process.exit(1);
   }
 }
@@ -232,4 +319,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   });
 }
 
-export { extractTweetIds, loadCache, saveCache };
+export { extractTweetIds, loadCache, saveCache, getCardImageUrl, mergePreservedCardImages };

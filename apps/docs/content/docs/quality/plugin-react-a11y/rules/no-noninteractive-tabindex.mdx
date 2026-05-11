@@ -1,19 +1,16 @@
 ---
-title: "no-noninteractive-tabindex"
-description: "title: no-noninteractive-tabindex"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-noninteractive-tabindex
-description: no-noninteractive-tabindex rule
+description: "Enforce that non-interactive elements do not have tabindex"
 tags: ['quality', 'react', 'accessibility', 'a11y']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-no-noninteractive-tabindex rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** no-noninteractive-tabindex, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

@@ -1,19 +1,16 @@
 ---
-title: "no-multi-comp"
-description: "description: no-multi-comp rule"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-multi-comp
-description: no-multi-comp rule
+description: "Prevent multiple components per file"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-no-multi-comp rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** React, components, file organization, single responsibility, code structure, ESLint rule, LLM-optimized
 

@@ -25,7 +25,7 @@ ILB measures **rule quality**. CI/CD Impact measures **org-economic value**. Tog
 | **Contributor opening a PR** | [`CONTRIBUTING.md`](CONTRIBUTING.md) — gates, severity contract, vocabulary contract |
 | **Auditor reviewing project governance** | [`GOVERNANCE.md`](GOVERNANCE.md) — roles, decision rules, conflict policy |
 | **MITRE / OWASP submitter** | [`benchmarks/audits/INDEX.md`](benchmarks/audits/INDEX.md) — the submission packets |
-| **Plugin author** wanting MCP integration | [`packages/eslint-mcp-base/README.md`](packages/eslint-mcp-base/README.md) — wrap your plugin in <30 lines |
+| **Agent / MCP integration** | We retired per-plugin MCP servers. Use the official [`@eslint/mcp`](https://github.com/eslint/mcp) — it auto-discovers every plugin. See [docs/integrations/claude-code](apps/docs/content/docs/integrations/claude-code.mdx). |
 | **CI engineer** | [`.github/actions/audit/README.md`](.github/actions/audit/README.md) — one-line GitHub Action |
 
 ## Doc surfaces — which is canonical for what?

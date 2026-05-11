@@ -12,7 +12,7 @@ const meta: Meta<typeof Button> = {
     },
     size: {
       control: 'select',
-      options: ['xs', 'sm', 'default', 'lg', 'hero', 'icon', 'icon-xs', 'icon-sm', 'icon-lg'],
+      options: ['xs', 'sm', 'default', 'lg', 'icon', 'icon-xs', 'icon-sm', 'icon-lg'],
     },
     disabled: { control: 'boolean' },
   },
@@ -49,7 +49,6 @@ export const Sizes: Story = {
       <Button size="sm">SM</Button>
       <Button size="default">Default</Button>
       <Button size="lg">LG</Button>
-      <Button size="hero">Hero</Button>
     </div>
   ),
 };

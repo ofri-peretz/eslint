@@ -1,20 +1,19 @@
 ---
-title: "no-static-iv"
-description: "description: Disallow static or hardcoded initialization vectors (IVs)"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-static-iv
-description: Disallow static or hardcoded initialization vectors (IVs)
+description: "Disallow static or hardcoded initialization vectors (IVs)"
 tags: ['security', 'cryptography', 'cwe-329', 'nodejs']
 category: security
 severity: high
 cwe: CWE-329
 owasp: "A02:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** IV, initialization vector, hardcoded, static, nonce, CWE-329, security, ESLint rule, LLM-optimized
 > **CWE:** [CWE-329](https://cwe.mitre.org/data/definitions/329.html)  

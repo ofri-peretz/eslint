@@ -1,19 +1,16 @@
 ---
-title: "control-has-associated-label"
-description: "title: control-has-associated-label"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: control-has-associated-label
-description: control-has-associated-label rule
+description: "Enforce that controls (interactive elements) have associated labels"
 tags: ['quality', 'react', 'accessibility', 'a11y']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-control-has-associated-label rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** control-has-associated-label, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

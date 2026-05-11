@@ -1,19 +1,16 @@
 ---
-title: "autocomplete-valid"
-description: "title: autocomplete-valid"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: autocomplete-valid
-description: autocomplete-valid rule
+description: "Enforce that autocomplete attribute has valid value"
 tags: ['quality', 'react', 'accessibility', 'a11y']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-autocomplete-valid rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** autocomplete-valid, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

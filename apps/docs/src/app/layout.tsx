@@ -89,7 +89,21 @@ export default function Layout({ children }: LayoutProps<'/'>) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className="flex flex-col min-h-screen">
-        <RootProvider>
+        {/* Skip link — MUST be the first focusable element in the body so
+            keyboard users (Safari + Full Keyboard Access on; any browser)
+            can bypass the fumadocs nav and jump straight to the page's
+            <main id="main-content"> landmark. Visually hidden via sr-only
+            until focused; revealed as a high-contrast brand pill on focus.
+            See KEYBOARD_PHILOSOPHY.md #1. */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-100 focus:rounded-md focus:bg-fd-primary focus:px-4 focus:py-2 focus:font-medium focus:text-fd-primary-foreground focus:shadow-lg focus:outline-hidden focus:ring-2 focus:ring-fd-ring"
+        >
+          Skip to main content
+        </a>
+        {/* Dark is the default theme — branded cosmic hero looks best on a dark
+            canvas, and the rest of the surface is AAA-tuned for near-black. */}
+        <RootProvider theme={{ defaultTheme: 'dark' }}>
           <TooltipProvider delayDuration={250}>{children}</TooltipProvider>
           <CodeBlockLabeller />
         </RootProvider>

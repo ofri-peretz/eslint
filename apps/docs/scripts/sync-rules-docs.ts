@@ -34,10 +34,44 @@ export const PLUGIN_MAPPINGS: Record<string, PluginMapping> = Object.fromEntries
 ) as Record<string, PluginMapping>;
 
 const MDX_TEMPLATE_IMPORTS = `
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 `;
 
-export function convertMdToMdx(mdContent, fileName) {
+export type TypeStatus = 'unaware' | 'optional' | 'aware';
+
+export interface ConvertOptions {
+  /**
+   * Type-awareness classification for this rule, sourced from
+   * `.agent/type-awareness-scan.tsv`. When provided, the script writes a
+   * `type_aware` frontmatter field and emits `<RuleBadges typeAware={...} />`
+   * directly under the imports so the rule MDX page surfaces the indicator.
+   */
+  typeStatus?: TypeStatus;
+}
+
+/**
+ * Load the per-rule type-awareness classification from
+ * `.agent/type-awareness-scan.tsv`. The TSV is the single source of truth
+ * (see `.agent/type-awareness-audit.md`). Returns `null` when the file is
+ * missing — the generator stays runnable, but every rule renders as 🟢.
+ */
+export function loadTypeAwarenessMap(tsvPath: string): Map<string, TypeStatus> | null {
+  if (!fs.existsSync(tsvPath)) return null;
+  const map = new Map<string, TypeStatus>();
+  const lines = fs.readFileSync(tsvPath, 'utf-8').split('\n');
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+    const [plugin, rule, status] = line.split('\t');
+    if (!plugin || !rule || !status) continue;
+    const normalized = status.trim();
+    if (normalized !== 'unaware' && normalized !== 'optional' && normalized !== 'aware') continue;
+    map.set(`${plugin}/${rule}`, normalized);
+  }
+  return map;
+}
+
+export function convertMdToMdx(mdContent, fileName, opts: ConvertOptions = {}) {
   // Extract Title (usually first # header)
   const titleMatch = mdContent.match(/^#\s+(.+)$/m);
   const title = titleMatch ? titleMatch[1].trim() : fileName.replace('.md', '');
@@ -71,15 +105,28 @@ export function convertMdToMdx(mdContent, fileName) {
       .slice(0, 160);
   }
 
-  // Build Frontmatter with safe escaping
+  // Build Frontmatter with safe escaping. The `type_aware` field is the
+  // structured form of the badge (true when the rule needs the TS program in
+  // any mode); the `type_aware_status` keeps the finer-grained classification
+  // for tests/validators that want to distinguish refining vs graceful.
+  const isTypeAware = opts.typeStatus === 'optional' || opts.typeStatus === 'aware';
+  const typeStatusForFm = opts.typeStatus ?? 'unaware';
   let mdx = `---
 title: ${JSON.stringify(title)}
 description: ${JSON.stringify(description)}
+type_aware: ${isTypeAware}
+type_aware_status: ${typeStatusForFm}
 ---
 `;
 
   // Add Imports
   mdx += MDX_TEMPLATE_IMPORTS + '\n';
+
+  // Render the badge immediately under the imports so it sits at the very
+  // top of the rule page above the description. The `<RuleBadges>` component
+  // owns the visual treatment; the props mirror frontmatter so the same data
+  // is reachable via fumadocs frontmatter when rendering elsewhere.
+  mdx += `<RuleBadges typeAware={${isTypeAware}} typeAwareStatus=${JSON.stringify(typeStatusForFm)} />\n\n`;
 
   // Process Content
   let finalContent = mdContent;
@@ -149,6 +196,12 @@ export function updateMetaJson(pluginRulesDir, ruleSlugs) {
 async function main() {
   console.log('Syncing Rule MD to MDX...');
 
+  const tsvPath = path.resolve(rootDir, '.agent', 'type-awareness-scan.tsv');
+  const typeMap = loadTypeAwarenessMap(tsvPath);
+  if (!typeMap) {
+    console.warn(`(type-awareness TSV missing at ${tsvPath} — every rule renders as 🟢)`);
+  }
+
   for (const [pluginSlug, { package: packageName, pillar }] of Object.entries(PLUGIN_MAPPINGS)) {
     const pkgRulesDir = path.join(packagesDir, packageName, 'docs/rules');
     const docsRulesDir = path.join(contentDir, pillar, `plugin-${pluginSlug}`, 'rules');
@@ -172,8 +225,9 @@ async function main() {
       ruleSlugs.push(slug);
 
       const content = fs.readFileSync(mdPath, 'utf8');
-      const mdxContent = convertMdToMdx(content, file);
-      
+      const typeStatus = typeMap?.get(`${pluginSlug}/${slug}`);
+      const mdxContent = convertMdToMdx(content, file, { typeStatus });
+
       fs.writeFileSync(mdxPath, mdxContent);
     }
 

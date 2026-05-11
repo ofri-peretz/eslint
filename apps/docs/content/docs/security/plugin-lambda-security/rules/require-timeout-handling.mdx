@@ -1,19 +1,18 @@
 ---
-title: "require-timeout-handling"
-description: "title: require-timeout-handling"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: require-timeout-handling
-description: Require timeout handling in Lambda handlers with external calls
+description: "Warns when Lambda handlers with external calls lack timeout handling"
 tags: ['serverless', 'lambda', 'cwe-400', 'timeout', 'aws']
 category: reliability
 severity: medium
 cwe: CWE-400
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** Lambda, timeout, context, getRemainingTimeInMillis, AbortController, CWE-400, AWS, serverless
 > **CWE:** [CWE-400](https://cwe.mitre.org/data/definitions/400.html)

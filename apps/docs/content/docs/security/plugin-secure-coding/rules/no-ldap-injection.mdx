@@ -1,19 +1,18 @@
 ---
-title: "no-ldap-injection"
-description: "title: no-ldap-injection"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-ldap-injection
-description: Detects LDAP injection vulnerabilities
+description: "Detects LDAP injection vulnerabilities"
 tags: ['security', 'core']
 category: security
 severity: critical
 cwe: CWE-90
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** LDAP injection, CWE-90, directory service, authentication bypass, security, Active Directory
 

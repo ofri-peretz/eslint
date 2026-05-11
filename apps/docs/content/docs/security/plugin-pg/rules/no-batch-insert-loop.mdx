@@ -1,23 +1,20 @@
 ---
-title: "no-batch-insert-loop"
-description: "title: no-batch-insert-loop"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-batch-insert-loop
-description: Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern).
+description: "Prevent executing database queries within loops (N+1 problem)."
 tags: ['security', 'postgres']
 category: security
 severity: medium
 cwe: CWE-400
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> **Keywords:** N+1 queries, performance, CWE-400, pg, node-postgres, bulk operations
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Prevents INSERT/UPDATE/DELETE queries inside loops (N+1 query anti-pattern).
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** N+1 queries, performance, CWE-400, pg, node-postgres, bulk operations
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 

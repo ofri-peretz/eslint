@@ -1,20 +1,19 @@
 ---
-title: "require-class-validator"
-description: "title: require-class-validator"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: require-class-validator
-description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+description: "Requires class-validator decorators on DTO properties"
 tags: ['security', 'nestjs']
 category: security
 severity: medium
 cwe: CWE-20
 owasp: "A03:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Require class-validator decorators on DTO properties
 

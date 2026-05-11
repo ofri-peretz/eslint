@@ -172,6 +172,7 @@ export const requireDataTestId = createRule<RuleOptions, MessageIds>({
         description:
           '`data-testid` should be a string literal or a template literal of stable identifiers — values that change between renders make tests flaky.',
         severity: 'LOW',
+        // oxlint-disable-next-line eslint/no-template-curly-in-string
         fix: 'Use a string literal or template like `pagination-page-${pageNumber}` instead of dynamic / computed values.',
         documentationLink:
           'https://github.com/ofri-peretz/eslint/blob/main/packages/eslint-plugin-conventions/docs/rules/require-data-testid.md',

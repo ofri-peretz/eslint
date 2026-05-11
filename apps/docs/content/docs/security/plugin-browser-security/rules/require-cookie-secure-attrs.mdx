@@ -1,24 +1,21 @@
 ---
-title: "require-cookie-secure-attrs"
-description: "title: require-cookie-secure-attrs"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: require-cookie-secure-attrs
-description: Require Secure and SameSite attributes on cookies.
+description: "Require Secure and SameSite attributes when setting cookies"
 tags: ['security', 'browser']
 category: security
 severity: medium
 cwe: CWE-614
 owasp: "A05:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> Require Cookie Secure Attrs
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Require Secure and SameSite attributes on cookies.
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> Require Cookie Secure Attrs
 
 Require Secure and SameSite attributes on cookies.
 

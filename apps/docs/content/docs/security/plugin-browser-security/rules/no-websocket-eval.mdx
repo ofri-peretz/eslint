@@ -1,20 +1,19 @@
 ---
-title: "no-websocket-eval"
-description: "title: no-websocket-eval"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-websocket-eval
-description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+description: "Disallow using eval() or Function() with WebSocket message data"
 tags: ['security', 'browser']
 category: security
 severity: critical
 cwe: CWE-319
 owasp: "A03:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > 🔒 Disallow using eval() or Function() with WebSocket message data
 

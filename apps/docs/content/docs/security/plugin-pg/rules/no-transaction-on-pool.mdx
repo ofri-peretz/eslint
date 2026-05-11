@@ -1,23 +1,20 @@
 ---
-title: "no-transaction-on-pool"
-description: "title: no-transaction-on-pool"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-transaction-on-pool
-description: Prevents running transaction commands directly on pool (must use dedicated client).
+description: "Prevent starting transactions directly on the Pool, which is unsafe due to lack of client affinity."
 tags: ['security', 'postgres']
 category: security
 severity: medium
 cwe: CWE-362
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> **Keywords:** transactions, race condition, CWE-362, pg, node-postgres, pool
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Prevents running transaction commands directly on pool (must use dedicated client).
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** transactions, race condition, CWE-362, pg, node-postgres, pool
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 

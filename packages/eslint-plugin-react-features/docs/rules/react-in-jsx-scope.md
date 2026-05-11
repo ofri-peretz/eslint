@@ -21,7 +21,7 @@ Prevent missing React in scope when using JSX. This rule is part of [`eslint-plu
 
 | Aspect         | Details                                                              |
 | -------------- | -------------------------------------------------------------------- |
-| **Severity**   | Error (for React <17)                                                |
+| **Severity**   | Error (for React `<17`)                                              |
 | **Auto-Fix**   | ✅ Yes (adds import)                                                 |
 | **Category**   | React                                                                |
 | **ESLint MCP** | ✅ Optimized for ESLint MCP integration                              |

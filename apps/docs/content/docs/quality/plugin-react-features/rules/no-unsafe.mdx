@@ -1,17 +1,16 @@
 ---
-title: "no-unsafe"
-description: "description: Warn about UNSAFE_ lifecycle methods. This rule is part of eslint-plugin-react-features and provides LLM-optimized error messages."
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-unsafe
-description: Warn about UNSAFE_ lifecycle methods. This rule is part of eslint-plugin-react-features and provides LLM-optimized error messages.
+description: "Prevent usage of unsafe lifecycle methods"
 tags: ['quality', 'react']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** React, UNSAFE, lifecycle, deprecated, ESLint rule, code quality, LLM-optimized
 

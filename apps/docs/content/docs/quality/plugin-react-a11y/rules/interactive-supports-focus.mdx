@@ -1,19 +1,16 @@
 ---
-title: "interactive-supports-focus"
-description: "title: interactive-supports-focus"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: interactive-supports-focus
-description: interactive-supports-focus rule
+description: "Enforce that elements with interactive handlers are focusable"
 tags: ['quality', 'react', 'accessibility', 'a11y']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-interactive-supports-focus rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** interactive-supports-focus, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

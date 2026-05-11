@@ -1,19 +1,18 @@
 ---
-title: "no-timestamp-manipulation"
-description: "title: no-timestamp-manipulation"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-timestamp-manipulation
-description: "This rule detects noTimestamp: true which disables automatic iat (issued at) claim generation"
+description: "Prevent disabling automatic timestamp generation which enables replay attacks"
 tags: ['security', 'jwt']
 category: security
 severity: medium
 cwe: CWE-294
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Prevent disabling automatic timestamp generation which enables replay attacks
 

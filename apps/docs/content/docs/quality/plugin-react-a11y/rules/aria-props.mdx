@@ -1,19 +1,16 @@
 ---
-title: "aria-props"
-description: "description: aria-props rule"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: aria-props
-description: aria-props rule
+description: "Enforce that ARIA attributes are valid"
 tags: ['quality', 'react', 'accessibility', 'a11y']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-aria-props rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** aria-props, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

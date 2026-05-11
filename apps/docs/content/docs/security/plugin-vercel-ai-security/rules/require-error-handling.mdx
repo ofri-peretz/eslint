@@ -1,19 +1,18 @@
 ---
-title: "require-error-handling"
-description: "title: require-error-handling"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: require-error-handling
-description: "This rule identifies AI SDK calls that aren't wrapped in try-catch blocks"
+description: "Require error handling for AI SDK calls to prevent cascading failures"
 tags: ['security', 'ai']
 category: security
 severity: medium
 cwe: CWE-755
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Ensures AI SDK calls are wrapped in try-catch to prevent cascading failures.
 

@@ -1,17 +1,16 @@
 ---
-title: "require-data-minimization"
-description: "title: require-data-minimization"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: require-data-minimization
-description: Identifies excessive data collection patterns that violate privacy principles
+description: "Identify excessive data collection patterns"
 tags: ['quality', 'operability', 'production']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Identifies excessive data collection patterns that violate privacy principles
 

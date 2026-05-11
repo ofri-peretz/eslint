@@ -1,19 +1,16 @@
 ---
-title: "anchor-is-valid"
-description: "title: anchor-is-valid"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: anchor-is-valid
-description: anchor-is-valid rule
+description: "Enforce that anchors are valid, navigable elements"
 tags: ['quality', 'react', 'accessibility', 'a11y']
 category: quality
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
 
-anchor-is-valid rule
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** anchor-is-valid, accessibility, ESLint rule, WCAG, a11y, React accessibility
 

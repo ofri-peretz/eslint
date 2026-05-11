@@ -132,10 +132,16 @@ throw new Error('Service temporarily unavailable');
 | 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
 | 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
+<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [operability](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/operability) |  |  |  | Enforce operability | 🟢 |  |  |  |  |  |
-
+| [no-console-log](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/no-console-log) | CWE-532 |  |  | Disallow console.log with configurable remediation strategies and LLM-optimized output. This rule is part o… | 🟢 |  |  |  | 💡 |  |
+| [no-debug-code-in-production](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/no-debug-code-in-production) | CWE-489 |  |  | Detects debug code that should not be present in production builds. | 🟢 |  |  |  | 💡 |  |
+| [no-process-exit](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/no-process-exit) |  |  |  | Prevents direct process.exit() calls to encourage graceful shutdown patterns. This rule is part of eslint-p… | 🟢 |  |  |  | 💡 |  |
+| [no-verbose-error-messages](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/no-verbose-error-messages) | CWE-209 | A01:2021 |  | Prevent exposing stack traces to users in API responses | 🟢 |  |  |  |  |  |
+| [require-code-minification](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/require-code-minification) | CWE-656 |  |  | Require minification configuration in build tools | 🟢 |  |  |  |  |  |
+| [require-data-minimization](https://eslint.interlace.tools/docs/quality/plugin-operability/rules/require-data-minimization) | CWE-213 |  |  | Identifies excessive data collection patterns that violate privacy principles | 🟢 |  |  |  | 💡 |  |
+<!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:

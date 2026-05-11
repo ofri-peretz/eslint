@@ -1,23 +1,20 @@
 ---
-title: "no-insecure-ssl"
-description: "title: no-insecure-ssl"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-insecure-ssl
-description: Prevents disabling SSL certificate validation in PostgreSQL connections.
+description: "Prevent the use of insecure SSL configurations (rejectUnauthorized: false)."
 tags: ['security', 'postgres']
 category: security
 severity: medium
 cwe: CWE-295
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
 
-> **Keywords:** SSL, TLS, CWE-295, pg, node-postgres, security, certificate validation
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
 
-Prevents disabling SSL certificate validation in PostgreSQL connections.
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
+
+> **Keywords:** SSL, TLS, CWE-295, pg, node-postgres, security, certificate validation
 
 **CWE:** [CWE-693](https://cwe.mitre.org/data/definitions/693.html)
 

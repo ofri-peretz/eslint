@@ -1,17 +1,16 @@
 ---
-title: "prefer-at"
-description: "description: Prefer using Array.at() for accessing elements, especially with negative indices"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: prefer-at
-description: Prefer using Array.at() for accessing elements, especially with negative indices
+description: "Prefer .at() method over bracket notation for accessing elements from the end"
 tags: ['architecture', 'modernization']
 category: modernization
 autofix: suggestions
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** Array.at(), negative index, last element, ESLint rule, ES2022, auto-fix, LLM-optimized
 

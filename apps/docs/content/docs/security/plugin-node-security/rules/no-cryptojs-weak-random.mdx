@@ -1,20 +1,19 @@
 ---
-title: "Check crypto-js version"
-description: "title: no-cryptojs-weak-random"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-cryptojs-weak-random
-description: Disallow crypto-js WordArray.random() (CVE-2020-36732)
+description: "Disallow crypto-js WordArray.random() (CVE-2020-36732)"
 tags: ['security', 'cryptography', 'cwe-338', 'nodejs', 'cve']
 category: security
 severity: critical
 cwe: CWE-338
 owasp: "A02:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** crypto-js, WordArray.random, weak random, Math.random, CVE-2020-36732, CWE-338, ESLint rule
 > **CWE:** [CWE-338](https://cwe.mitre.org/data/definitions/338.html)  

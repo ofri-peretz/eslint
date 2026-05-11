@@ -1,19 +1,18 @@
 ---
-title: "no-data-in-temp-storage"
-description: "title: no-data-in-temp-storage"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-data-in-temp-storage
-description: Temporary directories (/tmp, /var/tmp, temp/) are often world-readable or persist longer than expected
+description: "Prevent sensitive data in temp directories"
 tags: ['security', 'node']
 category: security
 severity: medium
 cwe: CWE-312
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Prevents sensitive data in temporary directories
 

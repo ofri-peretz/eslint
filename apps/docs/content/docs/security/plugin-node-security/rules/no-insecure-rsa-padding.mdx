@@ -1,20 +1,19 @@
 ---
-title: "no-insecure-rsa-padding"
-description: "title: no-insecure-rsa-padding"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: no-insecure-rsa-padding
-description: Disallow RSA PKCS#1 v1.5 padding (CVE-2023-46809 Marvin Attack)
+description: "Disallow RSA PKCS#1 v1.5 padding (CVE-2023-46809 Marvin Attack)"
 tags: ['security', 'cryptography', 'cwe-327', 'nodejs', 'rsa']
 category: security
 severity: high
 cwe: CWE-327
 owasp: "A02:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** RSA, PKCS#1, padding, Marvin Attack, CVE-2023-46809, OAEP, CWE-327, security, ESLint rule
 > **CWE:** [CWE-327](https://cwe.mitre.org/data/definitions/327.html)  

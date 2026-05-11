@@ -17,8 +17,11 @@
  *   interlace bench
  *       Quick local bench (delegates to `npm run ilb:smoke`).
  *
- *   interlace mcp <plugin>
- *       Start the MCP server for a given plugin (e.g. `interlace mcp secure-coding`).
+ *   interlace mcp …
+ *       Retired. Use the official `@eslint/mcp` server — it discovers every
+ *       ESLint plugin (ours included) from your config automatically. The
+ *       subcommand still exists so older READMEs surface a clean redirect
+ *       message instead of a crash.
  *       Exposes the plugin's rules as agent-callable tools over stdio.
  *
  *   interlace --version | --help
@@ -51,8 +54,8 @@ Usage:
 
   interlace bench                      Quick local bench (npm run ilb:smoke)
 
-  interlace mcp <plugin>               Start the MCP server for <plugin> over stdio
-                                       (e.g. interlace mcp secure-coding)
+  interlace mcp                        Retired — prints a redirect to @eslint/mcp.
+                                       See https://eslint.interlace.tools/docs/integrations/claude-code
 
   interlace --version                  Print CLI version
   interlace --help                     This help text
@@ -158,18 +161,25 @@ function cmdBench(_args) {
   }
 }
 
-function cmdMcp(args) {
-  const plugin = args[0];
-  if (!plugin) {
-    console.error('interlace mcp: missing plugin. e.g. `interlace mcp secure-coding`');
-    process.exit(2);
-  }
-  // Expect @interlace/<plugin>-mcp to be installed (by the user) or available via npx.
-  const child = spawn('npx', ['--yes', `@interlace/${plugin}-mcp`], { stdio: 'inherit' });
-  child.on('exit', (code) => process.exit(code ?? 0));
+function cmdMcp() {
+  // Retired in 2026-05. We no longer ship per-plugin MCP servers — the
+  // official `@eslint/mcp` discovers every ESLint plugin in your config
+  // and gives Claude Code / Cursor the same tool surface for free.
+  // See: apps/docs/content/docs/integrations/claude-code.mdx
+  console.error(
+    'interlace mcp: retired. Use the official ESLint MCP instead:\n' +
+      '  1. npm install --save-dev eslint eslint-plugin-<plugin>\n' +
+      '  2. Register `@eslint/mcp` with your agent (Claude Code, Cursor, etc.):\n' +
+      '       { "command": "npx", "args": ["--yes", "@eslint/mcp"] }\n' +
+      '  3. Restart the agent. Every installed plugin is exposed automatically.\n' +
+      'Docs: https://eslint.interlace.tools/docs/integrations/claude-code',
+  );
+  process.exit(2);
 }
 
 // ─── doctor ────────────────────────────────────────────────────────────────
+
+const sym = (s) => s === 'ok' ? '✅' : s === 'warn' ? '⚠ ' : '❌';
 
 /**
  * `interlace doctor` — adoption-funnel debugger.
@@ -234,13 +244,15 @@ function cmdDoctor(_args) {
     fix: sarif ? null : 'npm install --save-dev @interlace/eslint-formatter-sarif',
   });
 
-  // 6. MCP servers installed (optional)
-  const mcpInstalled = FLEET.filter((p) => fs.existsSync(path.join(repoRoot, 'node_modules', '@interlace', `${p}-mcp`)));
+  // 6. ESLint MCP installed (optional, for agent integration)
+  const eslintMcp = fs.existsSync(path.join(repoRoot, 'node_modules', '@eslint', 'mcp'));
   checks.push({
-    name: 'MCP servers installed (for agent integration)',
-    status: mcpInstalled.length > 0 ? 'ok' : 'warn',
-    detail: mcpInstalled.length > 0 ? `${mcpInstalled.length} MCP server(s) installed` : 'no MCP servers installed (agents like Claude Code / Cursor cannot call audit_file etc. without these)',
-    fix: mcpInstalled.length === 0 ? 'npm install -g @interlace/secure-coding-mcp   # install one or more' : null,
+    name: 'ESLint MCP installed (for agent integration)',
+    status: eslintMcp ? 'ok' : 'warn',
+    detail: eslintMcp
+      ? '@eslint/mcp present — agents (Claude Code, Cursor) can lint files via the official MCP'
+      : '@eslint/mcp not installed (optional). Agents can still call it via npx; pre-installing avoids a cold-start delay.',
+    fix: eslintMcp ? null : 'npm install --save-dev @eslint/mcp   # then register it in your agent\'s MCP config',
   });
 
   // 7. Telemetry status (informational only)
@@ -268,7 +280,6 @@ function cmdDoctor(_args) {
   });
 
   // Render
-  const sym = (s) => s === 'ok' ? '✅' : s === 'warn' ? '⚠ ' : '❌';
   console.log(`interlace doctor — ${process.cwd()}`);
   console.log('');
   let fails = 0;

@@ -1,28 +1,23 @@
 ---
-title: "require-secure-pbkdf2-digest"
-description: "title: require-secure-pbkdf2-digest"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: require-secure-pbkdf2-digest
-description: "CWE: [CWE-328](https://cwe.mitre.org/data/definitions/328.html)"
+description: "Require secure digest algorithm for PBKDF2 (not SHA1)"
 tags: ['security', 'crypto']
 category: security
 severity: medium
 cwe: CWE-328
 owasp: "A02:2021"
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > **Keywords:** require-secure-pbkdf2-digest, PBKDF2, hashing, SHA1, weak algorithm, security, ESLint rule, CWE-328, password storage
 > **CWE:** [CWE-328: Use of Weak Hash](https://cwe.mitre.org/data/definitions/328.html)  
 > **OWASP:** [OWASP Top 10 A02:2021 - Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
-
-CWE: [CWE-328](https://cwe.mitre.org/data/definitions/328.html)
-
-ESLint Rule: require-secure-pbkdf2-digest. This rule is part of [`eslint-plugin-crypto`](https://www.npmjs.com/package/eslint-plugin-crypto).
 
 ## Quick Summary
 

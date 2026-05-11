@@ -1,19 +1,18 @@
 ---
-title: "require-express-body-parser-limits"
-description: "title: require-express-body-parser-limits"
----
-
-import { FalseNegativeCTA, WhenNotToUse } from "@/components/RuleComponents";
-
----
 title: require-express-body-parser-limits
-description: "The rule provides LLM-optimized error messages (Compact 2-line format) with actionable security guidance:"
+description: "Require size limits on Express.js body parsers to prevent DoS attacks"
 tags: ['security', 'express']
 category: security
 severity: medium
 cwe: CWE-400
 autofix: false
+type_aware: false
+type_aware_status: unaware
 ---
+
+import { FalseNegativeCTA, WhenNotToUse, RuleBadges } from "@/components/RuleComponents";
+
+<RuleBadges typeAware={false} typeAwareStatus="unaware" />
 
 > Require size limits on body parser middleware to prevent DoS attacks
 

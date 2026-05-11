@@ -115,12 +115,13 @@ const target = new EventTarget();
 | 🟡 | **Type-aware (refining)**: pure-AST primary path; types refine precision. |
 | 🟠 | **Type-aware (graceful)**: requires TS program; silent without it. |
 
+<!-- AUTO-GENERATED:RULES_TABLE:START - Do not edit manually -->
 | Rule | CWE | OWASP | CVSS | Description | 🧠 | 💼 | ⚠️ | 🔧 | 💡 | 🚫 |
 | :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [no-instanceof-array](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/no-instanceof-array) |  |  |  | ESLint rule documentation for no-instanceof-array | 🟢 |  |  |  |  |  |
-| [prefer-at](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-at) |  |  |  | ESLint rule documentation for prefer-at | 🟢 |  |  |  |  |  |
-| [prefer-event-target](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-event-target) |  |  |  | ESLint rule documentation for prefer-event-target | 🟢 |  |  |  |  |  |
-
+| [no-instanceof-array](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/no-instanceof-array) |  |  |  | Prefer Array.isArray() over instanceof Array for reliable type checking across different JavaScript realms… | 🟢 |  |  |  | 💡 |  |
+| [prefer-at](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-at) |  |  |  | Prefer using Array.at() for accessing elements, especially with negative indices | 🟢 |  |  |  | 💡 |  |
+| [prefer-event-target](https://eslint.interlace.tools/docs/quality/plugin-modernization/rules/prefer-event-target) |  |  |  | Prefer EventTarget over EventEmitter for isomorphic code | 🟢 |  |  |  | 💡 |  |
+<!-- AUTO-GENERATED:RULES_TABLE:END -->
 ## 🔗 Related ESLint Plugins
 
 Part of the **Interlace ESLint Ecosystem** — AI-native security plugins with LLM-optimized error messages:

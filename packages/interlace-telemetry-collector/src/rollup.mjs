@@ -41,7 +41,7 @@ if (!fs.existsSync(STORAGE)) {
 const sinceMs = SINCE ? new Date(SINCE).getTime() : 0;
 const perRule = new Map();   // ruleId → { fires, sessions:Set, severityCounts, toolchainBuckets:Map }
 let totalEvents = 0;
-let totalSessions = new Set();
+const totalSessions = new Set();
 
 for (const line of fs.readFileSync(STORAGE, 'utf8').split('\n')) {
   if (!line.trim()) continue;
@@ -79,7 +79,7 @@ const ranked = [...perRule.entries()]
     tsCompiler: Object.fromEntries(agg.tsCompilerBuckets.entries()),
     publishable: agg.sessions.size >= MIN_SESSIONS_FOR_PUBLIC,
   }))
-  .sort((a, b) => b.fires - a.fires);
+  .toSorted((a, b) => b.fires - a.fires);
 
 const json = {
   generatedAt: new Date().toISOString(),
@@ -108,8 +108,8 @@ lines.push('| Rule | Fires | Unique sessions | Error | Warn | Top Node major | T
 lines.push('|---|---:|---:|---:|---:|---|---|');
 const top = ranked.slice(0, 50);
 for (const r of top) {
-  const topNode = Object.entries(r.nodeMajor).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—';
-  const topTsc  = Object.entries(r.tsCompiler).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—';
+  const topNode = Object.entries(r.nodeMajor).toSorted((a, b) => b[1] - a[1])[0]?.[0] ?? '—';
+  const topTsc  = Object.entries(r.tsCompiler).toSorted((a, b) => b[1] - a[1])[0]?.[0] ?? '—';
   const flag = r.publishable ? '' : ' ⚠';
   lines.push(`| \`${r.ruleId}\`${flag} | ${r.fires} | ${r.uniqueSessions} | ${r.severity.error} | ${r.severity.warn} | ${topNode} | ${topTsc} |`);
 }
